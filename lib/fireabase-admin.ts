@@ -1,4 +1,3 @@
-import "server-only";
 import * as admin from "firebase-admin";
 
 interface FirebaseAdminAppParams {
@@ -27,12 +26,14 @@ const createFirebaseAdminApp = (params: FirebaseAdminAppParams) => {
     projectId: params.projectId,
   });
 
+  console.log("Firebase admin initialized.", process.env.FIREBASE_DB_NAME);
+
   app.firestore().settings({
     ignoreUndefinedProperties: true,
-    databaseId: `${process.env.NEXT_PUBLIC_FIREBASE_DB_NAME}`,
+    // databaseId: `${process.env.FIREBASE_DB_NAME}`,
   });
 
-  app.storage().bucket(`${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_NAME}`);
+  app.storage().bucket(`${process.env.FIREBASE_STORAGE_NAME}`);
 
   return app;
 };

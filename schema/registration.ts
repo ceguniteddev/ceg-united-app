@@ -1,12 +1,22 @@
 import { z } from "zod";
 import { dateOfBirthSchema, GenderEnum } from ".";
 
+export const passwordSchema = z
+  .string()
+  .min(8, { message: "8 minimum characters" })
+  .regex(/[A-Z]/, { message: "Require uppercase character" })
+  .regex(/[a-z]/, { message: "Require lowercase character" })
+  .regex(/[0-9]/, { message: "Require numeric character" })
+  // If you don't want spaces to count as special, use /[^\w\s]/ instead:
+  .regex(/[^\w\s]/, { message: "Require special character" });
+
 export type Registration = z.infer<typeof registrationSchema>;
 export const registrationSchema = z.object({
   firstName: z.string().min(1, { error: "Required" }),
   lastName: z.string().min(1, { error: "Required" }),
   email: z.email().min(1, { error: "Required" }),
-  password: z.string().min(1, { error: "Required" }),
+  password: passwordSchema,
   birthdate: dateOfBirthSchema,
   gender: GenderEnum,
+  phoneNumber: z.string().min(1, { error: "Required" }),
 });

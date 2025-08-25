@@ -1,6 +1,9 @@
 "use server";
 import { USER_COLLECTION } from "@/constant/collection-name";
+import AppError from "@/error/AppError";
+import { normalizeAllDates } from "@/lib/date-parser";
 import { authenticationAdmin, firestoreAdmin } from "@/lib/fireabase-admin";
+import { Registration } from "@/schema/registration";
 
 export const getUserRecordByEmail = async (email: string) => {
   const authentication = authenticationAdmin();
@@ -9,7 +12,7 @@ export const getUserRecordByEmail = async (email: string) => {
   try {
     userRecord = await authentication.getUserByEmail(email);
   } catch (error) {
-    console.info(error);
+    console.error(error);
   }
 
   return userRecord;
@@ -29,4 +32,36 @@ export const getUser = async (email: string): Promise<User | null> => {
   const userDoc = querySnapshot.docs[0];
 
   return { id: userDoc.id, ...userDoc.data() } as User;
+};
+
+export const registerClient = async (value: Registration) => {
+  const userRecord = await getUserRecordByEmail(value.email);
+
+  if (userRecord) {
+    throw new AppError("Cannot register duplicate email.");
+  }
+
+  const db = firestoreAdmin();
+
+  const collectionRef = db.collection(USER_COLLECTION);
+
+  const userData = { ...value };
+  delete (userData as { password?: string }).password;
+
+  const docRef = await collectionRef.add(userData);
+  const data = (await docRef.get()).data();
+
+  await authenticationAdmin().createUser({
+    uid: docRef.id,
+    email: value.email,
+    password: value.password,
+    displayName: `${value.firstName} ${value.lastName}`,
+    disabled: false,
+    emailVerified: false,
+  });
+
+  return {
+    id: docRef.id,
+    ...normalizeAllDates(data),
+  };
 };

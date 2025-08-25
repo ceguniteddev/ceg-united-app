@@ -5,18 +5,23 @@ import { Form } from "@/components/ui/form";
 import { Registration, registrationSchema } from "@/schema/registration";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon, SaveIcon } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { genderTypes } from "@/schema";
 import { useRegistration } from "@/hooks/registration";
+import { PasswordStrength } from "@/components/PasswordStrength";
 
 const RegistrationPage = () => {
   const { recordRegistration, isRecording } = useRegistration();
 
   const form = useForm<Registration>({
     resolver: zodResolver(registrationSchema),
+    defaultValues: {
+      password: "",
+    } as Partial<Registration>,
   });
+  const password = useWatch({ control: form.control, name: "password", defaultValue: "" });
 
   const onSubmit = async (values: Registration) => {
     await recordRegistration(values);
@@ -53,10 +58,12 @@ const RegistrationPage = () => {
                     options={genderTypes()}
                   />
                 </div>
-                <div className="grid">
+                <div className="grid grid-cols-2 gap-4">
                   <CustomFormField name={"email"} type="email" placeholder="Email Address" />
+                  <CustomFormField name={"phoneNumber"} placeholder="Phone Number" />
                 </div>
                 <CustomFormField name={"password"} type="password" placeholder="New Password" />
+                <PasswordStrength password={password ?? ""} />
               </CardContent>
               <CardFooter>
                 <div className="flex space-x-4 w-full">

@@ -1,4 +1,6 @@
+import AppError from "@/error/AppError";
 import { Registration } from "@/schema/registration";
+import { registerClient } from "@/service/user";
 
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -6,14 +8,18 @@ import { toast } from "sonner";
 export const useRegistration = () => {
   const createMutation = useMutation({
     mutationFn: async (values: Registration) => {
-      //   await createContractParticularsInfo(values, referenceNumber);
+      await registerClient(values);
     },
     onSuccess: () => {
       toast.success("Registered successfully.");
     },
     onError: (error: any) => {
-      toast.error("Failed to record registration.");
-      console.error(error);
+      if (error instanceof AppError) {
+        toast.warning(error.message);
+      } else {
+        toast.warning(error.message);
+        console.error(error);
+      }
     },
   });
 
