@@ -124,3 +124,67 @@
 .date-form {
   @apply w-full rounded-md text-[24px] flex flex-row;
 }
+
+.root-layout {
+  @apply mx-auto w-full h-full justify-center items-center;
+}
+
+/* Landing Page */
+.landing {
+  @apply w-3/4;
+}
+
+.landing__hero {
+  @apply flex justify-between items-center mt-12 h-[500px] rounded-lg;
+}
+
+.landing__hero-content {
+  @apply basis-1/2 px-16 mx-auto;
+}
+
+.landing__hero-images {
+  @apply basis-1/2 h-full relative overflow-hidden rounded-r-lg;
+}
+
+.landing__hero-image {
+  @apply object-cover transition-opacity duration-500 opacity-0;
+}
+
+.landing__hero-image--active {
+  @apply opacity-100;
+}
+
+/* NonDashboard Layout */
+.nondashboard-layout {
+  @apply flex flex-col min-h-screen w-full;
+}
+
+.nondashboard-layout__main {
+  @apply flex flex-grow w-full h-full justify-center items-center;
+}
+
+/* Dashboard Layout */
+.dashboard {
+  @apply min-h-screen w-full flex;
+}
+
+.dashboard__content {
+  @apply flex flex-1;
+}
+
+.dashboard__main {
+  @apply flex-grow min-h-screen h-[100vh] transition-all duration-500 ease-in-out overflow-y-auto;
+}
+
+.dashboard__body {
+  @apply px-8 py-1;
+}
+
+/* Dashboard Navbar */
+.dashboard-navbar {
+  @apply w-full mb-1 px-4 sm:px-8 pt-1 z-10 shadow;
+}
+
+.dashboard-navbar__container {
+  @apply flex justify-between items-center w-full;
+}

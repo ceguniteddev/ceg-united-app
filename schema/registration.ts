@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { dateOfBirthSchema, GenderEnum } from ".";
+import { dateOfBirthSchema, GenderEnum, ROLES, ROLESEnum } from ".";
 
 export const passwordSchema = z
   .string()
@@ -19,4 +19,7 @@ export const registrationSchema = z.object({
   birthdate: dateOfBirthSchema,
   gender: GenderEnum,
   phoneNumber: z.string().min(1, { error: "Required" }),
+  role: ROLESEnum.optional(),
+  isOnboarded: z.boolean().optional(),
+  registrationDate: z.date().optional(),
 });

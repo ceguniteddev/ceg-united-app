@@ -1,8 +1,17 @@
 "use client";
 import React from "react";
+import { Footer } from "react-day-picker";
+import Landing from "./(public)/landing-page";
 
 const Home = () => {
-  return <div>Home</div>;
+  return (
+    <div className="nondashboard-layout">
+      <main className="nondashboard-layout__main">
+        <Landing />
+      </main>
+      <Footer />
+    </div>
+  );
 };
 
 export default Home;

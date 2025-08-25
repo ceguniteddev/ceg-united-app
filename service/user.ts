@@ -12,7 +12,7 @@ export const getUserRecordByEmail = async (email: string) => {
   try {
     userRecord = await authentication.getUserByEmail(email);
   } catch (error) {
-    console.error(error);
+    // console.error(error);
   }
 
   return userRecord;
@@ -30,8 +30,9 @@ export const getUser = async (email: string): Promise<User | null> => {
   if (querySnapshot.empty) return null;
 
   const userDoc = querySnapshot.docs[0];
+  const user = userDoc.data();
 
-  return { id: userDoc.id, ...userDoc.data() } as User;
+  return { id: userDoc.id, ...normalizeAllDates(user) } as User;
 };
 
 export const registerClient = async (value: Registration) => {

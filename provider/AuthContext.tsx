@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         await loadAndSetUserData(firebaseUser);
 
         // 5. Redirect to the desired page
-        router.push("/dashboard");
+        router.push("/overview");
       } catch (error) {
         console.error("Error signing in:", error);
         // Ensure no stale cookie if sign-in fails

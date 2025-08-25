@@ -1,6 +1,19 @@
 import z from "zod";
 
+function caseInsensitiveEnum<T extends readonly [string, ...string[]]>(values: T) {
+  const lowerMap = Object.fromEntries(values.map((v) => [v.toLowerCase(), v]));
+
+  return z
+    .string()
+    .transform((val) => lowerMap[val.toLowerCase()] || val)
+    .refine((val) => values.includes(val as T[number]), {
+      message: `Invalid enum value. Expected one of: ${values.join(", ")}`,
+    });
+}
+
 export const ROLES = ["Admin", "IT", "Staff", "Client"] as const;
+export const ROLESEnum = caseInsensitiveEnum(ROLES);
+
 export type Role = (typeof ROLES)[number];
 export type AppRole = Exclude<Role, "Client">;
 
