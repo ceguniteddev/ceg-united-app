@@ -9,22 +9,23 @@ import { useForm } from "react-hook-form";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { genderTypes } from "@/schema";
+import { useRegistration } from "@/hooks/registration";
 
 const RegistrationPage = () => {
+  const { recordRegistration, isRecording } = useRegistration();
+
   const form = useForm<Registration>({
     resolver: zodResolver(registrationSchema),
   });
 
   const onSubmit = async (values: Registration) => {
-    console.log(values);
+    await recordRegistration(values);
   };
-
-  const isSaving = false;
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <fieldset disabled={isSaving}>
+        <fieldset disabled={isRecording}>
           <div className="flex justify-center">
             <Card className="w-[600px]">
               <CardHeader>
@@ -62,10 +63,10 @@ const RegistrationPage = () => {
                   <Button
                     size="lg"
                     type="submit"
-                    disabled={isSaving}
+                    disabled={isRecording}
                     className="w-full bg-green-400 hover:bg-green-500 text-black-100"
                   >
-                    {isSaving ? (
+                    {isRecording ? (
                       <>
                         <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                         Saving...

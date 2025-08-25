@@ -37,7 +37,7 @@ export async function middleware(req: NextRequest) {
   const token = cookieStore.get(FIREBASE_TOKEN_NAME)?.value;
 
   if (token && pathname === "/") {
-    return NextResponse.redirect(new URL("/overview", req.nextUrl));
+    return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
   }
 
   if (!token) {

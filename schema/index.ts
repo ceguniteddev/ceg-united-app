@@ -1,5 +1,9 @@
 import z from "zod";
 
+export const ROLES = ["Admin", "IT", "Staff", "Client"] as const;
+export type Role = (typeof ROLES)[number];
+export type AppRole = Exclude<Role, "Client">;
+
 export const GenderEnum = z.enum(["Male", "Female", "Other"], { error: "Required" });
 export type Gender = z.infer<typeof GenderEnum>;
 
