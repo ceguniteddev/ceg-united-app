@@ -7,12 +7,13 @@ import IconMenu from "@/components/icon-menu";
 import { Link2Icon } from "lucide-react";
 import { exchangeAccessToken, recordAccessToken } from "@/service/plaid";
 import { useAuth } from "@/provider/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Link = () => {
   const { user } = useAuth();
 
   const { createLinkToken, canCreate } = useCreateLinkToken();
-
+  const queryClient = useQueryClient();
   const [linkToken, setLinkToken] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -30,11 +31,14 @@ const Link = () => {
       const exchangePublicTokenForAccessToken = async () => {
         const response = await exchangeAccessToken(public_token);
         await recordAccessToken(user?.uid ?? "", response.accessToken, response.itemId);
+        queryClient.invalidateQueries({
+          queryKey: ["GET_PLAID_ITEMS", user?.uid],
+        });
       };
 
       exchangePublicTokenForAccessToken();
     },
-    [user?.uid]
+    [user?.uid, queryClient]
   );
 
   const isOauth = false;

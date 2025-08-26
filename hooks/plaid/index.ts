@@ -1,33 +1,9 @@
 "use client";
 import { useAuth } from "@/provider/AuthContext";
-import {
-  getAccessToken,
-  getPlaidItemAccounts,
-  getPlaidItems,
-  getPlaidLinkToken,
-} from "@/service/plaid";
+import { getPlaidItemAccounts, getPlaidItems, getPlaidLinkToken } from "@/service/plaid";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { toast } from "sonner";
-
-export const useGetPlaidAccessToken = () => {
-  const { user } = useAuth();
-
-  const { data: accessToken, isLoading } = useQuery({
-    queryKey: ["GET_PLAID_ACCESS_TOKEN", user?.uid],
-    queryFn: async () => {
-      if (!user) throw new Error("User not authenticated");
-
-      return await getAccessToken(user.uid);
-    },
-    enabled: !!user,
-  });
-
-  return {
-    accessToken,
-    isLoading,
-  };
-};
 
 export const useGetPlaidItems = () => {
   const { user } = useAuth();

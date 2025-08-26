@@ -3,6 +3,7 @@ import { useGetPlaidItems } from "@/hooks/plaid";
 import { useSelectedInstitutionStoreStore } from "@/store/plaid";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
+import Spinner from "@/components/Spinner";
 
 export default function AppleStyleDock() {
   const { plaidItems, isLoading } = useGetPlaidItems();
@@ -17,7 +18,12 @@ export default function AppleStyleDock() {
     }
   }, [plaidItems, selectedInstitution, setSelectedInstitution]);
 
-  if (isLoading) return null;
+  if (isLoading)
+    return (
+      <div className="absolute bottom-2 left-1/2 max-w-full -translate-x-1/2">
+        <Spinner displayText="" />;
+      </div>
+    );
 
   function getInitials(name: string) {
     return name
@@ -43,7 +49,7 @@ export default function AppleStyleDock() {
             <DockItem
               className={cn(
                 "aspect-square rounded-full bg-gray-200 dark:bg-neutral-800 cursor-pointer",
-                selectedInstitution === item.item.institution_id
+                selectedInstitution?.institutionId === item.item.institution_id
                   ? "ring-2 ring-offset-2 ring-blue-500 shadow-lg shadow-blue-500/30"
                   : "hover:ring-2 hover:ring-offset-2 hover:ring-gray-400"
               )}

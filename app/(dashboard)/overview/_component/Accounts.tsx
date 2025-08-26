@@ -1,3 +1,4 @@
+import Spinner from "@/components/Spinner";
 import {
   Choicebox,
   ChoiceboxItem,
@@ -27,25 +28,35 @@ const options = [
 const Accounts = () => {
   const { selectedInstitution } = useSelectedInstitutionStoreStore();
 
-  const { plaidItemAccount } = useGetPlaidItemAccount(
+  const { plaidItemAccount, isLoading } = useGetPlaidItemAccount(
     selectedInstitution?.accessToken || "",
     selectedInstitution?.institutionId || ""
   );
-  console.log(plaidItemAccount);
+
+  if (isLoading) return <Spinner />;
+
   return (
     <Choicebox defaultValue="1">
-      {options.map((option) => (
-        <ChoiceboxItem key={option.id} value={option.id}>
+      {plaidItemAccount?.accounts.map((option) => (
+        <ChoiceboxItem key={option.account_id} value={option.account_id}>
           <ChoiceboxItemHeader>
             <ChoiceboxItemTitle>
-              {option.label}
-              <ChoiceboxItemSubtitle>{option.subtitle}</ChoiceboxItemSubtitle>
+              {option.name}
+              <ChoiceboxItemSubtitle>************{option.mask}</ChoiceboxItemSubtitle>
             </ChoiceboxItemTitle>
-            <ChoiceboxItemDescription>{option.description}</ChoiceboxItemDescription>
+            <div className="flex flex-row justify-between items-center">
+              <ChoiceboxItemDescription>{option.official_name}</ChoiceboxItemDescription>
+              <div className="space-x-2 flex items-center">
+                <span>{option.balances.iso_currency_code}</span>
+                <span>
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: option.balances.iso_currency_code || "USD",
+                  }).format(option.balances.available ?? 0)}
+                </span>
+              </div>
+            </div>
           </ChoiceboxItemHeader>
-          <ChoiceboxItemContent>
-            <ChoiceboxItemIndicator />
-          </ChoiceboxItemContent>
         </ChoiceboxItem>
       ))}
     </Choicebox>

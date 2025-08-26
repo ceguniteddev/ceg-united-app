@@ -140,7 +140,7 @@ export const getAccessToken = async (
     collectionRef = collectionRef.where("itemId", "==", itemId);
   }
 
-  const snapshot = await collectionRef.get();
+  const snapshot = await collectionRef.orderBy("createdAt", "asc").get();
 
   if (snapshot.empty) return null;
 
