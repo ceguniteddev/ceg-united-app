@@ -37,18 +37,22 @@ env:
   - variable: PLAID_ENV
     value: sandbox
     availability:
+      - BUILD
       - RUNTIME
   - variable: PLAID_PRODUCTS
     value: auth,transactions,identity
     availability:
+      - BUILD
       - RUNTIME
   - variable: PLAID_COUNTRY_CODES
     value: US
     availability:
+      - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
     value: 6LehUrMrAAAAAOtQ4f5x9JzYeLnxKnGE6P-9lQ9N
     availability:
+      - BUILD
       - RUNTIME
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters

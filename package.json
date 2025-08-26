@@ -41,7 +41,6 @@
     "react": "19.1.0",
     "react-day-picker": "^9.9.0",
     "react-dom": "19.1.0",
-    "react-google-recaptcha-v3": "^1.11.0",
     "react-hook-form": "^7.62.0",
     "react-number-format": "^5.4.4",
     "react-plaid-link": "^4.1.1",
