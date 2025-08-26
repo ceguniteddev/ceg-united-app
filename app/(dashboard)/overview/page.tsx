@@ -37,7 +37,7 @@ const OverviewPage = () => {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {!selectedInstitution ? <Spinner /> : <Accounts />}
+          <Accounts />
         </CardContent>
       </Card>
 

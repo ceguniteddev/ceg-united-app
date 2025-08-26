@@ -31,6 +31,7 @@ export const useGetPlaidItemAccount = (accessToken: string, itemId: string) => {
     queryKey: ["GET_PLAID_ITEM_ACCOUNT", user?.uid, itemId],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
+      if (!accessToken) throw new Error("Access token is required");
 
       return await getPlaidItemAccounts(accessToken);
     },

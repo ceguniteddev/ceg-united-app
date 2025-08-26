@@ -176,6 +176,8 @@ export const getPlaidItems = async (userId: string) => {
 };
 
 export const getPlaidItemAccounts = async (accessToken: string) => {
+  if (!accessToken) return null;
+
   const client = new PlaidApi(configuration);
   const accountsResponse = await client.accountsGet({
     client_id: PLAID_CLIENT_ID,
