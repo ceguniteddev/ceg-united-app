@@ -100,6 +100,9 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         // 4. Load the user's role and set the local state
         await loadAndSetUserData(firebaseUser);
 
+        queryClient.clear();
+        reset();
+
         // 5. Redirect to the desired page
         router.push("/overview");
       } catch (error) {
