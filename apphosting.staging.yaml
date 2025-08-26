@@ -1,0 +1,52 @@
+# Settings for Backend (on Cloud Run).
+# See https://firebase.google.com/docs/app-hosting/configure#cloud-run
+runConfig:
+  minInstances: 0
+  maxInstances: 1
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 2048
+# Environment variables and secrets.
+env:
+  # Configure environment variables.
+  # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
+  - variable: FIREBASE_DB_NAME
+    value: ceg-united-db-staging
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FIREBASE_STORAGE_NAME
+    value: gs://cegunitedllc.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: ENVIRONMENT
+    value: staging
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_ENVIRONMENT
+    value: staging
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_APP_NAME
+    value: CEG United LLC
+    availability:
+      - RUNTIME
+  # Grant access to secrets in Cloud Secret Manager.
+  # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
+  - variable: FIREBASE_CLIENT_EMAIL
+    secret: FIREBASE_CLIENT_EMAIL
+  - variable: FIREBASE_PRIVATE_KEY
+    secret: FIREBASE_PRIVATE_KEY
+  - variable: ADMIN_ACCESS_KEY
+    secret: ADMIN_ACCESS_KEY_STAGING
+  - variable: PLAID_CLIENT_ID
+    secret: PLAID_CLIENT_ID
+  - variable: PLAID_SECRET
+    secret: PLAID_SECRET_STAGING
+  - variable: PLAID_ENV
+    secret: PLAID_ENV_STAGING
+  - variable: PASSWORD_PEPPER
+    secret: PASSWORD_PEPPER_STAGING
