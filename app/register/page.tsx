@@ -7,12 +7,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon, SaveIcon } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { genderTypes } from "@/schema";
 import { useRegistration } from "@/hooks/registration";
 import { PasswordStrength } from "@/components/PasswordStrength";
-import { redirect, RedirectType } from "next/navigation";
 import Link from "next/link";
+import { getCaptchaTokenRegistration } from "@/lib/captcha";
 const RegistrationPage = () => {
   const { recordRegistration, isRecording } = useRegistration();
 
@@ -25,8 +24,10 @@ const RegistrationPage = () => {
   const password = useWatch({ control: form.control, name: "password", defaultValue: "" });
 
   const onSubmit = async (values: Registration) => {
+    const token = await getCaptchaTokenRegistration("registration");
+
     values = { ...values, role: "Client", isOnboarded: false, registrationDate: new Date() };
-    await recordRegistration(values);
+    await recordRegistration({ token, values });
   };
 
   return (

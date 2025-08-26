@@ -10,13 +10,16 @@ import { getUser } from "@/service/user";
 import { Role } from "@/schema";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSelectedInstitutionStoreStore } from "@/store/plaid";
+import { getCaptchaTokenRegistration } from "@/lib/captcha";
+import { verifyCaptchaToken } from "@/lib/captcha/captcha";
+import AppError from "@/error/AppError";
 
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
   role: Role | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (token: string | null, email: string, password: string) => Promise<void>;
   logOut: () => Promise<void>;
 }
 
@@ -46,7 +49,8 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     // 1. Revoke server session and delete cookie
     await logoutSession();
     // 2. Sign out from Firebase client
-    await signOut(authFirebase);
+    // await signOut(authFirebase);
+    await authFirebase.signOut();
     // 3. Clear local state
     setUser(null);
     setRole(null);
@@ -85,8 +89,21 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
   }, [loadAndSetUserData, logOut]);
 
   const signIn = useCallback(
-    async (email: string, password: string) => {
+    async (token: string | null, email: string, password: string) => {
       try {
+        if (!token) {
+          throw new AppError("Captcha token is missing. Please try again.");
+        }
+
+        const captchaData = await verifyCaptchaToken(token);
+        if (
+          !captchaData ||
+          !captchaData.success ||
+          captchaData.score < 0.5 ||
+          captchaData.action !== "registration"
+        ) {
+          throw new AppError("Captcha verification failed. Please try again.");
+        }
         // 1. Sign in with Firebase
         const userCredential = await signInWithEmailAndPassword(authFirebase, email, password);
         const firebaseUser = userCredential.user;
@@ -112,7 +129,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         throw new Error("Invalid email or password.");
       }
     },
-    [router, loadAndSetUserData]
+    [router, loadAndSetUserData, queryClient, reset]
   );
 
   const authContextValue = useMemo(

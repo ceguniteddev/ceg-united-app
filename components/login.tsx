@@ -5,6 +5,7 @@ import { useAuth } from "@/provider/AuthContext";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import Link from "next/link";
+import { getCaptchaTokenRegistration } from "@/lib/captcha";
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -19,8 +20,9 @@ export default function LoginPage() {
       setError("");
       setLoading(true);
 
+      const token = await getCaptchaTokenRegistration("registration");
       try {
-        await signIn(email, password);
+        await signIn(token, email, password);
       } catch (err: any) {
         setError(err.message || "Invalid email or password");
       }

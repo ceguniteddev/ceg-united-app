@@ -34,6 +34,20 @@ env:
     value: CEG United LLC
     availability:
       - RUNTIME
+  - variable: PLAID_ENV
+    value: sandbox
+    availability:
+      - RUNTIME
+  - variable: PLAID_PRODUCTS
+    value: auth,transactions,identity
+    availability:
+      - RUNTIME
+  - variable: PLAID_COUNTRY_CODES
+    value: US
+    availability:
+      - RUNTIME
+  - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    secret: 6LehUrMrAAAAAOtQ4f5x9JzYeLnxKnGE6P-9lQ9N
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   - variable: FIREBASE_CLIENT_EMAIL
@@ -46,7 +60,7 @@ env:
     secret: PLAID_CLIENT_ID
   - variable: PLAID_SECRET
     secret: PLAID_SECRET_STAGING
-  - variable: PLAID_ENV
-    secret: PLAID_ENV_STAGING
   - variable: PASSWORD_PEPPER
     secret: PASSWORD_PEPPER_STAGING
+  - variable: RECAPTCHA_SECRET_KEY
+    secret: RECAPTCHA_SECRET_KEY_STAGING
