@@ -3,6 +3,7 @@ import { USER_COLLECTION } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { authenticationAdmin, firestoreAdmin } from "@/lib/fireabase-admin";
+import { sendMail } from "@/lib/nodemailer";
 import { Registration } from "@/schema/registration";
 
 export const getUserRecordByEmail = async (email: string) => {
@@ -52,7 +53,9 @@ export const registerClient = async (value: Registration) => {
   const docRef = await collectionRef.add(userData);
   const data = (await docRef.get()).data();
 
-  await authenticationAdmin().createUser({
+  const authAdmin = authenticationAdmin();
+
+  await authAdmin.createUser({
     uid: docRef.id,
     email: value.email,
     password: value.password,
@@ -60,6 +63,11 @@ export const registerClient = async (value: Registration) => {
     disabled: false,
     emailVerified: false,
   });
+
+  // const link = await authAdmin.generateEmailVerificationLink(value.email);
+  // const mailBody = `<p>Please verify your email by clicking the link below:</p>
+  // <a href="${link}">Verify Email</a>`;
+  // await sendMail("ceguniteddev@gmail.com", value.email, "Verify your email", mailBody);
 
   return {
     id: docRef.id,

@@ -1,3 +1,4 @@
+import AppError from "@/error/AppError";
 import { NextRequest, NextResponse } from "next/server";
 
 export const badRequest = (errors: string | object | null = null, message = "Bad Request") => {
@@ -68,4 +69,17 @@ export const ensureFormDataContentType = (request: NextRequest): NextResponse | 
     );
   }
   return null;
+};
+
+export const handleApiError = (error: any, customMessage?: string) => {
+  if (error instanceof AppError) {
+    console.error(customMessage ? `${customMessage}:` : "Error: ", error);
+    return NextResponse.json(error.message, { status: error.statusCode });
+  }
+
+  console.error(
+    customMessage ? `${customMessage}: Unexpected error: ` : "Unexpected error: ",
+    error
+  );
+  return internalServerError();
 };

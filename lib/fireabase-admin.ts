@@ -7,7 +7,7 @@ interface FirebaseAdminAppParams {
   privateKey: string;
 }
 
-const formatPrivateKey = (privateKey: string) => privateKey.replace(/\\n/g, "\n");
+export const formatPrivateKey = (privateKey: string) => privateKey.replace(/\\n/g, "\n");
 
 const createFirebaseAdminApp = (params: FirebaseAdminAppParams) => {
   if (admin.apps.length > 0) {

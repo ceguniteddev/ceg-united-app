@@ -21,7 +21,7 @@ export default function AppleStyleDock() {
   if (isLoading)
     return (
       <div className="absolute bottom-2 left-1/2 max-w-full -translate-x-1/2">
-        <Spinner displayText="" />;
+        <Spinner displayText="" />
       </div>
     );
 
