@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -13,19 +13,22 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  const handleLogin = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setError("");
+      setLoading(true);
 
-    try {
-      await signIn(email, password);
-    } catch (err: any) {
-      setError(err.message || "Invalid email or password");
-    }
+      try {
+        await signIn(email, password);
+      } catch (err: any) {
+        setError(err.message || "Invalid email or password");
+      }
 
-    setLoading(false);
-  };
+      setLoading(false);
+    },
+    [email, password, signIn]
+  );
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">

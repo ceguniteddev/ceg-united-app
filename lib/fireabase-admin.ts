@@ -30,7 +30,7 @@ const createFirebaseAdminApp = (params: FirebaseAdminAppParams) => {
 
   app.firestore().settings({
     ignoreUndefinedProperties: true,
-    // databaseId: `${process.env.FIREBASE_DB_NAME}`,
+    databaseId: `${process.env.FIREBASE_DB_NAME}`,
   });
 
   app.storage().bucket(`${process.env.FIREBASE_STORAGE_NAME}`);

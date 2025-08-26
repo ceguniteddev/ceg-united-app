@@ -32,3 +32,15 @@ export const genderTypes = () => {
 export const dateOfBirthSchema = z
   .date({ error: "Required" })
   .refine((date) => date <= new Date(), { message: "Date cannot be in the future" });
+
+export const getMessage = (error: z.ZodError) => {
+  const flat = error.flatten();
+  const fieldErrors = flat.fieldErrors;
+  const formErrors = flat.formErrors;
+
+  const fieldMessages = Object.values(fieldErrors).flat();
+
+  const allMessages = [...fieldMessages, ...formErrors];
+
+  return allMessages.length > 0 ? allMessages : ["Invalid request body"];
+};

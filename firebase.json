@@ -1,0 +1,15 @@
+{
+  "firestore": [
+    {
+      "database": "ceg-united-db-staging",
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
+    },
+    {
+      "database": "ceg-united-db-production",
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
+    }
+  ],
+  "firebase-commands": "firebase deploy --only firestore:ceg-united-db-production"
+}
