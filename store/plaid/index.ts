@@ -12,6 +12,7 @@ type SelectedInstitutionState = {
 
 type SelectedInstitutionActions = {
   setSelectedInstitution: (value: PlaidInstitution) => void;
+  reset: () => void;
 };
 
 type SelectedInstitutionStore = SelectedInstitutionState & SelectedInstitutionActions;
@@ -23,6 +24,7 @@ const defaultSelectedInstitutionState: SelectedInstitutionState = {
 export const selectedInstitutionStore = createStore<SelectedInstitutionStore>((set) => ({
   ...defaultSelectedInstitutionState,
   setSelectedInstitution: (value) => set({ selectedInstitution: value }),
+  reset: () => set(defaultSelectedInstitutionState),
 }));
 
 export const useSelectedInstitutionStoreStore = () => useStore(selectedInstitutionStore);

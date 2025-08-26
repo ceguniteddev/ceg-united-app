@@ -8,6 +8,8 @@ import { createSession, deleteCookie, logoutSession } from "@/lib/session";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { getUser } from "@/service/user";
 import { Role } from "@/schema";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSelectedInstitutionStoreStore } from "@/store/plaid";
 
 interface AuthContextType {
   user: User | null;
@@ -26,6 +28,8 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true); // Still true to prevent flicker on load
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { reset } = useSelectedInstitutionStoreStore();
 
   // Helper function to load user role and set state
   const loadAndSetUserData = useCallback(async (firebaseUser: User) => {
@@ -47,9 +51,11 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     setUser(null);
     setRole(null);
     setIsAdmin(false);
+    queryClient.clear();
+    reset();
     // 4. Redirect to home
     router.push("/");
-  }, [router]);
+  }, [router, queryClient, reset]);
 
   // useEffect now only syncs client state with Firebase auth state
   useEffect(() => {
