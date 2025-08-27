@@ -2,7 +2,7 @@
 import { CustomFormField } from "@/components/CustomFormField";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Registration, registrationSchema } from "@/schema/registration";
+import { User, registrationSchema } from "@/schema/registration";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon, SaveIcon } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
@@ -15,15 +15,15 @@ import { getCaptchaTokenRegistration } from "@/lib/captcha";
 const RegistrationPage = () => {
   const { recordRegistration, isRecording } = useRegistration();
 
-  const form = useForm<Registration>({
+  const form = useForm<User>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
       password: "",
-    } as Partial<Registration>,
+    } as Partial<User>,
   });
   const password = useWatch({ control: form.control, name: "password", defaultValue: "" });
 
-  const onSubmit = async (values: Registration) => {
+  const onSubmit = async (values: User) => {
     const token = await getCaptchaTokenRegistration("registration");
 
     values = {

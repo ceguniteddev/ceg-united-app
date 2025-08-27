@@ -4,7 +4,7 @@ import AppError from "@/error/AppError";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { authenticationAdmin, firestoreAdmin } from "@/lib/fireabase-admin";
 
-import { Registration } from "@/schema/registration";
+import { User } from "@/schema/registration";
 
 export const getUserRecordByEmail = async (email: string) => {
   const authentication = authenticationAdmin();
@@ -36,7 +36,7 @@ export const getUser = async (email: string): Promise<User | null> => {
   return { id: userDoc.id, ...normalizeAllDates(user) } as User;
 };
 
-export const registerClient = async (value: Registration) => {
+export const registerClient = async (value: User) => {
   const userRecord = await getUserRecordByEmail(value.email);
 
   if (userRecord) {
@@ -80,4 +80,21 @@ export const registerClient = async (value: Registration) => {
     id: docRef.id,
     ...normalizeAllDates(data),
   };
+};
+
+export const getUsers = async (): Promise<User[]> => {
+  const db = firestoreAdmin();
+
+  const collectionRef = db.collection(USER_COLLECTION);
+  const querySnapshot = await collectionRef.get();
+
+  if (querySnapshot.empty) return [];
+
+  const users: User[] = [];
+  querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    users.push({ id: doc.id, ...normalizeAllDates(data) } as User);
+  });
+
+  return users;
 };

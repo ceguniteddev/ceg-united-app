@@ -1,5 +1,5 @@
 import AppError from "@/error/AppError";
-import { Registration } from "@/schema/registration";
+import { User } from "@/schema/registration";
 import { registerClient } from "@/service/user";
 
 import { useMutation } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ export const useRegistration = () => {
   const router = useRouter();
 
   const createMutation = useMutation({
-    mutationFn: async ({ token, values }: { values: Registration; token: string | null }) => {
+    mutationFn: async ({ token, values }: { values: User; token: string | null }) => {
       if (!token) {
         throw new AppError("Captcha token is missing. Please try again.");
       }

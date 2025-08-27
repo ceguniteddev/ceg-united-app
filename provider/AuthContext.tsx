@@ -10,7 +10,6 @@ import { getUser } from "@/service/user";
 import { Role } from "@/schema";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSelectedInstitutionStoreStore } from "@/store/plaid";
-import { getCaptchaTokenRegistration } from "@/lib/captcha";
 import { verifyCaptchaToken } from "@/lib/captcha/captcha";
 import AppError from "@/error/AppError";
 
@@ -41,7 +40,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     const userRole = userData?.role ?? "Staff";
 
     setUser(firebaseUser);
-    setRole(userRole);
+    setRole(userRole as Role);
     setIsAdmin(userRole === "Admin" || userRole === "IT");
   }, []);
 

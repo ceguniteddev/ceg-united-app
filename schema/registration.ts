@@ -10,7 +10,7 @@ export const passwordSchema = z
   // If you don't want spaces to count as special, use /[^\w\s]/ instead:
   .regex(/[^\w\s]/, { message: "Require special character" });
 
-export type Registration = z.infer<typeof registrationSchema>;
+export type User = z.infer<typeof registrationSchema>;
 export const registrationSchema = z.object({
   firstName: z.string().min(1, { error: "Required" }),
   lastName: z.string().min(1, { error: "Required" }),
