@@ -20,7 +20,7 @@ export default function LoginPage() {
       setError("");
       setLoading(true);
 
-      const token = await getCaptchaTokenRegistration("registration");
+      const token = await getCaptchaTokenRegistration("login");
       try {
         await signIn(token, email, password);
       } catch (err: any) {

@@ -24,6 +24,16 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  if (pathname.startsWith("/api/")) {
+    const xIdToken = req.headers.get("x-id-token");
+    const ADMIN_ACCESS_KEY = req.headers.get("ADMIN_ACCESS_KEY");
+
+    if (xIdToken || ADMIN_ACCESS_KEY) return NextResponse.next();
+
+    console.log("middleware Unauthorized ", pathname);
+    return NextResponse.json("Unauthorized", { status: 401 });
+  }
+
   if (!token) {
     return NextResponse.redirect(new URL("/", req.nextUrl.origin));
   }

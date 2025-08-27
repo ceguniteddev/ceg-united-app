@@ -22,4 +22,5 @@ export const registrationSchema = z.object({
   role: ROLESEnum.optional(),
   isOnboarded: z.boolean().optional(),
   registrationDate: z.date().optional(),
+  ssn: z.string().min(1, { error: "Required" }),
 });

@@ -100,13 +100,17 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
           !captchaData ||
           !captchaData.success ||
           captchaData.score < 0.5 ||
-          captchaData.action !== "registration"
+          captchaData.action !== "login"
         ) {
           throw new AppError("Captcha verification failed. Please try again.");
         }
         // 1. Sign in with Firebase
         const userCredential = await signInWithEmailAndPassword(authFirebase, email, password);
         const firebaseUser = userCredential.user;
+
+        if (!firebaseUser?.emailVerified) {
+          throw new AppError("Please verify your email before signing in.");
+        }
 
         // 2. Get the ID token from the signed-in user
         const idToken = await firebaseUser.getIdToken(true);
@@ -123,7 +127,9 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         // 5. Redirect to the desired page
         router.push("/overview");
       } catch (error) {
-        console.error("Error signing in:", error);
+        if (error instanceof AppError) {
+          throw error;
+        }
         // Ensure no stale cookie if sign-in fails
         deleteCookie(FIREBASE_TOKEN_NAME);
         throw new Error("Invalid email or password.");

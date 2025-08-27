@@ -3,7 +3,7 @@ import { USER_COLLECTION } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { authenticationAdmin, firestoreAdmin } from "@/lib/fireabase-admin";
-import { sendMail } from "@/lib/nodemailer";
+
 import { Registration } from "@/schema/registration";
 
 export const getUserRecordByEmail = async (email: string) => {
@@ -64,10 +64,17 @@ export const registerClient = async (value: Registration) => {
     emailVerified: false,
   });
 
-  // const link = await authAdmin.generateEmailVerificationLink(value.email);
-  // const mailBody = `<p>Please verify your email by clicking the link below:</p>
-  // <a href="${link}">Verify Email</a>`;
-  // await sendMail("ceguniteddev@gmail.com", value.email, "Verify your email", mailBody);
+  const link = await authAdmin.generateEmailVerificationLink(value.email);
+
+  const response = await fetch(`https://n8n.srv967756.hstgr.cloud/webhook/email-verfication`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: value.email, link }),
+  });
+
+  if (!response.ok) {
+    throw new AppError("Failed to send verification email.");
+  }
 
   return {
     id: docRef.id,

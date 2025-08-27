@@ -26,7 +26,12 @@ const RegistrationPage = () => {
   const onSubmit = async (values: Registration) => {
     const token = await getCaptchaTokenRegistration("registration");
 
-    values = { ...values, role: "Client", isOnboarded: false, registrationDate: new Date() };
+    values = {
+      ...values,
+      role: "Client",
+      isOnboarded: false,
+      registrationDate: new Date(),
+    };
     await recordRegistration({ token, values });
   };
 
@@ -49,6 +54,10 @@ const RegistrationPage = () => {
                     <CustomFormField name={"lastName"} placeholder={"Last Name"} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
+                    <CustomFormField name={"email"} type="email" placeholder="Email Address" />
+                    <CustomFormField name={"phoneNumber"} placeholder="Phone Number" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
                       name={"birthdate"}
                       type="date-picker"
@@ -62,11 +71,11 @@ const RegistrationPage = () => {
                       options={genderTypes()}
                     />
                   </div>
+
                   <div className="grid grid-cols-2 gap-4">
-                    <CustomFormField name={"email"} type="email" placeholder="Email Address" />
-                    <CustomFormField name={"phoneNumber"} placeholder="Phone Number" />
+                    <CustomFormField name={"ssn"} placeholder="Social Security Number" />
+                    <CustomFormField name={"password"} type="password" placeholder="New Password" />
                   </div>
-                  <CustomFormField name={"password"} type="password" placeholder="New Password" />
                   <PasswordStrength password={password ?? ""} />
                 </CardContent>
                 <CardFooter>

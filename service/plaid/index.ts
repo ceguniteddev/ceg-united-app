@@ -186,3 +186,52 @@ export const getPlaidItemAccounts = async (accessToken: string) => {
   });
   return accountsResponse.data;
 };
+
+export const getPlaidCompleteData = async (userId: string) => {
+  const accessToken = await getAccessToken(userId);
+  if (!accessToken) return null;
+
+  const client = new PlaidApi(configuration);
+
+  const completeData = [];
+
+  const currentDate = new Date();
+
+  // clone date, then subtract 1 year
+  const lastYearDate = new Date(currentDate);
+  lastYearDate.setFullYear(currentDate.getFullYear() - 2);
+
+  // format both as YYYY-MM-DD
+  const formatDate = (d: Date) => d.toISOString().split("T")[0];
+
+  for (const token of accessToken) {
+    const jsonData: any = {};
+    const configs = {
+      client_id: PLAID_CLIENT_ID,
+      secret: PLAID_SECRET,
+      access_token: token.accessToken,
+    };
+
+    const itemsResponse = await client.itemGet(configs);
+
+    jsonData.institutionName = itemsResponse.data.item.institution_name;
+    jsonData.item = itemsResponse.data.item;
+
+    const accountBalanceResponse = await client.accountsBalanceGet(configs);
+
+    jsonData.balance = [];
+    jsonData.balance = accountBalanceResponse.data.accounts;
+
+    const transactionsGetResponse = await client.transactionsGet({
+      ...configs,
+      start_date: formatDate(lastYearDate),
+      end_date: formatDate(currentDate),
+    });
+    jsonData.transaction = [];
+    jsonData.transaction = transactionsGetResponse.data.transactions;
+
+    completeData.push(jsonData);
+  }
+
+  return completeData;
+};
