@@ -15,7 +15,7 @@ export const useGetPlaidItems = () => {
 
       return await getPlaidItems(user.uid);
     },
-    enabled: !!user,
+    // enabled: !!user,
   });
 
   return {

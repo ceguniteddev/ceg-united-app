@@ -1,5 +1,5 @@
 "use server";
-import { USER_COLLECTION } from "@/constant/collection-name";
+import { PLAID_TOKEN_COLLECTION, USER_COLLECTION } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { authenticationAdmin, firestoreAdmin } from "@/lib/fireabase-admin";
@@ -81,7 +81,6 @@ export const registerUser = async (value: User) => {
 
 export const getUsers = async (role?: Role): Promise<User[]> => {
   const db = firestoreAdmin();
-
   const collectionRef = db.collection(USER_COLLECTION);
 
   let query: FirebaseFirestore.Query = collectionRef;
@@ -91,13 +90,21 @@ export const getUsers = async (role?: Role): Promise<User[]> => {
 
   const querySnapshot = await query.get();
 
-  if (querySnapshot.empty) return [];
+  if (querySnapshot.empty) {
+    console.log("No matching documents.");
+    return [];
+  }
+
+  const plaidTokenRef = db.collection(PLAID_TOKEN_COLLECTION);
+  const plaidTokenRefSnapshot = await plaidTokenRef.get();
+
+  console.log("Plaid token documents count:", plaidTokenRefSnapshot);
 
   const users: User[] = [];
   querySnapshot.forEach((doc) => {
     const data = doc.data();
+
     users.push({ id: doc.id, ...normalizeAllDates(data) } as User);
   });
-
   return users;
 };

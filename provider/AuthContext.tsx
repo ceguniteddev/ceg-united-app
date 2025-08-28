@@ -34,38 +34,26 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
   const { reset } = useSelectedInstitutionStoreStore();
 
   // Helper function to load user role and set state
-  const loadAndSetUserData = useCallback(
-    async (firebaseUser: User) => {
-      // No need to create a session here, just get user data
-      const userData = await getUser(firebaseUser.email || "");
-      const userRole = userData?.role ?? ("Staff" as Role);
+  const loadAndSetUserData = useCallback(async (firebaseUser: User) => {
+    // No need to create a session here, just get user data
+    const userData = await getUser(firebaseUser.email || "");
+    const userRole = userData?.role ?? ("Staff" as Role);
 
-      setUser(firebaseUser);
-      setRole(userRole as Role);
-      setIsAdmin(userRole === "Admin" || userRole === "IT");
-
-      if (userRole === "Client") {
-        router.push("/overview");
-      } else {
-        router.push("/admin");
-      }
-    },
-    [router]
-  );
+    setUser(firebaseUser);
+    setRole(userRole as Role);
+    setIsAdmin(userRole === "Admin" || userRole === "IT");
+  }, []);
 
   const logOut = useCallback(async () => {
-    // 1. Revoke server session and delete cookie
-    await logoutSession();
-    // 2. Sign out from Firebase client
-    // await signOut(authFirebase);
-    await authFirebase.signOut();
-    // 3. Clear local state
+    await Promise.all([await logoutSession(), await authFirebase.signOut()]);
+
+    await queryClient.cancelQueries({ predicate: () => true });
+    queryClient.clear();
+    reset();
     setUser(null);
     setRole(null);
     setIsAdmin(false);
-    queryClient.clear();
-    reset();
-    // 4. Redirect to home
+
     router.push("/");
   }, [router, queryClient, reset]);
 
@@ -131,6 +119,12 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
 
         // 4. Load the user's role and set the local state
         await loadAndSetUserData(firebaseUser);
+
+        const userData = await getUser(firebaseUser.email || "");
+        const userRole = userData?.role ?? ("Staff" as Role);
+
+        // 5. Redirect to the appropriate dashboard
+        router.push(userRole === "Client" ? "/overview" : "/admin");
       } catch (error) {
         if (error instanceof AppError) {
           throw error;
@@ -140,7 +134,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         throw new Error("Invalid email or password.");
       }
     },
-    [loadAndSetUserData, queryClient, reset]
+    [loadAndSetUserData, queryClient, reset, router]
   );
 
   const authContextValue = useMemo(

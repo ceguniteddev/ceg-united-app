@@ -10,10 +10,10 @@ export async function middleware(req: NextRequest) {
 
   const cookieStore = await cookies();
   const token = cookieStore.get(FIREBASE_TOKEN_NAME)?.value;
-
-  // if (token && pathname === "/") {
-  //   return NextResponse.redirect(new URL("/overview", req.nextUrl));
-  // }
+  // console.log("token ", token);
+  if (token && pathname === "/") {
+    return NextResponse.redirect(new URL("/overview", req.nextUrl));
+  }
 
   const publicRoutes = ["/", "/register"];
   const isPublicRoute = publicRoutes.some(
@@ -21,6 +21,7 @@ export async function middleware(req: NextRequest) {
   );
 
   if (isPublicRoute) {
+    // console.log("middleware next ", pathname);
     return NextResponse.next();
   }
 
@@ -30,11 +31,12 @@ export async function middleware(req: NextRequest) {
 
     if (xIdToken || ADMIN_ACCESS_KEY) return NextResponse.next();
 
-    console.log("middleware Unauthorized ", pathname);
+    // console.log("middleware Unauthorized ", pathname);
     return NextResponse.json("Unauthorized", { status: 401 });
   }
 
   if (!token) {
+    // console.log("middleware redirect to / ", pathname);
     return NextResponse.redirect(new URL("/", req.nextUrl.origin));
   }
 

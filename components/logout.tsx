@@ -18,11 +18,7 @@ export default function UserNav(): JSX.Element | null {
   if (!user) return null;
 
   const handleLogout = async () => {
-    try {
-      await logOut();
-    } catch (error) {
-      console.error("Failed to log out:", error);
-    }
+    await logOut();
   };
 
   const handleProfile = () => {
