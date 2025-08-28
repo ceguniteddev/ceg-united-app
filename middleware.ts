@@ -11,9 +11,9 @@ export async function middleware(req: NextRequest) {
   const cookieStore = await cookies();
   const token = cookieStore.get(FIREBASE_TOKEN_NAME)?.value;
 
-  if (token && pathname === "/") {
-    return NextResponse.redirect(new URL("/overview", req.nextUrl));
-  }
+  // if (token && pathname === "/") {
+  //   return NextResponse.redirect(new URL("/overview", req.nextUrl));
+  // }
 
   const publicRoutes = ["/", "/register"];
   const isPublicRoute = publicRoutes.some(

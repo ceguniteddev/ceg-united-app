@@ -4,6 +4,7 @@ import AppError from "@/error/AppError";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { authenticationAdmin, firestoreAdmin } from "@/lib/fireabase-admin";
 import { sendMail } from "@/lib/nodemailer";
+import { Role } from "@/schema";
 
 import { User } from "@/schema/registration";
 
@@ -37,7 +38,7 @@ export const getUser = async (email: string): Promise<User | null> => {
   return { id: userDoc.id, ...normalizeAllDates(user) } as User;
 };
 
-export const registerClient = async (value: User) => {
+export const registerUser = async (value: User) => {
   const userRecord = await getUserRecordByEmail(value.email);
 
   if (userRecord) {
@@ -78,11 +79,17 @@ export const registerClient = async (value: User) => {
   };
 };
 
-export const getUsers = async (): Promise<User[]> => {
+export const getUsers = async (role?: Role): Promise<User[]> => {
   const db = firestoreAdmin();
 
   const collectionRef = db.collection(USER_COLLECTION);
-  const querySnapshot = await collectionRef.get();
+
+  let query: FirebaseFirestore.Query = collectionRef;
+  if (role) {
+    query = collectionRef.where("role", "==", role);
+  }
+
+  const querySnapshot = await query.get();
 
   if (querySnapshot.empty) return [];
 

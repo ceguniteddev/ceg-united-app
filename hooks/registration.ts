@@ -1,6 +1,6 @@
 import AppError from "@/error/AppError";
 import { User } from "@/schema/registration";
-import { registerClient } from "@/service/user";
+import { registerUser } from "@/service/user";
 
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -25,7 +25,7 @@ export const useRegistration = () => {
         throw new AppError("Captcha verification failed. Please try again.");
       }
 
-      await registerClient(values);
+      await registerUser(values);
       router.replace("/");
     },
     onSuccess: () => {
