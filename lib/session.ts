@@ -68,3 +68,13 @@ export const revokeAllSessions = async (sessionCookie: string) => {
   const decodedIdToken = await auth.verifySessionCookie(sessionCookie);
   await auth.revokeRefreshTokens(decodedIdToken.sub);
 };
+
+export const verifySession = async (sessionCookie: string) => {
+  try {
+    const decodedClaims = await authenticationAdmin().verifySessionCookie(sessionCookie, true);
+    return decodedClaims;
+  } catch (error) {
+    console.error("Error verifying session:", error);
+    return null;
+  }
+};

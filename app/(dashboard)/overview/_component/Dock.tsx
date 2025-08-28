@@ -18,12 +18,17 @@ export default function AppleStyleDock() {
     }
   }, [plaidItems, selectedInstitution, setSelectedInstitution]);
 
-  if (isLoading)
+  if (isLoading) {
     return (
       <div className="absolute bottom-2 left-1/2 max-w-full -translate-x-1/2">
         <Spinner displayText="" />
       </div>
     );
+  }
+
+  if (!plaidItems || plaidItems.length === 0) {
+    return null;
+  }
 
   function getInitials(name: string) {
     return name

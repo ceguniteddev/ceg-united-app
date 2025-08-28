@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import Link from "./_component/Link";
 import dynamic from "next/dynamic";
+import { useAuth } from "@/provider/AuthContext";
 
 const Dock = dynamic(() => import("./_component/Dock"), {
   ssr: false,
