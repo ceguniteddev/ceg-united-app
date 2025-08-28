@@ -1,4 +1,4 @@
-export const FIREBASE_TOKEN_NAME = "firebaseAuthToken";
+export const FIREBASE_TOKEN_NAME = "auth_token";
 
 export const monthNames = [
   "January",

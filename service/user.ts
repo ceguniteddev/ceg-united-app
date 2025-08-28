@@ -1,12 +1,12 @@
 "use server";
 import { PLAID_TOKEN_COLLECTION, USER_COLLECTION } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
-import { normalizeAllDates } from "@/lib/date-parser";
+import { normalizeAllDates, normalizeDate } from "@/lib/date-parser";
 import { authenticationAdmin, firestoreAdmin } from "@/lib/fireabase-admin";
 import { sendMail } from "@/lib/nodemailer";
 import { Role } from "@/schema";
 
-import { User } from "@/schema/registration";
+import { User, UserPlaid } from "@/schema/registration";
 
 export const getUserRecordByEmail = async (email: string) => {
   const authentication = authenticationAdmin();
@@ -79,7 +79,7 @@ export const registerUser = async (value: User) => {
   };
 };
 
-export const getUsers = async (role?: Role): Promise<User[]> => {
+export const getUsers = async (role?: Role): Promise<UserPlaid[]> => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(USER_COLLECTION);
 
@@ -98,13 +98,21 @@ export const getUsers = async (role?: Role): Promise<User[]> => {
   const plaidTokenRef = db.collection(PLAID_TOKEN_COLLECTION);
   const plaidTokenRefSnapshot = await plaidTokenRef.get();
 
-  console.log("Plaid token documents count:", plaidTokenRefSnapshot);
+  const plaidTokenData: PlaidAccessToken[] = plaidTokenRefSnapshot.docs.map((doc) => ({
+    id: doc.id,
+    userId: doc.data().userId,
+    accessToken: doc.data().accessToken,
+    itemId: doc.data().itemId,
+    createdAt: normalizeDate(doc.data().createdAt),
+  }));
 
-  const users: User[] = [];
+  const users: UserPlaid[] = [];
   querySnapshot.forEach((doc) => {
     const data = doc.data();
 
-    users.push({ id: doc.id, ...normalizeAllDates(data) } as User);
+    const plaidData = plaidTokenData.filter((token) => token.userId === doc.id);
+
+    users.push({ id: doc.id, plaidData: plaidData, ...normalizeAllDates(data) } as UserPlaid);
   });
   return users;
 };

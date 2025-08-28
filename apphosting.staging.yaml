@@ -54,6 +54,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: EMAIL_USER
+    value: noreply@cegunited.com
+    availability:
+      - BUILD
+      - RUNTIME
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   - variable: FIREBASE_CLIENT_EMAIL
@@ -70,3 +75,5 @@ env:
     secret: PASSWORD_PEPPER_STAGING
   - variable: RECAPTCHA_SECRET_KEY
     secret: RECAPTCHA_SECRET_KEY_STAGING
+  - variable: EMAIL_PASSWORD
+    secret: EMAIL_PASSWORD

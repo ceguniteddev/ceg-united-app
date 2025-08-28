@@ -1,7 +1,7 @@
 import { GET_USERS } from "@/constant/react-query-keys";
 import { useAuth } from "@/provider/AuthContext";
 import { Role } from "@/schema";
-import { User } from "@/schema/registration";
+import { UserPlaid } from "@/schema/registration";
 import { getUsers } from "@/service/user";
 import { useQuery } from "@tanstack/react-query";
 
@@ -12,7 +12,7 @@ export const useUserQuery = (role?: Role) => {
     queryKey: [GET_USERS, role],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
-      const data = (await getUsers(role)) as User[];
+      const data = (await getUsers(role)) as UserPlaid[];
 
       return data;
     },

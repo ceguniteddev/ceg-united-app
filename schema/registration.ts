@@ -24,3 +24,5 @@ export const registrationSchema = z.object({
   ssn: z.string().min(1, { error: "Required" }),
 });
 export type User = z.infer<typeof registrationSchema>;
+
+export type UserPlaid = User & { plaidData?: PlaidAccessToken[] };

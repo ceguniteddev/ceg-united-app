@@ -37,9 +37,10 @@ import {
 } from "@/components/ui/table";
 import { useUserQuery } from "@/hooks/user";
 import Spinner from "@/components/Spinner";
-import { User } from "@/schema/registration";
+import { UserPlaid } from "@/schema/registration";
+import { DataTablePagination } from "./pagination";
 
-export const columns: ColumnDef<User>[] = [
+export const columns: ColumnDef<UserPlaid>[] = [
   {
     accessorKey: "firstName",
     id: "firstName",
@@ -73,11 +74,26 @@ export const columns: ColumnDef<User>[] = [
     cell: ({ row }) => <div className="lowercase">{row.getValue("email")}</div>,
   },
   {
+    id: "plaidCount",
+    accessorFn: (row) => row.plaidData?.length ?? 0,
+    header: ({ column }) => (
+      <div className="flex w-full justify-center">
+        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
+          Plaid Linked <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
+    cell: (info) => {
+      const count = info.getValue<number>();
+      return <div className="w-full text-center tabular-nums">{count}</div>;
+    },
+    sortingFn: (a, b) => (a.original.plaidData?.length ?? 0) - (b.original.plaidData?.length ?? 0),
+    sortDescFirst: true,
+  },
+  {
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const payment = row.original;
-
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -88,12 +104,9 @@ export const columns: ColumnDef<User>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(payment.email)}>
-              Copy payment ID
-            </DropdownMenuItem>
+
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            <DropdownMenuItem>View payment details</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer">View dashboard</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -106,6 +119,7 @@ const Users = () => {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  const [globalFilter, setGlobalFilter] = React.useState("");
 
   const { users, isLoading } = useUserQuery("Client");
 
@@ -114,6 +128,7 @@ const Users = () => {
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -125,6 +140,7 @@ const Users = () => {
       columnFilters,
       columnVisibility,
       rowSelection,
+      globalFilter,
     },
   });
 
@@ -133,38 +149,16 @@ const Users = () => {
   }
 
   return (
-    <div className="w-full">
+    <div className="mx-auto w-full md:w-1/2 px-4">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter emails..."
-          value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-          onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
+          placeholder="Filter name or emails..."
+          // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+          value={globalFilter}
+          // onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
+          onChange={(e) => setGlobalFilter(e.target.value)}
           className="max-w-sm"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
       <div className="overflow-hidden rounded-md border">
         <Table>
@@ -205,10 +199,7 @@ const Users = () => {
         </Table>
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="text-muted-foreground flex-1 text-sm">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
+        <DataTablePagination table={table} />
         <div className="space-x-2">
           <Button
             variant="outline"

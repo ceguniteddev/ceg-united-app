@@ -15,11 +15,11 @@ declare global {
   };
 
   type PlaidAccessToken = {
-    id: string;
+    id?: string;
     userId: string;
     accessToken: string;
     itemId: string;
-    createdAt: Date;
+    createdAt: Date | null;
   };
 }
 
