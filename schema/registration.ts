@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { dateOfBirthSchema, GenderEnum, ROLES, ROLESEnum } from ".";
+import { dateOfBirthSchema, GenderEnum, ROLESEnum } from ".";
 
 export const passwordSchema = z
   .string()
@@ -10,7 +10,6 @@ export const passwordSchema = z
   // If you don't want spaces to count as special, use /[^\w\s]/ instead:
   .regex(/[^\w\s]/, { message: "Require special character" });
 
-export type User = z.infer<typeof registrationSchema>;
 export const registrationSchema = z.object({
   firstName: z.string().min(1, { error: "Required" }),
   lastName: z.string().min(1, { error: "Required" }),
@@ -24,3 +23,4 @@ export const registrationSchema = z.object({
   registrationDate: z.date().optional(),
   ssn: z.string().min(1, { error: "Required" }),
 });
+export type User = z.infer<typeof registrationSchema>;

@@ -12,8 +12,6 @@ import {
 } from "@/components/ui/card";
 import Link from "./_component/Link";
 import dynamic from "next/dynamic";
-import { useSelectedInstitutionStoreStore } from "@/store/plaid";
-import Spinner from "@/components/Spinner";
 
 const Dock = dynamic(() => import("./_component/Dock"), {
   ssr: false,
@@ -23,8 +21,6 @@ const Accounts = dynamic(() => import("./_component/Accounts"), {
 });
 
 const OverviewPage = () => {
-  const { selectedInstitution } = useSelectedInstitutionStoreStore();
-
   return (
     <div className="flex justify-center items-center">
       <Card className="w-3/4">

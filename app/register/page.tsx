@@ -5,7 +5,7 @@ import { Form } from "@/components/ui/form";
 import { User, registrationSchema } from "@/schema/registration";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon, SaveIcon } from "lucide-react";
-import { useForm, useWatch } from "react-hook-form";
+import { SubmitHandler, useForm, UseFormReturn, useWatch } from "react-hook-form";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { genderTypes } from "@/schema";
 import { useRegistration } from "@/hooks/registration";
@@ -21,9 +21,10 @@ const RegistrationPage = () => {
       password: "",
     } as Partial<User>,
   });
+
   const password = useWatch({ control: form.control, name: "password", defaultValue: "" });
 
-  const onSubmit = async (values: User) => {
+  const onSubmit: SubmitHandler<User> = async (values) => {
     const token = await getCaptchaTokenRegistration("registration");
 
     values = {

@@ -52,7 +52,6 @@ export const deleteCookie = async (key: string) => {
 export const logoutSession = async () => {
   try {
     const sessionCookie = await getCookie(FIREBASE_TOKEN_NAME);
-
     if (sessionCookie) {
       await revokeAllSessions(sessionCookie);
 
@@ -60,6 +59,7 @@ export const logoutSession = async () => {
     }
   } catch (error: any) {
     console.error("Error during logout:", error.message);
+    await deleteCookie(FIREBASE_TOKEN_NAME);
   }
 };
 

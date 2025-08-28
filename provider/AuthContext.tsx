@@ -34,15 +34,24 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
   const { reset } = useSelectedInstitutionStoreStore();
 
   // Helper function to load user role and set state
-  const loadAndSetUserData = useCallback(async (firebaseUser: User) => {
-    // No need to create a session here, just get user data
-    const userData = await getUser(firebaseUser.email || "");
-    const userRole = userData?.role ?? "Staff";
+  const loadAndSetUserData = useCallback(
+    async (firebaseUser: User) => {
+      // No need to create a session here, just get user data
+      const userData = await getUser(firebaseUser.email || "");
+      const userRole = userData?.role ?? ("Staff" as Role);
 
-    setUser(firebaseUser);
-    setRole(userRole as Role);
-    setIsAdmin(userRole === "Admin" || userRole === "IT");
-  }, []);
+      setUser(firebaseUser);
+      setRole(userRole as Role);
+      setIsAdmin(userRole === "Admin" || userRole === "IT");
+
+      if (userRole === "Client") {
+        router.push("/overview");
+      } else {
+        router.push("/admin");
+      }
+    },
+    [router]
+  );
 
   const logOut = useCallback(async () => {
     // 1. Revoke server session and delete cookie
@@ -117,14 +126,11 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         // 3. Create the server-side session cookie (THIS IS THE KEY CHANGE)
         await createSession(idToken);
 
-        // 4. Load the user's role and set the local state
-        await loadAndSetUserData(firebaseUser);
-
         queryClient.clear();
         reset();
 
-        // 5. Redirect to the desired page
-        router.push("/overview");
+        // 4. Load the user's role and set the local state
+        await loadAndSetUserData(firebaseUser);
       } catch (error) {
         if (error instanceof AppError) {
           throw error;
@@ -134,7 +140,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         throw new Error("Invalid email or password.");
       }
     },
-    [router, loadAndSetUserData, queryClient, reset]
+    [loadAndSetUserData, queryClient, reset]
   );
 
   const authContextValue = useMemo(

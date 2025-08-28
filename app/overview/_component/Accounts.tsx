@@ -2,29 +2,14 @@ import Spinner from "@/components/Spinner";
 import {
   Choicebox,
   ChoiceboxItem,
-  ChoiceboxItemContent,
   ChoiceboxItemDescription,
   ChoiceboxItemHeader,
-  ChoiceboxItemIndicator,
   ChoiceboxItemSubtitle,
   ChoiceboxItemTitle,
 } from "@/components/ui/shadcn-io/choicebox";
 import { useGetPlaidItemAccount } from "@/hooks/plaid";
 import { useSelectedInstitutionStoreStore } from "@/store/plaid";
-const options = [
-  {
-    id: "1",
-    label: "Option 1",
-    subtitle: "(the first option)",
-    description: "This is the first option",
-  },
-  {
-    id: "2",
-    label: "Option 2",
-    subtitle: "(the second option)",
-    description: "This is the second option",
-  },
-];
+
 const Accounts = () => {
   const { selectedInstitution } = useSelectedInstitutionStoreStore();
 

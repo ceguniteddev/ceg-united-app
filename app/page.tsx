@@ -1,8 +1,7 @@
 "use client";
 import React from "react";
 import { Footer } from "react-day-picker";
-import Landing from "./(public)/landing-page";
-
+import Landing from "./landing-page";
 const Home = () => {
   return (
     <div className="nondashboard-layout">
