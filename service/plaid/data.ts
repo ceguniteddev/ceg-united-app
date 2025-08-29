@@ -21,8 +21,8 @@ async function safeData<T>(label: string, call: () => Promise<{ data: T }>): Pro
   try {
     const res = await call();
     return res.data;
-  } catch (err) {
-    console.error(`[Plaid] ${label} failed`, err);
+  } catch (err: any) {
+    console.error(`[Plaid] ${label} failed`, err.response?.data);
     return null;
   }
 }
@@ -36,9 +36,15 @@ type LinkTokenRecord = UserCreateResponse & {
 export const recordPlaidUserToken = async (userId: string) => {
   const client = await getPlaidClient();
 
-  const userCreateResponse = await client.userCreate({
-    client_user_id: userId,
-  });
+  let userCreateResponse = null;
+  try {
+    userCreateResponse = await client.userCreate({
+      client_user_id: userId,
+    });
+  } catch (error: any) {
+    console.error("Plaid Error:", error.response?.data);
+    throw error;
+  }
 
   const db = firestoreAdmin();
   const collectionRef = db.collection(USER_TOKEN_COLLECTION);

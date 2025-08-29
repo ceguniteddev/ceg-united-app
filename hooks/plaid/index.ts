@@ -78,14 +78,14 @@ export const useCreateLinkToken = () => {
       if (!user || role !== "Client") return "";
 
       const linkToken = await getPlaidLinkToken(user.uid, userToken);
-      return linkToken.link_token;
+      return linkToken?.link_token;
     },
-    retry: (count, err: any) => {
-      // Don’t auto-retry while auth is still initializing or user is missing
-      const msg = String(err?.message || "");
-      if (/Auth not ready|Not signed in/i.test(msg)) return false;
-      return count < 2;
-    },
+    // retry: (count, err: any) => {
+    //   // Don’t auto-retry while auth is still initializing or user is missing
+    //   const msg = String(err?.message || "");
+    //   if (/Auth not ready|Not signed in/i.test(msg)) return false;
+    //   return count < 2;
+    // },
 
     onError: (error: any) => {
       console.error(error);

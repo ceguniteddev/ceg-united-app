@@ -30,7 +30,7 @@ const IncomeLink = () => {
       }
 
       const token = await createLinkToken(userToken?.user_token);
-      setLinkToken(token);
+      setLinkToken(token!);
     };
 
     if (canCreate && user && !hasToken) fetchLinkToken();

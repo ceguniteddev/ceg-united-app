@@ -9,6 +9,7 @@ import {
   LinkTokenCreateResponse,
   PlaidApi,
   PlaidEnvironments,
+  PlaidError,
   Products,
 } from "plaid";
 import { getBaseUrl } from "..";
@@ -95,8 +96,13 @@ export const getPlaidLinkToken = async (userId: string, userToken?: string) => {
   //   configs.consumer_report_permissible_purpose = "ACCOUNT_REVIEW_CREDIT";
   // }
   const client = await getPlaidClient();
-  const createTokenResponse = await client.linkTokenCreate(configs);
-  return createTokenResponse.data;
+  try {
+    const linkTokenResponse = await client.linkTokenCreate(configs);
+    return linkTokenResponse.data;
+  } catch (e: any) {
+    console.error("Plaid Error:", e.response?.data);
+    return null;
+  }
 };
 
 export const recordLinkToken = async (linkToken: LinkTokenCreateResponse, userId: string) => {

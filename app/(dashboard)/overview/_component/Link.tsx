@@ -5,7 +5,7 @@ import { Link2Icon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ItemLink from "./LinkItem";
 import IncomeLink from "./LinkIncome";
-import LinkAssetReport from "./LinkAssetReport";
+// import LinkAssetReport from "./LinkAssetReport";
 
 const Link = () => {
   return (
@@ -20,7 +20,7 @@ const Link = () => {
         <div className="grid gap-1">
           <ItemLink />
           <IncomeLink />
-          <LinkAssetReport />
+          {/* <LinkAssetReport /> */}
         </div>
       </PopoverContent>
     </Popover>

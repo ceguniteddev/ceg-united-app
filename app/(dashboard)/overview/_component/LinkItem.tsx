@@ -20,7 +20,7 @@ const ItemLink = () => {
   React.useEffect(() => {
     const fetchLinkToken = async () => {
       const token = await createLinkToken("");
-      setLinkToken(token);
+      setLinkToken(token!);
     };
 
     if (canCreate && user) fetchLinkToken();
@@ -44,9 +44,12 @@ const ItemLink = () => {
       const exchangePublicTokenForAccessToken = async () => {
         const response = await exchangeAccessToken(public_token);
         await recordAccessToken(user?.uid ?? "", response.accessToken, response.itemId, "ITEM");
-        queryClient.invalidateQueries({
-          queryKey: ["GET_PLAID_ITEM_LINK", user?.uid],
+        await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_LINK", user?.uid] });
+        await queryClient.invalidateQueries({
+          queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid],
+          exact: false,
         });
+        await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEMS", user?.uid] });
       };
 
       exchangePublicTokenForAccessToken();

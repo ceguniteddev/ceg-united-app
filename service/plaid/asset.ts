@@ -11,7 +11,6 @@ import { getUserById } from "../user";
 import AppError from "@/error/AppError";
 import { getBaseUrl } from "..";
 import { AssetReportAddOns } from "plaid";
-import { normalize } from "path";
 import { normalizeAllDates } from "@/lib/date-parser";
 
 /***
@@ -98,7 +97,7 @@ export const getAssetReportRequestByUserId = async (userId: string) => {
   }
 
   const doc = querySnapshot.docs[0];
-  console.log(doc);
+
   return { id: doc.id, ...normalizeAllDates(doc.data()) } as PlaidAssetReportRequest & {
     id: string;
   };
@@ -106,28 +105,40 @@ export const getAssetReportRequestByUserId = async (userId: string) => {
 
 export const getAssetReportPDF = async (assetReportToken: string, userId: string) => {
   const client = await getPlaidClient();
-  const response = await client.assetReportPdfGet(
-    {
-      asset_report_token: assetReportToken,
-    },
-    { responseType: "arraybuffer" }
-  );
-  const pdfBuffer =
-    response.data instanceof Buffer ? response.data : Buffer.from(response.data as ArrayBuffer);
 
-  const storage = storageAdmin();
+  try {
+    const response = await client.assetReportPdfGet(
+      {
+        asset_report_token: assetReportToken,
+      },
+      { responseType: "arraybuffer" }
+    );
+    const pdfBuffer =
+      response.data instanceof Buffer ? response.data : Buffer.from(response.data as ArrayBuffer);
 
-  const bucketFile = storage.file(`plaid/${userId}/asset-report.pdf`);
+    const storage = storageAdmin();
 
-  await bucketFile.save(pdfBuffer, { contentType: "application/pdf" });
+    const bucketFile = storage.file(`plaid/${userId}/asset-report.pdf`);
+
+    await bucketFile.save(pdfBuffer, { contentType: "application/pdf" });
+  } catch (e: any) {
+    console.error("Plaid Error:", e.response?.data);
+    throw e;
+  }
 };
 
 export const getAssetReport = async (assetReportToken: string, userId: string) => {
   const client = await getPlaidClient();
-  const response = await client.assetReportGet({
-    asset_report_token: assetReportToken,
-    include_insights: true,
-  });
+  let response = null;
+  try {
+    response = await client.assetReportGet({
+      asset_report_token: assetReportToken,
+      include_insights: true,
+    });
+  } catch (e: any) {
+    console.error("Plaid Error:", e.response?.data);
+    throw e;
+  }
 
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_ASSET_REPORT_DATA);
@@ -186,7 +197,13 @@ export const createAssetReport = async (userId: string) => {
 
   // console.log("config", config);
 
-  const response = await client.assetReportCreate(config);
+  let response = null;
+  try {
+    response = await client.assetReportCreate(config);
+  } catch (error: any) {
+    console.error("Plaid Error:", error.response?.data);
+    throw error;
+  }
 
   await recordAssetReportRequest(
     userId,

@@ -100,6 +100,9 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         ) {
           throw new AppError("Captcha verification failed. Please try again.");
         }
+
+        await logOut();
+
         // 1. Sign in with Firebase
         const userCredential = await signInWithEmailAndPassword(authFirebase, email, password);
         const firebaseUser = userCredential.user;
