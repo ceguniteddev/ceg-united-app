@@ -1,6 +1,12 @@
 "use client";
 import { useAuth } from "@/provider/AuthContext";
-import { getPlaidItemAccounts, getPlaidItems, getPlaidLinkToken } from "@/service/plaid";
+import {
+  getPlaidItemAccounts,
+  getPlaidItems,
+  getPlaidLinkToken,
+  hasAccessToken,
+} from "@/service/plaid";
+import { createAssetReport } from "@/service/plaid/asset";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { toast } from "sonner";
@@ -15,11 +21,30 @@ export const useGetPlaidItems = () => {
 
       return await getPlaidItems(user.uid);
     },
-    // enabled: !!user,
+    enabled: !!user,
   });
 
   return {
     plaidItems,
+    isLoading,
+  };
+};
+
+export const useHasAccessToken = (tokenType?: TokenType) => {
+  const { user } = useAuth();
+
+  const { data: hasToken, isLoading } = useQuery({
+    queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid, tokenType],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+
+      return await hasAccessToken(user.uid, tokenType);
+    },
+    enabled: !!user,
+  });
+
+  return {
+    hasToken,
     isLoading,
   };
 };
@@ -49,10 +74,10 @@ export const useCreateLinkToken = () => {
 
   const createMutation = useMutation({
     mutationKey: ["plaidLinkToken", user?.uid],
-    mutationFn: async () => {
+    mutationFn: async (userToken?: string) => {
       if (!user || role !== "Client") return "";
 
-      const linkToken = await getPlaidLinkToken(user.uid);
+      const linkToken = await getPlaidLinkToken(user.uid, userToken);
       return linkToken.link_token;
     },
     retry: (count, err: any) => {

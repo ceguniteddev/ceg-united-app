@@ -34,7 +34,8 @@ export async function middleware(req: NextRequest) {
     if (xIdToken || adminAccessKey) return NextResponse.next();
 
     const token = req.cookies.get(FIREBASE_TOKEN_NAME)?.value;
-    if (!token) return NextResponse.json("Unauthorized", { status: 401 });
+    if (!token && !pathname.includes("webhook"))
+      return NextResponse.json("Unauthorized", { status: 401 });
     // Optionally verify here if your API routes need auth in middleware
     return NextResponse.next();
   }

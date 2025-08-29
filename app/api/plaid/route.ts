@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { badRequest, internalServerError } from "../helpers";
 import z from "zod";
 import { getMessage } from "@/schema";
-import { getPlaidCompleteData } from "@/service/plaid";
+import { getPlaidCompleteData } from "@/service/plaid/data";
 
 const querySchema = z
   .object({

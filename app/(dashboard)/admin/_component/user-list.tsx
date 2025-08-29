@@ -13,7 +13,13 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import {
+  ArrowUpDown,
+  ChevronDown,
+  FolderSearch2Icon,
+  ListCollapseIcon,
+  MoreHorizontal,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -35,10 +41,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useUserQuery } from "@/hooks/user";
+import { useUsersQuery } from "@/hooks/user";
 import Spinner from "@/components/Spinner";
 import { UserPlaid } from "@/schema/registration";
 import { DataTablePagination } from "./pagination";
+import IconMenu from "@/components/icon-menu";
+import Link from "next/link";
 
 export const columns: ColumnDef<UserPlaid>[] = [
   {
@@ -95,20 +103,11 @@ export const columns: ColumnDef<UserPlaid>[] = [
     enableHiding: false,
     cell: ({ row }) => {
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer">View dashboard</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button variant={"outline"}>
+          <Link href={`/admin/dashboard/${encodeURIComponent(row.original.id)}`}>
+            <IconMenu icon={<FolderSearch2Icon />} text="View" />
+          </Link>
+        </Button>
       );
     },
   },
@@ -121,7 +120,7 @@ const Users = () => {
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
 
-  const { users, isLoading } = useUserQuery("Client");
+  const { users, isLoading } = useUsersQuery("Client");
 
   const table = useReactTable({
     data: users || [],

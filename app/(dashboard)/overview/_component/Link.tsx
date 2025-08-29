@@ -1,77 +1,29 @@
-import React, { useEffect } from "react";
-import { usePlaidLink } from "react-plaid-link";
-
-import { useCreateLinkToken } from "@/hooks/plaid";
+import React from "react";
 import { Button } from "@/components/ui/button";
-import IconMenu from "@/components/icon-menu";
+
 import { Link2Icon } from "lucide-react";
-import { exchangeAccessToken, recordAccessToken } from "@/service/plaid";
-import { useAuth } from "@/provider/AuthContext";
-import { useQueryClient } from "@tanstack/react-query";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import ItemLink from "./LinkItem";
+import IncomeLink from "./LinkIncome";
+import LinkAssetReport from "./LinkAssetReport";
 
 const Link = () => {
-  const { user } = useAuth();
-
-  const { createLinkToken, canCreate } = useCreateLinkToken();
-  const queryClient = useQueryClient();
-  const [linkToken, setLinkToken] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    const fetchLinkToken = async () => {
-      const token = await createLinkToken();
-      setLinkToken(token);
-    };
-
-    if (canCreate && user) fetchLinkToken();
-  }, [createLinkToken, canCreate, user]);
-
-  const onSuccess = React.useCallback(
-    (public_token: string) => {
-      // If the access_token is needed, send public_token to server
-      const exchangePublicTokenForAccessToken = async () => {
-        const response = await exchangeAccessToken(public_token);
-        await recordAccessToken(user?.uid ?? "", response.accessToken, response.itemId);
-        queryClient.invalidateQueries({
-          queryKey: ["GET_PLAID_ITEMS", user?.uid],
-        });
-      };
-
-      exchangePublicTokenForAccessToken();
-    },
-    [user?.uid, queryClient]
-  );
-
-  const isOauth = false;
-  const config: Parameters<typeof usePlaidLink>[0] = {
-    token: linkToken!,
-    onSuccess,
-  };
-
-  //   if (window.location.href.includes("?oauth_state_id=")) {
-  //     // TODO: figure out how to delete this ts-ignore
-  //     // @ts-ignore
-  //     config.receivedRedirectUri = window.location.href;
-  //     isOauth = true;
-  //   }
-
-  const { open, ready } = usePlaidLink(config);
-
-  useEffect(() => {
-    if (isOauth && ready) {
-      open();
-    }
-  }, [ready, open, isOauth]);
-
   return (
-    <Button
-      variant={"outline"}
-      type="button"
-      onClick={() => open()}
-      disabled={!ready}
-      className="w-full justify-start flex rounded-md p-2 transition-all duration-75 hover:bg-neutral-100 cursor-pointer"
-    >
-      <IconMenu text="Link Account" icon={<Link2Icon className="h-4 w-4" />} />
-    </Button>
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="w-full justify-start rounded-md">
+          <Link2Icon className="mr-2 h-4 w-4" />
+          Link Account
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-2">
+        <div className="grid gap-1">
+          <ItemLink />
+          <IncomeLink />
+          <LinkAssetReport />
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 

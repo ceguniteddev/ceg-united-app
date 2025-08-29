@@ -2,7 +2,6 @@
 import { LINK_TOKEN_COLLECTION, PLAID_TOKEN_COLLECTION } from "@/constant/collection-name";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
-import { DataItem } from "@/lib/plaid/data-util";
 import { Timestamp } from "firebase-admin/firestore";
 import {
   Configuration,
@@ -12,6 +11,7 @@ import {
   PlaidEnvironments,
   Products,
 } from "plaid";
+import { getBaseUrl } from "..";
 
 const PLAID_CLIENT_ID = process.env.PLAID_CLIENT_ID;
 const PLAID_SECRET = process.env.PLAID_SECRET;
@@ -21,6 +21,14 @@ const PLAID_COUNTRY_CODES = (process.env.PLAID_COUNTRY_CODES || "US").split(",")
 const PLAID_PRODUCTS = (process.env.PLAID_PRODUCTS || Products.Transactions).split(
   ","
 ) as Products[];
+
+const OPTIONAL_PLAID_PRODUCTS = (process.env.OPTIONAL_PLAID_PRODUCTS || "")
+  .split(",")
+  .filter((p) => p.trim() !== "") as Products[];
+
+const REQUIRED_IF_SUPPORTED = (process.env.REQUIRED_IF_SUPPORTED || "")
+  .split(",")
+  .filter((p) => p.trim() !== "") as Products[];
 
 const PLAID_ENV = process.env.PLAID_ENV || "sandbox";
 
@@ -36,17 +44,36 @@ const configuration = new Configuration({
   },
 });
 
-export const getPlaidLinkToken = async (userId: string) => {
-  const configs = {
+export const getPlaidClient = async () => {
+  return new PlaidApi(configuration);
+};
+
+export const getPlaidLinkToken = async (userId: string, userToken?: string) => {
+  const webhookBaseUrl = await getBaseUrl();
+  let configs = {
     user: {
       // This should correspond to a unique id for the current user.
       client_user_id: userId,
     },
+    user_token: "",
     client_name: "CEG United LLC",
     products: PLAID_PRODUCTS,
+    required_if_supported_products: REQUIRED_IF_SUPPORTED,
+    optional_products: OPTIONAL_PLAID_PRODUCTS,
     country_codes: PLAID_COUNTRY_CODES,
     language: "en",
+    webhook: webhookBaseUrl + "/api/plaid/webhook",
   };
+
+  if (userToken) {
+    configs = {
+      ...configs,
+      user_token: userToken,
+      required_if_supported_products: [],
+      optional_products: [],
+      products: [Products.IncomeVerification],
+    };
+  }
 
   // if (PLAID_REDIRECT_URI !== "") {
   //   configs.redirect_uri = PLAID_REDIRECT_URI;
@@ -67,7 +94,7 @@ export const getPlaidLinkToken = async (userId: string) => {
   //   };
   //   configs.consumer_report_permissible_purpose = "ACCOUNT_REVIEW_CREDIT";
   // }
-  const client = new PlaidApi(configuration);
+  const client = await getPlaidClient();
   const createTokenResponse = await client.linkTokenCreate(configs);
   return createTokenResponse.data;
 };
@@ -106,7 +133,7 @@ export const getValidLinkToken = async (userId: string) => {
 };
 
 export const exchangeAccessToken = async (publicToken: string) => {
-  const client = new PlaidApi(configuration);
+  const client = await getPlaidClient();
   const tokenResponse = await client.itemPublicTokenExchange({
     public_token: publicToken,
   });
@@ -117,7 +144,12 @@ export const exchangeAccessToken = async (publicToken: string) => {
   return { accessToken: ACCESS_TOKEN, itemId: ITEM_ID };
 };
 
-export const recordAccessToken = async (userId: string, accessToken: string, itemId: string) => {
+export const recordAccessToken = async (
+  userId: string,
+  accessToken: string,
+  itemId: string,
+  tokenType: TokenType
+) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_TOKEN_COLLECTION);
 
@@ -125,17 +157,21 @@ export const recordAccessToken = async (userId: string, accessToken: string, ite
     userId,
     accessToken,
     itemId,
+    tokenType,
     createdAt: Timestamp.now(),
   });
 };
 
 export const getAccessToken = async (
   userId: string,
+  tokenType?: TokenType,
   itemId?: string
 ): Promise<PlaidAccessToken[] | null> => {
   const db = firestoreAdmin();
   let collectionRef = db.collection(PLAID_TOKEN_COLLECTION).where("userId", "==", userId);
-
+  if (tokenType) {
+    collectionRef = collectionRef.where("tokenType", "==", tokenType);
+  }
   if (itemId) {
     collectionRef = collectionRef.where("itemId", "==", itemId);
   }
@@ -147,16 +183,31 @@ export const getAccessToken = async (
   return snapshot.docs.map((doc) => ({ id: doc.id, ...normalizeAllDates(doc.data()) }));
 };
 
+export async function hasAccessToken(
+  userId: string,
+  tokenType?: TokenType,
+  itemId?: string
+): Promise<boolean> {
+  const db = firestoreAdmin();
+
+  let q = db.collection(PLAID_TOKEN_COLLECTION).where("userId", "==", userId);
+  if (tokenType) q = q.where("tokenType", "==", tokenType);
+  if (itemId) q = q.where("itemId", "==", itemId);
+
+  const countSnap = await q.count().get();
+  return countSnap.data().count > 0;
+}
+
 export const deleteAccessToken = async (accessTokenId: string) => {
   const db = firestoreAdmin();
   await db.collection(PLAID_TOKEN_COLLECTION).doc(accessTokenId).delete();
 };
 
 export const getPlaidItems = async (userId: string) => {
-  const accessToken = await getAccessToken(userId);
+  const accessToken = await getAccessToken(userId, "ITEM");
   if (!accessToken) return null;
 
-  const client = new PlaidApi(configuration);
+  const client = await getPlaidClient();
 
   const items = [];
 
@@ -178,60 +229,11 @@ export const getPlaidItems = async (userId: string) => {
 export const getPlaidItemAccounts = async (accessToken: string) => {
   if (!accessToken) return null;
 
-  const client = new PlaidApi(configuration);
+  const client = await getPlaidClient();
   const accountsResponse = await client.accountsGet({
     client_id: PLAID_CLIENT_ID,
     secret: PLAID_SECRET,
     access_token: accessToken,
   });
   return accountsResponse.data;
-};
-
-export const getPlaidCompleteData = async (userId: string) => {
-  const accessToken = await getAccessToken(userId);
-  if (!accessToken) return null;
-
-  const client = new PlaidApi(configuration);
-
-  const completeData = [];
-
-  const currentDate = new Date();
-
-  // clone date, then subtract 1 year
-  const lastYearDate = new Date(currentDate);
-  lastYearDate.setFullYear(currentDate.getFullYear() - 2);
-
-  // format both as YYYY-MM-DD
-  const formatDate = (d: Date) => d.toISOString().split("T")[0];
-
-  for (const token of accessToken) {
-    const jsonData: any = {};
-    const configs = {
-      client_id: PLAID_CLIENT_ID,
-      secret: PLAID_SECRET,
-      access_token: token.accessToken,
-    };
-
-    const itemsResponse = await client.itemGet(configs);
-
-    jsonData.institutionName = itemsResponse.data.item.institution_name;
-    jsonData.item = itemsResponse.data.item;
-
-    const accountBalanceResponse = await client.accountsBalanceGet(configs);
-
-    jsonData.balance = [];
-    jsonData.balance = accountBalanceResponse.data.accounts;
-
-    const transactionsGetResponse = await client.transactionsGet({
-      ...configs,
-      start_date: formatDate(lastYearDate),
-      end_date: formatDate(currentDate),
-    });
-    jsonData.transaction = [];
-    jsonData.transaction = transactionsGetResponse.data.transactions;
-
-    completeData.push(jsonData);
-  }
-
-  return completeData;
 };

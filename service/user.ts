@@ -38,6 +38,21 @@ export const getUser = async (email: string): Promise<User | null> => {
   return { id: userDoc.id, ...normalizeAllDates(user) } as User;
 };
 
+export const getUserById = async (id: string): Promise<User | null> => {
+  const db = firestoreAdmin();
+
+  const collectionRef = db.collection(USER_COLLECTION);
+  const docRef = collectionRef.doc(id);
+  const docSnapshot = await docRef.get();
+
+  if (!docSnapshot.exists) return null;
+
+  const userDoc = docSnapshot;
+  const user = userDoc.data();
+
+  return { id: userDoc.id, ...normalizeAllDates(user) } as User;
+};
+
 export const registerUser = async (value: User) => {
   const userRecord = await getUserRecordByEmail(value.email);
 

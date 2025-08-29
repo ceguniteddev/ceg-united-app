@@ -42,10 +42,9 @@ export const initFirebase = () => {
   const params = {
     projectId: "cegunitedllc",
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL as string,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_NAME as string,
+    storageBucket: process.env.FIREBASE_STORAGE_NAME as string,
     privateKey: process.env.FIREBASE_PRIVATE_KEY as string,
   };
-
   return createFirebaseAdminApp(params);
 };
 

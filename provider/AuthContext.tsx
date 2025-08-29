@@ -114,6 +114,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         // 3. Create the server-side session cookie (THIS IS THE KEY CHANGE)
         await createSession(idToken);
 
+        await queryClient.cancelQueries({ predicate: () => true });
         queryClient.clear();
         reset();
 
