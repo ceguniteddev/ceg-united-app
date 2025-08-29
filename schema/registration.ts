@@ -21,7 +21,7 @@ export const registrationSchema = z.object({
   role: ROLESEnum.optional(),
   isOnboarded: z.boolean().optional(),
   registrationDate: z.date().optional(),
-  ssn: z.string().min(1, { error: "Required" }),
+  ssn: z.string().min(1, { error: "Required" }), // TODO: validate ssn format
 });
 export type User = z.infer<typeof registrationSchema>;
 

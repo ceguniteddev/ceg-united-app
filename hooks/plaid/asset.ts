@@ -7,10 +7,10 @@ export const useCreateAssetReport = () => {
   const { user, loading, role } = useAuth();
 
   const createMutation = useMutation({
-    mutationKey: ["plaidLinkToken", user?.uid],
-    mutationFn: async () => {
+    mutationKey: ["PLAID_CREATE_ASSET_REPORT", user?.uid],
+    mutationFn: async (itemId: string) => {
       if (!user || role !== "Client") return null;
-      return await createAssetReport(user.uid);
+      return await createAssetReport(user.uid, itemId);
     },
     retry: (count, err: any) => {
       // Don’t auto-retry while auth is still initializing or user is missing

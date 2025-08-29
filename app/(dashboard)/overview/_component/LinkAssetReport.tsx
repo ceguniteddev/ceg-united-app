@@ -16,7 +16,7 @@ const LinkAssetReport = () => {
       className="justify-start"
       aria-busy={isBusy}
       disabled={hasRequest || isCreating || isLoading} // disabled if request exists (and while busy)
-      onClick={async () => await createAssetReport()}
+      // onClick={async () => await createAssetReport("")}
     >
       <FileTextIcon className="mr-2 h-4 w-4" />
       <span>Asset Report</span>

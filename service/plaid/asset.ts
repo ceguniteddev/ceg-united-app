@@ -20,7 +20,8 @@ import { normalizeAllDates } from "@/lib/date-parser";
  *    - this will record in PLAID_CREATE_ASSET_REPORT (recordAssetReportRequest)
  *        userId,
           response.data.asset_report_token,
-          response.data.asset_report_id 
+          response.data.asset_report_id ,
+          itemId
 
  * 2. Plaid will call webhook when the report is ready (recordWebhookData)
  *    2.1. invoke getAssetReportRequestByAssetReportId function to get asset_report_token
@@ -63,8 +64,17 @@ export const recordWebhookData = async (webhookData: PlaidAssetWebhookData) => {
     );
 
     if (response) {
-      await getAssetReportPDF(assetReportRequest.assetReportToken, assetReportRequest.userId);
+      await getAssetReportPDF(
+        assetReportRequest.assetReportToken,
+        assetReportRequest.userId,
+        assetReportRequest.itemId
+      );
     }
+
+    /** 
+     //TODO - call n8n webhook for AI analysis
+
+     **/
   }
 };
 
@@ -103,7 +113,11 @@ export const getAssetReportRequestByUserId = async (userId: string) => {
   };
 };
 
-export const getAssetReportPDF = async (assetReportToken: string, userId: string) => {
+export const getAssetReportPDF = async (
+  assetReportToken: string,
+  userId: string,
+  itemId: string
+) => {
   const client = await getPlaidClient();
 
   try {
@@ -118,13 +132,28 @@ export const getAssetReportPDF = async (assetReportToken: string, userId: string
 
     const storage = storageAdmin();
 
-    const bucketFile = storage.file(`plaid/${userId}/asset-report.pdf`);
+    const bucketFile = storage.file(`plaid/${userId}/${itemId}.pdf`);
 
     await bucketFile.save(pdfBuffer, { contentType: "application/pdf" });
   } catch (e: any) {
     console.error("Plaid Error:", e.response?.data);
     throw e;
   }
+};
+
+export const getAssetReportPDFUrl = async (assetReportToken: string) => {
+  const client = await getPlaidClient();
+  let response = null;
+  try {
+    response = await client.assetReportPdfGet({
+      asset_report_token: assetReportToken,
+    });
+  } catch (e: any) {
+    console.error("Plaid Error:", e.response?.data);
+    throw e;
+  }
+
+  return response.data.url;
 };
 
 export const getAssetReport = async (assetReportToken: string, userId: string) => {
@@ -162,7 +191,7 @@ export const getAssetReportData = async (userId: string) => {
   return snapshot.docs.map((doc) => ({ id: doc.id, ...normalizeAllDates(doc.data()) }));
 };
 
-export const createAssetReport = async (userId: string) => {
+export const createAssetReport = async (userId: string, itemId: string) => {
   const client = await getPlaidClient();
 
   const userData = await getUserById(userId);
@@ -170,7 +199,7 @@ export const createAssetReport = async (userId: string) => {
     throw new AppError("User not found");
   }
 
-  const accessTokens = await getAccessToken(userId, "ITEM");
+  const accessTokens = await getAccessToken(userId, "ITEM", itemId);
   if (!accessTokens?.length) {
     throw new AppError("No linked bank account found");
   }
@@ -189,6 +218,7 @@ export const createAssetReport = async (userId: string) => {
         last_name: userData.lastName,
         email: userData.email,
         phone_number: userData.phoneNumber,
+        // ssn: userData.ssn,
       },
       add_ons: [AssetReportAddOns.Investments],
       webhook: webhookUrl,
@@ -208,7 +238,8 @@ export const createAssetReport = async (userId: string) => {
   await recordAssetReportRequest(
     userId,
     response.data.asset_report_token,
-    response.data.asset_report_id
+    response.data.asset_report_id,
+    itemId
   );
   return response.data;
 };
@@ -216,7 +247,8 @@ export const createAssetReport = async (userId: string) => {
 export const recordAssetReportRequest = async (
   userId: string,
   assetReportToken: string,
-  assetReportId: string
+  assetReportId: string,
+  itemId: string
 ) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_CREATE_ASSET_REPORT);
@@ -225,9 +257,12 @@ export const recordAssetReportRequest = async (
     userId,
     assetReportToken,
     assetReportId,
+    itemId,
     createdAt: Timestamp.now(),
   });
 
   const doc = await docRef.get();
-  return { id: doc.id, ...doc.data() };
+  return { id: doc.id, ...normalizeAllDates(doc.data()) } as PlaidAssetReportRequest & {
+    id: string;
+  };
 };

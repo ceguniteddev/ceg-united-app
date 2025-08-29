@@ -15,14 +15,20 @@ type PlaidCompleteRow = {
   liabilities: any; // liabilities object
   bank_income: any[]; // bank_income array
   payroll_income: any[]; // items array
+  investmentHoldings: any[];
+  investmentTransactions: any[];
 };
 
-async function safeData<T>(label: string, call: () => Promise<{ data: T }>): Promise<T | null> {
+async function safeData<T>(
+  tokenType: TokenType,
+  label: string,
+  call: () => Promise<{ data: T }>
+): Promise<T | null> {
   try {
     const res = await call();
     return res.data;
   } catch (err: any) {
-    console.error(`[Plaid] ${label} failed`, err.response?.data);
+    console.error(`[Plaid] ${label} failed token-type ${tokenType}`, err.response?.data);
     return null;
   }
 }
@@ -108,26 +114,40 @@ export const getPlaidCompleteData = async (userId: string) => {
       liabilitiesData,
       bankIncomeData,
       payrollIncomeData,
+      investmentsHoldingsData,
+      investmentsTransactionsData,
     ] = await Promise.all([
-      safeData("itemGet", () => client.itemGet(configs)),
-      safeData("accountsBalanceGet", () => client.accountsBalanceGet(configs)),
-      safeData("transactionsGet", () =>
+      safeData(token.tokenType, "itemGet", () => client.itemGet(configs)),
+      safeData(token.tokenType, "accountsBalanceGet", () => client.accountsBalanceGet(configs)),
+      safeData(token.tokenType, "transactionsGet", () =>
         client.transactionsGet({
           ...configs,
           start_date: fmt(twoYearsAgo),
           end_date: fmt(now),
         })
       ),
-      safeData("identityGet", () => client.identityGet(configs)),
-      safeData("liabilitiesGet", () => client.liabilitiesGet(configs)),
-      safeData("creditBankIncomeGet", () =>
+      safeData(token.tokenType, "identityGet", () => client.identityGet(configs)),
+      safeData(token.tokenType, "liabilitiesGet", () => client.liabilitiesGet(configs)),
+      safeData(token.tokenType, "creditBankIncomeGet", () =>
         client.creditBankIncomeGet({
           user_token: userTokenRecord.user_token,
         })
       ),
-      safeData("creditPayrollIncomeGet", () =>
+      safeData(token.tokenType, "creditPayrollIncomeGet", () =>
         client.creditPayrollIncomeGet({
           user_token: userTokenRecord.user_token,
+        })
+      ),
+
+      safeData(token.tokenType, "investmentsHoldingsGet", () =>
+        client.investmentsHoldingsGet(configs)
+      ),
+
+      safeData(token.tokenType, "investmentsTransactionsGet", () =>
+        client.investmentsTransactionsGet({
+          ...configs,
+          start_date: fmt(twoYearsAgo),
+          end_date: fmt(now),
         })
       ),
     ]);
@@ -141,6 +161,8 @@ export const getPlaidCompleteData = async (userId: string) => {
       liabilities: liabilitiesData?.liabilities ?? {},
       bank_income: bankIncomeData?.bank_income ?? [],
       payroll_income: payrollIncomeData?.items ?? [],
+      investmentHoldings: investmentsHoldingsData?.holdings ?? [],
+      investmentTransactions: investmentsTransactionsData?.investment_transactions ?? [],
     };
 
     completeData.push(row);

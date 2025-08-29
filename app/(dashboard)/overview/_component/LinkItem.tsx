@@ -8,11 +8,13 @@ import { useAuth } from "@/provider/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { BanknoteIcon, Loader2Icon, CheckIcon } from "lucide-react";
+import { useCreateAssetReport } from "@/hooks/plaid/asset";
 
 const ItemLink = () => {
   const { user } = useAuth();
 
   const { createLinkToken, canCreate } = useCreateLinkToken();
+  const { createAssetReport, isCreating } = useCreateAssetReport();
   const [hasToken, setHasToken] = React.useState(false);
   const queryClient = useQueryClient();
   const [linkToken, setLinkToken] = React.useState<string | null>(null);
@@ -44,6 +46,9 @@ const ItemLink = () => {
       const exchangePublicTokenForAccessToken = async () => {
         const response = await exchangeAccessToken(public_token);
         await recordAccessToken(user?.uid ?? "", response.accessToken, response.itemId, "ITEM");
+
+        await createAssetReport(response.itemId);
+
         await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_LINK", user?.uid] });
         await queryClient.invalidateQueries({
           queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid],
@@ -54,7 +59,7 @@ const ItemLink = () => {
 
       exchangePublicTokenForAccessToken();
     },
-    [user?.uid, queryClient]
+    [user?.uid, queryClient, createAssetReport]
   );
 
   const isOauth = false;

@@ -12,6 +12,7 @@ declare global {
     userId: string;
     accessToken: string;
     itemId: string;
+    tokenType: TokenType;
     createdAt: Date | null;
   };
 
@@ -42,6 +43,7 @@ declare global {
     userId: string;
     assetReportToken: string;
     assetReportId: string;
+    itemId: string;
     createdAt: Date;
   };
 }

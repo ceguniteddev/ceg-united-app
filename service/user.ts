@@ -118,6 +118,7 @@ export const getUsers = async (role?: Role): Promise<UserPlaid[]> => {
     userId: doc.data().userId,
     accessToken: doc.data().accessToken,
     itemId: doc.data().itemId,
+    tokenType: doc.data().tokenType,
     createdAt: normalizeDate(doc.data().createdAt),
   }));
 
