@@ -125,6 +125,9 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         await loadAndSetUserData(firebaseUser);
 
         const userData = await getUser(firebaseUser.email || "");
+        if (!userData) {
+          throw new AppError("User data not found.");
+        }
         const userRole = userData?.role ?? ("Staff" as Role);
 
         // 5. Redirect to the appropriate dashboard
@@ -138,7 +141,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         throw new Error("Invalid email or password.");
       }
     },
-    [loadAndSetUserData, queryClient, reset, router]
+    [loadAndSetUserData, queryClient, reset, router, logOut]
   );
 
   const authContextValue = useMemo(

@@ -40,7 +40,12 @@ env:
       - BUILD
       - RUNTIME
   - variable: PLAID_PRODUCTS
-    value: auth,transactions,identity,assets
+    value: auth,transactions,assets
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: REQUIRED_IF_SUPPORTED
+    value: identity,liabilities,investments
     availability:
       - BUILD
       - RUNTIME

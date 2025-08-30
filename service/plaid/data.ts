@@ -131,6 +131,9 @@ export const getPlaidCompleteData = async (userId: string) => {
       safeData(token.tokenType, "creditBankIncomeGet", () =>
         client.creditBankIncomeGet({
           user_token: userTokenRecord.user_token,
+          options: {
+            count: 3,
+          },
         })
       ),
       safeData(token.tokenType, "creditPayrollIncomeGet", () =>

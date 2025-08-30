@@ -46,13 +46,16 @@ export const getCookie = async (key: string) => {
 };
 
 export const deleteCookie = async (key: string) => {
+  console.log("deleteCookie", key);
   const cookieStore = await cookies();
   cookieStore.delete(key);
 };
 export const logoutSession = async () => {
   try {
     const sessionCookie = await getCookie(FIREBASE_TOKEN_NAME);
+    console.log("sessionCookie", sessionCookie);
     if (sessionCookie) {
+      console.log("revokeAllSessions", sessionCookie);
       await revokeAllSessions(sessionCookie);
 
       await deleteCookie(FIREBASE_TOKEN_NAME);
