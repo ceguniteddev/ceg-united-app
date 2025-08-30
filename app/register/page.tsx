@@ -60,32 +60,64 @@ const RegistrationPage = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-3 gap-4">
-                    <CustomFormField name={"firstName"} placeholder={"First Name"} />
-                    <CustomFormField name={"middleName"} placeholder={"Middle Name"} />
-                    <CustomFormField name={"lastName"} placeholder={"Last Name"} />
+                    <CustomFormField
+                      name={"firstName"}
+                      placeholder={"First Name"}
+                      label="* First Name"
+                    />
+                    <CustomFormField
+                      name={"middleName"}
+                      placeholder={"Middle Name"}
+                      label="Middle Name"
+                    />
+                    <CustomFormField
+                      name={"lastName"}
+                      placeholder={"Last Name"}
+                      label="* Last Name"
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <CustomFormField name={"email"} type="email" placeholder="Email Address" />
-                    <CustomFormField name={"phoneNumber"} placeholder="Phone Number" />
+                    <CustomFormField
+                      name={"email"}
+                      type="email"
+                      placeholder="Email Address"
+                      label="* Email Address"
+                    />
+                    <CustomFormField
+                      name={"phoneNumber"}
+                      placeholder="Phone Number"
+                      label="* Phone Number"
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
                       name={"birthdate"}
                       type="date-picker"
                       placeholder="Birthdate"
+                      label="* Birthdate"
                       dateAfterHidden={new Date()}
                     />
                     <CustomFormField
                       name={"gender"}
                       type="select"
                       placeholder="Gender"
+                      label="* Gender"
                       options={genderTypes()}
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <CustomFormField name={"ssn"} placeholder="Social Security Number" />
-                    <CustomFormField name={"password"} type="password" placeholder="New Password" />
+                    <CustomFormField
+                      name={"ssn"}
+                      placeholder="xxx-xx-xxxx"
+                      label="* Social Security Number"
+                    />
+                    <CustomFormField
+                      name={"password"}
+                      type="password"
+                      label="* Password"
+                      placeholder="New Password"
+                    />
                   </div>
                   <PasswordStrength password={password ?? ""} />
                 </CardContent>

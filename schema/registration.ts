@@ -5,28 +5,28 @@ import { dateOfBirthSchema, GenderEnum, ROLESEnum } from ".";
 export const ssnSchema = z
   .string({ error: "Required" })
   .trim()
-  .transform((v) => v.replace(/\D/g, "")) // strip hyphens/spaces/anything non-digit
-  .pipe(
-    z
-      .string()
-      .length(9, { message: "SSN must have exactly 9 digits" })
-      .superRefine((digits, ctx) => {
-        const area = Number(digits.slice(0, 3)); // AAA
-        const group = Number(digits.slice(3, 5)); // GG
-        const serial = Number(digits.slice(5)); // SSSS
+  // Require exactly "xxx-xx-xxxx"
+  .regex(/^\d{3}-\d{2}-\d{4}$/, { message: "Enter a valid SSN" })
+  .superRefine((value, ctx) => {
+    const digits = value.replace(/\D/g, ""); // "AAAGGSSSS"
+    const area = Number(digits.slice(0, 3)); // AAA
+    const group = Number(digits.slice(3, 5)); // GG
+    const serial = Number(digits.slice(5)); // SSSS
 
-        // Disallow 000, 666, and 900–999 area numbers
-        if (area === 0 || area === 666 || area >= 900) {
-          ctx.addIssue({ code: "custom", message: "Enter a valid SSN" });
-        }
-        // Disallow 00 group and 0000 serial
-        if (group === 0 || serial === 0) {
-          ctx.addIssue({ code: "custom", message: "Enter a valid SSN" });
-        }
-      })
-  )
+    // Disallow 000, 666, and 900–999 area numbers
+    if (area === 0 || area === 666 || area >= 900) {
+      ctx.addIssue({ code: "custom", message: "Enter a valid SSN" });
+    }
+    // Disallow 00 group and 0000 serial
+    if (group === 0 || serial === 0) {
+      ctx.addIssue({ code: "custom", message: "Enter a valid SSN" });
+    }
+  })
   // Return canonical format AAA-GG-SSSS
-  .transform((digits) => `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`);
+  .transform((value) => {
+    const digits = value.replace(/\D/g, "");
+    return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
+  });
 
 export const passwordSchema = z
   .string()

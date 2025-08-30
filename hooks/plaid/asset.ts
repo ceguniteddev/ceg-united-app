@@ -26,9 +26,9 @@ export const useCreateAssetReport = () => {
         : "Failed to create asset report";
       toast.error(msg);
     },
-    onSuccess: () => {
-      toast.success("Asset report created successfully.");
-    },
+    // onSuccess: () => {
+    //   toast.success("Asset report created successfully.");
+    // },
   });
 
   return {
