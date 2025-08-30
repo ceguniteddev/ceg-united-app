@@ -1,6 +1,33 @@
 import { z } from "zod";
 import { dateOfBirthSchema, GenderEnum, ROLESEnum } from ".";
 
+// Strict SSN validator with normalization
+export const ssnSchema = z
+  .string({ error: "Required" })
+  .trim()
+  .transform((v) => v.replace(/\D/g, "")) // strip hyphens/spaces/anything non-digit
+  .pipe(
+    z
+      .string()
+      .length(9, { message: "SSN must have exactly 9 digits" })
+      .superRefine((digits, ctx) => {
+        const area = Number(digits.slice(0, 3)); // AAA
+        const group = Number(digits.slice(3, 5)); // GG
+        const serial = Number(digits.slice(5)); // SSSS
+
+        // Disallow 000, 666, and 900–999 area numbers
+        if (area === 0 || area === 666 || area >= 900) {
+          ctx.addIssue({ code: "custom", message: "Enter a valid SSN" });
+        }
+        // Disallow 00 group and 0000 serial
+        if (group === 0 || serial === 0) {
+          ctx.addIssue({ code: "custom", message: "Enter a valid SSN" });
+        }
+      })
+  )
+  // Return canonical format AAA-GG-SSSS
+  .transform((digits) => `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`);
+
 export const passwordSchema = z
   .string()
   .min(8, { message: "8 minimum characters" })
@@ -12,6 +39,7 @@ export const passwordSchema = z
 
 export const registrationSchema = z.object({
   firstName: z.string().min(1, { error: "Required" }),
+  middleName: z.string().optional(),
   lastName: z.string().min(1, { error: "Required" }),
   email: z.email().min(1, { error: "Required" }),
   password: passwordSchema,
@@ -21,7 +49,7 @@ export const registrationSchema = z.object({
   role: ROLESEnum.optional(),
   isOnboarded: z.boolean().optional(),
   registrationDate: z.date().optional(),
-  ssn: z.string().min(1, { error: "Required" }), // TODO: validate ssn format
+  ssn: ssnSchema,
 });
 export type User = z.infer<typeof registrationSchema>;
 

@@ -4,7 +4,6 @@ export async function getCaptchaTokenRegistration(action: string): Promise<strin
       resolve(null);
       return;
     }
-
     grecaptcha.ready(async () => {
       const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
       if (!siteKey) {

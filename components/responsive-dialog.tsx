@@ -19,6 +19,7 @@ interface Props {
   readonly className?: string;
   readonly id?: string;
   readonly onEscapeAttempt?: () => void;
+  readonly descriptionClassName?: string;
 }
 
 export function ResponsiveDialog({
@@ -30,6 +31,7 @@ export function ResponsiveDialog({
   className = "w-6/12",
   id = "dialog-form",
   onEscapeAttempt,
+  descriptionClassName,
 }: Props) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -46,7 +48,7 @@ export function ResponsiveDialog({
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription className={cn(descriptionClassName)}>{description}</DialogDescription>
         </DialogHeader>
         {children}
       </DialogContent>

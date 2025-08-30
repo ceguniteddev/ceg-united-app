@@ -215,10 +215,11 @@ export const createAssetReport = async (userId: string, itemId: string) => {
       user: {
         client_user_id: userId,
         first_name: userData.firstName,
+        middle_name: userData.middleName,
         last_name: userData.lastName,
         email: userData.email,
         phone_number: userData.phoneNumber,
-        // ssn: userData.ssn,
+        ssn: userData.ssn,
       },
       add_ons: [AssetReportAddOns.Investments],
       webhook: webhookUrl,

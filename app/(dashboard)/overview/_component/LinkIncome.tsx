@@ -74,7 +74,7 @@ const IncomeLink = () => {
   return (
     <Button
       variant="ghost"
-      className="justify-start"
+      className="justify-start cursor-pointer"
       aria-busy={!ready}
       disabled={!ready || hasToken}
       onClick={() => open()}

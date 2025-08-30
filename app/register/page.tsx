@@ -12,6 +12,7 @@ import { useRegistration } from "@/hooks/registration";
 import { PasswordStrength } from "@/components/PasswordStrength";
 import Link from "next/link";
 import { getCaptchaTokenRegistration } from "@/lib/captcha";
+import Image from "next/image";
 const RegistrationPage = () => {
   const { recordRegistration, isRecording } = useRegistration();
 
@@ -38,6 +39,14 @@ const RegistrationPage = () => {
 
   return (
     <div>
+      <div className="flex justify-center items-center">
+        <Image
+          src="/icon.png"
+          alt={process.env.NEXT_PUBLIC_APP_NAME as string}
+          width={100}
+          height={100}
+        />
+      </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <fieldset disabled={isRecording}>
@@ -50,8 +59,9 @@ const RegistrationPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <CustomFormField name={"firstName"} placeholder={"First Name"} />
+                    <CustomFormField name={"middleName"} placeholder={"Middle Name"} />
                     <CustomFormField name={"lastName"} placeholder={"Last Name"} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">

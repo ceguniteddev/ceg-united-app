@@ -20,6 +20,7 @@ interface DatePickerProps {
   inputProps?: any;
   dateBeforeHidden?: Date;
   dateAfterHidden?: Date;
+  disabled?: boolean;
 }
 const DatePicker = ({
   isOpen,
@@ -33,6 +34,7 @@ const DatePicker = ({
   inputProps,
   dateBeforeHidden,
   dateAfterHidden,
+  disabled,
 }: DatePickerProps) => {
   const parseDate = date ? new Date(date) : null;
 
@@ -68,6 +70,7 @@ const DatePicker = ({
           variant="ghost"
           size="icon"
           className="absolute right-8 rounded-none"
+          disabled={disabled}
           onClick={() => {
             handleDateChange(null);
           }}
@@ -77,7 +80,12 @@ const DatePicker = ({
       )}
 
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className={cn("absolute right-0 rounded-none px-2")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("absolute right-0 rounded-none px-2")}
+          disabled={disabled}
+        >
           <CalendarIcon className="h-4 w-4 text-dark-500" />
         </Button>
       </PopoverTrigger>

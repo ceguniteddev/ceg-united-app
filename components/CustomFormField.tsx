@@ -185,6 +185,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
               handleDateChange={handleChange}
               dateBeforeHidden={dateBeforeHidden}
               dateAfterHidden={dateAfterHidden}
+              disabled={disabled}
               inputProps={{
                 ...field,
                 readOnly: true,
@@ -272,6 +273,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
             value={field.value || (initialValue as string)}
             defaultValue={field.value || (initialValue as string)}
             onValueChange={handleSelectChange}
+            disabled={disabled}
           >
             <SelectTrigger className={`w-full ${inputClassName}`}>
               <SelectValue placeholder={placeholder || "Select an option"} />
