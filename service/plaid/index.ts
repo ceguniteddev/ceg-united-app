@@ -13,6 +13,8 @@ import {
   Products,
 } from "plaid";
 import { getBaseUrl } from "..";
+import { plaidClient } from "@/lib/plaid";
+import { parseStringify } from "@/lib/utils";
 
 const PLAID_CLIENT_ID = process.env.PLAID_CLIENT_ID;
 const PLAID_SECRET = process.env.PLAID_SECRET;
@@ -31,23 +33,23 @@ const REQUIRED_IF_SUPPORTED = (process.env.REQUIRED_IF_SUPPORTED || "")
   .split(",")
   .filter((p) => p.trim() !== "") as Products[];
 
-const PLAID_ENV = process.env.PLAID_ENV || "sandbox";
+// const PLAID_ENV = process.env.PLAID_ENV || "sandbox";
 
 const PLAID_REDIRECT_URI = process.env.PLAID_REDIRECT_URI || "";
 
-const configuration = new Configuration({
-  basePath: PlaidEnvironments[PLAID_ENV],
-  baseOptions: {
-    headers: {
-      "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID,
-      "PLAID-SECRET": process.env.PLAID_SECRET,
-    },
-  },
-});
+// const configuration = new Configuration({
+//   basePath: PlaidEnvironments[PLAID_ENV],
+//   baseOptions: {
+//     headers: {
+//       "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID,
+//       "PLAID-SECRET": process.env.PLAID_SECRET,
+//     },
+//   },
+// });
 
-export const getPlaidClient = async () => {
-  return new PlaidApi(configuration);
-};
+// export const getPlaidClient = async () => {
+//   return new PlaidApi(configuration);
+// };
 
 export const getPlaidLinkToken = async (userId: string, userToken?: string) => {
   const webhookBaseUrl = await getBaseUrl();
@@ -95,9 +97,9 @@ export const getPlaidLinkToken = async (userId: string, userToken?: string) => {
   //   };
   //   configs.consumer_report_permissible_purpose = "ACCOUNT_REVIEW_CREDIT";
   // }
-  const client = await getPlaidClient();
+
   try {
-    const linkTokenResponse = await client.linkTokenCreate(configs);
+    const linkTokenResponse = await plaidClient.linkTokenCreate(configs);
     return linkTokenResponse.data;
   } catch (e: any) {
     console.error("Plaid Error:", e.response?.data);
@@ -139,8 +141,7 @@ export const getValidLinkToken = async (userId: string) => {
 };
 
 export const exchangeAccessToken = async (publicToken: string) => {
-  const client = await getPlaidClient();
-  const tokenResponse = await client.itemPublicTokenExchange({
+  const tokenResponse = await plaidClient.itemPublicTokenExchange({
     public_token: publicToken,
   });
 
@@ -213,12 +214,10 @@ export const getPlaidItems = async (userId: string) => {
   const accessToken = await getAccessToken(userId, "ITEM");
   if (!accessToken) return null;
 
-  const client = await getPlaidClient();
-
   const items = [];
 
   for (const token of accessToken) {
-    const itemsResponse = await client.itemGet({
+    const itemsResponse = await plaidClient.itemGet({
       client_id: PLAID_CLIENT_ID,
       secret: PLAID_SECRET,
       access_token: token.accessToken,
@@ -235,11 +234,185 @@ export const getPlaidItems = async (userId: string) => {
 export const getPlaidItemAccounts = async (accessToken: string) => {
   if (!accessToken) return null;
 
-  const client = await getPlaidClient();
-  const accountsResponse = await client.accountsGet({
+  const accountsResponse = await plaidClient.accountsGet({
     client_id: PLAID_CLIENT_ID,
     secret: PLAID_SECRET,
     access_token: accessToken,
   });
   return accountsResponse.data;
+};
+
+export const getPlaidAccounts = async (userId: string) => {
+  const accessToken = await getAccessToken(userId, "ITEM");
+  if (!accessToken) return null;
+
+  const accounts = await Promise.all(
+    accessToken?.map(async (bank: PlaidAccessToken) => {
+      // get each account info from plaid
+      const accountsResponse = await plaidClient.accountsGet({
+        access_token: bank.accessToken,
+      });
+      const accountData = accountsResponse.data.accounts[0];
+
+      // get institution info from plaid
+      const institution = await getInstitution({
+        institutionId: accountsResponse.data.item.institution_id!,
+      });
+
+      const account = {
+        id: accountData.account_id,
+        availableBalance: accountData.balances.available!,
+        currentBalance: accountData.balances.current!,
+        institutionId: institution.institution_id,
+        name: accountData.name,
+        officialName: accountData.official_name,
+        mask: accountData.mask!,
+        type: accountData.type as string,
+        subtype: accountData.subtype! as string,
+        bankItemId: bank.itemId,
+      };
+
+      return account;
+    })
+  );
+
+  const totalBanks = accounts.length;
+  const totalCurrentBalance = accounts.reduce((total, account) => {
+    return total + account.currentBalance;
+  }, 0);
+  return parseStringify({ data: accounts, totalBanks, totalCurrentBalance });
+};
+
+export const getInstitution = async ({ institutionId }: getInstitutionProps) => {
+  const institutionResponse = await plaidClient.institutionsGetById({
+    institution_id: institutionId,
+    country_codes: ["US"] as CountryCode[],
+  });
+
+  const intitution = institutionResponse.data.institution;
+
+  return parseStringify(intitution);
+};
+
+export const getPlaidAccountByUserIdAndItemId = async ({ userId, itemId }: getAccountProps) => {
+  // get bank from db
+  const bank = await getAccessToken(userId, "ITEM", itemId);
+  if (!bank || bank.length === 0) return null;
+
+  // get account info from plaid
+  const accountsResponse = await plaidClient.accountsGet({
+    access_token: bank[0].accessToken,
+  });
+  const accountData = accountsResponse.data.accounts[0];
+
+  // get transfer transactions from appwrite
+  // const transferTransactionsData = await getTransactionsByBankId({
+  //   bankId: bank.$id,
+  // });
+
+  // const transferTransactions = transferTransactionsData.documents.map(
+  //   (transferData: Transaction) => ({
+  //     id: transferData.$id,
+  //     name: transferData.name!,
+  //     amount: transferData.amount!,
+  //     date: transferData.$createdAt,
+  //     paymentChannel: transferData.channel,
+  //     category: transferData.category,
+  //     type: transferData.senderBankId === bank.$id ? "debit" : "credit",
+  //   })
+  // );
+
+  // get institution info from plaid
+  const institution = await getInstitution({
+    institutionId: accountsResponse.data.item.institution_id!,
+  });
+
+  const transactions = await getTransactions({
+    accessToken: bank[0].accessToken,
+  });
+
+  const account = {
+    id: accountData.account_id,
+    availableBalance: accountData.balances.available!,
+    currentBalance: accountData.balances.current!,
+    institutionId: institution.institution_id,
+    name: accountData.name,
+    officialName: accountData.official_name,
+    mask: accountData.mask!,
+    type: accountData.type as string,
+    subtype: accountData.subtype! as string,
+    bankItemId: bank[0].itemId,
+  };
+
+  // sort transactions by date such that the most recent transaction is first
+  // const allTransactions = [...transactions, ...transferTransactions].sort(
+  //   (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  // );
+
+  const allTransactions = [...transactions].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  return parseStringify({
+    data: account,
+    transactions: allTransactions,
+  });
+};
+
+// export const getTransactionsByBankId = async ({ bankId }: getTransactionsByBankIdProps) => {
+//   try {
+//     const { database } = await createAdminClient();
+
+//     const senderTransactions = await database.listDocuments(
+//       DATABASE_ID!,
+//       TRANSACTION_COLLECTION_ID!,
+//       [Query.equal("senderBankId", bankId)]
+//     );
+
+//     const receiverTransactions = await database.listDocuments(
+//       DATABASE_ID!,
+//       TRANSACTION_COLLECTION_ID!,
+//       [Query.equal("receiverBankId", bankId)]
+//     );
+
+//     const transactions = {
+//       total: senderTransactions.total + receiverTransactions.total,
+//       documents: [...senderTransactions.documents, ...receiverTransactions.documents],
+//     };
+
+//     return parseStringify(transactions);
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
+
+export const getTransactions = async ({ accessToken }: getTransactionsProps) => {
+  let hasMore = true;
+  let transactions: any = [];
+
+  // Iterate through each page of new transaction updates for item
+  while (hasMore) {
+    const response = await plaidClient.transactionsSync({
+      access_token: accessToken,
+    });
+
+    const data = response.data;
+
+    transactions = response.data.added.map((transaction) => ({
+      id: transaction.transaction_id,
+      name: transaction.name,
+      paymentChannel: transaction.payment_channel,
+      type: transaction.payment_channel,
+      accountId: transaction.account_id,
+      amount: transaction.amount,
+      pending: transaction.pending,
+      category: transaction.category ? transaction.category[0] : "",
+      date: transaction.date,
+      image: transaction.logo_url,
+    }));
+
+    hasMore = data.has_more;
+  }
+
+  return parseStringify(transactions);
 };

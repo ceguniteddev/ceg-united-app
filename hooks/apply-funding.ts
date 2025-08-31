@@ -1,7 +1,7 @@
 import AppError from "@/error/AppError";
 import { ApplyFunding } from "@/schema/apply-funding";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { verifyCaptchaToken } from "@/lib/captcha/captcha";
@@ -29,13 +29,16 @@ export const useGetUserApplyFunding = () => {
 };
 
 export const useApplyFunding = () => {
-  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const createMutation = useMutation({
     mutationFn: async ({ token, values }: { values: ApplyFunding; token: string | null }) => {
       if (!token) {
         throw new AppError("Captcha token is missing. Please try again.");
       }
+
+      if (!user) throw new Error("User not authenticated");
 
       const captchaData = await verifyCaptchaToken(token);
       if (
@@ -49,9 +52,11 @@ export const useApplyFunding = () => {
 
       await applyFunding(values);
     },
-    // onSuccess: () => {
-    //   toast.success("Funding application is submitted successfully");
-    // },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["GET_USER_APPLY_FUNDING", user?.uid],
+      });
+    },
     onError: (error: any) => {
       if (error instanceof AppError) {
         toast.warning(error.message);

@@ -53,6 +53,11 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen }: Props) => {
 
   const form = useForm<ApplyFunding>({
     resolver: zodResolver(applyFundingSchema),
+    defaultValues: {
+      appliedDate: new Date(),
+      userId: user?.uid ?? "",
+      status: "New",
+    },
   });
 
   const onSubmit: SubmitHandler<ApplyFunding> = async (values) => {
@@ -78,12 +83,6 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen }: Props) => {
             <div>
               <Card>
                 <CardContent className="space-y-4">
-                  <input
-                    type="hidden"
-                    {...form.register("userId")}
-                    defaultValue={user?.uid ?? ""}
-                  />
-                  <input type="hidden" {...form.register("status")} defaultValue={"New"} />
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
                       name={"interestedProduct"}

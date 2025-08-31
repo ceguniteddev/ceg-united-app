@@ -20,5 +20,6 @@ export const applyFundingSchema = z.object({
   payPerMonth: z.number().min(1, { error: "Required" }),
   rentOrMortgage: z.string().min(1, { error: "Required" }),
   status: FundingApplicationSatusEnum,
+  appliedDate: z.date(),
 });
 export type ApplyFunding = z.infer<typeof applyFundingSchema>;

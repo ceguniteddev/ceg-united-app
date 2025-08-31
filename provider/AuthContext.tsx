@@ -43,7 +43,10 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
   const loadAndSetUserData = useCallback(async (firebaseUser: User) => {
     // No need to create a session here, just get user data
     const userData = await getUser(firebaseUser.email || "");
-    const userRole = userData?.role ?? ("Staff" as Role);
+    if (!userData) {
+      throw new AppError("User not found.");
+    }
+    const userRole = userData?.role ?? ("Admin" as Role);
 
     setUser(firebaseUser);
     setRole(userRole as Role);
@@ -120,6 +123,9 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
           throw new AppError("Captcha verification failed. Please try again.");
         }
 
+        const userRole = await getUser(email || "");
+        if (!userRole) throw new AppError("Invalid email or password.");
+
         // local cleanup only; don't revoke all sessions
         try {
           await authFirebase.signOut();
@@ -147,7 +153,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         await loadAndSetUserData(firebaseUser);
 
         // Use the role you just set instead of refetching
-        const nextRole = (await getUser(firebaseUser.email || ""))?.role ?? ("Staff" as Role);
+        const nextRole = userRole.role ?? ("Admin" as Role);
         router.push(nextRole === "Client" ? "/overview" : "/admin");
       } catch (error) {
         if (error instanceof AppError) throw error;
