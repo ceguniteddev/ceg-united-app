@@ -608,3 +608,6 @@
   font-size: 36px;
   line-height: 44px;
 }
+@utility no-scrollbar {
+  @apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+}
