@@ -11,3 +11,4 @@ export const PLAID_TOKEN_COLLECTION = "plaid-token";
 export const GMAIL_TOKENS = "gmail-token";
 
 export const REFERENCE_ID_COLLECTION = "reference-id";
+export const WEBHOOK_DATA_COLLECTION = "webhook-data";
