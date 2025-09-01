@@ -99,6 +99,10 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
                       type="number"
                     />
                   </div>
+                  <CustomFormField
+                    name={"businessName"}
+                    label="* Enter Business name (Business Funding Only)"
+                  />
                   <div>
                     <CustomFormField
                       name={"currentSituation"}

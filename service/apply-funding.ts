@@ -18,6 +18,19 @@ export const applyFunding = async (value: ApplyFunding) => {
   await docRef.set({ ...value });
   const data = (await docRef.get()).data();
 
+  // TODO call n8n webhook to generate analysis
+  await fetch(`${process.env.n8n_HOST}/funding-analysis`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      referenceNumber,
+      userId: value.userId,
+    }),
+  });
+
   return {
     id: docRef.id,
     ...normalizeAllDates(data),
