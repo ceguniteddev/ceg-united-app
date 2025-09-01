@@ -1,6 +1,6 @@
 import z from "zod";
 
-export const FundingApplicationSatus = ["New", "In-Progress", "Completed", "Declined"] as const;
+export const FundingApplicationSatus = ["New", "Processing", "Completed", "Declined"] as const;
 export const FundingApplicationSatusEnum = z.enum(FundingApplicationSatus);
 
 export const applyFundingSchema = z.object({

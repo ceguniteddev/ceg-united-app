@@ -1,5 +1,6 @@
 "use server";
-import { REFERENCE_ID_COLLECTION, USER_FUNDING_APPLICATION } from "@/constant/collection-name";
+import { USER_FUNDING_APPLICATION } from "@/constant/collection-name";
+import AppError from "@/error/AppError";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { ApplyFunding } from "@/schema/apply-funding";
@@ -16,7 +17,7 @@ export const applyFunding = async (value: ApplyFunding) => {
   const docRef = collectionRef.doc(referenceNumber);
   await docRef.set({ ...value });
   const data = (await docRef.get()).data();
-  console.log(docRef.id, data);
+
   return {
     id: docRef.id,
     ...normalizeAllDates(data),
@@ -31,12 +32,42 @@ export const getApplyFunding = async (userId: string): Promise<ApplyFunding[] | 
     console.log("No matching documents.");
     return null;
   }
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...normalizeAllDates(doc.data()) }));
+  return snapshot.docs.map((doc) => ({
+    referenceNumber: doc.id,
+    ...normalizeAllDates(doc.data()),
+  }));
+};
+
+export const getApplyFundingByReferenceNumber = async (
+  referenceNumber: string
+): Promise<ApplyFunding | null> => {
+  const db = firestoreAdmin();
+  const doc = await db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber).get();
+  if (!doc.exists) return null;
+  return { id: doc.id, ...normalizeAllDates(doc.data()) };
+};
+
+export const deleteApplyFunding = async (referenceNumber: string): Promise<void> => {
+  if (!referenceNumber) {
+    throw new AppError("Reference number is required.");
+  }
+
+  const data = await getApplyFundingByReferenceNumber(referenceNumber);
+  if (!data) {
+    throw new AppError("Funding application not found.");
+  }
+
+  if (data.status !== "New") {
+    throw new AppError("Funding application cannot be deleted.");
+  }
+
+  const db = firestoreAdmin();
+  await db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber).delete();
 };
 
 export async function createReferenceId(): Promise<{ id: string; path: string }> {
   const db = firestoreAdmin();
-  const collection = REFERENCE_ID_COLLECTION;
+  const collection = USER_FUNDING_APPLICATION;
   const maxAttempts = 50;
 
   for (let i = 0; i < maxAttempts; i++) {

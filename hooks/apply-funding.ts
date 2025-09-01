@@ -3,9 +3,8 @@ import { ApplyFunding } from "@/schema/apply-funding";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { verifyCaptchaToken } from "@/lib/captcha/captcha";
-import { applyFunding, getApplyFunding } from "@/service/apply-funding";
+import { applyFunding, deleteApplyFunding, getApplyFunding } from "@/service/apply-funding";
 import { useAuth } from "@/provider/AuthContext";
 
 export const useGetUserApplyFunding = () => {
@@ -67,8 +66,30 @@ export const useApplyFunding = () => {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (referenceNumber: string) => {
+      await deleteApplyFunding(referenceNumber);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["GET_USER_APPLY_FUNDING", user?.uid],
+      });
+    },
+    onError: (error: any) => {
+      if (error instanceof AppError) {
+        toast.warning(error.message);
+      } else {
+        toast.warning(error.message);
+        console.error(error);
+      }
+    },
+  });
+
   return {
     applyFunding: createMutation.mutateAsync,
     isRecording: createMutation.isPending,
+
+    deleteAppliedFunding: deleteMutation.mutateAsync,
+    isDeleting: deleteMutation.isPending,
   };
 };
