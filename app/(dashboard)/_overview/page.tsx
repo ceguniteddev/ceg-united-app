@@ -17,10 +17,12 @@ const Dock = dynamic(() => import("./_component/Dock"), {
 const Accounts = dynamic(() => import("./_component/Accounts"), {
   ssr: false,
 });
-
+const ApplyFundingList = dynamic(() => import("./_component/funding/ApplyFundingList"), {
+  ssr: false,
+});
 const OverviewPage = () => {
   return (
-    <div className="flex justify-center items-center">
+    <div className="flex justify-center items-center flex-col gap-6">
       <Card className="w-3/4">
         <CardHeader>
           <CardTitle>Account</CardTitle>
@@ -32,6 +34,15 @@ const OverviewPage = () => {
 
         <CardContent className="space-y-4">
           <Accounts />
+        </CardContent>
+      </Card>
+
+      <Card className="w-3/4">
+        <CardHeader>
+          <CardTitle>Funding Application</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ApplyFundingList />
         </CardContent>
       </Card>
 

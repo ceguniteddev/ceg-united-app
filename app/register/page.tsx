@@ -60,47 +60,31 @@ const RegistrationPage = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-3 gap-4">
-                    <CustomFormField
-                      name={"firstName"}
-                      placeholder={"First Name"}
-                      label="* First Name"
-                    />
-                    <CustomFormField
-                      name={"middleName"}
-                      placeholder={"Middle Name"}
-                      label="Middle Name"
-                    />
-                    <CustomFormField
-                      name={"lastName"}
-                      placeholder={"Last Name"}
-                      label="* Last Name"
-                    />
+                    <CustomFormField name={"firstName"} placeholder={""} label="* First Name" />
+                    <CustomFormField name={"middleName"} placeholder={""} label="Middle Name" />
+                    <CustomFormField name={"lastName"} placeholder={""} label="* Last Name" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
                       name={"email"}
                       type="email"
-                      placeholder="Email Address"
+                      placeholder=""
                       label="* Email Address"
                     />
-                    <CustomFormField
-                      name={"phoneNumber"}
-                      placeholder="Phone Number"
-                      label="* Phone Number"
-                    />
+                    <CustomFormField name={"phoneNumber"} placeholder="" label="* Phone Number" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
                       name={"birthdate"}
                       type="date-picker"
-                      placeholder="Birthdate"
+                      placeholder=""
                       label="* Birthdate"
                       dateAfterHidden={new Date()}
                     />
                     <CustomFormField
                       name={"gender"}
                       type="select"
-                      placeholder="Gender"
+                      placeholder=" "
                       label="* Gender"
                       options={genderTypes()}
                     />
@@ -116,7 +100,7 @@ const RegistrationPage = () => {
                       name={"password"}
                       type="password"
                       label="* Password"
-                      placeholder="New Password"
+                      placeholder=""
                     />
                   </div>
                   <PasswordStrength password={password ?? ""} />

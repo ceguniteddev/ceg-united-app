@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { ApplyFunding, applyFundingSchema } from "@/schema/apply-funding";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BanknoteIcon, Loader2Icon } from "lucide-react";
+import { BanknoteIcon, CircleXIcon, Loader2Icon } from "lucide-react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
@@ -43,23 +43,30 @@ const isMarried: DropdownOption[] = [
 
 type Props = {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setCongratsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setCongratsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  data?: ApplyFunding;
 };
 
-const ApplyFundingForm = ({ setOpen, setCongratsOpen }: Props) => {
+const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
   const { user } = useAuth();
   const { applyFunding, isRecording } = useApplyFunding();
   const [showLegalResidentOther, setShowLegalResidentOther] = useState(false);
 
   const form = useForm<ApplyFunding>({
     resolver: zodResolver(applyFundingSchema),
+    defaultValues: {
+      ...data,
+      appliedDate: data?.appliedDate ?? new Date(),
+      userId: user?.uid ?? "",
+      status: data?.status ?? "New",
+    },
   });
 
   const onSubmit: SubmitHandler<ApplyFunding> = async (values) => {
     const token = await getCaptchaTokenRegistration("applyFunding");
     await applyFunding({ token, values });
     setOpen(false);
-    setCongratsOpen(true);
+    if (setCongratsOpen) setCongratsOpen(true);
   };
 
   const handleLegalResidentChange = (value: string) => {
@@ -78,17 +85,12 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen }: Props) => {
             <div>
               <Card>
                 <CardContent className="space-y-4">
-                  <input
-                    type="hidden"
-                    {...form.register("userId")}
-                    defaultValue={user?.uid ?? ""}
-                  />
-                  <input type="hidden" {...form.register("status")} defaultValue={"New"} />
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
                       name={"interestedProduct"}
-                      label="* Please Select The Product You're Most Interested In"
+                      label="* The Product You're Most Interested In"
                       type="select"
+                      placeholder=" "
                       options={interestedProduct}
                     />
                     <CustomFormField
@@ -108,7 +110,7 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen }: Props) => {
                     <CustomFormField
                       name={"legalResident"}
                       onSelectValue={handleLegalResidentChange}
-                      label={"* Are you a legal resident or citizen of the United Sates?"}
+                      label={"* Are you a legal resident of the United Sates?"}
                       type="select"
                       options={legalResident}
                     />
@@ -142,7 +144,7 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen }: Props) => {
                     <CustomFormField
                       name={"payPerMonth"}
                       type="number"
-                      label={"* How much do you pay a month? Your portion only"}
+                      label={"* How much do you pay a month?"}
                     />
                     <CustomFormField
                       name={"rentOrMortgage"}
@@ -151,25 +153,47 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen }: Props) => {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <div className="flex space-x-4 w-full">
+                  {!data ? (
+                    <div className="grid grid-cols-2 gap-4 w-full">
+                      <Button
+                        size="lg"
+                        variant={"outline"}
+                        type="button"
+                        disabled={isRecording}
+                        onClick={() => setOpen(false)}
+                        className=" bg-red-200 hover:bg-red-300 text-black-100"
+                      >
+                        <CircleXIcon className="mr-2 h-4 w-4" /> Close
+                      </Button>
+                      <Button
+                        size="lg"
+                        type="submit"
+                        disabled={isRecording}
+                        className=" bg-green-400 hover:bg-green-500 text-black-100"
+                      >
+                        {isRecording ? (
+                          <>
+                            <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                            Applying...
+                          </>
+                        ) : (
+                          <>
+                            <BanknoteIcon className="mr-2 h-4 w-4" /> Apply Funding
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
                     <Button
                       size="lg"
-                      type="submit"
-                      disabled={isRecording}
-                      className="w-full bg-green-400 hover:bg-green-500 text-black-100"
+                      variant={"outline"}
+                      type="button"
+                      onClick={() => setOpen(false)}
+                      className="w-full bg-red-200 hover:bg-red-300 text-black-100"
                     >
-                      {isRecording ? (
-                        <>
-                          <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-                          Applying...
-                        </>
-                      ) : (
-                        <>
-                          <BanknoteIcon className="mr-2 h-4 w-4" /> Apply Funding
-                        </>
-                      )}
+                      <CircleXIcon className="mr-2 h-4 w-4" /> Close
                     </Button>
-                  </div>
+                  )}
                 </CardFooter>
               </Card>
             </div>

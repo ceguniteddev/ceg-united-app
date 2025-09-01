@@ -1,6 +1,7 @@
+"use client";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { Button } from "@/components/ui/button";
-import { BanknoteIcon, CheckIcon, Loader2Icon } from "lucide-react";
+import { BanknoteIcon } from "lucide-react";
 import React from "react";
 import ApplyFundingForm from "./ApplyFundingForm";
 

@@ -1,11 +1,10 @@
 import AppError from "@/error/AppError";
 import { ApplyFunding } from "@/schema/apply-funding";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { verifyCaptchaToken } from "@/lib/captcha/captcha";
-import { applyFunding, getApplyFunding } from "@/service/apply-funding";
+import { applyFunding, deleteApplyFunding, getApplyFunding } from "@/service/apply-funding";
 import { useAuth } from "@/provider/AuthContext";
 
 export const useGetUserApplyFunding = () => {
@@ -29,13 +28,16 @@ export const useGetUserApplyFunding = () => {
 };
 
 export const useApplyFunding = () => {
-  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const createMutation = useMutation({
     mutationFn: async ({ token, values }: { values: ApplyFunding; token: string | null }) => {
       if (!token) {
         throw new AppError("Captcha token is missing. Please try again.");
       }
+
+      if (!user) throw new Error("User not authenticated");
 
       const captchaData = await verifyCaptchaToken(token);
       if (
@@ -49,9 +51,30 @@ export const useApplyFunding = () => {
 
       await applyFunding(values);
     },
-    // onSuccess: () => {
-    //   toast.success("Funding application is submitted successfully");
-    // },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["GET_USER_APPLY_FUNDING", user?.uid],
+      });
+    },
+    onError: (error: any) => {
+      if (error instanceof AppError) {
+        toast.warning(error.message);
+      } else {
+        toast.warning(error.message);
+        console.error(error);
+      }
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (referenceNumber: string) => {
+      await deleteApplyFunding(referenceNumber);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["GET_USER_APPLY_FUNDING", user?.uid],
+      });
+    },
     onError: (error: any) => {
       if (error instanceof AppError) {
         toast.warning(error.message);
@@ -65,5 +88,8 @@ export const useApplyFunding = () => {
   return {
     applyFunding: createMutation.mutateAsync,
     isRecording: createMutation.isPending,
+
+    deleteAppliedFunding: deleteMutation.mutateAsync,
+    isDeleting: deleteMutation.isPending,
   };
 };

@@ -1,6 +1,8 @@
 "use client";
 import { useAuth } from "@/provider/AuthContext";
 import {
+  getPlaidAccountByUserIdAndItemId,
+  getPlaidAccounts,
   getPlaidItemAccounts,
   getPlaidItems,
   getPlaidLinkToken,
@@ -65,6 +67,46 @@ export const useGetPlaidItemAccount = (accessToken: string, itemId: string) => {
 
   return {
     plaidItemAccount,
+    isLoading,
+  };
+};
+
+export const useGetPlaidItemAccountByUserId = (itemId: string, accountId: string) => {
+  const { user } = useAuth();
+
+  const { data: plaidItemAccounts, isLoading } = useQuery({
+    queryKey: ["GET_PLAID_ITEM_ACCOUNT_BY_USER_ID", user?.uid, itemId, accountId],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+      if (!itemId) throw new Error("Item id is required");
+      if (!accountId) throw new Error("Account id is required");
+
+      return await getPlaidAccountByUserIdAndItemId({ userId: user.uid, itemId, accountId });
+    },
+    enabled: !!user,
+  });
+
+  return {
+    plaidItemAccounts,
+    isLoading,
+  };
+};
+
+export const useGetPlaidAccounts = () => {
+  const { user } = useAuth();
+
+  const { data: plaidAccounts, isLoading } = useQuery({
+    queryKey: ["GET_PLAID_ITEM_ACCOUNT", user?.uid],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+
+      return await getPlaidAccounts(user.uid);
+    },
+    enabled: !!user,
+  });
+
+  return {
+    plaidAccounts,
     isLoading,
   };
 };

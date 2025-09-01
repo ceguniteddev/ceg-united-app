@@ -9,3 +9,5 @@ export const PLAID_ASSET_REPORT_DATA = "plaid-asset-report-data";
 export const PLAID_TOKEN_COLLECTION = "plaid-token";
 
 export const GMAIL_TOKENS = "gmail-token";
+
+export const REFERENCE_ID_COLLECTION = "reference-id";

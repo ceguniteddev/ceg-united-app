@@ -6,12 +6,13 @@ import {
 } from "@/constant/collection-name";
 import { firestoreAdmin, storageAdmin } from "@/lib/fireabase-admin";
 import { Timestamp } from "firebase-admin/firestore";
-import { getAccessToken, getPlaidClient } from ".";
+import { getAccessToken } from ".";
 import { getUserById } from "../user";
 import AppError from "@/error/AppError";
 import { getBaseUrl } from "..";
 import { AssetReportAddOns } from "plaid";
 import { normalizeAllDates } from "@/lib/date-parser";
+import { plaidClient } from "@/lib/plaid";
 
 /***
  * workflow to create asset report
@@ -118,10 +119,8 @@ export const getAssetReportPDF = async (
   userId: string,
   itemId: string
 ) => {
-  const client = await getPlaidClient();
-
   try {
-    const response = await client.assetReportPdfGet(
+    const response = await plaidClient.assetReportPdfGet(
       {
         asset_report_token: assetReportToken,
       },
@@ -142,10 +141,9 @@ export const getAssetReportPDF = async (
 };
 
 export const getAssetReportPDFUrl = async (assetReportToken: string) => {
-  const client = await getPlaidClient();
   let response = null;
   try {
-    response = await client.assetReportPdfGet({
+    response = await plaidClient.assetReportPdfGet({
       asset_report_token: assetReportToken,
     });
   } catch (e: any) {
@@ -157,10 +155,9 @@ export const getAssetReportPDFUrl = async (assetReportToken: string) => {
 };
 
 export const getAssetReport = async (assetReportToken: string, userId: string) => {
-  const client = await getPlaidClient();
   let response = null;
   try {
-    response = await client.assetReportGet({
+    response = await plaidClient.assetReportGet({
       asset_report_token: assetReportToken,
       include_insights: true,
     });
@@ -192,8 +189,6 @@ export const getAssetReportData = async (userId: string) => {
 };
 
 export const createAssetReport = async (userId: string, itemId: string) => {
-  const client = await getPlaidClient();
-
   const userData = await getUserById(userId);
   if (!userData) {
     throw new AppError("User not found");
@@ -230,7 +225,7 @@ export const createAssetReport = async (userId: string, itemId: string) => {
 
   let response = null;
   try {
-    response = await client.assetReportCreate(config);
+    response = await plaidClient.assetReportCreate(config);
   } catch (error: any) {
     console.error("Plaid Error:", error.response?.data);
     throw error;

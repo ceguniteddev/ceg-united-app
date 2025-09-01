@@ -4,6 +4,9 @@ import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { Timestamp } from "firebase-admin/firestore";
 import {
+  AccountBase,
+  AccountsGetRequest,
+  AccountsGetResponse,
   Configuration,
   CountryCode,
   LinkTokenCreateResponse,
@@ -13,6 +16,8 @@ import {
   Products,
 } from "plaid";
 import { getBaseUrl } from "..";
+import { plaidClient } from "@/lib/plaid";
+import { parseStringify } from "@/lib/utils";
 
 const PLAID_CLIENT_ID = process.env.PLAID_CLIENT_ID;
 const PLAID_SECRET = process.env.PLAID_SECRET;
@@ -31,23 +36,23 @@ const REQUIRED_IF_SUPPORTED = (process.env.REQUIRED_IF_SUPPORTED || "")
   .split(",")
   .filter((p) => p.trim() !== "") as Products[];
 
-const PLAID_ENV = process.env.PLAID_ENV || "sandbox";
+// const PLAID_ENV = process.env.PLAID_ENV || "sandbox";
 
 const PLAID_REDIRECT_URI = process.env.PLAID_REDIRECT_URI || "";
 
-const configuration = new Configuration({
-  basePath: PlaidEnvironments[PLAID_ENV],
-  baseOptions: {
-    headers: {
-      "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID,
-      "PLAID-SECRET": process.env.PLAID_SECRET,
-    },
-  },
-});
+// const configuration = new Configuration({
+//   basePath: PlaidEnvironments[PLAID_ENV],
+//   baseOptions: {
+//     headers: {
+//       "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID,
+//       "PLAID-SECRET": process.env.PLAID_SECRET,
+//     },
+//   },
+// });
 
-export const getPlaidClient = async () => {
-  return new PlaidApi(configuration);
-};
+// export const getPlaidClient = async () => {
+//   return new PlaidApi(configuration);
+// };
 
 export const getPlaidLinkToken = async (userId: string, userToken?: string) => {
   const webhookBaseUrl = await getBaseUrl();
@@ -95,9 +100,9 @@ export const getPlaidLinkToken = async (userId: string, userToken?: string) => {
   //   };
   //   configs.consumer_report_permissible_purpose = "ACCOUNT_REVIEW_CREDIT";
   // }
-  const client = await getPlaidClient();
+
   try {
-    const linkTokenResponse = await client.linkTokenCreate(configs);
+    const linkTokenResponse = await plaidClient.linkTokenCreate(configs);
     return linkTokenResponse.data;
   } catch (e: any) {
     console.error("Plaid Error:", e.response?.data);
@@ -139,8 +144,7 @@ export const getValidLinkToken = async (userId: string) => {
 };
 
 export const exchangeAccessToken = async (publicToken: string) => {
-  const client = await getPlaidClient();
-  const tokenResponse = await client.itemPublicTokenExchange({
+  const tokenResponse = await plaidClient.itemPublicTokenExchange({
     public_token: publicToken,
   });
 
@@ -213,12 +217,10 @@ export const getPlaidItems = async (userId: string) => {
   const accessToken = await getAccessToken(userId, "ITEM");
   if (!accessToken) return null;
 
-  const client = await getPlaidClient();
-
   const items = [];
 
   for (const token of accessToken) {
-    const itemsResponse = await client.itemGet({
+    const itemsResponse = await plaidClient.itemGet({
       client_id: PLAID_CLIENT_ID,
       secret: PLAID_SECRET,
       access_token: token.accessToken,
@@ -235,11 +237,183 @@ export const getPlaidItems = async (userId: string) => {
 export const getPlaidItemAccounts = async (accessToken: string) => {
   if (!accessToken) return null;
 
-  const client = await getPlaidClient();
-  const accountsResponse = await client.accountsGet({
+  const accountsResponse = await plaidClient.accountsGet({
     client_id: PLAID_CLIENT_ID,
     secret: PLAID_SECRET,
     access_token: accessToken,
   });
   return accountsResponse.data;
+};
+
+export const getPlaidAccounts = async (userId: string) => {
+  const accessToken = await getAccessToken(userId, "ITEM");
+  if (!accessToken) return null;
+
+  const accounts = (
+    await Promise.all(
+      (accessToken ?? []).map(async (bank: PlaidAccessToken) => {
+        // Get all accounts for this item
+        const { accounts: accountData, item } = (
+          await plaidClient.accountsGet({ access_token: bank.accessToken })
+        ).data;
+
+        // Institution is per item, reuse for all accounts in this item
+        const institution = item.institution_id
+          ? await getInstitution({ institutionId: item.institution_id })
+          : null;
+
+        // Map each Plaid account -> your shape
+        return accountData.map((a) => ({
+          id: a.account_id,
+          availableBalance: a.balances.available ?? null,
+          currentBalance: a.balances.current ?? null,
+          institutionId: institution?.institution_id ?? null,
+          institutionName: institution?.name ?? null,
+          name: a.name,
+          officialName: a.official_name ?? null,
+          mask: a.mask ?? "",
+          type: String(a.type),
+          subtype: String(a.subtype),
+          bankItemId: bank.itemId,
+        }));
+      })
+    )
+  ).flat();
+
+  const totalBanks = accounts.length;
+  const totalCurrentBalance = accounts.reduce((sum, { currentBalance }) => {
+    const n = Number(currentBalance ?? 0);
+    return sum + (Number.isFinite(n) ? n : 0);
+  }, 0);
+  return parseStringify({ data: accounts, totalBanks, totalCurrentBalance });
+};
+
+export const getInstitution = async ({ institutionId }: getInstitutionProps) => {
+  const institutionResponse = await plaidClient.institutionsGetById({
+    institution_id: institutionId,
+    country_codes: ["US"] as CountryCode[],
+  });
+
+  const intitution = institutionResponse.data.institution;
+
+  return parseStringify(intitution);
+};
+
+export const getPlaidAccountByUserIdAndItemId = async ({
+  userId,
+  itemId,
+  accountId,
+}: getAccountProps) => {
+  if (!userId) throw new Error("User id is required");
+  if (!itemId) throw new Error("Item id is required");
+  if (!accountId) throw new Error("Account id is required");
+
+  // get bank (Plaid item) from db
+  const bank = await getAccessToken(userId, "ITEM", itemId);
+  if (!bank?.length) return null;
+
+  let response = null;
+  try {
+    response = await plaidClient.accountsGet({
+      access_token: bank[0].accessToken,
+      options: { account_ids: [accountId] },
+    });
+  } catch (err: any) {
+    console.error("Plaid Error:", err.response?.data);
+    throw err;
+  }
+
+  const { accounts: plaidAccounts, item } = response.data;
+
+  // fetch institution (once per item)
+  const institution = item?.institution_id
+    ? await getInstitution({ institutionId: item.institution_id })
+    : null;
+
+  // map Plaid accounts -> your shape
+  const accounts = plaidAccounts.map((a: AccountBase) => ({
+    id: a.account_id,
+    availableBalance: a.balances.available ?? null,
+    currentBalance: a.balances.current ?? null,
+    institutionId: institution?.institution_id ?? null,
+    name: a.name,
+    officialName: a.official_name ?? null,
+    mask: a.mask ?? "",
+    type: String(a.type),
+    subtype: String(a.subtype),
+    bankItemId: bank[0].itemId,
+  }));
+
+  // fetch transactions for the item (all accounts unless your helper filters)
+  const transactions = await getTransactions({
+    accessToken: bank[0].accessToken,
+  });
+
+  // most recent first
+  const allTransactions = [...transactions].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  return parseStringify({
+    data: accounts, // <-- now an array
+    transactions: allTransactions,
+  });
+};
+
+// export const getTransactionsByBankId = async ({ bankId }: getTransactionsByBankIdProps) => {
+//   try {
+//     const { database } = await createAdminClient();
+
+//     const senderTransactions = await database.listDocuments(
+//       DATABASE_ID!,
+//       TRANSACTION_COLLECTION_ID!,
+//       [Query.equal("senderBankId", bankId)]
+//     );
+
+//     const receiverTransactions = await database.listDocuments(
+//       DATABASE_ID!,
+//       TRANSACTION_COLLECTION_ID!,
+//       [Query.equal("receiverBankId", bankId)]
+//     );
+
+//     const transactions = {
+//       total: senderTransactions.total + receiverTransactions.total,
+//       documents: [...senderTransactions.documents, ...receiverTransactions.documents],
+//     };
+
+//     return parseStringify(transactions);
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
+
+export const getTransactions = async ({ accessToken }: getTransactionsProps) => {
+  let hasMore = true;
+  let transactions: any = [];
+
+  // Iterate through each page of new transaction updates for item
+  while (hasMore) {
+    const response = await plaidClient.transactionsSync({
+      access_token: accessToken,
+    });
+
+    const data = response.data;
+
+    transactions = response.data.added.map((transaction) => ({
+      id: transaction.transaction_id,
+      name: transaction.name,
+      paymentChannel: transaction.payment_channel,
+      type: transaction.payment_channel,
+      accountId: transaction.account_id,
+      amount: transaction.amount,
+      pending: transaction.pending,
+      category: transaction.category ? transaction.category[0] : "",
+      date: transaction.date,
+      image: transaction.logo_url,
+    }));
+
+    hasMore = data.has_more;
+  }
+
+  return parseStringify(transactions);
 };

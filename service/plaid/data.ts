@@ -1,10 +1,11 @@
 "use server";
-import { Configuration, PlaidApi, PlaidEnvironments, UserCreateResponse } from "plaid";
-import { getAccessToken, getPlaidClient } from ".";
+import { UserCreateResponse } from "plaid";
+import { getAccessToken } from ".";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
-import { LINK_TOKEN_COLLECTION, USER_TOKEN_COLLECTION } from "@/constant/collection-name";
+import { USER_TOKEN_COLLECTION } from "@/constant/collection-name";
 import { Timestamp } from "firebase-admin/firestore";
 import { normalizeAllDates } from "@/lib/date-parser";
+import { plaidClient } from "@/lib/plaid";
 
 type PlaidCompleteRow = {
   institutionName: string | null;
@@ -40,11 +41,15 @@ type LinkTokenRecord = UserCreateResponse & {
 };
 
 export const recordPlaidUserToken = async (userId: string) => {
-  const client = await getPlaidClient();
+  // check if user already has a token
+  const existingToken = await getPlaidUserToken(userId);
+  if (existingToken) {
+    return existingToken;
+  }
 
   let userCreateResponse = null;
   try {
-    userCreateResponse = await client.userCreate({
+    userCreateResponse = await plaidClient.userCreate({
       client_user_id: userId,
     });
   } catch (error: any) {
@@ -85,8 +90,6 @@ export const getPlaidCompleteData = async (userId: string) => {
   const accessTokens = await getAccessToken(userId);
   if (!accessTokens?.length) return null;
 
-  const client = await getPlaidClient();
-
   let userTokenRecord = await getPlaidUserToken(userId);
   if (!userTokenRecord) {
     userTokenRecord = await recordPlaidUserToken(userId);
@@ -117,19 +120,21 @@ export const getPlaidCompleteData = async (userId: string) => {
       investmentsHoldingsData,
       investmentsTransactionsData,
     ] = await Promise.all([
-      safeData(token.tokenType, "itemGet", () => client.itemGet(configs)),
-      safeData(token.tokenType, "accountsBalanceGet", () => client.accountsBalanceGet(configs)),
+      safeData(token.tokenType, "itemGet", () => plaidClient.itemGet(configs)),
+      safeData(token.tokenType, "accountsBalanceGet", () =>
+        plaidClient.accountsBalanceGet(configs)
+      ),
       safeData(token.tokenType, "transactionsGet", () =>
-        client.transactionsGet({
+        plaidClient.transactionsGet({
           ...configs,
           start_date: fmt(twoYearsAgo),
           end_date: fmt(now),
         })
       ),
-      safeData(token.tokenType, "identityGet", () => client.identityGet(configs)),
-      safeData(token.tokenType, "liabilitiesGet", () => client.liabilitiesGet(configs)),
+      safeData(token.tokenType, "identityGet", () => plaidClient.identityGet(configs)),
+      safeData(token.tokenType, "liabilitiesGet", () => plaidClient.liabilitiesGet(configs)),
       safeData(token.tokenType, "creditBankIncomeGet", () =>
-        client.creditBankIncomeGet({
+        plaidClient.creditBankIncomeGet({
           user_token: userTokenRecord.user_token,
           options: {
             count: 3,
@@ -137,17 +142,17 @@ export const getPlaidCompleteData = async (userId: string) => {
         })
       ),
       safeData(token.tokenType, "creditPayrollIncomeGet", () =>
-        client.creditPayrollIncomeGet({
+        plaidClient.creditPayrollIncomeGet({
           user_token: userTokenRecord.user_token,
         })
       ),
 
       safeData(token.tokenType, "investmentsHoldingsGet", () =>
-        client.investmentsHoldingsGet(configs)
+        plaidClient.investmentsHoldingsGet(configs)
       ),
 
       safeData(token.tokenType, "investmentsTransactionsGet", () =>
-        client.investmentsTransactionsGet({
+        plaidClient.investmentsTransactionsGet({
           ...configs,
           start_date: fmt(twoYearsAgo),
           end_date: fmt(now),

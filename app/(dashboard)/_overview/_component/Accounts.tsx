@@ -23,7 +23,7 @@ const Accounts = () => {
   return (
     <Choicebox defaultValue="1">
       {plaidItemAccount?.accounts.map((option) => (
-        <ChoiceboxItem key={option.account_id} value={option.account_id}>
+        <ChoiceboxItem key={option.account_id} value={option.account_id} className="p-2">
           <ChoiceboxItemHeader>
             <ChoiceboxItemTitle>
               {option.name}
