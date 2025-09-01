@@ -56,11 +56,13 @@ declare type Account = {
   officialName: string;
   mask: string;
   institutionId: string;
+  institutionName: string;
   name: string;
   type: string;
   subtype: string;
-  appwriteItemId: string;
-  shareableId: string;
+  bankItemId: string;
+  // appwriteItemId: string;
+  // shareableId: string;
 };
 
 declare type Transaction = {
@@ -259,6 +261,7 @@ declare interface getAccountsProps {
 declare interface getAccountProps {
   userId: string;
   itemId: string;
+  accountId: string;
 }
 
 declare interface getInstitutionProps {

@@ -1,12 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { PlaidLinkOnSuccess, PlaidLinkOptions, usePlaidLink } from "react-plaid-link";
+import { PlaidLinkOptions, usePlaidLink } from "react-plaid-link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCreateLinkToken } from "@/hooks/plaid";
 import { exchangeAccessToken, recordAccessToken } from "@/service/plaid";
 import { useAuth } from "@/provider/AuthContext";
-import { createAssetReport } from "@/service/plaid/asset";
 import { useCreateAssetReport } from "@/hooks/plaid/asset";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -39,15 +38,19 @@ const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
 
         await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_LINK", user?.uid] });
         await queryClient.invalidateQueries({
-          queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid],
+          queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid, "INCOME_VERIFICATION"],
           exact: false,
         });
         await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEMS", user?.uid] });
+        await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_ACCOUNT", user?.uid] });
+
+        router.refresh();
+        router.push("/overview");
       };
 
       exchangePublicTokenForAccessToken();
     },
-    [user?.uid, queryClient, createAssetReport]
+    [user?.uid, queryClient, createAssetReport, router]
   );
 
   const config: PlaidLinkOptions = {
@@ -69,7 +72,7 @@ const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
           <p className="hiddenl text-[16px] font-semibold text-black-2 xl:block">Connect bank</p>
         </Button>
       ) : (
-        <Button onClick={() => open()} className="plaidlink-default">
+        <Button onClick={() => open()} className="plaidlink-default shadow-none">
           <Image src="/icons/connect-bank.svg" alt="connect bank" width={24} height={24} />
           <p className="text-[16px] font-semibold text-black-2">Connect bank</p>
         </Button>

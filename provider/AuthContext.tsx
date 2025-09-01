@@ -66,27 +66,27 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     router.push("/");
   }, [router, queryClient, reset]);
 
-  useEffect(() => {
-    if (!authFirebase) return;
-    let lastRefresh = 0;
+  // useEffect(() => {
+  //   if (!authFirebase) return;
+  //   let lastRefresh = 0;
 
-    const unsub = onIdTokenChanged(authFirebase, async (u) => {
-      if (!u) return;
-      // throttle to ~30 mins to avoid spamming server actions
-      const now = Date.now();
-      if (now - lastRefresh < 30 * 60 * 1000) return;
-      lastRefresh = now;
+  //   const unsub = onIdTokenChanged(authFirebase, async (u) => {
+  //     if (!u) return;
+  //     // throttle to ~30 mins to avoid spamming server actions
+  //     const now = Date.now();
+  //     if (now - lastRefresh < 30 * 60 * 1000) return;
+  //     lastRefresh = now;
 
-      const token = await u.getIdToken(/* forceRefresh? false */);
-      try {
-        await refreshSession(token); // server action
-      } catch (e) {
-        console.error("refreshSession failed", e);
-      }
-    });
+  //     const token = await u.getIdToken(/* forceRefresh? false */);
+  //     try {
+  //       await refreshSession(token); // server action
+  //     } catch (e) {
+  //       console.error("refreshSession failed", e);
+  //     }
+  //   });
 
-    return () => unsub();
-  }, []);
+  //   return () => unsub();
+  // }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(authFirebase, async (firebaseUser) => {

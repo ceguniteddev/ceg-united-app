@@ -1,13 +1,13 @@
+"use client";
 import HeaderBox from "@/components/HeaderBox";
-import RecentTransactions from "@/components/RecentTransactions";
+import NoBankLinked from "@/components/NoBankLinked";
 import RightSidebar from "@/components/RightSidebar";
 import Spinner from "@/components/Spinner";
 import TotalBalanceBox from "@/components/TotalBalanceBox";
 import { useGetPlaidAccounts } from "@/hooks/plaid";
 import { useAuth } from "@/provider/AuthContext";
 
-const Home = ({ searchParams: { id, page } }: SearchParamProps) => {
-  const currentPage = Number(page as string) || 1;
+const Home = () => {
   const { user } = useAuth();
   // const accounts = await getAccounts({
   //   userId: loggedIn.$id,
@@ -17,10 +17,11 @@ const Home = ({ searchParams: { id, page } }: SearchParamProps) => {
 
   if (isLoading) return <Spinner />;
 
-  if (!plaidAccounts) return;
+  if (!plaidAccounts || !plaidAccounts.data?.length) {
+    return <NoBankLinked />;
+  }
 
   const accountsData = plaidAccounts?.data;
-  const appwriteItemId = (id as string) || accountsData[0]?.appwriteItemId;
 
   // const account = await getAccount({ appwriteItemId });
 
@@ -50,11 +51,11 @@ const Home = ({ searchParams: { id, page } }: SearchParamProps) => {
         /> */}
       </div>
 
-      <RightSidebar
+      {/* <RightSidebar
         user={user}
         // transactions={account?.transactions}
         banks={accountsData?.slice(0, 2)}
-      />
+      /> */}
     </section>
   );
 };

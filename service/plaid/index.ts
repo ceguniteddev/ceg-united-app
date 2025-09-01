@@ -4,6 +4,9 @@ import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { Timestamp } from "firebase-admin/firestore";
 import {
+  AccountBase,
+  AccountsGetRequest,
+  AccountsGetResponse,
   Configuration,
   CountryCode,
   LinkTokenCreateResponse,
@@ -246,39 +249,41 @@ export const getPlaidAccounts = async (userId: string) => {
   const accessToken = await getAccessToken(userId, "ITEM");
   if (!accessToken) return null;
 
-  const accounts = await Promise.all(
-    accessToken?.map(async (bank: PlaidAccessToken) => {
-      // get each account info from plaid
-      const accountsResponse = await plaidClient.accountsGet({
-        access_token: bank.accessToken,
-      });
-      const accountData = accountsResponse.data.accounts[0];
+  const accounts = (
+    await Promise.all(
+      (accessToken ?? []).map(async (bank: PlaidAccessToken) => {
+        // Get all accounts for this item
+        const { accounts: accountData, item } = (
+          await plaidClient.accountsGet({ access_token: bank.accessToken })
+        ).data;
 
-      // get institution info from plaid
-      const institution = await getInstitution({
-        institutionId: accountsResponse.data.item.institution_id!,
-      });
+        // Institution is per item, reuse for all accounts in this item
+        const institution = item.institution_id
+          ? await getInstitution({ institutionId: item.institution_id })
+          : null;
 
-      const account = {
-        id: accountData.account_id,
-        availableBalance: accountData.balances.available!,
-        currentBalance: accountData.balances.current!,
-        institutionId: institution.institution_id,
-        name: accountData.name,
-        officialName: accountData.official_name,
-        mask: accountData.mask!,
-        type: accountData.type as string,
-        subtype: accountData.subtype! as string,
-        bankItemId: bank.itemId,
-      };
-
-      return account;
-    })
-  );
+        // Map each Plaid account -> your shape
+        return accountData.map((a) => ({
+          id: a.account_id,
+          availableBalance: a.balances.available ?? null,
+          currentBalance: a.balances.current ?? null,
+          institutionId: institution?.institution_id ?? null,
+          institutionName: institution?.name ?? null,
+          name: a.name,
+          officialName: a.official_name ?? null,
+          mask: a.mask ?? "",
+          type: String(a.type),
+          subtype: String(a.subtype),
+          bankItemId: bank.itemId,
+        }));
+      })
+    )
+  ).flat();
 
   const totalBanks = accounts.length;
-  const totalCurrentBalance = accounts.reduce((total, account) => {
-    return total + account.currentBalance;
+  const totalCurrentBalance = accounts.reduce((sum, { currentBalance }) => {
+    const n = Number(currentBalance ?? 0);
+    return sum + (Number.isFinite(n) ? n : 0);
   }, 0);
   return parseStringify({ data: accounts, totalBanks, totalCurrentBalance });
 };
@@ -294,67 +299,63 @@ export const getInstitution = async ({ institutionId }: getInstitutionProps) => 
   return parseStringify(intitution);
 };
 
-export const getPlaidAccountByUserIdAndItemId = async ({ userId, itemId }: getAccountProps) => {
-  // get bank from db
+export const getPlaidAccountByUserIdAndItemId = async ({
+  userId,
+  itemId,
+  accountId,
+}: getAccountProps) => {
+  if (!userId) throw new Error("User id is required");
+  if (!itemId) throw new Error("Item id is required");
+  if (!accountId) throw new Error("Account id is required");
+
+  // get bank (Plaid item) from db
   const bank = await getAccessToken(userId, "ITEM", itemId);
-  if (!bank || bank.length === 0) return null;
+  if (!bank?.length) return null;
 
-  // get account info from plaid
-  const accountsResponse = await plaidClient.accountsGet({
-    access_token: bank[0].accessToken,
-  });
-  const accountData = accountsResponse.data.accounts[0];
+  let response = null;
+  try {
+    response = await plaidClient.accountsGet({
+      access_token: bank[0].accessToken,
+      options: { account_ids: [accountId] },
+    });
+  } catch (err: any) {
+    console.error("Plaid Error:", err.response?.data);
+    throw err;
+  }
 
-  // get transfer transactions from appwrite
-  // const transferTransactionsData = await getTransactionsByBankId({
-  //   bankId: bank.$id,
-  // });
+  const { accounts: plaidAccounts, item } = response.data;
 
-  // const transferTransactions = transferTransactionsData.documents.map(
-  //   (transferData: Transaction) => ({
-  //     id: transferData.$id,
-  //     name: transferData.name!,
-  //     amount: transferData.amount!,
-  //     date: transferData.$createdAt,
-  //     paymentChannel: transferData.channel,
-  //     category: transferData.category,
-  //     type: transferData.senderBankId === bank.$id ? "debit" : "credit",
-  //   })
-  // );
+  // fetch institution (once per item)
+  const institution = item?.institution_id
+    ? await getInstitution({ institutionId: item.institution_id })
+    : null;
 
-  // get institution info from plaid
-  const institution = await getInstitution({
-    institutionId: accountsResponse.data.item.institution_id!,
-  });
+  // map Plaid accounts -> your shape
+  const accounts = plaidAccounts.map((a: AccountBase) => ({
+    id: a.account_id,
+    availableBalance: a.balances.available ?? null,
+    currentBalance: a.balances.current ?? null,
+    institutionId: institution?.institution_id ?? null,
+    name: a.name,
+    officialName: a.official_name ?? null,
+    mask: a.mask ?? "",
+    type: String(a.type),
+    subtype: String(a.subtype),
+    bankItemId: bank[0].itemId,
+  }));
 
+  // fetch transactions for the item (all accounts unless your helper filters)
   const transactions = await getTransactions({
     accessToken: bank[0].accessToken,
   });
 
-  const account = {
-    id: accountData.account_id,
-    availableBalance: accountData.balances.available!,
-    currentBalance: accountData.balances.current!,
-    institutionId: institution.institution_id,
-    name: accountData.name,
-    officialName: accountData.official_name,
-    mask: accountData.mask!,
-    type: accountData.type as string,
-    subtype: accountData.subtype! as string,
-    bankItemId: bank[0].itemId,
-  };
-
-  // sort transactions by date such that the most recent transaction is first
-  // const allTransactions = [...transactions, ...transferTransactions].sort(
-  //   (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  // );
-
+  // most recent first
   const allTransactions = [...transactions].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
   return parseStringify({
-    data: account,
+    data: accounts, // <-- now an array
     transactions: allTransactions,
   });
 };

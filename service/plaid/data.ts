@@ -41,6 +41,12 @@ type LinkTokenRecord = UserCreateResponse & {
 };
 
 export const recordPlaidUserToken = async (userId: string) => {
+  // check if user already has a token
+  const existingToken = await getPlaidUserToken(userId);
+  if (existingToken) {
+    return existingToken;
+  }
+
   let userCreateResponse = null;
   try {
     userCreateResponse = await plaidClient.userCreate({

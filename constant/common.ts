@@ -60,13 +60,13 @@ export const topCategoryStyles = {
 export const sidebarLinks = [
   {
     imgURL: "/icons/home.svg",
-    route: "/",
+    route: "/overview",
     label: "Home",
   },
   {
     imgURL: "/icons/dollar-circle.svg",
-    route: "/my-banks",
-    label: "My Banks",
+    route: "/my-accounts",
+    label: "My Accounts",
   },
   {
     imgURL: "/icons/transaction.svg",
@@ -75,8 +75,8 @@ export const sidebarLinks = [
   },
   {
     imgURL: "/icons/money-send.svg",
-    route: "/payment-transfer",
-    label: "Transfer Funds",
+    route: "/apply-funding",
+    label: "Apply Funding",
   },
 ];
 
