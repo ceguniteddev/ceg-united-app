@@ -13,6 +13,7 @@ import { getCaptchaTokenRegistration } from "@/lib/captcha";
 import { useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
 import { useApplyFunding } from "@/hooks/apply-funding";
+import { US_STATES } from "@/constant/common";
 
 const interestedProduct: DropdownOption[] = [
   { value: "Personal & Business Funding", label: "Personal & Business Funding" },
@@ -137,7 +138,13 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
                   <CustomFormField name={"addressStreet"} label={"* Street Address"} />
                   <div className="grid grid-cols-3 gap-4">
                     <CustomFormField name={"addressCity"} label={"* City"} />
-                    <CustomFormField name={"addressState"} label={"* State"} />
+                    <CustomFormField
+                      name={"addressState"}
+                      label={"* State"}
+                      type="select"
+                      placeholder="Select a state"
+                      options={US_STATES}
+                    />
                     <CustomFormField name={"addressPostal"} label={"* Postal"} />
                   </div>
                   <CustomFormField

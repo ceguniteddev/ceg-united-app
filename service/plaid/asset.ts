@@ -38,7 +38,6 @@ import { plaidClient } from "@/lib/plaid";
 export const recordWebhookData = async (webhookData: PlaidAssetWebhookData) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_ASSET_WEBHOOK_COLLECTION);
-  console.log(webhookData);
 
   const querySnapshot = await collectionRef
     .where("asset_report_id", "==", webhookData.asset_report_id)

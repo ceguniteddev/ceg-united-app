@@ -18,7 +18,6 @@ export const applyFunding = async (value: ApplyFunding) => {
   await docRef.set({ ...value });
   const data = (await docRef.get()).data();
 
-  // TODO call n8n webhook to generate analysis
   await fetch(`${process.env.n8n_HOST}/funding-analysis`, {
     method: "POST",
     headers: {
