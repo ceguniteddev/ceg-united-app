@@ -23,7 +23,7 @@ const Home = () => {
 
   const accountsData = plaidAccounts?.data;
 
-  // const account = await getAccount({ appwriteItemId });
+  // const account = await getAccount({ bankItemId });
 
   return (
     <section className="home">
@@ -46,7 +46,7 @@ const Home = () => {
         {/* <RecentTransactions
           accounts={accountsData}
           transactions={account?.transactions}
-          appwriteItemId={appwriteItemId}
+          bankItemId={bankItemId}
           page={currentPage}
         /> */}
       </div>

@@ -61,7 +61,7 @@ declare type Account = {
   type: string;
   subtype: string;
   bankItemId: string;
-  // appwriteItemId: string;
+  // bankItemId: string;
   // shareableId: string;
 };
 
@@ -142,7 +142,7 @@ declare interface CreditCardProps {
 
 declare interface BankInfoProps {
   account: Account;
-  appwriteItemId?: string;
+  bankItemId?: string;
   type: "full" | "card";
 }
 
@@ -197,7 +197,7 @@ declare interface BankDropdownProps {
 
 declare interface BankTabItemProps {
   account: Account;
-  appwriteItemId?: string;
+  bankItemId?: string;
 }
 
 declare interface TotalBalanceBoxProps {
@@ -224,7 +224,7 @@ declare interface SiderbarProps {
 declare interface RecentTransactionsProps {
   accounts: Account[];
   transactions: Transaction[];
-  appwriteItemId: string;
+  bankItemId: string;
   page: number;
 }
 

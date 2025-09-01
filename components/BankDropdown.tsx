@@ -14,17 +14,13 @@ import {
 } from "@/components/ui/select";
 import { formUrlQuery, formatAmount } from "@/lib/utils";
 
-export const BankDropdown = ({
-  accounts = [],
-  setValue,
-  otherStyles,
-}: BankDropdownProps) => {
+export const BankDropdown = ({ accounts = [], setValue, otherStyles }: BankDropdownProps) => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [selected, setSeclected] = useState(accounts[0]);
 
   const handleBankChange = (id: string) => {
-    const account = accounts.find((account) => account.appwriteItemId === id)!;
+    const account = accounts.find((account) => account.bankItemId === id)!;
 
     setSeclected(account);
     const newUrl = formUrlQuery({
@@ -40,25 +36,12 @@ export const BankDropdown = ({
   };
 
   return (
-    <Select
-      defaultValue={selected.id}
-      onValueChange={(value) => handleBankChange(value)}
-    >
-      <SelectTrigger
-        className={`flex w-full bg-white gap-3 md:w-[300px] ${otherStyles}`}
-      >
-        <Image
-          src="icons/credit-card.svg"
-          width={20}
-          height={20}
-          alt="account"
-        />
+    <Select defaultValue={selected.id} onValueChange={(value) => handleBankChange(value)}>
+      <SelectTrigger className={`flex w-full bg-white gap-3 md:w-[300px] ${otherStyles}`}>
+        <Image src="icons/credit-card.svg" width={20} height={20} alt="account" />
         <p className="line-clamp-1 w-full text-left">{selected.name}</p>
       </SelectTrigger>
-      <SelectContent
-        className={`w-full bg-white md:w-[300px] ${otherStyles}`}
-        align="end"
-      >
+      <SelectContent className={`w-full bg-white md:w-[300px] ${otherStyles}`} align="end">
         <SelectGroup>
           <SelectLabel className="py-2 font-normal text-gray-500">
             Select a bank to display
@@ -66,7 +49,7 @@ export const BankDropdown = ({
           {accounts.map((account: Account) => (
             <SelectItem
               key={account.id}
-              value={account.appwriteItemId}
+              value={account.bankItemId}
               className="cursor-pointer border-t"
             >
               <div className="flex flex-col ">

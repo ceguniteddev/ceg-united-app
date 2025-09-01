@@ -8,7 +8,7 @@ import { Pagination } from "./Pagination";
 const RecentTransactions = ({
   accounts,
   transactions = [],
-  appwriteItemId,
+  bankItemId,
   page = 1,
 }: RecentTransactionsProps) => {
   const rowsPerPage = 10;
@@ -23,23 +23,23 @@ const RecentTransactions = ({
     <section className="recent-transactions">
       <header className="flex items-center justify-between">
         <h2 className="recent-transactions-label">Recent transactions</h2>
-        <Link href={`/transaction-history/?id=${appwriteItemId}`} className="view-all-btn">
+        <Link href={`/transaction-history/?id=${bankItemId}`} className="view-all-btn">
           View all
         </Link>
       </header>
 
-      <Tabs defaultValue={appwriteItemId} className="w-full">
+      <Tabs defaultValue={bankItemId} className="w-full">
         <TabsList className="recent-transactions-tablist">
           {accounts.map((account: Account) => (
-            <TabsTrigger key={account.id} value={account.appwriteItemId}>
-              <BankTabItem key={account.id} account={account} appwriteItemId={appwriteItemId} />
+            <TabsTrigger key={account.id} value={account.bankItemId}>
+              <BankTabItem key={account.id} account={account} bankItemId={bankItemId} />
             </TabsTrigger>
           ))}
         </TabsList>
 
         {accounts.map((account: Account) => (
-          <TabsContent value={account.appwriteItemId} key={account.id} className="space-y-4">
-            <BankInfo account={account} appwriteItemId={appwriteItemId} type="full" />
+          <TabsContent value={account.bankItemId} key={account.id} className="space-y-4">
+            <BankInfo account={account} bankItemId={bankItemId} type="full" />
 
             <TransactionsTable transactions={currentTransactions} />
 
