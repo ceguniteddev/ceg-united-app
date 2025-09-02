@@ -28,5 +28,5 @@ export const applyFundingSchema = z.object({
 export type ApplyFunding = z.infer<typeof applyFundingSchema>;
 
 export type ApplyFundingWithUser = ApplyFunding & {
-  user: z.infer<typeof registrationSchema>;
+  user?: z.infer<typeof registrationSchema> | null;
 };

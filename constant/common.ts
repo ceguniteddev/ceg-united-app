@@ -101,10 +101,10 @@ export const transactionCategoryStyles = {
     chipBackgroundColor: "bg-inherit",
   },
   Processing: {
-    borderColor: "border-[#F2F4F7]",
-    backgroundColor: "bg-gray-500",
-    textColor: "text-[#344054]",
-    chipBackgroundColor: "bg-[#F2F4F7]",
+    borderColor: "border-amber-500",
+    backgroundColor: "bg-amber-500",
+    textColor: "text-amber-700",
+    chipBackgroundColor: "bg-amber-100",
   },
   Completed: {
     borderColor: "border-[#12B76A]",

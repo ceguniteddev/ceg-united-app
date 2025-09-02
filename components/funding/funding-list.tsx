@@ -1,4 +1,23 @@
-import React from "react";
+"use client";
+
+import * as React from "react";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+  VisibilityState,
+} from "@tanstack/react-table";
+import { ArrowUpDown } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -7,9 +26,121 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DataTablePagination } from "./pagination";
 import { ApplyFundingWithUser } from "@/schema/apply-funding";
 import { cn, formatAmount, formatDateTime } from "@/lib/utils";
 import { transactionCategoryStyles } from "@/constant/common";
+
+export const columns: ColumnDef<ApplyFundingWithUser>[] = [
+  {
+    accessorKey: "referenceNumber",
+    id: "referenceNumber",
+    header: ({ column }) => (
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Reference Number <ArrowUpDown />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      return <div>{row.getValue("referenceNumber")}</div>;
+    },
+  },
+  {
+    accessorKey: "name",
+    id: "name",
+    header: ({ column }) => (
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Name
+        <ArrowUpDown />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const user = row.original.user;
+      if (!user) return <div className="text-muted-foreground">Unknown</div>;
+
+      return (
+        <div>
+          {user.firstName} {user.lastName}
+        </div>
+      );
+    },
+  },
+  {
+    id: "interestedProduct",
+    accessorKey: "interestedProduct",
+    header: ({ column }) => (
+      <div className="flex w-full">
+        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
+          Product <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
+    cell: ({ row }) => {
+      return <div>{row.getValue("interestedProduct")}</div>;
+    },
+  },
+  {
+    id: "amountFunding",
+    accessorKey: "amountFunding",
+    header: ({ column }) => (
+      <div className="flex w-full justify-end">
+        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
+          Amount <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
+    cell: ({ row }) => {
+      return <div className="text-right">{formatAmount(row.getValue("amountFunding"))}</div>;
+    },
+  },
+  {
+    id: "appliedDate",
+    accessorKey: "appliedDate",
+    header: ({ column }) => (
+      <div className="flex w-full">
+        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
+          Applied Date <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
+    cell: ({ row }) => {
+      const raw = row.getValue("appliedDate") as string | Date;
+      const date = new Date(raw);
+
+      return <div>{formatDateTime(date).dateTime}</div>;
+    },
+  },
+  {
+    id: "status",
+    accessorKey: "status",
+    header: ({ column }) => (
+      <div className="flex w-full">
+        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
+          Status <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
+    cell: ({ row }) => {
+      return (
+        <div>
+          <CategoryBadge category={row.getValue("status")} />
+        </div>
+      );
+    },
+  },
+  // {
+  //   id: "actions",
+  //   enableHiding: false,
+  //   cell: ({ row }) => {
+  //     return (
+  //       <Button variant={"outline"}>
+  //         <Link href={`/admin/dashboard/${encodeURIComponent(row.original.id)}`}>
+  //           <IconMenu icon={<FolderSearch2Icon />} text="View" />
+  //         </Link>
+  //       </Button>
+  //     );
+  //   },
+  // },
+];
 
 type Props = {
   appliedFunding: ApplyFundingWithUser[] | undefined;
@@ -17,73 +148,117 @@ type Props = {
 };
 
 const FundingList = ({ appliedFunding, rowActions }: Props) => {
-  if (!appliedFunding || appliedFunding.length === 0)
-    return <div className="text-center">No funding applied</div>;
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [globalFilter, setGlobalFilter] = React.useState("");
 
-  const hasUser = appliedFunding?.some((item) => item.user != null) ?? false;
+  const actionColumn: ColumnDef<ApplyFundingWithUser> = {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ row }) => rowActions(row.original),
+  };
 
+  const table = useReactTable({
+    data: appliedFunding || [],
+    columns: [...columns, actionColumn],
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+      globalFilter,
+    },
+  });
+
+  React.useEffect(() => {
+    const hasUser = appliedFunding?.some((row) => row.user);
+    table.getColumn("name")?.toggleVisibility(!!hasUser);
+  }, [appliedFunding, table]);
   return (
-    <Table>
-      <TableHeader className="bg-[#f9fafb]">
-        <TableRow>
-          <TableHead className="px-2">Reference Number</TableHead>
-          {hasUser && <TableHead className="px-2">Name</TableHead>}
-          <TableHead className="px-2">Product</TableHead>
-          <TableHead className="px-2 pr-2 text-right">Amount</TableHead>
-          <TableHead className="px-2">Applied Date</TableHead>
-          <TableHead className="px-2">Status</TableHead>
-          <TableHead className="px-2 items-center text-center"></TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {appliedFunding?.map((t: ApplyFundingWithUser) => {
-          const amount = formatAmount(t.amountFunding);
-
-          return (
-            <TableRow key={t.referenceNumber} className={`#F6FEF9 !over:bg-none !border-b-DEFAULT`}>
-              <TableCell className="max-w-[250px] pl-2 pr-2">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-14 truncate font-semibold text-[#344054]">
-                    {t.referenceNumber}
-                  </h1>
-                </div>
-              </TableCell>
-              {hasUser && (
-                <TableCell className="max-w-[250px] pl-2 pr-2">
-                  <h1 className="text-14 truncate font-semibold text-[#344054]">
-                    {t.user ? `${t.user.firstName} ${t.user.lastName}` : "-"}
-                  </h1>
+    <div className="mx-auto w-full">
+      <div className="flex items-center py-4">
+        <Input
+          placeholder="Filter"
+          // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+          value={globalFilter}
+          // onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+      <div className="overflow-hidden rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  No results.
                 </TableCell>
-              )}
-
-              <TableCell className="max-w-[250px] pl-2 pr-2">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-14 truncate font-semibold text-[#344054]">
-                    {t.interestedProduct}
-                  </h1>
-                </div>
-              </TableCell>
-
-              <TableCell className={`pl-2 pr-2 font-semibold #039855 text-right`}>
-                ${amount}
-              </TableCell>
-
-              <TableCell className="min-w-32 pl-2 pr-2">
-                {formatDateTime(new Date(t.appliedDate)).dateTime}
-              </TableCell>
-
-              <TableCell className="pl-2 pr-2">
-                <CategoryBadge category={t.status} />
-              </TableCell>
-              <TableCell className="text-right">{rowActions(t)}</TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex items-center justify-end space-x-2 py-4">
+        <DataTablePagination table={table} />
+        <div className="space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
-
 export default FundingList;
 
 const CategoryBadge = ({ category }: CategoryBadgeProps) => {

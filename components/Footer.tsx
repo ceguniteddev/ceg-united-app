@@ -1,15 +1,17 @@
 "use client";
 import { useAuth } from "@/provider/AuthContext";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import React from "react";
 
 const Footer = ({ type = "desktop" }: FooterProps) => {
   const { user, logOut } = useAuth();
-
+  const router = useRouter();
   if (!user) return null;
 
   const handleLogOut = async () => {
     await logOut();
+    router.push("/");
   };
 
   return (

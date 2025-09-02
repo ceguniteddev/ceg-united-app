@@ -7,6 +7,7 @@ import { useGetAdminStatistics } from "@/hooks/statistics";
 import Spinner from "@/components/Spinner";
 import { StatesTable } from "./StatesTable";
 import { useState, useMemo } from "react";
+import { transactionCategoryStyles } from "@/constant/common";
 
 export default function AdminDashboard() {
   const [selectedState, setSelectedState] = useState<string | undefined>(undefined);
@@ -28,17 +29,25 @@ export default function AdminDashboard() {
     return <Spinner displayText="Loading statistics..." />;
   }
 
+  const labels = Object.keys(filteredStatusCounts || {});
+
   const statusesData = {
-    labels: Object.keys(filteredStatusCounts || {}),
+    labels,
     datasets: [
       {
         data: Object.values(filteredStatusCounts || {}),
-        backgroundColor: [
-          "rgba(16, 185, 129, 0.7)", // green-500
-          "rgba(59, 130, 246, 0.7)", // blue-500
-          "rgba(239, 68, 68, 0.7)", // red-500
-          "rgba(234, 179, 8, 0.7)", // yellow-500
-        ],
+        backgroundColor: labels.map((status) => {
+          switch (status) {
+            case "Declined":
+              return "rgba(239, 68, 68, 0.7)";
+            case "Processing":
+              return "#F59E0B";
+            case "Completed":
+              return "#12B76A";
+            default:
+              return "rgba(59, 130, 246, 0.7)";
+          }
+        }),
       },
     ],
   };
