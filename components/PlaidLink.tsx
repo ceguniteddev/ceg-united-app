@@ -72,7 +72,7 @@ const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
           <p className="hiddenl text-[16px] font-semibold text-black-2 xl:block">Connect bank</p>
         </Button>
       ) : (
-        <Button onClick={() => open()} className="plaidlink-default shadow-none">
+        <Button onClick={() => open()} className="plaidlink-default shadow-none px-3">
           <Image src="/icons/connect-bank.svg" alt="connect bank" width={24} height={24} />
           <p className="text-[16px] font-semibold text-black-2">Connect bank</p>
         </Button>

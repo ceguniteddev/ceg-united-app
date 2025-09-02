@@ -1,9 +1,25 @@
+"use client";
+
 import HeaderBox from "@/components/HeaderBox";
 import React from "react";
 import ApplyFunding from "./_funding/ApplyFunding";
 import ApplyFundingList from "./_funding/ApplyFundingList";
+import Spinner from "@/components/Spinner";
+import { useGetPlaidAccounts } from "@/hooks/plaid";
+import { useAuth } from "@/provider/AuthContext";
+import NoBankLinked from "@/components/NoBankLinked";
 
 const ApplyFundingPage = () => {
+  const { plaidAccounts, isLoading } = useGetPlaidAccounts();
+  const { user } = useAuth();
+
+  if (!user) return null;
+
+  if (isLoading) return <Spinner />;
+
+  if (!plaidAccounts || !plaidAccounts.data?.length) {
+    return <NoBankLinked />;
+  }
   return (
     <section className="transactions">
       <div className="transactions-header flex flex-row justify-between">

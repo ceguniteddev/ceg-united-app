@@ -411,7 +411,7 @@
   @apply flex cursor-pointer items-center justify-center gap-3 rounded-lg px-3 py-7 hover:bg-white lg:justify-start;
 }
 @utility plaidlink-default {
-  @apply flex !justify-start cursor-pointer gap-3 rounded-lg !bg-transparent flex-row;
+  @apply flex !justify-start cursor-pointer gap-2 rounded-lg !bg-transparent flex-row;
 }
 
 @utility auth-asset {

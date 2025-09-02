@@ -70,7 +70,7 @@ const PlaidIncomeLink = () => {
 
   return (
     <Button
-      className="plaidlink-default"
+      className="plaidlink-default shadow-none px-3"
       aria-busy={!ready}
       disabled={!ready || hasToken}
       onClick={() => open()}
