@@ -12,12 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
+import { FilesIcon, MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
 import { ApplyFunding } from "@/schema/apply-funding";
 import ApplyFundingForm from "@/components/funding/ApplyFundingForm";
 import DeleteConfirmation from "@/components/delete-confirmation";
 import { toast } from "sonner";
 import { useApplyFunding } from "@/hooks/apply-funding";
+import DocumentsDisplay from "@/components/funding/DocumentsDisplay";
+import ViewApplication from "@/components/funding/ViewApplication";
 
 type Props = {
   data: ApplyFunding;
@@ -25,46 +27,18 @@ type Props = {
 
 export function RowActions({ data }: Props) {
   const [open, setOpen] = React.useState(false);
-  const [openDeleteConfirmation, setOpenDeleteConfirmation] = React.useState(false);
-  const { deleteAppliedFunding, isDeleting } = useApplyFunding();
-
-  const handleDeleteConfirmation = useCallback(async () => {
-    if (data?.referenceNumber) {
-      try {
-        await deleteAppliedFunding(data.referenceNumber);
-        setOpenDeleteConfirmation(false);
-      } catch (error) {
-        console.log(error);
-        toast.error("Error deleting person!");
-      }
-    }
-  }, [data?.referenceNumber, deleteAppliedFunding]);
 
   return (
     <>
       <ResponsiveDialog
-        isOpen={openDeleteConfirmation}
-        setIsOpen={setOpenDeleteConfirmation}
-        title="Delete Application"
-        className="w-3/12"
-      >
-        <DeleteConfirmation
-          handleDelete={handleDeleteConfirmation}
-          isDeleting={isDeleting}
-          info={`${data?.referenceNumber}`}
-          setModalOpen={setOpenDeleteConfirmation}
-        />
-      </ResponsiveDialog>
-
-      <ResponsiveDialog
         isOpen={open}
         setIsOpen={setOpen}
-        title="View Application"
+        title={`View Application - ${data.referenceNumber}`}
         description=""
         descriptionClassName="text-red-500 text-lg font-semibold"
         className="w-3/6"
       >
-        <ApplyFundingForm data={data} setOpen={setOpen} />
+        <ViewApplication formData={data} formSetOpen={setOpen} />
       </ResponsiveDialog>
 
       <DropdownMenu modal={true}>

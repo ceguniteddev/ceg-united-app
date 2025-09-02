@@ -130,7 +130,7 @@ export const getAssetReportPDF = async (
 
     const storage = storageAdmin();
 
-    const bucketFile = storage.file(`plaid/${userId}/${itemId}.pdf`);
+    const bucketFile = storage.file(`documents/${userId}/asset-report-${itemId}.pdf`);
 
     await bucketFile.save(pdfBuffer, { contentType: "application/pdf" });
   } catch (e: any) {
