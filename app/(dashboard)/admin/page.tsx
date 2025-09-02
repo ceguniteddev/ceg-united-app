@@ -2,14 +2,14 @@
 import React from "react";
 import dynamic from "next/dynamic";
 
-const Users = dynamic(() => import("./_component/user-list"), {
+const AdminDashboard = dynamic(() => import("./_component/Statistics"), {
   ssr: false,
 });
 
 const AdminPage = () => {
   return (
     <div>
-      <Users />
+      <AdminDashboard />
     </div>
   );
 };

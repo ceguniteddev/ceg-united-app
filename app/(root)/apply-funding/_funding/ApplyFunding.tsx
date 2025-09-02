@@ -3,7 +3,7 @@ import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { BanknoteIcon } from "lucide-react";
 import React from "react";
-import ApplyFundingForm from "./ApplyFundingForm";
+import ApplyFundingForm from "../../../../components/funding/ApplyFundingForm";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ApplyFundingSuccessful from "./ApplyFundingSuccessful";

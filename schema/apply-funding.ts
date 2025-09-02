@@ -1,4 +1,5 @@
 import z from "zod";
+import { registrationSchema } from "./registration";
 
 export const FundingApplicationSatus = ["New", "Processing", "Completed", "Declined"] as const;
 export const FundingApplicationSatusEnum = z.enum(FundingApplicationSatus);
@@ -25,3 +26,7 @@ export const applyFundingSchema = z.object({
   businessName: z.string().optional(),
 });
 export type ApplyFunding = z.infer<typeof applyFundingSchema>;
+
+export type ApplyFundingWithUser = ApplyFunding & {
+  user: z.infer<typeof registrationSchema>;
+};

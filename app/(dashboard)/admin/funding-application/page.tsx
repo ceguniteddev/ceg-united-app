@@ -1,0 +1,31 @@
+"use client";
+import FundingList from "@/components/funding/funding-list";
+import Spinner from "@/components/Spinner";
+import { useGetFundingApplications } from "@/hooks/apply-funding";
+import React from "react";
+import { RowActions } from "./_components/RowActions";
+import HeaderBox from "@/components/HeaderBox";
+
+const FundingApplications = () => {
+  const { appliedFunding, isLoading } = useGetFundingApplications();
+
+  if (isLoading) return <Spinner displayText="Loading funding applications…" />;
+  return (
+    <section className="transactions">
+      <div className="transactions-header flex flex-row justify-between">
+        <HeaderBox title="Funding Applications" />
+      </div>
+
+      <div className="space-y-6">
+        <section className="flex w-full flex-col gap-6">
+          <FundingList
+            appliedFunding={appliedFunding}
+            rowActions={(data) => <RowActions data={data} />}
+          />
+        </section>
+      </div>
+    </section>
+  );
+};
+
+export default FundingApplications;

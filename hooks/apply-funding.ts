@@ -1,10 +1,15 @@
 import AppError from "@/error/AppError";
-import { ApplyFunding } from "@/schema/apply-funding";
+import { ApplyFunding, ApplyFundingWithUser } from "@/schema/apply-funding";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { verifyCaptchaToken } from "@/lib/captcha/captcha";
-import { applyFunding, deleteApplyFunding, getApplyFunding } from "@/service/apply-funding";
+import {
+  applyFunding,
+  deleteApplyFunding,
+  getApplyFunding,
+  getFundingApplications,
+} from "@/service/apply-funding";
 import { useAuth } from "@/provider/AuthContext";
 
 export const useGetUserApplyFunding = () => {
@@ -15,6 +20,27 @@ export const useGetUserApplyFunding = () => {
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
       const data = (await getApplyFunding(user.uid)) as ApplyFunding[];
+
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  return {
+    appliedFunding,
+    isLoading,
+  };
+};
+
+export const useGetFundingApplications = () => {
+  const { user } = useAuth();
+
+  const { data: appliedFunding, isLoading } = useQuery({
+    queryKey: ["GET_FUNDING_APPLICATIONS"],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+
+      const data = (await getFundingApplications()) as ApplyFundingWithUser[];
 
       return data;
     },
@@ -54,6 +80,9 @@ export const useApplyFunding = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["GET_USER_APPLY_FUNDING", user?.uid],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_FUNDING_APPLICATIONS"],
       });
     },
     onError: (error: any) => {

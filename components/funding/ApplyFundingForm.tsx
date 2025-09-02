@@ -8,7 +8,6 @@ import { BanknoteIcon, CircleXIcon, Loader2Icon } from "lucide-react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
-import { useRegistration } from "@/hooks/registration";
 import { getCaptchaTokenRegistration } from "@/lib/captcha";
 import { useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
@@ -28,6 +27,13 @@ const interestedProduct: DropdownOption[] = [
 
   { value: "Auto Loan", label: "Auto Loan" },
   { value: "Equipment Financing", label: "Equipment Financing" },
+];
+
+const businessProducts = [
+  "Personal & Business Funding",
+  "Personal & Business Tradelines",
+  "Business Funding",
+  "Business Tradelines",
 ];
 
 const legalResident: DropdownOption[] = [
@@ -52,6 +58,9 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
   const { user } = useAuth();
   const { applyFunding, isRecording } = useApplyFunding();
   const [showLegalResidentOther, setShowLegalResidentOther] = useState(false);
+  const [interestedProductSelected, setInterestedProductSelected] = useState<string | undefined>(
+    undefined
+  );
 
   const form = useForm<ApplyFunding>({
     resolver: zodResolver(applyFundingSchema),
@@ -93,6 +102,7 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
                       type="select"
                       placeholder=" "
                       options={interestedProduct}
+                      onSelectValue={setInterestedProductSelected}
                     />
                     <CustomFormField
                       name={"amountFunding"}
@@ -100,18 +110,15 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
                       type="number"
                     />
                   </div>
-                  <CustomFormField
-                    name={"businessName"}
-                    label="* Enter Business name (Business Funding Only)"
-                  />
-                  <div>
-                    <CustomFormField
-                      name={"currentSituation"}
-                      type="textarea"
-                      label="* Please explain your current situation"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  {interestedProductSelected &&
+                    businessProducts.includes(interestedProductSelected) && (
+                      <CustomFormField
+                        name={"businessName"}
+                        label="* Enter Business name (Business Funding Only)"
+                      />
+                    )}
+
+                  <div className="grid grid-cols-2 gap-4 items-start">
                     <CustomFormField
                       name={"legalResident"}
                       onSelectValue={handleLegalResidentChange}
@@ -120,9 +127,14 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
                       options={legalResident}
                     />
                     {showLegalResidentOther && (
-                      <CustomFormField name={"legalResidentOther"} label={"Other"} />
+                      <CustomFormField
+                        name={"currentSituation"}
+                        type="textarea"
+                        label="* Please explain your current situation"
+                      />
                     )}
                   </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
                       name={"motherMaidenName"}

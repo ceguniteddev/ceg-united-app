@@ -80,6 +80,19 @@ export const sidebarLinks = [
   },
 ];
 
+export const adminSidebarLinks = [
+  {
+    imgURL: "/icons/home.svg",
+    route: "/admin",
+    label: "Home",
+  },
+  {
+    imgURL: "/icons/money-send.svg",
+    route: "/admin/funding-application",
+    label: "Funding Application",
+  },
+];
+
 export const transactionCategoryStyles = {
   Declined: {
     borderColor: "border-red-700",

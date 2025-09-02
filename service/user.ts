@@ -110,25 +110,11 @@ export const getUsers = async (role?: Role): Promise<UserPlaid[]> => {
     return [];
   }
 
-  const plaidTokenRef = db.collection(PLAID_TOKEN_COLLECTION);
-  const plaidTokenRefSnapshot = await plaidTokenRef.get();
-
-  const plaidTokenData: PlaidAccessToken[] = plaidTokenRefSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    userId: doc.data().userId,
-    accessToken: doc.data().accessToken,
-    itemId: doc.data().itemId,
-    tokenType: doc.data().tokenType,
-    createdAt: normalizeDate(doc.data().createdAt),
-  }));
-
   const users: UserPlaid[] = [];
   querySnapshot.forEach((doc) => {
     const data = doc.data();
 
-    const plaidData = plaidTokenData.filter((token) => token.userId === doc.id);
-
-    users.push({ id: doc.id, plaidData: plaidData, ...normalizeAllDates(data) } as UserPlaid);
+    users.push({ id: doc.id, ...normalizeAllDates(data) } as UserPlaid);
   });
   return users;
 };

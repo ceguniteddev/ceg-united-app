@@ -1,11 +1,12 @@
 "use server";
-import { USER_FUNDING_APPLICATION } from "@/constant/collection-name";
+import { USER_COLLECTION, USER_FUNDING_APPLICATION } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
-import { ApplyFunding } from "@/schema/apply-funding";
+import { ApplyFunding, ApplyFundingWithUser } from "@/schema/apply-funding";
 import { Timestamp } from "firebase-admin/firestore";
 import * as crypto from "node:crypto";
+import { no } from "zod/v4/locales";
 
 export const applyFunding = async (value: ApplyFunding) => {
   const db = firestoreAdmin();
@@ -31,7 +32,7 @@ export const applyFunding = async (value: ApplyFunding) => {
   });
 
   return {
-    id: docRef.id,
+    referenceNumber: docRef.id,
     ...normalizeAllDates(data),
   };
 };
@@ -48,6 +49,47 @@ export const getApplyFunding = async (userId: string): Promise<ApplyFunding[] | 
     referenceNumber: doc.id,
     ...normalizeAllDates(doc.data()),
   }));
+};
+
+export const getFundingApplications = async (
+  state?: string
+): Promise<ApplyFundingWithUser[] | null> => {
+  const db = firestoreAdmin();
+  let collectionRef = db.collection(USER_FUNDING_APPLICATION).orderBy("appliedDate", "asc");
+
+  if (state) {
+    collectionRef = collectionRef.where("addressState", "==", state);
+  }
+  const snapshot = await collectionRef.get();
+  if (snapshot.empty) {
+    console.log("No matching documents.");
+    return null;
+  }
+
+  // get all users
+  const usersSnap = await db.collection(USER_COLLECTION).get();
+  if (usersSnap.empty) {
+    console.log("No matching documents.");
+    return null;
+  }
+
+  const usersMap: Record<string, any> = {};
+  usersSnap.forEach((doc) => {
+    usersMap[doc.id] = {
+      userId: doc.id,
+      ...normalizeAllDates(doc.data()),
+    };
+  });
+
+  return snapshot.docs.map((doc) => {
+    const data = normalizeAllDates(doc.data());
+    const userId = data.userId;
+    return {
+      referenceNumber: doc.id,
+      ...data,
+      user: usersMap[userId] ?? null,
+    };
+  });
 };
 
 export const getApplyFundingByReferenceNumber = async (

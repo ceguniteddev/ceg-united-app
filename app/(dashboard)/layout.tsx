@@ -1,18 +1,15 @@
-"use client";
-import Navbar from "@/components/Navbar";
-import { cn } from "@/lib/utils";
+import Sidebar from "@/components/SidebarAdmin";
 
-export default function DashboardLayout({ children }: { readonly children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <div className="dashboard">
-      <div className="dashboard__content">
-        <div className={cn("dashboard__main")}>
-          <div>
-            <Navbar />
-            <main className="dashboard__body">{children}</main>
-          </div>
-        </div>
-      </div>
-    </div>
+    <main className="flex h-screen w-full font-inter">
+      <Sidebar />
+
+      <div className="flex size-full flex-col">{children}</div>
+    </main>
   );
 }
