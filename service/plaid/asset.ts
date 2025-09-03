@@ -224,7 +224,7 @@ export const createAssetReport = async (userId: string, itemId: string) => {
     },
   };
 
-  console.log("config", config);
+  // console.log("config", config);
 
   let response = null;
   try {

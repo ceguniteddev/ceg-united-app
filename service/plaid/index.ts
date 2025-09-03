@@ -112,28 +112,30 @@ export const getPlaidLinkToken = async (userId: string, userToken?: string) => {
   }
 };
 
-export const unlinkPlaidItem = async (userId: string, bankItemId: string) => {
-  const bankRecord = await getAccessToken(userId, "ITEM", bankItemId);
+export const unlinkPlaidItem = async (userId: string, bankItemIds: string[]) => {
+  for (const bankItemId of bankItemIds) {
+    const bankRecord = await getAccessToken(userId, "ITEM", bankItemId);
 
-  if (!bankRecord) return;
+    if (!bankRecord) return;
 
-  const assetData = await getAssetReportRequestByUserId(userId, bankItemId);
+    const assetData = await getAssetReportRequestByUserId(userId, bankItemId);
 
-  if (assetData) {
-    for (const data of assetData) {
-      await plaidClient.assetReportRemove({ asset_report_token: data.assetReportToken });
-      await deleteAssetReportRequest(data.id ?? "");
+    if (assetData) {
+      for (const data of assetData) {
+        await plaidClient.assetReportRemove({ asset_report_token: data.assetReportToken });
+        await deleteAssetReportRequest(data.id ?? "");
+      }
     }
+
+    await plaidClient.itemRemove({ access_token: bankRecord[0].accessToken });
+
+    await deleteAccessToken(bankRecord[0].id ?? "");
+
+    // remove the storage file for the asset report pdfs
+    const storage = storageAdmin();
+    const bucketFile = storage.file(`documents/${userId}/asset-report-${bankItemId}.pdf`);
+    await bucketFile.delete();
   }
-
-  await plaidClient.itemRemove({ access_token: bankRecord[0].accessToken });
-
-  await deleteAccessToken(bankRecord[0].id ?? "");
-
-  // remove the storage file for the asset report pdfs
-  const storage = storageAdmin();
-  const bucketFile = storage.file(`documents/${userId}/asset-report-${bankItemId}.pdf`);
-  await bucketFile.delete();
 };
 
 export const recordLinkToken = async (linkToken: LinkTokenCreateResponse, userId: string) => {

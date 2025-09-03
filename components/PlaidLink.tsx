@@ -32,6 +32,7 @@ const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
       // If the access_token is needed, send public_token to server
       const exchangePublicTokenForAccessToken = async () => {
         const response = await exchangeAccessToken(public_token);
+
         await recordAccessToken(user?.uid ?? "", response.accessToken, response.itemId, "ITEM");
 
         await createAssetReport(response.itemId);
@@ -63,16 +64,29 @@ const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
   return (
     <>
       {variant === "primary" ? (
-        <Button onClick={() => open()} disabled={!ready} className="plaidlink-primary">
+        <Button
+          onClick={() => open()}
+          disabled={!ready || isCreating}
+          className="plaidlink-primary"
+        >
           Connect bank
         </Button>
       ) : variant === "ghost" ? (
-        <Button onClick={() => open()} variant="ghost" className="plaidlink-ghost">
+        <Button
+          onClick={() => open()}
+          disabled={!ready || isCreating}
+          variant="ghost"
+          className="plaidlink-ghost"
+        >
           <Image src="/icons/connect-bank.svg" alt="connect bank" width={24} height={24} />
           <p className="hiddenl text-[16px] font-semibold text-black-2 xl:block">Connect bank</p>
         </Button>
       ) : (
-        <Button onClick={() => open()} className="plaidlink-default shadow-none px-3">
+        <Button
+          onClick={() => open()}
+          disabled={!ready || isCreating}
+          className="plaidlink-default shadow-none px-3"
+        >
           <Image src="/icons/connect-bank.svg" alt="connect bank" width={24} height={24} />
           <p className="text-[16px] font-semibold text-black-2">Connect bank</p>
         </Button>

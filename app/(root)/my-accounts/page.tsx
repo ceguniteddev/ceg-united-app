@@ -45,7 +45,7 @@ const MyBanks = () => {
   const { user } = useAuth();
 
   const [selectedGroupIdx, setSelectedGroupIdx] = useState<string>("all");
-  const [selectedBankItemId, setSelectedBankItemId] = useState<string>("");
+  const [selectedBankItemId, setSelectedBankItemId] = useState<string[]>([]);
 
   const groups: Group[] = useMemo(
     () => (plaidAccounts?.groups ?? []) as Group[],
@@ -75,16 +75,16 @@ const MyBanks = () => {
       setSelectedGroupIdx(idx);
 
       if (idx === "all") {
-        setSelectedBankItemId("");
+        setSelectedBankItemId([]);
         return;
       }
       const g = groups[Number(idx)];
       if (!g) {
-        setSelectedBankItemId("");
+        setSelectedBankItemId([]);
         return;
       }
       // pick first item id in the group; the delete action will remove *all* ids in the group
-      setSelectedBankItemId(g.bankItemIds[0] ?? "");
+      setSelectedBankItemId(g.bankItemIds);
     },
     [groups]
   );
@@ -101,11 +101,11 @@ const MyBanks = () => {
     if (!bankItemIds.length) return;
 
     try {
-      await removeBankAccount(bankItemIds[0]);
+      await removeBankAccount(bankItemIds);
 
       // Reset selection and refresh list
       setSelectedGroupIdx("all");
-      setSelectedBankItemId("");
+      setSelectedBankItemId([]);
       await refetch?.();
     } catch (err) {
       console.error(err);

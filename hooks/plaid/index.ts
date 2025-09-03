@@ -154,10 +154,10 @@ export const usePlaidAccountsMutation = () => {
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
-    mutationFn: async (bankItemId: string) => {
+    mutationFn: async (bankItemIds: string[]) => {
       if (!user) throw new Error("User not authenticated");
 
-      await unlinkPlaidItem(user.uid, bankItemId);
+      await unlinkPlaidItem(user.uid, bankItemIds);
     },
     onSuccess: () => {
       toast.success("Bank account removed successfully.");
