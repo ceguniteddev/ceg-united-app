@@ -7,9 +7,10 @@ import {
   getPlaidItems,
   getPlaidLinkToken,
   hasAccessToken,
+  unlinkPlaidItem,
 } from "@/service/plaid";
 import { createAssetReport } from "@/service/plaid/asset";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { toast } from "sonner";
 
@@ -95,19 +96,22 @@ export const useGetPlaidItemAccountByUserId = (itemId: string, accountId: string
 export const useGetPlaidAccounts = () => {
   const { user } = useAuth();
 
-  const { data: plaidAccounts, isLoading } = useQuery({
+  const { data, isLoading, isFetching, isRefetching, refetch, error } = useQuery({
     queryKey: ["GET_PLAID_ITEM_ACCOUNT", user?.uid],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
-
       return await getPlaidAccounts(user.uid);
     },
     enabled: !!user,
   });
 
   return {
-    plaidAccounts,
+    plaidAccounts: data,
     isLoading,
+    isFetching,
+    isRefetching,
+    refetch,
+    error: (error as Error) ?? null,
   };
 };
 
@@ -142,5 +146,33 @@ export const useCreateLinkToken = () => {
     createLinkToken: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
     canCreate: !loading && !!user,
+  };
+};
+
+export const usePlaidAccountsMutation = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (bankItemId: string) => {
+      if (!user) throw new Error("User not authenticated");
+
+      await unlinkPlaidItem(user.uid, bankItemId);
+    },
+    onSuccess: () => {
+      toast.success("Bank account removed successfully.");
+      queryClient.invalidateQueries({
+        queryKey: ["GET_PLAID_ITEM_ACCOUNT", user?.uid],
+      });
+    },
+    onError: (error: any) => {
+      toast.error("Failed to removed Bank account.");
+      console.error(error);
+    },
+  });
+
+  return {
+    removeBankAccount: deleteMutation.mutateAsync,
+    isDeleting: deleteMutation.isPending,
   };
 };

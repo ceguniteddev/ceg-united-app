@@ -1,7 +1,7 @@
 "use server";
 import { LINK_TOKEN_COLLECTION, PLAID_TOKEN_COLLECTION } from "@/constant/collection-name";
 import { normalizeAllDates } from "@/lib/date-parser";
-import { firestoreAdmin } from "@/lib/fireabase-admin";
+import { firestoreAdmin, storageAdmin } from "@/lib/fireabase-admin";
 import { Timestamp } from "firebase-admin/firestore";
 import {
   AccountBase,
@@ -9,6 +9,7 @@ import {
   AccountsGetResponse,
   Configuration,
   CountryCode,
+  Institution,
   LinkTokenCreateResponse,
   PlaidApi,
   PlaidEnvironments,
@@ -18,6 +19,7 @@ import {
 import { getBaseUrl } from "..";
 import { plaidClient } from "@/lib/plaid";
 import { parseStringify } from "@/lib/utils";
+import { deleteAssetReportRequest, getAssetReportRequestByUserId } from "./asset";
 
 const PLAID_CLIENT_ID = process.env.PLAID_CLIENT_ID;
 const PLAID_SECRET = process.env.PLAID_SECRET;
@@ -108,6 +110,30 @@ export const getPlaidLinkToken = async (userId: string, userToken?: string) => {
     console.error("Plaid Error:", e.response?.data);
     return null;
   }
+};
+
+export const unlinkPlaidItem = async (userId: string, bankItemId: string) => {
+  const bankRecord = await getAccessToken(userId, "ITEM", bankItemId);
+
+  if (!bankRecord) return;
+
+  const assetData = await getAssetReportRequestByUserId(userId, bankItemId);
+
+  if (assetData) {
+    for (const data of assetData) {
+      await plaidClient.assetReportRemove({ asset_report_token: data.assetReportToken });
+      await deleteAssetReportRequest(data.id ?? "");
+    }
+  }
+
+  await plaidClient.itemRemove({ access_token: bankRecord[0].accessToken });
+
+  await deleteAccessToken(bankRecord[0].id ?? "");
+
+  // remove the storage file for the asset report pdfs
+  const storage = storageAdmin();
+  const bucketFile = storage.file(`documents/${userId}/asset-report-${bankItemId}.pdf`);
+  await bucketFile.delete();
 };
 
 export const recordLinkToken = async (linkToken: LinkTokenCreateResponse, userId: string) => {
@@ -245,32 +271,72 @@ export const getPlaidItemAccounts = async (accessToken: string) => {
   return accountsResponse.data;
 };
 
+// export const getPlaidAccounts = async (userId: string) => {
+//   const accessToken = await getAccessToken(userId, "ITEM");
+//   if (!accessToken) return null;
+
+//   const accounts = (
+//     await Promise.all(
+//       (accessToken ?? []).map(async (bank: PlaidAccessToken) => {
+//         // Get all accounts for this item
+//         const { accounts: accountData, item } = (
+//           await plaidClient.accountsGet({ access_token: bank.accessToken })
+//         ).data;
+
+//         // Institution is per item, reuse for all accounts in this item
+//         const institution = item.institution_id
+//           ? await getInstitution({ institutionId: item.institution_id })
+//           : null;
+
+//         // Map each Plaid account -> your shape
+//         return accountData.map((a) => ({
+//           id: a.account_id,
+//           availableBalance: a.balances.available ?? null,
+//           currentBalance: a.balances.current ?? null,
+//           institutionId: institution?.institution_id ?? null,
+//           institutionName: institution?.name ?? null,
+//           name: a.name,
+//           officialName: a.official_name ?? null,
+//           mask: a.mask ?? "",
+//           type: String(a.type),
+//           subtype: String(a.subtype),
+//           bankItemId: bank.itemId,
+//         }));
+//       })
+//     )
+//   ).flat();
+
+//   const totalBanks = accounts.length;
+//   const totalCurrentBalance = accounts.reduce((sum, { currentBalance }) => {
+//     const n = Number(currentBalance ?? 0);
+//     return sum + (Number.isFinite(n) ? n : 0);
+//   }, 0);
+//   return parseStringify({ data: accounts, totalBanks, totalCurrentBalance });
+// };
+
 export const getPlaidAccounts = async (userId: string) => {
   const accessToken = await getAccessToken(userId, "ITEM");
   if (!accessToken) return null;
 
-  const accounts = (
+  const accounts: Account[] = (
     await Promise.all(
       (accessToken ?? []).map(async (bank: PlaidAccessToken) => {
-        // Get all accounts for this item
         const { accounts: accountData, item } = (
           await plaidClient.accountsGet({ access_token: bank.accessToken })
         ).data;
 
-        // Institution is per item, reuse for all accounts in this item
         const institution = item.institution_id
           ? await getInstitution({ institutionId: item.institution_id })
           : null;
 
-        // Map each Plaid account -> your shape
         return accountData.map((a) => ({
           id: a.account_id,
-          availableBalance: a.balances.available ?? null,
-          currentBalance: a.balances.current ?? null,
-          institutionId: institution?.institution_id ?? null,
-          institutionName: institution?.name ?? null,
+          availableBalance: a.balances.available,
+          currentBalance: a.balances.current,
+          institutionId: institution?.institution_id,
+          institutionName: institution?.name,
           name: a.name,
-          officialName: a.official_name ?? null,
+          officialName: a.official_name,
           mask: a.mask ?? "",
           type: String(a.type),
           subtype: String(a.subtype),
@@ -280,12 +346,52 @@ export const getPlaidAccounts = async (userId: string) => {
     )
   ).flat();
 
-  const totalBanks = accounts.length;
-  const totalCurrentBalance = accounts.reduce((sum, { currentBalance }) => {
-    const n = Number(currentBalance ?? 0);
-    return sum + (Number.isFinite(n) ? n : 0);
-  }, 0);
-  return parseStringify({ data: accounts, totalBanks, totalCurrentBalance });
+  // ---- group per institution ----
+  const groupsMap = new Map<string, InstitutionGroup>();
+
+  for (const acct of accounts) {
+    // Use institutionId if present; otherwise fall back to the item (still one institution)
+    const key = acct.institutionId ?? `item:${acct.bankItemId}`;
+    let g = groupsMap.get(key);
+    if (!g) {
+      g = {
+        institutionId: acct.institutionId,
+        institutionName: acct.institutionName,
+        bankItemIds: [acct.bankItemId],
+        accounts: [],
+        totalCurrentBalance: 0,
+        totalAvailableBalance: 0,
+      };
+      groupsMap.set(key, g);
+    } else if (!g.bankItemIds.includes(acct.bankItemId)) {
+      g.bankItemIds.push(acct.bankItemId);
+    }
+
+    g.accounts.push(acct);
+    g.totalCurrentBalance += Number.isFinite(Number(acct.currentBalance))
+      ? Number(acct.currentBalance)
+      : 0;
+    g.totalAvailableBalance += Number.isFinite(Number(acct.availableBalance))
+      ? Number(acct.availableBalance)
+      : 0;
+  }
+
+  const groups = Array.from(groupsMap.values());
+
+  // overall totals
+  const totalAccounts = accounts.length;
+  const totalInstitutions = groups.length;
+  const totalCurrentBalance = groups.reduce((s, g) => s + g.totalCurrentBalance, 0);
+  const totalAvailableBalance = groups.reduce((s, g) => s + g.totalAvailableBalance, 0);
+
+  return parseStringify({
+    data: accounts, // flat list (unchanged)
+    groups, // NEW: grouped per institution with totals
+    totalAccounts,
+    totalInstitutions,
+    totalCurrentBalance,
+    totalAvailableBalance,
+  });
 };
 
 export const getInstitution = async ({ institutionId }: getInstitutionProps) => {
@@ -296,7 +402,7 @@ export const getInstitution = async ({ institutionId }: getInstitutionProps) => 
 
   const intitution = institutionResponse.data.institution;
 
-  return parseStringify(intitution);
+  return parseStringify(intitution) as Institution;
 };
 
 export const getPlaidAccountByUserIdAndItemId = async ({

@@ -10,6 +10,7 @@ export const useCreateAssetReport = () => {
     mutationKey: ["PLAID_CREATE_ASSET_REPORT", user?.uid],
     mutationFn: async (itemId: string) => {
       if (!user || role !== "Client") return null;
+      console.log("createAssetReport", user.uid, itemId);
       return await createAssetReport(user.uid, itemId);
     },
     retry: (count, err: any) => {

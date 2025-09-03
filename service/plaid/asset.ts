@@ -70,11 +70,6 @@ export const recordWebhookData = async (webhookData: PlaidAssetWebhookData) => {
         assetReportRequest.itemId
       );
     }
-
-    /** 
-     //TODO - call n8n webhook for AI analysis
-
-     **/
   }
 };
 
@@ -96,21 +91,28 @@ export const getAssetReportRequestByAssetReportId = async (assetReportId: string
   };
 };
 
-export const getAssetReportRequestByUserId = async (userId: string) => {
+type AssetReportRow = PlaidAssetReportRequest & { id: string };
+
+export const getAssetReportRequestByUserId = async (userId: string, itemId?: string) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_CREATE_ASSET_REPORT);
-  const querySnapshot = await collectionRef.where("userId", "==", userId).limit(1).get();
+  let docRef = collectionRef.where("userId", "==", userId);
+  if (itemId) {
+    docRef = docRef.where("itemId", "==", itemId);
+  }
+
+  const querySnapshot = await docRef.get();
 
   if (querySnapshot.empty) {
     console.log("No matching documents.");
     return null;
   }
 
-  const doc = querySnapshot.docs[0];
-
-  return { id: doc.id, ...normalizeAllDates(doc.data()) } as PlaidAssetReportRequest & {
-    id: string;
-  };
+  const rows: AssetReportRow[] = querySnapshot.docs.map((doc) => {
+    const data = normalizeAllDates(doc.data()) as PlaidAssetReportRequest;
+    return { id: doc.id, ...data };
+  });
+  return rows;
 };
 
 export const getAssetReportPDF = async (
@@ -190,11 +192,13 @@ export const getAssetReportData = async (userId: string) => {
 export const createAssetReport = async (userId: string, itemId: string) => {
   const userData = await getUserById(userId);
   if (!userData) {
+    console.log("User not found");
     throw new AppError("User not found");
   }
 
   const accessTokens = await getAccessToken(userId, "ITEM", itemId);
   if (!accessTokens?.length) {
+    console.log("No linked bank account found");
     throw new AppError("No linked bank account found");
   }
 
@@ -220,7 +224,7 @@ export const createAssetReport = async (userId: string, itemId: string) => {
     },
   };
 
-  // console.log("config", config);
+  console.log("config", config);
 
   let response = null;
   try {
@@ -260,4 +264,10 @@ export const recordAssetReportRequest = async (
   return { id: doc.id, ...normalizeAllDates(doc.data()) } as PlaidAssetReportRequest & {
     id: string;
   };
+};
+
+export const deleteAssetReportRequest = async (docId: string) => {
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(PLAID_CREATE_ASSET_REPORT).doc(docId);
+  await collectionRef.delete();
 };

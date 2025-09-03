@@ -55,7 +55,7 @@ const BankInfo = ({ account, bankItemId, type }: BankInfoProps) => {
         </div>
 
         <p className={`text-16 font-medium text-blue-700 ${colors.subText}`}>
-          {formatAmount(account.currentBalance)}
+          {formatAmount(account.currentBalance ?? 0)}
         </p>
       </div>
     </div>

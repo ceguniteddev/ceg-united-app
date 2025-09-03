@@ -51,12 +51,12 @@ declare type NewUserParams = {
 
 declare type Account = {
   id: string;
-  availableBalance: number;
-  currentBalance: number;
-  officialName: string;
+  availableBalance: number | null;
+  currentBalance: number | null;
+  officialName: string | null;
   mask: string;
-  institutionId: string;
-  institutionName: string;
+  institutionId: string | undefined;
+  institutionName: string | undefined;
   name: string;
   type: string;
   subtype: string;
@@ -326,4 +326,13 @@ declare interface getBankProps {
 
 declare interface getBankByAccountIdProps {
   accountId: string;
+}
+
+declare interface InstitutionGroup {
+  institutionId: string | undefined;
+  institutionName: string | undefined;
+  bankItemIds: string[];
+  accounts: MyAccount[];
+  totalCurrentBalance: number;
+  totalAvailableBalance: number;
 }

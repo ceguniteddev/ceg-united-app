@@ -98,6 +98,9 @@ export const config = {
   matcher: [
     "/", // root (we fan out to role home)
     "/register", // public page
+    "/apply-funding/:path*",
+    "/my-accounts/:path*",
+    "/transaction-history/:path*",
     "/overview/:path*", // client area
     "/admin/:path*", // admin area
     "/api/:path*", // api guarding
