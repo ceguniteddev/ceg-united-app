@@ -6,7 +6,6 @@ import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { ApplyFunding, ApplyFundingWithUser } from "@/schema/apply-funding";
 import { Timestamp } from "firebase-admin/firestore";
 import * as crypto from "node:crypto";
-import { no } from "zod/v4/locales";
 
 export const applyFunding = async (value: ApplyFunding) => {
   const db = firestoreAdmin();
@@ -19,6 +18,7 @@ export const applyFunding = async (value: ApplyFunding) => {
   await docRef.set({ ...value });
   const data = (await docRef.get()).data();
 
+  // call n8n webhook to capture AI analysis
   await fetch(`${process.env.n8n_HOST}/funding-analysis`, {
     method: "POST",
     headers: {
@@ -95,6 +95,9 @@ export const getFundingApplications = async (
 export const getApplyFundingByReferenceNumber = async (
   referenceNumber: string
 ): Promise<ApplyFunding | null> => {
+  if (!referenceNumber) {
+    throw new AppError("Reference number is required.");
+  }
   const db = firestoreAdmin();
   const doc = await db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber).get();
   if (!doc.exists) return null;

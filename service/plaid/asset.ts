@@ -9,10 +9,11 @@ import { Timestamp } from "firebase-admin/firestore";
 import { getAccessToken } from ".";
 import { getUserById } from "../user";
 import AppError from "@/error/AppError";
-import { getBaseUrl } from "..";
+import { getAppPlaidWebhookURL, getBaseUrl } from "..";
 import { AssetReportAddOns } from "plaid";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { plaidClient } from "@/lib/plaid";
+import { logError, logInfo } from "@/lib/logger";
 
 /***
  * workflow to create asset report
@@ -36,6 +37,7 @@ import { plaidClient } from "@/lib/plaid";
  */
 
 export const recordWebhookData = async (webhookData: PlaidAssetWebhookData) => {
+  logInfo("recordWebhookData", { webhookData });
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_ASSET_WEBHOOK_COLLECTION);
 
@@ -74,6 +76,7 @@ export const recordWebhookData = async (webhookData: PlaidAssetWebhookData) => {
 };
 
 export const getAssetReportRequestByAssetReportId = async (assetReportId: string) => {
+  logInfo("getAssetReportRequestByAssetReportId", { assetReportId });
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_CREATE_ASSET_REPORT);
   const querySnapshot = await collectionRef
@@ -94,6 +97,7 @@ export const getAssetReportRequestByAssetReportId = async (assetReportId: string
 type AssetReportRow = PlaidAssetReportRequest & { id: string };
 
 export const getAssetReportRequestByUserId = async (userId: string, itemId?: string) => {
+  logInfo("getAssetReportRequestByUserId", { userId, itemId });
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_CREATE_ASSET_REPORT);
   let docRef = collectionRef.where("userId", "==", userId);
@@ -120,6 +124,19 @@ export const getAssetReportPDF = async (
   userId: string,
   itemId: string
 ) => {
+  logInfo("getAssetReportPDF", { assetReportToken, userId, itemId });
+  if (!assetReportToken) {
+    logInfo("Asset report token is required");
+    throw new Error("Asset report token is required");
+  }
+  if (!userId) {
+    logInfo("User id is required");
+    throw new Error("User id is required");
+  }
+  if (!itemId) {
+    logInfo("Item id is required");
+    throw new Error("Item id is required");
+  }
   try {
     const response = await plaidClient.assetReportPdfGet(
       {
@@ -136,18 +153,25 @@ export const getAssetReportPDF = async (
 
     await bucketFile.save(pdfBuffer, { contentType: "application/pdf" });
   } catch (e: any) {
+    logError(e);
     console.error("Plaid Error:", e.response?.data);
     throw e;
   }
 };
 
 export const getAssetReportPDFUrl = async (assetReportToken: string) => {
+  logInfo("getAssetReportPDFUrl");
+  if (!assetReportToken) {
+    logInfo("Asset report token is required");
+    throw new Error("Asset report token is required");
+  }
   let response = null;
   try {
     response = await plaidClient.assetReportPdfGet({
       asset_report_token: assetReportToken,
     });
   } catch (e: any) {
+    logError(e);
     console.error("Plaid Error:", e.response?.data);
     throw e;
   }
@@ -156,6 +180,13 @@ export const getAssetReportPDFUrl = async (assetReportToken: string) => {
 };
 
 export const getAssetReport = async (assetReportToken: string, userId: string) => {
+  if (!assetReportToken) {
+    throw new Error("Asset report token is required");
+  }
+  if (!userId) {
+    throw new Error("User id is required");
+  }
+  logInfo("getAssetReport", { userId });
   let response = null;
   try {
     response = await plaidClient.assetReportGet({
@@ -163,6 +194,7 @@ export const getAssetReport = async (assetReportToken: string, userId: string) =
       include_insights: true,
     });
   } catch (e: any) {
+    logError(e);
     console.error("Plaid Error:", e.response?.data);
     throw e;
   }
@@ -179,6 +211,7 @@ export const getAssetReport = async (assetReportToken: string, userId: string) =
 };
 
 export const getAssetReportData = async (userId: string) => {
+  logInfo("getAssetReportData", { userId });
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_ASSET_REPORT_DATA).where("userId", "==", userId);
 
@@ -190,21 +223,30 @@ export const getAssetReportData = async (userId: string) => {
 };
 
 export const createAssetReport = async (userId: string, itemId: string) => {
+  logInfo("createAssetReport", { userId, itemId });
+  if (!userId) {
+    logInfo("User id is required");
+    throw new Error("User id is required");
+  }
+  if (!itemId) {
+    logInfo("Item id is required");
+    throw new Error("Item id is required");
+  }
   const userData = await getUserById(userId);
   if (!userData) {
-    console.log("User not found");
+    logInfo("User not found");
     throw new AppError("User not found");
   }
 
   const accessTokens = await getAccessToken(userId, "ITEM", itemId);
   if (!accessTokens?.length) {
-    console.log("No linked bank account found");
+    logInfo("No linked bank account found");
     throw new AppError("No linked bank account found");
   }
 
   const tokens = accessTokens.map((item) => item.accessToken);
 
-  const webhookUrl = `${await getBaseUrl()}/api/plaid/webhook`;
+  const webhookUrl = await getAppPlaidWebhookURL();
 
   const config = {
     access_tokens: tokens,
@@ -230,6 +272,7 @@ export const createAssetReport = async (userId: string, itemId: string) => {
   try {
     response = await plaidClient.assetReportCreate(config);
   } catch (error: any) {
+    logError(error, { userId, itemId });
     console.error("Plaid Error:", error.response?.data);
     throw error;
   }
@@ -249,6 +292,24 @@ export const recordAssetReportRequest = async (
   assetReportId: string,
   itemId: string
 ) => {
+  logInfo("recordAssetReportRequest", { userId, assetReportId, itemId });
+  if (!userId) {
+    logInfo("User id is required");
+    throw new Error("User id is required");
+  }
+  if (!assetReportToken) {
+    logInfo("Asset report token is required");
+    throw new Error("Asset report token is required");
+  }
+  if (!assetReportId) {
+    logInfo("Asset report id is required");
+    throw new Error("Asset report id is required");
+  }
+  if (!itemId) {
+    logInfo("Item id is required");
+    throw new Error("Item id is required");
+  }
+
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_CREATE_ASSET_REPORT);
 
@@ -267,6 +328,11 @@ export const recordAssetReportRequest = async (
 };
 
 export const deleteAssetReportRequest = async (docId: string) => {
+  if (!docId) {
+    logInfo("Doc id is required");
+    throw new Error("Doc id is required");
+  }
+  logInfo("deleteAssetReportRequest", { docId });
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_CREATE_ASSET_REPORT).doc(docId);
   await collectionRef.delete();

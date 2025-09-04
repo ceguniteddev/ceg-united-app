@@ -1,4 +1,3 @@
-import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { getUsers } from "./user";
 import { getFundingApplications } from "./apply-funding";
 

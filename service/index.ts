@@ -9,3 +9,5 @@ export const getBaseUrl = async () => {
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   return `${proto}://${host}`;
 };
+
+export const getAppPlaidWebhookURL = async () => `${await getBaseUrl()}/api/plaid/webhook`;

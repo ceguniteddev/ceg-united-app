@@ -9,7 +9,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 import { getCaptchaTokenRegistration } from "@/lib/captcha";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
 import { useApplyFunding } from "@/hooks/apply-funding";
 import { US_STATES } from "@/constant/common";
@@ -72,12 +72,18 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
     },
   });
 
-  const onSubmit: SubmitHandler<ApplyFunding> = async (values) => {
-    const token = await getCaptchaTokenRegistration("applyFunding");
-    await applyFunding({ token, values });
-    setOpen(false);
-    if (setCongratsOpen) setCongratsOpen(true);
-  };
+  const errors = form.formState.errors;
+  console.log(errors);
+
+  const onSubmit: SubmitHandler<ApplyFunding> = useCallback(
+    async (values) => {
+      const token = await getCaptchaTokenRegistration("applyFunding");
+      await applyFunding({ token, values });
+      setOpen(false);
+      if (setCongratsOpen) setCongratsOpen(true);
+    },
+    [setOpen, setCongratsOpen, applyFunding]
+  );
 
   const handleLegalResidentChange = (value: string) => {
     if (value === "Other") {

@@ -2,20 +2,13 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-  User,
-  onIdTokenChanged,
-} from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword, User } from "firebase/auth";
 import { authFirebase } from "@/lib/firebase";
 import { createSession, deleteCookie, logoutSession, refreshSession } from "@/lib/session";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { getUser } from "@/service/user";
 import { Role } from "@/schema";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSelectedInstitutionStoreStore } from "@/store/plaid";
 import { verifyCaptchaToken } from "@/lib/captcha/captcha";
 import AppError from "@/error/AppError";
 
@@ -37,7 +30,6 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
   const [loading, setLoading] = useState(true); // Still true to prevent flicker on load
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { reset } = useSelectedInstitutionStoreStore();
 
   // Helper function to load user role and set state
   const loadAndSetUserData = useCallback(async (firebaseUser: User) => {
@@ -58,13 +50,12 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
 
     await queryClient.cancelQueries({ predicate: () => true });
     queryClient.clear();
-    reset();
     setUser(null);
     setRole(null);
     setIsAdmin(false);
 
     router.push("/");
-  }, [router, queryClient, reset]);
+  }, [router, queryClient]);
 
   // useEffect(() => {
   //   if (!authFirebase) return;
@@ -147,7 +138,6 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
 
         await queryClient.cancelQueries({ predicate: () => true });
         queryClient.clear();
-        reset();
 
         // Single source of truth for user/role
         await loadAndSetUserData(firebaseUser);
@@ -163,7 +153,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         throw new Error("Invalid email or password.");
       }
     },
-    [loadAndSetUserData, queryClient, reset, router]
+    [loadAndSetUserData, queryClient, router]
   );
 
   const authContextValue = useMemo(

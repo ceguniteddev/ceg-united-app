@@ -6,6 +6,9 @@ import { USER_TOKEN_COLLECTION } from "@/constant/collection-name";
 import { Timestamp } from "firebase-admin/firestore";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { plaidClient } from "@/lib/plaid";
+import { logError, logInfo } from "@/lib/logger";
+import { log } from "console";
+import AppError from "@/error/AppError";
 
 type PlaidCompleteRow = {
   institutionName: string | null;
@@ -25,10 +28,12 @@ async function safeData<T>(
   label: string,
   call: () => Promise<{ data: T }>
 ): Promise<T | null> {
+  logInfo(`[Plaid] ${label} token-type ${tokenType}`);
   try {
     const res = await call();
     return res.data;
   } catch (err: any) {
+    logError(err);
     console.error(`[Plaid] ${label} failed token-type ${tokenType}`, err.response?.data);
     return null;
   }
@@ -41,9 +46,15 @@ type LinkTokenRecord = UserCreateResponse & {
 };
 
 export const recordPlaidUserToken = async (userId: string) => {
+  logInfo("recordPlaidUserToken", { userId });
+  if (!userId) {
+    logInfo("User id is required");
+    throw new Error("User id is required");
+  }
   // check if user already has a token
   const existingToken = await getPlaidUserToken(userId);
   if (existingToken) {
+    logInfo("User already has a token");
     return existingToken;
   }
 
@@ -53,6 +64,7 @@ export const recordPlaidUserToken = async (userId: string) => {
       client_user_id: userId,
     });
   } catch (error: any) {
+    logError(error);
     console.error("Plaid Error:", error.response?.data);
     throw error;
   }
@@ -75,6 +87,7 @@ export const recordPlaidUserToken = async (userId: string) => {
 };
 
 export const getPlaidUserToken = async (userId: string) => {
+  logInfo("getPlaidUserToken", { userId });
   const db = firestoreAdmin();
   const collectionRef = db.collection(USER_TOKEN_COLLECTION).where("userId", "==", userId);
 
@@ -87,11 +100,16 @@ export const getPlaidUserToken = async (userId: string) => {
 };
 
 export const getPlaidCompleteData = async (userId: string) => {
+  logInfo("getPlaidCompleteData", { userId });
   const accessTokens = await getAccessToken(userId);
-  if (!accessTokens?.length) return null;
+  if (!accessTokens?.length) {
+    logInfo("No linked bank account found");
+    throw new AppError("No linked bank account found");
+  }
 
   let userTokenRecord = await getPlaidUserToken(userId);
   if (!userTokenRecord) {
+    logInfo("User does not have a token");
     userTokenRecord = await recordPlaidUserToken(userId);
   }
 

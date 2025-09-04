@@ -3,35 +3,14 @@ import { useAuth } from "@/provider/AuthContext";
 import {
   getPlaidAccountByUserIdAndItemId,
   getPlaidAccounts,
-  getPlaidItemAccounts,
-  getPlaidItems,
   getPlaidLinkToken,
   hasAccessToken,
   unlinkPlaidItem,
 } from "@/service/plaid";
-import { createAssetReport } from "@/service/plaid/asset";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { IncomeVerificationSourceType } from "plaid";
 
 import { toast } from "sonner";
-
-export const useGetPlaidItems = () => {
-  const { user } = useAuth();
-
-  const { data: plaidItems, isLoading } = useQuery({
-    queryKey: ["GET_PLAID_ITEMS", user?.uid],
-    queryFn: async () => {
-      if (!user) throw new Error("User not authenticated");
-
-      return await getPlaidItems(user.uid);
-    },
-    enabled: !!user,
-  });
-
-  return {
-    plaidItems,
-    isLoading,
-  };
-};
 
 export const useHasAccessToken = (tokenType?: TokenType) => {
   const { user } = useAuth();
@@ -48,26 +27,6 @@ export const useHasAccessToken = (tokenType?: TokenType) => {
 
   return {
     hasToken,
-    isLoading,
-  };
-};
-
-export const useGetPlaidItemAccount = (accessToken: string, itemId: string) => {
-  const { user } = useAuth();
-
-  const { data: plaidItemAccount, isLoading } = useQuery({
-    queryKey: ["GET_PLAID_ITEM_ACCOUNT", user?.uid, itemId],
-    queryFn: async () => {
-      if (!user) throw new Error("User not authenticated");
-      if (!accessToken) throw new Error("Access token is required");
-
-      return await getPlaidItemAccounts(accessToken);
-    },
-    enabled: !!user,
-  });
-
-  return {
-    plaidItemAccount,
     isLoading,
   };
 };
@@ -120,10 +79,16 @@ export const useCreateLinkToken = () => {
 
   const createMutation = useMutation({
     mutationKey: ["plaidLinkToken", user?.uid],
-    mutationFn: async (userToken?: string) => {
+    mutationFn: async ({
+      userToken,
+      incomeSourceType,
+    }: {
+      userToken?: string;
+      incomeSourceType?: IncomeVerificationSourceType;
+    }) => {
       if (!user || role !== "Client") return "";
 
-      const linkToken = await getPlaidLinkToken(user.uid, userToken);
+      const linkToken = await getPlaidLinkToken(user.uid, userToken, incomeSourceType);
       return linkToken?.link_token;
     },
     // retry: (count, err: any) => {

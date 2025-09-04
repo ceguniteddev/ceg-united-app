@@ -8,7 +8,8 @@ import { usePathname } from "next/navigation";
 import Footer from "./Footer";
 import PlaidLink from "./PlaidLink";
 import { useAuth } from "@/provider/AuthContext";
-import PlaidIncomeLink from "./PlaidLinkIncome";
+import PlaidIncomeLinkBank from "./PlaidLinkIncomeBank";
+import PlaidIncomeLinkPayroll from "./PlaidLinkIncomePayroll";
 
 const Sidebar = () => {
   const { user } = useAuth();
@@ -54,7 +55,8 @@ const Sidebar = () => {
           );
         })}
         <PlaidLink />
-        <PlaidIncomeLink />
+        <PlaidIncomeLinkBank />
+        <PlaidIncomeLinkPayroll />
       </nav>
 
       <Footer />
