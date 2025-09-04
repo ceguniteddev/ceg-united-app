@@ -3,18 +3,20 @@ import { usePlaidLink } from "react-plaid-link";
 
 import { useCreateLinkToken, useHasAccessToken } from "@/hooks/plaid";
 import { Button } from "@/components/ui/button";
-import { exchangeAccessToken, recordAccessToken } from "@/service/plaid";
+import { exchangeAccessToken } from "@/service/plaid";
 import { useAuth } from "@/provider/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
-import { getPlaidUserToken, recordPlaidUserToken } from "@/service/plaid/data";
-import { BadgeDollarSignIcon, CheckIcon, Loader2Icon } from "lucide-react";
+import { recordPlaidUserToken } from "@/service/plaid/data";
+import { CheckIcon } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
+import { IncomeVerificationSourceType } from "plaid";
 
-const PlaidIncomeLink = () => {
+const PlaidIncomeLinkPayroll = () => {
   const { user } = useAuth();
 
   const { createLinkToken, canCreate } = useCreateLinkToken();
-  const { hasToken, isLoading } = useHasAccessToken("INCOME_VERIFICATION");
+  const { hasToken, isLoading } = useHasAccessToken("INCOME_VERIFICATION_PAYROLL");
   const queryClient = useQueryClient();
   const [linkToken, setLinkToken] = React.useState<string | null>(null);
 
@@ -22,7 +24,10 @@ const PlaidIncomeLink = () => {
     const fetchLinkToken = async () => {
       const userToken = await recordPlaidUserToken(user?.uid ?? "");
 
-      const token = await createLinkToken(userToken?.user_token);
+      const token = await createLinkToken({
+        userToken: userToken.user_token,
+        incomeSourceType: IncomeVerificationSourceType.Payroll,
+      });
       setLinkToken(token!);
     };
 
@@ -33,20 +38,15 @@ const PlaidIncomeLink = () => {
     (public_token: string) => {
       // If the access_token is needed, send public_token to server
       const exchangePublicTokenForAccessToken = async () => {
-        const response = await exchangeAccessToken(public_token);
-        await recordAccessToken(
-          user?.uid ?? "",
-          response.accessToken,
-          response.itemId,
-          "INCOME_VERIFICATION"
-        );
+        await exchangeAccessToken(public_token, user?.uid ?? "", "INCOME_VERIFICATION_PAYROLL");
+
         queryClient.invalidateQueries({
           queryKey: ["GET_PLAID_INCOME_LINK", user?.uid],
         });
         queryClient.invalidateQueries({
-          queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid, "INCOME_VERIFICATION"],
-          exact: false,
+          queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid, "INCOME_VERIFICATION_PAYROLL"],
         });
+        toast.success("Income Verification is complete.");
       };
 
       exchangePublicTokenForAccessToken();
@@ -78,7 +78,7 @@ const PlaidIncomeLink = () => {
       {/* <BadgeDollarSignIcon className="mr-2 h-4 w-4" /> */}
       <Image src="/icons/connect-bank.svg" alt="income verification" width={24} height={24} />
 
-      <p className="text-[16px] font-semibold text-black-2">Income Verification</p>
+      <p className="text-[16px] font-semibold text-black-2">Income Payroll Verification</p>
       {/* {!ready && !hasToken && <Loader2Icon className="ml-2 h-4 w-4 animate-spin" />} */}
       {hasToken && <CheckIcon className="ml-2 h-4 w-4 text-green-600" />}
     </Button>
@@ -87,4 +87,4 @@ const PlaidIncomeLink = () => {
 
 // PlaidIncomeLink.displayName = "PlaidIncomeLink";
 
-export default PlaidIncomeLink;
+export default PlaidIncomeLinkPayroll;

@@ -11,12 +11,13 @@ declare global {
     id?: string;
     userId: string;
     accessToken: string;
+    iv: string;
     itemId: string;
     tokenType: TokenType;
     createdAt: Date | null;
   };
 
-  type TokenType = "ITEM" | "INCOME_VERIFICATION";
+  type TokenType = "ITEM" | "INCOME_VERIFICATION_BANK" | "INCOME_VERIFICATION_PAYROLL";
 
   type PlaidWebhookType = "ITEM" | "ASSETS";
 

@@ -1,5 +1,5 @@
 "use server";
-import { PLAID_TOKEN_COLLECTION, USER_COLLECTION } from "@/constant/collection-name";
+import { USER_COLLECTION } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { normalizeAllDates, normalizeDate } from "@/lib/date-parser";
 import { authenticationAdmin, firestoreAdmin } from "@/lib/fireabase-admin";

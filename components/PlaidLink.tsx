@@ -4,22 +4,20 @@ import { PlaidLinkOptions, usePlaidLink } from "react-plaid-link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCreateLinkToken } from "@/hooks/plaid";
-import { exchangeAccessToken, recordAccessToken } from "@/service/plaid";
+import { exchangeAccessToken } from "@/service/plaid";
 import { useAuth } from "@/provider/AuthContext";
-import { useCreateAssetReport } from "@/hooks/plaid/asset";
 import { useQueryClient } from "@tanstack/react-query";
 
 const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
   const router = useRouter();
   const { createLinkToken, canCreate } = useCreateLinkToken();
-  const { createAssetReport, isCreating } = useCreateAssetReport();
   const [token, setToken] = useState("");
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const getLinkToken = async () => {
-      const linkToken = await createLinkToken("");
+      const linkToken = await createLinkToken({});
 
       setToken(linkToken!);
     };
@@ -31,11 +29,7 @@ const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
     (public_token: string) => {
       // If the access_token is needed, send public_token to server
       const exchangePublicTokenForAccessToken = async () => {
-        const response = await exchangeAccessToken(public_token);
-
-        await recordAccessToken(user?.uid ?? "", response.accessToken, response.itemId, "ITEM");
-
-        await createAssetReport(response.itemId);
+        await exchangeAccessToken(public_token, user?.uid ?? "", "ITEM");
 
         await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_LINK", user?.uid] });
         await queryClient.invalidateQueries({
@@ -51,7 +45,7 @@ const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
 
       exchangePublicTokenForAccessToken();
     },
-    [user?.uid, queryClient, createAssetReport, router]
+    [user?.uid, queryClient, router]
   );
 
   const config: PlaidLinkOptions = {
@@ -64,17 +58,13 @@ const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
   return (
     <>
       {variant === "primary" ? (
-        <Button
-          onClick={() => open()}
-          disabled={!ready || isCreating}
-          className="plaidlink-primary"
-        >
+        <Button onClick={() => open()} disabled={!ready} className="plaidlink-primary">
           Connect bank
         </Button>
       ) : variant === "ghost" ? (
         <Button
           onClick={() => open()}
-          disabled={!ready || isCreating}
+          disabled={!ready}
           variant="ghost"
           className="plaidlink-ghost"
         >
@@ -84,7 +74,7 @@ const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
       ) : (
         <Button
           onClick={() => open()}
-          disabled={!ready || isCreating}
+          disabled={!ready}
           className="plaidlink-default shadow-none px-3"
         >
           <Image src="/icons/connect-bank.svg" alt="connect bank" width={24} height={24} />

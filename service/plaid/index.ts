@@ -1,28 +1,27 @@
 "use server";
-import { LINK_TOKEN_COLLECTION, PLAID_TOKEN_COLLECTION } from "@/constant/collection-name";
+import { PLAID_TOKEN_COLLECTION } from "@/constant/collection-name";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin, storageAdmin } from "@/lib/fireabase-admin";
 import { Timestamp } from "firebase-admin/firestore";
 import {
   AccountBase,
-  AccountsGetRequest,
-  AccountsGetResponse,
-  Configuration,
   CountryCode,
+  IncomeVerificationPayrollFlowType,
+  IncomeVerificationSourceType,
   Institution,
-  LinkTokenCreateResponse,
-  PlaidApi,
-  PlaidEnvironments,
-  PlaidError,
+  LinkTokenCreateRequest,
   Products,
 } from "plaid";
-import { getBaseUrl } from "..";
+import { getAppPlaidWebhookURL } from "..";
 import { plaidClient } from "@/lib/plaid";
 import { parseStringify } from "@/lib/utils";
-import { deleteAssetReportRequest, getAssetReportRequestByUserId } from "./asset";
-
-const PLAID_CLIENT_ID = process.env.PLAID_CLIENT_ID;
-const PLAID_SECRET = process.env.PLAID_SECRET;
+import {
+  createAssetReport,
+  deleteAssetReportRequest,
+  getAssetReportRequestByUserId,
+} from "./asset";
+import { logError, logInfo } from "@/lib/logger";
+import { decrypt, encrypt } from "@/lib/encryption";
 
 const PLAID_COUNTRY_CODES = (process.env.PLAID_COUNTRY_CODES || "US").split(",") as CountryCode[];
 
@@ -38,29 +37,20 @@ const REQUIRED_IF_SUPPORTED = (process.env.REQUIRED_IF_SUPPORTED || "")
   .split(",")
   .filter((p) => p.trim() !== "") as Products[];
 
-// const PLAID_ENV = process.env.PLAID_ENV || "sandbox";
-
 const PLAID_REDIRECT_URI = process.env.PLAID_REDIRECT_URI || "";
 
-// const configuration = new Configuration({
-//   basePath: PlaidEnvironments[PLAID_ENV],
-//   baseOptions: {
-//     headers: {
-//       "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID,
-//       "PLAID-SECRET": process.env.PLAID_SECRET,
-//     },
-//   },
-// });
+export const getPlaidLinkToken = async (
+  userId: string,
+  userToken?: string,
+  incomeSourceType?: IncomeVerificationSourceType
+) => {
+  if (!userId) throw new Error("User id is required");
 
-// export const getPlaidClient = async () => {
-//   return new PlaidApi(configuration);
-// };
+  const webhookBaseUrl = await getAppPlaidWebhookURL();
 
-export const getPlaidLinkToken = async (userId: string, userToken?: string) => {
-  const webhookBaseUrl = await getBaseUrl();
-  let configs = {
+  logInfo("getPlaidLinkToken::entry data", { userId, userToken, incomeSourceType });
+  let configs: LinkTokenCreateRequest = {
     user: {
-      // This should correspond to a unique id for the current user.
       client_user_id: userId,
     },
     user_token: "",
@@ -70,10 +60,11 @@ export const getPlaidLinkToken = async (userId: string, userToken?: string) => {
     optional_products: OPTIONAL_PLAID_PRODUCTS,
     country_codes: PLAID_COUNTRY_CODES,
     language: "en",
-    webhook: webhookBaseUrl + "/api/plaid/webhook",
+    webhook: webhookBaseUrl,
   };
 
-  if (userToken) {
+  logInfo("getPlaidLinkToken::webhookBaseUrl", { webhookBaseUrl });
+  if (userToken && incomeSourceType) {
     configs = {
       ...configs,
       user_token: userToken,
@@ -81,7 +72,25 @@ export const getPlaidLinkToken = async (userId: string, userToken?: string) => {
       optional_products: [],
       products: [Products.IncomeVerification],
     };
+
+    if (incomeSourceType === IncomeVerificationSourceType.Bank) {
+      configs.income_verification = {
+        income_source_types: [IncomeVerificationSourceType.Bank],
+        bank_income: { days_requested: 365 },
+      };
+    } else if (incomeSourceType === IncomeVerificationSourceType.Payroll) {
+      configs.income_verification = {
+        income_source_types: [IncomeVerificationSourceType.Payroll],
+        payroll_income: {
+          flow_types: [
+            IncomeVerificationPayrollFlowType.DigitalIncome,
+            IncomeVerificationPayrollFlowType.DocumentIncome,
+          ],
+        },
+      };
+    }
   }
+  // console.log("configs", configs);
 
   // if (PLAID_REDIRECT_URI !== "") {
   //   configs.redirect_uri = PLAID_REDIRECT_URI;
@@ -105,6 +114,7 @@ export const getPlaidLinkToken = async (userId: string, userToken?: string) => {
 
   try {
     const linkTokenResponse = await plaidClient.linkTokenCreate(configs);
+    logInfo("getPlaidLinkToken::linkTokenResponse.data", { data: linkTokenResponse.data });
     return linkTokenResponse.data;
   } catch (e: any) {
     console.error("Plaid Error:", e.response?.data);
@@ -113,7 +123,12 @@ export const getPlaidLinkToken = async (userId: string, userToken?: string) => {
 };
 
 export const unlinkPlaidItem = async (userId: string, bankItemIds: string[]) => {
+  if (!userId) throw new Error("User id is required");
+  if (!bankItemIds || !bankItemIds.length) throw new Error("Bank item ids is required");
+
+  logInfo("unlinkPlaidItem", { userId, bankItemIds });
   for (const bankItemId of bankItemIds) {
+    logInfo("unlinkPlaidItem:: start process", { itemId: bankItemId });
     const bankRecord = await getAccessToken(userId, "ITEM", bankItemId);
 
     if (!bankRecord) return;
@@ -122,6 +137,11 @@ export const unlinkPlaidItem = async (userId: string, bankItemIds: string[]) => 
 
     if (assetData) {
       for (const data of assetData) {
+        logInfo("unlinkPlaidItem - assetReportRemove", {
+          userId: data.userId,
+          assetReportId: data.assetReportId,
+          itemId: data.itemId,
+        });
         await plaidClient.assetReportRemove({ asset_report_token: data.assetReportToken });
         await deleteAssetReportRequest(data.id ?? "");
       }
@@ -138,48 +158,26 @@ export const unlinkPlaidItem = async (userId: string, bankItemIds: string[]) => 
   }
 };
 
-export const recordLinkToken = async (linkToken: LinkTokenCreateResponse, userId: string) => {
-  const db = firestoreAdmin();
-  const collectionRef = db.collection(LINK_TOKEN_COLLECTION);
+export const exchangeAccessToken = async (
+  publicToken: string,
+  userId: string,
+  tokenType: TokenType
+) => {
+  if (!userId) throw new Error("User id is required");
+  if (!publicToken) throw new Error("Public token is required");
 
-  const expiresAt = Timestamp.fromDate(new Date(linkToken.expiration));
-
-  await collectionRef.add({
-    userId,
-    linkToken: linkToken.link_token,
-    requestId: linkToken.request_id,
-    expiresAt,
-    createdAt: Timestamp.now(),
-  });
-};
-
-export const getValidLinkToken = async (userId: string) => {
-  const db = firestoreAdmin();
-  const now = Timestamp.now();
-
-  const snapshot = await db
-    .collection(LINK_TOKEN_COLLECTION)
-    .where("userId", "==", userId)
-    .where("expiresAt", ">", now)
-    .orderBy("expiresAt", "desc")
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) return null;
-
-  const doc = snapshot.docs[0];
-  return { id: doc.id, ...normalizeAllDates(doc.data()) };
-};
-
-export const exchangeAccessToken = async (publicToken: string) => {
+  logInfo("exchangeAccessToken", { publicToken });
   const tokenResponse = await plaidClient.itemPublicTokenExchange({
     public_token: publicToken,
   });
 
   const ACCESS_TOKEN = tokenResponse.data.access_token;
   const ITEM_ID = tokenResponse.data.item_id;
+  logInfo("exchangeAccessToken::ITEM_ID", { ITEM_ID });
 
-  return { accessToken: ACCESS_TOKEN, itemId: ITEM_ID };
+  await recordAccessToken(userId, ACCESS_TOKEN, ITEM_ID, tokenType);
+
+  if (tokenType === "ITEM") await createAssetReport(userId, ITEM_ID);
 };
 
 export const recordAccessToken = async (
@@ -188,12 +186,16 @@ export const recordAccessToken = async (
   itemId: string,
   tokenType: TokenType
 ) => {
+  logInfo("recordAccessToken", { userId, itemId, tokenType });
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_TOKEN_COLLECTION);
 
+  const encrypted = encrypt(accessToken);
+
   await collectionRef.add({
     userId,
-    accessToken,
+    iv: encrypted.iv,
+    accessToken: encrypted.content,
     itemId,
     tokenType,
     createdAt: Timestamp.now(),
@@ -205,8 +207,11 @@ export const getAccessToken = async (
   tokenType?: TokenType,
   itemId?: string
 ): Promise<PlaidAccessToken[] | null> => {
+  logInfo("getAccessToken", { userId, tokenType, itemId });
   const db = firestoreAdmin();
+
   let collectionRef = db.collection(PLAID_TOKEN_COLLECTION).where("userId", "==", userId);
+
   if (tokenType) {
     collectionRef = collectionRef.where("tokenType", "==", tokenType);
   }
@@ -215,10 +220,31 @@ export const getAccessToken = async (
   }
 
   const snapshot = await collectionRef.orderBy("createdAt", "asc").get();
-
   if (snapshot.empty) return null;
 
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...normalizeAllDates(doc.data()) }));
+  return snapshot.docs.map((doc) => {
+    const data = normalizeAllDates(doc.data());
+
+    // 👇 decrypt the accessToken field before returning
+    let decryptedToken: string | null = null;
+    if (data.accessToken && data.iv) {
+      try {
+        decryptedToken = decrypt({
+          iv: data.iv,
+          content: data.accessToken,
+        });
+      } catch (err: any) {
+        console.error("Failed to decrypt Plaid access token:", err);
+        logError(err, { userId, tokenType, itemId });
+      }
+    }
+
+    return {
+      id: doc.id,
+      ...data,
+      accessToken: decryptedToken ?? data.accessToken,
+    };
+  });
 };
 
 export async function hasAccessToken(
@@ -227,6 +253,7 @@ export async function hasAccessToken(
   itemId?: string
 ): Promise<boolean> {
   const db = firestoreAdmin();
+  logInfo("hasAccessToken", { userId, tokenType, itemId });
 
   let q = db.collection(PLAID_TOKEN_COLLECTION).where("userId", "==", userId);
   if (tokenType) q = q.where("tokenType", "==", tokenType);
@@ -236,96 +263,25 @@ export async function hasAccessToken(
   return countSnap.data().count > 0;
 }
 
-export const deleteAccessToken = async (accessTokenId: string) => {
+export const deleteAccessToken = async (docId: string) => {
+  logInfo("deleteAccessToken", { docId });
   const db = firestoreAdmin();
-  await db.collection(PLAID_TOKEN_COLLECTION).doc(accessTokenId).delete();
+  await db.collection(PLAID_TOKEN_COLLECTION).doc(docId).delete();
 };
-
-export const getPlaidItems = async (userId: string) => {
-  const accessToken = await getAccessToken(userId, "ITEM");
-  if (!accessToken) return null;
-
-  const items = [];
-
-  for (const token of accessToken) {
-    const itemsResponse = await plaidClient.itemGet({
-      client_id: PLAID_CLIENT_ID,
-      secret: PLAID_SECRET,
-      access_token: token.accessToken,
-    });
-
-    const data = { ...itemsResponse.data, accessToken: token.accessToken };
-
-    items.push(data);
-  }
-
-  return items;
-};
-
-export const getPlaidItemAccounts = async (accessToken: string) => {
-  if (!accessToken) return null;
-
-  const accountsResponse = await plaidClient.accountsGet({
-    client_id: PLAID_CLIENT_ID,
-    secret: PLAID_SECRET,
-    access_token: accessToken,
-  });
-  return accountsResponse.data;
-};
-
-// export const getPlaidAccounts = async (userId: string) => {
-//   const accessToken = await getAccessToken(userId, "ITEM");
-//   if (!accessToken) return null;
-
-//   const accounts = (
-//     await Promise.all(
-//       (accessToken ?? []).map(async (bank: PlaidAccessToken) => {
-//         // Get all accounts for this item
-//         const { accounts: accountData, item } = (
-//           await plaidClient.accountsGet({ access_token: bank.accessToken })
-//         ).data;
-
-//         // Institution is per item, reuse for all accounts in this item
-//         const institution = item.institution_id
-//           ? await getInstitution({ institutionId: item.institution_id })
-//           : null;
-
-//         // Map each Plaid account -> your shape
-//         return accountData.map((a) => ({
-//           id: a.account_id,
-//           availableBalance: a.balances.available ?? null,
-//           currentBalance: a.balances.current ?? null,
-//           institutionId: institution?.institution_id ?? null,
-//           institutionName: institution?.name ?? null,
-//           name: a.name,
-//           officialName: a.official_name ?? null,
-//           mask: a.mask ?? "",
-//           type: String(a.type),
-//           subtype: String(a.subtype),
-//           bankItemId: bank.itemId,
-//         }));
-//       })
-//     )
-//   ).flat();
-
-//   const totalBanks = accounts.length;
-//   const totalCurrentBalance = accounts.reduce((sum, { currentBalance }) => {
-//     const n = Number(currentBalance ?? 0);
-//     return sum + (Number.isFinite(n) ? n : 0);
-//   }, 0);
-//   return parseStringify({ data: accounts, totalBanks, totalCurrentBalance });
-// };
 
 export const getPlaidAccounts = async (userId: string) => {
+  logInfo("getPlaidAccounts", { userId });
   const accessToken = await getAccessToken(userId, "ITEM");
   if (!accessToken) return null;
 
   const accounts: Account[] = (
     await Promise.all(
       (accessToken ?? []).map(async (bank: PlaidAccessToken) => {
+        logInfo("accountsGet", { itemId: bank.itemId });
         const { accounts: accountData, item } = (
           await plaidClient.accountsGet({ access_token: bank.accessToken })
         ).data;
+        logInfo("accountsGet", { accountData: accountData.length });
 
         const institution = item.institution_id
           ? await getInstitution({ institutionId: item.institution_id })
@@ -397,13 +353,14 @@ export const getPlaidAccounts = async (userId: string) => {
 };
 
 export const getInstitution = async ({ institutionId }: getInstitutionProps) => {
+  logInfo("getInstitution", { institutionId });
   const institutionResponse = await plaidClient.institutionsGetById({
     institution_id: institutionId,
     country_codes: ["US"] as CountryCode[],
   });
 
   const intitution = institutionResponse.data.institution;
-
+  logInfo("getInstitution", { intitution });
   return parseStringify(intitution) as Institution;
 };
 
@@ -416,6 +373,8 @@ export const getPlaidAccountByUserIdAndItemId = async ({
   if (!itemId) throw new Error("Item id is required");
   if (!accountId) throw new Error("Account id is required");
 
+  logInfo("getPlaidAccountByUserIdAndItemId", { userId, itemId, accountId });
+
   // get bank (Plaid item) from db
   const bank = await getAccessToken(userId, "ITEM", itemId);
   if (!bank?.length) return null;
@@ -426,8 +385,10 @@ export const getPlaidAccountByUserIdAndItemId = async ({
       access_token: bank[0].accessToken,
       options: { account_ids: [accountId] },
     });
+    logInfo("getPlaidAccountByUserIdAndItemId", { requestId: response.data.request_id });
   } catch (err: any) {
     console.error("Plaid Error:", err.response?.data);
+    logError(err, { userId, itemId, accountId });
     throw err;
   }
 
@@ -468,33 +429,6 @@ export const getPlaidAccountByUserIdAndItemId = async ({
   });
 };
 
-// export const getTransactionsByBankId = async ({ bankId }: getTransactionsByBankIdProps) => {
-//   try {
-//     const { database } = await createAdminClient();
-
-//     const senderTransactions = await database.listDocuments(
-//       DATABASE_ID!,
-//       TRANSACTION_COLLECTION_ID!,
-//       [Query.equal("senderBankId", bankId)]
-//     );
-
-//     const receiverTransactions = await database.listDocuments(
-//       DATABASE_ID!,
-//       TRANSACTION_COLLECTION_ID!,
-//       [Query.equal("receiverBankId", bankId)]
-//     );
-
-//     const transactions = {
-//       total: senderTransactions.total + receiverTransactions.total,
-//       documents: [...senderTransactions.documents, ...receiverTransactions.documents],
-//     };
-
-//     return parseStringify(transactions);
-//   } catch (error) {
-//     console.log(error);
-//   }
-// };
-
 export const getTransactions = async ({ accessToken }: getTransactionsProps) => {
   let hasMore = true;
   let transactions: any = [];
@@ -503,6 +437,9 @@ export const getTransactions = async ({ accessToken }: getTransactionsProps) => 
   while (hasMore) {
     const response = await plaidClient.transactionsSync({
       access_token: accessToken,
+    });
+    logInfo("getTransactions::transactionsSync", {
+      requestId: response.data.request_id,
     });
 
     const data = response.data;
