@@ -87,3 +87,5 @@ env:
     secret: RECAPTCHA_SECRET_KEY_STAGING
   - variable: EMAIL_PASSWORD
     secret: EMAIL_PASSWORD
+  - variable: ENCRYPTION_KEY
+    secret: ENCRYPTION_KEY
