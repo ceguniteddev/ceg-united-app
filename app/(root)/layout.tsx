@@ -1,15 +1,20 @@
 import Sidebar from "@/components/Sidebar";
 
+import UserBanners from "@/components/UserBanners";
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <main className="flex h-screen w-full font-inter">
-      <Sidebar />
+    <div>
+      <UserBanners />
 
-      <div className="flex size-full flex-col">{children}</div>
-    </main>
+      <main className="flex h-screen w-full font-inter pt-12">
+        <Sidebar />
+        <div className="flex size-full flex-col">{children}</div>
+      </main>
+    </div>
   );
 }

@@ -82,13 +82,23 @@ export const useCreateLinkToken = () => {
     mutationFn: async ({
       userToken,
       incomeSourceType,
+      itemId,
+      isNewAccount,
     }: {
       userToken?: string;
       incomeSourceType?: IncomeVerificationSourceType;
+      itemId?: string;
+      isNewAccount?: boolean;
     }) => {
       if (!user || role !== "Client") return "";
 
-      const linkToken = await getPlaidLinkToken(user.uid, userToken, incomeSourceType);
+      const linkToken = await getPlaidLinkToken({
+        userId: user.uid,
+        userToken,
+        incomeSourceType,
+        itemId,
+        isNewAccount,
+      });
       return linkToken?.link_token;
     },
     // retry: (count, err: any) => {

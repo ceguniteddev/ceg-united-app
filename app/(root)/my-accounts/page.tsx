@@ -192,8 +192,8 @@ const MyBanks = () => {
 
         <div className="space-y-4">
           <div className="flex flex-wrap gap-6">
-            {visibleAccounts.map((a: Account) => (
-              <BankCard key={a.id} account={a} userName={user?.displayName ?? ""} />
+            {visibleAccounts.map((a: Account, idx) => (
+              <BankCard key={`${a.id}-${idx}`} account={a} userName={user?.displayName ?? ""} />
             ))}
           </div>
         </div>
