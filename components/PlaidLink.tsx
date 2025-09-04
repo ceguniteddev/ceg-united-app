@@ -8,7 +8,13 @@ import { exchangeAccessToken } from "@/service/plaid";
 import { useAuth } from "@/provider/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 
-const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
+type PlaidLinkProps = {
+  variant?: "primary" | "ghost";
+  itemId?: string;
+  isNewAccount?: boolean;
+};
+
+const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
   const router = useRouter();
   const { createLinkToken, canCreate } = useCreateLinkToken();
   const [token, setToken] = useState("");
@@ -17,19 +23,19 @@ const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
 
   useEffect(() => {
     const getLinkToken = async () => {
-      const linkToken = await createLinkToken({});
+      const linkToken = await createLinkToken({ itemId: itemId ?? "", isNewAccount });
 
       setToken(linkToken!);
     };
 
     getLinkToken();
-  }, [createLinkToken]);
+  }, [createLinkToken, itemId, isNewAccount]);
 
   const onSuccess = React.useCallback(
     (public_token: string) => {
       // If the access_token is needed, send public_token to server
       const exchangePublicTokenForAccessToken = async () => {
-        await exchangeAccessToken(public_token, user?.uid ?? "", "ITEM");
+        await exchangeAccessToken(public_token, user?.uid ?? "", "ITEM", itemId, isNewAccount);
 
         await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_LINK", user?.uid] });
         await queryClient.invalidateQueries({
@@ -38,6 +44,10 @@ const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
         });
         await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEMS", user?.uid] });
         await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_ACCOUNT", user?.uid] });
+        await queryClient.invalidateQueries({ queryKey: ["USER_LINK_UPDATE_MODE", user?.uid] });
+        await queryClient.invalidateQueries({
+          queryKey: ["USER_NEW_ACCOUNT_LINK_UPDATE_MODE", user?.uid],
+        });
 
         router.refresh();
         router.push("/overview");
@@ -45,7 +55,7 @@ const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
 
       exchangePublicTokenForAccessToken();
     },
-    [user?.uid, queryClient, router]
+    [user?.uid, queryClient, router, itemId, isNewAccount]
   );
 
   const config: PlaidLinkOptions = {
@@ -78,7 +88,13 @@ const PlaidLink = ({ variant }: { variant?: "primary" | "ghost" }) => {
           className="plaidlink-default shadow-none px-3"
         >
           <Image src="/icons/connect-bank.svg" alt="connect bank" width={24} height={24} />
-          <p className="text-[16px] font-semibold text-black-2">Connect bank</p>
+          <p className="text-[16px] font-semibold text-black-2">
+            {itemId && !isNewAccount
+              ? "Reconnect bank"
+              : isNewAccount
+              ? "Connect new account"
+              : "Connect bank"}
+          </p>
         </Button>
       )}
     </>

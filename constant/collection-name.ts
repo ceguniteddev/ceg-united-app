@@ -12,3 +12,5 @@ export const GMAIL_TOKENS = "gmail-token";
 
 export const REFERENCE_ID_COLLECTION = "reference-id";
 export const WEBHOOK_DATA_COLLECTION = "webhook-data";
+export const USER_LINK_UPDATE_MODE = "user-link-update-mode";
+export const NEW_ACCOUNTS_AVAILABLE = "user-link-new-accounts-available";

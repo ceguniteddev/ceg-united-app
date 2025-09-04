@@ -1,4 +1,12 @@
 declare global {
+  type PlaidLinkTokenCreateRequest = {
+    userId: string;
+    userToken?: string;
+    incomeSourceType?: IncomeVerificationSourceType;
+    itemId?: string;
+    isNewAccount?: boolean;
+  };
+
   type LinkTokenDoc = {
     userId: string;
     linkToken: string;
@@ -22,9 +30,11 @@ declare global {
   type PlaidWebhookType = "ITEM" | "ASSETS";
 
   interface PlaidItemWebhookData {
+    createdAt: Date;
     environment: string;
     error: string;
     item_id: string;
+    reason: string;
     webhook_code: string;
   }
 

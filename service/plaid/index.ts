@@ -9,6 +9,7 @@ import {
   IncomeVerificationPayrollFlowType,
   IncomeVerificationSourceType,
   Institution,
+  Item,
   LinkTokenCreateRequest,
   Products,
 } from "plaid";
@@ -22,6 +23,8 @@ import {
 } from "./asset";
 import { logError, logInfo } from "@/lib/logger";
 import { decrypt, encrypt } from "@/lib/encryption";
+import { log } from "console";
+import { removeItemLinkUpdateModeData, removeItemLinkUpdateModeNewAccount } from "./item";
 
 const PLAID_COUNTRY_CODES = (process.env.PLAID_COUNTRY_CODES || "US").split(",") as CountryCode[];
 
@@ -39,21 +42,32 @@ const REQUIRED_IF_SUPPORTED = (process.env.REQUIRED_IF_SUPPORTED || "")
 
 const PLAID_REDIRECT_URI = process.env.PLAID_REDIRECT_URI || "";
 
-export const getPlaidLinkToken = async (
-  userId: string,
-  userToken?: string,
-  incomeSourceType?: IncomeVerificationSourceType
-) => {
+export const getPlaidLinkToken = async ({
+  userId,
+  userToken,
+  incomeSourceType,
+  itemId,
+  isNewAccount,
+}: PlaidLinkTokenCreateRequest) => {
   if (!userId) throw new Error("User id is required");
 
   const webhookBaseUrl = await getAppPlaidWebhookURL();
+
+  // get accessToken from this itemId because this is update_mode
+  let accessToken = null;
+  if (itemId) {
+    const plaidAccessToken = await getAccessToken(userId, "ITEM", itemId);
+    if (plaidAccessToken) {
+      accessToken = plaidAccessToken[0].accessToken;
+    }
+  }
 
   logInfo("getPlaidLinkToken::entry data", { userId, userToken, incomeSourceType });
   let configs: LinkTokenCreateRequest = {
     user: {
       client_user_id: userId,
     },
-    user_token: "",
+
     client_name: "CEG United LLC",
     products: PLAID_PRODUCTS,
     required_if_supported_products: REQUIRED_IF_SUPPORTED,
@@ -63,6 +77,24 @@ export const getPlaidLinkToken = async (
     webhook: webhookBaseUrl,
   };
 
+  if (accessToken && itemId) {
+    logInfo("getPlaidLinkToken::accessToken::update_mode");
+    configs = {
+      user: {
+        client_user_id: userId,
+      },
+      client_name: "CEG United LLC",
+      country_codes: PLAID_COUNTRY_CODES,
+      language: "en",
+      access_token: accessToken,
+    };
+
+    if (isNewAccount) {
+      configs.update = {
+        account_selection_enabled: true,
+      };
+    }
+  }
   logInfo("getPlaidLinkToken::webhookBaseUrl", { webhookBaseUrl });
   if (userToken && incomeSourceType) {
     configs = {
@@ -117,7 +149,7 @@ export const getPlaidLinkToken = async (
     logInfo("getPlaidLinkToken::linkTokenResponse.data", { data: linkTokenResponse.data });
     return linkTokenResponse.data;
   } catch (e: any) {
-    console.error("Plaid Error:", e.response?.data);
+    console.error("getPlaidLinkToken::Plaid Error :", e.response?.data);
     return null;
   }
 };
@@ -161,7 +193,9 @@ export const unlinkPlaidItem = async (userId: string, bankItemIds: string[]) => 
 export const exchangeAccessToken = async (
   publicToken: string,
   userId: string,
-  tokenType: TokenType
+  tokenType: TokenType,
+  itemId?: string,
+  isNewAccount?: boolean
 ) => {
   if (!userId) throw new Error("User id is required");
   if (!publicToken) throw new Error("Public token is required");
@@ -175,9 +209,19 @@ export const exchangeAccessToken = async (
   const ITEM_ID = tokenResponse.data.item_id;
   logInfo("exchangeAccessToken::ITEM_ID", { ITEM_ID });
 
-  await recordAccessToken(userId, ACCESS_TOKEN, ITEM_ID, tokenType);
+  if (!itemId) {
+    console.log("exchangeAccessToken::recordAccessToken");
+    await recordAccessToken(userId, ACCESS_TOKEN, ITEM_ID, tokenType);
+  }
+  // create asset report once per item
+  if (tokenType === "ITEM" && !itemId) {
+    console.log("exchangeAccessToken::createAssetReport");
+    await createAssetReport(userId, ITEM_ID);
+  }
 
-  if (tokenType === "ITEM") await createAssetReport(userId, ITEM_ID);
+  if (isNewAccount && itemId) {
+    await removeItemLinkUpdateModeNewAccount(itemId);
+  }
 };
 
 export const recordAccessToken = async (
@@ -362,6 +406,15 @@ export const getInstitution = async ({ institutionId }: getInstitutionProps) => 
   const intitution = institutionResponse.data.institution;
   logInfo("getInstitution", { intitution });
   return parseStringify(intitution) as Institution;
+};
+
+export const getItem = async ({ accessToken }: { accessToken: string }) => {
+  logInfo("getItem");
+  const itemResponse = await plaidClient.itemGet({ access_token: accessToken });
+  const item = itemResponse.data.item;
+
+  logInfo("getItem", { item: itemResponse.data.item.item_id });
+  return parseStringify(item) as Item;
 };
 
 export const getPlaidAccountByUserIdAndItemId = async ({
