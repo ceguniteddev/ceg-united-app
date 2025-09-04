@@ -11,7 +11,6 @@ import { getAccessToken, getItem } from ".";
 import { normalizeAllDates } from "@/lib/date-parser";
 
 export const recordWebhookData = async (webhookData: PlaidItemWebhookData) => {
-  console.log("webhookData", webhookData);
   logInfo("recordWebhookData", { webhookData });
 
   const db = firestoreAdmin();
