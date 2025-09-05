@@ -3,7 +3,7 @@ import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { BanknoteIcon } from "lucide-react";
 import React from "react";
-import ApplyFundingForm from "../../../../components/funding/ApplyFundingForm";
+import ApplyFundingForm from "@/components/funding/ApplyFundingForm";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ApplyFundingSuccessful from "./ApplyFundingSuccessful";
@@ -19,7 +19,12 @@ const ApplyFunding = () => {
         isOpen={open}
         setIsOpen={setOpen}
         title="Apply Funding"
-        description="* Please make sure all the details are correct"
+        description={
+          <>
+            * Please make sure all the details are correct
+            <br />* You will be able to update this form once submitted
+          </>
+        }
         descriptionClassName="text-red-500 text-lg font-semibold"
         className="w-3/6"
       >

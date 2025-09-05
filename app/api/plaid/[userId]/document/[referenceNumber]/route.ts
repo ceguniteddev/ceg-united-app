@@ -3,9 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { storageAdmin } from "@/lib/fireabase-admin";
 import { internalServerError } from "@/app/api/helpers";
 
-export async function POST(req: NextRequest, { params }: { params?: Promise<{ userId: string }> }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params?: Promise<{ userId: string; referenceNumber: string }> }
+) {
   try {
-    const { userId } = (await params) ?? {};
+    const { userId, referenceNumber } = (await params) ?? {};
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
@@ -20,7 +23,7 @@ export async function POST(req: NextRequest, { params }: { params?: Promise<{ us
     // GCS bucket
     const bucket = storageAdmin();
     const filename = `${Date.now()}-${file.name}`;
-    const path = `documents/${userId}/${filename}`;
+    const path = `documents/${userId}/${referenceNumber}/${filename}`;
 
     // Upload buffer to GCS
     const arrayBuffer = await file.arrayBuffer();

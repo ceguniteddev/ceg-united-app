@@ -151,3 +151,39 @@ export const usePlaidAccountsMutation = () => {
     isDeleting: deleteMutation.isPending,
   };
 };
+
+export const useHasIncomeBankVerificationQuery = () => {
+  const { user } = useAuth();
+
+  const { data: incomeBankItem, isLoading } = useQuery({
+    queryKey: ["GET_INCOME_BANK_VERIFICATION_USER_ID", user?.uid],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+      return await hasAccessToken(user.uid, "INCOME_VERIFICATION_BANK");
+    },
+    enabled: !!user,
+  });
+
+  return {
+    incomeBankItem,
+    isLoading,
+  };
+};
+
+export const useHasPayrollBankVerificationQuery = () => {
+  const { user } = useAuth();
+
+  const { data: incomePayrollItem, isLoading } = useQuery({
+    queryKey: ["GET_INCOME_PAYROLL_VERIFICATION_USER_ID", user?.uid],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+      return await hasAccessToken(user.uid, "INCOME_VERIFICATION_PAYROLL");
+    },
+    enabled: !!user,
+  });
+
+  return {
+    incomePayrollItem,
+    isLoading,
+  };
+};

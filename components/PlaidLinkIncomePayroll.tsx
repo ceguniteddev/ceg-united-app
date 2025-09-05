@@ -28,6 +28,7 @@ const PlaidIncomeLinkPayroll = () => {
         userToken: userToken.user_token,
         incomeSourceType: IncomeVerificationSourceType.Payroll,
       });
+      if (!token) return;
       setLinkToken(token!);
     };
 

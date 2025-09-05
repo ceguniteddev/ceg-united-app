@@ -25,6 +25,8 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
     const getLinkToken = async () => {
       const linkToken = await createLinkToken({ itemId: itemId ?? "", isNewAccount });
 
+      if (!linkToken) return;
+
       setToken(linkToken!);
     };
 
@@ -64,6 +66,8 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
   };
 
   const { open, ready } = usePlaidLink(config);
+
+  if (!user) return null;
 
   return (
     <>

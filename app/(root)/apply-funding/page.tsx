@@ -5,21 +5,37 @@ import React from "react";
 import ApplyFunding from "./_funding/ApplyFunding";
 import ApplyFundingList from "./_funding/ApplyFundingList";
 import Spinner from "@/components/Spinner";
-import { useGetPlaidAccounts } from "@/hooks/plaid";
+import {
+  useGetPlaidAccounts,
+  useHasIncomeBankVerificationQuery,
+  useHasPayrollBankVerificationQuery,
+} from "@/hooks/plaid";
 import { useAuth } from "@/provider/AuthContext";
 import NoBankLinked from "@/components/NoBankLinked";
+import NoIncomeVerification from "@/components/NoIncomeVerification";
 
 const ApplyFundingPage = () => {
   const { plaidAccounts, isLoading } = useGetPlaidAccounts();
+  const { incomeBankItem, isLoading: incomeBankItemLoading } = useHasIncomeBankVerificationQuery();
+  const { incomePayrollItem, isLoading: payrollBankItemLoading } =
+    useHasPayrollBankVerificationQuery();
   const { user } = useAuth();
 
   if (!user) return null;
 
-  if (isLoading) return <Spinner />;
+  if (isLoading || incomeBankItemLoading || payrollBankItemLoading) return <Spinner />;
 
   if (!plaidAccounts || !plaidAccounts.data?.length) {
     return <NoBankLinked />;
   }
+
+  if (!incomeBankItem) {
+    return <NoIncomeVerification tokenType="INCOME_VERIFICATION_BANK" />;
+  }
+  if (!incomePayrollItem) {
+    return <NoIncomeVerification tokenType="INCOME_VERIFICATION_PAYROLL" />;
+  }
+
   return (
     <section className="transactions">
       <div className="transactions-header flex flex-row justify-between">

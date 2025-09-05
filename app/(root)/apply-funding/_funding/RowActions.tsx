@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
 import { ApplyFunding } from "@/schema/apply-funding";
-import ApplyFundingForm from "../../../../components/funding/ApplyFundingForm";
+import ApplyFundingForm from "@/components/funding/ApplyFundingForm";
 import DeleteConfirmation from "@/components/delete-confirmation";
 import { toast } from "sonner";
 import { useApplyFunding } from "@/hooks/apply-funding";

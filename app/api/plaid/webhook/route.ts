@@ -7,7 +7,7 @@ import { recordWebhookData as recordData } from "@/service/webhook";
 export const POST = async (request: NextRequest) => {
   try {
     const message = (await request.json()) as PlaidWebhookData;
-    console.log("message", message);
+    // console.log("message", message);
     await recordData(message);
 
     if (message.webhook_type === "ITEM") {

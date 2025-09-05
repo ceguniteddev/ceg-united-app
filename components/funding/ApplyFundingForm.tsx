@@ -2,31 +2,37 @@
 import { CustomFormField } from "@/components/CustomFormField";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { ApplyFunding, applyFundingSchema } from "@/schema/apply-funding";
+import { ApplyFunding, applyFundingSchema, FundingApplicationType } from "@/schema/apply-funding";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BanknoteIcon, CircleXIcon, Loader2Icon } from "lucide-react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 import { getCaptchaTokenRegistration } from "@/lib/captcha";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
 import { useApplyFunding } from "@/hooks/apply-funding";
 import { US_STATES } from "@/constant/common";
 
 const interestedProduct: DropdownOption[] = [
-  { value: "Personal & Business Funding", label: "Personal & Business Funding" },
-  { value: "Personal Funding", label: "Personal Funding" },
-  { value: "Business Funding", label: "Business Funding" },
-
-  { value: "Personal Tradelines", label: "Personal Tradelines" },
-  { value: "Business Tradelines", label: "Business Tradelines" },
-  { value: "Personal & Business Tradelines", label: "Personal & Business Tradelines" },
-  { value: "Aged Shelf Corporation", label: "Aged Shelf Corporation" },
-  { value: "Knowledge Community", label: "Knowledge Community" },
-
-  { value: "Auto Loan", label: "Auto Loan" },
-  { value: "Equipment Financing", label: "Equipment Financing" },
+  {
+    value: "Personal & Business Funding",
+    label: "Personal & Business Funding",
+    category: "Personal And Business",
+  },
+  { value: "Personal Funding", label: "Personal Funding", category: "Personal" },
+  { value: "Business Funding", label: "Business Funding", category: "Business" },
+  { value: "Personal Tradelines", label: "Personal Tradelines", category: "Personal" },
+  { value: "Business Tradelines", label: "Business Tradelines", category: "Business" },
+  {
+    value: "Personal & Business Tradelines",
+    label: "Personal & Business Tradelines",
+    category: "Personal And Business",
+  },
+  { value: "Aged Shelf Corporation", label: "Aged Shelf Corporation", category: "All" },
+  { value: "Knowledge Community", label: "Knowledge Community", category: "All" },
+  { value: "Auto Loan", label: "Auto Loan", category: "All" },
+  { value: "Equipment Financing", label: "Equipment Financing", category: "All" },
 ];
 
 const businessProducts = [
@@ -54,13 +60,18 @@ type Props = {
   data?: ApplyFunding;
 };
 
+const getCategory = (value?: string) =>
+  (interestedProduct.find((p) => p.value === value)?.category ?? undefined) as
+    | FundingApplicationType
+    | undefined;
+
 const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
   const { user } = useAuth();
   const { applyFunding, isRecording } = useApplyFunding();
   const [showLegalResidentOther, setShowLegalResidentOther] = useState(false);
-  const [interestedProductSelected, setInterestedProductSelected] = useState<string | undefined>(
-    undefined
-  );
+  const [interestedProductSelected, setInterestedProductSelected] = useState<
+    DropdownOption | undefined
+  >(undefined);
 
   const form = useForm<ApplyFunding>({
     resolver: zodResolver(applyFundingSchema),
@@ -69,11 +80,17 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
       appliedDate: data?.appliedDate ?? new Date(),
       userId: user?.uid ?? "",
       status: data?.status ?? "New",
+      fundingType: data?.fundingType ?? getCategory(data?.interestedProduct) ?? "Personal",
     },
   });
 
-  const errors = form.formState.errors;
-  console.log(errors);
+  const interested = form.watch("interestedProduct");
+  useEffect(() => {
+    const cat = getCategory(interested);
+    if (cat) {
+      form.setValue("fundingType", cat, { shouldValidate: true, shouldDirty: true });
+    }
+  }, [interested, form]);
 
   const onSubmit: SubmitHandler<ApplyFunding> = useCallback(
     async (values) => {
@@ -85,19 +102,27 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
     [setOpen, setCongratsOpen, applyFunding]
   );
 
-  const handleLegalResidentChange = (value: string) => {
+  const handleLegalResidentChange = useCallback((value: string) => {
     if (value === "Other") {
       setShowLegalResidentOther(true);
     } else {
       setShowLegalResidentOther(false);
     }
-  };
+  }, []);
+
+  const handleInterestedProductChange = useCallback((value: string) => {
+    const selectedProduct = interestedProduct.find((product) => product.value === value);
+    if (selectedProduct) {
+      setInterestedProductSelected(selectedProduct);
+    }
+  }, []);
 
   return (
     <div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <fieldset disabled={isRecording}>
+            <input type="hidden" {...form.register("fundingType")} />
             <div>
               <Card>
                 <CardContent className="space-y-4">
@@ -108,7 +133,7 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
                       type="select"
                       placeholder=" "
                       options={interestedProduct}
-                      onSelectValue={setInterestedProductSelected}
+                      onSelectValue={handleInterestedProductChange}
                     />
                     <CustomFormField
                       name={"amountFunding"}
@@ -117,7 +142,7 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
                     />
                   </div>
                   {interestedProductSelected &&
-                    businessProducts.includes(interestedProductSelected) && (
+                    interestedProductSelected.category?.includes("Business") && (
                       <CustomFormField
                         name={"businessName"}
                         label="* Enter Business name (Business Funding Only)"

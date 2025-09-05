@@ -1,17 +1,16 @@
 "use server";
-import {
-  USER_COLLECTION,
-  USER_FUNDING_APPLICATION,
-  USER_FUNDING_APPLICATION_ANALYSIS,
-} from "@/constant/collection-name";
+import { USER_COLLECTION, USER_FUNDING_APPLICATION } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { normalizeAllDates } from "@/lib/date-parser";
-import { firestoreAdmin } from "@/lib/fireabase-admin";
-import { logInfo } from "@/lib/logger";
-import { ApplyFunding, ApplyFundingWithUser } from "@/schema/apply-funding";
+import { firestoreAdmin, storageAdmin } from "@/lib/fireabase-admin";
+import { logError, logInfo } from "@/lib/logger";
+import {
+  ApplyFunding,
+  ApplyFundingWithUser,
+  FundingApplicationSatus,
+} from "@/schema/apply-funding";
 import { Timestamp } from "firebase-admin/firestore";
 import * as crypto from "node:crypto";
-import { getUserById } from "./user";
 
 export const applyFunding = async (value: ApplyFunding) => {
   const db = firestoreAdmin();
@@ -130,7 +129,19 @@ export const deleteApplyFunding = async (referenceNumber: string): Promise<void>
   }
 
   const db = firestoreAdmin();
-  await db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber).delete();
+  const appRef = db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber);
+  await db.recursiveDelete(appRef);
+
+  // delete the storage
+  const storage = storageAdmin();
+  try {
+    await storage.deleteFiles({
+      prefix: `documents/${data.userId}/${referenceNumber}`,
+    });
+  } catch (error: any) {
+    console.error("unlinkPlaidItem::error", error);
+    logError(error, { userId: data.userId, referenceNumber });
+  }
 };
 
 export async function createReferenceId(): Promise<{ id: string; path: string }> {
@@ -181,22 +192,16 @@ function randomString(length: number) {
   return out;
 }
 
-export const recordAnalysis = async (userId: string, referenceNumber: string, analysis: string) => {
-  if (!userId) throw new AppError("User ID is required.");
-  if (!referenceNumber) throw new AppError("Reference number is required.");
-  if (!analysis) throw new AppError("Analysis is required.");
+export const updateApplicationStatus = async (
+  referenceNumber: string,
+  status: FundingApplicationSatus
+) => {
+  logInfo("updateApplicationStatus", { referenceNumber, status });
 
-  logInfo("recordAnalysis", { userId, referenceNumber });
-
-  const fundingApplication = await getApplyFundingByReferenceNumber(referenceNumber);
-  if (!fundingApplication) throw new AppError("Funding application reference number not found.");
-
-  const userData = await getUserById(userId);
-  if (!userData) throw new AppError("User not found.");
+  const data = await getApplyFundingByReferenceNumber(referenceNumber);
+  if (!data) throw new AppError("Funding application not found.");
 
   const db = firestoreAdmin();
-  const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`
-  );
-  await collectionRef.add({ analysis, userId, createdAt: Timestamp.now() });
+  const appRef = db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber);
+  await appRef.update({ status });
 };

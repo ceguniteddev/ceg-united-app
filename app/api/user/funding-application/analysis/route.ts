@@ -1,7 +1,7 @@
 import { badRequest, internalServerError } from "@/app/api/helpers";
 import AppError from "@/error/AppError";
 import { getMessage } from "@/schema";
-import { recordAnalysis } from "@/service/apply-funding";
+import { recordAnalysis } from "@/service/analysis";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
 
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     await recordAnalysis(userId, referenceNumber, analysis);
 
-    return NextResponse.json("OK", { status: 200 });
+    return NextResponse.json({ message: "ok" }, { status: 200 });
   } catch (err) {
     if (err instanceof AppError) {
       return badRequest(err.message);

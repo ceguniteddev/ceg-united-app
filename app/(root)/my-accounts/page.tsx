@@ -154,7 +154,12 @@ const MyBanks = () => {
           {canShowRemove && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" className="gap-2" disabled={isDeleting}>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="gap-2 cursor-pointer"
+                  disabled={isDeleting}
+                >
                   {isDeleting ? (
                     <Loader2Icon className="h-4 w-4 animate-spin" />
                   ) : (
@@ -180,8 +185,14 @@ const MyBanks = () => {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={removeSelectedInstitution} disabled={isDeleting}>
+                  <AlertDialogCancel disabled={isDeleting} className="cursor-pointer">
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={removeSelectedInstitution}
+                    disabled={isDeleting}
+                    className="cursor-pointer"
+                  >
                     {isDeleting ? "Removing..." : "Remove"}
                   </AlertDialogAction>
                 </AlertDialogFooter>

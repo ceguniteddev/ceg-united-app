@@ -13,7 +13,7 @@ type DocumentItem = {
 };
 type ListResponse = { items: DocumentItem[] };
 
-export const useGetClientDocuments = (userId: string) => {
+export const useGetClientDocuments = (userId: string, referenceNumber: string) => {
   const { user } = useAuth();
 
   const { data, isLoading, error } = useQuery({
@@ -21,7 +21,9 @@ export const useGetClientDocuments = (userId: string) => {
     enabled: !!user && !!userId,
     queryFn: async (): Promise<ListResponse> => {
       if (!user) throw new Error("User not authenticated");
-      const res = await fetch(`/api/plaid/document/${userId}`, { method: "GET" });
+      const res = await fetch(`/api/plaid/${userId}/document/${referenceNumber}`, {
+        method: "GET",
+      });
       if (!res.ok) throw new Error(`Failed: ${res.status}`);
       return res.json();
     },

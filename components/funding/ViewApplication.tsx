@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApplyFunding } from "@/schema/apply-funding";
 import ApplyFundingForm from "./ApplyFundingForm";
 import DocumentsDisplay from "./DocumentsDisplay";
 
-import dynamic from "next/dynamic";
 import AnalysisView from "./AnalysisView";
+import { updateApplicationStatus } from "@/service/apply-funding";
 
 type Props = {
   formSetOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -14,6 +14,15 @@ type Props = {
 };
 
 const ViewApplication = ({ formSetOpen, formSetCongratsOpen, formData }: Props) => {
+  useEffect(() => {
+    const updateStatus = async () => {
+      if (formData?.status === "New") {
+        await updateApplicationStatus(formData.referenceNumber ?? "", "Processing");
+      }
+    };
+    updateStatus();
+  }, [formData]);
+
   return (
     <Tabs defaultValue="application" className="w-full flex flex-col items-start justify-start">
       <TabsList>
@@ -31,11 +40,14 @@ const ViewApplication = ({ formSetOpen, formSetCongratsOpen, formData }: Props) 
       </TabsContent>
 
       <TabsContent value="document" className="w-full">
-        <DocumentsDisplay userId={formData?.userId ?? ""} />
+        <DocumentsDisplay
+          userId={formData?.userId ?? ""}
+          referenceNumber={formData?.referenceNumber ?? ""}
+        />
       </TabsContent>
 
       <TabsContent value="analysis" className="w-full">
-        <AnalysisView />
+        <AnalysisView referenceNumber={formData?.referenceNumber ?? ""} setOpen={formSetOpen} />
       </TabsContent>
     </Tabs>
   );
