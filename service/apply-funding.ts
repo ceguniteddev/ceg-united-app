@@ -1,11 +1,17 @@
 "use server";
-import { USER_COLLECTION, USER_FUNDING_APPLICATION } from "@/constant/collection-name";
+import {
+  USER_COLLECTION,
+  USER_FUNDING_APPLICATION,
+  USER_FUNDING_APPLICATION_ANALYSIS,
+} from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
+import { logInfo } from "@/lib/logger";
 import { ApplyFunding, ApplyFundingWithUser } from "@/schema/apply-funding";
 import { Timestamp } from "firebase-admin/firestore";
 import * as crypto from "node:crypto";
+import { getUserById } from "./user";
 
 export const applyFunding = async (value: ApplyFunding) => {
   const db = firestoreAdmin();
@@ -81,7 +87,7 @@ export const getFundingApplications = async (
     };
   });
 
-  return snapshot.docs.map((doc) => {
+  let results = snapshot.docs.map((doc) => {
     const data = normalizeAllDates(doc.data());
     const userId = data.userId;
     return {
@@ -90,6 +96,11 @@ export const getFundingApplications = async (
       user: usersMap[userId] ?? null,
     };
   });
+
+  // remove results with user == null
+  results = results.filter((result) => result.user !== null);
+
+  return results;
 };
 
 export const getApplyFundingByReferenceNumber = async (
@@ -169,3 +180,23 @@ function randomString(length: number) {
   }
   return out;
 }
+
+export const recordAnalysis = async (userId: string, referenceNumber: string, analysis: string) => {
+  if (!userId) throw new AppError("User ID is required.");
+  if (!referenceNumber) throw new AppError("Reference number is required.");
+  if (!analysis) throw new AppError("Analysis is required.");
+
+  logInfo("recordAnalysis", { userId, referenceNumber });
+
+  const fundingApplication = await getApplyFundingByReferenceNumber(referenceNumber);
+  if (!fundingApplication) throw new AppError("Funding application reference number not found.");
+
+  const userData = await getUserById(userId);
+  if (!userData) throw new AppError("User not found.");
+
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`
+  );
+  await collectionRef.add({ analysis, userId, createdAt: Timestamp.now() });
+};

@@ -1,7 +1,5 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
-
 import IconMenu from "@/components/icon-menu";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { Button } from "@/components/ui/button";
@@ -12,21 +10,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FilesIcon, MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
+import { MoreHorizontal, SquarePen } from "lucide-react";
 import { ApplyFunding } from "@/schema/apply-funding";
-import ApplyFundingForm from "@/components/funding/ApplyFundingForm";
-import DeleteConfirmation from "@/components/delete-confirmation";
-import { toast } from "sonner";
-import { useApplyFunding } from "@/hooks/apply-funding";
-import DocumentsDisplay from "@/components/funding/DocumentsDisplay";
 import ViewApplication from "@/components/funding/ViewApplication";
+import { useState } from "react";
 
 type Props = {
   data: ApplyFunding;
 };
 
 export function RowActions({ data }: Props) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   return (
     <>
@@ -36,7 +30,7 @@ export function RowActions({ data }: Props) {
         title={`View Application - ${data.referenceNumber}`}
         description=""
         descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-3/6"
+        className="w-3/6 flex flex-col items-start justify-start min-h-[80vh] "
       >
         <ViewApplication formData={data} formSetOpen={setOpen} />
       </ResponsiveDialog>
@@ -54,7 +48,7 @@ export function RowActions({ data }: Props) {
               onClick={() => {
                 setOpen(true);
               }}
-              className="w-full justify-start flex rounded-md p-2 transition-all duration-75 hover:bg-neutral-100"
+              className="w-full justify-start flex rounded-md p-2 transition-all duration-75 hover:bg-neutral-100 cursor-pointer"
             >
               <IconMenu text="View" icon={<SquarePen className="h-4 w-4" />} />
             </button>

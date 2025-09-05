@@ -153,7 +153,7 @@ export const getAssetReportPDF = async (
 
     await bucketFile.save(pdfBuffer, { contentType: "application/pdf" });
   } catch (e: any) {
-    logError(e);
+    logError(e, { ...e.response?.data });
     console.error("Plaid Error:", e.response?.data);
     throw e;
   }
@@ -171,7 +171,7 @@ export const getAssetReportPDFUrl = async (assetReportToken: string) => {
       asset_report_token: assetReportToken,
     });
   } catch (e: any) {
-    logError(e);
+    logError(e, { ...e.response?.data });
     console.error("Plaid Error:", e.response?.data);
     throw e;
   }
@@ -194,7 +194,7 @@ export const getAssetReport = async (assetReportToken: string, userId: string) =
       include_insights: true,
     });
   } catch (e: any) {
-    logError(e);
+    logError(e, { ...e.response?.data });
     console.error("Plaid Error:", e.response?.data);
     throw e;
   }

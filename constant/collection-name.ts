@@ -1,5 +1,6 @@
 export const USER_COLLECTION = "user";
 export const USER_FUNDING_APPLICATION = "user-funding-application";
+export const USER_FUNDING_APPLICATION_ANALYSIS = "analysis";
 export const LINK_TOKEN_COLLECTION = "plaid-link-token";
 export const USER_TOKEN_COLLECTION = "plaid-user-token";
 export const PLAID_ITEM_WEBHOOK_COLLECTION = "plaid-item-webhook-data";

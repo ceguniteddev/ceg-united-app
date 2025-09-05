@@ -7,7 +7,6 @@ import { Timestamp } from "firebase-admin/firestore";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { plaidClient } from "@/lib/plaid";
 import { logError, logInfo } from "@/lib/logger";
-import { log } from "console";
 import AppError from "@/error/AppError";
 
 type PlaidCompleteRow = {
@@ -33,7 +32,7 @@ async function safeData<T>(
     const res = await call();
     return res.data;
   } catch (err: any) {
-    logError(err);
+    logError(err, { ...err.response?.data });
     console.error(`[Plaid] ${label} failed token-type ${tokenType}`, err.response?.data);
     return null;
   }
@@ -64,7 +63,7 @@ export const recordPlaidUserToken = async (userId: string) => {
       client_user_id: userId,
     });
   } catch (error: any) {
-    logError(error);
+    logError(error, { ...error.response?.data });
     console.error("Plaid Error:", error.response?.data);
     throw error;
   }

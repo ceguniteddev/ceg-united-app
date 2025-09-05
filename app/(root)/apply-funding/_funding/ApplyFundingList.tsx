@@ -10,6 +10,10 @@ const ApplyFundingList = () => {
   const { appliedFunding, isLoading } = useGetUserApplyFunding();
 
   if (isLoading) return <Spinner />;
+
+  if (!appliedFunding || appliedFunding.length === 0)
+    return <p className="text-center">No funding applications</p>;
+
   return (
     <FundingList
       appliedFunding={appliedFunding as ApplyFundingWithUser[]}

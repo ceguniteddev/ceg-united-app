@@ -184,9 +184,14 @@ export const unlinkPlaidItem = async (userId: string, bankItemIds: string[]) => 
     await deleteAccessToken(bankRecord[0].id ?? "");
 
     // remove the storage file for the asset report pdfs
-    const storage = storageAdmin();
-    const bucketFile = storage.file(`documents/${userId}/asset-report-${bankItemId}.pdf`);
-    await bucketFile.delete();
+    try {
+      const storage = storageAdmin();
+      const bucketFile = storage.file(`documents/${userId}/asset-report-${bankItemId}.pdf`);
+      await bucketFile.delete();
+    } catch (error: any) {
+      console.error("unlinkPlaidItem::error", error);
+      logError(error, { userId, bankItemId });
+    }
   }
 };
 
