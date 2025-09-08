@@ -13,34 +13,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
 import { useApplyFunding } from "@/hooks/apply-funding";
 import { US_STATES } from "@/constant/common";
-
-const interestedProduct: DropdownOption[] = [
-  {
-    value: "Personal & Business Funding",
-    label: "Personal & Business Funding",
-    category: "Personal And Business",
-  },
-  { value: "Personal Funding", label: "Personal Funding", category: "Personal" },
-  { value: "Business Funding", label: "Business Funding", category: "Business" },
-  { value: "Personal Tradelines", label: "Personal Tradelines", category: "Personal" },
-  { value: "Business Tradelines", label: "Business Tradelines", category: "Business" },
-  {
-    value: "Personal & Business Tradelines",
-    label: "Personal & Business Tradelines",
-    category: "Personal And Business",
-  },
-  { value: "Aged Shelf Corporation", label: "Aged Shelf Corporation", category: "All" },
-  { value: "Knowledge Community", label: "Knowledge Community", category: "All" },
-  { value: "Auto Loan", label: "Auto Loan", category: "All" },
-  { value: "Equipment Financing", label: "Equipment Financing", category: "All" },
-];
-
-const businessProducts = [
-  "Personal & Business Funding",
-  "Personal & Business Tradelines",
-  "Business Funding",
-  "Business Tradelines",
-];
+import { useFundingProducts } from "@/hooks/admin/funding-product";
+import Spinner from "../Spinner";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
@@ -60,11 +34,6 @@ type Props = {
   data?: ApplyFunding;
 };
 
-const getCategory = (value?: string) =>
-  (interestedProduct.find((p) => p.value === value)?.category ?? undefined) as
-    | FundingApplicationType
-    | undefined;
-
 const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
   const { user } = useAuth();
   const { applyFunding, isRecording } = useApplyFunding();
@@ -72,6 +41,23 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
   const [interestedProductSelected, setInterestedProductSelected] = useState<
     DropdownOption | undefined
   >(undefined);
+  const [interestedProducts, setInterestedProducts] = useState<DropdownOption[]>([]);
+  const { products, isLoading } = useFundingProducts();
+
+  useEffect(() => {
+    if (products) {
+      const data: DropdownOption[] = [];
+
+      products.forEach((product) => {
+        data.push({
+          value: product.productName,
+          label: product.productName,
+          category: product.fundingType,
+        });
+      });
+      setInterestedProducts(data);
+    }
+  }, [products]);
 
   const form = useForm<ApplyFunding>({
     resolver: zodResolver(applyFundingSchema),
@@ -80,17 +66,9 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
       appliedDate: data?.appliedDate ?? new Date(),
       userId: user?.uid ?? "",
       status: data?.status ?? "New",
-      fundingType: data?.fundingType ?? getCategory(data?.interestedProduct) ?? "Personal",
+      fundingType: data?.fundingType ?? "All",
     },
   });
-
-  const interested = form.watch("interestedProduct");
-  useEffect(() => {
-    const cat = getCategory(interested);
-    if (cat) {
-      form.setValue("fundingType", cat, { shouldValidate: true, shouldDirty: true });
-    }
-  }, [interested, form]);
 
   const onSubmit: SubmitHandler<ApplyFunding> = useCallback(
     async (values) => {
@@ -110,12 +88,28 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
     }
   }, []);
 
-  const handleInterestedProductChange = useCallback((value: string) => {
-    const selectedProduct = interestedProduct.find((product) => product.value === value);
-    if (selectedProduct) {
-      setInterestedProductSelected(selectedProduct);
-    }
-  }, []);
+  const handleInterestedProductChange = useCallback(
+    (value: string) => {
+      const selectedProduct = interestedProducts.find((product) => product.value === value);
+      if (selectedProduct) {
+        setInterestedProductSelected(selectedProduct);
+        form.setValue("fundingType", selectedProduct.category, { shouldValidate: true });
+      }
+    },
+    [interestedProducts, form]
+  );
+
+  if (isLoading) return <Spinner displayText="Loading data..." />;
+
+  if (!products || products.length === 0) {
+    return (
+      <div>
+        <p className="text-center">
+          No funding products available, please contact {process.env.NEXT_PUBLIC_APP_NAME} team.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -132,7 +126,7 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
                       label="* The Product You're Most Interested In"
                       type="select"
                       placeholder=" "
-                      options={interestedProduct}
+                      options={interestedProducts}
                       onSelectValue={handleInterestedProductChange}
                     />
                     <CustomFormField

@@ -37,7 +37,7 @@ export function RowActions({ data }: Props) {
 
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
+          <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -48,7 +48,7 @@ export function RowActions({ data }: Props) {
               onClick={() => {
                 setOpen(true);
               }}
-              className="w-full justify-start flex rounded-md p-2 transition-all duration-75 hover:bg-neutral-100 cursor-pointer"
+              className="cursor-pointer w-full justify-start flex rounded-md p-2 transition-all duration-75 hover:bg-neutral-100 cursor-pointer"
             >
               <IconMenu text="View" icon={<SquarePen className="h-4 w-4" />} />
             </button>

@@ -387,7 +387,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
             })}
           </FormControl>
 
-          {/* <FormMessage className="text-red-400" /> */}
+          <FormMessage className="text-red-400" />
         </FormItem>
       )}
     />

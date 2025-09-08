@@ -289,10 +289,10 @@
 }
 
 @utility home {
-  @apply no-scrollbar flex w-full flex-row max-xl:max-h-screen max-xl:overflow-y-scroll;
+  @apply no-scrollbar flex w-full flex-row max-xl:max-h-screen max-xl:overflow-y-auto;
 }
 @utility home-content {
-  @apply no-scrollbar flex w-full flex-1 flex-col gap-8 px-5 sm:px-8 py-7 lg:py-12 xl:max-h-screen xl:overflow-y-scroll;
+  @apply no-scrollbar flex w-full flex-1 flex-col gap-8 px-5 sm:px-8 py-7 lg:py-12 xl:max-h-screen xl:overflow-y-auto;
 }
 @utility home-header {
   @apply flex flex-col justify-between gap-8;
@@ -325,7 +325,7 @@
 }
 
 @utility right-sidebar {
-  @apply no-scrollbar hidden h-screen max-h-screen flex-col border-l border-gray-200 xl:flex w-[355px] xl:overflow-y-scroll;
+  @apply no-scrollbar hidden h-screen max-h-screen flex-col border-l border-gray-200 xl:flex w-[355px] xl:overflow-y-auto;
 }
 
 @utility profile-banner {
@@ -355,7 +355,7 @@
 }
 
 @utility transactions {
-  @apply flex max-h-screen w-full flex-col gap-8 overflow-y-scroll bg-gray-25 p-8 xl:py-12;
+  @apply flex max-h-screen w-full flex-col gap-8 overflow-y-auto bg-gray-25 p-8 xl:py-12;
 }
 @utility transactions-header {
   @apply flex w-full flex-col items-start justify-between gap-8 md:flex-row;
@@ -438,7 +438,7 @@
 }
 
 @utility payment-transfer {
-  @apply no-scrollbar flex flex-col overflow-y-scroll bg-gray-25 p-8 md:max-h-screen xl:py-12;
+  @apply no-scrollbar flex flex-col overflow-y-auto bg-gray-25 p-8 md:max-h-screen xl:py-12;
 }
 @utility payment-transfer_form-item {
   @apply flex w-full max-w-[850px] flex-col gap-3 md:flex-row lg:gap-8;

@@ -9,10 +9,20 @@ export const FundingApplicationType = [
   "Personal",
   "Business",
   "Personal And Business",
+  "Income",
   "All",
 ] as const;
-export const FundingApplicationTypeEnum = z.enum(FundingApplicationType);
+export const FundingApplicationTypeEnum = z.enum(FundingApplicationType, { error: "Required" });
 export type FundingApplicationType = z.infer<typeof FundingApplicationTypeEnum>;
+
+export const getFundingApplicationType = () => {
+  const data = FundingApplicationTypeEnum.options;
+
+  return data.map((type) => ({
+    value: type,
+    label: type,
+  }));
+};
 
 export const applyFundingSchema = z.object({
   userId: z.string().min(1, { error: "Required" }),

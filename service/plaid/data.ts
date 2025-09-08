@@ -22,21 +22,16 @@ type PlaidCompleteRow = {
   investmentTransactions: any[];
 };
 
-async function safeData<T>(
-  tokenType: TokenType,
-  label: string,
-  call: () => Promise<{ data: T }>
-): Promise<T | null> {
-  logInfo(`[Plaid] ${label} token-type ${tokenType}`);
-  try {
-    const res = await call();
-    return res.data;
-  } catch (err: any) {
-    logError(err, { ...err.response?.data });
-    console.error(`[Plaid] ${label} failed token-type ${tokenType}`, err.response?.data);
-    return null;
-  }
-}
+type Label =
+  | "itemGet"
+  | "accountsBalanceGet"
+  | "identityGet"
+  | "transactionsGet"
+  | "liabilitiesGet"
+  | "creditBankIncomeGet"
+  | "creditPayrollIncomeGet"
+  | "investmentsHoldingsGet"
+  | "investmentsTransactionsGet";
 
 type LinkTokenRecord = UserCreateResponse & {
   id: string;
@@ -195,3 +190,37 @@ export const getPlaidCompleteData = async (userId: string) => {
 
   return completeData;
 };
+
+async function safeData<T>(
+  tokenType: TokenType,
+  label: Label,
+  call: () => Promise<{ data: T }>
+): Promise<T | null> {
+  logInfo(`[Plaid] ${label} token-type ${tokenType}`);
+
+  const skipLabels: Label[] = [
+    "transactionsGet",
+    "liabilitiesGet",
+    "accountsBalanceGet",
+    "investmentsHoldingsGet",
+    "investmentsTransactionsGet",
+    "identityGet",
+  ];
+
+  if (
+    (tokenType === "INCOME_VERIFICATION_BANK" || tokenType === "INCOME_VERIFICATION_PAYROLL") &&
+    skipLabels.includes(label)
+  ) {
+    logInfo(`[Plaid] Skipping ${label} for token-type ${tokenType}`);
+    return null;
+  }
+
+  try {
+    const res = await call();
+    return res.data;
+  } catch (err: any) {
+    logError(err, { ...err.response?.data });
+    console.error(`[Plaid] ${label} failed token-type ${tokenType}`, err.response?.data);
+    return null;
+  }
+}
