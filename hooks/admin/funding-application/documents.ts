@@ -17,7 +17,7 @@ export const useGetClientDocuments = (userId: string, referenceNumber: string) =
   const { user } = useAuth();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: [GET_CLIENT_DOCUMENTS, userId],
+    queryKey: [GET_CLIENT_DOCUMENTS, userId, referenceNumber],
     enabled: !!user && !!userId,
     queryFn: async (): Promise<ListResponse> => {
       if (!user) throw new Error("User not authenticated");
