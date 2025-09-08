@@ -42,8 +42,8 @@ export default function AdminDashboard() {
               return "rgba(239, 68, 68, 0.7)";
             case "Processing":
               return "#F59E0B";
-            case "Completed":
-              return "#12B76A";
+            case "Approved":
+              return "#059669";
             default:
               return "rgba(59, 130, 246, 0.7)";
           }

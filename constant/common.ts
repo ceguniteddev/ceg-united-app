@@ -111,11 +111,11 @@ export const transactionCategoryStyles = {
     textColor: "text-amber-700",
     chipBackgroundColor: "bg-amber-100",
   },
-  Completed: {
-    borderColor: "border-[#12B76A]",
-    backgroundColor: "bg-[#12B76A]",
-    textColor: "text-[#027A48]",
-    chipBackgroundColor: "bg-[#ECFDF3]",
+  Approved: {
+    borderColor: "border-emerald-300",
+    backgroundColor: "bg-emerald-600",
+    textColor: "text-emerald-700",
+    chipBackgroundColor: "bg-emerald-50",
   },
   default: {
     borderColor: "",
