@@ -22,7 +22,7 @@ const Sidebar = () => {
   useEffect(() => {
     const driverObj = driver({
       // onCloseClick: () => console.log("onCloseClick"),
-      onDestroyed: () => updateOnboarding(),
+      onDestroyed: async () => await updateOnboarding(),
       steps: [
         {
           element: "#plaid-link-button",
