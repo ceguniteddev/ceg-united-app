@@ -37,7 +37,7 @@ const AnalysisView = ({ referenceNumber, setOpen }: Props) => {
 
   return (
     <div className="space-y-6">
-      {(analysisData as Item[]).map((item) => (
+      {(analysisData as Item[])?.map((item) => (
         <AnalysisDetailsView
           updateAnalysis={({ referenceNumber, id, analysis }) =>
             updateAnalysis({ referenceNumber, id, analysis })
