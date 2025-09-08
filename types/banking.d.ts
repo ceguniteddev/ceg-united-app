@@ -270,6 +270,7 @@ declare interface getInstitutionProps {
 
 declare interface getTransactionsProps {
   accessToken: string;
+  accountId?: string;
 }
 
 declare interface CreateFundingSourceOptions {

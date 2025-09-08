@@ -118,3 +118,10 @@ export const getUsers = async (role?: Role): Promise<UserPlaid[]> => {
   });
   return users;
 };
+
+export const updateUserOnboardingStatus = async (id: string, status: boolean) => {
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(USER_COLLECTION);
+  const docRef = collectionRef.doc(id);
+  await docRef.update({ isOnboarded: status });
+};

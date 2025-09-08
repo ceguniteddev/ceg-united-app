@@ -1,19 +1,16 @@
 "use client";
 import HeaderBox from "@/components/HeaderBox";
 import NoBankLinked from "@/components/NoBankLinked";
-import RightSidebar from "@/components/RightSidebar";
 import Spinner from "@/components/Spinner";
 import TotalBalanceBox from "@/components/TotalBalanceBox";
 import { useGetPlaidAccounts } from "@/hooks/plaid";
 import { useAuth } from "@/provider/AuthContext";
-
 const Home = () => {
   const { user } = useAuth();
-  // const accounts = await getAccounts({
-  //   userId: loggedIn.$id,
-  // });
 
   const { plaidAccounts, isLoading } = useGetPlaidAccounts();
+
+  if (!user && !isLoading && !plaidAccounts) return <Spinner />;
 
   if (isLoading) return <Spinner />;
 
@@ -22,8 +19,6 @@ const Home = () => {
   }
 
   const accountsData = plaidAccounts?.data;
-
-  // const account = await getAccount({ bankItemId });
 
   return (
     <section className="home">

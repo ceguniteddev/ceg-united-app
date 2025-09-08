@@ -15,6 +15,7 @@ import AppError from "@/error/AppError";
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
+  isOnboarded: boolean;
   role: Role | null;
   loading: boolean;
   signIn: (token: string | null, email: string, password: string) => Promise<void>;
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isOnboarded, setIsOnboarded] = useState(false);
   const [loading, setLoading] = useState(true); // Still true to prevent flicker on load
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -43,6 +45,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     setUser(firebaseUser);
     setRole(userRole as Role);
     setIsAdmin(userRole === "Admin" || userRole === "IT");
+    setIsOnboarded(userData.isOnboarded || false);
   }, []);
 
   const logOut = useCallback(async () => {
@@ -53,6 +56,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     setUser(null);
     setRole(null);
     setIsAdmin(false);
+    setIsOnboarded(false);
 
     router.push("/");
   }, [router, queryClient]);
@@ -88,6 +92,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
           setUser(null);
           setRole(null);
           setIsAdmin(false);
+          setIsOnboarded(false);
         }
       } catch (error) {
         console.error("Error during auth state change:", error);
@@ -157,8 +162,8 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
   );
 
   const authContextValue = useMemo(
-    () => ({ user, role, isAdmin, signIn, logOut, loading }),
-    [user, role, isAdmin, signIn, logOut, loading]
+    () => ({ user, role, isAdmin, signIn, logOut, loading, isOnboarded }),
+    [user, role, isAdmin, signIn, logOut, loading, isOnboarded]
   );
 
   return <AuthContext.Provider value={authContextValue}>{children}</AuthContext.Provider>;

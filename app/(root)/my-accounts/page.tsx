@@ -114,12 +114,15 @@ const MyBanks = () => {
     }
   }, [selectedGroup, refetch, removeBankAccount]);
 
-  if (!user) return null;
+  if (!user && !isLoading && !plaidAccounts) return <Spinner />;
+
   if (isLoading) return <Spinner />;
 
   if (!plaidAccounts || !plaidAccounts.data?.length) {
     return <NoBankLinked />;
   }
+
+  if (!user) return null;
 
   return (
     <section className="flex">

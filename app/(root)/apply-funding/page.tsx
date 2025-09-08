@@ -21,6 +21,8 @@ const ApplyFundingPage = () => {
     useHasPayrollBankVerificationQuery();
   const { user } = useAuth();
 
+  if (!user && !isLoading && !plaidAccounts) return <Spinner />;
+
   if (!user) return null;
 
   if (isLoading || incomeBankItemLoading || payrollBankItemLoading) return <Spinner />;

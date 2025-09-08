@@ -57,6 +57,18 @@ declare global {
     itemId: string;
     createdAt: Date;
   };
+
+  type CEGTransactionSyncResponse = {
+    id: string;
+    name?: string | null;
+    paymentChannel: string;
+    type: string;
+    accountId: string;
+    amount: number;
+    pending: boolean;
+    date: string;
+    image?: string | null;
+  };
 }
 
 export {};

@@ -474,6 +474,7 @@ export const getPlaidAccountByUserIdAndItemId = async ({
   // fetch transactions for the item (all accounts unless your helper filters)
   const transactions = await getTransactions({
     accessToken: bank[0].accessToken,
+    accountId,
   });
 
   // most recent first
@@ -487,36 +488,44 @@ export const getPlaidAccountByUserIdAndItemId = async ({
   });
 };
 
-export const getTransactions = async ({ accessToken }: getTransactionsProps) => {
+export const getTransactions = async ({ accessToken, accountId }: getTransactionsProps) => {
   let hasMore = true;
-  let transactions: any = [];
+  let transactions: CEGTransactionSyncResponse[] = [];
 
   // Iterate through each page of new transaction updates for item
+  let cursor = "";
   while (hasMore) {
     const response = await plaidClient.transactionsSync({
       access_token: accessToken,
+      cursor: cursor,
+      count: 500,
     });
     logInfo("getTransactions::transactionsSync", {
       requestId: response.data.request_id,
+      cursor,
     });
 
     const data = response.data;
 
     transactions = response.data.added.map((transaction) => ({
       id: transaction.transaction_id,
-      name: transaction.name,
+      name: transaction.merchant_name ?? removeSpecialCharacters(transaction.name),
       paymentChannel: transaction.payment_channel,
       type: transaction.payment_channel,
       accountId: transaction.account_id,
       amount: transaction.amount,
       pending: transaction.pending,
-      category: transaction.category ? transaction.category[0] : "",
       date: transaction.date,
       image: transaction.logo_url,
     }));
 
     hasMore = data.has_more;
+    cursor = data.next_cursor;
   }
+  if (accountId) transactions = transactions.filter((t) => t.accountId === accountId);
 
-  return parseStringify(transactions);
+  return parseStringify(transactions) as CEGTransactionSyncResponse[];
+};
+const removeSpecialCharacters = (value: string) => {
+  return value.replace(/[^\w\s]/gi, "");
 };

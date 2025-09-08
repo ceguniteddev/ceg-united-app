@@ -27,17 +27,11 @@ export const Pagination = ({ page, totalPages }: PaginationProps) => {
       <Button
         size="lg"
         variant="ghost"
-        className="p-0 hover:bg-transparent"
+        className="p-0 hover:bg-transparent cursor-pointer"
         onClick={() => handleNavigation("prev")}
         disabled={Number(page) <= 1}
       >
-        <Image
-          src="/icons/arrow-left.svg"
-          alt="arrow"
-          width={20}
-          height={20}
-          className="mr-2"
-        />
+        <Image src="/icons/arrow-left.svg" alt="arrow" width={20} height={20} className="mr-2" />
         Prev
       </Button>
       <p className="text-14 flex items-center px-2">
@@ -46,7 +40,7 @@ export const Pagination = ({ page, totalPages }: PaginationProps) => {
       <Button
         size="lg"
         variant="ghost"
-        className="p-0 hover:bg-transparent"
+        className="p-0 hover:bg-transparent cursor-pointer"
         onClick={() => handleNavigation("next")}
         disabled={Number(page) >= totalPages}
       >

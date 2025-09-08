@@ -1,5 +1,5 @@
 import Sidebar from "@/components/Sidebar";
-
+import "driver.js/dist/driver.css";
 import UserBanners from "@/components/UserBanners";
 
 export default async function RootLayout({

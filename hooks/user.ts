@@ -1,9 +1,11 @@
 import { GET_USER, GET_USERS } from "@/constant/react-query-keys";
+import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
 import { Role } from "@/schema";
 import { User, UserPlaid } from "@/schema/registration";
-import { getUserById, getUsers } from "@/service/user";
-import { useQuery } from "@tanstack/react-query";
+import { getUserById, getUsers, updateUserOnboardingStatus } from "@/service/user";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export const useUsersQuery = (role?: Role) => {
   const { user } = useAuth();
@@ -43,5 +45,33 @@ export const useUserQuery = (id: string) => {
   return {
     users,
     isLoading,
+  };
+};
+
+export const useUpdateUserOnboardingMutation = () => {
+  const { user } = useAuth();
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) {
+        throw new AppError("User not authenticated");
+      }
+
+      await updateUserOnboardingStatus(user.uid, true);
+    },
+
+    onError: (error: any) => {
+      if (error instanceof AppError) {
+        toast.warning(error.message);
+      } else {
+        toast.warning(error.message);
+        console.error(error);
+      }
+    },
+  });
+
+  return {
+    updateOnboarding: updateMutation.mutateAsync,
+    isUpdating: updateMutation.isPending,
   };
 };

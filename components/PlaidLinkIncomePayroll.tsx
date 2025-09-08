@@ -71,6 +71,7 @@ const PlaidIncomeLinkPayroll = () => {
 
   return (
     <Button
+      id="plaid-link-income-payroll-button"
       className="plaidlink-default shadow-none px-3"
       aria-busy={!ready}
       disabled={!ready || hasToken}

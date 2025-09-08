@@ -28,8 +28,8 @@ import {
 } from "@/components/ui/table";
 import { DataTablePagination } from "./pagination";
 import { ApplyFundingWithUser } from "@/schema/apply-funding";
-import { cn, formatAmount, formatDateTime } from "@/lib/utils";
-import { transactionCategoryStyles } from "@/constant/common";
+import { formatAmount, formatDateTime } from "@/lib/utils";
+import CategoryBadge from "../CategoryBadge";
 
 export const columns: ColumnDef<ApplyFundingWithUser>[] = [
   {
@@ -260,16 +260,3 @@ const FundingList = ({ appliedFunding, rowActions }: Props) => {
   );
 };
 export default FundingList;
-
-const CategoryBadge = ({ category }: CategoryBadgeProps) => {
-  const { borderColor, backgroundColor, textColor, chipBackgroundColor } =
-    transactionCategoryStyles[category as keyof typeof transactionCategoryStyles] ||
-    transactionCategoryStyles.default;
-
-  return (
-    <div className={cn("category-badge", borderColor, chipBackgroundColor)}>
-      <div className={cn("size-2 rounded-full", backgroundColor)} />
-      <p className={cn("text-[12px] font-medium", textColor)}>{category}</p>
-    </div>
-  );
-};

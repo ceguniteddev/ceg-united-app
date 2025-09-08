@@ -71,6 +71,7 @@ const PlaidIncomeLinkBank = () => {
 
   return (
     <Button
+      id="plaid-link-income-bank-button"
       className="plaidlink-default shadow-none px-3"
       aria-busy={!ready}
       disabled={!ready || hasToken}

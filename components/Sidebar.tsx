@@ -10,10 +10,46 @@ import PlaidLink from "./PlaidLink";
 import { useAuth } from "@/provider/AuthContext";
 import PlaidIncomeLinkBank from "./PlaidLinkIncomeBank";
 import PlaidIncomeLinkPayroll from "./PlaidLinkIncomePayroll";
+import { useEffect } from "react";
+
+import { driver } from "driver.js";
+import { useUpdateUserOnboardingMutation } from "@/hooks/user";
 
 const Sidebar = () => {
-  const { user } = useAuth();
+  const { user, isOnboarded } = useAuth();
   const pathname = usePathname();
+  const { updateOnboarding } = useUpdateUserOnboardingMutation();
+  useEffect(() => {
+    const driverObj = driver({
+      // onCloseClick: () => console.log("onCloseClick"),
+      onDestroyed: () => updateOnboarding(),
+      steps: [
+        {
+          element: "#plaid-link-button",
+          popover: {
+            title: "Link your bank account",
+            description: "Link your bank account to get started.",
+          },
+        },
+        {
+          element: "#plaid-link-income-bank-button",
+          popover: {
+            title: "Verify your bank income",
+            description: "Verify your bank income to get started.",
+          },
+        },
+        {
+          element: "#plaid-link-income-payroll-button",
+          popover: {
+            title: "Verify your payroll income",
+            description: "Verify your payroll income to get started.",
+          },
+        },
+      ],
+    });
+
+    if (user && !isOnboarded) driverObj.drive();
+  }, [user, isOnboarded, updateOnboarding]);
 
   if (!user) return null;
 

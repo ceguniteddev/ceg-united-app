@@ -1,21 +1,15 @@
 "use client";
 import HeaderBox from "@/components/HeaderBox";
-import { Pagination } from "@/components/Pagination";
 import Spinner from "@/components/Spinner";
-import TransactionsTable from "@/components/TransactionsTable";
 import { useGetPlaidAccounts, useGetPlaidItemAccountByUserId } from "@/hooks/plaid";
 import { formatAmount } from "@/lib/utils";
 import { useAuth } from "@/provider/AuthContext";
 import React, { useCallback } from "react";
-import { useSearchParams } from "next/navigation";
 import NoBankLinked from "@/components/NoBankLinked";
 import AccountList from "./AccountList";
+import TransactionTable from "./TransactionTable";
 
 const TransactionHistory = () => {
-  const searchParams = useSearchParams();
-  const page = searchParams.get("page");
-  const id = searchParams.get("id");
-  const currentPage = Number(page as string) || 1;
   const { plaidAccounts, isLoading } = useGetPlaidAccounts();
   const [bankItemId, setBankItemId] = React.useState<string>("");
   const [selectedAccount, setSelectedAccount] = React.useState<string>("");
@@ -30,6 +24,8 @@ const TransactionHistory = () => {
     setBankItemId(bankItemId);
   }, []);
 
+  if (!user && !isLoading && !plaidAccounts) return <Spinner />;
+
   if (!user) return null;
 
   if (isLoading) return <Spinner />;
@@ -38,16 +34,6 @@ const TransactionHistory = () => {
     return <NoBankLinked />;
   }
 
-  const rowsPerPage = 10;
-  const totalPages = Math.ceil(plaidItemAccounts?.transactions.length / rowsPerPage);
-
-  const indexOfLastTransaction = currentPage * rowsPerPage;
-  const indexOfFirstTransaction = indexOfLastTransaction - rowsPerPage;
-
-  const currentTransactions = plaidItemAccounts?.transactions.slice(
-    indexOfFirstTransaction,
-    indexOfLastTransaction
-  );
   return (
     <div className="transactions">
       <div className="transactions-header">
@@ -79,12 +65,13 @@ const TransactionHistory = () => {
           </div>
 
           <section className="flex w-full flex-col gap-6">
-            <TransactionsTable transactions={currentTransactions} />
-            {totalPages > 1 && (
+            {/* <TransactionsTable transactions={currentTransactions} /> */}
+            <TransactionTable transactions={plaidItemAccounts?.transactions} />
+            {/* {totalPages > 1 && (
               <div className="my-4 w-full">
                 <Pagination totalPages={totalPages} page={currentPage} />
               </div>
-            )}
+            )} */}
           </section>
         </div>
       ) : (

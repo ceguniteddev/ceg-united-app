@@ -72,11 +72,17 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
   return (
     <>
       {variant === "primary" ? (
-        <Button onClick={() => open()} disabled={!ready} className="plaidlink-primary">
+        <Button
+          id="plaid-link-button"
+          onClick={() => open()}
+          disabled={!ready}
+          className="plaidlink-primary"
+        >
           Connect bank
         </Button>
       ) : variant === "ghost" ? (
         <Button
+          id="plaid-link-button"
           onClick={() => open()}
           disabled={!ready}
           variant="ghost"
@@ -87,6 +93,7 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
         </Button>
       ) : (
         <Button
+          id="plaid-link-button"
           onClick={() => open()}
           disabled={!ready}
           className="plaidlink-default shadow-none px-3"
