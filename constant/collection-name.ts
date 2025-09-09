@@ -17,3 +17,5 @@ export const USER_LINK_UPDATE_MODE = "user-link-update-mode";
 export const NEW_ACCOUNTS_AVAILABLE = "user-link-new-accounts-available";
 
 export const FUNDING_PRODUCTS_COLLECTION = "funding-products";
+
+export const CRS_REPORT_DATA = "crs-report-data";

@@ -7,7 +7,7 @@ import { useAuth } from "@/provider/AuthContext";
 import React, { useCallback } from "react";
 import NoBankLinked from "@/components/NoBankLinked";
 import AccountList from "./AccountList";
-import TransactionTable from "./TransactionTable";
+import TransactionTable from "../../my-accounts/_components/TransactionTable";
 
 const TransactionHistory = () => {
   const { plaidAccounts, isLoading } = useGetPlaidAccounts();

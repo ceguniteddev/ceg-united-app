@@ -138,6 +138,7 @@ declare interface CreditCardProps {
   account: Account;
   userName: string;
   showBalance?: boolean;
+  handleAccountSelected: (accountId: string, bankItemId: string) => void;
 }
 
 declare interface BankInfoProps {

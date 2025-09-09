@@ -83,8 +83,7 @@ export const registerUser = async (value: User) => {
 
   const link = await authAdmin.generateEmailVerificationLink(value.email);
 
-  const requestBody = `<p>Please verify your email by clicking the link below:</p>
-<a href="${link}">Verify Email</a>`;
+  const requestBody = getVerifyEmailBody(link);
 
   await sendMail(value.email, "Verify your email", requestBody);
 
@@ -92,6 +91,25 @@ export const registerUser = async (value: User) => {
     id: docRef.id,
     ...normalizeAllDates(data),
   };
+};
+
+const getVerifyEmailBody = (link: string) => {
+  return `<p style="font-family:Arial,Helvetica,sans-serif; font-size:16px; color:#111827; margin:0 0 12px;">
+  Please confirm your email address to finish setting up your account.
+</p>
+
+<p style="margin:0;">
+  <a href="${link}" target="_blank" rel="noopener noreferrer"
+     style="display:inline-block; background:#2563eb; color:#ffffff; text-decoration:none; font-weight:600; font-size:16px; padding:12px 18px; border-radius:8px;">
+    Verify Email
+  </a>
+</p>
+<p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#6b7280; margin:16px 0 0;">
+  If the button doesn’t work, paste this URL into your browser: <br />
+  <a href="${link}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;">${link}</a>
+</p>
+
+<p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#6b7280; margin:12px 0 0;">Thanks, <br />CEG United LLC team</p>`;
 };
 
 export const getUsers = async (role?: Role): Promise<UserPlaid[]> => {

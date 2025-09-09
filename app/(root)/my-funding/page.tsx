@@ -39,8 +39,8 @@ const ApplyFundingPage = () => {
   }
 
   return (
-    <section className="transactions">
-      <div className="transactions-header flex flex-row justify-between">
+    <section className="home-content">
+      <div className="home-header flex flex-row justify-between">
         <HeaderBox title="Apply Funding" subtext="Manage your funding applications." />
         <ApplyFunding />
       </div>

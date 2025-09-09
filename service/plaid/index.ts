@@ -23,8 +23,9 @@ import {
 } from "./asset";
 import { logError, logInfo } from "@/lib/logger";
 import { decrypt, encrypt } from "@/lib/encryption";
-import { log } from "console";
-import { removeItemLinkUpdateModeData, removeItemLinkUpdateModeNewAccount } from "./item";
+import { removeItemLinkUpdateModeNewAccount } from "./item";
+import { getPlaidUserToken, recordPlaidUserToken } from "./data";
+import { generateCRSReport } from "../crs";
 
 const PLAID_COUNTRY_CODES = (process.env.PLAID_COUNTRY_CODES || "US").split(",") as CountryCode[];
 
@@ -40,17 +41,28 @@ const REQUIRED_IF_SUPPORTED = (process.env.REQUIRED_IF_SUPPORTED || "")
   .split(",")
   .filter((p) => p.trim() !== "") as Products[];
 
+const ADDITIONAL_CONSENTED_PRODUCTS = (process.env.ADDITIONAL_CONSENTED_PRODUCTS || "")
+  .split(",")
+  .filter((p) => p.trim() !== "") as Products[];
+
 const PLAID_REDIRECT_URI = process.env.PLAID_REDIRECT_URI || "";
 
 export const getPlaidLinkToken = async ({
   userId,
-  userToken,
   incomeSourceType,
   itemId,
   isNewAccount,
 }: PlaidLinkTokenCreateRequest) => {
   if (!userId) throw new Error("User id is required");
 
+  let userToken = null;
+  if (
+    incomeSourceType === IncomeVerificationSourceType.Bank ||
+    incomeSourceType === IncomeVerificationSourceType.Payroll
+  ) {
+    await recordPlaidUserToken(userId);
+    userToken = await getPlaidUserToken(userId);
+  }
   const webhookBaseUrl = await getAppPlaidWebhookURL();
 
   // get accessToken from this itemId because this is update_mode
@@ -72,6 +84,7 @@ export const getPlaidLinkToken = async ({
     products: PLAID_PRODUCTS,
     required_if_supported_products: REQUIRED_IF_SUPPORTED,
     optional_products: OPTIONAL_PLAID_PRODUCTS,
+    additional_consented_products: ADDITIONAL_CONSENTED_PRODUCTS,
     country_codes: PLAID_COUNTRY_CODES,
     language: "en",
     webhook: webhookBaseUrl,
@@ -99,10 +112,11 @@ export const getPlaidLinkToken = async ({
   if (userToken && incomeSourceType) {
     configs = {
       ...configs,
-      user_token: userToken,
+      user_token: userToken.user_token,
       required_if_supported_products: [],
       optional_products: [],
       products: [Products.IncomeVerification],
+      additional_consented_products: [],
     };
 
     if (incomeSourceType === IncomeVerificationSourceType.Bank) {
@@ -227,6 +241,8 @@ export const exchangeAccessToken = async (
   if (isNewAccount && itemId) {
     await removeItemLinkUpdateModeNewAccount(itemId);
   }
+
+  await generateCRSReport(userId);
 };
 
 export const recordAccessToken = async (
@@ -291,7 +307,7 @@ export const getAccessToken = async (
     return {
       id: doc.id,
       ...data,
-      accessToken: decryptedToken ?? data.accessToken,
+      accessToken: decryptedToken,
     };
   });
 };

@@ -11,7 +11,7 @@ export default async function RootLayout({
     <div>
       <UserBanners />
 
-      <main className="flex h-screen w-full font-inter pt-12">
+      <main className="flex h-screen w-full font-inter">
         <Sidebar />
         <div className="flex size-full flex-col">{children}</div>
       </main>

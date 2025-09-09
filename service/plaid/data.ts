@@ -8,6 +8,7 @@ import { normalizeAllDates } from "@/lib/date-parser";
 import { plaidClient } from "@/lib/plaid";
 import { logError, logInfo } from "@/lib/logger";
 import AppError from "@/error/AppError";
+import { decrypt, encrypt } from "@/lib/encryption";
 
 type PlaidCompleteRow = {
   institutionName: string | null;
@@ -37,6 +38,7 @@ type LinkTokenRecord = UserCreateResponse & {
   id: string;
   createdAt: Date | null;
   userId: string;
+  iv?: string;
 };
 
 export const recordPlaidUserToken = async (userId: string) => {
@@ -66,18 +68,16 @@ export const recordPlaidUserToken = async (userId: string) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(USER_TOKEN_COLLECTION);
 
-  const docRef = await collectionRef.add({
+  const encrypted = encrypt(userCreateResponse.data.user_token!);
+
+  await collectionRef.add({
     userId,
     user_id: userCreateResponse.data.user_id,
     request_id: userCreateResponse.data.request_id,
-    user_token: userCreateResponse.data.user_token,
+    user_token: encrypted.content,
+    iv: encrypted.iv,
     createdAt: Timestamp.now(),
   });
-
-  const doc = await docRef.get();
-  const userTokenData = doc.data();
-
-  return { id: doc.id, ...normalizeAllDates(userTokenData!) } as LinkTokenRecord;
 };
 
 export const getPlaidUserToken = async (userId: string) => {
@@ -90,7 +90,25 @@ export const getPlaidUserToken = async (userId: string) => {
   if (snapshot.empty) return null;
 
   const doc = snapshot.docs[0];
-  return { id: doc.id, ...normalizeAllDates(doc.data()) } as LinkTokenRecord;
+  const data = normalizeAllDates(doc.data());
+  let decryptedToken: string | null = null;
+  if (data.user_token && data.iv) {
+    try {
+      decryptedToken = decrypt({
+        iv: data.iv,
+        content: data.user_token,
+      });
+    } catch (err: any) {
+      console.error("Failed to decrypt Plaid access token:", err);
+      logError(err, { userId });
+    }
+  }
+
+  return {
+    id: doc.id,
+    ...data,
+    user_token: decryptedToken,
+  } as LinkTokenRecord;
 };
 
 export const getPlaidCompleteData = async (userId: string) => {
@@ -104,7 +122,8 @@ export const getPlaidCompleteData = async (userId: string) => {
   let userTokenRecord = await getPlaidUserToken(userId);
   if (!userTokenRecord) {
     logInfo("User does not have a token");
-    userTokenRecord = await recordPlaidUserToken(userId);
+    await recordPlaidUserToken(userId);
+    userTokenRecord = await getPlaidUserToken(userId);
   }
 
   const now = new Date();
@@ -147,7 +166,7 @@ export const getPlaidCompleteData = async (userId: string) => {
       safeData(token.tokenType, "liabilitiesGet", () => plaidClient.liabilitiesGet(configs)),
       safeData(token.tokenType, "creditBankIncomeGet", () =>
         plaidClient.creditBankIncomeGet({
-          user_token: userTokenRecord.user_token,
+          user_token: userTokenRecord?.user_token,
           options: {
             count: 3,
           },
@@ -155,7 +174,7 @@ export const getPlaidCompleteData = async (userId: string) => {
       ),
       safeData(token.tokenType, "creditPayrollIncomeGet", () =>
         plaidClient.creditPayrollIncomeGet({
-          user_token: userTokenRecord.user_token,
+          user_token: userTokenRecord?.user_token,
         })
       ),
 

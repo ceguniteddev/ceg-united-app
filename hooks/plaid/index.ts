@@ -43,7 +43,7 @@ export const useGetPlaidItemAccountByUserId = (itemId: string, accountId: string
 
       return await getPlaidAccountByUserIdAndItemId({ userId: user.uid, itemId, accountId });
     },
-    enabled: !!user,
+    enabled: Boolean(itemId && accountId && user),
   });
 
   return {
@@ -74,55 +74,98 @@ export const useGetPlaidAccounts = () => {
   };
 };
 
-export const useCreateLinkToken = () => {
-  const { user, loading, role } = useAuth();
+export const useGetLinkToken = ({
+  incomeSourceType,
+  itemId,
+  isNewAccount,
+  hasToken,
+}: {
+  incomeSourceType?: IncomeVerificationSourceType;
+  itemId?: string;
+  isNewAccount?: boolean;
+  hasToken?: boolean;
+}) => {
+  const { user, role } = useAuth();
 
-  const createMutation = useMutation({
-    mutationKey: ["plaidLinkToken", user?.uid],
-    mutationFn: async ({
-      userToken,
-      incomeSourceType,
-      itemId,
-      isNewAccount,
-    }: {
-      userToken?: string;
-      incomeSourceType?: IncomeVerificationSourceType;
-      itemId?: string;
-      isNewAccount?: boolean;
-    }) => {
+  const { data, isLoading } = useQuery({
+    queryKey: ["GET_PLAID_LINK_TOKEN", user?.uid, incomeSourceType, itemId, isNewAccount, hasToken],
+    queryFn: async () => {
       if (!user || role !== "Client") return "";
+      if (
+        hasToken &&
+        (incomeSourceType === IncomeVerificationSourceType.Bank ||
+          incomeSourceType === IncomeVerificationSourceType.Payroll)
+      ) {
+        return null;
+      }
 
       const linkToken = await getPlaidLinkToken({
         userId: user.uid,
-        userToken,
         incomeSourceType,
         itemId,
         isNewAccount,
       });
       return linkToken?.link_token;
     },
-    // retry: (count, err: any) => {
-    //   // Don’t auto-retry while auth is still initializing or user is missing
-    //   const msg = String(err?.message || "");
-    //   if (/Auth not ready|Not signed in/i.test(msg)) return false;
-    //   return count < 2;
-    // },
-
-    onError: (error: any) => {
-      console.error(error);
-      const msg = /Auth not ready|Not signed in/.test(String(error?.message))
-        ? "Please sign in first."
-        : "Failed to create link token";
-      toast.error(msg);
-    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 mins
   });
 
   return {
-    createLinkToken: createMutation.mutateAsync,
-    isCreating: createMutation.isPending,
-    canCreate: !loading && !!user,
+    linkToken: data,
+    isLoading,
   };
 };
+
+// export const useCreateLinkToken = () => {
+//   const { user, loading, role } = useAuth();
+
+//   const createMutation = useMutation({
+//     mutationKey: ["plaidLinkToken", user?.uid],
+//     mutationFn: async ({
+//       userToken,
+//       incomeSourceType,
+//       itemId,
+//       isNewAccount,
+//     }: {
+//       userToken?: string;
+//       incomeSourceType?: IncomeVerificationSourceType;
+//       itemId?: string;
+//       isNewAccount?: boolean;
+//     }) => {
+//       if (!user || role !== "Client") return "";
+
+//       const linkToken = await getPlaidLinkToken({
+//         userId: user.uid,
+//         userToken,
+//         incomeSourceType,
+//         itemId,
+//         isNewAccount,
+//       });
+//       return linkToken?.link_token;
+//     },
+//     // retry: (count, err: any) => {
+//     //   // Don’t auto-retry while auth is still initializing or user is missing
+//     //   const msg = String(err?.message || "");
+//     //   if (/Auth not ready|Not signed in/i.test(msg)) return false;
+//     //   return count < 2;
+//     // },
+
+//     onError: (error: any) => {
+//       console.error(error);
+//       const msg = /Auth not ready|Not signed in/.test(String(error?.message))
+//         ? "Please sign in first."
+//         : "Failed to create link token";
+//       toast.error(msg);
+//     },
+//   });
+
+//   return {
+//     createLinkToken: createMutation.mutateAsync,
+//     isCreating: createMutation.isPending,
+//     canCreate: !loading && !!user,
+//   };
+// };
 
 export const usePlaidAccountsMutation = () => {
   const { user } = useAuth();
@@ -134,10 +177,16 @@ export const usePlaidAccountsMutation = () => {
 
       await unlinkPlaidItem(user.uid, bankItemIds);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variable) => {
       toast.success("Bank account removed successfully.");
       queryClient.invalidateQueries({
         queryKey: ["GET_PLAID_ITEM_ACCOUNT", user?.uid],
+      });
+      variable.map((id) => {
+        queryClient.invalidateQueries({
+          queryKey: ["GET_PLAID_ITEM_ACCOUNT_BY_USER_ID", user?.uid, id],
+          exact: false,
+        });
       });
     },
     onError: (error: any) => {

@@ -7,3 +7,5 @@ export const GET_ADMIN_STATISTICS = "get-admin-statistics";
 
 export const GET_FUNDING_PRODUCTS = "get-funding-products";
 export const GET_FUNDING_PRODUCT = "get-funding-product";
+
+export const GET_USER_CRS_REPORT = "get-user-crs-report";

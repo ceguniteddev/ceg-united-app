@@ -1,7 +1,6 @@
 declare global {
   type PlaidLinkTokenCreateRequest = {
     userId: string;
-    userToken?: string;
     incomeSourceType?: IncomeVerificationSourceType;
     itemId?: string;
     isNewAccount?: boolean;

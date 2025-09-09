@@ -50,6 +50,14 @@ export const registrationSchema = z.object({
   isOnboarded: z.boolean().optional(),
   registrationDate: z.date().optional(),
   ssn: ssnSchema,
+  addressStreet: z.string().min(1, { error: "Required" }),
+  addressCity: z.string().min(1, { error: "Required" }),
+  addressState: z.string().min(1, { error: "Required" }),
+  addressPostal: z
+    .string()
+    .trim()
+    .nonempty({ message: "Required" })
+    .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" }),
 });
 export type User = z.infer<typeof registrationSchema>;
 

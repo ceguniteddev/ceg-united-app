@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { PlaidLinkOptions, usePlaidLink } from "react-plaid-link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCreateLinkToken } from "@/hooks/plaid";
+import { useGetLinkToken } from "@/hooks/plaid";
 import { exchangeAccessToken } from "@/service/plaid";
 import { useAuth } from "@/provider/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,22 +16,25 @@ type PlaidLinkProps = {
 
 const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
   const router = useRouter();
-  const { createLinkToken, canCreate } = useCreateLinkToken();
-  const [token, setToken] = useState("");
+  const { linkToken, isLoading } = useGetLinkToken({
+    itemId,
+    isNewAccount,
+  });
+  // const [token, setToken] = useState("");
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const getLinkToken = async () => {
-      const linkToken = await createLinkToken({ itemId: itemId ?? "", isNewAccount });
+  // useEffect(() => {
+  //   const getLinkToken = async () => {
+  //     const linkToken = await createLinkToken({ itemId: itemId ?? "", isNewAccount });
 
-      if (!linkToken) return;
+  //     if (!linkToken) return;
 
-      setToken(linkToken!);
-    };
+  //     setToken(linkToken!);
+  //   };
 
-    getLinkToken();
-  }, [createLinkToken, itemId, isNewAccount]);
+  //   getLinkToken();
+  // }, [createLinkToken, itemId, isNewAccount]);
 
   const onSuccess = React.useCallback(
     (public_token: string) => {
@@ -61,7 +64,7 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
   );
 
   const config: PlaidLinkOptions = {
-    token,
+    token: linkToken!,
     onSuccess,
   };
 
@@ -75,7 +78,7 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
         <Button
           id="plaid-link-button"
           onClick={() => open()}
-          disabled={!ready}
+          disabled={!ready || isLoading}
           className="plaidlink-primary"
         >
           Connect bank
@@ -84,7 +87,7 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
         <Button
           id="plaid-link-button"
           onClick={() => open()}
-          disabled={!ready}
+          disabled={!ready || isLoading}
           variant="ghost"
           className="plaidlink-ghost"
         >
@@ -95,8 +98,8 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
         <Button
           id="plaid-link-button"
           onClick={() => open()}
-          disabled={!ready}
-          className="plaidlink-default shadow-none px-3"
+          disabled={!ready || isLoading}
+          className="plaidlink-default shadow-none px-3 bg-green-100 hover:bg-green-200"
         >
           <Image src="/icons/connect-bank.svg" alt="connect bank" width={24} height={24} />
           <p className="text-[16px] font-semibold text-black-2">

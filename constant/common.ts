@@ -64,20 +64,50 @@ export const sidebarLinks = [
     label: "Home",
   },
   {
+    imgURL: "/icons/money-send.svg",
+    route: "/my-funding",
+    label: "My Funding",
+  },
+  {
     imgURL: "/icons/dollar-circle.svg",
     route: "/my-accounts",
     label: "My Accounts",
   },
+  // {
+  //   imgURL: "/icons/transaction.svg",
+  //   route: "/transaction-history",
+  //   label: "Transaction History",
+  // },
   {
-    imgURL: "/icons/transaction.svg",
-    route: "/transaction-history",
-    label: "Transaction History",
+    imgURL: "/icons/dollar-circle.svg",
+    route: "/my-credit",
+    label: "My Credit",
   },
+  // {
+  //   imgURL: "/icons/dollar-circle.svg",
+  //   route: "/my-tradelines",
+  //   label: "My Tradelines",
+  // },
   {
-    imgURL: "/icons/money-send.svg",
-    route: "/apply-funding",
-    label: "Apply Funding",
+    imgURL: "/icons/dollar-circle.svg",
+    route: "/my-documents",
+    label: "My Documents",
   },
+  // {
+  //   imgURL: "/icons/dollar-circle.svg",
+  //   route: "/other-services",
+  //   label: "Other Services",
+  // },
+  // {
+  //   imgURL: "/icons/dollar-circle.svg",
+  //   route: "/whats-new",
+  //   label: "What's New",
+  // },
+  // {
+  //   imgURL: "/icons/dollar-circle.svg",
+  //   route: "/contact-us",
+  //   label: "Contact Us",
+  // },
 ];
 
 export const adminSidebarLinks = [

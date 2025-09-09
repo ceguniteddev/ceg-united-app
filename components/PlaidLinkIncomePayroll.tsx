@@ -1,12 +1,11 @@
 import React, { useEffect } from "react";
 import { usePlaidLink } from "react-plaid-link";
 
-import { useCreateLinkToken, useHasAccessToken } from "@/hooks/plaid";
+import { useGetLinkToken, useHasAccessToken } from "@/hooks/plaid";
 import { Button } from "@/components/ui/button";
 import { exchangeAccessToken } from "@/service/plaid";
 import { useAuth } from "@/provider/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
-import { recordPlaidUserToken } from "@/service/plaid/data";
 import { CheckIcon } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -14,26 +13,13 @@ import { IncomeVerificationSourceType } from "plaid";
 
 const PlaidIncomeLinkPayroll = () => {
   const { user } = useAuth();
-
-  const { createLinkToken, canCreate } = useCreateLinkToken();
   const { hasToken, isLoading } = useHasAccessToken("INCOME_VERIFICATION_PAYROLL");
+
+  const { linkToken, isLoading: isLoadingLinkToken } = useGetLinkToken({
+    incomeSourceType: IncomeVerificationSourceType.Payroll,
+    hasToken,
+  });
   const queryClient = useQueryClient();
-  const [linkToken, setLinkToken] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    const fetchLinkToken = async () => {
-      const userToken = await recordPlaidUserToken(user?.uid ?? "");
-
-      const token = await createLinkToken({
-        userToken: userToken.user_token,
-        incomeSourceType: IncomeVerificationSourceType.Payroll,
-      });
-      if (!token) return;
-      setLinkToken(token!);
-    };
-
-    if (canCreate && user && !hasToken) fetchLinkToken();
-  }, [createLinkToken, canCreate, user, hasToken]);
 
   const onSuccess = React.useCallback(
     (public_token: string) => {
@@ -72,7 +58,7 @@ const PlaidIncomeLinkPayroll = () => {
   return (
     <Button
       id="plaid-link-income-payroll-button"
-      className="plaidlink-default shadow-none px-3"
+      className="plaidlink-default shadow-none px-3  bg-green-100 hover:bg-green-200"
       aria-busy={!ready}
       disabled={!ready || hasToken}
       onClick={() => open()}
@@ -80,7 +66,7 @@ const PlaidIncomeLinkPayroll = () => {
       {/* <BadgeDollarSignIcon className="mr-2 h-4 w-4" /> */}
       <Image src="/icons/connect-bank.svg" alt="income verification" width={24} height={24} />
 
-      <p className="text-[16px] font-semibold text-black-2">Income Payroll Verification</p>
+      <p className="text-[16px] font-semibold text-black-2">Payroll Verification</p>
       {/* {!ready && !hasToken && <Loader2Icon className="ml-2 h-4 w-4 animate-spin" />} */}
       {hasToken && <CheckIcon className="ml-2 h-4 w-4 text-green-600" />}
     </Button>
