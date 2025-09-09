@@ -2,7 +2,7 @@
 import { USER_COLLECTION } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { normalizeAllDates, normalizeDate } from "@/lib/date-parser";
-import { authenticationAdmin, firestoreAdmin } from "@/lib/fireabase-admin";
+import { authenticationAdmin, firestoreAdmin, storageAdmin } from "@/lib/fireabase-admin";
 import { sendMail } from "@/lib/nodemailer";
 import { Role } from "@/schema";
 
@@ -142,4 +142,37 @@ export const updateUserOnboardingStatus = async (id: string, status: boolean) =>
   const collectionRef = db.collection(USER_COLLECTION);
   const docRef = collectionRef.doc(id);
   await docRef.update({ isOnboarded: status });
+};
+
+export const getUserDocuments = async (userId: string): Promise<UserDoc[]> => {
+  const prefix = `documents/${userId}/`;
+  const bucket = storageAdmin();
+
+  const [files] = await bucket.getFiles({ prefix });
+  if (!files.length) return [];
+
+  const expiresAt = Date.now() + 60 * 60 * 1000;
+
+  const docs = await Promise.all(
+    files
+      .filter((f) => !f.name.endsWith("/"))
+      .map(async (file) => {
+        const [meta] = await file.getMetadata();
+        const [signedUrl] = await file.getSignedUrl({
+          action: "read",
+          expires: expiresAt,
+        });
+
+        return {
+          name: file.name.split("/").pop()!,
+          path: file.name,
+          contentType: meta.contentType,
+          size: Number(meta.size ?? 0),
+          updated: meta.updated ?? "",
+          signedUrl,
+        };
+      })
+  );
+
+  return docs;
 };

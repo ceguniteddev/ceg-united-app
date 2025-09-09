@@ -1,3 +1,4 @@
+"use server";
 import { CRS_REPORT_DATA } from "@/constant/collection-name";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin } from "@/lib/fireabase-admin";

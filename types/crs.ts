@@ -1,17 +1,15 @@
-// Primitive helpers
-export type ISODate = string; // e.g. "2025-09-09"
-export type ISODateTime = string; // e.g. "2025-09-09T15:24:12.051826Z"
-export type NumericString = `${number}`; // e.g. "4800"
+export type ISODate = string;
+export type ISODateTime = string;
+export type NumericString = `${number}` | string;
 
-// Common shapes
 export interface Address {
   addressLine1: string;
   addressLine2?: string;
   city: string;
   state: string;
   postalCode: string;
-  countryCode?: string;
   dateReported?: ISODate;
+  borrowerResidencyType?: string;
 }
 
 export interface Name {
@@ -21,13 +19,9 @@ export interface Name {
   suffix?: string;
 }
 
-export interface RequestAddress extends Address {
-  borrowerResidencyType?: string; // e.g. "Current"
-}
-
 export interface RequestData extends Name {
   ssn?: string;
-  addresses?: RequestAddress[];
+  addresses?: Address[];
 }
 
 export interface RepositoryIncluded {
@@ -39,7 +33,6 @@ export interface RepositoryIncluded {
 export interface Party {
   name: string;
 }
-
 export interface CreditBureauContact {
   name: string;
   address?: Address;
@@ -53,114 +46,110 @@ export interface ResponseDetail {
 
 export interface CreditFileDetail {
   creditFileInfileDate?: ISODate;
-  creditFileResultStatusType?: "FileReturned" | "NoFileReturnedNoHit" | string;
-  sourceType?: "Experian" | "Equifax" | "TransUnion" | string;
+  creditFileResultStatusType?: string;
+  sourceType?: string;
 }
-
 export interface CreditFile {
   creditFileDetail?: CreditFileDetail;
   aliases?: Name[];
   addresses?: Address[];
+  ssns?: { ssn: string }[];
 }
 
 export interface TradelineComment {
   commentCode?: string;
-  commentSourceType?: string; // e.g. "Experian"
-  commentType?: string; // e.g. "BureauRemarks"
-  commentText?: string; // e.g. "ACCOUNT CLOSED AT CONSUMER’S REQUEST"
+  commentSourceType?: string;
+  commentType?: string;
+  commentText?: string;
 }
 
 export interface Tradeline {
   accountIdentifier: string;
   creditorName?: string;
   subscriberCode?: string;
-
-  accountType?: string; // e.g. "Revolving", "Installment"
-  loanType?: string; // e.g. "CreditCard"
-  businessType?: string; // e.g. "Banking"
-
-  accountOwnershipType?: string; // e.g. "Individual", "AuthorizedUser"
-  accountStatusType?: "Open" | "Closed" | "Paid" | string;
-
+  accountType?: string;
+  loanType?: string;
+  businessType?: string;
+  accountOwnershipType?: string;
+  accountStatusType?: string; // Open | Closed | Paid | Transferred | etc.
   accountOpenedDate?: ISODate;
   accountClosedDate?: ISODate;
   accountPaidDate?: ISODate;
   lastActivityDate?: ISODate;
   accountReportedDate?: ISODate;
   paymentPatternStartDate?: ISODate;
-
   monthsReviewedCount?: NumericString;
   termsMonthsCount?: NumericString;
-
   creditLimitAmount?: NumericString;
   highBalanceAmount?: NumericString;
   currentBalanceAmount?: NumericString;
   monthlyPaymentAmount?: NumericString;
-
+  pastDueAmount?: NumericString;
   derogatoryDataIndicator?: boolean;
-
-  currentRatingCode?: string; // e.g. "C"
-  currentRatingType?: string; // e.g. "AsAgreed"
-
-  paymentPatternData?: string; // bureau’s raw payment grid (e.g. "CCCC...")
-
-  /** Late counts (as strings in payload) */
+  currentRatingCode?: string;
+  currentRatingType?: string;
+  paymentPatternData?: string;
   _30DayLates?: NumericString;
   _60DayLates?: NumericString;
   _90DayLates?: NumericString;
-
-  sourceType?: "Experian" | "Equifax" | "TransUnion" | string;
-
+  sourceType?: string;
   comments?: TradelineComment[];
 }
 
+export interface Inquiry {
+  creditorName?: string;
+  inquiryDate?: ISODate;
+  businessType?: string;
+  subscriberCode?: string;
+  sourceType?: string;
+}
+
 export interface ScoreFactor {
-  scoreFactorCode: string; // e.g. "10"
+  scoreFactorCode: string;
   scoreFactorText: string;
 }
 
 export interface CreditScore {
-  modelName: string; // e.g. "Experian/Fair Isaac Risk Model V9"
-  modelNameType?: string; // e.g. "F9"
-  sourceType?: "Experian" | "Equifax" | "TransUnion" | string;
-
-  scoreValue: NumericString; // e.g. "634"
-  scoreMinimumValue?: NumericString; // e.g. "336"
-  scoreMaximumValue?: NumericString; // e.g. "843"
-  scoreRankPercentileValue?: NumericString; // e.g. "20"
-
+  modelName: string;
+  modelNameType?: string;
+  sourceType?: string; // Experian | Equifax | TransUnion
   factaInquiriesIndicator?: boolean;
+  scoreValue: NumericString;
+  scoreRankPercentileValue?: NumericString;
+  scoreMaximumValue?: NumericString;
+  scoreMinimumValue?: NumericString;
   scoreFactors?: ScoreFactor[];
 }
 
 export interface OfacResult {
-  name: string; // e.g. "OFAC"
-  productType?: string; // e.g. "OFAC"
-  sourceType?: string; // e.g. "Experian"
-  resultText?: string; // e.g. "OFAC SEARCH NOT PERFORMED DUE TO MISSING REQUIRED DATA"
-  resultStatusType?: string; // e.g. "Error"
+  name: string;
+  productType?: string;
+  sourceType?: string;
+  resultText?: string;
+  resultStatusType?: string;
 }
-
 export interface ErrorMessage {
-  creditErrorMessageCode: string;
-  creditErrorMessageSourceType: string;
-  creditErrorMessageText: string;
+  code: string;
+  message: string;
+  sourceType?: string;
 }
 
-/**
- * Top-level credit report type for the provided payload
- */
 export interface CreditReport {
   requestData: RequestData;
   repositoryIncluded: RepositoryIncluded;
   responseDetail?: ResponseDetail;
-
-  /** Often empty or vendor-specific; keep as unknowns unless you have a schema */
   responseAlertMessages?: unknown[];
   errorMessages?: ErrorMessage[];
-
   creditFiles?: CreditFile[];
+  inquiries?: Inquiry[]; // present on some bureaus
   tradelines?: Tradeline[];
   scores?: CreditScore[];
   ofacs?: OfacResult[];
+}
+
+export interface CreditReportWithId extends Record<string, any> {
+  id: string;
+  userId?: string;
+  report: CreditReport;
+  createdAt: ISODate;
 }

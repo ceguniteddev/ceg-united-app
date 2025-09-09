@@ -1,9 +1,14 @@
-import { GET_USER, GET_USERS } from "@/constant/react-query-keys";
+import { GET_USER, GET_USER_DOCUMENTS, GET_USERS } from "@/constant/react-query-keys";
 import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
 import { Role } from "@/schema";
 import { User, UserPlaid } from "@/schema/registration";
-import { getUserById, getUsers, updateUserOnboardingStatus } from "@/service/user";
+import {
+  getUserById,
+  getUserDocuments,
+  getUsers,
+  updateUserOnboardingStatus,
+} from "@/service/user";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -23,6 +28,25 @@ export const useUsersQuery = (role?: Role) => {
 
   return {
     users,
+    isLoading,
+  };
+};
+
+export const useUserDocumentsQuery = () => {
+  const { user } = useAuth();
+
+  const { data: userDocuments, isLoading } = useQuery({
+    queryKey: [GET_USER_DOCUMENTS, user?.uid],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+
+      return await getUserDocuments(user.uid);
+    },
+    enabled: !!user,
+  });
+
+  return {
+    userDocuments,
     isLoading,
   };
 };

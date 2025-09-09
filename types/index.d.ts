@@ -29,6 +29,15 @@ declare global {
     | "Knowledge Community"
     | "Auto Loan"
     | "Equipment Financing";
+
+  type UserDoc = {
+    name: string; // "invoice.pdf"
+    path: string; // "documents/<uid>/invoice.pdf"
+    contentType?: string;
+    size: number; // bytes
+    updated: string; // ISO string from GCS
+    signedUrl: string; // time-limited read URL
+  };
 }
 
 export {};
