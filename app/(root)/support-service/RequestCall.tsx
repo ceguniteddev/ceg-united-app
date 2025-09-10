@@ -3,6 +3,7 @@ import { Form } from "@/components/ui/form";
 import { useContactUsMutation } from "@/hooks/contact-us";
 import { type RequestCall, requestCallSchema } from "@/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useCallback } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 
 const RequestCall = () => {
@@ -15,10 +16,13 @@ const RequestCall = () => {
     },
   });
 
-  const onSubmit: SubmitHandler<RequestCall> = async (values) => {
-    await requestCall({ values });
-    form.reset();
-  };
+  const onSubmit: SubmitHandler<RequestCall> = useCallback(
+    async (values) => {
+      await requestCall({ values });
+      form.reset();
+    },
+    [form, requestCall]
+  );
 
   return (
     <Form {...form}>
