@@ -69,7 +69,7 @@ export const sidebarLinks = [
     label: "My Funding",
   },
   {
-    imgURL: "/icons/dollar-circle.svg",
+    imgURL: "/icons/credit-card.svg",
     route: "/my-accounts",
     label: "My Accounts",
   },
@@ -89,7 +89,7 @@ export const sidebarLinks = [
   //   label: "My Tradelines",
   // },
   {
-    imgURL: "/icons/dollar-circle.svg",
+    imgURL: "/icons/files.svg",
     route: "/my-documents",
     label: "My Documents",
   },
@@ -103,11 +103,11 @@ export const sidebarLinks = [
   //   route: "/whats-new",
   //   label: "What's New",
   // },
-  // {
-  //   imgURL: "/icons/dollar-circle.svg",
-  //   route: "/contact-us",
-  //   label: "Contact Us",
-  // },
+  {
+    imgURL: "/icons/headset.svg",
+    route: "/support-service",
+    label: "Contact Us",
+  },
 ];
 
 export const adminSidebarLinks = [

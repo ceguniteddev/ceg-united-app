@@ -43,6 +43,7 @@ export const useUserDocumentsQuery = () => {
       return await getUserDocuments(user.uid);
     },
     enabled: !!user,
+    staleTime: 30 * 60 * 1000, // 30 minutes
   });
 
   return {

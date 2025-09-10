@@ -87,9 +87,6 @@ const Sidebar = () => {
             </Link>
           );
         })}
-        {/* <PlaidLink />
-        <PlaidIncomeLinkBank />
-        <PlaidIncomeLinkPayroll /> */}
       </nav>
 
       <Footer />

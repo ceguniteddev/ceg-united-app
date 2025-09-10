@@ -1,4 +1,5 @@
 "use client";
+import Spinner from "@/components/Spinner";
 import { useClientCRSReportQuery } from "@/hooks/crs";
 import {
   CreditReport,
@@ -257,11 +258,7 @@ const MyCreditPage: React.FC = () => {
   }, [bureauMap]);
 
   if (isLoading) {
-    return (
-      <div className="mx-auto max-w-6xl p-6">
-        <div className="animate-pulse text-neutral-500">Loading your credit data…</div>
-      </div>
-    );
+    return <Spinner displayText="Loading credit reports..." />;
   }
 
   const hasAnyReport = Boolean(bureauMap.Experian || bureauMap.TransUnion || bureauMap.Equifax);
@@ -271,7 +268,7 @@ const MyCreditPage: React.FC = () => {
         <Card className="p-6">
           <div className="text-lg font-semibold">No credit reports found</div>
           <p className="text-sm text-neutral-600 mt-1">
-            We couldn’t find Experian, Equifax, or TransUnion data yet.
+            {`We couldn't find Experian, Equifax, or TransUnion data yet.`}
           </p>
           <a
             href="https://rapidrepairnow.com"
@@ -367,7 +364,7 @@ const MyCreditPage: React.FC = () => {
         title="Negative Items"
         sub="Accounts with derogatories or any reported late payments (all bureaus)"
       />
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden  mb-10">
         {negItems.length === 0 ? (
           <Empty>No negative items detected from the provided tradelines.</Empty>
         ) : (
@@ -433,7 +430,7 @@ const MyCreditPage: React.FC = () => {
         <div>
           <div className="text-lg font-semibold">Need help improving your credit?</div>
           <div className="text-neutral-600 text-sm mt-1">
-            Tap the button to start automated credit repair with Rapid Repair Now.
+            Tap the button to start credit repair with Rapid Repair Now.
           </div>
         </div>
         <a
