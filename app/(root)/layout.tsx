@@ -1,12 +1,16 @@
+"use client";
 import Sidebar from "@/components/Sidebar";
 import "driver.js/dist/driver.css";
 import UserBanners from "@/components/UserBanners";
+import { useAuth } from "@/provider/AuthContext";
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { user } = useAuth();
+  if (!user) return null;
   return (
     <div>
       <UserBanners />

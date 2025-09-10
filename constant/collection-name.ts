@@ -19,3 +19,4 @@ export const NEW_ACCOUNTS_AVAILABLE = "user-link-new-accounts-available";
 export const FUNDING_PRODUCTS_COLLECTION = "funding-products";
 
 export const CRS_REPORT_DATA = "crs-report-data";
+export const REQUEST_CUSTOMER_CALL = "user-request-call";

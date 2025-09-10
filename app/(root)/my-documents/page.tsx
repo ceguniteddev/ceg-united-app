@@ -17,7 +17,7 @@ export default function DocumentsPage() {
     <main className="p-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {userDocuments.map((doc) => (
         <article key={doc.path} className="rounded-2xl border shadow p-4">
-          <header className="mb-2">
+          <header className="mb-2 cursor-pointer" onClick={() => openInNewTab(doc.signedUrl)}>
             <h2 className="font-semibold break-words">{doc.name}</h2>
             <p className="text-sm opacity-70">
               {doc.contentType ?? "unknown"} • {(doc.size / 1024).toFixed(1)} KB
