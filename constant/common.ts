@@ -126,6 +126,11 @@ export const adminSidebarLinks = [
     route: "/admin/funding-application",
     label: "Funding Application",
   },
+  {
+    imgURL: "/icons/money-send.svg",
+    route: "/admin/whats-new",
+    label: "What's New Management",
+  },
 ];
 
 export const transactionCategoryStyles = {

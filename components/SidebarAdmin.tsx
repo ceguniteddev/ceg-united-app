@@ -18,11 +18,8 @@ const Sidebar = () => {
 
   return (
     <section className="sidebar">
-      <nav className="flex flex-col gap-4">
-        <Link
-          href="/overview"
-          className="mb-6 cursor-pointer flex items-center justify-center gap-2"
-        >
+      <nav className="flex flex-col">
+        <Link href="/overview" className="mb-6 cursor-pointer flex items-center justify-center">
           <Image
             src="/icons/logo.svg"
             width={64}

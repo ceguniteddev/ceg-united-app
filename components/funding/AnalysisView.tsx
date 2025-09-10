@@ -153,7 +153,7 @@ const AnalysisDetailsView = ({ referenceNumber, analysis, id, updateAnalysis }: 
 
   React.useEffect(() => () => debouncedSave.flush(), [debouncedSave]);
 
-  return <Editor content={content} setContent={handleSetContent} />;
+  return <Editor content={content} onContentChange={handleSetContent} />;
 };
 
 export default AnalysisView;

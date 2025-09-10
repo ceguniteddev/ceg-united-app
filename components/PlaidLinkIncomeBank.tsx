@@ -35,6 +35,9 @@ const PlaidIncomeLinkBank = () => {
         queryClient.invalidateQueries({
           queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid, "INCOME_VERIFICATION_BANK"],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["GET_INCOME_BANK_VERIFICATION_USER_ID", user?.uid],
+        });
         toast.success("Income Verification is complete.");
       };
 

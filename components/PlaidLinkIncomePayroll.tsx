@@ -33,6 +33,9 @@ const PlaidIncomeLinkPayroll = () => {
         queryClient.invalidateQueries({
           queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid, "INCOME_VERIFICATION_PAYROLL"],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["GET_INCOME_PAYROLL_VERIFICATION_USER_ID", user?.uid],
+        });
         toast.success("Income Verification is complete.");
       };
 

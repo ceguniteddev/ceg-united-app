@@ -31,6 +31,9 @@ const ApplyFundingPage = () => {
     return <NoBankLinked />;
   }
 
+  console.log("incomeBankItem", incomeBankItem);
+  console.log("incomePayrollItem", incomePayrollItem);
+
   if (!incomeBankItem) {
     return <NoIncomeVerification tokenType="INCOME_VERIFICATION_BANK" />;
   }
