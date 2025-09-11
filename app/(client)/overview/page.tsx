@@ -178,8 +178,6 @@ const HomeDashboard: React.FC<HomeProps> = ({ funding, personal, businesses }) =
   let crsReportDocs: CreditReportDoc[] | null | undefined = undefined;
   let isLoadingCRS = false;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    // const { useClientCRSReportQuery } = require("./hooks");
     const q = useClientCRSReportQuery();
     crsReportDocs = q?.crsReport as CreditReportDoc[] | null;
     isLoadingCRS = q?.isLoading;
