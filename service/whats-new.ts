@@ -21,7 +21,7 @@ export const getWhatsNew = async () => {
 
 export const getWhatsNewActive = async () => {
   const db = firestoreAdmin();
-  const collectionRef = db.collection(WHATS_NEW_COLLECTION).where("status", "==", "Active");
+  const collectionRef = db.collection(WHATS_NEW_COLLECTION).where("status", "==", true);
   const querySnapshot = await collectionRef.get();
   return querySnapshot.docs.map(
     (doc) => ({ id: doc.id, ...normalizeAllDates(doc.data()) } as WhatsNew)

@@ -461,7 +461,8 @@
 }
 
 @utility footer {
-  @apply flex cursor-pointer items-center justify-between gap-2 py-6 sticky bottom-0 bg-white;
+  @apply sticky bottom-0 z-10 flex items-center justify-between gap-2 py-2
+         bg-white border-t border-gray-200;
 }
 @utility footer_name {
   @apply flex size-10 items-center justify-center rounded-full bg-gray-200 max-xl:hidden;
@@ -476,7 +477,7 @@
   @apply flex flex-1 flex-col justify-center;
 }
 @utility footer_image {
-  @apply relative size-5 max-xl:w-full max-xl:flex max-xl:justify-center max-xl:items-center;
+  @apply relative size-5 max-xl:w-full max-xl:flex max-xl:justify-center max-xl:items-center cursor-pointer;
 }
 
 @utility sidebar {

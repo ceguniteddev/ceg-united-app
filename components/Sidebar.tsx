@@ -14,6 +14,7 @@ import { useAuth } from "@/provider/AuthContext";
 
 import { driver } from "driver.js";
 import { useUpdateUserOnboardingMutation } from "@/hooks/user";
+import { WhatsNewAccordion } from "./WhatsNewAccordion";
 
 const Sidebar = () => {
   const { user, isOnboarded } = useAuth();
@@ -88,8 +89,10 @@ const Sidebar = () => {
           );
         })}
       </nav>
-
-      <Footer />
+      <div className="flex flex-col">
+        <WhatsNewAccordion />
+        <Footer />
+      </div>
     </section>
   );
 };

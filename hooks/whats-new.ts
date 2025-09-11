@@ -35,7 +35,7 @@ export const useWhatsNewQuery = () => {
 export const useWhatsNewQueryActive = () => {
   const { user } = useAuth();
 
-  const { data: users, isLoading } = useQuery({
+  const { data: activeItems, isLoading } = useQuery({
     queryKey: ["GET_WHATS_NEW_ACTIVE"],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
@@ -48,7 +48,7 @@ export const useWhatsNewQueryActive = () => {
   });
 
   return {
-    users,
+    activeItems,
     isLoading,
   };
 };
