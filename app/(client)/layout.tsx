@@ -1,16 +1,21 @@
-"use client";
 import Sidebar from "@/components/Sidebar";
 import "driver.js/dist/driver.css";
 import UserBanners from "@/components/UserBanners";
-import { useAuth } from "@/provider/AuthContext";
+import { Metadata } from "next";
 
-export default function RootLayout({
+export const metadata: Metadata = {
+  title: "CEG United LLC",
+  description: "CEG United LLC",
+  icons: {
+    icon: "icon.ico",
+  },
+};
+
+export default function ClientLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { user } = useAuth();
-  if (!user) return null;
   return (
     <div>
       <UserBanners />

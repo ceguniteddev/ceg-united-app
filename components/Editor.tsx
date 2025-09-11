@@ -25,11 +25,12 @@ const plugins = [
   "table",
   "visualblocks",
   "visualchars",
+  "link",
 ];
 
 const toolbar = [
   "blocks fontfamily fontsizeinput | casechange forecolor bold italic underline strikethrough | alignleft aligncenter alignright alignjustify ",
-  " numlist bullist outdent indent | table removeformat | undo redo | pastetext pagebreak | insertvalue",
+  "numlist bullist outdent indent | table removeformat | undo redo | pastetext pagebreak | link",
 ];
 
 const EmailTemplateEditor: React.FC<TinyEditorProps> = ({
@@ -46,7 +47,6 @@ const EmailTemplateEditor: React.FC<TinyEditorProps> = ({
   return (
     <div>
       <Editor
-        apiKey="4jg0fnp9ky6dcqlafb4w8uw683xuxek2ndxpjfariu0m8mj5"
         onInit={(_evt, editor) => {
           editorRef.current = editor;
         }}

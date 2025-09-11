@@ -18,7 +18,8 @@ import DatePicker from "./date-picker";
 import { MultiSelect } from "./multi-select";
 import { SearchableInput } from "./input-search";
 import { NumberInput } from "./input-number";
-
+import dynamic from "next/dynamic";
+const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 interface FormFieldProps {
   name: string;
   label?: string;
@@ -36,6 +37,7 @@ interface FormFieldProps {
     | "multi-select"
     | "input-search"
     | "hidden"
+    | "editor"
     | "file";
   // | "multi-input";
   placeholder?: string;
@@ -334,6 +336,9 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
             className={cn(disabled || readonly ? "border-none shadow-none" : "", className)}
           />
         );
+
+      case "editor":
+        return <Editor content={field.value} onContentChange={field.onChange} />;
 
       default:
         return (

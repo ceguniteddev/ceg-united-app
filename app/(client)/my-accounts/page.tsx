@@ -1,7 +1,6 @@
 "use client";
 import BankCard from "@/components/BankCard";
 import HeaderBox from "@/components/HeaderBox";
-import NoBankLinked from "@/components/NoBankLinked";
 import Spinner from "@/components/Spinner";
 import {
   useGetPlaidAccounts,

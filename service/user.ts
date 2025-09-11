@@ -1,12 +1,14 @@
 "use server";
 import { USER_COLLECTION } from "@/constant/collection-name";
+import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import AppError from "@/error/AppError";
 import { normalizeAllDates, normalizeDate } from "@/lib/date-parser";
 import { authenticationAdmin, firestoreAdmin, storageAdmin } from "@/lib/fireabase-admin";
 import { sendMail } from "@/lib/nodemailer";
-import { Role } from "@/schema";
+import { CurrentUser, Role } from "@/schema";
 
 import { User, UserPlaid } from "@/schema/registration";
+import { cookies, headers } from "next/headers";
 
 export const getUserRecordByEmail = async (email: string) => {
   const authentication = authenticationAdmin();
@@ -176,3 +178,55 @@ export const getUserDocuments = async (userId: string): Promise<UserDoc[]> => {
 
   return docs;
 };
+
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  // 1) Try Authorization: Bearer <idToken>
+  const h = await headers();
+  const authHeader = h.get("Authorization");
+  let idToken: string | null = null;
+  if (authHeader?.startsWith("Bearer ")) {
+    idToken = authHeader.slice(7);
+  }
+
+  // 2) Try session cookies
+  const cookieStore = await cookies();
+  const sessionCookie =
+    cookieStore.get("session")?.value ??
+    cookieStore.get("__session")?.value ??
+    cookieStore.get(FIREBASE_TOKEN_NAME)?.value ??
+    null;
+
+  if (sessionCookie) {
+    try {
+      const decoded = await authenticationAdmin().verifySessionCookie(sessionCookie, true);
+      return {
+        uid: decoded.uid,
+        email: decoded.email ?? null,
+        name: decoded.name ?? null,
+        picture: decoded.picture ?? null,
+        role: (decoded as any).role ?? null,
+        admin: !!(decoded as any).admin,
+        token: decoded,
+      };
+    } catch {
+      // fall through to idToken flow
+    }
+  }
+
+  if (!idToken) return null;
+
+  try {
+    const decoded = await authenticationAdmin().verifyIdToken(idToken, true);
+    return {
+      uid: decoded.uid,
+      email: decoded.email ?? null,
+      name: decoded.name ?? null,
+      picture: decoded.picture ?? null,
+      role: (decoded as any).role ?? null,
+      admin: !!(decoded as any).admin,
+      token: decoded,
+    };
+  } catch {
+    return null;
+  }
+}

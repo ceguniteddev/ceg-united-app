@@ -117,17 +117,17 @@ export const adminSidebarLinks = [
     label: "Home",
   },
   {
-    imgURL: "/icons/credit-card.svg",
-    route: "/admin/funding-products",
-    label: "Product Management",
-  },
-  {
     imgURL: "/icons/money-send.svg",
     route: "/admin/funding-application",
     label: "Funding Application",
   },
   {
-    imgURL: "/icons/money-send.svg",
+    imgURL: "/icons/credit-card.svg",
+    route: "/admin/funding-products",
+    label: "Product Management",
+  },
+  {
+    imgURL: "/icons/bell.svg",
     route: "/admin/whats-new",
     label: "What's New Management",
   },

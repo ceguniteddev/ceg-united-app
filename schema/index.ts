@@ -1,5 +1,5 @@
 import z from "zod";
-
+import { auth as adminAuth } from "firebase-admin";
 export const ROLES = ["Admin", "IT", "Staff", "Client"] as const;
 export const ROLESEnum = z.enum(ROLES);
 
@@ -46,3 +46,13 @@ export const requestCallSchema = z.object({
 });
 
 export type RequestCall = z.infer<typeof requestCallSchema>;
+
+export type CurrentUser = {
+  uid: string;
+  email?: string | null;
+  name?: string | null;
+  picture?: string | null;
+  role?: string | null; // from custom claims
+  admin?: boolean; // from custom claims
+  token: adminAuth.DecodedIdToken;
+};

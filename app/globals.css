@@ -355,7 +355,7 @@
 }
 
 @utility transactions {
-  @apply flex max-h-screen w-full flex-col gap-8 overflow-y-auto bg-gray-25 p-6 xl:py-6;
+  @apply flex w-full flex-col gap-8 bg-gray-25 p-6 xl:py-6;
 }
 @utility transactions-header {
   @apply flex w-full flex-col items-start justify-between gap-8 md:flex-row;

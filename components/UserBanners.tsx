@@ -4,16 +4,24 @@ import { Banner, BannerIcon, BannerTitle, BannerClose } from "@/components/ui/sh
 import { CircleAlert } from "lucide-react";
 import PlaidLink from "@/components/PlaidLink";
 import { useGetNewAccountFlags, useUserFlags } from "@/hooks/plaid/item";
+import { useAuth } from "@/provider/AuthContext";
+import { useMemo } from "react";
 
 export default function UserBanners() {
+  const { user } = useAuth();
   const { flags } = useUserFlags();
   const { flags: newAccountFlags } = useGetNewAccountFlags();
 
-  // Merge both sets into one list with type annotation
-  const allFlags = [
-    ...flags.map((f) => ({ ...f, type: "disconnect" as const })),
-    ...newAccountFlags.map((f) => ({ ...f, type: "new-account" as const })),
-  ];
+  const allFlags = useMemo(
+    () => [
+      ...flags.map((f) => ({ ...f, type: "disconnect" as const })),
+      ...newAccountFlags.map((f) => ({ ...f, type: "new-account" as const })),
+    ],
+    [flags, newAccountFlags]
+  );
+
+  if (!user) return null;
+
   if (allFlags.length === 0) return null;
 
   return (
