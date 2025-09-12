@@ -21,3 +21,4 @@ export const FUNDING_PRODUCTS_COLLECTION = "funding-products";
 export const CRS_REPORT_DATA = "crs-report-data";
 export const REQUEST_CUSTOMER_CALL = "user-request-call";
 export const WHATS_NEW_COLLECTION = "whats-new";
+export const BUSINESS_DETAIL_COLLECTION = "business-detail";

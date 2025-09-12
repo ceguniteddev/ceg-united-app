@@ -73,6 +73,11 @@ export const sidebarLinks = [
     route: "/my-accounts",
     label: "My Accounts",
   },
+  {
+    imgURL: "/icons/building-2.svg",
+    route: "/my-business",
+    label: "My Business",
+  },
   // {
   //   imgURL: "/icons/transaction.svg",
   //   route: "/transaction-history",

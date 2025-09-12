@@ -38,6 +38,7 @@ const ViewApplication = ({ formSetOpen, formSetCongratsOpen, formData }: Props) 
           setOpen={formSetOpen}
           setCongratsOpen={formSetCongratsOpen}
           data={formData}
+          isViewing
         />
       </TabsContent>
 

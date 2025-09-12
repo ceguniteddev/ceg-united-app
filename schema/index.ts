@@ -56,3 +56,49 @@ export type CurrentUser = {
   admin?: boolean; // from custom claims
   token: adminAuth.DecodedIdToken;
 };
+
+// export const businessSchmea = z.object({
+//   id: z.string().optional(),
+//   userId: z.string().optional(),
+//   businessName: z.string().min(1, { error: "Required" }),
+//   businessStreetAddress: z.string().min(1, { error: "Required" }),
+//   businessCityAddress: z.string().min(1, { error: "Required" }),
+//   businessStateAddress: z.string().min(1, { error: "Required" }),
+//   businessPostalAddress: z
+//     .string()
+//     .trim()
+//     .nonempty({ message: "Required" })
+//     .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" }),
+//   businessPhoneNumber: z.string().min(1, { error: "Required" }),
+//   businessEmail: z.email().min(1, { error: "Required" }),
+//   businessDescription: z.string().min(1, { error: "Required" }),
+//   businessWebsite: z.string().min(1, { error: "Required" }),
+//   businessCategory: z.string().min(1, { error: "Required" }),
+// });
+// export type Business = z.infer<typeof businessSchmea>;
+
+export const businessRecordSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string().min(1, { message: "Required" }),
+  businessName: z.string().min(1, { message: "Required" }),
+  businessStreetAddress: z.string().min(1, { message: "Required" }),
+  businessCityAddress: z.string().min(1, { message: "Required" }),
+  businessStateAddress: z.string().min(1, { message: "Required" }),
+  businessPostalAddress: z
+    .string()
+    .trim()
+    .nonempty({ message: "Required" })
+    .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" }),
+  employerIdentificationNumber: z.string().min(1, { message: "Required" }),
+  businessPhoneNumber: z.string().min(1, { message: "Required" }),
+  businessEmail: z.email({ message: "Invalid email" }),
+  businessWebsite: z.string({ error: "Required" }).optional(),
+  socialMedia: z.string({ error: "Required" }).optional(),
+});
+
+// What the DB stores / APIs expect:
+export type Business = z.infer<typeof businessRecordSchema>;
+
+// What the form edits (no userId here):
+export const businessFormSchema = businessRecordSchema.omit({ userId: true });
+export type BusinessForm = z.infer<typeof businessFormSchema>;

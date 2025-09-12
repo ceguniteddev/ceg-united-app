@@ -2,19 +2,20 @@
 import { CustomFormField } from "@/components/CustomFormField";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { ApplyFunding, applyFundingSchema, FundingApplicationType } from "@/schema/apply-funding";
+import { ApplyFunding, applyFundingSchema } from "@/schema/apply-funding";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BanknoteIcon, CircleXIcon, Loader2Icon } from "lucide-react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 import { getCaptchaTokenRegistration } from "@/lib/captcha";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
 import { useApplyFunding } from "@/hooks/apply-funding";
 import { US_STATES } from "@/constant/common";
 import { useFundingProducts } from "@/hooks/admin/funding-product";
 import Spinner from "../Spinner";
+import { useBusinessQuery } from "@/hooks/business";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
@@ -32,9 +33,10 @@ type Props = {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setCongratsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   data?: ApplyFunding;
+  isViewing?: boolean;
 };
 
-const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
+const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) => {
   const { user } = useAuth();
   const { applyFunding, isRecording } = useApplyFunding();
   const [showLegalResidentOther, setShowLegalResidentOther] = useState(false);
@@ -44,20 +46,38 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
   const [interestedProducts, setInterestedProducts] = useState<DropdownOption[]>([]);
   const { products, isLoading } = useFundingProducts();
 
+  const { businessData, isLoading: isBusinessLoading } = useBusinessQuery(
+    (data?.userId || user?.uid) ?? ""
+  );
+
+  const businessOptions = useMemo<DropdownOption[]>(
+    () =>
+      (businessData ?? []).map((b) => ({
+        value: b.businessName,
+        label: `${b.businessName} (${b.employerIdentificationNumber})`,
+      })),
+    [businessData]
+  );
+
   useEffect(() => {
     if (products) {
-      const data: DropdownOption[] = [];
+      const dropdownOptions: DropdownOption[] = [];
 
       products.forEach((product) => {
-        data.push({
+        dropdownOptions.push({
           value: product.productName,
           label: product.productName,
           category: product.fundingType,
         });
       });
-      setInterestedProducts(data);
+      setInterestedProducts(dropdownOptions);
+
+      if (data?.interestedProduct) {
+        const selected = dropdownOptions.filter((x) => x.value === data?.interestedProduct);
+        setInterestedProductSelected(selected[0]);
+      }
     }
-  }, [products]);
+  }, [products, data]);
 
   const form = useForm<ApplyFunding>({
     resolver: zodResolver(applyFundingSchema),
@@ -69,6 +89,38 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
       fundingType: data?.fundingType ?? "All",
     },
   });
+
+  const handleBusinessSelect = useCallback(
+    (value: string) => {
+      form.setValue("businessName", value, { shouldValidate: true });
+
+      const b = businessData?.find((x) => x.businessName === value);
+      if (b) {
+        form.setValue("businessStreetAddress", b.businessStreetAddress ?? "", {
+          shouldValidate: false,
+        });
+        form.setValue("businessCityAddress", b.businessCityAddress ?? "", {
+          shouldValidate: false,
+        });
+        form.setValue("businessStateAddress", b.businessStateAddress ?? "", {
+          shouldValidate: false,
+        });
+        form.setValue("businessPostalAddress", b.businessPostalAddress ?? "", {
+          shouldValidate: false,
+        });
+        form.setValue("businessPhoneNumber", b.businessPhoneNumber ?? "", {
+          shouldValidate: false,
+        });
+        form.setValue("businessEmail", b.businessEmail ?? "", { shouldValidate: false });
+        form.setValue("businessWebsite", b.businessWebsite ?? "", { shouldValidate: false });
+        form.setValue("socialMedia", b.socialMedia ?? "", { shouldValidate: false });
+        form.setValue("employerIdentificationNumber", b.employerIdentificationNumber ?? "", {
+          shouldValidate: false,
+        });
+      }
+    },
+    [businessData, form]
+  );
 
   const onSubmit: SubmitHandler<ApplyFunding> = useCallback(
     async (values) => {
@@ -135,13 +187,23 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data }: Props) => {
                       type="number"
                     />
                   </div>
-                  {interestedProductSelected &&
-                    interestedProductSelected.category?.includes("Business") && (
+                  {interestedProductSelected?.category?.includes("Business") &&
+                    (businessOptions.length > 0 ? (
                       <CustomFormField
-                        name={"businessName"}
+                        name="businessName"
+                        label="* Select Business (Business Funding Only)"
+                        type="select"
+                        placeholder="Select your business"
+                        options={businessOptions}
+                        onSelectValue={handleBusinessSelect}
+                      />
+                    ) : (
+                      // Fallback if the user has no saved businesses yet
+                      <CustomFormField
+                        name="businessName"
                         label="* Enter Business name (Business Funding Only)"
                       />
-                    )}
+                    ))}
 
                   <div className="grid grid-cols-2 gap-4 items-start">
                     <CustomFormField
