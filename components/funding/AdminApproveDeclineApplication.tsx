@@ -55,7 +55,7 @@ export default function AdminApproveDeclineApplication({
       await updateApplicationStatus(referenceNumber, status, form.getValues());
       onStatusChange?.(status);
       if (status === "Declined") toast.error("Funding application declined.");
-      else toast.success("Funding application updated.");
+      else toast.success("Funding application approved!.");
     } catch (error: any) {
       console.error("AdminApproveDeclineApplication::doUpdate::error", error);
       toast.error("Failed to update funding application.");
