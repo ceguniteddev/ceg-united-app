@@ -242,7 +242,9 @@ export const exchangeAccessToken = async (
     await removeItemLinkUpdateModeNewAccount(itemId);
   }
 
-  await generateCRSReport(userId);
+  if (tokenType === "ITEM") {
+    await generateCRSReport(userId);
+  }
 };
 
 export const recordAccessToken = async (

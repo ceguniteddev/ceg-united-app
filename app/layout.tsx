@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, IBM_Plex_Serif } from "next/font/google";
 import "./globals.css";
 import Providers from "@/provider/Providers";
+import Script from "next/script";
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -40,6 +41,10 @@ export default function RootLayout({
       >
         <Providers>
           <div className="h-full w-full">{children}</div>
+          <Script
+            strategy="afterInteractive"
+            src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}
+          />
         </Providers>
       </body>
     </html>

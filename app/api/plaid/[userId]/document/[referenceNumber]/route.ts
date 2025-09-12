@@ -13,6 +13,10 @@ export async function POST(
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
 
+    if (!referenceNumber) {
+      return NextResponse.json({ error: "Missing referenceNumber" }, { status: 400 });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
 
@@ -61,8 +65,19 @@ export async function POST(
   }
 }
 
-export async function GET(_req: NextRequest, { params }: { params?: Promise<{ userId: string }> }) {
-  const { userId } = (await params) ?? {};
+export async function GET(
+  _req: NextRequest,
+  { params }: { params?: Promise<{ userId: string; referenceNumber: string }> }
+) {
+  const { userId, referenceNumber } = (await params) ?? {};
+  if (!userId) {
+    return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+  }
+
+  if (!referenceNumber) {
+    return NextResponse.json({ error: "Missing referenceNumber" }, { status: 400 });
+  }
+
   const prefix = `documents/${userId}/`;
   const bucket = storageAdmin();
 

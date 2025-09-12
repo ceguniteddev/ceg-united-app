@@ -7,6 +7,7 @@ import { logError, logInfo } from "@/lib/logger";
 import {
   ApplyFunding,
   ApplyFundingWithUser,
+  FundingApplicationApproveDecline,
   FundingApplicationSatus,
 } from "@/schema/apply-funding";
 import { Timestamp } from "firebase-admin/firestore";
@@ -194,7 +195,8 @@ function randomString(length: number) {
 
 export const updateApplicationStatus = async (
   referenceNumber: string,
-  status: FundingApplicationSatus
+  status: FundingApplicationSatus,
+  approveOrDeclineValue?: FundingApplicationApproveDecline
 ) => {
   logInfo("updateApplicationStatus", { referenceNumber, status });
 
@@ -203,5 +205,5 @@ export const updateApplicationStatus = async (
 
   const db = firestoreAdmin();
   const appRef = db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber);
-  await appRef.update({ status });
+  await appRef.update({ status, approveOrDecline: approveOrDeclineValue });
 };

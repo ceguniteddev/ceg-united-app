@@ -6,6 +6,7 @@ import DocumentsDisplay from "./DocumentsDisplay";
 
 import AnalysisView from "./AnalysisView";
 import { updateApplicationStatus } from "@/service/apply-funding";
+import AdminApproveDeclineApplication from "./AdminApproveDeclineApplication";
 
 type Props = {
   formSetOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -29,6 +30,7 @@ const ViewApplication = ({ formSetOpen, formSetCongratsOpen, formData }: Props) 
         <TabsTrigger value="application">Application</TabsTrigger>
         <TabsTrigger value="document">Document</TabsTrigger>
         <TabsTrigger value="analysis">Analysis</TabsTrigger>
+        <TabsTrigger value="approve-decline">Approve/Decline</TabsTrigger>
       </TabsList>
 
       <TabsContent value="application" className="w-full">
@@ -48,6 +50,10 @@ const ViewApplication = ({ formSetOpen, formSetCongratsOpen, formData }: Props) 
 
       <TabsContent value="analysis" className="w-full">
         <AnalysisView referenceNumber={formData?.referenceNumber ?? ""} setOpen={formSetOpen} />
+      </TabsContent>
+
+      <TabsContent value="approve-decline" className="w-full">
+        <AdminApproveDeclineApplication referenceNumber={formData?.referenceNumber ?? ""} />
       </TabsContent>
     </Tabs>
   );

@@ -4,7 +4,7 @@ import Script from "next/script";
 
 export default function RecaptchaGate() {
   const pathname = usePathname();
-  const shouldLoad = pathname === "/register" || pathname === "/";
+  const shouldLoad = pathname === "/register" || pathname === "/" || pathname === "/my-funding";
   if (!shouldLoad) {
     return null;
   }

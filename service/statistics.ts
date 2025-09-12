@@ -40,3 +40,9 @@ export const getAdminStatistics = async (): Promise<AdminStatistics> => {
     countsByStatus: counts.statuses,
   };
 };
+
+export const getClientStatistics = async (userId: string) => {
+  // get total funding eligible amount
+  // get total funding applications amount
+  // get total funding approved amount
+};

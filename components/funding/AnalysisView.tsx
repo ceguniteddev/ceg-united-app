@@ -2,13 +2,13 @@ import { useAnalysisMutation, useAnalysisQuery } from "@/hooks/admin/funding-app
 import dynamic from "next/dynamic";
 import React from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { CheckIcon, XIcon } from "lucide-react";
+// import { CheckIcon, XIcon } from "lucide-react";
 import Spinner from "../Spinner";
-import { ConfirmButton } from "../Confirmation";
-import { Button } from "../ui/button";
-import { useQueryClient } from "@tanstack/react-query";
-import { fa } from "zod/v4/locales";
-import { updateApplicationStatus } from "@/service/apply-funding";
+// import { ConfirmButton } from "../Confirmation";
+// import { Button } from "../ui/button";
+// import { useQueryClient } from "@tanstack/react-query";
+// import { fa } from "zod/v4/locales";
+// import { updateApplicationStatus } from "@/service/apply-funding";
 
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -18,20 +18,20 @@ type Item = { id: string; analysis?: string };
 const AnalysisView = ({ referenceNumber, setOpen }: Props) => {
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
   const { updateAnalysis } = useAnalysisMutation();
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
 
-  const handleStatusChange = React.useCallback(
-    async (status: "Approved" | "Declined") => {
-      await updateApplicationStatus(referenceNumber, status);
+  // const handleStatusChange = React.useCallback(
+  //   async (status: "Approved" | "Declined") => {
+  //     await updateApplicationStatus(referenceNumber, status);
 
-      queryClient.invalidateQueries({
-        queryKey: ["GET_FUNDING_APPLICATIONS"],
-      });
+  //     queryClient.invalidateQueries({
+  //       queryKey: ["GET_FUNDING_APPLICATIONS"],
+  //     });
 
-      setOpen(false);
-    },
-    [referenceNumber, queryClient, setOpen]
-  );
+  //     setOpen(false);
+  //   },
+  //   [referenceNumber, queryClient, setOpen]
+  // );
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
 
@@ -48,7 +48,7 @@ const AnalysisView = ({ referenceNumber, setOpen }: Props) => {
           analysis={item.analysis ?? ""}
         />
       ))}
-      <div className="flex justify-between pr-4 pl-4">
+      {/* <div className="flex justify-between pr-4 pl-4">
         <div>
           <Button type="button" variant={"outline"} onClick={() => setOpen(false)}>
             Close
@@ -79,7 +79,7 @@ const AnalysisView = ({ referenceNumber, setOpen }: Props) => {
             classNameAction="bg-green-600 hover:bg-green-700"
           />
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

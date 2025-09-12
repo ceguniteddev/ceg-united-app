@@ -7,12 +7,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, SquarePen } from "lucide-react";
 import { ApplyFunding } from "@/schema/apply-funding";
-import ViewApplication from "@/components/funding/ViewApplication";
+import ViewApplication from "@/components/funding/AdminViewApplication";
 import { useState } from "react";
 
 type Props = {
