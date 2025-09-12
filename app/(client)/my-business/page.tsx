@@ -101,6 +101,18 @@ const MyBusinessPage = () => {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <CustomFormField
+                          type="number"
+                          name="lastYearTaxes"
+                          label="Last Year Taxes"
+                        />
+                        <CustomFormField
+                          name="currentYearTaxes"
+                          label="Current Year Taxes"
+                          type="number"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <CustomFormField
                           name="businessEmail"
                           type="email"
                           label="* Email Address"

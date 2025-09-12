@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { ApplyFunding, applyFundingSchema } from "@/schema/apply-funding";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BanknoteIcon, CircleXIcon, Loader2Icon } from "lucide-react";
+import { BanknoteIcon, CheckIcon, CircleXIcon, Loader2Icon } from "lucide-react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
@@ -16,6 +16,7 @@ import { US_STATES } from "@/constant/common";
 import { useFundingProducts } from "@/hooks/admin/funding-product";
 import Spinner from "../Spinner";
 import { useBusinessQuery } from "@/hooks/business";
+import { ConfirmButton } from "../Confirmation";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
@@ -45,6 +46,7 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
   >(undefined);
   const [interestedProducts, setInterestedProducts] = useState<DropdownOption[]>([]);
   const { products, isLoading } = useFundingProducts();
+  const [busyStatus, setBusyStatus] = useState<ApplyFunding | null>(null);
 
   const { businessData, isLoading: isBusinessLoading } = useBusinessQuery(
     (data?.userId || user?.uid) ?? ""
@@ -117,20 +119,29 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
         form.setValue("employerIdentificationNumber", b.employerIdentificationNumber ?? "", {
           shouldValidate: false,
         });
+        form.setValue("lastYearTaxes", b.lastYearTaxes ?? 0, { shouldValidate: false });
+        form.setValue("currentYearTaxes", b.currentYearTaxes ?? 0, { shouldValidate: false });
       }
     },
     [businessData, form]
   );
 
-  const onSubmit: SubmitHandler<ApplyFunding> = useCallback(
-    async (values) => {
-      const token = await getCaptchaTokenRegistration("applyFunding");
-      await applyFunding({ token, values });
-      setOpen(false);
-      if (setCongratsOpen) setCongratsOpen(true);
-    },
-    [setOpen, setCongratsOpen, applyFunding]
-  );
+  const onSubmit = useCallback(async () => {
+    const values = form.getValues();
+    const token = await getCaptchaTokenRegistration("applyFunding");
+    await applyFunding({ token, values });
+    setOpen(false);
+    if (setCongratsOpen) setCongratsOpen(true);
+  }, [setOpen, setCongratsOpen, applyFunding, form]);
+
+  const handleApproveClickCapture: React.MouseEventHandler<HTMLSpanElement> = async (e) => {
+    const ok = await form.trigger(); // runs Zod validation and shows errors if any
+    if (!ok) {
+      // Block the ConfirmButton from opening its dialog
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
 
   const handleLegalResidentChange = useCallback((value: string) => {
     if (value === "Other") {
@@ -166,7 +177,7 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
   return (
     <div>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={(e) => e.preventDefault()}>
           <fieldset disabled={isRecording}>
             <input type="hidden" {...form.register("fundingType")} />
             <div>
@@ -262,9 +273,9 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
                     />
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex justify-end">
                   {!data ? (
-                    <div className="grid grid-cols-2 gap-4 w-full">
+                    <div className="grid grid-cols-2 gap-4">
                       <Button
                         size="lg"
                         variant={"outline"}
@@ -275,23 +286,40 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
                       >
                         <CircleXIcon className="mr-2 h-4 w-4" /> Close
                       </Button>
-                      <Button
-                        size="lg"
-                        type="submit"
-                        disabled={isRecording}
-                        className=" bg-green-400 hover:bg-green-500 text-black-100"
-                      >
-                        {isRecording ? (
-                          <>
-                            <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-                            Applying...
-                          </>
-                        ) : (
-                          <>
-                            <BanknoteIcon className="mr-2 h-4 w-4" /> Apply Funding
-                          </>
-                        )}
-                      </Button>
+
+                      <span onClickCapture={handleApproveClickCapture}>
+                        <ConfirmButton
+                          label="Apply"
+                          confirmLabel="Apply"
+                          description="Please confirm your application."
+                          variant="default"
+                          size="sm"
+                          icon={<CheckIcon className="h-4 w-4" />}
+                          onConfirm={() => onSubmit()}
+                          className="bg-green-600 hover:bg-green-700"
+                          classNameAction="bg-green-600 hover:bg-green-700"
+                          isLoading={form.formState.isSubmitting || busyStatus !== null}
+                          trigger={
+                            <Button
+                              size="lg"
+                              type="submit"
+                              disabled={isRecording}
+                              className=" bg-green-400 hover:bg-green-500 text-black-100"
+                            >
+                              {isRecording ? (
+                                <>
+                                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                                  Applying...
+                                </>
+                              ) : (
+                                <>
+                                  <BanknoteIcon className="mr-2 h-4 w-4" /> Apply Funding
+                                </>
+                              )}
+                            </Button>
+                          }
+                        />
+                      </span>
                     </div>
                   ) : (
                     <Button

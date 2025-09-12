@@ -42,7 +42,8 @@ export const getAdminStatistics = async (): Promise<AdminStatistics> => {
 };
 
 export const getClientStatistics = async (userId: string) => {
-  // get total funding eligible amount
   // get total funding applications amount
   // get total funding approved amount
+  // get business details
+  // get CRS data
 };

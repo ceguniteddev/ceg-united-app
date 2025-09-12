@@ -64,6 +64,8 @@ export const applyFundingSchema = z.object({
   businessEmail: z.email({ message: "Invalid email" }).optional(),
   businessWebsite: z.string({ error: "Required" }).optional(),
   socialMedia: z.string({ error: "Required" }).optional(),
+  lastYearTaxes: z.number().optional(),
+  currentYearTaxes: z.number().optional(),
 
   fundingType: FundingApplicationTypeEnum,
   approveOrDecline: fundingApplicationApproveDeclineSchema.optional(),

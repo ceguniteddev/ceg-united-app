@@ -91,6 +91,8 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="Business Name" value={data.businessName} />
                 <Field label="EIN" value={data.employerIdentificationNumber} />
+                <Field label="Last Year Taxes" value={currency(data.lastYearTaxes)} />
+                <Field label="Current Year Taxes" value={currency(data.currentYearTaxes)} />
                 <Field label="Website" value={data.businessWebsite} />
                 <Field label="Email" value={data.businessEmail} />
                 <Field label="Phone" value={data.businessPhoneNumber} />
