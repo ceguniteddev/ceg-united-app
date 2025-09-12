@@ -53,7 +53,13 @@ const ViewApplication = ({ formSetOpen, formSetCongratsOpen, formData }: Props) 
       </TabsContent>
 
       <TabsContent value="approve-decline" className="w-full">
-        <AdminApproveDeclineApplication referenceNumber={formData?.referenceNumber ?? ""} />
+        <AdminApproveDeclineApplication
+          referenceNumber={formData?.referenceNumber ?? ""}
+          defaultValues={{
+            amountApprove: formData?.approveOrDecline?.amountApprove,
+            remarks: formData?.approveOrDecline?.remarks,
+          }}
+        />
       </TabsContent>
     </Tabs>
   );

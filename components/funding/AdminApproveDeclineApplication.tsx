@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/card";
 import { Form } from "../ui/form";
 import { CustomFormField } from "../CustomFormField";
+import { toast } from "sonner";
 // If you keep FundingApplicationSatus as a const tuple:
 type FundingApplicationStatus = (typeof FundingApplicationSatus)[number];
 
@@ -53,6 +54,11 @@ export default function AdminApproveDeclineApplication({
       setBusyStatus(status);
       await updateApplicationStatus(referenceNumber, status, form.getValues());
       onStatusChange?.(status);
+      if (status === "Declined") toast.error("Funding application declined.");
+      else toast.success("Funding application updated.");
+    } catch (error: any) {
+      console.error("AdminApproveDeclineApplication::doUpdate::error", error);
+      toast.error("Failed to update funding application.");
     } finally {
       setBusyStatus(null);
     }
