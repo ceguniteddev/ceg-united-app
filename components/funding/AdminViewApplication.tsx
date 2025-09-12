@@ -7,6 +7,7 @@ import DocumentsDisplay from "./DocumentsDisplay";
 import AnalysisView from "./AnalysisView";
 import { updateApplicationStatus } from "@/service/apply-funding";
 import AdminApproveDeclineApplication from "./AdminApproveDeclineApplication";
+import FundingApplicationView from "./AdminViewApplicationForm";
 
 type Props = {
   formSetOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -34,12 +35,13 @@ const ViewApplication = ({ formSetOpen, formSetCongratsOpen, formData }: Props) 
       </TabsList>
 
       <TabsContent value="application" className="w-full">
-        <ApplyFundingForm
+        {/* <ApplyFundingForm
           setOpen={formSetOpen}
           setCongratsOpen={formSetCongratsOpen}
           data={formData}
           isViewing
-        />
+        /> */}
+        <FundingApplicationView setOpen={formSetOpen} data={formData} />
       </TabsContent>
 
       <TabsContent value="document" className="w-full">
