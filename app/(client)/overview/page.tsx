@@ -1,6 +1,6 @@
 "use client";
 import { useGetClientStatistics } from "@/hooks/statistics";
-import { ClientDashboard } from "./ClientDashboard";
+import { ClientDashboard } from "@/components/ClientDashboard";
 import Spinner from "@/components/Spinner";
 
 export default function DashboardPage() {

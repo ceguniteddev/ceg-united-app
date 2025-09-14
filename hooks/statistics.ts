@@ -23,7 +23,7 @@ export const useGetAdminStatistics = (state?: string) => {
   };
 };
 
-export const useGetClientStatistics = (state?: string) => {
+export const useGetClientStatistics = () => {
   const { user } = useAuth();
 
   const { data: clientStatistics, isLoading } = useQuery({
@@ -35,6 +35,27 @@ export const useGetClientStatistics = (state?: string) => {
       return data;
     },
     enabled: !!user,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  return {
+    clientStatistics,
+    isLoading,
+  };
+};
+
+export const useGetClientStatisticsByUserId = (userId: string) => {
+  const { user } = useAuth();
+
+  const { data: clientStatistics, isLoading } = useQuery({
+    queryKey: [GET_CLIENT_STATISTICS, userId],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+      const data = await getClientStatistics(userId);
+
+      return data;
+    },
+    enabled: !!user && !!userId,
     staleTime: 10 * 60 * 1000,
   });
 

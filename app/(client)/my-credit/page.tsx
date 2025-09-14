@@ -1,6 +1,7 @@
 "use client";
 import Spinner from "@/components/Spinner";
 import { useClientCRSReportQuery } from "@/hooks/crs";
+import { useAuth } from "@/provider/AuthContext";
 import {
   CreditReport,
   CreditReportWithId,
@@ -205,6 +206,7 @@ const ScoreCard: React.FC<{
 
 // --- Main Page ---
 const MyCreditPage: React.FC = () => {
+  const { user } = useAuth();
   const { crsReport, isLoading } = useClientCRSReportQuery();
 
   const bureauMap = useMemo(() => groupByBureau(crsReport || []), [crsReport]);
@@ -256,6 +258,8 @@ const MyCreditPage: React.FC = () => {
     if (dates.length === 0) return undefined;
     return new Date(Math.max(...dates)).toLocaleString();
   }, [bureauMap]);
+
+  if (!user) return null;
 
   if (isLoading) {
     return <Spinner displayText="Loading credit reports..." />;

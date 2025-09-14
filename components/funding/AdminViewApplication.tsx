@@ -8,14 +8,15 @@ import AnalysisView from "./AnalysisView";
 import { updateApplicationStatus } from "@/service/apply-funding";
 import AdminApproveDeclineApplication from "./AdminApproveDeclineApplication";
 import FundingApplicationView from "./AdminViewApplicationForm";
+import { ClientDashboard } from "../ClientDashboard";
+import AdminViewUserProfile from "./AdminViewUserProfile";
 
 type Props = {
   formSetOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  formSetCongratsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   formData?: ApplyFunding;
 };
 
-const ViewApplication = ({ formSetOpen, formSetCongratsOpen, formData }: Props) => {
+const ViewApplication = ({ formSetOpen, formData }: Props) => {
   useEffect(() => {
     const updateStatus = async () => {
       if (formData?.status === "New") {
@@ -29,19 +30,17 @@ const ViewApplication = ({ formSetOpen, formSetCongratsOpen, formData }: Props) 
     <Tabs defaultValue="application" className="w-full flex flex-col items-start justify-start">
       <TabsList>
         <TabsTrigger value="application">Application</TabsTrigger>
+        <TabsTrigger value="user-profile">User Profile</TabsTrigger>
         <TabsTrigger value="document">Document</TabsTrigger>
         <TabsTrigger value="analysis">Analysis</TabsTrigger>
         <TabsTrigger value="approve-decline">Approve/Decline</TabsTrigger>
       </TabsList>
 
       <TabsContent value="application" className="w-full">
-        {/* <ApplyFundingForm
-          setOpen={formSetOpen}
-          setCongratsOpen={formSetCongratsOpen}
-          data={formData}
-          isViewing
-        /> */}
         <FundingApplicationView setOpen={formSetOpen} data={formData} />
+      </TabsContent>
+      <TabsContent value="user-profile" className="w-full">
+        <AdminViewUserProfile userId={formData?.userId ?? ""} />
       </TabsContent>
 
       <TabsContent value="document" className="w-full">
