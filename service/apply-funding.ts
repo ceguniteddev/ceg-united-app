@@ -13,6 +13,8 @@ import {
 import { Timestamp } from "firebase-admin/firestore";
 import * as crypto from "node:crypto";
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export const applyFunding = async (value: ApplyFunding) => {
   const db = firestoreAdmin();
 
@@ -23,6 +25,25 @@ export const applyFunding = async (value: ApplyFunding) => {
   const docRef = collectionRef.doc(referenceNumber);
   await docRef.set({ ...value });
   const data = (await docRef.get()).data();
+
+  if (value.businessId) {
+    await fetch(`${process.env.n8n_HOST}/crs-report`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+      },
+      body: JSON.stringify({
+        fundingReferenceNumber: referenceNumber,
+        userId: value.userId,
+        type: "business",
+      }),
+    });
+
+    // sleep for 20 seconds so that funding-analysis will capture the business profile and score
+    // increase if necessary
+    await sleep(20000);
+  }
 
   // call n8n webhook to capture AI analysis
   await fetch(`${process.env.n8n_HOST}/funding-analysis`, {
@@ -37,6 +58,8 @@ export const applyFunding = async (value: ApplyFunding) => {
     }),
   });
 
+  // call n8n webhook to capture Business Profile / Score
+
   return {
     referenceNumber: docRef.id,
     ...normalizeAllDates(data),
@@ -46,7 +69,7 @@ export const applyFunding = async (value: ApplyFunding) => {
 export const getApplyFunding = async (userId: string): Promise<ApplyFunding[] | null> => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(USER_FUNDING_APPLICATION).where("userId", "==", userId);
-  const snapshot = await collectionRef.orderBy("appliedDate", "asc").get();
+  const snapshot = await collectionRef.orderBy("appliedDate", "desc").get();
   if (snapshot.empty) {
     console.log("No matching documents.");
     return null;
@@ -61,7 +84,7 @@ export const getFundingApplications = async (
   state?: string
 ): Promise<ApplyFundingWithUser[] | null> => {
   const db = firestoreAdmin();
-  let collectionRef = db.collection(USER_FUNDING_APPLICATION).orderBy("appliedDate", "asc");
+  let collectionRef = db.collection(USER_FUNDING_APPLICATION).orderBy("appliedDate", "desc");
 
   if (state) {
     collectionRef = collectionRef.where("addressState", "==", state);

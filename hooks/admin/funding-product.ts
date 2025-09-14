@@ -107,7 +107,7 @@ export const useFundingProductMutation = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!user) throw new Error("User not authenticated");
-      console.log("deleteFundingProduct", id);
+
       await deleteFundingProduct(id);
     },
     onSuccess: (_data, id) => {

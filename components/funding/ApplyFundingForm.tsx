@@ -98,6 +98,7 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
 
       const b = businessData?.find((x) => x.businessName === value);
       if (b) {
+        form.setValue("businessId", b.id ?? "", { shouldValidate: false });
         form.setValue("businessStreetAddress", b.businessStreetAddress ?? "", {
           shouldValidate: false,
         });

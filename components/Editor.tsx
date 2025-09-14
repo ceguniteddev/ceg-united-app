@@ -62,7 +62,7 @@ const EmailTemplateEditor: React.FC<TinyEditorProps> = ({
           //   const html = editorRef.current?.getContent({ format: "html" });
           //   onSaveCallback?.(html);
           // },
-          save_oncancelcallback: () => console.log("Save cancelled"),
+          // save_oncancelcallback: () => console.log("Save cancelled"),
           save_enablewhendirty: false,
           // init_instance_callback(editor) {
           //   const dialogContainer = document.getElementById("dialog-form");

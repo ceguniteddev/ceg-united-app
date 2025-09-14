@@ -124,7 +124,7 @@ const RegistrationPage = () => {
                       size="lg"
                       type="submit"
                       disabled={isRecording}
-                      className="w-full bg-green-400 hover:bg-green-500 text-black-100"
+                      className="w-full bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer"
                     >
                       {isRecording ? (
                         <>

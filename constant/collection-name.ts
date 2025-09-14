@@ -8,6 +8,7 @@ export const PLAID_ASSET_WEBHOOK_COLLECTION = "plaid-asset-webhook-data";
 export const PLAID_CREATE_ASSET_REPORT = "plaid-asset-create-report";
 export const PLAID_ASSET_REPORT_DATA = "plaid-asset-report-data";
 export const PLAID_TOKEN_COLLECTION = "plaid-token";
+export const PLAID_USER_COMPLETE_DATA = "plaid-user-complete-data";
 
 export const GMAIL_TOKENS = "gmail-token";
 
@@ -19,6 +20,9 @@ export const NEW_ACCOUNTS_AVAILABLE = "user-link-new-accounts-available";
 export const FUNDING_PRODUCTS_COLLECTION = "funding-products";
 
 export const CRS_REPORT_DATA = "crs-report-data";
+export const CRS_REPORT_BUSINESS_PROFILE = "crs-report-business-profile";
+export const CRS_REPORT_BUSINESS_SCORE = "crs-report-business-score";
+
 export const REQUEST_CUSTOMER_CALL = "user-request-call";
 export const WHATS_NEW_COLLECTION = "whats-new";
 export const BUSINESS_DETAIL_COLLECTION = "business-detail";

@@ -7,6 +7,7 @@ import { useGetLinkToken } from "@/hooks/plaid";
 import { exchangeAccessToken } from "@/service/plaid";
 import { useAuth } from "@/provider/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 type PlaidLinkProps = {
   variant?: "primary" | "ghost";
@@ -23,18 +24,6 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
   // const [token, setToken] = useState("");
   const { user } = useAuth();
   const queryClient = useQueryClient();
-
-  // useEffect(() => {
-  //   const getLinkToken = async () => {
-  //     const linkToken = await createLinkToken({ itemId: itemId ?? "", isNewAccount });
-
-  //     if (!linkToken) return;
-
-  //     setToken(linkToken!);
-  //   };
-
-  //   getLinkToken();
-  // }, [createLinkToken, itemId, isNewAccount]);
 
   const onSuccess = React.useCallback(
     (public_token: string) => {
@@ -54,13 +43,12 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
           queryKey: ["USER_NEW_ACCOUNT_LINK_UPDATE_MODE", user?.uid],
         });
 
-        router.refresh();
-        router.push("/overview");
+        toast.success("Bank successfully connected.");
       };
 
       exchangePublicTokenForAccessToken();
     },
-    [user?.uid, queryClient, router, itemId, isNewAccount]
+    [user?.uid, queryClient, itemId, isNewAccount]
   );
 
   const config: PlaidLinkOptions = {

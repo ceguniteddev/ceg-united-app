@@ -2,7 +2,7 @@
 import { UserCreateResponse } from "plaid";
 import { getAccessToken } from ".";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
-import { USER_TOKEN_COLLECTION } from "@/constant/collection-name";
+import { PLAID_USER_COMPLETE_DATA, USER_TOKEN_COLLECTION } from "@/constant/collection-name";
 import { Timestamp } from "firebase-admin/firestore";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { plaidClient } from "@/lib/plaid";
@@ -10,7 +10,7 @@ import { logError, logInfo } from "@/lib/logger";
 import AppError from "@/error/AppError";
 import { decrypt, encrypt } from "@/lib/encryption";
 
-type PlaidCompleteRow = {
+export type PlaidCompleteRow = {
   institutionName: string | null;
   item: any | null;
   balance: any[]; // accounts
@@ -206,8 +206,34 @@ export const getPlaidCompleteData = async (userId: string) => {
 
     completeData.push(row);
   }
-
+  await recordPlaidCompleteData(userId, completeData);
   return completeData;
+};
+
+const recordPlaidCompleteData = async (userId: string, data: PlaidCompleteRow[]) => {
+  const db = firestoreAdmin();
+
+  const docRef = db.collection(PLAID_USER_COMPLETE_DATA).doc(userId);
+
+  await docRef.set(
+    {
+      userId,
+      data,
+      lastUpdated: Timestamp.now(),
+    },
+    { merge: true }
+  );
+};
+
+export const getPlaidCompleteDataForUser = async (userId: string) => {
+  const db = firestoreAdmin();
+  const docRef = db.collection(PLAID_USER_COMPLETE_DATA).doc(userId);
+  const doc = await docRef.get();
+  if (!doc.exists) {
+    return null;
+  }
+  const docData = normalizeAllDates(doc.data());
+  return docData?.data as PlaidCompleteRow[];
 };
 
 async function safeData<T>(

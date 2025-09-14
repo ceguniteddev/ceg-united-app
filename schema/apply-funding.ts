@@ -53,8 +53,9 @@ export const applyFundingSchema = z.object({
   status: FundingApplicationSatusEnum,
   appliedDate: z.date(),
   referenceNumber: z.string().optional(),
-  businessName: z.string().optional(),
 
+  businessId: z.string().optional(),
+  businessName: z.string().optional(),
   businessStreetAddress: z.string().optional(),
   businessCityAddress: z.string().optional(),
   businessStateAddress: z.string().optional(),

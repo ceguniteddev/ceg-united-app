@@ -1,5 +1,9 @@
-import { getUsers } from "./user";
-import { getFundingApplications } from "./apply-funding";
+import { getUserById, getUsers } from "./user";
+import { getApplyFunding, getFundingApplications } from "./apply-funding";
+import { getBusiness } from "./business";
+import { getCRSBusinessProfile, getCRSBusinessScore, getCRSReport } from "./crs";
+import { Business } from "@/schema";
+import { getPlaidCompleteDataForUser } from "./plaid/data";
 
 // get all registered user
 export const getAdminStatistics = async (): Promise<AdminStatistics> => {
@@ -41,9 +45,44 @@ export const getAdminStatistics = async (): Promise<AdminStatistics> => {
   };
 };
 
+export interface BusinessWithCRSData extends Business {
+  crsBusinessProfile: any;
+  crsBusinessScore: any;
+}
+
 export const getClientStatistics = async (userId: string) => {
+  const userData = await getUserById(userId);
   // get total funding applications amount
+  const fundingApplications = await getApplyFunding(userId);
   // get total funding approved amount
+  const crsReportData = await getCRSReport(userId);
+
   // get business details
-  // get CRS data
+  const businessDetails: Business[] = await getBusiness(userId);
+  // get CRS business prorfile
+  // get CRS business score
+  const businessesWithCrsData = await Promise.all(
+    businessDetails.map(async (business) => {
+      const [businessProfile, businessScore] = await Promise.all([
+        getCRSBusinessProfile(userId, business.id ?? ""),
+        getCRSBusinessScore(userId, business.id ?? ""),
+      ]);
+
+      return {
+        ...business,
+        crsBusinessProfile: businessProfile,
+        crsBusinessScore: businessScore,
+      };
+    })
+  );
+
+  const getPlaidCompleteData = await getPlaidCompleteDataForUser(userId);
+
+  return {
+    userData,
+    crsReportData,
+    fundingApplications,
+    businessesWithCrsData,
+    getPlaidCompleteData,
+  };
 };

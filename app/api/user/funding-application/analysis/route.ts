@@ -1,5 +1,6 @@
 import { badRequest, internalServerError } from "@/app/api/helpers";
 import AppError from "@/error/AppError";
+import { withAuth } from "@/lib/api-validation";
 import { getMessage } from "@/schema";
 import { recordAnalysis } from "@/service/analysis";
 import { NextRequest, NextResponse } from "next/server";
@@ -25,7 +26,7 @@ const requestBodySchema = z
   })
   .strict();
 
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async (req: NextRequest) => {
   const body = await req.json();
 
   // safeparse
@@ -48,4 +49,4 @@ export async function POST(req: NextRequest) {
     console.log(err);
     return internalServerError();
   }
-}
+});

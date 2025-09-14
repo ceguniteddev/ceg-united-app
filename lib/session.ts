@@ -46,7 +46,6 @@ export const getCookie = async (key: string) => {
 };
 
 export const deleteCookie = async (key: string) => {
-  console.log("deleteCookie", key);
   const cookieStore = await cookies();
   cookieStore.delete(key);
 };

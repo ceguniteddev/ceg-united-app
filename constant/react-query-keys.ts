@@ -5,6 +5,7 @@ export const GET_CLIENT_DOCUMENTS = "get-client-documents";
 export const GET_USER = "get-user";
 
 export const GET_ADMIN_STATISTICS = "get-admin-statistics";
+export const GET_CLIENT_STATISTICS = "get-client-statistics";
 
 export const GET_FUNDING_PRODUCTS = "get-funding-products";
 export const GET_FUNDING_PRODUCT = "get-funding-product";
