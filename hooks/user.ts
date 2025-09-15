@@ -32,26 +32,6 @@ export const useUsersQuery = (role?: Role) => {
   };
 };
 
-export const useUserDocumentsQuery = () => {
-  const { user } = useAuth();
-
-  const { data: userDocuments, isLoading } = useQuery({
-    queryKey: [GET_USER_DOCUMENTS, user?.uid],
-    queryFn: async () => {
-      if (!user) throw new Error("User not authenticated");
-
-      return await getUserDocuments(user.uid);
-    },
-    enabled: !!user,
-    staleTime: 30 * 60 * 1000, // 30 minutes
-  });
-
-  return {
-    userDocuments,
-    isLoading,
-  };
-};
-
 export const useUserQuery = (id: string) => {
   const { user } = useAuth();
 

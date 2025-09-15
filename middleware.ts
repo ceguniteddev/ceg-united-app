@@ -27,21 +27,19 @@ function isClientRoute(pathname: string) {
 export async function middleware(req: NextRequest) {
   const { pathname, origin } = req.nextUrl;
 
+  const token = req.cookies.get(FIREBASE_TOKEN_NAME)?.value;
+
   // 1) API first: short-circuit and only 401 if truly unauthenticated
   if (pathname.startsWith("/api/")) {
     const xIdToken = req.headers.get("x-id-token");
     const adminAccessKey = req.headers.get("ADMIN_ACCESS_KEY");
-    if (xIdToken || adminAccessKey) return NextResponse.next();
+    if (xIdToken || adminAccessKey || token) return NextResponse.next();
 
-    const token = req.cookies.get(FIREBASE_TOKEN_NAME)?.value;
     if (!token && !pathname.includes("webhook"))
       return NextResponse.json("Unauthorized", { status: 401 });
     // Optionally verify here if your API routes need auth in middleware
     return NextResponse.next();
   }
-
-  // 2) Read cookie in middleware via req.cookies
-  const token = req.cookies.get(FIREBASE_TOKEN_NAME)?.value;
 
   // 3) No token → allow public, redirect others to "/"
   if (!token) {
