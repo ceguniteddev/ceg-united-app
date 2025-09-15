@@ -11,11 +11,7 @@ const Page = () => {
         <HeaderBox title="New Features Management" />
       </div>
 
-      <div className="space-y-6">
-        <section className="flex w-full flex-col gap-6">
-          <AdminWhatsNew />
-        </section>
-      </div>
+      <AdminWhatsNew />
     </section>
   );
 };

@@ -40,7 +40,28 @@ export const useGetFundingApplications = () => {
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
 
-      const data = (await getFundingApplications()) as ApplyFundingWithUser[];
+      const data = (await getFundingApplications({})) as ApplyFundingWithUser[];
+
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  return {
+    appliedFunding,
+    isLoading,
+  };
+};
+
+export const useGetFundingApplicationsIsNew = () => {
+  const { user } = useAuth();
+
+  const { data: appliedFunding, isLoading } = useQuery({
+    queryKey: ["GET_FUNDING_APPLICATIONS_NEW"],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+
+      const data = (await getFundingApplications({ status: "New" })) as ApplyFundingWithUser[];
 
       return data;
     },
@@ -83,6 +104,9 @@ export const useApplyFunding = () => {
       });
       queryClient.invalidateQueries({
         queryKey: ["GET_FUNDING_APPLICATIONS"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_FUNDING_APPLICATIONS_NEW"],
       });
     },
     onError: (error: any) => {

@@ -7,11 +7,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
+import { useContactUsQueryIsOpen } from "@/hooks/contact-us";
+import { useGetFundingApplicationsIsNew } from "@/hooks/apply-funding";
 
 const Sidebar = () => {
   const { user, role } = useAuth();
   const pathname = usePathname();
-
+  const { requestCallsOpen } = useContactUsQueryIsOpen();
+  const { appliedFunding } = useGetFundingApplicationsIsNew();
   if (!user) return null;
 
   if (role === "Client") return null;
@@ -45,7 +48,15 @@ const Sidebar = () => {
                     "brightness-[3] invert-0": isActive,
                   })}
                 />
+                {item.route === "/admin/funding-application" &&
+                  (appliedFunding?.length ?? 0) > 0 && (
+                    <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                  )}
+                {item.route === "/admin/call-requests" && (requestCallsOpen?.length ?? 0) > 0 && (
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                )}
               </div>
+
               <p className={cn("sidebar-label", { "!text-white": isActive })}>{item.label}</p>
             </Link>
           );

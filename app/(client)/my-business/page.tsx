@@ -15,6 +15,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useBusinessMutation } from "@/hooks/business";
 import { useAuth } from "@/provider/AuthContext";
 import IconMenu from "@/components/icon-menu";
+import Spinner from "@/components/Spinner";
 
 const defaultValues: BusinessForm = {
   businessName: "",
@@ -72,6 +73,9 @@ const MyBusinessPage = () => {
     [recordBusiness, updateBusiness, editingBusiness, form, user]
   );
 
+  if (!user) {
+    return <Spinner displayText="Loading data..." />;
+  }
   const isSubmitting = isRecording || isUpdating;
   const isEditing = !!editingBusiness;
   return (

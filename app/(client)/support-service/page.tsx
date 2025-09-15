@@ -11,7 +11,7 @@ export default function ContactPage() {
         <header className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Contact Us</h1>
           <p className="text-gray-600 mt-2">
-            We’d love to hear from you. Choose the best way to get in touch.
+            {`We'd love to hear from you. Choose the best way to get in touch.`}
           </p>
         </header>
 

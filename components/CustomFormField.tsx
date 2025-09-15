@@ -69,6 +69,7 @@ interface FormFieldProps {
   dateAfterHidden?: Date | undefined;
   numberPrefix?: string;
   decimalScale?: number;
+  editorHeight?: number;
 }
 
 export const CustomFormField: React.FC<FormFieldProps> = ({
@@ -102,6 +103,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
   dateAfterHidden = undefined,
   numberPrefix,
   decimalScale = 2,
+  editorHeight,
 }) => {
   const { control } = useFormContext();
 
@@ -338,7 +340,9 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
         );
 
       case "editor":
-        return <Editor content={field.value} onContentChange={field.onChange} />;
+        return (
+          <Editor height={editorHeight} content={field.value} onContentChange={field.onChange} />
+        );
 
       default:
         return (

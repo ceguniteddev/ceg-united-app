@@ -7,6 +7,7 @@ interface TinyEditorProps {
   content?: string;
   enrichData?: (value: string) => string;
   onSaveCallback?: (content?: string) => void;
+  height?: number;
 }
 
 const plugins = [
@@ -37,6 +38,7 @@ const EmailTemplateEditor: React.FC<TinyEditorProps> = ({
   onContentChange,
   content,
   onSaveCallback,
+  height = 700,
 }) => {
   const editorRef = useRef<tinymce.Editor | null>(null);
 
@@ -71,7 +73,7 @@ const EmailTemplateEditor: React.FC<TinyEditorProps> = ({
           //     if (auxElements.length) dialogContainer.append(auxElements[auxElements.length - 1]);
           //   }
           // },
-          height: 700,
+          height,
           menubar: false,
           statusbar: false,
           promotion: false,

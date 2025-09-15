@@ -80,14 +80,24 @@ export const getApplyFunding = async (userId: string): Promise<ApplyFunding[] | 
   }));
 };
 
-export const getFundingApplications = async (
-  state?: string
-): Promise<ApplyFundingWithUser[] | null> => {
+type Props = {
+  state?: string;
+  status?: FundingApplicationSatus;
+};
+
+export const getFundingApplications = async ({
+  state,
+  status,
+}: Props): Promise<ApplyFundingWithUser[] | null> => {
   const db = firestoreAdmin();
   let collectionRef = db.collection(USER_FUNDING_APPLICATION).orderBy("appliedDate", "desc");
 
   if (state) {
     collectionRef = collectionRef.where("addressState", "==", state);
+  }
+
+  if (status) {
+    collectionRef = collectionRef.where("status", "==", status);
   }
   const snapshot = await collectionRef.get();
   if (snapshot.empty) {

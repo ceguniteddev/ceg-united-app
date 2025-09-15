@@ -107,7 +107,7 @@ const getVerifyEmailBody = (link: string) => {
   </a>
 </p>
 <p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#6b7280; margin:16px 0 0;">
-  If the button doesn’t work, paste this URL into your browser: <br />
+  If the button doesn't work, paste this URL into your browser: <br />
   <a href="${link}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;">${link}</a>
 </p>
 

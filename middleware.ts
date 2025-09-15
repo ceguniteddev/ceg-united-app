@@ -84,7 +84,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL(CLIENT_HOME, origin));
   }
 
-  // Admins/Staff/IT shouldn’t live on client-only pages
+  // Admins/Staff/IT shouldn't live on client-only pages
   if (isClientRoute(pathname) && role !== "Client") {
     return NextResponse.redirect(new URL(ADMIN_HOME, origin));
   }

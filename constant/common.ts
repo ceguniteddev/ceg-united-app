@@ -122,11 +122,6 @@ export const adminSidebarLinks = [
     label: "Home",
   },
   {
-    imgURL: "/icons/money-send.svg",
-    route: "/admin/funding-application",
-    label: "Funding Application",
-  },
-  {
     imgURL: "/icons/credit-card.svg",
     route: "/admin/funding-products",
     label: "Product Management",
@@ -136,8 +131,17 @@ export const adminSidebarLinks = [
     route: "/admin/whats-new",
     label: "What's New Management",
   },
+  {
+    imgURL: "/icons/money-send.svg",
+    route: "/admin/funding-application",
+    label: "Funding Applications",
+  },
+  {
+    imgURL: "/icons/phone-call.svg",
+    route: "/admin/call-requests",
+    label: "Call Requests",
+  },
 ];
-
 export const transactionCategoryStyles = {
   Declined: {
     borderColor: "border-red-700",
@@ -151,7 +155,19 @@ export const transactionCategoryStyles = {
     textColor: "text-amber-700",
     chipBackgroundColor: "bg-amber-100",
   },
+  Pending: {
+    borderColor: "border-amber-500",
+    backgroundColor: "bg-amber-500",
+    textColor: "text-amber-700",
+    chipBackgroundColor: "bg-amber-100",
+  },
   Approved: {
+    borderColor: "border-emerald-300",
+    backgroundColor: "bg-emerald-600",
+    textColor: "text-emerald-700",
+    chipBackgroundColor: "bg-emerald-50",
+  },
+  Resolved: {
     borderColor: "border-emerald-300",
     backgroundColor: "bg-emerald-600",
     textColor: "text-emerald-700",

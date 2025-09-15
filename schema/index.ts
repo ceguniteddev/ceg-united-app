@@ -34,15 +34,25 @@ export const getMessage = (error: z.ZodError) => {
   return allMessages.length > 0 ? allMessages : ["Invalid request body"];
 };
 
-export const RequestCallStatus = ["New", "Resolved"] as const;
+export const RequestCallStatus = ["Open", "Pending", "Resolved"] as const;
 export const RequestCallStatusEnum = z.enum(RequestCallStatus);
+export const getRequestCallStatus = () => {
+  const dataArray = RequestCallStatusEnum.options;
+
+  return dataArray.map((type) => ({
+    value: type,
+    label: type,
+  }));
+};
 
 export const requestCallSchema = z.object({
+  id: z.string().optional(),
   fullName: z.string().min(1, { error: "Required" }),
   email: z.email().min(1, { error: "Required" }),
   phoneNumber: z.string().min(1, { error: "Required" }),
   message: z.string().min(1, { error: "Required" }),
   status: RequestCallStatusEnum,
+  remarks: z.string().optional(),
 });
 
 export type RequestCall = z.infer<typeof requestCallSchema>;

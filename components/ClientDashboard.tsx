@@ -217,7 +217,13 @@ const ScoreCard: React.FC<{
 };
 
 // --- MAIN DASHBOARD COMPONENT ---
-export const ClientDashboard = ({ clientData }: { clientData: ClientData | null | undefined }) => {
+export const ClientDashboard = ({
+  clientData,
+  adminView,
+}: {
+  clientData: ClientData | null | undefined;
+  adminView?: boolean;
+}) => {
   const stats = useMemo(() => {
     if (!clientData) return null;
 
@@ -303,10 +309,18 @@ export const ClientDashboard = ({ clientData }: { clientData: ClientData | null 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6 bg-gray-50/50 dark:bg-background">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-          Welcome, {userData?.firstName || "Client"}!
-        </h1>
-        <p className="text-muted-foreground">Here’s a summary of your financial overview.</p>
+        {adminView ? (
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+            {`${userData?.firstName} ${userData?.lastName}` || "Client"}!
+          </h1>
+        ) : (
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+              Welcome, {userData?.firstName || "Client"}!
+            </h1>
+            <p className="text-muted-foreground">{`Here's a summary of your financial overview.`}</p>
+          </div>
+        )}
       </header>
 
       <main className="grid gap-6">

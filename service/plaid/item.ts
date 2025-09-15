@@ -60,7 +60,7 @@ export const getItemLinkUpdateModeData = async (userId: string) => {
   // Build map: itemId -> Plaid accessToken
   const tokenMap = new Map(plaidTokens.map((t) => [t.itemId, t.accessToken]));
 
-  // Normalize and filter snapshot docs to ones that match user’s itemIds
+  // Normalize and filter snapshot docs to ones that match user's itemIds
   const matchedDocs = snapshot.docs
     .map((doc) => ({ id: doc.id, ...normalizeAllDates(doc.data()) }))
     .filter((doc) => tokenMap.has(doc.item_id));
@@ -107,7 +107,7 @@ export const getItemLinkUpdateModeNewAccount = async (userId: string) => {
   // Build map: itemId -> Plaid accessToken
   const tokenMap = new Map(plaidTokens.map((t) => [t.itemId, t.accessToken]));
 
-  // Normalize and filter snapshot docs to ones that match user’s itemIds
+  // Normalize and filter snapshot docs to ones that match user's itemIds
   const matchedDocs = snapshot.docs
     .map((doc) => ({ id: doc.id, ...normalizeAllDates(doc.data()) }))
     .filter((doc) => tokenMap.has(doc.item_id));

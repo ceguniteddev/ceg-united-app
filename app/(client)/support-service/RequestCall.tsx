@@ -12,7 +12,7 @@ const RequestCall = () => {
   const form = useForm<RequestCall>({
     resolver: zodResolver(requestCallSchema),
     defaultValues: {
-      status: "New",
+      status: "Open",
     },
   });
 

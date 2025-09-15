@@ -8,7 +8,7 @@ import { getPlaidCompleteDataForUser } from "./plaid/data";
 // get all registered user
 export const getAdminStatistics = async (): Promise<AdminStatistics> => {
   const usersClient = await getUsers("Client");
-  const fundingApplications = await getFundingApplications();
+  const fundingApplications = await getFundingApplications({});
 
   if (!fundingApplications) {
     return {

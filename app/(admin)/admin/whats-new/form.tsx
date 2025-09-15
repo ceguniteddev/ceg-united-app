@@ -60,57 +60,67 @@ const AdminWhatsNew = () => {
   const isEditing = !!editingData;
 
   return (
-    <div>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} aria-busy={isRecording}>
-          <fieldset disabled={isRecording}>
-            <main className="max-w-3xl mx-auto p-6 space-y-4">
-              <CustomFormField name="title" placeholder="" label="* Title" />
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="lg:col-span-7">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} aria-busy={isRecording}>
+            <fieldset disabled={isRecording}>
+              <main className="max-w-3xl mx-auto space-y-4">
+                <CustomFormField name="title" placeholder="" label="* Title" />
 
-              <CustomFormField name="content" placeholder="" type="editor" label="* Content" />
+                <CustomFormField
+                  name="content"
+                  editorHeight={500}
+                  placeholder=""
+                  type="editor"
+                  label="* Content"
+                />
 
-              <CustomFormField name="status" placeholder="" type="switch" label="Activate" />
+                <CustomFormField name="status" placeholder="" type="switch" label="Activate" />
 
-              <div className="col-span-2 flex flex-wrap items-center justify-start gap-2 self-end">
-                {isEditing && (
+                <div className="col-span-2 flex flex-wrap items-center justify-start gap-2 self-end">
+                  {isEditing && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isSubmitting}
+                      className="disabled:cursor-not-allowed"
+                      onClick={handleCancelEdit}
+                    >
+                      <IconMenu icon={<XIcon className="mr-2 h-4 w-4" />} text="Cancel" />
+                    </Button>
+                  )}
+
                   <Button
-                    type="button"
+                    type="submit"
                     variant="outline"
                     disabled={isSubmitting}
-                    className="disabled:cursor-not-allowed"
-                    onClick={handleCancelEdit}
+                    className="bg-emerald-200 hover:bg-emerald-300 disabled:cursor-not-allowed"
                   >
-                    <IconMenu icon={<XIcon className="mr-2 h-4 w-4" />} text="Cancel" />
+                    {isSubmitting ? (
+                      <IconMenu
+                        icon={<Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
+                        text={isEditing ? "Updating..." : "Saving..."}
+                      />
+                    ) : isEditing ? (
+                      <IconMenu icon={<CheckIcon className="mr-2 h-4 w-4" />} text="Update" />
+                    ) : (
+                      <IconMenu icon={<SaveIcon className="mr-2 h-4 w-4" />} text="Save" />
+                    )}
                   </Button>
-                )}
-
-                <Button
-                  type="submit"
-                  variant="outline"
-                  disabled={isSubmitting}
-                  className="bg-emerald-200 hover:bg-emerald-300 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? (
-                    <IconMenu
-                      icon={<Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
-                      text={isEditing ? "Updating..." : "Saving..."}
-                    />
-                  ) : isEditing ? (
-                    <IconMenu icon={<CheckIcon className="mr-2 h-4 w-4" />} text="Update" />
-                  ) : (
-                    <IconMenu icon={<SaveIcon className="mr-2 h-4 w-4" />} text="Save" />
-                  )}
-                </Button>
-              </div>
-            </main>
-          </fieldset>
-        </form>
-      </Form>
-      <WhatsNewList
-        onEdit={(data) => {
-          setEditingData(data);
-        }}
-      />
+                </div>
+              </main>
+            </fieldset>
+          </form>
+        </Form>
+      </div>
+      <aside className="lg:col-span-5 lg:pl-2 lg:sticky lg:top-24">
+        <WhatsNewList
+          onEdit={(data) => {
+            setEditingData(data);
+          }}
+        />
+      </aside>
     </div>
   );
 };
