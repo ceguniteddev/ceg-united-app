@@ -10,10 +10,11 @@ import AdminApproveDeclineApplication from "./AdminApproveDeclineApplication";
 import FundingApplicationView from "./AdminViewApplicationForm";
 import { ClientDashboard } from "../ClientDashboard";
 import AdminViewUserProfile from "./AdminViewUserProfile";
+import SendEmail from "../SendEmail";
 
 type Props = {
   formSetOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  formData?: ApplyFunding;
+  formData: ApplyFunding;
 };
 
 const ViewApplication = ({ formSetOpen, formData }: Props) => {
@@ -34,8 +35,11 @@ const ViewApplication = ({ formSetOpen, formData }: Props) => {
         <TabsTrigger value="document">Document</TabsTrigger>
         <TabsTrigger value="analysis">Analysis</TabsTrigger>
         <TabsTrigger value="approve-decline">Approve/Decline</TabsTrigger>
+        <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>
-
+      <TabsContent value="email" className="w-full">
+        <SendEmail formData={formData} />
+      </TabsContent>
       <TabsContent value="application" className="w-full">
         <FundingApplicationView setOpen={formSetOpen} data={formData} />
       </TabsContent>

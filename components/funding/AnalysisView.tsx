@@ -2,13 +2,7 @@ import { useAnalysisMutation, useAnalysisQuery } from "@/hooks/admin/funding-app
 import dynamic from "next/dynamic";
 import React from "react";
 import { useDebouncedCallback } from "use-debounce";
-// import { CheckIcon, XIcon } from "lucide-react";
 import Spinner from "../Spinner";
-// import { ConfirmButton } from "../Confirmation";
-// import { Button } from "../ui/button";
-// import { useQueryClient } from "@tanstack/react-query";
-// import { fa } from "zod/v4/locales";
-// import { updateApplicationStatus } from "@/service/apply-funding";
 
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -18,20 +12,6 @@ type Item = { id: string; analysis?: string };
 const AnalysisView = ({ referenceNumber, setOpen }: Props) => {
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
   const { updateAnalysis } = useAnalysisMutation();
-  // const queryClient = useQueryClient();
-
-  // const handleStatusChange = React.useCallback(
-  //   async (status: "Approved" | "Declined") => {
-  //     await updateApplicationStatus(referenceNumber, status);
-
-  //     queryClient.invalidateQueries({
-  //       queryKey: ["GET_FUNDING_APPLICATIONS"],
-  //     });
-
-  //     setOpen(false);
-  //   },
-  //   [referenceNumber, queryClient, setOpen]
-  // );
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
 
@@ -48,38 +28,6 @@ const AnalysisView = ({ referenceNumber, setOpen }: Props) => {
           analysis={item.analysis ?? ""}
         />
       ))}
-      {/* <div className="flex justify-between pr-4 pl-4">
-        <div>
-          <Button type="button" variant={"outline"} onClick={() => setOpen(false)}>
-            Close
-          </Button>
-        </div>
-        <div className="flex space-x-4">
-          <ConfirmButton
-            label="Decline"
-            confirmLabel="Decline"
-            description="Do you really want to decline this request?"
-            variant="destructive"
-            size="sm"
-            icon={<XIcon className="h-4 w-4" />}
-            onConfirm={() => handleStatusChange("Declined")}
-            className="bg-red-600 hover:bg-red-700"
-            classNameAction="bg-red-600 hover:bg-red-700"
-          />
-
-          <ConfirmButton
-            label="Approve"
-            confirmLabel="Approve"
-            description="Do you really want to approve this request?"
-            variant="default"
-            size="sm"
-            icon={<CheckIcon className="h-4 w-4" />}
-            onConfirm={() => handleStatusChange("Approved")}
-            className="bg-green-600 hover:bg-green-700"
-            classNameAction="bg-green-600 hover:bg-green-700"
-          />
-        </div>
-      </div> */}
     </div>
   );
 };

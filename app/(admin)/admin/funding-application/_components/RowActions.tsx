@@ -29,7 +29,7 @@ export function RowActions({ data }: Props) {
         title={`View Application - ${data.referenceNumber}`}
         description=""
         descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-3/6 flex flex-col items-start justify-start min-h-[80vh] "
+        className="w-8/12 flex flex-col items-start justify-start min-h-[80vh] "
       >
         <ViewApplication formData={data} formSetOpen={setOpen} />
       </ResponsiveDialog>

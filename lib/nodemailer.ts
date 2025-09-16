@@ -1,3 +1,4 @@
+"use server";
 import nodemailer from "nodemailer";
 
 import AppError from "@/error/AppError";
@@ -18,7 +19,14 @@ export const getTransporter = async () => {
   });
 };
 
-export const sendMail = async (emailTo: string, subject: string, bodyHTML: string) => {
+type MailOptions = {
+  emailTo: string;
+  subject: string;
+  bodyHTML: string;
+  cc?: string[];
+};
+
+export const sendMail = async ({ emailTo, subject, bodyHTML, cc }: MailOptions) => {
   const transporter = await getTransporter();
 
   if (transporter === null) {
@@ -30,6 +38,7 @@ export const sendMail = async (emailTo: string, subject: string, bodyHTML: strin
     to: emailTo,
     subject,
     html: bodyHTML,
+    cc,
   });
   return info.messageId;
 };

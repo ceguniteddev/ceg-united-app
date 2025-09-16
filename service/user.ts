@@ -87,7 +87,7 @@ export const registerUser = async (value: User) => {
 
   const requestBody = getVerifyEmailBody(link);
 
-  await sendMail(value.email, "Verify your email", requestBody);
+  await sendMail({ emailTo: value.email, subject: "Verify Email", bodyHTML: requestBody });
 
   return {
     id: docRef.id,

@@ -49,10 +49,10 @@ export default function DocumentsPage() {
     refetch(); // This will refresh the document list
   }, [docToDelete, refetch, deleteDocument]);
 
+  if (!user) return null;
+
   if (isLoading || (!userDocuments && !isLoading))
     return <Spinner displayText="Loading documents..." />;
-
-  if (!user) return null;
 
   if (!userDocuments?.length) return <div className="p-6">No documents found.</div>;
 
