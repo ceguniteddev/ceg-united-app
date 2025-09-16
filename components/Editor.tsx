@@ -66,13 +66,13 @@ const EmailTemplateEditor: React.FC<TinyEditorProps> = ({
           // },
           // save_oncancelcallback: () => console.log("Save cancelled"),
           save_enablewhendirty: false,
-          // init_instance_callback(editor) {
-          //   const dialogContainer = document.getElementById("dialog-form");
-          //   if (dialogContainer) {
-          //     const auxElements = document.querySelectorAll("body > .tox-tinymce-aux");
-          //     if (auxElements.length) dialogContainer.append(auxElements[auxElements.length - 1]);
-          //   }
-          // },
+          init_instance_callback(editor) {
+            const dialogContainer = document.getElementById("dialog-form");
+            if (dialogContainer) {
+              const auxElements = document.querySelectorAll("body > .tox-tinymce-aux");
+              if (auxElements.length) dialogContainer.append(auxElements[auxElements.length - 1]);
+            }
+          },
           height,
           menubar: false,
           statusbar: false,

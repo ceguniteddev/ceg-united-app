@@ -34,7 +34,7 @@ const SendEmail = ({ formData }: { formData: ApplyFunding }) => {
   const { users } = useUserQuery(formData.userId);
   const [content, setContent] = React.useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [subject, setSubject] = useState("");
+  const [subject, setSubject] = useState(formData.referenceNumber ?? "");
   const [cc, setCc] = useState("");
   const [isSending, setIsSending] = useState(false);
 
@@ -65,6 +65,7 @@ const SendEmail = ({ formData }: { formData: ApplyFunding }) => {
             <Label htmlFor="subject">Subject</Label>
             <Input
               placeholder="subject"
+              defaultValue={formData.referenceNumber ?? ""}
               className="col-span-6"
               onChange={(e) => setSubject(e.target.value)}
             />
