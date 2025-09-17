@@ -74,13 +74,15 @@ export const getPlaidLinkToken = async ({
     }
   }
 
+  const clientName = "CEG United LLC";
+
   logInfo("getPlaidLinkToken::entry data", { userId, userToken, incomeSourceType });
   let configs: LinkTokenCreateRequest = {
     user: {
       client_user_id: userId,
     },
 
-    client_name: "CEG United LLC",
+    client_name: clientName,
     products: PLAID_PRODUCTS,
     required_if_supported_products: REQUIRED_IF_SUPPORTED,
     optional_products: OPTIONAL_PLAID_PRODUCTS,
@@ -88,6 +90,7 @@ export const getPlaidLinkToken = async ({
     country_codes: PLAID_COUNTRY_CODES,
     language: "en",
     webhook: webhookBaseUrl,
+    redirect_uri: PLAID_REDIRECT_URI,
   };
 
   if (accessToken && itemId) {
@@ -96,7 +99,7 @@ export const getPlaidLinkToken = async ({
       user: {
         client_user_id: userId,
       },
-      client_name: "CEG United LLC",
+      client_name: clientName,
       country_codes: PLAID_COUNTRY_CODES,
       language: "en",
       access_token: accessToken,
@@ -136,7 +139,7 @@ export const getPlaidLinkToken = async ({
       };
     }
   }
-  // console.log("configs", configs);
+  console.log("configs", configs);
 
   // if (PLAID_REDIRECT_URI !== "") {
   //   configs.redirect_uri = PLAID_REDIRECT_URI;

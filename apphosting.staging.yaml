@@ -74,6 +74,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: PLAID_REDIRECT_URI
+    value: https://staging.cegunited.com/redirect
+    availability:
+      - BUILD
+      - RUNTIME
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   - variable: FIREBASE_CLIENT_EMAIL

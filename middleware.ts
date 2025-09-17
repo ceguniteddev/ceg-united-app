@@ -5,7 +5,7 @@ import { verifySession } from "@/lib/session";
 import { getUser } from "@/service/user";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 
-const PUBLIC_ROUTES = new Set<string>(["/", "/register"]);
+const PUBLIC_ROUTES = new Set<string>(["/", "/register", "/redirect"]);
 const CLIENT_HOME = "/overview";
 const ADMIN_HOME = "/admin";
 
@@ -28,6 +28,21 @@ export async function middleware(req: NextRequest) {
   const { pathname, origin } = req.nextUrl;
 
   const token = req.cookies.get(FIREBASE_TOKEN_NAME)?.value;
+  // 3) No token → allow public, redirect others to "/"
+  if (!token) {
+    if (isPublic(pathname)) return NextResponse.next();
+    const url = req.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+
+  const sessionCookie = await verifySession(token);
+  if (!sessionCookie) {
+    if (isPublic(pathname)) return NextResponse.next();
+    const url = req.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
 
   // 1) API first: short-circuit and only 401 if truly unauthenticated
   if (pathname.startsWith("/api/")) {
@@ -39,14 +54,6 @@ export async function middleware(req: NextRequest) {
       return NextResponse.json("Unauthorized", { status: 401 });
     // Optionally verify here if your API routes need auth in middleware
     return NextResponse.next();
-  }
-
-  // 3) No token → allow public, redirect others to "/"
-  if (!token) {
-    if (isPublic(pathname)) return NextResponse.next();
-    const url = req.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
   }
 
   // 4) Token present → verify + find role

@@ -16,7 +16,6 @@ type PlaidLinkProps = {
 };
 
 const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
-  const router = useRouter();
   const { linkToken, isLoading } = useGetLinkToken({
     itemId,
     isNewAccount,
