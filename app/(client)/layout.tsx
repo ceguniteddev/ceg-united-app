@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "CEG United LLC",
   description: "CEG United LLC",
   icons: {
-    icon: "icon.ico",
+    icon: "../icon.ico",
   },
 };
 
