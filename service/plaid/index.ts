@@ -139,7 +139,7 @@ export const getPlaidLinkToken = async ({
       };
     }
   }
-  console.log("configs", configs);
+  // console.log("configs", configs);
 
   // if (PLAID_REDIRECT_URI !== "") {
   //   configs.redirect_uri = PLAID_REDIRECT_URI;
