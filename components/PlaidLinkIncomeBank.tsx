@@ -50,6 +50,10 @@ const PlaidIncomeLinkBank = () => {
   const config: Parameters<typeof usePlaidLink>[0] = {
     token: linkToken!,
     onSuccess,
+    onExit: (error, metadata) => {
+      console.log("onExit", error, metadata);
+      toast.error("Failed to verify bank income.");
+    },
   };
 
   const { open, ready } = usePlaidLink(config);

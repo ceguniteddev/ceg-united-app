@@ -66,7 +66,10 @@ function Search() {
   const config: PlaidLinkOptions = {
     token,
     onSuccess,
-    receivedRedirectUri,
+    onExit: (error, metadata) => {
+      console.log("onExit", error, metadata);
+      toast.error("Failed to connect Bank.");
+    },
   };
 
   const { open, ready } = usePlaidLink(config);

@@ -48,6 +48,10 @@ const PlaidIncomeLinkPayroll = () => {
   const config: Parameters<typeof usePlaidLink>[0] = {
     token: linkToken!,
     onSuccess,
+    onExit: (error, metadata) => {
+      console.log("onExit", error, metadata);
+      toast.error("Failed to verify payroll income.");
+    },
   };
 
   const { open, ready } = usePlaidLink(config);

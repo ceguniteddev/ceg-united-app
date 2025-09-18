@@ -60,6 +60,10 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
   const config: PlaidLinkOptions = {
     token: linkToken!,
     onSuccess,
+    onExit: (error, metadata) => {
+      console.log("onExit", error, metadata);
+      toast.error("Failed to connect Bank.");
+    },
   };
 
   const { open, ready } = usePlaidLink(config);
