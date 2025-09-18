@@ -20,10 +20,10 @@ function Search() {
   const { user } = useAuth();
 
   React.useEffect(() => {
-    if (oauthStateId) {
+    if (oauthStateId && user) {
       setToken(localStorage.getItem("link_token"));
       setReceivedRedirectUri(window.location.href);
-      setUserId(user?.uid ?? "");
+      setUserId(user.uid);
     }
   }, [oauthStateId, user]);
 
@@ -31,19 +31,24 @@ function Search() {
     (public_token: string) => {
       // If the access_token is needed, send public_token to server
       const exchangePublicTokenForAccessToken = async () => {
+        if (!userId) {
+          toast.error("User not authenticated. Please try again.");
+          console.error("onSuccess called without a userId.");
+          return;
+        }
         try {
-          await exchangeAccessToken(public_token, userId!, "ITEM");
+          await exchangeAccessToken(public_token, userId, "ITEM");
 
-          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_LINK", userId!] });
+          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_LINK", userId] });
           await queryClient.invalidateQueries({
-            queryKey: ["GET_HAS_ACCESS_TOKEN", userId!, "INCOME_VERIFICATION"],
+            queryKey: ["GET_HAS_ACCESS_TOKEN", userId, "INCOME_VERIFICATION"],
             exact: false,
           });
-          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEMS", userId!] });
-          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_ACCOUNT", userId!] });
-          await queryClient.invalidateQueries({ queryKey: ["USER_LINK_UPDATE_MODE", userId!] });
+          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEMS", userId] });
+          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_ACCOUNT", userId] });
+          await queryClient.invalidateQueries({ queryKey: ["USER_LINK_UPDATE_MODE", userId] });
           await queryClient.invalidateQueries({
-            queryKey: ["USER_NEW_ACCOUNT_LINK_UPDATE_MODE", userId!],
+            queryKey: ["USER_NEW_ACCOUNT_LINK_UPDATE_MODE", userId],
           });
 
           toast.success("Bank successfully connected.");
@@ -67,10 +72,14 @@ function Search() {
   const { open, ready } = usePlaidLink(config);
 
   React.useEffect(() => {
-    if (oauthStateId && ready) {
+    if (oauthStateId && ready && userId) {
       open();
     }
-  }, [ready, open, oauthStateId]);
+  }, [ready, open, oauthStateId, userId]);
+
+  if (oauthStateId && !userId) {
+    return <Spinner displayText="Finalizing connection..." />;
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 px-4 dark:bg-gray-900">
