@@ -14,6 +14,7 @@ function Search() {
   const searchParams = useSearchParams();
   const oauthStateId = searchParams.get("oauth_state_id");
   const [token, setToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [receivedRedirectUri, setReceivedRedirectUri] = useState<string | undefined>();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -22,27 +23,27 @@ function Search() {
     if (oauthStateId) {
       setToken(localStorage.getItem("link_token"));
       setReceivedRedirectUri(window.location.href);
-      return;
+      setUserId(user?.uid ?? "");
     }
-  }, [oauthStateId]);
+  }, [oauthStateId, user]);
 
   const onSuccess = React.useCallback(
     (public_token: string) => {
       // If the access_token is needed, send public_token to server
       const exchangePublicTokenForAccessToken = async () => {
         try {
-          await exchangeAccessToken(public_token, user?.uid ?? "", "ITEM");
+          await exchangeAccessToken(public_token, userId!, "ITEM");
 
-          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_LINK", user?.uid] });
+          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_LINK", userId!] });
           await queryClient.invalidateQueries({
-            queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid, "INCOME_VERIFICATION"],
+            queryKey: ["GET_HAS_ACCESS_TOKEN", userId!, "INCOME_VERIFICATION"],
             exact: false,
           });
-          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEMS", user?.uid] });
-          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_ACCOUNT", user?.uid] });
-          await queryClient.invalidateQueries({ queryKey: ["USER_LINK_UPDATE_MODE", user?.uid] });
+          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEMS", userId!] });
+          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_ACCOUNT", userId!] });
+          await queryClient.invalidateQueries({ queryKey: ["USER_LINK_UPDATE_MODE", userId!] });
           await queryClient.invalidateQueries({
-            queryKey: ["USER_NEW_ACCOUNT_LINK_UPDATE_MODE", user?.uid],
+            queryKey: ["USER_NEW_ACCOUNT_LINK_UPDATE_MODE", userId!],
           });
 
           toast.success("Bank successfully connected.");
@@ -54,7 +55,7 @@ function Search() {
 
       exchangePublicTokenForAccessToken();
     },
-    [user, queryClient]
+    [userId, queryClient]
   );
 
   const config: PlaidLinkOptions = {
