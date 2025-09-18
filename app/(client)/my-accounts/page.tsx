@@ -130,9 +130,9 @@ const MyBanks = () => {
     setBankItemId(bankItemId);
   }, []);
 
-  if (!user && !isLoading && !plaidAccounts) return <Spinner />;
+  if (!user && !isLoading && !plaidAccounts) return <Spinner displayText="Loading accounts..." />;
 
-  if (isLoading) return <Spinner />;
+  if (isLoading) return <Spinner displayText="Loading accounts..." />;
 
   if (!user) return null;
 

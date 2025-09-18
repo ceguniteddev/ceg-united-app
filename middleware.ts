@@ -5,7 +5,7 @@ import { verifySession } from "@/lib/session";
 import { getUser } from "@/service/user";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 
-const PUBLIC_ROUTES = new Set<string>(["/", "/register", "/redirect"]);
+const PUBLIC_ROUTES = new Set<string>(["/", "/register"]);
 const CLIENT_HOME = "/overview";
 const ADMIN_HOME = "/admin";
 

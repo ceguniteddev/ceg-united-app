@@ -103,6 +103,7 @@ export const getPlaidLinkToken = async ({
       country_codes: PLAID_COUNTRY_CODES,
       language: "en",
       access_token: accessToken,
+      redirect_uri: PLAID_REDIRECT_URI,
     };
 
     if (isNewAccount) {

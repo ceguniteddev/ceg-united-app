@@ -20,6 +20,13 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
     itemId,
     isNewAccount,
   });
+
+  useEffect(() => {
+    if (linkToken) {
+      localStorage.setItem("link_token", linkToken);
+    }
+  }, [linkToken]);
+
   // const [token, setToken] = useState("");
   const { user } = useAuth();
   const queryClient = useQueryClient();
