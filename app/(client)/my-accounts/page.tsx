@@ -118,6 +118,7 @@ const MyBanks = () => {
       setSelectedGroupIdx("all");
       setSelectedBankItemId([]);
       await refetch?.();
+      toast.success("Bank account removed successfully.");
     } catch (err) {
       console.error(err);
       // optional: surface a toast here

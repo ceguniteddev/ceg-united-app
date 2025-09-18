@@ -30,21 +30,26 @@ function Search() {
     (public_token: string) => {
       // If the access_token is needed, send public_token to server
       const exchangePublicTokenForAccessToken = async () => {
-        await exchangeAccessToken(public_token, user?.uid ?? "", "ITEM");
+        try {
+          await exchangeAccessToken(public_token, user?.uid ?? "", "ITEM");
 
-        await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_LINK", user?.uid] });
-        await queryClient.invalidateQueries({
-          queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid, "INCOME_VERIFICATION"],
-          exact: false,
-        });
-        await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEMS", user?.uid] });
-        await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_ACCOUNT", user?.uid] });
-        await queryClient.invalidateQueries({ queryKey: ["USER_LINK_UPDATE_MODE", user?.uid] });
-        await queryClient.invalidateQueries({
-          queryKey: ["USER_NEW_ACCOUNT_LINK_UPDATE_MODE", user?.uid],
-        });
+          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_LINK", user?.uid] });
+          await queryClient.invalidateQueries({
+            queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid, "INCOME_VERIFICATION"],
+            exact: false,
+          });
+          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEMS", user?.uid] });
+          await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_ACCOUNT", user?.uid] });
+          await queryClient.invalidateQueries({ queryKey: ["USER_LINK_UPDATE_MODE", user?.uid] });
+          await queryClient.invalidateQueries({
+            queryKey: ["USER_NEW_ACCOUNT_LINK_UPDATE_MODE", user?.uid],
+          });
 
-        toast.success("Bank successfully connected.");
+          toast.success("Bank successfully connected.");
+        } catch (error) {
+          console.error(error);
+          toast.error("Failed to connect Bank.");
+        }
       };
 
       exchangePublicTokenForAccessToken();
