@@ -142,6 +142,15 @@ export const adminSidebarLinks = [
     label: "Call Requests",
   },
 ];
+
+export const settingsSidebar = [
+  {
+    imgURL: "/icons/circle-user-round.svg",
+    route: "/settings/personal",
+    label: "Personal",
+  },
+];
+
 export const transactionCategoryStyles = {
   Declined: {
     borderColor: "border-red-700",

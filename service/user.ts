@@ -5,7 +5,7 @@ import AppError from "@/error/AppError";
 import { normalizeAllDates, normalizeDate } from "@/lib/date-parser";
 import { authenticationAdmin, firestoreAdmin, storageAdmin } from "@/lib/fireabase-admin";
 import { sendMail } from "@/lib/nodemailer";
-import { CurrentUser, Role } from "@/schema";
+import { ChangePassword, CurrentUser, Role } from "@/schema";
 
 import { User, UserPlaid } from "@/schema/registration";
 import { cookies, headers } from "next/headers";
@@ -195,7 +195,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     cookieStore.get("__session")?.value ??
     cookieStore.get(FIREBASE_TOKEN_NAME)?.value ??
     null;
-
+  console.log("sessionCookie", sessionCookie);
   if (sessionCookie) {
     try {
       const decoded = await authenticationAdmin().verifySessionCookie(sessionCookie, true);
@@ -230,3 +230,66 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     return null;
   }
 }
+
+const validatePasswordStrength = (password: string) => {
+  const requirements = [
+    { regex: /.{8,}/, message: "be at least 8 characters" },
+    { regex: /[A-Z]/, message: "contain an uppercase letter" },
+    { regex: /[a-z]/, message: "contain a lowercase letter" },
+    { regex: /[0-9]/, message: "contain a number" },
+    { regex: /[^A-Za-z0-9]/, message: "contain a special character" },
+  ];
+
+  const missing = requirements.filter((req) => !req.regex.test(password)).map((req) => req.message);
+
+  if (missing.length > 0) {
+    // This is the standard way to throw errors back to the client
+    // from a Callable Function.
+    throw new AppError(`Password is too weak. It must: ${missing.join(", ")}.`);
+  }
+};
+
+export const changePassword = async (data: ChangePassword) => {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    throw new AppError("User not authenticated.");
+  }
+
+  const { newPassword, confirmPassword, currentPassword } = data;
+  const uid = user.uid;
+
+  // 2. Input Validation: Ensure required data is present.
+  if (!newPassword || !confirmPassword) {
+    throw new AppError("Missing required fields: newPassword and confirmPassword.");
+  }
+
+  if (typeof newPassword !== "string" || typeof confirmPassword !== "string") {
+    throw new AppError("Passwords must be strings.");
+  }
+
+  // 3. Business Logic: Perform password checks.
+  if (newPassword !== confirmPassword) {
+    throw new AppError("Passwords do not match.");
+  }
+
+  // 4. Password Strength Validation
+  validatePasswordStrength(newPassword);
+
+  // 5. Core Action: Update the user's password using the Admin SDK.
+  try {
+    await authenticationAdmin().updateUser(uid, {
+      password: newPassword,
+    });
+
+    console.info(`Successfully updated password for user: ${uid}`);
+    return { success: true, message: "Password updated successfully." };
+  } catch (error) {
+    console.error(`Error updating password for user ${uid}:`, error);
+
+    // Don't leak detailed implementation errors to the client.
+    throw new AppError(
+      "An unexpected error occurred while changing the password. Please try again later."
+    );
+  }
+};

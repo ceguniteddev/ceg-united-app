@@ -34,7 +34,7 @@ export function ResponsiveDialog({
   descriptionClassName,
 }: Props) {
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen} modal>
       <DialogContent
         id={id}
         className={cn("max-h-[80vh] overflow-y-auto", className)}
