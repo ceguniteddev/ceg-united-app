@@ -1,3 +1,7 @@
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <main className="flex h-screen w-full font-inter">
+      <div className="flex size-full flex-col overflow-y-auto">{children}</div>
+    </main>
+  );
 }
