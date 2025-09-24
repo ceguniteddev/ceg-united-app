@@ -28,6 +28,19 @@ export async function middleware(req: NextRequest) {
   const { pathname, origin } = req.nextUrl;
 
   const token = req.cookies.get(FIREBASE_TOKEN_NAME)?.value;
+
+  // 1) API first: short-circuit and only 401 if truly unauthenticated
+  if (pathname.startsWith("/api/")) {
+    const xIdToken = req.headers.get("x-id-token");
+    const adminAccessKey = req.headers.get("ADMIN_ACCESS_KEY");
+    if (xIdToken || adminAccessKey || token) return NextResponse.next();
+
+    if (!token && !pathname.includes("webhook"))
+      return NextResponse.json("Unauthorized", { status: 401 });
+    // Optionally verify here if your API routes need auth in middleware
+    return NextResponse.next();
+  }
+
   // 3) No token → allow public, redirect others to "/"
   if (!token) {
     if (isPublic(pathname)) return NextResponse.next();
@@ -42,18 +55,6 @@ export async function middleware(req: NextRequest) {
     const url = req.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
-  }
-
-  // 1) API first: short-circuit and only 401 if truly unauthenticated
-  if (pathname.startsWith("/api/")) {
-    const xIdToken = req.headers.get("x-id-token");
-    const adminAccessKey = req.headers.get("ADMIN_ACCESS_KEY");
-    if (xIdToken || adminAccessKey || token) return NextResponse.next();
-
-    if (!token && !pathname.includes("webhook"))
-      return NextResponse.json("Unauthorized", { status: 401 });
-    // Optionally verify here if your API routes need auth in middleware
-    return NextResponse.next();
   }
 
   // 4) Token present → verify + find role

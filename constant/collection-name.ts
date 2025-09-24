@@ -1,6 +1,7 @@
 export const USER_COLLECTION = "user";
 export const USER_FUNDING_APPLICATION = "user-funding-application";
 export const USER_FUNDING_APPLICATION_ANALYSIS = "analysis";
+export const USER_FUNDING_APPLICATION_FUND_MAPPING = "fund-mapping";
 export const LINK_TOKEN_COLLECTION = "plaid-link-token";
 export const USER_TOKEN_COLLECTION = "plaid-user-token";
 export const PLAID_ITEM_WEBHOOK_COLLECTION = "plaid-item-webhook-data";
@@ -18,7 +19,7 @@ export const USER_LINK_UPDATE_MODE = "user-link-update-mode";
 export const NEW_ACCOUNTS_AVAILABLE = "user-link-new-accounts-available";
 
 export const FUNDING_PRODUCTS_COLLECTION = "funding-products";
-
+export const BANK_PRODUCTS_COLLECTION = "bank-products";
 export const CRS_REPORT_DATA = "crs-report-data";
 export const CRS_REPORT_BUSINESS_PROFILE = "crs-report-business-profile";
 export const CRS_REPORT_BUSINESS_SCORE = "crs-report-business-score";

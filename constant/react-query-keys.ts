@@ -10,4 +10,6 @@ export const GET_CLIENT_STATISTICS = "get-client-statistics";
 export const GET_FUNDING_PRODUCTS = "get-funding-products";
 export const GET_FUNDING_PRODUCT = "get-funding-product";
 
+export const GET_BANK_PRODUCTS = "get-bank-products";
+
 export const GET_USER_CRS_REPORT = "get-user-crs-report";

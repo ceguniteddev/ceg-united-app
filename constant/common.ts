@@ -1,5 +1,9 @@
 export const FIREBASE_TOKEN_NAME = "auth_token";
 
+export const yesNo = [
+  { value: "Yes", label: "Yes" },
+  { value: "No", label: "No" },
+];
 export const monthNames = [
   "January",
   "February",
@@ -125,6 +129,11 @@ export const adminSidebarLinks = [
     imgURL: "/icons/credit-card.svg",
     route: "/admin/funding-products",
     label: "Product Management",
+  },
+  {
+    imgURL: "/icons/landmark.svg",
+    route: "/admin/bank-products",
+    label: "Bank Product Management",
   },
   {
     imgURL: "/icons/bell.svg",
