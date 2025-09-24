@@ -129,8 +129,8 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
 
   const onSubmit = useCallback(async () => {
     const values = form.getValues();
-    const token = await getCaptchaTokenRegistration("applyFunding");
-    await applyFunding({ token, values });
+    // const token = await getCaptchaTokenRegistration("applyFunding");
+    await applyFunding({ values });
     setOpen(false);
     if (setCongratsOpen) setCongratsOpen(true);
   }, [setOpen, setCongratsOpen, applyFunding, form]);

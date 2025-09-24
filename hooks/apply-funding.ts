@@ -79,22 +79,22 @@ export const useApplyFunding = () => {
   const { user } = useAuth();
 
   const createMutation = useMutation({
-    mutationFn: async ({ token, values }: { values: ApplyFunding; token: string | null }) => {
-      if (!token) {
-        throw new AppError("Captcha token is missing. Please try again.");
-      }
+    mutationFn: async ({ values }: { values: ApplyFunding }) => {
+      // if (!token) {
+      //   throw new AppError("Captcha token is missing. Please try again.");
+      // }
 
       if (!user) throw new Error("User not authenticated");
 
-      const captchaData = await verifyCaptchaToken(token);
-      if (
-        !captchaData ||
-        !captchaData.success ||
-        captchaData.score < 0.5 ||
-        captchaData.action !== "applyFunding"
-      ) {
-        throw new AppError("Captcha verification failed. Please try again.");
-      }
+      // const captchaData = await verifyCaptchaToken(token);
+      // if (
+      //   !captchaData ||
+      //   !captchaData.success ||
+      //   captchaData.score < 0.5 ||
+      //   captchaData.action !== "applyFunding"
+      // ) {
+      //   throw new AppError("Captcha verification failed. Please try again.");
+      // }
 
       await applyFunding(values);
     },
