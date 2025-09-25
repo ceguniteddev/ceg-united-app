@@ -37,7 +37,7 @@ export function ResponsiveDialog({
     <Dialog open={isOpen} onOpenChange={setIsOpen} modal>
       <DialogContent
         id={id}
-        className={cn("max-h-[80vh] overflow-y-auto", className)}
+        className={cn("max-h-screen overflow-y-auto", className)}
         onInteractOutside={(e) => {
           e.preventDefault();
         }}

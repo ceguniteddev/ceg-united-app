@@ -18,6 +18,7 @@ import ApplyFundingForm from "@/components/funding/ApplyFundingForm";
 import DeleteConfirmation from "@/components/delete-confirmation";
 import { toast } from "sonner";
 import { useApplyFunding } from "@/hooks/apply-funding";
+import ViewApplication from "./ViewApplication";
 
 type Props = {
   data: ApplyFunding;
@@ -62,40 +63,42 @@ export function RowActions({ data }: Props) {
         title={`View Application - ${data.referenceNumber}`}
         description=""
         descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-3/6"
+        className="w-3/6 min-h-screen flex flex-col justify-start"
       >
-        <ApplyFundingForm data={data} setOpen={setOpen} />
+        <ViewApplication formData={data} formSetOpen={setOpen} />
       </ResponsiveDialog>
 
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
+          <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end" className="w-[160px] z-50">
           <DropdownMenuItem className="group flex w-full items-center justify-between  text-left p-0 text-sm font-base text-neutral-500 ">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => {
                 setOpen(true);
               }}
-              className="w-full justify-start flex rounded-md p-2 transition-all duration-75 hover:bg-neutral-100"
+              className="w-full justify-start flex rounded-md p-2 transition-all duration-75 hover:bg-neutral-100 cursor-pointer"
             >
               <IconMenu text="View" icon={<SquarePen className="h-4 w-4" />} />
-            </button>
+            </Button>
           </DropdownMenuItem>
 
           {data.status === "New" && (
             <DropdownMenuItem className="group flex w-full items-center justify-between  text-left p-0 text-sm font-base text-neutral-500 ">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => {
                   setOpenDeleteConfirmation(true);
                 }}
-                className="w-full justify-start flex text-red-500 rounded-md p-2 transition-all duration-75 hover:bg-neutral-100"
+                className="w-full justify-start flex text-red-500 rounded-md p-2 transition-all duration-75 hover:bg-neutral-100 cursor-pointer"
               >
-                <IconMenu text="Delete" icon={<Trash2 className="h-4 w-4" />} />
-              </button>
+                <IconMenu text="Delete" icon={<Trash2 className="h-4 w-4" color="red" />} />
+              </Button>
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>

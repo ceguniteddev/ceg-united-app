@@ -17,19 +17,22 @@ import {
 import { Loader2Icon, SaveIcon, XCircleIcon } from "lucide-react";
 import { useBankProductsMutation } from "@/hooks/admin/bank-products";
 import { toast } from "sonner";
+import { useFundingApplicationsMappedFundsMutation } from "@/hooks/admin/funding-application/fund-mapping";
 
 type Props = {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   data?: BankFormData;
   isAdminViewing?: boolean;
+  referenceNumber?: string;
 };
 
-const BankProductsForm = ({ setOpen, data, isAdminViewing }: Props) => {
+const BankProductsForm = ({ setOpen, data, isAdminViewing, referenceNumber }: Props) => {
   const { products, isLoading } = useFundingProducts();
   const [interestedProducts, setInterestedProducts] = useState<DropdownOption[]>([]);
 
   const { createBankProduct, updateBankProduct, isCreating, isUpdating } =
     useBankProductsMutation();
+  const { approveMappedFund, isApproving } = useFundingApplicationsMappedFundsMutation();
 
   const form = useForm<BankFormData>({
     resolver: zodResolver(bankDataSchema),
@@ -58,22 +61,32 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing }: Props) => {
 
   const onSubmit: SubmitHandler<BankFormData> = useCallback(
     async (values) => {
-      try {
-        if (data) {
-          await updateBankProduct({ id: data.id!, values });
-          form.reset();
+      if (data) {
+        if (isAdminViewing && referenceNumber) {
+          await approveMappedFund({
+            bankProductId: data.id!,
+            referenceNumber: referenceNumber,
+          });
         } else {
-          await createBankProduct(values);
-          form.reset();
+          await updateBankProduct({ id: data.id!, values });
         }
-        setOpen(false);
-      } catch (e) {
-        console.error(e);
-        if (data) toast.error("Failed to update bank product.");
-        else toast.error("Failed to create bank product.");
+        form.reset();
+      } else {
+        await createBankProduct(values);
+        form.reset();
       }
+      setOpen(false);
     },
-    [createBankProduct, updateBankProduct, form, setOpen, data]
+    [
+      createBankProduct,
+      updateBankProduct,
+      form,
+      setOpen,
+      data,
+      isAdminViewing,
+      referenceNumber,
+      approveMappedFund,
+    ]
   );
 
   // const handleSelectFundingProduct = (value: string) => {
@@ -83,7 +96,7 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing }: Props) => {
   //   }
   // };
 
-  const isSubmitting = isCreating || isUpdating;
+  const isSubmitting = isCreating || isUpdating || isApproving;
   return (
     <div className="w-full">
       <Form {...form}>

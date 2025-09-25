@@ -16,7 +16,7 @@ type Props = {
   formData: ApplyFunding;
 };
 
-const ViewApplication = ({ formSetOpen, formData }: Props) => {
+const AdminViewApplication = ({ formSetOpen, formData }: Props) => {
   useEffect(() => {
     const updateStatus = async () => {
       if (formData?.status === "New") {
@@ -74,4 +74,4 @@ const ViewApplication = ({ formSetOpen, formData }: Props) => {
   );
 };
 
-export default ViewApplication;
+export default AdminViewApplication;

@@ -195,7 +195,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     cookieStore.get("__session")?.value ??
     cookieStore.get(FIREBASE_TOKEN_NAME)?.value ??
     null;
-  console.log("sessionCookie", sessionCookie);
+  // console.log("sessionCookie", sessionCookie);
   if (sessionCookie) {
     try {
       const decoded = await authenticationAdmin().verifySessionCookie(sessionCookie, true);

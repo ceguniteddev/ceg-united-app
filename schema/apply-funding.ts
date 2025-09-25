@@ -1,7 +1,13 @@
 import z from "zod";
 import { registrationSchema } from "./registration";
 
-export const FundingApplicationSatus = ["New", "Processing", "Approved", "Declined"] as const;
+export const FundingApplicationSatus = [
+  "New",
+  "Processing",
+  "Pre-Approved",
+  "Approved",
+  "Declined",
+] as const;
 export const FundingApplicationSatusEnum = z.enum(FundingApplicationSatus);
 export type FundingApplicationSatus = z.infer<typeof FundingApplicationSatusEnum>;
 

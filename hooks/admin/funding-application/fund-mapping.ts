@@ -75,6 +75,12 @@ export const useFundingApplicationsMappedFundsMutation = () => {
       queryClient.invalidateQueries({
         queryKey: ["GET_FUNDING_APPLICATION_MAPPED_FUNDS", variable.referenceNumber],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.referenceNumber],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_FUNDING_APPLICATIONS"],
+      });
     },
     onError: (error: any) => {
       if (error instanceof AppError) {
@@ -89,5 +95,48 @@ export const useFundingApplicationsMappedFundsMutation = () => {
   return {
     approveMappedFund: approveMappedFundMutation.mutateAsync,
     isApproving: approveMappedFundMutation.isPending,
+  };
+};
+
+export const useBankProductApplicationMutation = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const applyBankProduct = useMutation({
+    mutationFn: async ({
+      bankProductId,
+      referenceNumber,
+    }: {
+      bankProductId: string;
+      referenceNumber: string;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      await approveMappedFund(referenceNumber, bankProductId);
+    },
+    // onSuccess: (_data, variable) => {
+    //   queryClient.invalidateQueries({
+    //     queryKey: ["GET_FUNDING_APPLICATION_MAPPED_FUNDS", variable.referenceNumber],
+    //   });
+    //   queryClient.invalidateQueries({
+    //     queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.referenceNumber],
+    //   });
+    //   queryClient.invalidateQueries({
+    //     queryKey: ["GET_FUNDING_APPLICATIONS"],
+    //   });
+    // },
+    onError: (error: any) => {
+      if (error instanceof AppError) {
+        toast.warning(error.message);
+      } else {
+        toast.warning(error.message);
+        console.error(error);
+      }
+    },
+  });
+
+  return {
+    applyBankProduct: applyBankProduct.mutateAsync,
+    isApplying: applyBankProduct.isPending,
   };
 };

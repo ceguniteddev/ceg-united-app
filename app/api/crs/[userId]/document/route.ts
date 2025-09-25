@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { storageAdmin } from "@/lib/fireabase-admin";
 import { withAuth } from "@/lib/api-validation";
 import { randomUUID } from "crypto";
+import { getUserById } from "@/service/user";
 export const POST = withAuth(
   async (req: NextRequest, { params }: { params?: Promise<{ userId: string }> }) => {
     try {
@@ -18,10 +19,15 @@ export const POST = withAuth(
         return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
       }
 
+      const userData = await getUserById(userId);
+      if (!userData) {
+        return NextResponse.json({ error: "User not found" }, { status: 400 });
+      }
+
       // GCS bucket
       const bucket = storageAdmin();
       const uniqueId = randomUUID();
-      const filename = `${uniqueId}-${file.name}`;
+      const filename = `${uniqueId}_${userData.firstName} ${userData.lastName}_${file.name}`;
       const path = `documents/${userId}/CRS/${filename}`;
 
       // Upload buffer to GCS

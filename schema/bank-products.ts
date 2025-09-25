@@ -10,6 +10,10 @@ export const CreditBureauEnum = z.enum(["Experian", "TransUnion", "Equifax"], {
   error: "Required",
 });
 
+const ClientApplicationStatus = z.enum(["Not Applied", "Pending", "Approved", "Declined"], {
+  error: "Required",
+});
+
 // Main Zod Schema
 export const bankDataSchema = z.object({
   id: z.string().optional(),
@@ -70,5 +74,6 @@ export const bankDataSchema = z.object({
   contactName: z.string().min(1, "Required"),
   contactPhoneNumber: z.string().min(1, "Required"),
   contactEmail: z.email({ error: "Invalid email address" }),
+  clientApplicationStatus: ClientApplicationStatus.optional(),
 });
 export type BankFormData = z.infer<typeof bankDataSchema>;

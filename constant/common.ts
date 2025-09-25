@@ -179,6 +179,12 @@ export const transactionCategoryStyles = {
     textColor: "text-amber-700",
     chipBackgroundColor: "bg-amber-100",
   },
+  "Pre-Approved": {
+    borderColor: "border-emerald-100",
+    backgroundColor: "bg-emerald-400",
+    textColor: "text-emerald-700",
+    chipBackgroundColor: "bg-emerald-50",
+  },
   Approved: {
     borderColor: "border-emerald-300",
     backgroundColor: "bg-emerald-600",

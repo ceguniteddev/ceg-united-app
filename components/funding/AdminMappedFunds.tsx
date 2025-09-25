@@ -38,6 +38,7 @@ import IconMenu from "@/components/icon-menu";
 import { BankFormData } from "@/schema/bank-products";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import BankProductsForm from "@/app/(admin)/admin/bank-products/form";
+import CategoryBadge from "../CategoryBadge";
 
 type Props = { referenceNumber: string; setOpen?: React.Dispatch<React.SetStateAction<boolean>> };
 
@@ -50,10 +51,11 @@ export default AdminMappedFunds;
 const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
   const { mappedFund = [], isLoading } = useFundingApplicationsMappedFundsQuery(referenceNumber);
   const { approvedMappedFunds = [] } = useApproveMappedFundsQuery(referenceNumber);
-  const approvedIds = useMemo(
-    () => new Set(approvedMappedFunds.map((fund) => fund.id)),
+  const approvedByIds = useMemo(
+    () => new Map((approvedMappedFunds ?? []).map((f) => [f.id, f.clientApplicationStatus])),
     [approvedMappedFunds]
   );
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -66,11 +68,12 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
         id: "status",
         header: "Status",
         cell: ({ row }) => {
-          const isApproved = approvedIds.has(row.original.id);
-          return isApproved ? (
+          const id = row.original.id;
+          const status = id ? approvedByIds.get(id) : undefined;
+          return status ? (
             <div className="flex items-center text-green-500">
               <CheckCircle className="mr-2 h-4 w-4" />
-              Approved
+              {"Approved"}
             </div>
           ) : null;
         },
@@ -79,27 +82,13 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
       {
         accessorKey: "bankName",
         id: "bankName",
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Bank Name <ArrowUpDown />
-          </Button>
-        ),
+        header: "Bank Name",
         cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
       },
       {
         accessorKey: "productName",
         id: "productName",
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Product Name <ArrowUpDown />
-          </Button>
-        ),
+        header: "Product Name",
         cell: ({ row }) => {
           const productNames = row.getValue("productName") as string[];
 
@@ -117,23 +106,26 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
       {
         accessorKey: "financingTerm",
         id: "financingTerm",
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Product Type <ArrowUpDown />
-          </Button>
-        ),
+        header: "Financing Term",
         cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
       },
       {
+        accessorKey: "clientApplicationStatus",
+        id: "clientApplicationStatus",
+        header: "Client Application Status",
+        cell: ({ row }) => {
+          const id = row.original.id;
+          const status = id ? approvedByIds.get(id) : undefined;
+          return status ? <CategoryBadge category={status} /> : null;
+        },
+      },
+      {
         id: "actions",
-        cell: ({ row }) => <ActionCell row={row} />,
+        cell: ({ row }) => <ActionCell row={row} referenceNumber={referenceNumber} />,
         size: 80,
       },
     ],
-    [approvedIds]
+    [approvedByIds, referenceNumber]
   );
 
   const table = useReactTable({
@@ -209,7 +201,7 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
   );
 };
 
-const ActionCell = ({ row }: { row: any }) => {
+const ActionCell = ({ row, referenceNumber }: { row: any; referenceNumber: string }) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -222,7 +214,12 @@ const ActionCell = ({ row }: { row: any }) => {
         descriptionClassName="text-red-500 text-lg font-semibold"
         className="w-8/12 flex flex-col items-start justify-start min-h-screen "
       >
-        <BankProductsForm setOpen={setOpen} data={row.original} isAdminViewing={true} />
+        <BankProductsForm
+          setOpen={setOpen}
+          data={row.original}
+          isAdminViewing={true}
+          referenceNumber={referenceNumber}
+        />
       </ResponsiveDialog>
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
@@ -238,7 +235,7 @@ const ActionCell = ({ row }: { row: any }) => {
               className="cursor-pointer w-full justify-start rounded-md p-2 hover:bg-neutral-100"
               onClick={() => setOpen(true)}
             >
-              <IconMenu text="View" icon={<ViewIcon className="h-4 w-4" />} />
+              <IconMenu text="View Product" icon={<ViewIcon className="h-4 w-4" />} />
             </Button>
           </DropdownMenuItem>
         </DropdownMenuContent>
