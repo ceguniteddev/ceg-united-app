@@ -69,7 +69,13 @@ export const useFundingApplicationsMappedFundsMutation = () => {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      await approveMappedFund(referenceNumber, bankProductId);
+      const result = await approveMappedFund(referenceNumber, bankProductId);
+
+      if (!result.success && result.error) {
+        throw new Error(result.error);
+      }
+
+      return result;
     },
     onSuccess: (_data, variable) => {
       queryClient.invalidateQueries({
@@ -83,12 +89,8 @@ export const useFundingApplicationsMappedFundsMutation = () => {
       });
     },
     onError: (error: any) => {
-      if (error instanceof AppError) {
-        toast.warning(error.message);
-      } else {
-        toast.warning(error.message);
-        console.error(error);
-      }
+      toast.warning(error.message);
+      console.error(error);
     },
   });
 

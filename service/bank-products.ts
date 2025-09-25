@@ -112,39 +112,90 @@ export const getFundMappingAnalysis = async (referenceNumber: string) => {
   return result;
 };
 
-export const approveMappedFund = async (referenceNumber: string, bankProductId: string) => {
-  if (!referenceNumber) throw new AppError("Reference number is required.");
+// export const approveMappedFund = async (referenceNumber: string, bankProductId: string) => {
+//   if (!referenceNumber) throw new AppError("Reference number is required.");
 
-  logInfo("approveMappedFund", { referenceNumber });
+//   logInfo("approveMappedFund", { referenceNumber });
 
-  const fundingApplication = await getApplyFundingByReferenceNumber(referenceNumber);
-  if (!fundingApplication) throw new AppError("Funding application reference number not found.");
+//   const fundingApplication = await getApplyFundingByReferenceNumber(referenceNumber);
+//   if (!fundingApplication) throw new AppError("Funding application reference number not found.");
 
-  const productData = await getBankProduct(bankProductId);
-  if (!productData) throw new AppError("Bank product not found.");
+//   const productData = await getBankProduct(bankProductId);
+//   if (!productData) throw new AppError("Bank product not found.");
 
-  const currentUser = await getCurrentUser();
-  if (!currentUser) throw new AppError("User not found.");
+//   const currentUser = await getCurrentUser();
+//   if (!currentUser) throw new AppError("User not found.");
 
-  // check if already approved
-  const approvedFunds = await getApprovedMappedFunds(referenceNumber);
-  if (approvedFunds?.find((f) => f.id === bankProductId))
-    throw new AppError("This bank product is already approved.");
+//   // check if already approved
+//   const approvedFunds = await getApprovedMappedFunds(referenceNumber);
+//   if (approvedFunds?.find((f) => f.id === bankProductId))
+//     throw new AppError("This bank product is already approved.");
 
-  const db = firestoreAdmin();
-  const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
-  );
-  await collectionRef.add({
-    bankProductId,
-    createdAt: Timestamp.now(),
-    approvedById: currentUser.uid,
-    clientApplicationStatus: "Not Applied",
-  });
+//   const db = firestoreAdmin();
+//   const collectionRef = db.collection(
+//     `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+//   );
+//   await collectionRef.add({
+//     bankProductId,
+//     createdAt: Timestamp.now(),
+//     approvedById: currentUser.uid,
+//     clientApplicationStatus: "Not Applied",
+//   });
 
-  await updateApplicationStatus(referenceNumber, "Pre-Approved");
+//   await updateApplicationStatus(referenceNumber, "Pre-Approved");
 
-  // TODO send notification email
+//   // TODO send notification email
+// };
+
+export const approveMappedFund = async (
+  referenceNumber: string,
+  bankProductId: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    if (!referenceNumber) {
+      return { success: false, error: "Reference number is required." };
+    }
+    logInfo("approveMappedFund", { referenceNumber });
+
+    const fundingApplication = await getApplyFundingByReferenceNumber(referenceNumber);
+    if (!fundingApplication) {
+      return { success: false, error: "Funding application reference number not found." };
+    }
+
+    const productData = await getBankProduct(bankProductId);
+    if (!productData) {
+      return { success: false, error: "Bank product not found." };
+    }
+
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return { success: false, error: "User not found." };
+    }
+
+    // check if already approved
+    const approvedFunds = await getApprovedMappedFunds(referenceNumber);
+    if (approvedFunds?.find((f) => f.id === bankProductId)) {
+      return { success: false, error: "This bank product is already approved." };
+    }
+
+    const db = firestoreAdmin();
+    const collectionRef = db.collection(
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+    );
+    await collectionRef.add({
+      bankProductId,
+      createdAt: Timestamp.now(),
+      approvedById: currentUser.uid,
+      clientApplicationStatus: "Not Applied",
+    });
+
+    await updateApplicationStatus(referenceNumber, "Pre-Approved");
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in approveMappedFund:", error);
+    return { success: false, error: "An unexpected error occurred." };
+  }
 };
 
 export const getApprovedMappedFunds = async (referenceNumber: string) => {
