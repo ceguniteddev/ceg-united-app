@@ -63,7 +63,7 @@ const Footer = ({ type = "desktop" }: FooterProps) => {
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full text-gray-700 focus-visible:ring-1"
+            className="rounded-full text-gray-700 focus-visible:ring-1 cursor-pointer"
           >
             <MoreHorizontalIcon className="h-5 w-5" />
             <span className="sr-only">Open user menu</span>

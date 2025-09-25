@@ -1,16 +1,15 @@
 import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApplyFunding } from "@/schema/apply-funding";
-import ApplyFundingForm from "./ApplyFundingForm";
 import DocumentsDisplay from "./DocumentsDisplay";
 
 import AnalysisView from "./AnalysisView";
 import { updateApplicationStatus } from "@/service/apply-funding";
 import AdminApproveDeclineApplication from "./AdminApproveDeclineApplication";
 import FundingApplicationView from "./AdminViewApplicationForm";
-import { ClientDashboard } from "../ClientDashboard";
 import AdminViewUserProfile from "./AdminViewUserProfile";
 import SendEmail from "../SendEmail";
+import AdminMappedFunds from "./AdminMappedFunds";
 
 type Props = {
   formSetOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -34,9 +33,13 @@ const ViewApplication = ({ formSetOpen, formData }: Props) => {
         <TabsTrigger value="user-profile">User Profile</TabsTrigger>
         <TabsTrigger value="document">Document</TabsTrigger>
         <TabsTrigger value="analysis">Analysis</TabsTrigger>
+        <TabsTrigger value="fund-mapping">Fund Mapping</TabsTrigger>
         <TabsTrigger value="approve-decline">Approve/Decline</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>
+      <TabsContent value="fund-mapping" className="w-full">
+        <AdminMappedFunds referenceNumber={formData?.referenceNumber ?? ""} />
+      </TabsContent>
       <TabsContent value="email" className="w-full">
         <SendEmail formData={formData} />
       </TabsContent>

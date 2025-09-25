@@ -89,7 +89,19 @@ const BankProductsList = () => {
             Product Name <ArrowUpDown />
           </Button>
         ),
-        cell: ({ row }) => <div>{row.getValue("productName")}</div>,
+        cell: ({ row }) => {
+          const productNames = row.getValue("productName") as string[];
+
+          return (
+            <div className="flex flex-col gap-1">
+              {" "}
+              {/* gap-1 adds a small space between items */}
+              {productNames.map((name, index) => (
+                <span key={index}>{name}</span>
+              ))}
+            </div>
+          );
+        },
       },
       {
         accessorKey: "financingTerm",
@@ -123,6 +135,9 @@ const BankProductsList = () => {
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getColumnCanGlobalFilter: (column) => {
+      return true;
+    },
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     state: {

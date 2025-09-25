@@ -2,17 +2,13 @@ import { badRequest, internalServerError } from "@/app/api/helpers";
 import AppError from "@/error/AppError";
 import { withAuth } from "@/lib/api-validation";
 import { getMessage } from "@/schema";
-import { recordFundMappingAnalysis } from "@/service/bank-products";
+import { getFundMappingAnalysis, recordFundMappingAnalysis } from "@/service/bank-products";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
 
 const requestBodySchema = z
   .object({
-    analysis: z
-      .string({
-        error: "Analysis is required",
-      })
-      .min(1, { error: "Required" }),
+    ids: z.array(z.object({ id: z.string() })),
     referenceNumber: z
       .string({
         error: "Reference number is required",
@@ -37,9 +33,9 @@ export const POST = withAuth(async (req: NextRequest) => {
     return badRequest(message);
   }
   try {
-    const { analysis, referenceNumber, userId } = parsedBody.data;
+    const { ids, referenceNumber, userId } = parsedBody.data;
 
-    await recordFundMappingAnalysis(userId, referenceNumber, analysis);
+    await recordFundMappingAnalysis(userId, referenceNumber, ids);
 
     return NextResponse.json({ message: "ok" }, { status: 200 });
   } catch (err) {

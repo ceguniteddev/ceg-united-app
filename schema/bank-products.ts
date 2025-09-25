@@ -2,6 +2,10 @@ import { z } from "zod";
 
 export const YesNoEnum = z.enum(["Yes", "No"], { error: "Required" });
 
+export const ApplicationMethodEnum = z.enum(["Online", "Branch", "Referral"], {
+  error: "Required",
+});
+
 export const CreditBureauEnum = z.enum(["Experian", "TransUnion", "Equifax"], {
   error: "Required",
 });
@@ -11,8 +15,8 @@ export const bankDataSchema = z.object({
   id: z.string().optional(),
   isApproved: z.boolean().optional(),
   bankName: z.string().min(1, "Required"),
-  productName: z.string().min(1, "Required"),
-  productType: z.string().min(1, "Required"),
+  productName: z.string().min(1, "Required").array(),
+  // productType: z.string().min(1, "Required"),
   financingTerm: z.string().min(1, "Required"),
   underwritingNotes: z.string().optional(),
   maximumFundingAmount: z
@@ -59,7 +63,7 @@ export const bankDataSchema = z.object({
   threeYearPersonalTaxes: YesNoEnum,
   immigrationStatusRequirement: z.string().min(1, "Required"),
   stateAvailability: z.string().min(1, "Required").array(),
-  applicationMethod: z.string().min(1, "Required"),
+  applicationMethod: ApplicationMethodEnum.array(),
   allowsForwardingViaEmail: YesNoEnum,
   canBeFinalizedOnline: YesNoEnum,
   clientNeedsToGoToBranch: YesNoEnum,

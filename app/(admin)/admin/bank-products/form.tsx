@@ -8,17 +8,23 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useFundingProducts } from "@/hooks/admin/funding-product";
 import { US_STATES, yesNo } from "@/constant/common";
-import { bankDataSchema, BankFormData, CreditBureauEnum } from "@/schema/bank-products";
-import { SaveIcon, XCircleIcon } from "lucide-react";
+import {
+  ApplicationMethodEnum,
+  bankDataSchema,
+  BankFormData,
+  CreditBureauEnum,
+} from "@/schema/bank-products";
+import { Loader2Icon, SaveIcon, XCircleIcon } from "lucide-react";
 import { useBankProductsMutation } from "@/hooks/admin/bank-products";
 import { toast } from "sonner";
 
 type Props = {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   data?: BankFormData;
+  isAdminViewing?: boolean;
 };
 
-const BankProductsForm = ({ setOpen, data }: Props) => {
+const BankProductsForm = ({ setOpen, data, isAdminViewing }: Props) => {
   const { products, isLoading } = useFundingProducts();
   const [interestedProducts, setInterestedProducts] = useState<DropdownOption[]>([]);
 
@@ -52,7 +58,6 @@ const BankProductsForm = ({ setOpen, data }: Props) => {
 
   const onSubmit: SubmitHandler<BankFormData> = useCallback(
     async (values) => {
-      console.log("onSubmit", values);
       try {
         if (data) {
           await updateBankProduct({ id: data.id!, values });
@@ -71,12 +76,12 @@ const BankProductsForm = ({ setOpen, data }: Props) => {
     [createBankProduct, updateBankProduct, form, setOpen, data]
   );
 
-  const handleSelectFundingProduct = (value: string) => {
-    const product = products?.find((p) => p.productName === value);
-    if (product) {
-      form.setValue("productType", product.fundingType, { shouldValidate: true });
-    }
-  };
+  // const handleSelectFundingProduct = (value: string) => {
+  //   const product = products?.find((p) => p.productName === value);
+  //   if (product) {
+  //     form.setValue("productType", product.fundingType, { shouldValidate: true });
+  //   }
+  // };
 
   const isSubmitting = isCreating || isUpdating;
   return (
@@ -93,9 +98,9 @@ const BankProductsForm = ({ setOpen, data }: Props) => {
                     name="productName"
                     placeholder=""
                     label="* Product Name"
-                    type="select"
+                    type="multi-select"
                     options={interestedProducts}
-                    onSelectValue={handleSelectFundingProduct}
+                    // onSelectValue={handleSelectFundingProduct}
                   />
 
                   <CustomFormField
@@ -301,6 +306,11 @@ const BankProductsForm = ({ setOpen, data }: Props) => {
                     name="applicationMethod"
                     placeholder="Online"
                     label="* Application Method"
+                    type="multi-select"
+                    options={ApplicationMethodEnum.options.map((type) => ({
+                      value: type,
+                      label: type,
+                    }))}
                   />
                   <CustomFormField
                     name="allowsForwardingViaEmail"
@@ -342,14 +352,43 @@ const BankProductsForm = ({ setOpen, data }: Props) => {
                   <XCircleIcon className="h-4 w-4" color="red" />
                   Close
                 </Button>
-                <Button
-                  type="submit"
-                  variant="outline"
-                  className="cursor-pointer bg-green-200 hover:bg-green-300"
-                >
-                  <SaveIcon className="h-4 w-4" />
-                  Save
-                </Button>
+                {!isAdminViewing ? (
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    className="cursor-pointer bg-green-200 hover:bg-green-300"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2Icon className="h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <SaveIcon className="h-4 w-4" />
+                        Save
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    className="cursor-pointer bg-green-200 hover:bg-green-300"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2Icon className="h-4 w-4 animate-spin" />
+                        Approving...
+                      </>
+                    ) : (
+                      <>
+                        <SaveIcon className="h-4 w-4" />
+                        Approve
+                      </>
+                    )}
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           </fieldset>
