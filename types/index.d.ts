@@ -1,3 +1,5 @@
+import { BankFormData } from "@/schema/bank-products";
+
 declare global {
   type DropdownOption = {
     label: string;
@@ -31,12 +33,25 @@ declare global {
     | "Equipment Financing";
 
   type UserDoc = {
-    name: string; // "invoice.pdf"
-    path: string; // "documents/<uid>/invoice.pdf"
+    name: string;
+    path: string;
     contentType?: string;
-    size: number; // bytes
-    updated: string; // ISO string from GCS
-    signedUrl: string; // time-limited read URL
+    size: number;
+    updated: string;
+    signedUrl: string;
+  };
+
+  type GetBankFormDataResponse = {
+    success: boolean;
+    data?: BankFormData[];
+    error?: "error" | "warning";
+    message?: string;
+  };
+
+  type CommonResponse = {
+    success: boolean;
+    error?: "error" | "warning";
+    message?: string;
   };
 }
 

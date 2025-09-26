@@ -1,5 +1,6 @@
 import {
   useApproveMappedFundsQuery,
+  useBankProductApplicationMutation,
   useFundingApplicationsMappedFundsQuery,
 } from "@/hooks/admin/funding-application/fund-mapping";
 
@@ -17,7 +18,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, CheckCircle, MoreHorizontal, ViewIcon } from "lucide-react";
+import { ArrowUpDown, CheckCircle, Loader2, MoreHorizontal, ViewIcon } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import {
   Table,
@@ -34,6 +35,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import IconMenu from "@/components/icon-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 import { BankFormData } from "@/schema/bank-products";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
@@ -41,6 +53,7 @@ import BankProductsForm from "@/app/(admin)/admin/bank-products/form";
 import { formatAmount } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import CategoryBadge from "@/components/CategoryBadge";
+import { toast } from "sonner";
 
 type Props = { referenceNumber: string; setOpen?: React.Dispatch<React.SetStateAction<boolean>> };
 
@@ -57,7 +70,7 @@ export default ApprovedFunds;
 
 const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
   const { approvedMappedFunds = [], isLoading } = useApproveMappedFundsQuery(referenceNumber);
-  console.log(approvedMappedFunds);
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -185,15 +198,66 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
 };
 
 const ActionCell = ({ row, referenceNumber }: { row: any; referenceNumber: string }) => {
-  const [open, setOpen] = useState(false);
+  const { applyBankProduct, isApplying } = useBankProductApplicationMutation();
+  // State to control the dialog's visibility
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleApply = () => {
-    setOpen(true);
+  // This function handles the confirmation logic
+  const handleConfirm = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    // 1. Prevent the dialog from closing immediately on click
+    event.preventDefault();
+
+    try {
+      await applyBankProduct({ referenceNumber, bankProductId: row.original.id });
+
+      // 4. On success, close the dialog and reset the submitting state
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast.error("Failed to submit application.");
+      console.error("Submission failed:", error);
+    }
   };
 
   return (
-    <Button variant={"outline"} className="cursor-pointer bg-green-200 hover:bg-green-300">
-      <CheckCircle className="mr-2 h-4 w-4" /> Apply
-    </Button>
+    <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant={"outline"}
+          disabled={row.original.clientApplicationStatus !== "Not Applied"}
+          className="cursor-pointer bg-green-200 hover:bg-green-300"
+        >
+          <CheckCircle className="mr-2 h-4 w-4" /> Apply
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure you want to apply?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action will submit an application to{" "}
+            <span className="font-semibold">{row.original.bankName}</span> for the product{" "}
+            <span className="font-semibold">{row.original.productName.join(", ")}</span>.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="cursor-pointer" disabled={isApplying}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            className="cursor-pointer"
+            onClick={handleConfirm}
+            disabled={isApplying}
+          >
+            {isApplying ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Confirm & Apply"
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };

@@ -1,6 +1,8 @@
 import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
+import { BankFormData } from "@/schema/bank-products";
 import {
+  applyBankProduct,
   approveMappedFund,
   getApprovedMappedFunds,
   getFundMappingAnalysis,
@@ -38,21 +40,39 @@ export const useApproveMappedFundsQuery = (referenceNumber: string) => {
   const {
     data: approvedMappedFunds,
     isLoading,
+    isError, // It's often useful to also expose isError
     error,
-  } = useQuery({
+  } = useQuery<BankFormData[], Error>({
+    // 1. Add explicit types for data and error
     queryKey: ["GET_APPROVED_MAPPED_FUNDS", referenceNumber],
     enabled: !!user && !!referenceNumber,
     queryFn: async () => {
-      if (!user) throw new Error("User not authenticated");
-      const data = await getApprovedMappedFunds(referenceNumber);
-      return data;
+      // User authentication check remains on the client for early exit
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      // 2. Await the structured response from your server function
+      const response = await getApprovedMappedFunds(referenceNumber);
+
+      // Check if the call to get the funds failed
+      if (!response.success && response.message) {
+        if (response.error === "error") {
+          throw new Error(response.message);
+        }
+        toast.warning(response.message);
+        return [];
+      }
+
+      return response.data || [];
     },
+    // Query options remain the same
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchInterval: 5 * 60 * 1000,
   });
 
-  return { approvedMappedFunds, isLoading, error };
+  return { approvedMappedFunds, isLoading, isError, error };
 };
 
 export const useFundingApplicationsMappedFundsMutation = () => {
@@ -71,8 +91,12 @@ export const useFundingApplicationsMappedFundsMutation = () => {
 
       const result = await approveMappedFund(referenceNumber, bankProductId);
 
-      if (!result.success && result.error) {
-        throw new Error(result.error);
+      if (!result.success && result.message) {
+        if (result.error === "error") {
+          throw new Error(result.message);
+        }
+        toast.warning(result.message);
+        return null;
       }
 
       return result;
@@ -89,7 +113,7 @@ export const useFundingApplicationsMappedFundsMutation = () => {
       });
     },
     onError: (error: any) => {
-      toast.warning(error.message);
+      toast.error(error.message);
       console.error(error);
     },
   });
@@ -104,7 +128,7 @@ export const useBankProductApplicationMutation = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const applyBankProduct = useMutation({
+  const applyBankProductMutation = useMutation({
     mutationFn: async ({
       bankProductId,
       referenceNumber,
@@ -114,31 +138,28 @@ export const useBankProductApplicationMutation = () => {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      await approveMappedFund(referenceNumber, bankProductId);
-    },
-    // onSuccess: (_data, variable) => {
-    //   queryClient.invalidateQueries({
-    //     queryKey: ["GET_FUNDING_APPLICATION_MAPPED_FUNDS", variable.referenceNumber],
-    //   });
-    //   queryClient.invalidateQueries({
-    //     queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.referenceNumber],
-    //   });
-    //   queryClient.invalidateQueries({
-    //     queryKey: ["GET_FUNDING_APPLICATIONS"],
-    //   });
-    // },
-    onError: (error: any) => {
-      if (error instanceof AppError) {
-        toast.warning(error.message);
-      } else {
-        toast.warning(error.message);
-        console.error(error);
+      const result = await applyBankProduct(referenceNumber, bankProductId);
+      if (!result.success && result.message) {
+        if (result.error === "error") {
+          throw new Error(result.message);
+        }
+        toast.warning(result.message);
+        return null;
       }
+    },
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({
+        queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.referenceNumber],
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+      console.error(error);
     },
   });
 
   return {
-    applyBankProduct: applyBankProduct.mutateAsync,
-    isApplying: applyBankProduct.isPending,
+    applyBankProduct: applyBankProductMutation.mutateAsync,
+    isApplying: applyBankProductMutation.isPending,
   };
 };

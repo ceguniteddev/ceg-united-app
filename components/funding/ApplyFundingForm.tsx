@@ -283,7 +283,7 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
                         type="button"
                         disabled={isRecording}
                         onClick={() => setOpen(false)}
-                        className=" bg-red-200 hover:bg-red-300 text-black-100"
+                        className=" bg-red-200 hover:bg-red-300 text-black-100 cursor-pointer"
                       >
                         <CircleXIcon className="mr-2 h-4 w-4" /> Close
                       </Button>
@@ -305,7 +305,7 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
                               size="lg"
                               type="submit"
                               disabled={isRecording}
-                              className=" bg-green-400 hover:bg-green-500 text-black-100"
+                              className=" bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer"
                             >
                               {isRecording ? (
                                 <>

@@ -21,7 +21,8 @@ export const useBankProductsQuery = () => {
     queryFn: async (): Promise<BankFormData[]> => {
       if (!user) throw new Error("User not authenticated");
       const data = await getBankProducts();
-      return data;
+      if (!data.success) throw new Error(data.message);
+      return data.data || [];
     },
   });
 
