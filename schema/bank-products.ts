@@ -75,5 +75,6 @@ export const bankDataSchema = z.object({
   contactPhoneNumber: z.string().min(1, "Required"),
   contactEmail: z.email({ error: "Invalid email address" }),
   clientApplicationStatus: ClientApplicationStatus.optional(),
+  webUrl: z.string().min(1, "Required"),
 });
 export type BankFormData = z.infer<typeof bankDataSchema>;

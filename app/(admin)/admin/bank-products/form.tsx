@@ -354,6 +354,7 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing, referenceNumber }: Pr
                   />
                   <CustomFormField name="contactEmail" placeholder="" label="* Contact Email" />
                 </div>
+                <CustomFormField name="webUrl" placeholder="" label="* Web URL" />
               </CardContent>
               <CardFooter className="flex justify-between">
                 <Button
