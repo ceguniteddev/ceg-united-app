@@ -1,7 +1,6 @@
 import {
   useApproveMappedFundsQuery,
   useBankProductApplicationMutation,
-  useFundingApplicationsMappedFundsQuery,
 } from "@/hooks/admin/funding-application/fund-mapping";
 
 import Spinner from "@/components/Spinner";
@@ -18,7 +17,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, CheckCircle, Loader2, MoreHorizontal, ViewIcon } from "lucide-react";
+import { CheckCircle, Loader2 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import {
   Table,
@@ -28,13 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import IconMenu from "@/components/icon-menu";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,8 +41,6 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { BankFormData } from "@/schema/bank-products";
-import { ResponsiveDialog } from "@/components/responsive-dialog";
-import BankProductsForm from "@/app/(admin)/admin/bank-products/form";
 import { formatAmount } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import CategoryBadge from "@/components/CategoryBadge";

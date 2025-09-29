@@ -270,6 +270,15 @@ export const applyBankProduct = async (
       return { success: false, error: "warning", message: "Bank product id is required." };
     }
 
+    const referenceData = await getApplyFundingByReferenceNumber(referenceNumber);
+    if (!referenceData) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Funding application reference number not found.",
+      };
+    }
+
     // This assumes getBankProduct might still throw or return null on failure.
     // If it's also refactored, its response should be checked similarly to getApprovedMappedFunds.
     const bankProduct = await getBankProduct(bankProductId);
@@ -319,6 +328,19 @@ export const applyBankProduct = async (
 
       await docRef.update({
         clientApplicationStatus: "Pending",
+      });
+
+      await fetch(`${process.env.n8n_HOST}/client-apply-bank-product`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+        },
+        body: JSON.stringify({
+          userId: referenceData.userId,
+          referenceNumber: referenceNumber,
+          bankProductId: bankProductId,
+        }),
       });
     }
 
