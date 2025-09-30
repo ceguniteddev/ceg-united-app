@@ -61,4 +61,6 @@ export const registrationSchema = z.object({
 });
 export type User = z.infer<typeof registrationSchema>;
 
+export type UserWithId = User & { id: string };
+
 export type UserPlaid = User & { plaidData?: PlaidAccessToken[]; id: string };

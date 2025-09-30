@@ -9,26 +9,14 @@ import { ResponsiveDialog } from "@/components/responsive-dialog";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
 import { useAuth } from "@/provider/AuthContext";
 
-// Helper component for required labels
-const RequiredLabel = ({ children }: { children: React.ReactNode }) => (
-  <Label className="flex items-center font-medium text-gray-700">
-    {children}
-    <span className="ml-1 text-red-500">*</span>
-  </Label>
-);
-
 export default function PersonalSettingsPage() {
   const { user } = useAuth();
-  // const [firstName, setFirstName] = useState("CEG");
-  // const [lastName, setLastName] = useState("United");
-  // const [email, setEmail] = useState("ceguniteddev@gmail.com");
   const [openChangePassword, setOpenChangePassword] = useState(false);
 
   if (!user) {
     return null;
   }
 
-  console.log("user", user);
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 p-4 sm:p-6 lg:p-8">
       <ResponsiveDialog
@@ -46,45 +34,6 @@ export default function PersonalSettingsPage() {
         </header>
 
         <main className="space-y-10">
-          {/* <section>
-            <h2 className="text-xl font-semibold text-gray-800">Basic Information</h2>
-
-            <Separator className="my-4 bg-gray-200" />
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <RequiredLabel>First Name</RequiredLabel>
-
-                  <Input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="bg-white border-gray-300 text-gray-900"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <RequiredLabel>Last Name</RequiredLabel>
-                  <Input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="bg-white border-gray-300 text-gray-900"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <RequiredLabel>Email</RequiredLabel>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="bg-white border-gray-300 text-gray-900"
-                />
-              </div>
-            </div>
-          </section> */}
-
-          {/* Security Section */}
           <section>
             <h2 className="text-xl font-semibold text-gray-800">Security</h2>
             <Separator className="my-4 bg-gray-200" />
@@ -103,10 +52,6 @@ export default function PersonalSettingsPage() {
             </div>
           </section>
         </main>
-
-        {/* <footer className="mt-12 flex justify-end">
-          <Button className="bg-red-600 hover:bg-red-700 text-white">Save</Button>
-        </footer> */}
       </div>
     </div>
   );

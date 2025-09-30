@@ -7,7 +7,7 @@ import { authenticationAdmin, firestoreAdmin, storageAdmin } from "@/lib/fireaba
 import { sendMail } from "@/lib/nodemailer";
 import { ChangePassword, CurrentUser, Role } from "@/schema";
 
-import { User, UserPlaid } from "@/schema/registration";
+import { User, UserPlaid, UserWithId } from "@/schema/registration";
 import { cookies, headers } from "next/headers";
 
 export const getUserRecordByEmail = async (email: string) => {
@@ -114,7 +114,7 @@ const getVerifyEmailBody = (link: string) => {
 <p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#6b7280; margin:12px 0 0;">Thanks, <br />CEG United LLC team</p>`;
 };
 
-export const getUsers = async (role?: Role): Promise<UserPlaid[]> => {
+export const getUsers = async (role?: Role): Promise<UserWithId[]> => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(USER_COLLECTION);
 
@@ -130,11 +130,11 @@ export const getUsers = async (role?: Role): Promise<UserPlaid[]> => {
     return [];
   }
 
-  const users: UserPlaid[] = [];
+  const users: UserWithId[] = [];
   querySnapshot.forEach((doc) => {
     const data = doc.data();
 
-    users.push({ id: doc.id, ...normalizeAllDates(data) } as UserPlaid);
+    users.push({ id: doc.id, ...normalizeAllDates(data) } as UserWithId);
   });
   return users;
 };

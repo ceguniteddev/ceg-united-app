@@ -126,6 +126,11 @@ export const adminSidebarLinks = [
     label: "Home",
   },
   {
+    imgURL: "/icons/users.svg",
+    route: "/admin/clients",
+    label: "Clients",
+  },
+  {
     imgURL: "/icons/credit-card.svg",
     route: "/admin/funding-products",
     label: "Product Management",
@@ -157,6 +162,19 @@ export const settingsSidebar = [
     imgURL: "/icons/circle-user-round.svg",
     route: "/settings/personal",
     label: "Personal",
+  },
+];
+
+export const settingsSidebarAdmin = [
+  {
+    imgURL: "/icons/circle-user-round.svg",
+    route: "/settings/personal",
+    label: "Personal",
+  },
+  {
+    imgURL: "/icons/circle-user-round.svg",
+    route: "/settings/users",
+    label: "Users",
   },
 ];
 

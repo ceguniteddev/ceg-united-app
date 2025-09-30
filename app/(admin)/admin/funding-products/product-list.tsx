@@ -248,11 +248,11 @@ const ActionCell = ({ row, onEdit }: { row: any; onEdit: (product: FundingProduc
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>
+              <AlertDialogCancel disabled={isDeleting} className="cursor-pointer">
                 <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
               </AlertDialogCancel>
               <AlertDialogAction
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-red-600 hover:bg-red-700 cursor-pointer"
                 onClick={async (e) => {
                   e.preventDefault();
                   await handleDelete();

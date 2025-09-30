@@ -99,7 +99,7 @@ const FundingProductsPage = () => {
                   type="submit"
                   variant="outline"
                   disabled={isSubmitting}
-                  className="bg-emerald-200 hover:bg-emerald-300 disabled:cursor-not-allowed"
+                  className="bg-emerald-200 hover:bg-emerald-300 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isSubmitting ? (
                     <IconMenu

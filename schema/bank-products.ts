@@ -59,6 +59,12 @@ export const bankDataSchema = z.object({
   profitAndLossStatementRequired: YesNoEnum,
   balanceSheetRequired: YesNoEnum,
   businessPlanRequired: YesNoEnum,
+
+  membershipRequiredBeforeApplicationRequired: YesNoEnum,
+  membershipRequiredUponApprovalRequired: YesNoEnum,
+  accountOpeningBeforeApplicationRequired: YesNoEnum,
+  accountOpeningAfterApprovalRequired: YesNoEnum,
+
   oneYearBusinessTaxes: YesNoEnum,
   twoYearBusinessTaxes: YesNoEnum,
   threeYearBusinessTaxes: YesNoEnum,

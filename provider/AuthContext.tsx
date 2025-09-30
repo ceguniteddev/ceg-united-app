@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
 
     setUser(firebaseUser);
     setRole(userRole as Role);
-    setIsAdmin(userRole === "Admin" || userRole === "IT");
+    setIsAdmin(userRole === "Admin");
     setIsOnboarded(userData.isOnboarded || false);
   }, []);
 

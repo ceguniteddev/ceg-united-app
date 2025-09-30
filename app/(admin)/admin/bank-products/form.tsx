@@ -48,13 +48,15 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing, referenceNumber }: Pr
     if (products) {
       const dropdownOptions: DropdownOption[] = [];
 
-      products.forEach((product) => {
-        dropdownOptions.push({
-          value: product.productName,
-          label: product.productName,
-          category: product.fundingType,
+      products
+        .sort((a, b) => a.fundingType.localeCompare(b.fundingType))
+        .forEach((product) => {
+          dropdownOptions.push({
+            value: product.productName,
+            label: product.productName,
+            category: product.fundingType,
+          });
         });
-      });
       setInterestedProducts(dropdownOptions);
     }
   }, [products]);
@@ -261,6 +263,39 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing, referenceNumber }: Pr
                     type="select"
                     options={yesNo}
                   />
+
+                  <CustomFormField
+                    name="membershipRequiredBeforeApplicationRequired"
+                    placeholder=""
+                    label="* Membership Before Application"
+                    type="select"
+                    options={yesNo}
+                  />
+
+                  <CustomFormField
+                    name="membershipRequiredUponApprovalRequired"
+                    placeholder=""
+                    label="* Membership Upon Approval"
+                    type="select"
+                    options={yesNo}
+                  />
+
+                  <CustomFormField
+                    name="accountOpeningBeforeApplicationRequired"
+                    placeholder=""
+                    label="* Account Opening Before Application"
+                    type="select"
+                    options={yesNo}
+                  />
+
+                  <CustomFormField
+                    name="accountOpeningAfterApprovalRequired"
+                    placeholder=""
+                    label="* Account Opening After Approval"
+                    type="select"
+                    options={yesNo}
+                  />
+
                   <CustomFormField
                     name="oneYearBusinessTaxes"
                     placeholder=""
@@ -353,8 +388,14 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing, referenceNumber }: Pr
                     label="* Contact Phone Number"
                   />
                   <CustomFormField name="contactEmail" placeholder="" label="* Contact Email" />
+
+                  <CustomFormField
+                    name="webUrl"
+                    placeholder=""
+                    className="col-span-2"
+                    label="* Web URL"
+                  />
                 </div>
-                <CustomFormField name="webUrl" placeholder="" label="* Web URL" />
               </CardContent>
               <CardFooter className="flex justify-between">
                 <Button

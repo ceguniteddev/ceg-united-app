@@ -26,8 +26,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ApplyFundingWithUser } from "@/schema/apply-funding";
-import { formatAmount, formatDateTime } from "@/lib/utils";
 import { RequestCall } from "@/schema";
 import CategoryBadge from "@/components/CategoryBadge";
 import { DataTablePagination } from "@/components/funding/pagination";

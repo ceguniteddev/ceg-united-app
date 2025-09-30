@@ -1,6 +1,6 @@
 "use client";
 
-import { settingsSidebar } from "@/constant/common";
+import { settingsSidebar, settingsSidebarAdmin } from "@/constant/common";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,10 +9,12 @@ import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
 
 const SidebarSettings = () => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const pathname = usePathname();
 
   if (!user) return null;
+
+  const sidebar = role === "Client" ? settingsSidebar : settingsSidebarAdmin;
 
   return (
     <section className="sidebar">
@@ -25,7 +27,7 @@ const SidebarSettings = () => {
             alt={process.env.NEXT_PUBLIC_APP_NAME as string}
           />
         </Link>
-        {settingsSidebar.map((item) => {
+        {sidebar.map((item) => {
           const isActive = pathname === item.route || pathname.startsWith(`${item.route}/`);
 
           return (

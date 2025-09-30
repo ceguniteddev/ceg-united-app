@@ -1,6 +1,6 @@
 import z from "zod";
 import { auth as adminAuth } from "firebase-admin";
-export const ROLES = ["Admin", "IT", "Staff", "Client"] as const;
+export const ROLES = ["Admin", "Broker", "Client"] as const;
 export const ROLESEnum = z.enum(ROLES);
 
 export type Role = z.infer<typeof ROLESEnum>;
