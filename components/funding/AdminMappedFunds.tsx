@@ -1,7 +1,4 @@
-import {
-  useApproveMappedFundsQuery,
-  useFundingApplicationsMappedFundsQuery,
-} from "@/hooks/admin/funding-application/fund-mapping";
+import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
 
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
@@ -17,7 +14,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, CheckCircle, MoreHorizontal, ViewIcon } from "lucide-react";
+import { ArrowUpDown, CheckCircle, MoreHorizontal, ViewIcon, XCircle } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import {
   Table,
@@ -39,22 +36,12 @@ import { BankFormData } from "@/schema/bank-products";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import BankProductsForm from "@/app/(admin)/admin/bank-products/form";
 import CategoryBadge from "../CategoryBadge";
+import SortableHeader from "@/components/SortableHeader";
 
-type Props = { referenceNumber: string; setOpen?: React.Dispatch<React.SetStateAction<boolean>> };
+type Props = { userId: string; setOpen: React.Dispatch<React.SetStateAction<boolean>> };
 
-const AdminMappedFunds = ({ referenceNumber, setOpen }: Props) => {
-  return <BankProductsList referenceNumber={referenceNumber} />;
-};
-
-export default AdminMappedFunds;
-
-const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
-  const { mappedFund = [], isLoading } = useFundingApplicationsMappedFundsQuery(referenceNumber);
-  const { approvedMappedFunds = [] } = useApproveMappedFundsQuery(referenceNumber);
-  const approvedByIds = useMemo(
-    () => new Map((approvedMappedFunds ?? []).map((f) => [f.id, f.clientApplicationStatus])),
-    [approvedMappedFunds]
-  );
+const AdminMappedFunds = ({ userId, setOpen }: Props) => {
+  const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({ userId });
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -65,30 +52,26 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
   const columns: ColumnDef<BankFormData>[] = useMemo(
     () => [
       {
-        id: "status",
-        header: "Status",
+        id: "adminApprovedStatus",
+        accessorKey: "adminApprovedStatus",
+        // header: "Admin Approved Status",
+        header: ({ column }) => <SortableHeader column={column} title="Admin Approved Status" />,
         cell: ({ row }) => {
-          const id = row.original.id;
-          const status = id ? approvedByIds.get(id) : undefined;
-          return status ? (
-            <div className="flex items-center text-green-500">
-              <CheckCircle className="mr-2 h-4 w-4" />
-              {"Approved"}
-            </div>
-          ) : null;
+          const status = row.getValue("adminApprovedStatus") as string;
+          return status ? <CategoryBadge category={status} /> : null;
         },
         size: 120,
       },
       {
         accessorKey: "bankName",
         id: "bankName",
-        header: "Bank Name",
+        header: ({ column }) => <SortableHeader column={column} title="Bank Name" />,
         cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
       },
       {
         accessorKey: "productName",
         id: "productName",
-        header: "Product Name",
+        header: ({ column }) => <SortableHeader column={column} title="Product Name" />,
         cell: ({ row }) => {
           const productNames = row.getValue("productName") as string[];
 
@@ -106,26 +89,27 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
       {
         accessorKey: "financingTerm",
         id: "financingTerm",
-        header: "Financing Term",
+        header: ({ column }) => <SortableHeader column={column} title="Financing Term" />,
         cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
       },
       {
         accessorKey: "clientApplicationStatus",
         id: "clientApplicationStatus",
-        header: "Client Application Status",
+        header: ({ column }) => (
+          <SortableHeader column={column} title="Client Application Status" />
+        ),
         cell: ({ row }) => {
-          const id = row.original.id;
-          const status = id ? approvedByIds.get(id) : undefined;
+          const status = row.getValue("clientApplicationStatus") as string;
           return status ? <CategoryBadge category={status} /> : null;
         },
       },
       {
         id: "actions",
-        cell: ({ row }) => <ActionCell row={row} referenceNumber={referenceNumber} />,
+        cell: ({ row }) => <ActionCell row={row} userId={userId} />,
         size: 80,
       },
     ],
-    [approvedByIds, referenceNumber]
+    [userId]
   );
 
   const table = useReactTable({
@@ -197,11 +181,19 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
           </TableBody>
         </Table>
       </div>
+      <div className="justify-end flex mt-4">
+        <Button variant={"ghost"} onClick={() => setOpen(false)} className="cursor-pointer">
+          <XCircle className="h-4 w-4" />
+          Close
+        </Button>
+      </div>
     </div>
   );
 };
 
-const ActionCell = ({ row, referenceNumber }: { row: any; referenceNumber: string }) => {
+export default AdminMappedFunds;
+
+const ActionCell = ({ row, userId }: { row: any; userId: string }) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -218,7 +210,7 @@ const ActionCell = ({ row, referenceNumber }: { row: any; referenceNumber: strin
           setOpen={setOpen}
           data={row.original}
           isAdminViewing={true}
-          referenceNumber={referenceNumber}
+          userId={userId}
         />
       </ResponsiveDialog>
       <DropdownMenu modal={true}>

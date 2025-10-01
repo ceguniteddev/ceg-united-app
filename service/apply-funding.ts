@@ -10,12 +10,19 @@ import {
   FundingApplicationApproveDecline,
   FundingApplicationSatus,
 } from "@/schema/apply-funding";
+import { updateClientApplicationStatus } from "@/service/bank-products";
 import { Timestamp } from "firebase-admin/firestore";
 import * as crypto from "node:crypto";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const applyFunding = async (value: ApplyFunding) => {
+export const applyFunding = async ({
+  value,
+  bankProductId,
+}: {
+  value: ApplyFunding;
+  bankProductId: string;
+}) => {
   const db = firestoreAdmin();
 
   const collectionRef = db.collection(USER_FUNDING_APPLICATION);
@@ -40,12 +47,9 @@ export const applyFunding = async (value: ApplyFunding) => {
       }),
     });
 
-    // sleep for 20 seconds so that funding-analysis will capture the business profile and score
-    // increase if necessary
     await sleep(20000);
   }
 
-  // call n8n webhook to capture AI analysis
   await fetch(`${process.env.n8n_HOST}/funding-analysis`, {
     method: "POST",
     headers: {
@@ -58,12 +62,12 @@ export const applyFunding = async (value: ApplyFunding) => {
     }),
   });
 
-  // call n8n webhook to capture Business Profile / Score
-
-  return {
-    referenceNumber: docRef.id,
-    ...normalizeAllDates(data),
-  };
+  // TODO make the mapped-fund to Applied
+  await updateClientApplicationStatus({
+    bankProductId: bankProductId,
+    userId: value.userId,
+    status: "Pending",
+  });
 };
 
 export const getApplyFunding = async (userId: string): Promise<ApplyFunding[] | null> => {

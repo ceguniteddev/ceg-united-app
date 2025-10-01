@@ -141,11 +141,6 @@ export const adminSidebarLinks = [
     label: "Bank Product Management",
   },
   {
-    imgURL: "/icons/bell.svg",
-    route: "/admin/whats-new",
-    label: "What's New Management",
-  },
-  {
     imgURL: "/icons/money-send.svg",
     route: "/admin/funding-application",
     label: "Funding Applications",
@@ -154,6 +149,11 @@ export const adminSidebarLinks = [
     imgURL: "/icons/phone-call.svg",
     route: "/admin/call-requests",
     label: "Call Requests",
+  },
+  {
+    imgURL: "/icons/bell.svg",
+    route: "/admin/whats-new",
+    label: "What's New Management",
   },
 ];
 

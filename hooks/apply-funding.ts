@@ -32,6 +32,26 @@ export const useGetUserApplyFunding = () => {
   };
 };
 
+export const useGetClientApprovedMappedFunding = () => {
+  const { user } = useAuth();
+
+  const { data: appliedFunding, isLoading } = useQuery({
+    queryKey: ["useGetClientApprovedMappedFunding", user?.uid],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+      const data = (await getApplyFunding(user.uid)) as ApplyFunding[];
+
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  return {
+    appliedFunding,
+    isLoading,
+  };
+};
+
 export const useGetFundingApplications = () => {
   const { user } = useAuth();
 
@@ -79,24 +99,16 @@ export const useApplyFunding = () => {
   const { user } = useAuth();
 
   const createMutation = useMutation({
-    mutationFn: async ({ values }: { values: ApplyFunding }) => {
-      // if (!token) {
-      //   throw new AppError("Captcha token is missing. Please try again.");
-      // }
-
+    mutationFn: async ({
+      values,
+      bankProductId,
+    }: {
+      values: ApplyFunding;
+      bankProductId: string;
+    }) => {
       if (!user) throw new Error("User not authenticated");
 
-      // const captchaData = await verifyCaptchaToken(token);
-      // if (
-      //   !captchaData ||
-      //   !captchaData.success ||
-      //   captchaData.score < 0.5 ||
-      //   captchaData.action !== "applyFunding"
-      // ) {
-      //   throw new AppError("Captcha verification failed. Please try again.");
-      // }
-
-      await applyFunding(values);
+      await applyFunding({ value: values, bankProductId: bankProductId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

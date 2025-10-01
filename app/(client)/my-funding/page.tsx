@@ -2,7 +2,6 @@
 
 import HeaderBox from "@/components/HeaderBox";
 import React from "react";
-import ApplyFunding from "./_funding/ApplyFunding";
 import ApplyFundingList from "./_funding/ApplyFundingList";
 import Spinner from "@/components/Spinner";
 import {
@@ -42,7 +41,7 @@ const ApplyFundingPage = () => {
     <section className="home-content">
       <div className="home-header flex flex-row justify-between">
         <HeaderBox title="Apply Funding" subtext="Manage your funding applications." />
-        <ApplyFunding />
+        {/* <ApplyFunding /> */}
       </div>
 
       <div className="space-y-6">

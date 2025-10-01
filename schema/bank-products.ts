@@ -14,6 +14,8 @@ const ClientApplicationStatus = z.enum(["Not Applied", "Pending", "Approved", "D
   error: "Required",
 });
 
+export type ClientApplicationStatus = z.infer<typeof ClientApplicationStatus>;
+
 // Main Zod Schema
 export const bankDataSchema = z.object({
   id: z.string().optional(),
@@ -80,7 +82,8 @@ export const bankDataSchema = z.object({
   contactName: z.string().min(1, "Required"),
   contactPhoneNumber: z.string().min(1, "Required"),
   contactEmail: z.email({ error: "Invalid email address" }),
-  clientApplicationStatus: ClientApplicationStatus.optional(),
   webUrl: z.string().min(1, "Required"),
+  clientApplicationStatus: ClientApplicationStatus.optional(),
+  adminApprovedStatus: ClientApplicationStatus.optional(),
 });
 export type BankFormData = z.infer<typeof bankDataSchema>;

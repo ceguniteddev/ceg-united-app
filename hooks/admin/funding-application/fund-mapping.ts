@@ -6,12 +6,13 @@ import {
   approveMappedFund,
   getApprovedMappedFunds,
   getFundMappingAnalysis,
+  getFundMappingAnalysisDetails,
 } from "@/service/bank-products";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { is } from "date-fns/locale";
 import { toast } from "sonner";
 
-export const useFundingApplicationsMappedFundsQuery = (referenceNumber: string) => {
+export const useFundingApplicationsMappedFundsQuery = () => {
   const { user } = useAuth();
 
   const {
@@ -19,11 +20,40 @@ export const useFundingApplicationsMappedFundsQuery = (referenceNumber: string) 
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["GET_FUNDING_APPLICATION_MAPPED_FUNDS", referenceNumber],
-    enabled: !!user && !!referenceNumber,
+    queryKey: ["GET_FUNDING_APPLICATION_MAPPED_FUNDS"],
+    enabled: !!user,
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
-      const data = await getFundMappingAnalysis(referenceNumber);
+      const data = await getFundMappingAnalysis();
+      return data;
+    },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 5 * 60 * 1000,
+  });
+
+  return { mappedFund, isLoading, error };
+};
+
+export const useClientMappedFundingDetailsQuery = ({
+  userId,
+  adminApprovedStatus,
+}: {
+  userId: string;
+  adminApprovedStatus?: AdminApprovedStatus;
+}) => {
+  const { user } = useAuth();
+
+  const {
+    data: mappedFund,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["useClientMappedFundingDetailsQuery", userId, adminApprovedStatus],
+    enabled: !!user && !!userId,
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+      const data = await getFundMappingAnalysisDetails({ userId, adminApprovedStatus });
       return data;
     },
     staleTime: 0,
@@ -53,7 +83,7 @@ export const useApproveMappedFundsQuery = (referenceNumber: string) => {
       }
 
       // 2. Await the structured response from your server function
-      const response = await getApprovedMappedFunds(referenceNumber);
+      const response = await getApprovedMappedFunds({ userId: referenceNumber });
 
       // Check if the call to get the funds failed
       if (!response.success && response.message) {
@@ -80,16 +110,10 @@ export const useFundingApplicationsMappedFundsMutation = () => {
   const queryClient = useQueryClient();
 
   const approveMappedFundMutation = useMutation({
-    mutationFn: async ({
-      bankProductId,
-      referenceNumber,
-    }: {
-      bankProductId: string;
-      referenceNumber: string;
-    }) => {
+    mutationFn: async ({ bankProductId, userId }: { bankProductId: string; userId: string }) => {
       if (!user) throw new Error("User not authenticated");
 
-      const result = await approveMappedFund(referenceNumber, bankProductId);
+      const result = await approveMappedFund({ userId, bankProductId });
 
       if (!result.success && result.message) {
         if (result.error === "error") {
@@ -102,14 +126,18 @@ export const useFundingApplicationsMappedFundsMutation = () => {
       return result;
     },
     onSuccess: (_data, variable) => {
+      toast.success("Mapped funds approved successfully.");
+      // queryClient.invalidateQueries({
+      //   queryKey: ["GET_FUNDING_APPLICATION_MAPPED_FUNDS"],
+      // });
+      // queryClient.invalidateQueries({
+      //   queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.userId],
+      // });
+      // queryClient.invalidateQueries({
+      //   queryKey: ["GET_FUNDING_APPLICATIONS"],
+      // });
       queryClient.invalidateQueries({
-        queryKey: ["GET_FUNDING_APPLICATION_MAPPED_FUNDS", variable.referenceNumber],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.referenceNumber],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["GET_FUNDING_APPLICATIONS"],
+        queryKey: ["useClientMappedFundingDetailsQuery", variable.userId],
       });
     },
     onError: (error: any) => {
@@ -129,16 +157,10 @@ export const useBankProductApplicationMutation = () => {
   const queryClient = useQueryClient();
 
   const applyBankProductMutation = useMutation({
-    mutationFn: async ({
-      bankProductId,
-      referenceNumber,
-    }: {
-      bankProductId: string;
-      referenceNumber: string;
-    }) => {
+    mutationFn: async ({ bankProductId, userId }: { bankProductId: string; userId: string }) => {
       if (!user) throw new Error("User not authenticated");
 
-      const result = await applyBankProduct(referenceNumber, bankProductId);
+      const result = await applyBankProduct({ userId, bankProductId });
       if (!result.success && result.message) {
         if (result.error === "error") {
           throw new Error(result.message);
@@ -149,7 +171,7 @@ export const useBankProductApplicationMutation = () => {
     },
     onSuccess: (_data, variable) => {
       queryClient.invalidateQueries({
-        queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.referenceNumber],
+        queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.userId],
       });
     },
     onError: (error: any) => {

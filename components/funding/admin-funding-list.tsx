@@ -13,25 +13,10 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  ChevronDown,
-  FolderSearch2Icon,
-  ListCollapseIcon,
-  MoreHorizontal,
-} from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -41,90 +26,143 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useUsersQuery } from "@/hooks/user";
-import Spinner from "@/components/Spinner";
-import { UserPlaid } from "@/schema/registration";
 import { DataTablePagination } from "./pagination";
-import IconMenu from "@/components/icon-menu";
-import Link from "next/link";
+import { ApplyFundingWithUser } from "@/schema/apply-funding";
+import { formatAmount, formatDateTime } from "@/lib/utils";
+import CategoryBadge from "../CategoryBadge";
 
-export const columns: ColumnDef<UserPlaid>[] = [
+export const columns: ColumnDef<ApplyFundingWithUser>[] = [
   {
-    accessorKey: "firstName",
-    id: "firstName",
+    accessorKey: "referenceNumber",
+    id: "referenceNumber",
     header: ({ column }) => (
       <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Name <ArrowUpDown />
+        Reference Number <ArrowUpDown />
       </Button>
     ),
     cell: ({ row }) => {
-      const { firstName, lastName } = row.original;
+      return <div>{row.getValue("referenceNumber")}</div>;
+    },
+  },
+  {
+    accessorKey: "name",
+    id: "name",
+    header: ({ column }) => (
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Name
+        <ArrowUpDown />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const user = row.original.user;
+      if (!user) return <div className="text-muted-foreground">Unknown</div>;
+
       return (
         <div>
-          {firstName} {lastName}
+          {user.firstName} {user.lastName}
         </div>
       );
     },
   },
   {
-    accessorKey: "email",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Email
-          <ArrowUpDown />
-        </Button>
-      );
-    },
-    cell: ({ row }) => <div className="lowercase">{row.getValue("email")}</div>,
-  },
-  {
-    id: "plaidCount",
-    accessorFn: (row) => row.plaidData?.length ?? 0,
+    id: "interestedProduct",
+    accessorKey: "interestedProduct",
     header: ({ column }) => (
-      <div className="flex w-full justify-center">
+      <div className="flex w-full">
         <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
-          Plaid Linked <ArrowUpDown className="ml-2 h-4 w-4" />
+          Product <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       </div>
     ),
-    cell: (info) => {
-      const count = info.getValue<number>();
-      return <div className="w-full text-center tabular-nums">{count}</div>;
+    cell: ({ row }) => {
+      return <div>{row.getValue("interestedProduct")}</div>;
     },
-    sortingFn: (a, b) => (a.original.plaidData?.length ?? 0) - (b.original.plaidData?.length ?? 0),
-    sortDescFirst: true,
   },
   {
-    id: "actions",
-    enableHiding: false,
+    id: "amountFunding",
+    accessorKey: "amountFunding",
+    header: ({ column }) => (
+      <div className="flex w-full justify-end">
+        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
+          Amount <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
+    cell: ({ row }) => {
+      return <div className="text-right">{formatAmount(row.getValue("amountFunding"))}</div>;
+    },
+  },
+  {
+    id: "appliedDate",
+    accessorKey: "appliedDate",
+    header: ({ column }) => (
+      <div className="flex w-full">
+        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
+          Applied Date <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
+    cell: ({ row }) => {
+      const raw = row.getValue("appliedDate") as string | Date;
+      const date = new Date(raw);
+
+      return <div>{formatDateTime(date).dateTime}</div>;
+    },
+  },
+  {
+    id: "status",
+    accessorKey: "status",
+    header: ({ column }) => (
+      <div className="flex w-full">
+        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
+          Status <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
     cell: ({ row }) => {
       return (
-        <Button variant={"outline"}>
-          <Link href={`/admin/dashboard/${encodeURIComponent(row.original.id)}`}>
-            <IconMenu icon={<FolderSearch2Icon />} text="View" />
-          </Link>
-        </Button>
+        <div>
+          <CategoryBadge category={row.getValue("status")} />
+        </div>
       );
     },
   },
+  // {
+  //   id: "actions",
+  //   enableHiding: false,
+  //   cell: ({ row }) => {
+  //     return (
+  //       <Button variant={"outline"}>
+  //         <Link href={`/admin/dashboard/${encodeURIComponent(row.original.id)}`}>
+  //           <IconMenu icon={<FolderSearch2Icon />} text="View" />
+  //         </Link>
+  //       </Button>
+  //     );
+  //   },
+  // },
 ];
 
-const Users = () => {
+type Props = {
+  appliedFunding: ApplyFundingWithUser[] | undefined;
+  rowActions: (data: ApplyFundingWithUser) => React.ReactNode;
+};
+
+const AdminFundingList = ({ appliedFunding, rowActions }: Props) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
 
-  const { users, isLoading } = useUsersQuery("Client");
+  const actionColumn: ColumnDef<ApplyFundingWithUser> = {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ row }) => rowActions(row.original),
+  };
 
   const table = useReactTable({
-    data: users || [],
-    columns,
+    data: appliedFunding || [],
+    columns: [...columns, actionColumn],
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
@@ -143,15 +181,15 @@ const Users = () => {
     },
   });
 
-  if (isLoading || !users) {
-    return <Spinner />;
-  }
-
+  React.useEffect(() => {
+    const hasUser = appliedFunding?.some((row) => row.user);
+    table.getColumn("name")?.toggleVisibility(!!hasUser);
+  }, [appliedFunding, table]);
   return (
-    <div className="mx-auto w-full md:w-1/2 px-4">
+    <div className="mx-auto w-full">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter name or emails..."
+          placeholder="Filter"
           // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
           value={globalFilter}
           // onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
@@ -201,4 +239,4 @@ const Users = () => {
     </div>
   );
 };
-export default Users;
+export default AdminFundingList;

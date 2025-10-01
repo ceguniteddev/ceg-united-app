@@ -74,14 +74,14 @@ export const columns: ColumnDef<RequestCall>[] = [
     id: "message",
     accessorKey: "message",
     header: ({ column }) => (
-      <div className="flex w-full justify-end">
+      <div className="flex w-full">
         <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
           Message <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       </div>
     ),
     cell: ({ row }) => {
-      return <div className="text-right">{row.getValue("message")}</div>;
+      return <div>{row.getValue("message")}</div>;
     },
   },
 

@@ -46,21 +46,21 @@ import { Label } from "@/components/ui/label";
 import CategoryBadge from "@/components/CategoryBadge";
 import { toast } from "sonner";
 
-type Props = { referenceNumber: string; setOpen?: React.Dispatch<React.SetStateAction<boolean>> };
+type Props = { userId: string; setOpen?: React.Dispatch<React.SetStateAction<boolean>> };
 
-const ApprovedFunds = ({ referenceNumber, setOpen }: Props) => {
+const ApprovedFunds = ({ userId, setOpen }: Props) => {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Pre Approved Funds</h1>
-      <BankProductsList referenceNumber={referenceNumber} />
+      <BankProductsList userId={userId} />
     </div>
   );
 };
 
 export default ApprovedFunds;
 
-const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
-  const { approvedMappedFunds = [], isLoading } = useApproveMappedFundsQuery(referenceNumber);
+const BankProductsList = ({ userId }: { userId: string }) => {
+  const { approvedMappedFunds = [], isLoading } = useApproveMappedFundsQuery(userId);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -108,11 +108,11 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
       },
       {
         id: "actions",
-        cell: ({ row }) => <ActionCell row={row} referenceNumber={referenceNumber} />,
+        cell: ({ row }) => <ActionCell row={row} userId={userId} />,
         size: 80,
       },
     ],
-    [referenceNumber]
+    [userId]
   );
 
   const table = useReactTable({
@@ -188,7 +188,7 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
   );
 };
 
-const ActionCell = ({ row, referenceNumber }: { row: any; referenceNumber: string }) => {
+const ActionCell = ({ row, userId }: { row: any; userId: string }) => {
   const { applyBankProduct, isApplying } = useBankProductApplicationMutation();
   // State to control the dialog's visibility
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -199,7 +199,7 @@ const ActionCell = ({ row, referenceNumber }: { row: any; referenceNumber: strin
     event.preventDefault();
 
     try {
-      await applyBankProduct({ referenceNumber, bankProductId: row.original.id });
+      await applyBankProduct({ userId, bankProductId: row.original.id });
 
       // 4. On success, close the dialog and reset the submitting state
       setIsDialogOpen(false);

@@ -1,6 +1,7 @@
 import { BankFormData } from "@/schema/bank-products";
 
 declare global {
+  type AdminApprovedStatus = "Approved" | "Pending";
   type DropdownOption = {
     label: string;
     value: string;

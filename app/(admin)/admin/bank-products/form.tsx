@@ -23,10 +23,10 @@ type Props = {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   data?: BankFormData;
   isAdminViewing?: boolean;
-  referenceNumber?: string;
+  userId?: string;
 };
 
-const BankProductsForm = ({ setOpen, data, isAdminViewing, referenceNumber }: Props) => {
+const BankProductsForm = ({ setOpen, data, isAdminViewing, userId }: Props) => {
   const { products, isLoading } = useFundingProducts();
   const [interestedProducts, setInterestedProducts] = useState<DropdownOption[]>([]);
 
@@ -64,10 +64,10 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing, referenceNumber }: Pr
   const onSubmit: SubmitHandler<BankFormData> = useCallback(
     async (values) => {
       if (data) {
-        if (isAdminViewing && referenceNumber) {
+        if (isAdminViewing && userId) {
           await approveMappedFund({
             bankProductId: data.id!,
-            referenceNumber: referenceNumber,
+            userId: userId,
           });
         } else {
           await updateBankProduct({ id: data.id!, values });
@@ -86,7 +86,7 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing, referenceNumber }: Pr
       setOpen,
       data,
       isAdminViewing,
-      referenceNumber,
+      userId,
       approveMappedFund,
     ]
   );

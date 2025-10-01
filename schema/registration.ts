@@ -61,6 +61,8 @@ export const registrationSchema = z.object({
 });
 export type User = z.infer<typeof registrationSchema>;
 
-export type UserWithId = User & { id: string };
+export const UserFundMapStatus = z.enum(["New", "Processing"]);
+export type UserFundMapStatus = z.infer<typeof UserFundMapStatus>;
+export type UserWithId = User & { id: string; status: UserFundMapStatus };
 
 export type UserPlaid = User & { plaidData?: PlaidAccessToken[]; id: string };

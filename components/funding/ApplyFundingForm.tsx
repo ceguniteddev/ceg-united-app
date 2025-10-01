@@ -17,6 +17,7 @@ import { useFundingProducts } from "@/hooks/admin/funding-product";
 import Spinner from "../Spinner";
 import { useBusinessQuery } from "@/hooks/business";
 import { ConfirmButton } from "../Confirmation";
+import { BankFormData } from "@/schema/bank-products";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
@@ -34,11 +35,19 @@ type Props = {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setCongratsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   data?: ApplyFunding;
+  bankFormData: BankFormData;
   isViewing?: boolean;
+  userId: string;
 };
 
-const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) => {
-  const { user } = useAuth();
+const ApplyFundingForm = ({
+  setOpen,
+  setCongratsOpen,
+  data,
+  isViewing,
+  userId,
+  bankFormData,
+}: Props) => {
   const { applyFunding, isRecording } = useApplyFunding();
   const [showLegalResidentOther, setShowLegalResidentOther] = useState(false);
   const [interestedProductSelected, setInterestedProductSelected] = useState<
@@ -48,9 +57,7 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
   const { products, isLoading } = useFundingProducts();
   const [busyStatus, setBusyStatus] = useState<ApplyFunding | null>(null);
 
-  const { businessData, isLoading: isBusinessLoading } = useBusinessQuery(
-    (data?.userId || user?.uid) ?? ""
-  );
+  const { businessData, isLoading: isBusinessLoading } = useBusinessQuery(userId);
 
   const businessOptions = useMemo<DropdownOption[]>(
     () =>
@@ -62,14 +69,15 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
   );
 
   useEffect(() => {
-    if (products) {
+    if (bankFormData && products) {
       const dropdownOptions: DropdownOption[] = [];
+      bankFormData.productName.forEach((product) => {
+        const prod = products.find((p) => p.productName === product);
 
-      products.forEach((product) => {
         dropdownOptions.push({
-          value: product.productName,
-          label: product.productName,
-          category: product.fundingType,
+          value: product,
+          label: product,
+          category: prod?.fundingType,
         });
       });
       setInterestedProducts(dropdownOptions);
@@ -79,14 +87,14 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
         setInterestedProductSelected(selected[0]);
       }
     }
-  }, [products, data]);
+  }, [bankFormData, data, products]);
 
   const form = useForm<ApplyFunding>({
     resolver: zodResolver(applyFundingSchema),
     defaultValues: {
       ...data,
       appliedDate: data?.appliedDate ?? new Date(),
-      userId: user?.uid ?? "",
+      userId: userId,
       status: data?.status ?? "New",
       fundingType: data?.fundingType ?? "All",
     },
@@ -129,11 +137,10 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
 
   const onSubmit = useCallback(async () => {
     const values = form.getValues();
-    // const token = await getCaptchaTokenRegistration("applyFunding");
-    await applyFunding({ values });
+    await applyFunding({ values, bankProductId: bankFormData.id! });
     setOpen(false);
     if (setCongratsOpen) setCongratsOpen(true);
-  }, [setOpen, setCongratsOpen, applyFunding, form]);
+  }, [setOpen, setCongratsOpen, applyFunding, form, bankFormData?.id]);
 
   const handleApproveClickCapture: React.MouseEventHandler<HTMLSpanElement> = async (e) => {
     const ok = await form.trigger(); // runs Zod validation and shows errors if any
@@ -163,17 +170,17 @@ const ApplyFundingForm = ({ setOpen, setCongratsOpen, data, isViewing }: Props) 
     [interestedProducts, form]
   );
 
-  if (isLoading) return <Spinner displayText="Loading data..." />;
+  // if (isLoading) return <Spinner displayText="Loading data..." />;
 
-  if (!products || products.length === 0) {
-    return (
-      <div>
-        <p className="text-center">
-          No funding products available, please contact {process.env.NEXT_PUBLIC_APP_NAME} team.
-        </p>
-      </div>
-    );
-  }
+  // if (!products || products.length === 0) {
+  //   return (
+  //     <div>
+  //       <p className="text-center">
+  //         No funding products available, please contact {process.env.NEXT_PUBLIC_APP_NAME} team.
+  //       </p>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div>

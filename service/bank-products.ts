@@ -5,14 +5,19 @@ import {
   USER_FUNDING_APPLICATION,
   USER_FUNDING_APPLICATION_FUND_MAPPING,
   USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED,
+  USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS,
 } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { logInfo } from "@/lib/logger";
-import { BankFormData } from "@/schema/bank-products";
+import { BankFormData, ClientApplicationStatus } from "@/schema/bank-products";
 import { getApplyFundingByReferenceNumber, updateApplicationStatus } from "./apply-funding";
 import { getCurrentUser, getUserById } from "./user";
-import { Timestamp } from "firebase-admin/firestore";
+import { CollectionReference, DocumentData, Timestamp } from "firebase-admin/firestore";
+import { id } from "date-fns/locale";
+import { normalizeAllDates } from "@/lib/date-parser";
+import { UserFundMapStatus, UserWithId } from "@/schema/registration";
+import { stat } from "fs";
 
 export const recordBankProduct = async (value: BankFormData) => {
   const db = firestoreAdmin();
@@ -79,73 +84,147 @@ export const updateBankProduct = async (id: string, values: BankFormData) => {
 
 export const recordFundMappingAnalysis = async (
   userId: string,
-  referenceNumber: string,
+  // referenceNumber: string,
   ids: { id: string }[]
 ) => {
   if (!userId) throw new AppError("User ID is required.");
-  if (!referenceNumber) throw new AppError("Reference number is required.");
-  if (!ids || ids.length === 0) throw new AppError("Analysis is required.");
+  if (!ids || ids.length === 0) throw new AppError("Bank products is required.");
 
-  logInfo("recordFundMappingAnalysis", { userId, referenceNumber });
-
-  const fundingApplication = await getApplyFundingByReferenceNumber(referenceNumber);
-  if (!fundingApplication) throw new AppError("Funding application reference number not found.");
+  logInfo("recordFundMappingAnalysis", { userId });
 
   const userData = await getUserById(userId);
   if (!userData) throw new AppError("User not found.");
 
   const db = firestoreAdmin();
-  const collectionRef = db
-    .collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`
-    )
-    .doc(referenceNumber);
-  await collectionRef.set({
-    bank_products: ids,
-    userId,
-    createdAt: Timestamp.now(),
-  });
+  const parentRef = db.collection(USER_FUNDING_APPLICATION_FUND_MAPPING).doc(userId);
+  await parentRef.set(
+    {
+      userId,
+      status: "New",
+      createdAt: Timestamp.now(),
+    },
+    { merge: true }
+  );
+
+  const subCol = parentRef.collection(USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS);
+
+  const CHUNK = 500;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const slice = ids.slice(i, i + CHUNK);
+    const batch = db.batch();
+
+    for (const { id } of slice) {
+      const docRef = subCol.doc(id);
+      batch.set(
+        docRef,
+        {
+          createdAt: Timestamp.now(),
+          adminApprovedStatus: "Pending",
+          clientApplicationStatus: "Not Applied",
+        },
+        { merge: true }
+      );
+    }
+
+    await batch.commit();
+  }
 };
 
-export const getFundMappingAnalysis = async (referenceNumber: string) => {
+export const updateClientApplicationStatus = async ({
+  userId,
+  bankProductId,
+  status,
+}: {
+  userId: string;
+  bankProductId: string;
+  status: ClientApplicationStatus;
+}) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`
+    `${USER_FUNDING_APPLICATION_FUND_MAPPING}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS}`
   );
+
+  const docRef = collectionRef.doc(bankProductId);
+  const doc = await docRef.get();
+  if (!doc.exists) throw new AppError("Bank product not found.");
+
+  await docRef.update({ clientApplicationStatus: status });
+};
+
+export const getFundMappingAnalysis = async () => {
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(USER_FUNDING_APPLICATION_FUND_MAPPING);
   const doc = await collectionRef.get();
-  const bankProductIds = doc.docs.map((doc) => ({
-    bank_products: doc.data().bank_products,
+
+  const userIds = doc.docs.map((doc) => ({
+    id: doc.id,
+    ...normalizeAllDates(doc.data()),
   }));
+
+  return userIds;
+};
+
+export const getFundMappingAnalysisDetails = async ({
+  userId,
+  adminApprovedStatus,
+}: {
+  userId: string;
+  adminApprovedStatus?: AdminApprovedStatus;
+}) => {
+  const db = firestoreAdmin();
+  let collectionRef = db
+    .collection(
+      `${USER_FUNDING_APPLICATION_FUND_MAPPING}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS}`
+    )
+    .orderBy("createdAt", "desc");
+  if (adminApprovedStatus) {
+    collectionRef = collectionRef.where("adminApprovedStatus", "==", adminApprovedStatus);
+  }
+
+  const doc = await collectionRef.get();
+
+  const bankProductIds = doc.docs.map((d) => {
+    return {
+      id: d.id,
+      ...normalizeAllDates(d.data()),
+    };
+  });
   if (!bankProductIds) return null;
 
   const result: BankFormData[] = [];
   for (const bankProductId of bankProductIds) {
-    for (const id of bankProductId.bank_products) {
-      const bankProduct = await getBankProduct(id.id);
-      if (bankProduct) {
-        result.push(bankProduct);
-      }
+    const bankProduct = await getBankProduct(bankProductId.id);
+    if (bankProduct) {
+      result.push({
+        ...bankProduct,
+        clientApplicationStatus: bankProductId.clientApplicationStatus,
+        adminApprovedStatus: bankProductId.adminApprovedStatus,
+      });
     }
   }
+
   return result;
 };
 
-export const approveMappedFund = async (
-  referenceNumber: string,
-  bankProductId: string
-): Promise<CommonResponse> => {
+export const approveMappedFund = async ({
+  userId,
+  bankProductId,
+}: {
+  userId: string;
+  bankProductId: string;
+}): Promise<CommonResponse> => {
   try {
-    if (!referenceNumber) {
-      return { success: false, error: "warning", message: "Reference number is required." };
+    if (!userId) {
+      return { success: false, error: "warning", message: "User ID is required." };
     }
-    logInfo("approveMappedFund", { referenceNumber });
+    logInfo("approveMappedFund", { userId, bankProductId });
 
-    const fundingApplication = await getApplyFundingByReferenceNumber(referenceNumber);
-    if (!fundingApplication) {
+    const userData = await getUserById(userId);
+    if (!userData) {
       return {
         success: false,
         error: "warning",
-        message: "Funding application reference number not found.",
+        message: "User not found.",
       };
     }
 
@@ -159,28 +238,22 @@ export const approveMappedFund = async (
       return { success: false, error: "warning", message: "User not found." };
     }
 
-    // check if already approved
-    const approvedFunds = await getApprovedMappedFunds(referenceNumber);
-    if (approvedFunds?.data?.find((f) => f.id === bankProductId)) {
-      return {
-        success: false,
-        error: "warning",
-        message: "This bank product is already approved.",
-      };
+    const db = firestoreAdmin();
+    const subCollectionRef = db.collection(
+      `${USER_FUNDING_APPLICATION_FUND_MAPPING}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS}`
+    );
+
+    let docRef = subCollectionRef.doc(bankProductId);
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      return { success: false, error: "warning", message: "Bank product not found." };
     }
 
-    const db = firestoreAdmin();
-    const collectionRef = db.collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
-    );
-    await collectionRef.add({
-      bankProductId,
-      createdAt: Timestamp.now(),
-      approvedById: currentUser.uid,
-      clientApplicationStatus: "Not Applied",
-    });
+    await docRef.set({ adminApprovedStatus: "Approved" }, { merge: true });
 
-    await updateApplicationStatus(referenceNumber, "Pre-Approved");
+    const collectionRef = db.collection(`${USER_FUNDING_APPLICATION_FUND_MAPPING}`);
+    docRef = collectionRef.doc(userId);
+    await docRef.set({ status: "Pre-Approved" }, { merge: true });
 
     // TODO send email to Client
 
@@ -191,26 +264,28 @@ export const approveMappedFund = async (
   }
 };
 
-export const getApprovedMappedFunds = async (
-  referenceNumber: string
-): Promise<GetBankFormDataResponse> => {
+export const getApprovedMappedFunds = async ({
+  userId,
+}: {
+  userId: string;
+}): Promise<GetBankFormDataResponse> => {
   try {
     // 1. Return an error object for invalid input instead of throwing
-    if (!referenceNumber) {
-      return { success: false, message: "Reference number is required.", error: "warning" };
+    if (!userId) {
+      return { success: false, message: "User ID is required.", error: "warning" };
     }
-    const referenceData = await getApplyFundingByReferenceNumber(referenceNumber);
-    if (!referenceData) {
+    const userData = await getUserById(userId);
+    if (!userData) {
       return {
         success: false,
-        message: "Funding application reference number not found.",
         error: "warning",
+        message: "User not found.",
       };
     }
 
     const db = firestoreAdmin();
     const collectionRef = db.collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+      `${USER_FUNDING_APPLICATION}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
     );
     const snapshot = await collectionRef.get();
 
@@ -257,25 +332,28 @@ export const getApprovedMappedFunds = async (
   }
 };
 
-export const applyBankProduct = async (
-  referenceNumber: string,
-  bankProductId: string
-): Promise<CommonResponse> => {
+export const applyBankProduct = async ({
+  userId,
+  bankProductId,
+}: {
+  userId: string;
+  bankProductId: string;
+}): Promise<CommonResponse> => {
   try {
     // 1. Return structured errors for invalid inputs
-    if (!referenceNumber) {
-      return { success: false, error: "warning", message: "Reference number is required." };
+    if (!userId) {
+      return { success: false, error: "warning", message: "User id is required." };
     }
     if (!bankProductId) {
       return { success: false, error: "warning", message: "Bank product id is required." };
     }
 
-    const referenceData = await getApplyFundingByReferenceNumber(referenceNumber);
-    if (!referenceData) {
+    const userData = await getUserById(userId);
+    if (!userData) {
       return {
         success: false,
         error: "warning",
-        message: "Funding application reference number not found.",
+        message: "User not found.",
       };
     }
 
@@ -287,25 +365,40 @@ export const applyBankProduct = async (
     }
 
     // 2. Correctly handle the response from getApprovedMappedFunds
-    const approvedFundsResponse = await getApprovedMappedFunds(referenceNumber);
+    // const approvedFundsResponse = await getApprovedMappedFunds(referenceNumber);
 
     // Check if the call to get the funds failed
-    if (!approvedFundsResponse.success) {
-      // Propagate the error message from the nested function call
-      return { success: false, error: approvedFundsResponse.error };
-    }
+    // if (!approvedFundsResponse.success) {
+    // Propagate the error message from the nested function call
+    //   return { success: false, error: approvedFundsResponse.error };
+    // }
 
     // 3. Perform business logic validation using the returned data
-    const approvedFunds = approvedFundsResponse.data;
-    const foundBankProduct = approvedFunds?.find((item) => item.id === bankProductId);
+    // const approvedFunds = approvedFundsResponse.data;
+    // const foundBankProduct = approvedFunds?.find((item) => item.id === bankProductId);
 
-    if (!foundBankProduct) {
+    const db = firestoreAdmin();
+    const fundMappingBankProductsRef = db.collection(
+      `${USER_FUNDING_APPLICATION_FUND_MAPPING}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS}`
+    );
+
+    const docRef = fundMappingBankProductsRef.doc(bankProductId);
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      return { success: false, error: "warning", message: "Bank product not found." };
+    }
+
+    const docData = doc.data();
+    const adminApprovedStatus = docData?.adminApprovedStatus as AdminApprovedStatus;
+    const clientApplicationStatus = docData?.clientApplicationStatus;
+
+    if (adminApprovedStatus !== "Approved") {
       return {
         success: false,
         error: "warning",
         message: "This bank product is not approved for this application.",
       };
-    } else if (foundBankProduct.clientApplicationStatus !== "Not Applied") {
+    } else if (clientApplicationStatus !== "Not Applied") {
       return {
         success: false,
         error: "warning",
@@ -314,35 +407,21 @@ export const applyBankProduct = async (
     }
 
     // On success, perform the intended action
-    logInfo("applyBankProduct", { referenceNumber, bankProductId });
+    logInfo("applyBankProduct", { userId, bankProductId });
 
-    const db = firestoreAdmin();
-    const collectionRef = db.collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
-    );
+    await docRef.set({ clientApplicationStatus: "Pending" }, { merge: true });
 
-    const snapshot = await collectionRef.where("bankProductId", "==", bankProductId).limit(1).get();
-
-    if (!snapshot.empty) {
-      const docRef = snapshot.docs[0].ref;
-
-      await docRef.update({
-        clientApplicationStatus: "Pending",
-      });
-
-      await fetch(`${process.env.n8n_HOST}/client-apply-bank-product`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-        },
-        body: JSON.stringify({
-          userId: referenceData.userId,
-          referenceNumber: referenceNumber,
-          bankProductId: bankProductId,
-        }),
-      });
-    }
+    await fetch(`${process.env.n8n_HOST}/client-apply-bank-product`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+      },
+      body: JSON.stringify({
+        userId: userId,
+        bankProductId: bankProductId,
+      }),
+    });
 
     // 4. Return a successful response
     return { success: true };

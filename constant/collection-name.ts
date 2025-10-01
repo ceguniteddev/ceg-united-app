@@ -1,7 +1,8 @@
 export const USER_COLLECTION = "user";
 export const USER_FUNDING_APPLICATION = "user-funding-application";
 export const USER_FUNDING_APPLICATION_ANALYSIS = "analysis";
-export const USER_FUNDING_APPLICATION_FUND_MAPPING = "fund-mapping";
+export const USER_FUNDING_APPLICATION_FUND_MAPPING = "user-fund-mapping";
+export const USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS = "fund_mapping_bank_products";
 export const USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED = "fund-mapping-approved";
 export const LINK_TOKEN_COLLECTION = "plaid-link-token";
 export const USER_TOKEN_COLLECTION = "plaid-user-token";

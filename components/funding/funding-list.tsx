@@ -13,7 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, BanknoteIcon, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -28,141 +28,83 @@ import {
 } from "@/components/ui/table";
 import { DataTablePagination } from "./pagination";
 import { ApplyFundingWithUser } from "@/schema/apply-funding";
-import { formatAmount, formatDateTime } from "@/lib/utils";
+import { cn, formatAmount, formatDateTime } from "@/lib/utils";
 import CategoryBadge from "../CategoryBadge";
+import { BankFormData } from "@/schema/bank-products";
+import SortableHeader from "@/components/SortableHeader";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
+import ApplyFundingForm from "@/components/funding/ApplyFundingForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ApplyFundingSuccessful from "@/app/(client)/my-funding/_funding/ApplyFundingSuccessful";
+import { useAuth } from "@/provider/AuthContext";
 
-export const columns: ColumnDef<ApplyFundingWithUser>[] = [
+const columns: ColumnDef<BankFormData>[] = [
   {
-    accessorKey: "referenceNumber",
-    id: "referenceNumber",
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Reference Number <ArrowUpDown />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      return <div>{row.getValue("referenceNumber")}</div>;
-    },
+    accessorKey: "bankName",
+    id: "bankName",
+    header: ({ column }) => <SortableHeader column={column} title="Bank Name" />,
+    cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
   },
   {
-    accessorKey: "name",
-    id: "name",
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Name
-        <ArrowUpDown />
-      </Button>
-    ),
+    accessorKey: "productName",
+    id: "productName",
+    header: ({ column }) => <SortableHeader column={column} title="Product Name" />,
     cell: ({ row }) => {
-      const user = row.original.user;
-      if (!user) return <div className="text-muted-foreground">Unknown</div>;
+      const productNames = row.getValue("productName") as string[];
 
       return (
-        <div>
-          {user.firstName} {user.lastName}
+        <div className="flex flex-col gap-1">
+          {" "}
+          {/* gap-1 adds a small space between items */}
+          {productNames.map((name, index) => (
+            <span key={index}>{name}</span>
+          ))}
         </div>
       );
     },
   },
   {
-    id: "interestedProduct",
-    accessorKey: "interestedProduct",
-    header: ({ column }) => (
-      <div className="flex w-full">
-        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
-          Product <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-    ),
+    accessorKey: "financingTerm",
+    id: "financingTerm",
+    header: ({ column }) => <SortableHeader column={column} title="Financing Term" />,
+    cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
+  },
+  {
+    accessorKey: "maximumFundingAmount",
+    id: "maximumFundingAmount",
+    header: ({ column }) => <SortableHeader column={column} title="Maximum Funding Amount" />,
+    cell: ({ row }) => <div>{formatAmount(row.getValue("maximumFundingAmount"))}</div>,
+  },
+  {
+    accessorKey: "clientApplicationStatus",
+    id: "clientApplicationStatus",
+    header: ({ column }) => <SortableHeader column={column} title="Client Application Status" />,
     cell: ({ row }) => {
-      return <div>{row.getValue("interestedProduct")}</div>;
+      const status = row.getValue("clientApplicationStatus") as string;
+      return status ? <CategoryBadge category={status} /> : null;
     },
   },
   {
-    id: "amountFunding",
-    accessorKey: "amountFunding",
-    header: ({ column }) => (
-      <div className="flex w-full justify-end">
-        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
-          Amount <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-    ),
-    cell: ({ row }) => {
-      return <div className="text-right">{formatAmount(row.getValue("amountFunding"))}</div>;
-    },
+    id: "actions",
+    cell: ({ row }) => <ActionCell row={row} />,
+    size: 80,
   },
-  {
-    id: "appliedDate",
-    accessorKey: "appliedDate",
-    header: ({ column }) => (
-      <div className="flex w-full">
-        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
-          Applied Date <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-    ),
-    cell: ({ row }) => {
-      const raw = row.getValue("appliedDate") as string | Date;
-      const date = new Date(raw);
-
-      return <div>{formatDateTime(date).dateTime}</div>;
-    },
-  },
-  {
-    id: "status",
-    accessorKey: "status",
-    header: ({ column }) => (
-      <div className="flex w-full">
-        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
-          Status <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-    ),
-    cell: ({ row }) => {
-      return (
-        <div>
-          <CategoryBadge category={row.getValue("status")} />
-        </div>
-      );
-    },
-  },
-  // {
-  //   id: "actions",
-  //   enableHiding: false,
-  //   cell: ({ row }) => {
-  //     return (
-  //       <Button variant={"outline"}>
-  //         <Link href={`/admin/dashboard/${encodeURIComponent(row.original.id)}`}>
-  //           <IconMenu icon={<FolderSearch2Icon />} text="View" />
-  //         </Link>
-  //       </Button>
-  //     );
-  //   },
-  // },
 ];
 
 type Props = {
-  appliedFunding: ApplyFundingWithUser[] | undefined;
-  rowActions: (data: ApplyFundingWithUser) => React.ReactNode;
+  appliedFunding: BankFormData[] | undefined;
 };
 
-const FundingList = ({ appliedFunding, rowActions }: Props) => {
+const FundingList = ({ appliedFunding }: Props) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
 
-  const actionColumn: ColumnDef<ApplyFundingWithUser> = {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => rowActions(row.original),
-  };
-
   const table = useReactTable({
     data: appliedFunding || [],
-    columns: [...columns, actionColumn],
+    columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
@@ -181,10 +123,6 @@ const FundingList = ({ appliedFunding, rowActions }: Props) => {
     },
   });
 
-  React.useEffect(() => {
-    const hasUser = appliedFunding?.some((row) => row.user);
-    table.getColumn("name")?.toggleVisibility(!!hasUser);
-  }, [appliedFunding, table]);
   return (
     <div className="mx-auto w-full">
       <div className="flex items-center py-4">
@@ -240,3 +178,62 @@ const FundingList = ({ appliedFunding, rowActions }: Props) => {
   );
 };
 export default FundingList;
+
+const ActionCell = ({ row }: { row: any }) => {
+  const [open, setOpen] = React.useState(false);
+  const [congratsOpen, setCongratsOpen] = React.useState(false);
+  const { user } = useAuth();
+  return (
+    <>
+      <ResponsiveDialog
+        isOpen={open}
+        setIsOpen={setOpen}
+        title="Apply Funding"
+        description={
+          <>
+            * Please make sure all the details are correct
+            <br />* You will be able to update this form once submitted
+          </>
+        }
+        descriptionClassName="text-red-500 text-lg font-semibold"
+        className="w-3/6"
+      >
+        <ApplyFundingForm
+          setOpen={setOpen}
+          setCongratsOpen={setCongratsOpen}
+          bankFormData={row.original}
+          userId={user?.uid || ""}
+        />
+      </ResponsiveDialog>
+
+      <Dialog open={congratsOpen} onOpenChange={setCongratsOpen}>
+        <DialogContent
+          className={cn("min-h-[30vh] overflow-y-auto w-2/5")}
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{""}</DialogTitle>
+          </DialogHeader>
+          <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
+            <ApplyFundingSuccessful fire={congratsOpen} />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Button
+        type="button"
+        variant="outline"
+        className="bg-green-200 hover:bg-green-400 cursor-pointer"
+        onClick={() => setOpen(true)}
+      >
+        <BanknoteIcon className="h-4 w-4" />
+        {"Apply Funding"}
+      </Button>
+    </>
+  );
+};
