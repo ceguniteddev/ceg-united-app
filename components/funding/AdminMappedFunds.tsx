@@ -182,7 +182,11 @@ const AdminMappedFunds = ({ userId, setOpen }: Props) => {
         </Table>
       </div>
       <div className="justify-end flex mt-4">
-        <Button variant={"ghost"} onClick={() => setOpen(false)} className="cursor-pointer">
+        <Button
+          variant={"ghost"}
+          onClick={() => setOpen(false)}
+          className="cursor-pointer bg-blue-200 hover:bg-blue-300"
+        >
           <XCircle className="h-4 w-4" />
           Close
         </Button>

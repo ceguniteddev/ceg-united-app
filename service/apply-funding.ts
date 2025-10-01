@@ -62,11 +62,22 @@ export const applyFunding = async ({
     }),
   });
 
-  // TODO make the mapped-fund to Applied
   await updateClientApplicationStatus({
     bankProductId: bankProductId,
     userId: value.userId,
     status: "Pending",
+  });
+
+  await fetch(`${process.env.n8n_HOST}/client-apply-bank-product`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      userId: value.userId,
+      bankProductId: bankProductId,
+    }),
   });
 };
 

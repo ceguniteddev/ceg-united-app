@@ -24,7 +24,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowDown, ArrowUp, ArrowUpDown, Banknote, MoreHorizontal, ViewIcon } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Banknote,
+  ChartColumnIncreasing,
+  MoreHorizontal,
+  ViewIcon,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import IconMenu from "@/components/icon-menu";
 
@@ -41,6 +49,8 @@ import { useFundingApplicationsMappedFundsQuery } from "@/hooks/admin/funding-ap
 import CategoryBadge from "@/components/CategoryBadge";
 import SortableHeader from "@/components/SortableHeader";
 import AdminMappedFunds from "@/components/funding/AdminMappedFunds";
+import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
+import { useAuth } from "@/provider/AuthContext";
 
 const ClientsList = () => {
   const { mappedFund: approvedMappedFunds } = useFundingApplicationsMappedFundsQuery();
@@ -218,6 +228,8 @@ export default ClientsList;
 const ActionCell = ({ row, status }: { row: any; status?: UserFundMapStatus | null }) => {
   const [open, setOpen] = React.useState(false);
   const [mappedFundsOpen, setMappedFundsOpen] = React.useState(false);
+  const [statisticsOpen, setStatisticsOpen] = React.useState(false);
+
   //BankProductsList
   return (
     <>
@@ -240,6 +252,17 @@ const ActionCell = ({ row, status }: { row: any; status?: UserFundMapStatus | nu
       >
         <AdminMappedFunds userId={row.original.id} setOpen={setMappedFundsOpen} />
       </ResponsiveDialog>
+
+      <ResponsiveDialog
+        isOpen={statisticsOpen}
+        setIsOpen={setStatisticsOpen}
+        title={`Client Statistics`}
+        description=""
+        className="w-8/12 flex flex-col items-start justify-start min-h-[80vh] "
+      >
+        <AdminViewUserProfile userId={row.original.id} />
+      </ResponsiveDialog>
+
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
@@ -268,6 +291,16 @@ const ActionCell = ({ row, status }: { row: any; status?: UserFundMapStatus | nu
               </Button>
             </DropdownMenuItem>
           )}
+
+          <DropdownMenuItem className="p-0">
+            <Button
+              variant="ghost"
+              onClick={() => setStatisticsOpen(true)}
+              className="cursor-pointer w-full justify-start rounded-md p-2 hover:bg-neutral-100"
+            >
+              <IconMenu text="Statistics" icon={<ChartColumnIncreasing className="h-4 w-4" />} />
+            </Button>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </>
