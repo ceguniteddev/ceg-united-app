@@ -37,6 +37,10 @@ export const passwordSchema = z
   // If you don't want spaces to count as special, use /[^\w\s]/ instead:
   .regex(/[^\w\s]/, { message: "Require special character" });
 
+export const UserActiveStatusEnum = z.enum(["Active", "InActive", "Paused"]);
+
+export type UserActiveStatus = z.infer<typeof UserActiveStatusEnum>;
+
 export const registrationSchema = z.object({
   firstName: z.string().min(1, { error: "Required" }),
   middleName: z.string().optional(),
@@ -58,6 +62,7 @@ export const registrationSchema = z.object({
     .trim()
     .nonempty({ message: "Required" })
     .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" }),
+  activeStatus: UserActiveStatusEnum.optional(),
 });
 export type User = z.infer<typeof registrationSchema>;
 

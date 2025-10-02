@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
+  FilterFn,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -31,6 +32,24 @@ import { ApplyFundingWithUser } from "@/schema/apply-funding";
 import { formatAmount, formatDateTime } from "@/lib/utils";
 import CategoryBadge from "../CategoryBadge";
 
+const normalize = (s: unknown) =>
+  String(s ?? "")
+    .normalize("NFD")
+    // strip accents/diacritics
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+
+export const nameFilterFn: FilterFn<ApplyFundingWithUser> = (row, columnId, filterValue) => {
+  const haystack = normalize(row.getValue<string>(columnId));
+  const q = normalize(filterValue);
+
+  if (!q) return true; // no filter -> include
+
+  // Require all space-separated tokens to be present (AND search)
+  const tokens = q.split(/\s+/).filter(Boolean);
+  return tokens.every((t) => haystack.includes(t));
+};
+
 export const columns: ColumnDef<ApplyFundingWithUser>[] = [
   {
     accessorKey: "referenceNumber",
@@ -45,23 +64,23 @@ export const columns: ColumnDef<ApplyFundingWithUser>[] = [
     },
   },
   {
-    accessorKey: "name",
+    // Build a single string for filtering/sorting
     id: "name",
+    accessorFn: (row) => {
+      const u = row.user;
+      const parts = [u?.firstName, u?.middleName, u?.lastName].filter(Boolean);
+      return parts.join(" ");
+    },
+    filterFn: nameFilterFn,
     header: ({ column }) => (
       <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Name
-        <ArrowUpDown />
+        Name <ArrowUpDown />
       </Button>
     ),
     cell: ({ row }) => {
-      const user = row.original.user;
-      if (!user) return <div className="text-muted-foreground">Unknown</div>;
-
-      return (
-        <div>
-          {user.firstName} {user.lastName}
-        </div>
-      );
+      const u = row.original.user;
+      if (!u) return <div className="text-muted-foreground">Unknown</div>;
+      return <div>{[u.firstName, u.lastName].filter(Boolean).join(" ")}</div>;
     },
   },
   {
@@ -127,19 +146,6 @@ export const columns: ColumnDef<ApplyFundingWithUser>[] = [
       );
     },
   },
-  // {
-  //   id: "actions",
-  //   enableHiding: false,
-  //   cell: ({ row }) => {
-  //     return (
-  //       <Button variant={"outline"}>
-  //         <Link href={`/admin/dashboard/${encodeURIComponent(row.original.id)}`}>
-  //           <IconMenu icon={<FolderSearch2Icon />} text="View" />
-  //         </Link>
-  //       </Button>
-  //     );
-  //   },
-  // },
 ];
 
 type Props = {

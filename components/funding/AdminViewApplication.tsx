@@ -9,6 +9,7 @@ import AdminApproveDeclineApplication from "./AdminApproveDeclineApplication";
 import FundingApplicationView from "./AdminViewApplicationForm";
 import AdminViewUserProfile from "./AdminViewUserProfile";
 import SendEmail from "../SendEmail";
+import FundApplicationNotes from "@/components/notes/FundApplicationNotes";
 // import AdminMappedFunds from "./AdminMappedFunds";
 
 type Props = {
@@ -35,13 +36,17 @@ const AdminViewApplication = ({ formSetOpen, formData }: Props) => {
         <TabsTrigger value="analysis">Analysis</TabsTrigger>
         {/* <TabsTrigger value="fund-mapping">Fund Mapping</TabsTrigger> */}
         <TabsTrigger value="approve-decline">Approve/Decline</TabsTrigger>
+        <TabsTrigger value="notes">Notes</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>
-      {/* <TabsContent value="fund-mapping" className="w-full">
-        <AdminMappedFunds referenceNumber={formData?.referenceNumber ?? ""} />
-      </TabsContent> */}
+      <TabsContent value="notes" className="w-full">
+        <FundApplicationNotes applicationReferenceNumber={formData?.referenceNumber ?? ""} />
+      </TabsContent>
       <TabsContent value="email" className="w-full">
-        <SendEmail formData={formData} />
+        <SendEmail
+          referenceNumber={formData?.referenceNumber ?? ""}
+          userId={formData?.userId ?? ""}
+        />
       </TabsContent>
       <TabsContent value="application" className="w-full">
         <FundingApplicationView setOpen={formSetOpen} data={formData} />

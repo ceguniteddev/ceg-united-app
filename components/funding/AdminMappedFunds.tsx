@@ -38,9 +38,9 @@ import BankProductsForm from "@/app/(admin)/admin/bank-products/form";
 import CategoryBadge from "../CategoryBadge";
 import SortableHeader from "@/components/SortableHeader";
 
-type Props = { userId: string; setOpen: React.Dispatch<React.SetStateAction<boolean>> };
+type Props = { userId: string };
 
-const AdminMappedFunds = ({ userId, setOpen }: Props) => {
+const AdminMappedFunds = ({ userId }: Props) => {
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({ userId });
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -180,16 +180,6 @@ const AdminMappedFunds = ({ userId, setOpen }: Props) => {
             )}
           </TableBody>
         </Table>
-      </div>
-      <div className="justify-end flex mt-4">
-        <Button
-          variant={"ghost"}
-          onClick={() => setOpen(false)}
-          className="cursor-pointer bg-blue-200 hover:bg-blue-300"
-        >
-          <XCircle className="h-4 w-4" />
-          Close
-        </Button>
       </div>
     </div>
   );

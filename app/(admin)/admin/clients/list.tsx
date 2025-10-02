@@ -3,10 +3,11 @@ import { DataTablePagination } from "@/components/funding/pagination";
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { useUsersQuery } from "@/hooks/user";
-import { UserFundMapStatus, UserWithId } from "@/schema/registration";
+import { UserActiveStatusEnum, UserFundMapStatus, UserWithId } from "@/schema/registration";
 import {
   ColumnDef,
   ColumnFiltersState,
+  FilterFn,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -24,15 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Banknote,
-  ChartColumnIncreasing,
-  MoreHorizontal,
-  ViewIcon,
-} from "lucide-react";
+import { ChevronDownIcon, MoreHorizontal, ViewIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import IconMenu from "@/components/icon-menu";
 
@@ -40,21 +33,29 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
-import ClientData from "@/app/(admin)/admin/clients/view";
 import { useFundingApplicationsMappedFundsQuery } from "@/hooks/admin/funding-application/fund-mapping";
 import CategoryBadge from "@/components/CategoryBadge";
 import SortableHeader from "@/components/SortableHeader";
-import AdminMappedFunds from "@/components/funding/AdminMappedFunds";
-import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
-import { useAuth } from "@/provider/AuthContext";
+import TabView from "@/app/(admin)/admin/clients/tab";
+import { SelectItem } from "@/components/ui/select";
+
+const statusFilterFn: FilterFn<UserWithId> = (row, columnId, filterValue) => {
+  const raw = row.getValue<string | undefined>(columnId);
+  const v = (raw ?? "Active").toLowerCase();
+  const sel = String(filterValue ?? "").toLowerCase();
+  // exact match; swap to v.includes(sel) if you want partials
+  return v === sel;
+};
 
 const ClientsList = () => {
   const { mappedFund: approvedMappedFunds } = useFundingApplicationsMappedFundsQuery();
-
+  const [roleFilter, setRoleFilter] = useState("all");
   const approvedByIds = useMemo(
     () => new Map((approvedMappedFunds ?? []).map((f) => [f.id, f.status])),
     [approvedMappedFunds]
@@ -69,6 +70,20 @@ const ClientsList = () => {
   const [globalFilter, setGlobalFilter] = React.useState("");
   const STATUS_ORDER: Record<UserFundMapStatus, number> = { New: 0, Processing: 1 };
   const columns: ColumnDef<UserWithId>[] = [
+    {
+      accessorKey: "activeStatus",
+      id: "activeStatus",
+      header: ({ column }) => <SortableHeader column={column} title="Status" />,
+      cell: ({ row }) => {
+        const status = (row.getValue("activeStatus") as string) ?? "Active";
+        return (
+          <div>
+            <CategoryBadge category={status} />
+          </div>
+        );
+      },
+      filterFn: statusFilterFn,
+    },
     {
       accessorKey: "firstName",
       id: "firstName",
@@ -112,7 +127,7 @@ const ClientsList = () => {
     {
       id: "status",
       accessorFn: (row) => approvedByIds.get(row.id) ?? null,
-      header: ({ column }) => <SortableHeader column={column} title="Mapped Funding Status" />,
+      header: ({ column }) => <SortableHeader column={column} title="Funding Status" />,
       cell: ({ row }) => {
         const id = row.original.id;
         const status = id ? approvedByIds.get(id) : undefined;
@@ -164,13 +179,24 @@ const ClientsList = () => {
     },
   });
 
+  useEffect(() => {
+    const col = table.getColumn("activeStatus");
+    if (!col) return;
+
+    if (roleFilter === "all") {
+      col.setFilterValue(undefined);
+    } else {
+      col.setFilterValue(roleFilter);
+    }
+  }, [roleFilter, table]);
+
   if (isLoading) {
     return <Spinner displayText="Loading clients..." />;
   }
 
   return (
     <div className="mx-auto w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-4 gap-2">
         <Input
           placeholder="Filter"
           // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
@@ -179,8 +205,26 @@ const ClientsList = () => {
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="max-w-sm"
         />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <span className="mr-2">{roleFilter === "all" ? "All Status" : roleFilter}</span>
+              <ChevronDownIcon className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuRadioGroup value={roleFilter} onValueChange={setRoleFilter}>
+              <DropdownMenuRadioItem value="all">All Status</DropdownMenuRadioItem>
+              {UserActiveStatusEnum.options.map((status) => (
+                <DropdownMenuRadioItem key={status} value={status}>
+                  {status}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-      <div className="overflow-hidden rounded-md border">
+      <div className="overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -227,40 +271,18 @@ export default ClientsList;
 
 const ActionCell = ({ row, status }: { row: any; status?: UserFundMapStatus | null }) => {
   const [open, setOpen] = React.useState(false);
-  const [mappedFundsOpen, setMappedFundsOpen] = React.useState(false);
-  const [statisticsOpen, setStatisticsOpen] = React.useState(false);
 
-  //BankProductsList
   return (
     <>
       <ResponsiveDialog
         isOpen={open}
         setIsOpen={setOpen}
-        title={``}
+        title={`Client Details`}
         description=""
         descriptionClassName="text-red-500 text-lg font-semibold"
-      >
-        <ClientData user={row.original} setOpen={setOpen} />
-      </ResponsiveDialog>
-
-      <ResponsiveDialog
-        isOpen={mappedFundsOpen}
-        setIsOpen={setMappedFundsOpen}
-        title={`Client's Mapped Funds`}
-        description=""
         className="w-8/12 flex flex-col items-start justify-start min-h-[80vh] "
       >
-        <AdminMappedFunds userId={row.original.id} setOpen={setMappedFundsOpen} />
-      </ResponsiveDialog>
-
-      <ResponsiveDialog
-        isOpen={statisticsOpen}
-        setIsOpen={setStatisticsOpen}
-        title={`Client Statistics`}
-        description=""
-        className="w-8/12 flex flex-col items-start justify-start min-h-[80vh] "
-      >
-        <AdminViewUserProfile userId={row.original.id} />
+        <TabView formSetOpen={setOpen} data={row.original} status={status} />
       </ResponsiveDialog>
 
       <DropdownMenu modal={true}>
@@ -278,27 +300,6 @@ const ActionCell = ({ row, status }: { row: any; status?: UserFundMapStatus | nu
               className="cursor-pointer w-full justify-start rounded-md p-2 hover:bg-neutral-100"
             >
               <IconMenu text="Details" icon={<ViewIcon className="h-4 w-4" />} />
-            </Button>
-          </DropdownMenuItem>
-          {status && (
-            <DropdownMenuItem className="p-0">
-              <Button
-                variant="ghost"
-                onClick={() => setMappedFundsOpen(true)}
-                className="cursor-pointer w-full justify-start rounded-md p-2 hover:bg-neutral-100"
-              >
-                <IconMenu text="Mapped Funds" icon={<Banknote className="h-4 w-4" />} />
-              </Button>
-            </DropdownMenuItem>
-          )}
-
-          <DropdownMenuItem className="p-0">
-            <Button
-              variant="ghost"
-              onClick={() => setStatisticsOpen(true)}
-              className="cursor-pointer w-full justify-start rounded-md p-2 hover:bg-neutral-100"
-            >
-              <IconMenu text="Statistics" icon={<ChartColumnIncreasing className="h-4 w-4" />} />
             </Button>
           </DropdownMenuItem>
         </DropdownMenuContent>

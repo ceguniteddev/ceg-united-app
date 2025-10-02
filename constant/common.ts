@@ -133,12 +133,12 @@ export const adminSidebarLinks = [
   {
     imgURL: "/icons/credit-card.svg",
     route: "/admin/funding-products",
-    label: "Product Management",
+    label: "Products",
   },
   {
     imgURL: "/icons/landmark.svg",
     route: "/admin/bank-products",
-    label: "Bank Product Management",
+    label: "Bank Products",
   },
   {
     imgURL: "/icons/money-send.svg",
@@ -153,7 +153,7 @@ export const adminSidebarLinks = [
   {
     imgURL: "/icons/bell.svg",
     route: "/admin/whats-new",
-    label: "What's New Management",
+    label: "What's New",
   },
 ];
 
@@ -185,7 +185,19 @@ export const transactionCategoryStyles = {
     textColor: "text-red-700",
     chipBackgroundColor: "bg-inherit",
   },
+  InActive: {
+    borderColor: "border-red-700",
+    backgroundColor: "bg-red-700",
+    textColor: "text-red-700",
+    chipBackgroundColor: "bg-inherit",
+  },
   Processing: {
+    borderColor: "border-amber-500",
+    backgroundColor: "bg-amber-500",
+    textColor: "text-amber-700",
+    chipBackgroundColor: "bg-amber-100",
+  },
+  Paused: {
     borderColor: "border-amber-500",
     backgroundColor: "bg-amber-500",
     textColor: "text-amber-700",
@@ -204,6 +216,12 @@ export const transactionCategoryStyles = {
     chipBackgroundColor: "bg-emerald-50",
   },
   Approved: {
+    borderColor: "border-emerald-300",
+    backgroundColor: "bg-emerald-600",
+    textColor: "text-emerald-700",
+    chipBackgroundColor: "bg-emerald-50",
+  },
+  Active: {
     borderColor: "border-emerald-300",
     backgroundColor: "bg-emerald-600",
     textColor: "text-emerald-700",

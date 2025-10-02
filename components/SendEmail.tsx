@@ -30,11 +30,16 @@ import { Label } from "./ui/label";
 import { sendMail } from "@/lib/nodemailer";
 import { toast } from "sonner";
 
-const SendEmail = ({ formData }: { formData: ApplyFunding }) => {
-  const { users } = useUserQuery(formData.userId);
+type Props = {
+  referenceNumber?: string;
+  userId: string;
+};
+
+const SendEmail = ({ referenceNumber, userId }: Props) => {
+  const { users } = useUserQuery(userId);
   const [content, setContent] = React.useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [subject, setSubject] = useState(formData.referenceNumber ?? "");
+  const [subject, setSubject] = useState(referenceNumber ?? "");
   const [cc, setCc] = useState("");
   const [isSending, setIsSending] = useState(false);
 
@@ -65,7 +70,7 @@ const SendEmail = ({ formData }: { formData: ApplyFunding }) => {
             <Label htmlFor="subject">Subject</Label>
             <Input
               placeholder="subject"
-              defaultValue={formData.referenceNumber ?? ""}
+              defaultValue={referenceNumber ?? ""}
               className="col-span-6"
               onChange={(e) => setSubject(e.target.value)}
             />

@@ -1,10 +1,18 @@
 import IconMenu from "@/components/icon-menu";
 import { Button } from "@/components/ui/button";
-import { UserWithId } from "@/schema/registration";
+import { UserActiveStatus, UserActiveStatusEnum, UserWithId } from "@/schema/registration";
 import { format } from "date-fns";
 import { CircleX } from "lucide-react";
 import type { Metadata } from "next";
-import React from "react";
+import React, { useCallback } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useUpdateUserStatusMutation } from "@/hooks/user";
 
 function toDate(d?: string | Date) {
   if (!d) return undefined;
@@ -20,17 +28,45 @@ export const metadata: Metadata = {
   title: "User Profile",
 };
 
-const ClientData = ({ user, setOpen }: { user: UserWithId; setOpen: (open: boolean) => void }) => {
-  const birth = toDate(user.birthdate);
+const ClientData = ({ user }: { user: UserWithId }) => {
+  const { updateUserStatus, isUpdating } = useUpdateUserStatusMutation();
   const registered = toDate(user.registrationDate);
 
   const name = [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ");
 
+  const handleStatusChange = useCallback(
+    async (value: string) => {
+      if (value) {
+        await updateUserStatus({ id: user.id, status: value as UserActiveStatus });
+      }
+    },
+    [updateUserStatus, user.id]
+  );
+
   return (
     <main className="mx-auto w-full">
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <header className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight">User Details</h1>
+        <header className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-semibold tracking-tight">Personal Information</h1>
+          <div className="flex items-center gap-2">
+            Status{" "}
+            <Select
+              disabled={isUpdating}
+              defaultValue={user.activeStatus || "Active"}
+              onValueChange={handleStatusChange}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {UserActiveStatusEnum.options.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -50,15 +86,6 @@ const ClientData = ({ user, setOpen }: { user: UserWithId; setOpen: (open: boole
           <Info label="Postal Code" value={user.addressPostal} />
         </div>
       </section>
-      <div className="flex justify-end">
-        <Button
-          variant={"ghost"}
-          onClick={() => setOpen(false)}
-          className="mt-4 cursor-pointer bg-blue-200 hover:bg-blue-300"
-        >
-          <IconMenu icon={<CircleX className="h-4 w-4" />} text="Close" />
-        </Button>
-      </div>
     </main>
   );
 };

@@ -255,3 +255,37 @@ export const updateApplicationStatus = async (
   const appRef = db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber);
   await appRef.update({ status, approveOrDecline: approveOrDeclineValue });
 };
+
+export const addFundApplicationNotes = async ({
+  referenceNumber,
+  notes,
+}: {
+  referenceNumber: string;
+  notes: string[];
+}) => {
+  console.log("addFundApplicationNotes", { referenceNumber, notes });
+  if (!referenceNumber) throw new AppError("Reference number is required.");
+  if (!notes) throw new AppError("Notes is required.");
+
+  const fundApplicationData = await getApplyFundingByReferenceNumber(referenceNumber);
+  if (!fundApplicationData) throw new AppError("Funding application not found.");
+
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(`${USER_FUNDING_APPLICATION}/${referenceNumber}/notes`);
+  const docRef = collectionRef.doc(referenceNumber);
+  await docRef.set({ notes });
+};
+
+export const getFundApplicationNotes = async (referenceNumber: string): Promise<string[]> => {
+  if (!referenceNumber) throw new AppError("Reference number is required.");
+
+  const fundApplicationData = await getApplyFundingByReferenceNumber(referenceNumber);
+  if (!fundApplicationData) throw new AppError("Funding application not found.");
+
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(`${USER_FUNDING_APPLICATION}/${referenceNumber}/notes`);
+  const docRef = collectionRef.doc(referenceNumber);
+  const doc = await docRef.get();
+  if (!doc.exists) return [];
+  return doc.data()?.notes ?? [];
+};

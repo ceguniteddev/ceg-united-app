@@ -4,10 +4,17 @@ import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import AppError from "@/error/AppError";
 import { normalizeAllDates, normalizeDate } from "@/lib/date-parser";
 import { authenticationAdmin, firestoreAdmin, storageAdmin } from "@/lib/fireabase-admin";
+import { logInfo } from "@/lib/logger";
 import { sendMail } from "@/lib/nodemailer";
 import { ChangePassword, CurrentUser, Role } from "@/schema";
 
-import { User, UserPlaid, UserWithId } from "@/schema/registration";
+import {
+  User,
+  UserActiveStatus,
+  UserActiveStatusEnum,
+  UserPlaid,
+  UserWithId,
+} from "@/schema/registration";
 import { cookies, headers } from "next/headers";
 
 export const getUserRecordByEmail = async (email: string) => {
@@ -137,6 +144,52 @@ export const getUsers = async (role?: Role): Promise<UserWithId[]> => {
     users.push({ id: doc.id, ...normalizeAllDates(data) } as UserWithId);
   });
   return users;
+};
+
+export const updateUserStatus = async ({
+  id,
+  status,
+}: {
+  id: string;
+  status: UserActiveStatus;
+}) => {
+  logInfo("Updating user status", { id, status });
+  if (!id) throw new AppError("User ID is required.");
+
+  if (!status) throw new AppError("Status is required.");
+
+  const userData = await getUserById(id);
+  if (!userData) throw new AppError("User not found.");
+
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(USER_COLLECTION);
+  const docRef = collectionRef.doc(id);
+  await docRef.update({ activeStatus: status });
+};
+
+export const addUserNotes = async ({ userId, notes }: { userId: string; notes: string[] }) => {
+  if (!userId) throw new AppError("User ID is required.");
+  if (!notes) throw new AppError("Notes is required.");
+
+  const userData = await getUserById(userId);
+  if (!userData) throw new AppError("User not found.");
+
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(`${USER_COLLECTION}/${userId}/notes`);
+  const docRef = collectionRef.doc(userId);
+  await docRef.set({ notes });
+};
+
+export const getUserNotes = async (userId: string): Promise<string[]> => {
+  if (!userId) throw new AppError("User ID is required.");
+  const userData = await getUserById(userId);
+  if (!userData) throw new AppError("User not found.");
+
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(`${USER_COLLECTION}/${userId}/notes`);
+  const docRef = collectionRef.doc(userId);
+  const querySnapshot = await docRef.get();
+  return querySnapshot.exists ? (querySnapshot.data()?.notes as string[]) || [] : [];
 };
 
 export const updateUserOnboardingStatus = async (id: string, status: boolean) => {
