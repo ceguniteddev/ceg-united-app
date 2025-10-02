@@ -147,9 +147,9 @@ const MyBanks = () => {
               subtext="Effortlessly manage your banking activites."
             />
             <div className="flex flex-row gap-2">
-              <PlaidLink />
               <PlaidIncomeLinkBank />
               <PlaidIncomeLinkPayroll />
+              <PlaidLink />
             </div>
           </div>
 

@@ -50,7 +50,7 @@ const PlaidIncomeLinkPayroll = () => {
     onSuccess,
     onExit: (error, metadata) => {
       console.log("onExit", error, metadata);
-      toast.error("Failed to verify payroll income.");
+      toast.warning("Failed to verify payroll income.");
     },
   };
 

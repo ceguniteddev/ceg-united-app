@@ -52,7 +52,7 @@ const PlaidIncomeLinkBank = () => {
     onSuccess,
     onExit: (error, metadata) => {
       console.log("onExit", error, metadata);
-      toast.error("Failed to verify bank income.");
+      toast.warning("Failed to verify bank income.");
     },
   };
 

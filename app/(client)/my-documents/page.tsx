@@ -21,6 +21,7 @@ import {
 import { useUserDocumentMutation, useUserDocumentsQuery } from "@/hooks/document";
 import { doc } from "firebase/firestore";
 import { useAuth } from "@/provider/AuthContext";
+import { EmptyState } from "@/components/EmptyState";
 
 export default function DocumentsPage() {
   const { user } = useAuth();
@@ -54,7 +55,14 @@ export default function DocumentsPage() {
   if (isLoading || (!userDocuments && !isLoading))
     return <Spinner displayText="Loading documents..." />;
 
-  if (!userDocuments?.length) return <div className="p-6">No documents found.</div>;
+  // if (!userDocuments?.length)
+  //   return (
+  //     <EmptyState
+  //       title="No documents yet"
+  //       description="Upload your first file or drag & drop to this page."
+  //       actionLabel="Upload Document"
+  //     />
+  //   );
 
   return (
     <section className="home">
@@ -65,7 +73,7 @@ export default function DocumentsPage() {
 
         <main className="p-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <UploadFile />
-          {userDocuments.map((doc) => (
+          {userDocuments?.map((doc) => (
             <article key={doc.path} className="rounded-2xl border shadow p-4">
               <div className="flex justify-between">
                 <header className="mb-2 cursor-pointer" onClick={() => openInNewTab(doc.signedUrl)}>

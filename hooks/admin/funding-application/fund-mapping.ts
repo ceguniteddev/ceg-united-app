@@ -1,6 +1,6 @@
 import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
-import { BankFormData } from "@/schema/bank-products";
+import { BankFormData, ClientApplicationStatus } from "@/schema/bank-products";
 import {
   applyBankProduct,
   approveMappedFund,
@@ -38,9 +38,11 @@ export const useFundingApplicationsMappedFundsQuery = () => {
 export const useClientMappedFundingDetailsQuery = ({
   userId,
   adminApprovedStatus,
+  clientApplicationStatus,
 }: {
   userId: string;
   adminApprovedStatus?: AdminApprovedStatus;
+  clientApplicationStatus?: ClientApplicationStatus[];
 }) => {
   const { user } = useAuth();
 
@@ -49,11 +51,20 @@ export const useClientMappedFundingDetailsQuery = ({
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["useClientMappedFundingDetailsQuery", userId, adminApprovedStatus],
+    queryKey: [
+      "useClientMappedFundingDetailsQuery",
+      userId,
+      adminApprovedStatus,
+      clientApplicationStatus,
+    ],
     enabled: !!user && !!userId,
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
-      const data = await getFundMappingAnalysisDetails({ userId, adminApprovedStatus });
+      const data = await getFundMappingAnalysisDetails({
+        userId,
+        adminApprovedStatus,
+        clientApplicationStatus,
+      });
       return data;
     },
     staleTime: 0,

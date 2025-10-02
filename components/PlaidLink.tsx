@@ -62,7 +62,7 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
     onSuccess,
     onExit: (error, metadata) => {
       console.log("onExit", error, metadata);
-      toast.error("Failed to connect Bank.");
+      toast.warning("Failed to connect Bank.");
     },
   };
 

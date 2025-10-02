@@ -38,7 +38,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import ApplyFundingSuccessful from "@/app/(client)/my-funding/_funding/ApplyFundingSuccessful";
 import { useAuth } from "@/provider/AuthContext";
 
-const columns: ColumnDef<BankFormData>[] = [
+const baseColumns: ColumnDef<BankFormData>[] = [
   {
     accessorKey: "bankName",
     id: "bankName",
@@ -93,14 +93,20 @@ const columns: ColumnDef<BankFormData>[] = [
 
 type Props = {
   appliedFunding: BankFormData[] | undefined;
+  isAdminView?: boolean;
 };
 
-const FundingList = ({ appliedFunding }: Props) => {
+const FundingList = ({ appliedFunding, isAdminView }: Props) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
+
+  const columns = React.useMemo(
+    () => baseColumns.filter((c) => (isAdminView ? c.id !== "actions" : true)),
+    [isAdminView]
+  );
 
   const table = useReactTable({
     data: appliedFunding || [],

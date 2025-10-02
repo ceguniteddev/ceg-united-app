@@ -1,6 +1,4 @@
-import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ApplyFunding } from "@/schema/apply-funding";
 
 import ClientData from "@/app/(admin)/admin/clients/view";
 import AdminMappedFunds from "@/components/funding/AdminMappedFunds";
@@ -8,7 +6,7 @@ import { UserFundMapStatus, UserWithId } from "@/schema/registration";
 import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
 import SendEmail from "@/components/SendEmail";
 import ClientNotes from "@/components/notes/ClientNotes";
-// import AdminMappedFunds from "./AdminMappedFunds";
+import ClientAppliedFunding from "@/app/(admin)/admin/clients/client-applied-funding";
 
 type Props = {
   formSetOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -22,10 +20,14 @@ const TabView = ({ formSetOpen, data, status }: Props) => {
       <TabsList>
         <TabsTrigger value="personal-information">Personal Information</TabsTrigger>
         {status && <TabsTrigger value="pre-approved-funds">Pre-approved Funds</TabsTrigger>}
+        <TabsTrigger value="applied-funding">Applied Funding</TabsTrigger>
         <TabsTrigger value="statistics">Statistics</TabsTrigger>
         <TabsTrigger value="note">Note</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>
+      <TabsContent value="applied-funding" className="w-full">
+        <ClientAppliedFunding userId={data.id} />
+      </TabsContent>
       <TabsContent value="email" className="w-full">
         <SendEmail userId={data.id} />
       </TabsContent>

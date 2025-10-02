@@ -11,13 +11,10 @@ import AppError from "@/error/AppError";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { logInfo } from "@/lib/logger";
 import { BankFormData, ClientApplicationStatus } from "@/schema/bank-products";
-import { getApplyFundingByReferenceNumber, updateApplicationStatus } from "./apply-funding";
 import { getCurrentUser, getUserById } from "./user";
-import { CollectionReference, DocumentData, Timestamp } from "firebase-admin/firestore";
-import { id } from "date-fns/locale";
+import { Timestamp } from "firebase-admin/firestore";
+
 import { normalizeAllDates } from "@/lib/date-parser";
-import { UserFundMapStatus, UserWithId } from "@/schema/registration";
-import { stat } from "fs";
 
 export const recordBankProduct = async (value: BankFormData) => {
   const db = firestoreAdmin();
@@ -39,6 +36,8 @@ export const getBankProducts = async (): Promise<GetBankFormDataResponse> => {
     }
 
     const result = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as BankFormData));
+
+    console.log("getBankProducts", result.length);
 
     return { success: true, data: result };
   } catch (error) {
@@ -167,9 +166,11 @@ export const getFundMappingAnalysis = async () => {
 export const getFundMappingAnalysisDetails = async ({
   userId,
   adminApprovedStatus,
+  clientApplicationStatus,
 }: {
   userId: string;
   adminApprovedStatus?: AdminApprovedStatus;
+  clientApplicationStatus?: ClientApplicationStatus[];
 }) => {
   const db = firestoreAdmin();
   let collectionRef = db
@@ -179,6 +180,9 @@ export const getFundMappingAnalysisDetails = async ({
     .orderBy("createdAt", "desc");
   if (adminApprovedStatus) {
     collectionRef = collectionRef.where("adminApprovedStatus", "==", adminApprovedStatus);
+  }
+  if (clientApplicationStatus) {
+    collectionRef = collectionRef.where("clientApplicationStatus", "in", clientApplicationStatus);
   }
 
   const doc = await collectionRef.get();

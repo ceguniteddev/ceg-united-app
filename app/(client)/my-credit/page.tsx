@@ -1,4 +1,5 @@
 "use client";
+import NoBankLinked from "@/components/NoBankLinked";
 import Spinner from "@/components/Spinner";
 import { useClientCRSReportQuery } from "@/hooks/crs";
 import { useAuth } from "@/provider/AuthContext";
@@ -283,6 +284,7 @@ const MyCreditPage: React.FC = () => {
             Fix my credit
           </a>
         </Card>
+        <NoBankLinked />
       </div>
     );
   }

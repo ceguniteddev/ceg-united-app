@@ -7,7 +7,6 @@ import { useAuth } from "@/provider/AuthContext";
 import { BankFormData } from "@/schema/bank-products";
 
 const ApplyFundingList = () => {
-  // const { appliedFunding, isLoading } = useGetUserApplyFunding();
   const { user } = useAuth();
 
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
@@ -18,7 +17,12 @@ const ApplyFundingList = () => {
   if (isLoading) return <Spinner />;
 
   if (!mappedFund || mappedFund.length === 0)
-    return <p className="text-center">No funding applications</p>;
+    return (
+      <p className="text-center text-xl font-medium text-gray-600">
+        The {process.env.NEXT_PUBLIC_APP_NAME} team is currently processing your pre-approve funding
+        products.
+      </p>
+    );
 
   return <FundingList appliedFunding={mappedFund as BankFormData[]} />;
 };
