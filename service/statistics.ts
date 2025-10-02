@@ -1,3 +1,4 @@
+'use server";';
 import { getUserById, getUsers } from "./user";
 import { getApplyFunding, getFundingApplications } from "./apply-funding";
 import { getBusiness } from "./business";
@@ -64,8 +65,8 @@ export const getClientStatistics = async (userId: string) => {
   const businessesWithCrsData = await Promise.all(
     businessDetails.map(async (business) => {
       const [businessProfile, businessScore] = await Promise.all([
-        getCRSBusinessProfile(userId, business.id ?? ""),
-        getCRSBusinessScore(userId, business.id ?? ""),
+        getCRSBusinessProfile(business.id ?? ""),
+        getCRSBusinessScore(business.id ?? ""),
       ]);
 
       return {

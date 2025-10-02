@@ -19,9 +19,9 @@ const TabView = ({ formSetOpen, data, status }: Props) => {
     <Tabs defaultValue="application" className="w-full flex flex-col items-start justify-start">
       <TabsList>
         <TabsTrigger value="personal-information">Personal Information</TabsTrigger>
+        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
         {status && <TabsTrigger value="pre-approved-funds">Pre-approved Funds</TabsTrigger>}
         <TabsTrigger value="applied-funding">Applied Funding</TabsTrigger>
-        <TabsTrigger value="statistics">Statistics</TabsTrigger>
         <TabsTrigger value="note">Note</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>
@@ -41,7 +41,7 @@ const TabView = ({ formSetOpen, data, status }: Props) => {
         <AdminMappedFunds userId={data.id} />
       </TabsContent>
 
-      <TabsContent value="statistics" className="w-full">
+      <TabsContent value="dashboard" className="w-full">
         <AdminViewUserProfile userId={data.id} />
       </TabsContent>
     </Tabs>

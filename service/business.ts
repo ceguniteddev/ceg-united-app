@@ -13,7 +13,20 @@ export const recordBusiness = async (values: Business) => {
 
   const db = firestoreAdmin();
   const collectionRef = db.collection(BUSINESS_DETAIL_COLLECTION);
-  await collectionRef.add(result.data);
+  const docRef = await collectionRef.add(result.data);
+
+  await fetch(`${process.env.n8n_HOST}/crs-report`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      businessId: docRef.id,
+      userId: values.userId,
+      type: "business",
+    }),
+  });
 };
 
 export const updateBusiness = async (id: string, values: Business) => {
@@ -27,6 +40,19 @@ export const updateBusiness = async (id: string, values: Business) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(BUSINESS_DETAIL_COLLECTION).doc(id);
   await collectionRef.update(result.data);
+
+  await fetch(`${process.env.n8n_HOST}/crs-report`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      businessId: id,
+      userId: values.userId,
+      type: "business",
+    }),
+  });
 };
 
 export const getBusiness = async (userId: string) => {

@@ -12,6 +12,8 @@ export interface Address {
   borrowerResidencyType?: string;
 }
 
+export type CRSReportType = "experian" | "transunion" | "equifax";
+
 export interface Name {
   firstName: string;
   middleName?: string;

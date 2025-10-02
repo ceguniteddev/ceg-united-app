@@ -2,7 +2,7 @@ import IconMenu from "@/components/icon-menu";
 import { Button } from "@/components/ui/button";
 import { UserActiveStatus, UserActiveStatusEnum, UserWithId } from "@/schema/registration";
 import { format } from "date-fns";
-import { CircleX } from "lucide-react";
+import { CircleX, Loader2Icon, RefreshCcw, Trash2Icon, XIcon } from "lucide-react";
 import type { Metadata } from "next";
 import React, { useCallback } from "react";
 import {
@@ -12,7 +12,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useUpdateUserStatusMutation } from "@/hooks/user";
+import { useRefreshCRSData } from "@/hooks/crs";
+import { toast } from "sonner";
 
 function toDate(d?: string | Date) {
   if (!d) return undefined;
@@ -29,44 +42,18 @@ export const metadata: Metadata = {
 };
 
 const ClientData = ({ user }: { user: UserWithId }) => {
-  const { updateUserStatus, isUpdating } = useUpdateUserStatusMutation();
   const registered = toDate(user.registrationDate);
-
   const name = [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ");
-
-  const handleStatusChange = useCallback(
-    async (value: string) => {
-      if (value) {
-        await updateUserStatus({ id: user.id, status: value as UserActiveStatus });
-      }
-    },
-    [updateUserStatus, user.id]
-  );
 
   return (
     <main className="mx-auto w-full">
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <header className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-semibold tracking-tight">Personal Information</h1>
-          <div className="flex items-center gap-2">
-            Status{" "}
-            <Select
-              disabled={isUpdating}
-              defaultValue={user.activeStatus || "Active"}
-              onValueChange={handleStatusChange}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                {UserActiveStatusEnum.options.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        </header>
+        <header className="mb-6 flex items-center justify-between">
+          <RefreshCRSData userId={user.id} />
+          <StatusPicker user={user} />
         </header>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -100,3 +87,163 @@ function Info({ label, value }: { label: string; value?: string }) {
     </div>
   );
 }
+
+type StatusKey = "Active" | "Paused" | "InActive";
+
+const STATUS_STYLES: Record<
+  StatusKey,
+  {
+    border: string;
+    bg: string;
+    text: string;
+    chipBg: string;
+  }
+> = {
+  InActive: {
+    border: "border-red-700",
+    bg: "bg-red-700",
+    text: "text-red-700",
+    chipBg: "bg-inherit",
+  },
+  Paused: {
+    border: "border-amber-500",
+    bg: "bg-amber-500",
+    text: "text-amber-700",
+    chipBg: "bg-amber-100",
+  },
+  Active: {
+    border: "border-emerald-300",
+    bg: "bg-emerald-600",
+    text: "text-emerald-700",
+    chipBg: "bg-emerald-50",
+  },
+};
+
+const StatusPicker = ({ user }: { user: UserWithId }) => {
+  const styles = STATUS_STYLES[user.activeStatus || "Active"] ?? STATUS_STYLES.Active;
+
+  const { updateUserStatus, isUpdating } = useUpdateUserStatusMutation();
+
+  const handleStatusChange = useCallback(
+    async (value: string) => {
+      if (value) {
+        await updateUserStatus({ id: user.id, status: value as UserActiveStatus });
+      }
+    },
+    [updateUserStatus, user.id]
+  );
+
+  return (
+    <div
+      className={[
+        "flex items-center gap-3 rounded-md p-3 border",
+        styles.border, // border color
+        styles.chipBg, // container background
+      ].join(" ")}
+    >
+      <span className={["text-sm font-medium", styles.text].join(" ")}>Status</span>
+
+      <Select
+        disabled={!!isUpdating}
+        defaultValue={user.activeStatus ?? "Active"}
+        onValueChange={handleStatusChange}
+      >
+        <SelectTrigger
+          className={[
+            "w-[180px] h-9",
+            "border-2", // make color more visible
+            styles.border, // trigger border color
+            "bg-white", // readable input background
+            "focus:ring-0 focus:outline-none",
+          ].join(" ")}
+        >
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent>
+          {UserActiveStatusEnum.options.map((opt: StatusKey) => (
+            <SelectItem key={opt} value={opt}>
+              <div className="flex items-center gap-2">
+                {/* a little color chip */}
+                <span
+                  className={[
+                    "inline-block h-2.5 w-2.5 rounded-full",
+                    STATUS_STYLES[opt].bg, // solid dot using your bg color
+                  ].join(" ")}
+                />
+                {opt}
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};
+
+const RefreshCRSData = ({ userId }: { userId: string }) => {
+  const [refreshConfirmationOpen, setRefreshConfirmationOpen] = React.useState(false);
+  const { isUpdating, refreshCRSData } = useRefreshCRSData();
+
+  const handleRefreshCRSData = useCallback(async () => {
+    try {
+      await refreshCRSData({ userId });
+    } catch (error) {
+      console.error("Error refreshing CRS data:", error);
+      toast.error("Failed to refresh CRS data. Please try again.");
+    }
+  }, [refreshCRSData, userId]);
+
+  return (
+    <>
+      <Button
+        variant={"ghost"}
+        className="cursor-pointer bg-blue-200 hover:bg-blue-300"
+        onClick={() => setRefreshConfirmationOpen(true)}
+      >
+        <IconMenu icon={<RefreshCcw className="h-4 w-4" />} text="Refresh CRS Data" />
+      </Button>
+
+      {refreshConfirmationOpen && (
+        <AlertDialog
+          open={refreshConfirmationOpen}
+          onOpenChange={(open) => {
+            if (!isUpdating) setRefreshConfirmationOpen(open);
+          }}
+        >
+          <AlertDialogTrigger asChild></AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmation</AlertDialogTitle>
+              <AlertDialogDescription>
+                {`Please confirm that you want to refresh the client's CRS data. This action cannot be
+                undone.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="cursor-pointer" disabled={isUpdating}>
+                <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700 cursor-pointer"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  await handleRefreshCRSData();
+                }}
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <IconMenu
+                    text="Refreshing..."
+                    icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
+                  />
+                ) : (
+                  <IconMenu text="Refresh" icon={<RefreshCcw className="h-4 w-4" />} />
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </>
+  );
+};

@@ -33,22 +33,22 @@ export const applyFunding = async ({
   await docRef.set({ ...value });
   const data = (await docRef.get()).data();
 
-  if (value.businessId) {
-    await fetch(`${process.env.n8n_HOST}/crs-report`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-      },
-      body: JSON.stringify({
-        fundingReferenceNumber: referenceNumber,
-        userId: value.userId,
-        type: "business",
-      }),
-    });
+  // if (value.businessId) {
+  //   await fetch(`${process.env.n8n_HOST}/crs-report`, {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+  //     },
+  //     body: JSON.stringify({
+  //       businessId: value.businessId,
+  //       userId: value.userId,
+  //       type: "business",
+  //     }),
+  //   });
 
-    await sleep(20000);
-  }
+  //   await sleep(5000);
+  // }
 
   await fetch(`${process.env.n8n_HOST}/funding-analysis`, {
     method: "POST",

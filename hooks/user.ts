@@ -103,6 +103,8 @@ export const useUpdateUserOnboardingMutation = () => {
 export const useUpdateUserStatusMutation = () => {
   const { user } = useAuth();
 
+  const queryClient = useQueryClient();
+
   const updateUserStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: UserActiveStatus }) => {
       if (!user) {
@@ -113,6 +115,7 @@ export const useUpdateUserStatusMutation = () => {
     },
     onSuccess: () => {
       toast.success("User status updated");
+      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
     },
 
     onError: (error: any) => {

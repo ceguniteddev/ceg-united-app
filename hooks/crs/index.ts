@@ -1,8 +1,10 @@
 import { GET_USER_CRS_REPORT } from "@/constant/react-query-keys";
+import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
-import { getCRSReport } from "@/service/crs";
+import { getCRSReport, refreshCRSData } from "@/service/crs";
 import { CreditReportWithId } from "@/types/crs";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export const useClientCRSReportQuery = () => {
   const { user } = useAuth();
@@ -20,5 +22,32 @@ export const useClientCRSReportQuery = () => {
   return {
     crsReport,
     isLoading,
+  };
+};
+
+export const useRefreshCRSData = () => {
+  const { user } = useAuth();
+
+  const refreshCRSDataMutation = useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      if (!user) {
+        throw new AppError("User not authenticated");
+      }
+
+      await refreshCRSData(userId);
+    },
+    onSuccess: (data, _variable) => {
+      toast.success("CRS data refreshed successfully.");
+    },
+
+    onError: (error: any) => {
+      console.log("Error refreshing CRS data:", error);
+      toast.error("Failed to refresh CRS data. Please try again.");
+    },
+  });
+
+  return {
+    refreshCRSData: refreshCRSDataMutation.mutateAsync,
+    isUpdating: refreshCRSDataMutation.isPending,
   };
 };
