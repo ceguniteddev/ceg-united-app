@@ -68,7 +68,7 @@ export const useClientMappedFundingDetailsQuery = ({
       return data;
     },
     staleTime: 0,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchInterval: 5 * 60 * 1000,
   });
 

@@ -14,7 +14,14 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, CheckCircle, MoreHorizontal, ViewIcon, XCircle } from "lucide-react";
+import {
+  ArrowUpDown,
+  BanknoteIcon,
+  CheckCircle,
+  MoreHorizontal,
+  ViewIcon,
+  XCircle,
+} from "lucide-react";
 import React, { useMemo, useState } from "react";
 import {
   Table,
@@ -37,6 +44,10 @@ import { ResponsiveDialog } from "@/components/responsive-dialog";
 import BankProductsForm from "@/app/(admin)/admin/bank-products/form";
 import CategoryBadge from "../CategoryBadge";
 import SortableHeader from "@/components/SortableHeader";
+import ApplyFundingForm from "@/components/funding/ApplyFundingForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ApplyFundingSuccessful from "@/app/(client)/my-funding/_funding/ApplyFundingSuccessful";
+import { cn } from "@/lib/utils";
 
 type Props = { userId: string };
 
@@ -102,6 +113,11 @@ const AdminMappedFunds = ({ userId }: Props) => {
           const status = row.getValue("clientApplicationStatus") as string;
           return status ? <CategoryBadge category={status} /> : null;
         },
+      },
+      {
+        id: "applyFunding",
+        header: "Apply Funding",
+        cell: ({ row }) => <ApplyFunding row={row} userId={userId} />,
       },
       {
         id: "actions",
@@ -226,6 +242,64 @@ const ActionCell = ({ row, userId }: { row: any; userId: string }) => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+    </>
+  );
+};
+
+const ApplyFunding = ({ row, userId }: { row: any; userId: string }) => {
+  const [open, setOpen] = React.useState(false);
+  const [congratsOpen, setCongratsOpen] = React.useState(false);
+  return (
+    <>
+      <ResponsiveDialog
+        isOpen={open}
+        setIsOpen={setOpen}
+        title="Apply Funding"
+        description={
+          <>
+            * Please make sure all the details are correct
+            <br />* You will be able to update this form once submitted
+          </>
+        }
+        descriptionClassName="text-red-500 text-lg font-semibold"
+        className="w-3/6"
+      >
+        <ApplyFundingForm
+          setOpen={setOpen}
+          setCongratsOpen={setCongratsOpen}
+          bankFormData={row.original}
+          userId={userId}
+        />
+      </ResponsiveDialog>
+
+      <Dialog open={congratsOpen} onOpenChange={setCongratsOpen}>
+        <DialogContent
+          className={cn("min-h-[30vh] overflow-y-auto w-2/5")}
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{""}</DialogTitle>
+          </DialogHeader>
+          <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
+            <ApplyFundingSuccessful fire={congratsOpen} />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Button
+        type="button"
+        variant="outline"
+        className="bg-green-200 hover:bg-green-400 cursor-pointer"
+        onClick={() => setOpen(true)}
+      >
+        <BanknoteIcon className="h-4 w-4" />
+        {"Apply Funding"}
+      </Button>
     </>
   );
 };

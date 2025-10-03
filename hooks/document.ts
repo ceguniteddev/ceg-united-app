@@ -38,7 +38,7 @@ export const useUserDocumentMutation = () => {
   };
 };
 
-export const useUserDocumentsQuery = () => {
+export const useUserDocumentsQuery = ({ userId }: { userId: string }) => {
   const { user } = useAuth();
 
   const {
@@ -46,14 +46,14 @@ export const useUserDocumentsQuery = () => {
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: [GET_USER_DOCUMENTS, user?.uid],
+    queryKey: [GET_USER_DOCUMENTS, userId],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
 
-      return await getUserDocuments(user.uid);
+      return await getUserDocuments({ userId });
     },
     enabled: !!user,
-    staleTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 30 * 60 * 1000,
   });
 
   return {

@@ -199,7 +199,7 @@ export const updateUserOnboardingStatus = async (id: string, status: boolean) =>
   await docRef.update({ isOnboarded: status });
 };
 
-export const getUserDocuments = async (userId: string): Promise<UserDoc[]> => {
+export const getUserDocuments = async ({ userId }: { userId: string }): Promise<UserDoc[]> => {
   const prefix = `documents/${userId}/`;
   const bucket = storageAdmin();
 
