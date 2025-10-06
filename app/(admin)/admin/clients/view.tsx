@@ -26,6 +26,7 @@ import {
 import { useUpdateUserStatusMutation } from "@/hooks/user";
 import { useRefreshCRSData } from "@/hooks/crs";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/EmptyState";
 
 function toDate(d?: string | Date) {
   if (!d) return undefined;
@@ -42,6 +43,10 @@ export const metadata: Metadata = {
 };
 
 const ClientData = ({ user }: { user: UserWithId }) => {
+  if (!user) {
+    return <EmptyState title="User not found" description="" />;
+  }
+
   const registered = toDate(user.registrationDate);
   const name = [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ");
 
