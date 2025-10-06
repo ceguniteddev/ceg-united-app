@@ -32,7 +32,7 @@ const TabView = ({ formSetOpen, data, status }: Props) => {
         <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>
       <TabsContent value="business" className="w-full">
-        <BusinessRecordsPage />
+        <BusinessRecordsPage userId={data.id} />
       </TabsContent>
       <TabsContent value="credit-report" className="w-full">
         <ClientCreditReport userId={data.id} isAdminView />

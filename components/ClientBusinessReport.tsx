@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Building2, Mail, Phone, Globe, MapPin, Hash, Link as LinkIcon } from "lucide-react";
 import { Business, businessRecordSchema } from "@/schema";
+import { useBusinessQuery } from "@/hooks/business";
+import Spinner from "@/components/Spinner";
 
 // ---- Utilities ----
 const formatCurrency = (n?: number) =>
@@ -49,9 +51,6 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
             <Building2 className="h-5 w-5 text-primary" />
             <CardTitle className="text-xl md:text-2xl">{rec.businessName}</CardTitle>
           </div>
-          <Badge variant="secondary" className="whitespace-nowrap">
-            User #{rec.userId}
-          </Badge>
         </div>
         <CardDescription className="flex items-center gap-1.5">
           <Hash className="h-4 w-4" /> EIN: {rec.employerIdentificationNumber}
@@ -61,7 +60,7 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
       <CardContent className="space-y-4">
         <Address rec={rec} />
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-1">
           <a
             href={`mailto:${rec.businessEmail}`}
             className="flex items-center gap-2 rounded-md border p-2 hover:bg-muted"
@@ -109,7 +108,7 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-1">
           <div className="rounded-md border p-3">
             <div className="text-xs uppercase text-muted-foreground">Last Year Taxes</div>
             <div className="text-lg font-semibold">{formatCurrency(rec.lastYearTaxes)}</div>
@@ -156,46 +155,16 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
 }
 
 // ---- Page ----
-export default function BusinessRecordsPage({ records }: { records?: Business[] }) {
-  // Demo data (remove when wiring to your backend)
-  const demo: Business[] = [
-    {
-      id: "1",
-      userId: "1001",
-      businessName: "Somersby & Finch Pty Ltd",
-      businessStreetAddress: "123 Market Street",
-      businessCityAddress: "Sydney",
-      businessStateAddress: "NSW",
-      businessPostalAddress: "22000",
-      employerIdentificationNumber: "12-3456789",
-      businessPhoneNumber: "0287654321",
-      businessEmail: "info@somersbyfinch.com",
-      businessWebsite: "somersbyfinch.com",
-      socialMedia: "twitter.com/somersbyfinch",
-      lastYearTaxes: 84231.25,
-      currentYearTaxes: 91200,
-    },
-    {
-      id: "2",
-      userId: "1002",
-      businessName: "Blatt Consulting",
-      businessStreetAddress: "55 Collins St",
-      businessCityAddress: "Melbourne",
-      businessStateAddress: "VIC",
-      businessPostalAddress: "32000",
-      employerIdentificationNumber: "98-7654321",
-      businessPhoneNumber: "0399991111",
-      businessEmail: "hello@blatt.com.au",
-      businessWebsite: "https://blatt.com.au",
-      socialMedia: "linkedin.com/company/blatt",
-      lastYearTaxes: 125000,
-      currentYearTaxes: 131500,
-    },
-  ];
+export default function BusinessRecordsPage({ userId }: { userId: string }) {
+  const { businessData, isLoading } = useBusinessQuery(userId);
 
-  const list = (records && records.length > 0 ? records : demo).map((r) =>
-    businessRecordSchema.parse(r)
-  ); // validate each one
+  console.log(businessData);
+
+  const list = businessData?.map((r) => businessRecordSchema.parse(r));
+
+  if (isLoading) {
+    return <Spinner displayText="Loading data…" />;
+  }
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -206,28 +175,13 @@ export default function BusinessRecordsPage({ records }: { records?: Business[] 
           </h1>
           <p className="text-muted-foreground">All your business details at a glance.</p>
         </div>
-        <Badge className="text-sm">
-          {list.length} record{list.length === 1 ? "" : "s"}
-        </Badge>
       </header>
 
       <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {list.map((rec) => (
+        {list?.map((rec) => (
           <BusinessRecordCard key={rec.id ?? rec.businessName} rec={rec} />
         ))}
       </section>
     </main>
   );
 }
-
-/*
-Usage (Next.js App Router):
-- Save this file as app/business-records/page.tsx, or render <BusinessRecordsPage records={yourArray} /> from any page.
-- Replace the `demo` data with your fetched records (e.g., from Firestore).
-- If your schema lives elsewhere, import it and remove the duplicate here.
-
-Accessibility/Responsiveness:
-- Card contents are laid out as a single column on mobile and a responsive grid on larger screens.
-- Interactive elements (email/phone/site) use <a> tags for native behaviors.
-- Tailwind colors/adornments (gradients, subtle borders) give it a pleasant, colorful UI without sacrificing contrast.
-*/

@@ -48,7 +48,7 @@ const TabView = () => {
         <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>
       <TabsContent value="business" className="w-full">
-        <BusinessRecordsPage />
+        <BusinessRecordsPage userId={userId} />
       </TabsContent>
       <TabsContent value="credit-report" className="w-full">
         <ClientCreditReport userId={userId} isAdminView />
