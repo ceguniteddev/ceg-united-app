@@ -44,6 +44,7 @@ import CategoryBadge from "@/components/CategoryBadge";
 import SortableHeader from "@/components/SortableHeader";
 import TabView from "@/app/(admin)/admin/clients/tab";
 import { SelectItem } from "@/components/ui/select";
+import { useRouter } from "next/navigation";
 
 const statusFilterFn: FilterFn<UserWithId> = (row, columnId, filterValue) => {
   const raw = row.getValue<string | undefined>(columnId);
@@ -270,20 +271,24 @@ const ClientsList = () => {
 export default ClientsList;
 
 const ActionCell = ({ row, status }: { row: any; status?: UserFundMapStatus | null }) => {
-  const [open, setOpen] = React.useState(false);
+  // const [open, setOpen] = React.useState(false);
+  const router = useRouter();
+  const handleOpen = () => {
+    router.push(`/admin/clients/${row.original.id}`);
+  };
 
   return (
     <>
-      <ResponsiveDialog
+      {/* <ResponsiveDialog
         isOpen={open}
         setIsOpen={setOpen}
         title={`Client Details`}
         description=""
         descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-8/12 flex flex-col items-start justify-start min-h-[80vh] "
+        className="w-10/12 flex flex-col items-start justify-start min-h-[80vh] "
       >
         <TabView formSetOpen={setOpen} data={row.original} status={status} />
-      </ResponsiveDialog>
+      </ResponsiveDialog> */}
 
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
@@ -296,7 +301,7 @@ const ActionCell = ({ row, status }: { row: any; status?: UserFundMapStatus | nu
           <DropdownMenuItem className="p-0">
             <Button
               variant="ghost"
-              onClick={() => setOpen(true)}
+              onClick={() => handleOpen()}
               className="cursor-pointer w-full justify-start rounded-md p-2 hover:bg-neutral-100"
             >
               <IconMenu text="Details" icon={<ViewIcon className="h-4 w-4" />} />

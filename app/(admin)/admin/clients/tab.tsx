@@ -8,6 +8,8 @@ import SendEmail from "@/components/SendEmail";
 import ClientNotes from "@/components/notes/ClientNotes";
 import ClientAppliedFunding from "@/app/(admin)/admin/clients/client-applied-funding";
 import ClientDocuments from "@/components/ClientDocuments";
+import ClientCreditReport from "@/components/ClientCreditReport";
+import BusinessRecordsPage from "@/components/ClientBusinessReport";
 
 type Props = {
   formSetOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -22,11 +24,19 @@ const TabView = ({ formSetOpen, data, status }: Props) => {
         <TabsTrigger value="personal-information">Personal Information</TabsTrigger>
         <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
         <TabsTrigger value="documents">Documents</TabsTrigger>
+        <TabsTrigger value="credit-report">Credit Report</TabsTrigger>
+        <TabsTrigger value="business">Business</TabsTrigger>
         {status && <TabsTrigger value="pre-approved-funds">Pre-approved Funds</TabsTrigger>}
         <TabsTrigger value="applied-funding">Applied Funding</TabsTrigger>
         <TabsTrigger value="note">Note</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>
+      <TabsContent value="business" className="w-full">
+        <BusinessRecordsPage />
+      </TabsContent>
+      <TabsContent value="credit-report" className="w-full">
+        <ClientCreditReport userId={data.id} isAdminView />
+      </TabsContent>
       <TabsContent value="documents" className="w-full">
         <ClientDocuments userId={data.id} />
       </TabsContent>

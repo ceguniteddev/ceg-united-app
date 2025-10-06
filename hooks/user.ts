@@ -37,7 +37,7 @@ export const useUsersQuery = (role?: Role) => {
 export const useUserQuery = (id: string) => {
   const { user } = useAuth();
 
-  const { data: users, isLoading } = useQuery({
+  const { data: userData, isLoading } = useQuery({
     queryKey: [GET_USER, id],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
@@ -50,7 +50,7 @@ export const useUserQuery = (id: string) => {
   });
 
   return {
-    users,
+    userData,
     isLoading,
   };
 };
@@ -113,9 +113,10 @@ export const useUpdateUserStatusMutation = () => {
 
       await updateUserStatus({ id, status });
     },
-    onSuccess: () => {
+    onSuccess: (data, _var) => {
       toast.success("User status updated");
       queryClient.invalidateQueries({ queryKey: [GET_USERS] });
+      queryClient.invalidateQueries({ queryKey: [GET_USER, _var.id] });
     },
 
     onError: (error: any) => {

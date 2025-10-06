@@ -36,7 +36,7 @@ type Props = {
 };
 
 const SendEmail = ({ referenceNumber, userId }: Props) => {
-  const { users } = useUserQuery(userId);
+  const { userData } = useUserQuery(userId);
   const [content, setContent] = React.useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [subject, setSubject] = useState(referenceNumber ?? "");
@@ -48,11 +48,11 @@ const SendEmail = ({ referenceNumber, userId }: Props) => {
     setIsDeleteDialogOpen(true);
   };
   const sendEmailClick = useCallback(async () => {
-    if (!users?.email || !subject || !content) return;
+    if (!userData?.email || !subject || !content) return;
     setIsSending(true);
 
     try {
-      await sendMail({ emailTo: users.email, subject, bodyHTML: content, cc: cc.split(",") });
+      await sendMail({ emailTo: userData.email, subject, bodyHTML: content, cc: cc.split(",") });
       toast.success("Email sent successfully");
       setIsDeleteDialogOpen(false);
     } catch (error) {
@@ -61,7 +61,7 @@ const SendEmail = ({ referenceNumber, userId }: Props) => {
     } finally {
       setIsSending(false);
     }
-  }, [subject, users, content, cc]);
+  }, [subject, userData, content, cc]);
   return (
     <Card>
       <CardHeader>
@@ -106,7 +106,7 @@ const SendEmail = ({ referenceNumber, userId }: Props) => {
               <AlertDialogTitle>Confirmation?</AlertDialogTitle>
               <AlertDialogDescription>
                 This action will send an email to the recipient
-                <span className="font-bold block mt-2 break-all">{users?.email}</span>
+                <span className="font-bold block mt-2 break-all">{userData?.email}</span>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

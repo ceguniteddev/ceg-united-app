@@ -6,17 +6,17 @@ import { CreditReportWithId } from "@/types/crs";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-export const useClientCRSReportQuery = () => {
+export const useClientCRSReportQuery = ({ userId }: { userId: string }) => {
   const { user } = useAuth();
 
   const { data: crsReport, isLoading } = useQuery({
-    queryKey: [GET_USER_CRS_REPORT, user?.uid],
+    queryKey: [GET_USER_CRS_REPORT, userId],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
 
-      return (await getCRSReport(user.uid)) as CreditReportWithId[];
+      return (await getCRSReport(userId)) as CreditReportWithId[];
     },
-    enabled: !!user,
+    enabled: !!user && !!userId,
   });
 
   return {
