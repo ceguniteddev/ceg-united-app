@@ -149,7 +149,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
 
         // Use the role you just set instead of refetching
         const nextRole = userRole.role ?? ("Admin" as Role);
-        router.push(nextRole === "Client" ? "/overview" : "/admin");
+        router.push(nextRole === "Client" ? "/overview" : "/admin/home");
       } catch (error) {
         if (error instanceof AppError) throw error;
         try {

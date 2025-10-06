@@ -7,7 +7,7 @@ import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 
 const PUBLIC_ROUTES = new Set<string>(["/", "/register"]);
 const CLIENT_HOME = "/overview";
-const ADMIN_HOME = "/admin";
+const ADMIN_HOME = "/admin/home";
 
 function isPublic(pathname: string) {
   // allow exact public pages and their subpaths (if you add any)
@@ -104,9 +104,12 @@ export const config = {
   matcher: [
     "/", // root (we fan out to role home)
     "/register", // public page
-    "/apply-funding/:path*",
+    "/my-funding/:path*",
     "/my-accounts/:path*",
-    "/transaction-history/:path*",
+    "/my-business/:path*",
+    "/my-credit/:path*",
+    "/my-documents/:path*",
+    "/support-service/:path*",
     "/overview/:path*", // client area
     "/admin/:path*", // admin area
     "/api/:path*", // api guarding

@@ -31,7 +31,7 @@ const Sidebar = () => {
           />
         </Link>
         {adminSidebarLinks.map((item) => {
-          const isActive = pathname === item.route || pathname.startsWith(`${item.route}/admin`);
+          const isActive = pathname.startsWith(item.route);
 
           return (
             <Link

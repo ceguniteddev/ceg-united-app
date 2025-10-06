@@ -122,7 +122,7 @@ export const sidebarLinks = [
 export const adminSidebarLinks = [
   {
     imgURL: "/icons/home.svg",
-    route: "/admin",
+    route: "/admin/home",
     label: "Home",
   },
   {

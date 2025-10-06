@@ -7,7 +7,6 @@ import { useGetAdminStatistics } from "@/hooks/statistics";
 import Spinner from "@/components/Spinner";
 import { StatesTable } from "./StatesTable";
 import { useState, useMemo } from "react";
-import { transactionCategoryStyles } from "@/constant/common";
 
 export default function AdminDashboard() {
   const [selectedState, setSelectedState] = useState<string | undefined>(undefined);
