@@ -135,7 +135,7 @@ const MyBusinessPage = () => {
                           placeholder="Select a state"
                           options={US_STATES}
                         />
-                        <CustomFormField name="businessPostalAddress" label="* Postal" />
+                        <CustomFormField name="businessPostalAddress" label="* Zip Code" />
                       </div>
 
                       <div className="grid grid-cols-2 md:grid-cols-2 gap-4">

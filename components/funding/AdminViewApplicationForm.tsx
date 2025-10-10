@@ -115,7 +115,7 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
                 <Field label="Street" value={data.businessStreetAddress} />
                 <Field label="City" value={data.businessCityAddress} />
                 <Field label="State" value={data.businessStateAddress} />
-                <Field label="Postal" value={data.businessPostalAddress} />
+                <Field label="Zip Code" value={data.businessPostalAddress} />
               </div>
             </section>
             <Separator />
@@ -142,7 +142,7 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
             <Field label="Street" value={data.addressStreet} />
             <Field label="City" value={data.addressCity} />
             <Field label="State" value={data.addressState} />
-            <Field label="Postal" value={data.addressPostal} />
+            <Field label="Zip Code" value={data.addressPostal} />
             <Field label="Move-in Date" value={data.moveInCurrentAddress} />
           </div>
         </section>

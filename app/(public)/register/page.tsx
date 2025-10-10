@@ -94,19 +94,19 @@ const RegistrationPage = () => {
                   <div className="grid grid-cols-3 gap-4">
                     <CustomFormField
                       name={"personalIncome"}
-                      label="* Personal Income?"
+                      label="Personal Income?"
                       type="number"
                     />
                     <CustomFormField
                       name={"frequencyOfIncome"}
-                      label="* Frequency of Income?"
+                      label="Frequency of Income?"
                       type="select"
                       placeholder="Select frequency"
                       options={frequencyOfIncome}
                     />
                     <CustomFormField
                       name={"paymentType"}
-                      label="* Payment Type?"
+                      label="Payment Type?"
                       placeholder="Select payment type"
                       type="select"
                       options={[
@@ -118,12 +118,8 @@ const RegistrationPage = () => {
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <CustomFormField
-                      name={"businessGross"}
-                      label="* Business Gross?"
-                      type="number"
-                    />
-                    <CustomFormField name={"businessNet"} label="* Business Net?" type="number" />
+                    <CustomFormField name={"businessGross"} label="Business Gross?" type="number" />
+                    <CustomFormField name={"businessNet"} label="Business Net?" type="number" />
                   </div>
 
                   <CustomFormField name={"addressStreet"} label={"* Street Address"} />
@@ -136,7 +132,7 @@ const RegistrationPage = () => {
                       placeholder="Select a state"
                       options={US_STATES}
                     />
-                    <CustomFormField name={"addressPostal"} label={"* Postal"} />
+                    <CustomFormField name={"addressPostal"} label={"* Zip Code"} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField

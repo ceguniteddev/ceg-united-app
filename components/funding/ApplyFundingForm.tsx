@@ -283,7 +283,7 @@ const ApplyFundingForm = ({
                       placeholder="Select a state"
                       options={US_STATES}
                     />
-                    <CustomFormField name={"addressPostal"} label={"* Postal"} />
+                    <CustomFormField name={"addressPostal"} label={"* Zip Code"} />
                   </div>
                   <CustomFormField
                     name={"moveInCurrentAddress"}

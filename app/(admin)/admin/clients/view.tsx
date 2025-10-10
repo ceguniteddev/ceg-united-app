@@ -75,7 +75,7 @@ const ClientData = ({ user }: { user: UserWithId }) => {
           <Info label="Street" value={user.addressStreet} />
           <Info label="City" value={user.addressCity} />
           <Info label="State" value={user.addressState} />
-          <Info label="Postal Code" value={user.addressPostal} />
+          <Info label="Zip Code" value={user.addressPostal} />
         </div>
       </section>
     </main>
