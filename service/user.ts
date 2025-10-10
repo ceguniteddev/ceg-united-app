@@ -15,6 +15,7 @@ import {
   UserPlaid,
   UserWithId,
 } from "@/schema/registration";
+import { generateCRSReport } from "@/service/crs";
 import { cookies, headers } from "next/headers";
 
 export const getUserRecordByEmail = async (email: string) => {
@@ -95,6 +96,8 @@ export const registerUser = async (value: User) => {
   const requestBody = getVerifyEmailBody(link);
 
   await sendMail({ emailTo: value.email, subject: "Verify Email", bodyHTML: requestBody });
+
+  await generateCRSReport(docRef.id);
 
   return {
     id: docRef.id,

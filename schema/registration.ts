@@ -63,6 +63,12 @@ export const registrationSchema = z.object({
     .nonempty({ message: "Required" })
     .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" }),
   activeStatus: UserActiveStatusEnum.optional(),
+
+  personalIncome: z.number().optional(),
+  frequencyOfIncome: z.string().optional(),
+  paymentType: z.string().optional(),
+  businessGross: z.number().optional(),
+  businessNet: z.number().optional(),
 });
 export type User = z.infer<typeof registrationSchema>;
 

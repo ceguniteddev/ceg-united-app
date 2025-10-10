@@ -453,3 +453,8 @@ export const US_STATES = [
     value: "WY",
   },
 ];
+
+export const frequencyOfIncome = ["Hourly", "Weekly", "BiWeekly", "Monthly", "Yearly"].map((f) => ({
+  value: f,
+  label: f,
+}));

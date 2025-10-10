@@ -76,6 +76,12 @@ export const applyFundingSchema = z.object({
 
   fundingType: FundingApplicationTypeEnum,
   approveOrDecline: fundingApplicationApproveDeclineSchema.optional(),
+
+  personalIncome: z.number().optional(),
+  frequencyOfIncome: z.string().optional(),
+  paymentType: z.string().optional(),
+  businessGross: z.number().optional(),
+  businessNet: z.number().optional(),
 });
 export type ApplyFunding = z.infer<typeof applyFundingSchema>;
 

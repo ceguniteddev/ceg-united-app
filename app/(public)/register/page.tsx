@@ -13,7 +13,7 @@ import { PasswordStrength } from "@/components/PasswordStrength";
 import Link from "next/link";
 import { getCaptchaTokenRegistration } from "@/lib/captcha";
 import Image from "next/image";
-import { US_STATES } from "@/constant/common";
+import { frequencyOfIncome, US_STATES } from "@/constant/common";
 const RegistrationPage = () => {
   const { recordRegistration, isRecording } = useRegistration();
 
@@ -52,7 +52,7 @@ const RegistrationPage = () => {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <fieldset disabled={isRecording}>
             <div className="flex justify-center">
-              <Card className="w-[600px]">
+              <Card className="w-[800px]">
                 <CardHeader>
                   <CardTitle className="text-center flex flex-col">
                     <span className="text-2xl font-bold">{"Register your account"}</span>
@@ -89,6 +89,41 @@ const RegistrationPage = () => {
                       label="* Gender"
                       options={genderTypes()}
                     />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <CustomFormField
+                      name={"personalIncome"}
+                      label="* Personal Income?"
+                      type="number"
+                    />
+                    <CustomFormField
+                      name={"frequencyOfIncome"}
+                      label="* Frequency of Income?"
+                      type="select"
+                      placeholder="Select frequency"
+                      options={frequencyOfIncome}
+                    />
+                    <CustomFormField
+                      name={"paymentType"}
+                      label="* Payment Type?"
+                      placeholder="Select payment type"
+                      type="select"
+                      options={[
+                        { value: "Cash", label: "Cash" },
+                        { value: "Check to Cash", label: "Check to Cash" },
+                        { value: "Check to Deposit", label: "Check to Deposit" },
+                        { value: "Direct Deposit", label: "Direct Deposit" },
+                      ]}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <CustomFormField
+                      name={"businessGross"}
+                      label="* Business Gross?"
+                      type="number"
+                    />
+                    <CustomFormField name={"businessNet"} label="* Business Net?" type="number" />
                   </div>
 
                   <CustomFormField name={"addressStreet"} label={"* Street Address"} />

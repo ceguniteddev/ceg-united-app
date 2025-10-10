@@ -83,6 +83,21 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
 
         <Separator />
 
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold mb-3">Income</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Field label="Personal Income" value={currency(data.personalIncome)} />
+            <Field label="Frequency of Income" value={data.frequencyOfIncome} />
+            <Field label="Payment Type" value={data.paymentType} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Field label="Business Gross" value={currency(data.businessGross)} />
+            <Field label="Business Net" value={currency(data.businessNet)} />
+          </div>
+        </section>
+
+        <Separator />
+
         {/* Business (only if present / business funding) */}
         {(isBusinessFunding || data.businessName) && (
           <>

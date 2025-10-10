@@ -12,7 +12,7 @@ import { getCaptchaTokenRegistration } from "@/lib/captcha";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
 import { useApplyFunding } from "@/hooks/apply-funding";
-import { US_STATES } from "@/constant/common";
+import { frequencyOfIncome, US_STATES } from "@/constant/common";
 import { useFundingProducts } from "@/hooks/admin/funding-product";
 import Spinner from "../Spinner";
 import { useBusinessQuery } from "@/hooks/business";
@@ -170,18 +170,6 @@ const ApplyFundingForm = ({
     [interestedProducts, form]
   );
 
-  // if (isLoading) return <Spinner displayText="Loading data..." />;
-
-  // if (!products || products.length === 0) {
-  //   return (
-  //     <div>
-  //       <p className="text-center">
-  //         No funding products available, please contact {process.env.NEXT_PUBLIC_APP_NAME} team.
-  //       </p>
-  //     </div>
-  //   );
-  // }
-
   return (
     <div>
       <Form {...form}>
@@ -190,7 +178,7 @@ const ApplyFundingForm = ({
             <input type="hidden" {...form.register("fundingType")} />
             <div>
               <Card>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2">
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
                       name={"interestedProduct"}
@@ -205,6 +193,38 @@ const ApplyFundingForm = ({
                       label="* How Much Funding Are You Looking For?"
                       type="number"
                     />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <CustomFormField
+                      name={"personalIncome"}
+                      label="* Personal Income?"
+                      type="number"
+                    />
+                    <CustomFormField
+                      name={"frequencyOfIncome"}
+                      label="* Frequency of Income?"
+                      type="select"
+                      options={frequencyOfIncome}
+                    />
+                    <CustomFormField
+                      name={"paymentType"}
+                      label="* Payment Type?"
+                      type="select"
+                      options={[
+                        { value: "Cash", label: "Cash" },
+                        { value: "Check to Cash", label: "Check to Cash" },
+                        { value: "Check to Deposit", label: "Check to Deposit" },
+                        { value: "Direct Deposit", label: "Direct Deposit" },
+                      ]}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <CustomFormField
+                      name={"businessGross"}
+                      label="* Business Gross?"
+                      type="number"
+                    />
+                    <CustomFormField name={"businessNet"} label="* Business Net?" type="number" />
                   </div>
                   {interestedProductSelected?.category?.includes("Business") &&
                     (businessOptions.length > 0 ? (
