@@ -40,7 +40,9 @@ export const passwordSchema = z
 export const UserActiveStatusEnum = z.enum(["Active", "InActive", "Paused"]);
 
 export type UserActiveStatus = z.infer<typeof UserActiveStatusEnum>;
+const emptyToUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
 
+export type User = z.infer<typeof registrationSchema>;
 export const registrationSchema = z.object({
   firstName: z.string().min(1, { error: "Required" }),
   middleName: z.string().optional(),
@@ -64,13 +66,12 @@ export const registrationSchema = z.object({
     .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" }),
   activeStatus: UserActiveStatusEnum.optional(),
 
-  personalIncome: z.number().optional(),
+  personalIncome: z.coerce.number<number>({ error: "Requires a number value" }).optional(),
   frequencyOfIncome: z.string().optional(),
   paymentType: z.string().optional(),
-  businessGross: z.number().optional(),
-  businessNet: z.number().optional(),
+  businessGross: z.coerce.number<number>({ error: "Requires a number value" }).optional(),
+  businessNet: z.coerce.number<number>({ error: "Requires a number value" }).optional(),
 });
-export type User = z.infer<typeof registrationSchema>;
 
 export const UserFundMapStatus = z.enum(["New", "Processing"]);
 export type UserFundMapStatus = z.infer<typeof UserFundMapStatus>;

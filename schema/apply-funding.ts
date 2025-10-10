@@ -43,7 +43,7 @@ export type FundingApplicationApproveDecline = z.infer<
 export const applyFundingSchema = z.object({
   userId: z.string().min(1, { error: "Required" }),
   interestedProduct: z.string().min(1, { error: "Required" }),
-  amountFunding: z.number().min(1, { error: "Required" }),
+  amountFunding: z.coerce.number<number>().min(1, { error: "Required" }),
   currentSituation: z.string().optional(),
   legalResident: z.string().min(1, { error: "Required" }),
   // legalResidentOther: z.string().optional(),
@@ -54,7 +54,7 @@ export const applyFundingSchema = z.object({
   addressState: z.string().min(1, { error: "Required" }),
   addressPostal: z.string().min(1, { error: "Required" }),
   moveInCurrentAddress: z.string().min(1, { error: "Required" }),
-  payPerMonth: z.number().min(1, { error: "Required" }),
+  payPerMonth: z.coerce.number<number>().min(1, { error: "Required" }),
   rentOrMortgage: z.string().min(1, { error: "Required" }),
   status: FundingApplicationSatusEnum,
   appliedDate: z.date(),
@@ -71,17 +71,17 @@ export const applyFundingSchema = z.object({
   businessEmail: z.email({ message: "Invalid email" }).optional(),
   businessWebsite: z.string({ error: "Required" }).optional(),
   socialMedia: z.string({ error: "Required" }).optional(),
-  lastYearTaxes: z.number().optional(),
-  currentYearTaxes: z.number().optional(),
+  lastYearTaxes: z.coerce.number<number>().optional(),
+  currentYearTaxes: z.coerce.number<number>().optional(),
 
   fundingType: FundingApplicationTypeEnum,
   approveOrDecline: fundingApplicationApproveDeclineSchema.optional(),
 
-  personalIncome: z.number().optional(),
+  personalIncome: z.coerce.number<number>().optional(),
   frequencyOfIncome: z.string().optional(),
   paymentType: z.string().optional(),
-  businessGross: z.number().optional(),
-  businessNet: z.number().optional(),
+  businessGross: z.coerce.number<number>().optional(),
+  businessNet: z.coerce.number<number>().optional(),
 });
 export type ApplyFunding = z.infer<typeof applyFundingSchema>;
 

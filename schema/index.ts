@@ -104,8 +104,8 @@ export const businessRecordSchema = z.object({
   businessEmail: z.email({ message: "Invalid email" }),
   businessWebsite: z.string({ error: "Required" }).optional(),
   socialMedia: z.string({ error: "Required" }).optional(),
-  lastYearTaxes: z.number().optional(),
-  currentYearTaxes: z.number().optional(),
+  lastYearTaxes: z.coerce.number<number>().optional(),
+  currentYearTaxes: z.coerce.number<number>().optional(),
 });
 
 // What the DB stores / APIs expect:

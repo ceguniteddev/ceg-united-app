@@ -26,7 +26,7 @@ const RegistrationPage = () => {
 
   const password = useWatch({ control: form.control, name: "password", defaultValue: "" });
 
-  const onSubmit: SubmitHandler<User> = async (values) => {
+  const onSubmit = async (values: User) => {
     const token = await getCaptchaTokenRegistration("registration");
 
     values = {
