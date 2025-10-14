@@ -24,7 +24,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useApplyFunding } from "@/hooks/apply-funding";
 import {
   businessTaxes,
@@ -35,6 +35,8 @@ import {
 import { useBusinessQuery } from "@/hooks/business";
 import { Separator } from "../ui/separator";
 import { ConfirmButton } from "../Confirmation";
+import { fa } from "zod/v4/locales";
+import { set } from "zod";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
@@ -71,6 +73,7 @@ const ApplyFundingForm = ({
   const [interestedProductSelected, setInterestedProductSelected] = useState<
     FundingProductEnumType | undefined
   >(undefined);
+  const [tradelinesOrShelf, setTradelinesOrShelf] = useState<boolean>(false);
 
   const [howDoYouGetPaidSelected, setHowDoYouGetPaidSelected] = useState<
     DropdownOption | undefined
@@ -115,9 +118,9 @@ const ApplyFundingForm = ({
     },
   });
 
-  // if (Object.keys(form.formState.errors).length > 0) {
-  //   console.log("There are validation errors:", form.formState.errors);
-  // }
+  if (Object.keys(form.formState.errors).length > 0) {
+    console.log("There are validation errors:", form.formState.errors);
+  }
 
   const handleBusinessSelect = useCallback(
     (value: string) => {
@@ -168,6 +171,15 @@ const ApplyFundingForm = ({
     },
     [businessData, form]
   );
+
+  useEffect(() => {
+    if (interestedProductSelected) {
+      setTradelinesOrShelf(
+        interestedProductSelected.value.includes("Shelf") ||
+          interestedProductSelected.value.includes("Tradelines")
+      );
+    }
+  }, [interestedProductSelected]);
 
   const onSubmit = useCallback(async () => {
     const values = form.getValues();
@@ -275,20 +287,22 @@ const ApplyFundingForm = ({
                       }))}
                       onSelectValue={handleInterestedProductChange}
                     />
-                    {interestedProductSelected?.type?.includes("Personal") && (
-                      <CustomFormField
-                        name={"personalAmountFunding"}
-                        label="How Much Personal Funding Are You Looking For?"
-                        type="number"
-                      />
-                    )}
-                    {interestedProductSelected?.type?.includes("Business") && (
-                      <CustomFormField
-                        name={"businessAmountFunding"}
-                        label="How Much Business Funding Are You Looking For?"
-                        type="number"
-                      />
-                    )}
+                    {interestedProductSelected?.type?.includes("Personal") &&
+                      !tradelinesOrShelf && (
+                        <CustomFormField
+                          name={"personalAmountFunding"}
+                          label="How Much Personal Funding Are You Looking For?"
+                          type="number"
+                        />
+                      )}
+                    {interestedProductSelected?.type?.includes("Business") &&
+                      !tradelinesOrShelf && (
+                        <CustomFormField
+                          name={"businessAmountFunding"}
+                          label="How Much Business Funding Are You Looking For?"
+                          type="number"
+                        />
+                      )}
                   </div>
 
                   <Card>
@@ -297,12 +311,15 @@ const ApplyFundingForm = ({
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-3 gap-4 items-start">
-                        <CustomFormField
-                          name={"isMarried"}
-                          label={"Are you married?"}
-                          type="select"
-                          options={isMarried}
-                        />
+                        {!tradelinesOrShelf && (
+                          <CustomFormField
+                            name={"isMarried"}
+                            label={"Are you married?"}
+                            type="select"
+                            options={isMarried}
+                          />
+                        )}
+
                         <CustomFormField
                           name={"legalResident"}
                           onSelectValue={handleLegalResidentChange}
@@ -318,32 +335,35 @@ const ApplyFundingForm = ({
                           />
                         )}
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <CustomFormField
-                          name={"driverLicenseNumber"}
-                          label={"Driver's License Number?"}
-                        />
-                        <CustomFormField
-                          name={"driverLicenseState"}
-                          label={"State?"}
-                          type="select"
-                          placeholder="Select a state"
-                          options={US_STATES}
-                        />
-                        <CustomFormField
-                          name={"driverLicenseIssueDate"}
-                          label={"Issue Date?"}
-                          type="date-picker"
-                          dateAfterHidden={new Date()}
-                        />
-                        <CustomFormField
-                          name={"driverLicenseIssueExpiryDate"}
-                          label={"Expiry Date?"}
-                          type="date-picker"
-                          // dateBeforeHidden={new Date()}
-                        />
-                      </div>
-                      <Separator />
+                      {!tradelinesOrShelf && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <CustomFormField
+                            name={"driverLicenseNumber"}
+                            label={"Driver's License Number?"}
+                          />
+                          <CustomFormField
+                            name={"driverLicenseState"}
+                            label={"State?"}
+                            type="select"
+                            placeholder="Select a state"
+                            options={US_STATES}
+                          />
+                          <CustomFormField
+                            name={"driverLicenseIssueDate"}
+                            label={"Issue Date?"}
+                            type="date-picker"
+                            dateAfterHidden={new Date()}
+                          />
+                          <CustomFormField
+                            name={"driverLicenseIssueExpiryDate"}
+                            label={"Expiry Date?"}
+                            type="date-picker"
+                            // dateBeforeHidden={new Date()}
+                          />
+                          <Separator />
+                        </div>
+                      )}
+
                       <CustomFormField
                         name={"addressStreet"}
                         label={"Street Address"}
@@ -383,14 +403,15 @@ const ApplyFundingForm = ({
                       </div>
                     </CardContent>
                   </Card>
-
-                  <CustomFormField
-                    name={"howDoYouGetPaid"}
-                    label={"Do you have a job?"}
-                    type="select"
-                    options={howDoYouGetPaid}
-                    onSelectValue={handleDoYouHaveAJobChange}
-                  />
+                  {!tradelinesOrShelf && (
+                    <CustomFormField
+                      name={"howDoYouGetPaid"}
+                      label={"Do you have a job?"}
+                      type="select"
+                      options={howDoYouGetPaid}
+                      onSelectValue={handleDoYouHaveAJobChange}
+                    />
+                  )}
 
                   {howDoYouGetPaidSelected?.type === "yes" && (
                     <Card>
@@ -465,7 +486,7 @@ const ApplyFundingForm = ({
                   {interestedProductSelected?.type?.includes("Business") && (
                     <CustomFormField
                       name="businessName"
-                      label="Select Business (Business Funding Only)"
+                      label="Select Business (Manage your business in My Business page)"
                       type="select"
                       placeholder="Select your business"
                       options={businessOptions}

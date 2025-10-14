@@ -59,18 +59,18 @@ export const applyFundingSchema = z
     personalAmountFunding: z.coerce.number<number>().optional(),
     businessAmountFunding: z.coerce.number<number>().optional(),
 
-    isMarried: z.string().min(1, { error: "Required" }),
+    isMarried: z.string().optional(), //TODO: make required if interestedProduct does not include Tradelines and Shelf
     legalResident: z.string().min(1, { error: "Required" }),
     currentSituation: z.string().optional(),
 
-    driverLicenseNumber: z.string().min(1, { error: "Required" }),
-    driverLicenseState: z.string().min(1, { error: "Required" }),
+    driverLicenseNumber: z.string().optional(),
+    driverLicenseState: z.string().optional(),
     driverLicenseIssueDate: z.coerce
-      .date<Date>({ error: "Required" })
-      .min(1, { error: "Required" }),
+      .date<Date>({ error: "Require Date" })
+      .optional(),
     driverLicenseIssueExpiryDate: z.coerce
-      .date<Date>({ error: "Required" })
-      .min(1, { error: "Required" }),
+      .date<Date>({ error: "Require Date" })
+      .optional(),
 
     // legalResidentOther: z.string().optional(),
     // motherMaidenName: z.string().min(1, { error: "Required" }),
@@ -83,14 +83,16 @@ export const applyFundingSchema = z
     payPerMonth: z.coerce.number<number>().min(1, { error: "Required" }),
     rentOrMortgage: z.string().min(1, { error: "Required" }),
 
-    howDoYouGetPaid: z.string().min(1, { error: "Required" }),
-    employmentStatus: z.string().min(1, { error: "Required" }),
+    howDoYouGetPaid: z.string().optional(),
+    employmentStatus: z.string().optional(),
     employmentPayPerMonth: z.coerce.number<number>().optional(),
     employmentEmployerName: z.string().optional(),
     employmentEmployerPhoneNumber: z.string().optional(),
     employmentEmployerAddress: z.string().optional(),
     employmentOccupation: z.string().optional(),
-    employmentDateOfHire: z.coerce.date<Date>({ error: "Required" }).optional(),
+    employmentDateOfHire: z.coerce
+      .date<Date>({ error: "Require Date" })
+      .optional(),
 
     personalTaxes: z.string().optional(),
     personalTaxesStatus: z.string().optional(),
@@ -128,6 +130,91 @@ export const applyFundingSchema = z
 
     approveOrDecline: fundingApplicationApproveDeclineSchema.optional(),
   })
+  .superRefine((data, ctx) => {
+    // Define the exclusion condition for clarity
+    const isExcludedProduct =
+      !data.interestedProduct || // Handle case where it's not selected yet
+      data.interestedProduct.includes("Tradelines") ||
+      data.interestedProduct.includes("Shelf");
+
+    // If the product is an excluded type, we don't need to validate these fields.
+    // So we simply exit the function.
+    if (isExcludedProduct) {
+      return;
+    }
+
+    // If the product is NOT excluded, then all driver's license fields become required.
+    // We now check each one and add an issue if it's empty.
+
+    if (
+      !data.driverLicenseNumber ||
+      data.driverLicenseNumber.trim().length === 0
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Driver license number is required.",
+        path: ["driverLicenseNumber"], // Links error to the correct field
+      });
+    }
+
+    if (
+      !data.driverLicenseState ||
+      data.driverLicenseState.trim().length === 0
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Driver license state is required.",
+        path: ["driverLicenseState"],
+      });
+    }
+
+    // For dates, we just need to check if they exist
+    if (!data.driverLicenseIssueDate) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Issue date is required.",
+        path: ["driverLicenseIssueDate"],
+      });
+    }
+
+    if (!data.driverLicenseIssueExpiryDate) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Expiry date is required.",
+        path: ["driverLicenseIssueExpiryDate"],
+      });
+    }
+  })
+  .refine(
+    (data) => {
+      // First, check if an interestedProduct has been selected.
+      if (!data.interestedProduct) {
+        // If not, we can't perform the check, so we pass validation.
+        // The base 'min(1)' rule on interestedProduct will catch this separately.
+        return true;
+      }
+
+      // Define the exclusion condition.
+      const isExcluded =
+        data.interestedProduct.includes("Tradelines") ||
+        data.interestedProduct.includes("Shelf");
+
+      // If the product is one of the excluded types, this validation rule passes.
+      if (isExcluded) {
+        return true;
+      }
+
+      // If the product is NOT excluded, then 'isMarried' becomes required.
+      // We check if it's a non-empty string.
+      return data.isMarried && data.isMarried.trim().length > 0;
+    },
+    {
+      // The message that will be displayed if the validation fails.
+      message: "This field is required.",
+      // This is crucial: it links the error message directly to the 'isMarried' field in your form.
+      path: ["isMarried"],
+    }
+  )
   .superRefine((data, ctx) => {
     // The condition: Only run this validation if a business name has been entered.
     if (data.businessName && data.businessName.trim().length > 0) {
@@ -311,7 +398,11 @@ export const applyFundingSchema = z
   )
   .refine(
     (data) => {
-      if (data.fundingType?.includes("Personal")) {
+      if (
+        data.fundingType?.includes("Personal") &&
+        !data.interestedProduct?.includes("Tradelines") &&
+        !data.interestedProduct?.includes("Shelf")
+      ) {
         return (
           data.personalAmountFunding !== undefined &&
           data.personalAmountFunding > 0
@@ -326,7 +417,11 @@ export const applyFundingSchema = z
   )
   .refine(
     (data) => {
-      if (data.fundingType?.includes("Business")) {
+      if (
+        data.fundingType?.includes("Business") &&
+        !data.interestedProduct?.includes("Tradelines") &&
+        !data.interestedProduct?.includes("Shelf")
+      ) {
         return (
           data.businessAmountFunding !== undefined &&
           data.businessAmountFunding > 0
