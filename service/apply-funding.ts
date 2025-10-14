@@ -1,5 +1,8 @@
 "use server";
-import { USER_COLLECTION, USER_FUNDING_APPLICATION } from "@/constant/collection-name";
+import {
+  USER_COLLECTION,
+  USER_FUNDING_APPLICATION,
+} from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin, storageAdmin } from "@/lib/fireabase-admin";
@@ -16,13 +19,7 @@ import * as crypto from "node:crypto";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const applyFunding = async ({
-  value,
-  bankProductId,
-}: {
-  value: ApplyFunding;
-  bankProductId: string;
-}) => {
+export const applyFunding = async ({ value }: { value: ApplyFunding }) => {
   const db = firestoreAdmin();
 
   const collectionRef = db.collection(USER_FUNDING_APPLICATION);
@@ -32,23 +29,6 @@ export const applyFunding = async ({
   const docRef = collectionRef.doc(referenceNumber);
   await docRef.set({ ...value });
   const data = (await docRef.get()).data();
-
-  // if (value.businessId) {
-  //   await fetch(`${process.env.n8n_HOST}/crs-report`, {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-  //     },
-  //     body: JSON.stringify({
-  //       businessId: value.businessId,
-  //       userId: value.userId,
-  //       type: "business",
-  //     }),
-  //   });
-
-  //   await sleep(5000);
-  // }
 
   await fetch(`${process.env.n8n_HOST}/funding-analysis`, {
     method: "POST",
@@ -62,28 +42,32 @@ export const applyFunding = async ({
     }),
   });
 
-  await updateClientApplicationStatus({
-    bankProductId: bankProductId,
-    userId: value.userId,
-    status: "Pending",
-  });
+  // await updateClientApplicationStatus({
+  //   bankProductId: bankProductId,
+  //   userId: value.userId,
+  //   status: "Pending",
+  // });
 
-  await fetch(`${process.env.n8n_HOST}/client-apply-bank-product`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-    },
-    body: JSON.stringify({
-      userId: value.userId,
-      bankProductId: bankProductId,
-    }),
-  });
+  // await fetch(`${process.env.n8n_HOST}/client-apply-bank-product`, {
+  //   method: "POST",
+  //   headers: {
+  //     "Content-Type": "application/json",
+  //     ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+  //   },
+  //   body: JSON.stringify({
+  //     userId: value.userId,
+  //     bankProductId: bankProductId,
+  //   }),
+  // });
 };
 
-export const getApplyFunding = async (userId: string): Promise<ApplyFunding[] | null> => {
+export const getApplyFunding = async (
+  userId: string
+): Promise<ApplyFunding[] | null> => {
   const db = firestoreAdmin();
-  const collectionRef = db.collection(USER_FUNDING_APPLICATION).where("userId", "==", userId);
+  const collectionRef = db
+    .collection(USER_FUNDING_APPLICATION)
+    .where("userId", "==", userId);
   const snapshot = await collectionRef.orderBy("appliedDate", "desc").get();
   if (snapshot.empty) {
     console.log("No matching documents.");
@@ -105,7 +89,9 @@ export const getFundingApplications = async ({
   status,
 }: Props): Promise<ApplyFundingWithUser[] | null> => {
   const db = firestoreAdmin();
-  let collectionRef = db.collection(USER_FUNDING_APPLICATION).orderBy("appliedDate", "desc");
+  let collectionRef = db
+    .collection(USER_FUNDING_APPLICATION)
+    .orderBy("appliedDate", "desc");
 
   if (state) {
     collectionRef = collectionRef.where("addressState", "==", state);
@@ -158,12 +144,17 @@ export const getApplyFundingByReferenceNumber = async (
     throw new AppError("Reference number is required.");
   }
   const db = firestoreAdmin();
-  const doc = await db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber).get();
+  const doc = await db
+    .collection(USER_FUNDING_APPLICATION)
+    .doc(referenceNumber)
+    .get();
   if (!doc.exists) return null;
   return { id: doc.id, ...normalizeAllDates(doc.data()) };
 };
 
-export const deleteApplyFunding = async (referenceNumber: string): Promise<void> => {
+export const deleteApplyFunding = async (
+  referenceNumber: string
+): Promise<void> => {
   if (!referenceNumber) {
     throw new AppError("Reference number is required.");
   }
@@ -193,7 +184,10 @@ export const deleteApplyFunding = async (referenceNumber: string): Promise<void>
   }
 };
 
-export async function createReferenceId(): Promise<{ id: string; path: string }> {
+export async function createReferenceId(): Promise<{
+  id: string;
+  path: string;
+}> {
   const db = firestoreAdmin();
   const collection = USER_FUNDING_APPLICATION;
   const maxAttempts = 50;
@@ -205,7 +199,11 @@ export async function createReferenceId(): Promise<{ id: string; path: string }>
       await ref.create({ createdAt: Timestamp.now() }); // atomic "insert if not exists"
       return { id: candidate, path: ref.path };
     } catch (e: any) {
-      if ((e?.code === 6 || e?.code === "already-exists") && i < maxAttempts - 1) continue;
+      if (
+        (e?.code === 6 || e?.code === "already-exists") &&
+        i < maxAttempts - 1
+      )
+        continue;
       throw e;
     }
   }
@@ -267,23 +265,35 @@ export const addFundApplicationNotes = async ({
   if (!referenceNumber) throw new AppError("Reference number is required.");
   if (!notes) throw new AppError("Notes is required.");
 
-  const fundApplicationData = await getApplyFundingByReferenceNumber(referenceNumber);
-  if (!fundApplicationData) throw new AppError("Funding application not found.");
+  const fundApplicationData = await getApplyFundingByReferenceNumber(
+    referenceNumber
+  );
+  if (!fundApplicationData)
+    throw new AppError("Funding application not found.");
 
   const db = firestoreAdmin();
-  const collectionRef = db.collection(`${USER_FUNDING_APPLICATION}/${referenceNumber}/notes`);
+  const collectionRef = db.collection(
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/notes`
+  );
   const docRef = collectionRef.doc(referenceNumber);
   await docRef.set({ notes });
 };
 
-export const getFundApplicationNotes = async (referenceNumber: string): Promise<string[]> => {
+export const getFundApplicationNotes = async (
+  referenceNumber: string
+): Promise<string[]> => {
   if (!referenceNumber) throw new AppError("Reference number is required.");
 
-  const fundApplicationData = await getApplyFundingByReferenceNumber(referenceNumber);
-  if (!fundApplicationData) throw new AppError("Funding application not found.");
+  const fundApplicationData = await getApplyFundingByReferenceNumber(
+    referenceNumber
+  );
+  if (!fundApplicationData)
+    throw new AppError("Funding application not found.");
 
   const db = firestoreAdmin();
-  const collectionRef = db.collection(`${USER_FUNDING_APPLICATION}/${referenceNumber}/notes`);
+  const collectionRef = db.collection(
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/notes`
+  );
   const docRef = collectionRef.doc(referenceNumber);
   const doc = await docRef.get();
   if (!doc.exists) return [];

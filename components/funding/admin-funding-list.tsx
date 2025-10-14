@@ -14,9 +14,6 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -31,6 +28,7 @@ import { DataTablePagination } from "./pagination";
 import { ApplyFundingWithUser } from "@/schema/apply-funding";
 import { formatAmount, formatDateTime } from "@/lib/utils";
 import CategoryBadge from "../CategoryBadge";
+import SortableHeader from "../SortableHeader";
 
 const normalize = (s: unknown) =>
   String(s ?? "")
@@ -39,7 +37,11 @@ const normalize = (s: unknown) =>
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase();
 
-export const nameFilterFn: FilterFn<ApplyFundingWithUser> = (row, columnId, filterValue) => {
+export const nameFilterFn: FilterFn<ApplyFundingWithUser> = (
+  row,
+  columnId,
+  filterValue
+) => {
   const haystack = normalize(row.getValue<string>(columnId));
   const q = normalize(filterValue);
 
@@ -54,10 +56,16 @@ export const columns: ColumnDef<ApplyFundingWithUser>[] = [
   {
     accessorKey: "referenceNumber",
     id: "referenceNumber",
+    // header: ({ column }) => (
+    //   <Button
+    //     variant="ghost"
+    //     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+    //   >
+    //     Reference Number <ArrowUpDown />
+    //   </Button>
+    // ),
     header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Reference Number <ArrowUpDown />
-      </Button>
+      <SortableHeader column={column} title="Reference Number" />
     ),
     cell: ({ row }) => {
       return <div>{row.getValue("referenceNumber")}</div>;
@@ -72,11 +80,8 @@ export const columns: ColumnDef<ApplyFundingWithUser>[] = [
       return parts.join(" ");
     },
     filterFn: nameFilterFn,
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Name <ArrowUpDown />
-      </Button>
-    ),
+
+    header: ({ column }) => <SortableHeader column={column} title="Name" />,
     cell: ({ row }) => {
       const u = row.original.user;
       if (!u) return <div className="text-muted-foreground">Unknown</div>;
@@ -86,40 +91,49 @@ export const columns: ColumnDef<ApplyFundingWithUser>[] = [
   {
     id: "interestedProduct",
     accessorKey: "interestedProduct",
+
     header: ({ column }) => (
-      <div className="flex w-full">
-        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
-          Product <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
+      <SortableHeader column={column} title="Interested Product" />
     ),
     cell: ({ row }) => {
       return <div>{row.getValue("interestedProduct")}</div>;
     },
   },
   {
-    id: "amountFunding",
-    accessorKey: "amountFunding",
+    id: "personalAmountFunding",
+    accessorKey: "personalAmountFunding",
     header: ({ column }) => (
-      <div className="flex w-full justify-end">
-        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
-          Amount <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
+      <SortableHeader column={column} title="Personal Amount" />
     ),
     cell: ({ row }) => {
-      return <div className="text-right">{formatAmount(row.getValue("amountFunding"))}</div>;
+      return (
+        <div className="text-right pr-4">
+          {formatAmount(row.getValue("personalAmountFunding"))}
+        </div>
+      );
+    },
+  },
+  {
+    id: "businessAmountFunding",
+    accessorKey: "businessAmountFunding",
+
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Business Amount" />
+    ),
+    cell: ({ row }) => {
+      return (
+        <div className="text-right pr-4">
+          {formatAmount(row.getValue("businessAmountFunding"))}
+        </div>
+      );
     },
   },
   {
     id: "appliedDate",
     accessorKey: "appliedDate",
+
     header: ({ column }) => (
-      <div className="flex w-full">
-        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
-          Applied Date <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
+      <SortableHeader column={column} title="Applied Date" />
     ),
     cell: ({ row }) => {
       const raw = row.getValue("appliedDate") as string | Date;
@@ -131,13 +145,8 @@ export const columns: ColumnDef<ApplyFundingWithUser>[] = [
   {
     id: "status",
     accessorKey: "status",
-    header: ({ column }) => (
-      <div className="flex w-full">
-        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
-          Status <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-    ),
+
+    header: ({ column }) => <SortableHeader column={column} title="Status" />,
     cell: ({ row }) => {
       return (
         <div>
@@ -155,8 +164,11 @@ type Props = {
 
 const AdminFundingList = ({ appliedFunding, rowActions }: Props) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
 
@@ -213,7 +225,10 @@ const AdminFundingList = ({ appliedFunding, rowActions }: Props) => {
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   );
                 })}
@@ -223,17 +238,26 @@ const AdminFundingList = ({ appliedFunding, rowActions }: Props) => {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>

@@ -454,7 +454,77 @@ export const US_STATES = [
   },
 ];
 
-export const frequencyOfIncome = ["Hourly", "Weekly", "BiWeekly", "Monthly", "Yearly"].map((f) => ({
+export const frequencyOfIncome = [
+  "Hourly",
+  "Weekly",
+  "BiWeekly",
+  "Monthly",
+  "Yearly",
+].map((f) => ({
   value: f,
   label: f,
 }));
+
+export const howDoYouGetPaid: DropdownOption[] = [
+  {
+    value: "yes_direct_deposit",
+    label: "Yes, I get paid direct deposit.",
+    type: "yes",
+  },
+  {
+    value: "yes_checks",
+    label: "Yes, I get paid checks.",
+    type: "yes",
+  },
+  {
+    value: "yes_cash",
+    label: "Yes, I get paid cash.",
+    type: "yes",
+  },
+  {
+    value: "no_assistance",
+    label: "No, I'm on disability or other government assistance.",
+    type: "no",
+  },
+  {
+    value: "no_work",
+    label: "No, I don't.",
+    type: "no",
+  },
+];
+
+export const personalTaxes: DropdownOption[] = [
+  {
+    value: "yes_every_year",
+    label: "Yes, I file them every year.",
+    type: "yes",
+  },
+  {
+    value: "yes_once",
+    label: "Yes, I have filed at some point in my life.",
+    type: "yes",
+  },
+  {
+    value: "no",
+    label: "No.",
+    type: "no",
+  },
+];
+
+export const businessTaxes: DropdownOption[] = [
+  {
+    value: "yes_every_year",
+    label: "Yes, I file them every year.",
+    type: "yes",
+  },
+  {
+    value: "yes_once",
+    label: "Yes, I have filed at some point in my life.",
+    type: "yes",
+  },
+  {
+    value: "no",
+    label: "No.",
+    type: "no",
+  },
+];

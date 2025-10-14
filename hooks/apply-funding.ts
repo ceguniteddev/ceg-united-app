@@ -83,7 +83,9 @@ export const useGetFundingApplicationsIsNew = () => {
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
 
-      const data = (await getFundingApplications({ status: "New" })) as ApplyFundingWithUser[];
+      const data = (await getFundingApplications({
+        status: "New",
+      })) as ApplyFundingWithUser[];
 
       return data;
     },
@@ -101,16 +103,10 @@ export const useApplyFunding = () => {
   const { user } = useAuth();
 
   const createMutation = useMutation({
-    mutationFn: async ({
-      values,
-      bankProductId,
-    }: {
-      values: ApplyFunding;
-      bankProductId: string;
-    }) => {
+    mutationFn: async ({ values }: { values: ApplyFunding }) => {
       if (!user) throw new Error("User not authenticated");
 
-      await applyFunding({ value: values, bankProductId: bankProductId });
+      await applyFunding({ value: values });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

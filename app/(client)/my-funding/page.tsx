@@ -12,10 +12,12 @@ import {
 import { useAuth } from "@/provider/AuthContext";
 import NoBankLinked from "@/components/NoBankLinked";
 import NoIncomeVerification from "@/components/NoIncomeVerification";
+import ApplyFunding from "./_funding/ApplyFunding";
 
 const ApplyFundingPage = () => {
   const { plaidAccounts, isLoading } = useGetPlaidAccounts();
-  const { incomeBankItem, isLoading: incomeBankItemLoading } = useHasIncomeBankVerificationQuery();
+  const { incomeBankItem, isLoading: incomeBankItemLoading } =
+    useHasIncomeBankVerificationQuery();
   const { incomePayrollItem, isLoading: payrollBankItemLoading } =
     useHasPayrollBankVerificationQuery();
   const { user } = useAuth();
@@ -24,7 +26,8 @@ const ApplyFundingPage = () => {
 
   if (!user) return null;
 
-  if (isLoading || incomeBankItemLoading || payrollBankItemLoading) return <Spinner />;
+  if (isLoading || incomeBankItemLoading || payrollBankItemLoading)
+    return <Spinner />;
 
   if (!plaidAccounts || !plaidAccounts.data?.length) {
     return <NoBankLinked />;
@@ -40,8 +43,11 @@ const ApplyFundingPage = () => {
   return (
     <section className="home-content">
       <div className="home-header flex flex-row justify-between">
-        <HeaderBox title="Apply Funding" subtext="Manage your funding applications." />
-        {/* <ApplyFunding /> */}
+        <HeaderBox
+          title="Apply Funding"
+          subtext="Manage your funding applications."
+        />
+        <ApplyFunding />
       </div>
 
       <div className="space-y-6">

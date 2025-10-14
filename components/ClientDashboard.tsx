@@ -230,7 +230,7 @@ export const ClientDashboard = ({
     // --- Funding and Plaid Calculations ---
     const totalRequested =
       clientData.fundingApplications?.reduce(
-        (sum, app) => sum + (Number(app.amountFunding) || 0),
+        (sum, app) => sum + (Number(app.personalAmountFunding) + Number(app.businessAmountFunding) || 0),
         0
       ) ?? 0;
     const totalApproved =

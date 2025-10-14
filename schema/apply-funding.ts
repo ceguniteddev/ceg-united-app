@@ -9,7 +9,9 @@ export const FundingApplicationSatus = [
   "Declined",
 ] as const;
 export const FundingApplicationSatusEnum = z.enum(FundingApplicationSatus);
-export type FundingApplicationSatus = z.infer<typeof FundingApplicationSatusEnum>;
+export type FundingApplicationSatus = z.infer<
+  typeof FundingApplicationSatusEnum
+>;
 
 export const FundingApplicationType = [
   "Personal",
@@ -18,7 +20,9 @@ export const FundingApplicationType = [
   "Income",
   "All",
 ] as const;
-export const FundingApplicationTypeEnum = z.enum(FundingApplicationType, { error: "Required" });
+export const FundingApplicationTypeEnum = z.enum(FundingApplicationType, {
+  error: "Required",
+});
 export type FundingApplicationType = z.infer<typeof FundingApplicationTypeEnum>;
 
 export const getFundingApplicationType = () => {
@@ -32,7 +36,9 @@ export const getFundingApplicationType = () => {
 
 export const fundingApplicationApproveDeclineSchema = z.object({
   id: z.string().optional(),
-  amountApprove: z.number({ error: "Numeric value is required" }).min(1, { error: "Required" }),
+  amountApprove: z
+    .number({ error: "Numeric value is required" })
+    .min(1, { error: "Required" }),
   remarks: z.string().optional(),
 });
 
@@ -40,51 +46,363 @@ export type FundingApplicationApproveDecline = z.infer<
   typeof fundingApplicationApproveDeclineSchema
 >;
 
-export const applyFundingSchema = z.object({
-  userId: z.string().min(1, { error: "Required" }),
-  interestedProduct: z.string().min(1, { error: "Required" }),
-  amountFunding: z.coerce.number<number>().min(1, { error: "Required" }),
-  currentSituation: z.string().optional(),
-  legalResident: z.string().min(1, { error: "Required" }),
-  // legalResidentOther: z.string().optional(),
-  motherMaidenName: z.string().min(1, { error: "Required" }),
-  isMarried: z.string().min(1, { error: "Required" }),
-  addressStreet: z.string().min(1, { error: "Required" }),
-  addressCity: z.string().min(1, { error: "Required" }),
-  addressState: z.string().min(1, { error: "Required" }),
-  addressPostal: z.string().min(1, { error: "Required" }),
-  moveInCurrentAddress: z.string().min(1, { error: "Required" }),
-  payPerMonth: z.coerce.number<number>().min(1, { error: "Required" }),
-  rentOrMortgage: z.string().min(1, { error: "Required" }),
-  status: FundingApplicationSatusEnum,
-  appliedDate: z.date(),
-  referenceNumber: z.string().optional(),
+export const applyFundingSchema = z
+  .object({
+    userId: z.string().min(1, { error: "Required" }),
+    status: FundingApplicationSatusEnum,
+    appliedDate: z.coerce.date<Date>({ error: "Required" }),
+    referenceNumber: z.string().optional(),
 
-  businessId: z.string().optional(),
-  businessName: z.string().optional(),
-  businessStreetAddress: z.string().optional(),
-  businessCityAddress: z.string().optional(),
-  businessStateAddress: z.string().optional(),
-  businessPostalAddress: z.string().optional(),
-  employerIdentificationNumber: z.string().optional(),
-  businessPhoneNumber: z.string().optional(),
-  businessEmail: z.email({ message: "Invalid email" }).optional(),
-  businessWebsite: z.string({ error: "Required" }).optional(),
-  socialMedia: z.string({ error: "Required" }).optional(),
-  lastYearTaxes: z.coerce.number<number>().optional(),
-  currentYearTaxes: z.coerce.number<number>().optional(),
+    interestedProduct: z.string().min(1, { error: "Required" }),
+    fundingType: FundingApplicationTypeEnum,
 
-  fundingType: FundingApplicationTypeEnum,
-  approveOrDecline: fundingApplicationApproveDeclineSchema.optional(),
+    personalAmountFunding: z.coerce.number<number>().optional(),
+    businessAmountFunding: z.coerce.number<number>().optional(),
 
-  personalIncome: z.coerce.number<number>().optional(),
-  frequencyOfIncome: z.string().optional(),
-  paymentType: z.string().optional(),
-  businessGross: z.coerce.number<number>().optional(),
-  businessNet: z.coerce.number<number>().optional(),
-});
+    isMarried: z.string().min(1, { error: "Required" }),
+    legalResident: z.string().min(1, { error: "Required" }),
+    currentSituation: z.string().optional(),
+
+    driverLicenseNumber: z.string().min(1, { error: "Required" }),
+    driverLicenseState: z.string().min(1, { error: "Required" }),
+    driverLicenseIssueDate: z.coerce
+      .date<Date>({ error: "Required" })
+      .min(1, { error: "Required" }),
+    driverLicenseIssueExpiryDate: z.coerce
+      .date<Date>({ error: "Required" })
+      .min(1, { error: "Required" }),
+
+    // legalResidentOther: z.string().optional(),
+    // motherMaidenName: z.string().min(1, { error: "Required" }),
+    addressStreet: z.string().min(1, { error: "Required" }),
+    addressCity: z.string().min(1, { error: "Required" }),
+    addressState: z.string().min(1, { error: "Required" }),
+    addressPostal: z.string().min(1, { error: "Required" }),
+
+    moveInCurrentAddress: z.string().min(1, { error: "Required" }),
+    payPerMonth: z.coerce.number<number>().min(1, { error: "Required" }),
+    rentOrMortgage: z.string().min(1, { error: "Required" }),
+
+    howDoYouGetPaid: z.string().min(1, { error: "Required" }),
+    employmentStatus: z.string().min(1, { error: "Required" }),
+    employmentPayPerMonth: z.coerce.number<number>().optional(),
+    employmentEmployerName: z.string().optional(),
+    employmentEmployerPhoneNumber: z.string().optional(),
+    employmentEmployerAddress: z.string().optional(),
+    employmentOccupation: z.string().optional(),
+    employmentDateOfHire: z.coerce.date<Date>({ error: "Required" }).optional(),
+
+    personalTaxes: z.string().optional(),
+    personalTaxesStatus: z.string().optional(),
+    personalTaxes1: z.coerce.number<number>().optional(),
+    personalTaxes2: z.coerce.number<number>().optional(),
+    personalTaxes3: z.coerce.number<number>().optional(),
+
+    businessId: z.string().optional(),
+    businessName: z.string().optional(),
+    businessStreetAddress: z.string().optional(),
+    businessCityAddress: z.string().optional(),
+    businessStateAddress: z.string().optional(),
+    businessPostalAddress: z.string().optional(),
+    employerIdentificationNumber: z.string().optional(),
+    businessPhoneNumber: z.string().optional(),
+    businessEmail: z.email({ message: "Invalid email" }).optional(),
+    businessWebsite: z.string({ error: "Required" }).optional(),
+    socialMedia: z.string({ error: "Required" }).optional(),
+    lastYearTaxes: z.coerce.number<number>().optional(),
+    currentYearTaxes: z.coerce.number<number>().optional(),
+
+    businessGrossProjectedRevenue1: z.coerce.number<number>().optional(),
+    businessGrossProjectedRevenue2: z.coerce.number<number>().optional(),
+    businessGrossProjectedRevenue3: z.coerce.number<number>().optional(),
+
+    businessProjectedProfit1: z.coerce.number<number>().optional(),
+    businessProjectedProfit2: z.coerce.number<number>().optional(),
+    businessProjectedProfit3: z.coerce.number<number>().optional(),
+
+    businessTaxes: z.string().optional(),
+    businessTaxesStatus: z.string().optional(),
+    businessTaxes1: z.coerce.number<number>().optional(),
+    businessTaxes2: z.coerce.number<number>().optional(),
+    businessTaxes3: z.coerce.number<number>().optional(),
+
+    approveOrDecline: fundingApplicationApproveDeclineSchema.optional(),
+  })
+  .superRefine((data, ctx) => {
+    // The condition: Only run this validation if a business name has been entered.
+    if (data.businessName && data.businessName.trim().length > 0) {
+      // Validate the three Gross Projected Revenue fields
+      if ((data.businessGrossProjectedRevenue1 ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessGrossProjectedRevenue1"],
+        });
+      }
+      if ((data.businessGrossProjectedRevenue2 ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessGrossProjectedRevenue2"],
+        });
+      }
+      if ((data.businessGrossProjectedRevenue3 ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessGrossProjectedRevenue3"],
+        });
+      }
+
+      // Validate the three Projected Profit fields
+      if ((data.businessProjectedProfit1 ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessProjectedProfit1"],
+        });
+      }
+      if ((data.businessProjectedProfit2 ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessProjectedProfit2"],
+        });
+      }
+      if ((data.businessProjectedProfit3 ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessProjectedProfit3"],
+        });
+      }
+    }
+  })
+  .superRefine((data, ctx) => {
+    // Check if the business taxes status is 'yes'.
+    // This value would be set by your handleBusinessTaxesChange callback.
+    if (data.businessTaxesStatus === "yes") {
+      // If the status is 'yes', then all three tax year fields are required.
+      // We check if the coerced number is 0 or less, which covers empty inputs.
+      if ((data.businessTaxes1 ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessTaxes1"], // Links the error to the correct input field.
+        });
+      }
+
+      if ((data.businessTaxes2 ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessTaxes2"],
+        });
+      }
+
+      if ((data.businessTaxes3 ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessTaxes3"],
+        });
+      }
+    }
+  })
+  .superRefine((data, ctx) => {
+    // Check if the user has filed taxes before
+    if (data.personalTaxesStatus === "yes") {
+      // If yes, validate that all three year fields have a value greater than 0.
+      // An empty field is coerced to 0, so this check works for "required".
+      if ((data.personalTaxes1 ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["personalTaxes1"], // Associates error with the correct field
+        });
+      }
+      if ((data.personalTaxes2 ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["personalTaxes2"],
+        });
+      }
+      if ((data.personalTaxes3 ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["personalTaxes3"],
+        });
+      }
+    }
+  })
+  .superRefine((data, ctx) => {
+    // Check if the employment status is 'yes'
+    if (data.employmentStatus === "yes") {
+      // If it is, validate each employment field
+      if (
+        !data.employmentEmployerName ||
+        data.employmentEmployerName.length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentEmployerName"],
+        });
+      }
+      if ((data.employmentPayPerMonth ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentPayPerMonth"],
+        });
+      }
+      if (
+        !data.employmentEmployerPhoneNumber ||
+        data.employmentEmployerPhoneNumber.length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentEmployerPhoneNumber"],
+        });
+      }
+      if (
+        !data.employmentEmployerAddress ||
+        data.employmentEmployerAddress.length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentEmployerAddress"],
+        });
+      }
+      if (
+        !data.employmentOccupation ||
+        data.employmentOccupation.length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentOccupation"],
+        });
+      }
+      if (!data.employmentDateOfHire) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentDateOfHire"],
+        });
+      }
+    }
+  })
+  .refine(
+    (data) => {
+      if (data.fundingType?.includes("Business")) {
+        return data.businessName && data.businessName.length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Required",
+      path: ["businessName"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.fundingType?.includes("Personal")) {
+        return (
+          data.personalAmountFunding !== undefined &&
+          data.personalAmountFunding > 0
+        );
+      }
+      return true;
+    },
+    {
+      message: "Required",
+      path: ["personalAmountFunding"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.fundingType?.includes("Business")) {
+        return (
+          data.businessAmountFunding !== undefined &&
+          data.businessAmountFunding > 0
+        );
+      }
+      return true;
+    },
+    {
+      message: "Required",
+      path: ["businessAmountFunding"],
+    }
+  );
+
 export type ApplyFunding = z.infer<typeof applyFundingSchema>;
 
 export type ApplyFundingWithUser = ApplyFunding & {
   user?: z.infer<typeof registrationSchema> | null;
 };
+
+export type FundingProductEnumType = {
+  value: string;
+  label: string;
+  type: FundingApplicationType;
+};
+
+export const FundingProductTypeEnum: FundingProductEnumType[] = [
+  {
+    value: "Personal & Business Funding",
+    label: "Personal & Business Funding",
+    type: "Personal And Business",
+  },
+  {
+    value: "Personal Funding",
+    label: "Personal Funding",
+    type: "Personal",
+  },
+  {
+    value: "Business Funding",
+    label: "Business Funding",
+    type: "Business",
+  },
+  {
+    value: "Personal Tradelines",
+    label: "Personal Tradelines",
+    type: "Personal",
+  },
+  {
+    value: "Business Tradelines",
+    label: "Business Tradelines",
+    type: "Business",
+  },
+  {
+    value: "Personal & Business Tradelines",
+    label: "Personal & Business Tradelines",
+    type: "Personal And Business",
+  },
+  {
+    value: "Aged Shelf Corporation",
+    label: "Aged Shelf Corporation",
+    type: "Business",
+  },
+  {
+    value: "Knowledge Community",
+    label: "Knowledge Community",
+    type: "Personal And Business",
+  },
+  {
+    value: "Auto Loan",
+    label: "Auto Loan",
+    type: "Personal And Business",
+  },
+  {
+    value: "Equipment Financing",
+    label: "Equipment Financing",
+    type: "Personal And Business",
+  },
+];
+
+export type FundingProductType = (typeof FundingProductTypeEnum)[number];

@@ -34,7 +34,12 @@ import { BankFormData } from "@/schema/bank-products";
 import SortableHeader from "@/components/SortableHeader";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import ApplyFundingForm from "@/components/funding/ApplyFundingForm";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import ApplyFundingSuccessful from "@/app/(client)/my-funding/_funding/ApplyFundingSuccessful";
 import { useAuth } from "@/provider/AuthContext";
 
@@ -42,13 +47,17 @@ const baseColumns: ColumnDef<BankFormData>[] = [
   {
     accessorKey: "bankName",
     id: "bankName",
-    header: ({ column }) => <SortableHeader column={column} title="Bank Name" />,
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Bank Name" />
+    ),
     cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
   },
   {
     accessorKey: "productName",
     id: "productName",
-    header: ({ column }) => <SortableHeader column={column} title="Product Name" />,
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Product Name" />
+    ),
     cell: ({ row }) => {
       const productNames = row.getValue("productName") as string[];
 
@@ -66,19 +75,27 @@ const baseColumns: ColumnDef<BankFormData>[] = [
   {
     accessorKey: "financingTerm",
     id: "financingTerm",
-    header: ({ column }) => <SortableHeader column={column} title="Financing Term" />,
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Financing Term" />
+    ),
     cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
   },
   {
     accessorKey: "maximumFundingAmount",
     id: "maximumFundingAmount",
-    header: ({ column }) => <SortableHeader column={column} title="Maximum Funding Amount" />,
-    cell: ({ row }) => <div>{formatAmount(row.getValue("maximumFundingAmount"))}</div>,
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Maximum Funding Amount" />
+    ),
+    cell: ({ row }) => (
+      <div>{formatAmount(row.getValue("maximumFundingAmount"))}</div>
+    ),
   },
   {
     accessorKey: "clientApplicationStatus",
     id: "clientApplicationStatus",
-    header: ({ column }) => <SortableHeader column={column} title="Client Application Status" />,
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Client Application Status" />
+    ),
     cell: ({ row }) => {
       const status = row.getValue("clientApplicationStatus") as string;
       return status ? <CategoryBadge category={status} /> : null;
@@ -98,8 +115,11 @@ type Props = {
 
 const FundingList = ({ appliedFunding, isAdminView }: Props) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
 
@@ -151,7 +171,10 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   );
                 })}
@@ -161,17 +184,26 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>

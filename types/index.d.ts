@@ -1,3 +1,4 @@
+import { FundingApplicationType } from "@/schema/apply-funding";
 import { BankFormData } from "@/schema/bank-products";
 
 declare global {
@@ -8,6 +9,7 @@ declare global {
     icon?: React.ComponentType<{ className?: string }>;
     isRequired?: boolean;
     category?: FundingApplicationType;
+    type?: string;
   };
 
   type AdminStatistics = {
@@ -20,18 +22,6 @@ declare global {
       [key: string]: number;
     };
   };
-
-  type InterestedProduct =
-    | "Personal & Business Funding"
-    | "Personal Funding"
-    | "Business Funding"
-    | "Personal Tradelines"
-    | "Business Tradelines"
-    | "Personal & Business Tradelines"
-    | "Aged Shelf Corporation"
-    | "Knowledge Community"
-    | "Auto Loan"
-    | "Equipment Financing";
 
   type UserDoc = {
     name: string;

@@ -3,7 +3,11 @@ import { DataTablePagination } from "@/components/funding/pagination";
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { useUsersQuery } from "@/hooks/user";
-import { UserActiveStatusEnum, UserFundMapStatus, UserWithId } from "@/schema/registration";
+import {
+  UserActiveStatusEnum,
+  UserFundMapStatus,
+  UserWithId,
+} from "@/schema/registration";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -55,21 +59,27 @@ const statusFilterFn: FilterFn<UserWithId> = (row, columnId, filterValue) => {
 };
 
 const ClientsList = () => {
-  const { mappedFund: approvedMappedFunds } = useFundingApplicationsMappedFundsQuery();
+  // const { mappedFund: approvedMappedFunds } = useFundingApplicationsMappedFundsQuery();
   const [roleFilter, setRoleFilter] = useState("all");
-  const approvedByIds = useMemo(
-    () => new Map((approvedMappedFunds ?? []).map((f) => [f.id, f.status])),
-    [approvedMappedFunds]
-  );
+  // const approvedByIds = useMemo(
+  //   () => new Map((approvedMappedFunds ?? []).map((f) => [f.id, f.status])),
+  //   [approvedMappedFunds]
+  // );
 
   const { users, isLoading } = useUsersQuery("Client");
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
 
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const STATUS_ORDER: Record<UserFundMapStatus, number> = { New: 0, Processing: 1 };
+  const STATUS_ORDER: Record<UserFundMapStatus, number> = {
+    New: 0,
+    Processing: 1,
+  };
   const columns: ColumnDef<UserWithId>[] = [
     {
       accessorKey: "activeStatus",
@@ -88,7 +98,9 @@ const ClientsList = () => {
     {
       accessorKey: "firstName",
       id: "firstName",
-      header: ({ column }) => <SortableHeader column={column} title="First Name" />,
+      header: ({ column }) => (
+        <SortableHeader column={column} title="First Name" />
+      ),
       cell: ({ row }) => {
         return <div>{row.getValue("firstName")}</div>;
       },
@@ -96,7 +108,9 @@ const ClientsList = () => {
     {
       accessorKey: "middleName",
       id: "middleName",
-      header: ({ column }) => <SortableHeader column={column} title="Middle Name" />,
+      header: ({ column }) => (
+        <SortableHeader column={column} title="Middle Name" />
+      ),
       cell: ({ row }) => {
         return <div>{row.getValue("middleName")}</div>;
       },
@@ -104,7 +118,9 @@ const ClientsList = () => {
     {
       accessorKey: "lastName",
       id: "lastName",
-      header: ({ column }) => <SortableHeader column={column} title="Last Name" />,
+      header: ({ column }) => (
+        <SortableHeader column={column} title="Last Name" />
+      ),
       cell: ({ row }) => {
         return <div>{row.getValue("lastName")}</div>;
       },
@@ -120,39 +136,41 @@ const ClientsList = () => {
     {
       id: "phoneNumber",
       accessorKey: "phoneNumber",
-      header: ({ column }) => <SortableHeader column={column} title="Phone Number" />,
+      header: ({ column }) => (
+        <SortableHeader column={column} title="Phone Number" />
+      ),
       cell: ({ row }) => {
         return <div>{row.getValue("phoneNumber")}</div>;
       },
     },
-    {
-      id: "status",
-      accessorFn: (row) => approvedByIds.get(row.id) ?? null,
-      header: ({ column }) => <SortableHeader column={column} title="Funding Status" />,
-      cell: ({ row }) => {
-        const id = row.original.id;
-        const status = id ? approvedByIds.get(id) : undefined;
-        return status ? <CategoryBadge category={status} /> : null;
-      },
-      sortingFn: (a, b, columnId) => {
-        const va = a.getValue<UserFundMapStatus | null>(columnId);
-        const vb = b.getValue<UserFundMapStatus | null>(columnId);
+    // {
+    //   id: "status",
+    //   accessorFn: (row) => approvedByIds.get(row.id) ?? null,
+    //   header: ({ column }) => <SortableHeader column={column} title="Funding Status" />,
+    //   cell: ({ row }) => {
+    //     const id = row.original.id;
+    //     const status = id ? approvedByIds.get(id) : undefined;
+    //     return status ? <CategoryBadge category={status} /> : null;
+    //   },
+    //   sortingFn: (a, b, columnId) => {
+    //     const va = a.getValue<UserFundMapStatus | null>(columnId);
+    //     const vb = b.getValue<UserFundMapStatus | null>(columnId);
 
-        const ra = va == null ? Number.POSITIVE_INFINITY : STATUS_ORDER[va];
-        const rb = vb == null ? Number.POSITIVE_INFINITY : STATUS_ORDER[vb];
+    //     const ra = va == null ? Number.POSITIVE_INFINITY : STATUS_ORDER[va];
+    //     const rb = vb == null ? Number.POSITIVE_INFINITY : STATUS_ORDER[vb];
 
-        if (ra < rb) return -1;
-        if (ra > rb) return 1;
-        return 0; // tie
-      },
-      sortDescFirst: false, // optional: first click = ascending (New -> Processing)
-      enableSorting: true,
-    },
+    //     if (ra < rb) return -1;
+    //     if (ra > rb) return 1;
+    //     return 0; // tie
+    //   },
+    //   sortDescFirst: false, // optional: first click = ascending (New -> Processing)
+    //   enableSorting: true,
+    // },
     {
       id: "actions",
       cell: ({ row }) => {
         const id = row.original.id;
-        const status = id ? approvedByIds.get(id) : undefined;
+        const status = undefined; // id ? approvedByIds.get(id) : undefined;
         return <ActionCell row={row} status={status} />;
       },
       size: 80,
@@ -209,13 +227,20 @@ const ClientsList = () => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline">
-              <span className="mr-2">{roleFilter === "all" ? "All Status" : roleFilter}</span>
+              <span className="mr-2">
+                {roleFilter === "all" ? "All Status" : roleFilter}
+              </span>
               <ChevronDownIcon className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuRadioGroup value={roleFilter} onValueChange={setRoleFilter}>
-              <DropdownMenuRadioItem value="all">All Status</DropdownMenuRadioItem>
+            <DropdownMenuRadioGroup
+              value={roleFilter}
+              onValueChange={setRoleFilter}
+            >
+              <DropdownMenuRadioItem value="all">
+                All Status
+              </DropdownMenuRadioItem>
               {UserActiveStatusEnum.options.map((status) => (
                 <DropdownMenuRadioItem key={status} value={status}>
                   {status}
@@ -235,7 +260,10 @@ const ClientsList = () => {
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   );
                 })}
@@ -245,17 +273,26 @@ const ClientsList = () => {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -270,7 +307,13 @@ const ClientsList = () => {
 
 export default ClientsList;
 
-const ActionCell = ({ row, status }: { row: any; status?: UserFundMapStatus | null }) => {
+const ActionCell = ({
+  row,
+  status,
+}: {
+  row: any;
+  status?: UserFundMapStatus | null;
+}) => {
   // const [open, setOpen] = React.useState(false);
   const router = useRouter();
   const handleOpen = () => {
@@ -304,7 +347,10 @@ const ActionCell = ({ row, status }: { row: any; status?: UserFundMapStatus | nu
               onClick={() => handleOpen()}
               className="cursor-pointer w-full justify-start rounded-md p-2 hover:bg-neutral-100"
             >
-              <IconMenu text="Details" icon={<ViewIcon className="h-4 w-4" />} />
+              <IconMenu
+                text="Details"
+                icon={<ViewIcon className="h-4 w-4" />}
+              />
             </Button>
           </DropdownMenuItem>
         </DropdownMenuContent>

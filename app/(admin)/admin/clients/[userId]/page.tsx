@@ -37,7 +37,9 @@ const TabView = () => {
       className="w-full flex flex-col items-start justify-start p-10"
     >
       <TabsList>
-        <TabsTrigger value="personal-information">Personal Information</TabsTrigger>
+        <TabsTrigger value="personal-information">
+          Personal Information
+        </TabsTrigger>
         <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
         <TabsTrigger value="documents">Documents</TabsTrigger>
         <TabsTrigger value="credit-report">Credit Report</TabsTrigger>
@@ -68,9 +70,9 @@ const TabView = () => {
       <TabsContent value="personal-information" className="w-full">
         <ClientData user={userData as UserWithId} />
       </TabsContent>
-      <TabsContent value="pre-approved-funds" className="w-full">
+      {/* <TabsContent value="pre-approved-funds" className="w-full">
         <AdminMappedFunds userId={userId} />
-      </TabsContent>
+      </TabsContent> */}
 
       <TabsContent value="dashboard" className="w-full">
         <AdminViewUserProfile userId={userId} />

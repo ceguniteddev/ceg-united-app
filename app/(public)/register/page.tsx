@@ -5,15 +5,26 @@ import { Form } from "@/components/ui/form";
 import { User, registrationSchema } from "@/schema/registration";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon, SaveIcon } from "lucide-react";
-import { SubmitHandler, useForm, UseFormReturn, useWatch } from "react-hook-form";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  SubmitHandler,
+  useForm,
+  UseFormReturn,
+  useWatch,
+} from "react-hook-form";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { genderTypes } from "@/schema";
 import { useRegistration } from "@/hooks/registration";
 import { PasswordStrength } from "@/components/PasswordStrength";
 import Link from "next/link";
 import { getCaptchaTokenRegistration } from "@/lib/captcha";
 import Image from "next/image";
-import { frequencyOfIncome, US_STATES } from "@/constant/common";
+// import { frequencyOfIncome, US_STATES } from "@/constant/common";
 const RegistrationPage = () => {
   const { recordRegistration, isRecording } = useRegistration();
 
@@ -24,7 +35,11 @@ const RegistrationPage = () => {
     } as Partial<User>,
   });
 
-  const password = useWatch({ control: form.control, name: "password", defaultValue: "" });
+  const password = useWatch({
+    control: form.control,
+    name: "password",
+    defaultValue: "",
+  });
 
   const onSubmit = async (values: User) => {
     const token = await getCaptchaTokenRegistration("registration");
@@ -55,15 +70,29 @@ const RegistrationPage = () => {
               <Card className="w-[800px]">
                 <CardHeader>
                   <CardTitle className="text-center flex flex-col">
-                    <span className="text-2xl font-bold">{"Register your account"}</span>
+                    <span className="text-2xl font-bold">
+                      {"Register your account"}
+                    </span>
                     <span>{"It's quick and easy."}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-3 gap-4">
-                    <CustomFormField name={"firstName"} placeholder={""} label="* First Name" />
-                    <CustomFormField name={"middleName"} placeholder={""} label="Middle Name" />
-                    <CustomFormField name={"lastName"} placeholder={""} label="* Last Name" />
+                    <CustomFormField
+                      name={"firstName"}
+                      placeholder={""}
+                      label="* First Name"
+                    />
+                    <CustomFormField
+                      name={"middleName"}
+                      placeholder={""}
+                      label="Middle Name"
+                    />
+                    <CustomFormField
+                      name={"lastName"}
+                      placeholder={""}
+                      label="* Last Name"
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
@@ -72,7 +101,11 @@ const RegistrationPage = () => {
                       placeholder=""
                       label="* Email Address"
                     />
-                    <CustomFormField name={"phoneNumber"} placeholder="" label="* Phone Number" />
+                    <CustomFormField
+                      name={"phoneNumber"}
+                      placeholder=""
+                      label="* Phone Number"
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
@@ -91,7 +124,7 @@ const RegistrationPage = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  {/* <div className="grid grid-cols-3 gap-4">
                     <CustomFormField
                       name={"personalIncome"}
                       label="Personal Income?"
@@ -116,13 +149,13 @@ const RegistrationPage = () => {
                         { value: "Direct Deposit", label: "Direct Deposit" },
                       ]}
                     />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  </div> */}
+                  {/* <div className="grid grid-cols-2 gap-4">
                     <CustomFormField name={"businessGross"} label="Business Gross?" type="number" />
                     <CustomFormField name={"businessNet"} label="Business Net?" type="number" />
-                  </div>
+                  </div> */}
 
-                  <CustomFormField name={"addressStreet"} label={"* Street Address"} />
+                  {/* <CustomFormField name={"addressStreet"} label={"* Street Address"} />
                   <div className="grid grid-cols-3 gap-4">
                     <CustomFormField name={"addressCity"} label={"* City"} />
                     <CustomFormField
@@ -133,7 +166,7 @@ const RegistrationPage = () => {
                       options={US_STATES}
                     />
                     <CustomFormField name={"addressPostal"} label={"* Zip Code"} />
-                  </div>
+                  </div> */}
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
                       name={"ssn"}

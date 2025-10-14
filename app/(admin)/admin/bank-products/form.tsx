@@ -28,11 +28,14 @@ type Props = {
 
 const BankProductsForm = ({ setOpen, data, isAdminViewing, userId }: Props) => {
   const { products, isLoading } = useFundingProducts();
-  const [interestedProducts, setInterestedProducts] = useState<DropdownOption[]>([]);
+  const [interestedProducts, setInterestedProducts] = useState<
+    DropdownOption[]
+  >([]);
 
   const { createBankProduct, updateBankProduct, isCreating, isUpdating } =
     useBankProductsMutation();
-  const { approveMappedFund, isApproving } = useFundingApplicationsMappedFundsMutation();
+  const { approveMappedFund, isApproving } =
+    useFundingApplicationsMappedFundsMutation();
 
   const form = useForm<BankFormData>({
     resolver: zodResolver(bankDataSchema),
@@ -64,14 +67,15 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing, userId }: Props) => {
   const onSubmit: SubmitHandler<BankFormData> = useCallback(
     async (values) => {
       if (data) {
-        if (isAdminViewing && userId) {
-          await approveMappedFund({
-            bankProductId: data.id!,
-            userId: userId,
-          });
-        } else {
-          await updateBankProduct({ id: data.id!, values });
-        }
+        // if (isAdminViewing && userId) {
+        //   await approveMappedFund({
+        //     bankProductId: data.id!,
+        //     userId: userId,
+        //   });
+        // } else {
+        //   await updateBankProduct({ id: data.id!, values });
+        // }
+        await updateBankProduct({ id: data.id!, values });
         form.reset();
       } else {
         await createBankProduct(values);
@@ -85,9 +89,9 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing, userId }: Props) => {
       form,
       setOpen,
       data,
-      isAdminViewing,
-      userId,
-      approveMappedFund,
+      // isAdminViewing,
+      // userId,
+      // approveMappedFund,
     ]
   );
 
@@ -107,7 +111,11 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing, userId }: Props) => {
             <Card>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-3 gap-4">
-                  <CustomFormField name="bankName" placeholder="Chase" label="* Bank Name" />
+                  <CustomFormField
+                    name="bankName"
+                    placeholder="Chase"
+                    label="* Bank Name"
+                  />
 
                   <CustomFormField
                     name="productName"
@@ -163,7 +171,10 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing, userId }: Props) => {
                     placeholder=""
                     label="* Credit Bureau Pulled"
                     type="multi-select"
-                    options={CreditBureauEnum.options.map((c) => ({ value: c, label: c }))}
+                    options={CreditBureauEnum.options.map((c) => ({
+                      value: c,
+                      label: c,
+                    }))}
                   />
                   <CustomFormField
                     name="minimumCreditAgeRequired"
@@ -381,13 +392,21 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing, userId }: Props) => {
                     type="select"
                     options={yesNo}
                   />
-                  <CustomFormField name="contactName" placeholder="" label="* Contact Name" />
+                  <CustomFormField
+                    name="contactName"
+                    placeholder=""
+                    label="* Contact Name"
+                  />
                   <CustomFormField
                     name="contactPhoneNumber"
                     placeholder=""
                     label="* Contact Phone Number"
                   />
-                  <CustomFormField name="contactEmail" placeholder="" label="* Contact Email" />
+                  <CustomFormField
+                    name="contactEmail"
+                    placeholder=""
+                    label="* Contact Email"
+                  />
 
                   <CustomFormField
                     name="webUrl"

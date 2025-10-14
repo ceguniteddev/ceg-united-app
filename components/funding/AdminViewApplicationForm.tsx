@@ -1,12 +1,23 @@
 "use client";
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { CircleXIcon } from "lucide-react";
 import { format } from "date-fns";
 import * as React from "react";
+import {
+  businessTaxes,
+  howDoYouGetPaid,
+  personalTaxes,
+} from "@/constant/common";
 
 type Props = {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -28,9 +39,17 @@ const fmtDate = (value?: Date | string) => {
   return isNaN(d.getTime()) ? "" : format(d, "MMM d, yyyy");
 };
 
-const Field = ({ label, value }: { label: string; value?: React.ReactNode }) => (
+const Field = ({
+  label,
+  value,
+}: {
+  label: string;
+  value?: React.ReactNode;
+}) => (
   <div className="flex flex-col gap-1">
-    <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+    <span className="text-xs uppercase tracking-wide text-muted-foreground">
+      {label}
+    </span>
     <span className="text-sm">{value ?? "—"}</span>
   </div>
 );
@@ -43,7 +62,9 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
           <CardTitle>Funding Application</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">No application data to display.</p>
+          <p className="text-sm text-muted-foreground">
+            No application data to display.
+          </p>
         </CardContent>
         <CardFooter>
           <Button
@@ -59,14 +80,27 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
     );
   }
 
-  const isBusinessFunding = (data.fundingType ?? "").toLowerCase().includes("business");
+  const isBusinessFunding = (data.fundingType ?? "").includes("business");
+
+  const howDoYouGetPaidOption = howDoYouGetPaid.find(
+    (x) => x.value === data.howDoYouGetPaid
+  );
+
+  const personalTaxesOption = personalTaxes.find(
+    (x) => x.value === data.personalTaxes
+  );
+
+  const businessTaxesOption = businessTaxes.find(
+    (x) => x.value === data.businessTaxes
+  );
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Funding Application</CardTitle>
         <div className="text-sm text-muted-foreground">
-          Submitted: {fmtDate(data.appliedDate) || "—"} • Status: {data.status || "—"}
+          Submitted: {fmtDate(data.appliedDate) || "—"} • Status:{" "}
+          {data.status || "—"} • Reference: {data.referenceNumber || "—"}
         </div>
       </CardHeader>
 
@@ -76,29 +110,39 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
           <h3 className="text-sm font-semibold mb-3">Product</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Interested Product" value={data.interestedProduct} />
-            <Field label="Requested Amount" value={currency(data.amountFunding)} />
             <Field label="Funding Type" value={data.fundingType || "All"} />
+            <Field
+              label="Personal Requested Amount"
+              value={currency(data.personalAmountFunding)}
+            />
+            <Field
+              label="Business Requested Amount"
+              value={currency(data.businessAmountFunding)}
+            />
           </div>
         </section>
 
         <Separator />
 
-        <section className="space-y-3">
-          <h3 className="text-sm font-semibold mb-3">Income</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field label="Personal Income" value={currency(data.personalIncome)} />
-            <Field label="Frequency of Income" value={data.frequencyOfIncome} />
-            <Field label="Payment Type" value={data.paymentType} />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field label="Business Gross" value={currency(data.businessGross)} />
-            <Field label="Business Net" value={currency(data.businessNet)} />
+        {/* Driver's License */}
+        <section>
+          <h3 className="text-sm font-semibold mb-3">{"Driver's License"}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="License Number" value={data.driverLicenseNumber} />
+            <Field label="State" value={data.driverLicenseState} />
+            <Field
+              label="Issue Date"
+              value={fmtDate(data.driverLicenseIssueDate)}
+            />
+            <Field
+              label="Expiry Date"
+              value={fmtDate(data.driverLicenseIssueExpiryDate)}
+            />
           </div>
         </section>
 
         <Separator />
 
-        {/* Business (only if present / business funding) */}
         {(isBusinessFunding || data.businessName) && (
           <>
             <section>
@@ -106,8 +150,14 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="Business Name" value={data.businessName} />
                 <Field label="EIN" value={data.employerIdentificationNumber} />
-                <Field label="Last Year Taxes" value={currency(data.lastYearTaxes)} />
-                <Field label="Current Year Taxes" value={currency(data.currentYearTaxes)} />
+                <Field
+                  label="Last Year Taxes"
+                  value={currency(data.lastYearTaxes)}
+                />
+                <Field
+                  label="Current Year Taxes"
+                  value={currency(data.currentYearTaxes)}
+                />
                 <Field label="Website" value={data.businessWebsite} />
                 <Field label="Email" value={data.businessEmail} />
                 <Field label="Phone" value={data.businessPhoneNumber} />
@@ -116,6 +166,60 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
                 <Field label="City" value={data.businessCityAddress} />
                 <Field label="State" value={data.businessStateAddress} />
                 <Field label="Zip Code" value={data.businessPostalAddress} />
+              </div>
+            </section>
+            <Separator />
+            <section>
+              <h3 className="text-sm font-semibold mb-3">
+                Business Financials
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Field
+                  label="Gross Projected Revenue (Year 1)"
+                  value={currency(data.businessGrossProjectedRevenue1)}
+                />
+                <Field
+                  label="Gross Projected Revenue (Year 2)"
+                  value={currency(data.businessGrossProjectedRevenue2)}
+                />
+                <Field
+                  label="Gross Projected Revenue (Year 3)"
+                  value={currency(data.businessGrossProjectedRevenue3)}
+                />
+                <Field
+                  label="Projected Profit (Year 1)"
+                  value={currency(data.businessProjectedProfit1)}
+                />
+                <Field
+                  label="Projected Profit (Year 2)"
+                  value={currency(data.businessProjectedProfit2)}
+                />
+                <Field
+                  label="Projected Profit (Year 3)"
+                  value={currency(data.businessProjectedProfit3)}
+                />
+              </div>
+            </section>
+            <Separator />
+            <section>
+              <h3 className="text-sm font-semibold mb-3">Business Taxes</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field
+                  label="Filed Business Taxes"
+                  value={businessTaxesOption?.label}
+                />
+                <Field
+                  label="Taxes Year 1"
+                  value={currency(data.businessTaxes1)}
+                />
+                <Field
+                  label="Taxes Year 2"
+                  value={currency(data.businessTaxes2)}
+                />
+                <Field
+                  label="Taxes Year 3"
+                  value={currency(data.businessTaxes3)}
+                />
               </div>
             </section>
             <Separator />
@@ -153,10 +257,60 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
         <section>
           <h3 className="text-sm font-semibold mb-3">Household</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Monthly Housing Cost" value={currency(data.payPerMonth as any)} />
+            <Field
+              label="Monthly Housing Cost"
+              value={currency(data.payPerMonth as any)}
+            />
             <Field label="Rent/Mortgage/Other" value={data.rentOrMortgage} />
             <Field label="Married" value={data.isMarried} />
-            <Field label="Mother's Maiden Name" value={data.motherMaidenName} />
+            {/* <Field label="Mother's Maiden Name" value={data.motherMaidenName} /> */}
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Employment */}
+        <section>
+          <h3 className="text-sm font-semibold mb-3">Employment</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field
+              label="How are you paid?"
+              value={howDoYouGetPaidOption?.label}
+            />
+            <Field
+              label="Pay Per Month"
+              value={currency(data.employmentPayPerMonth)}
+            />
+            <Field label="Employer Name" value={data.employmentEmployerName} />
+            <Field
+              label="Employer Phone"
+              value={data.employmentEmployerPhoneNumber}
+            />
+            <Field
+              label="Employer Address"
+              value={data.employmentEmployerAddress}
+            />
+            <Field label="Occupation" value={data.employmentOccupation} />
+            <Field
+              label="Date of Hire"
+              value={fmtDate(data.employmentDateOfHire)}
+            />
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Personal Taxes */}
+        <section>
+          <h3 className="text-sm font-semibold mb-3">Personal Taxes</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field
+              label="Filed Personal Taxes"
+              value={personalTaxesOption?.label}
+            />
+            <Field label="Taxes Year 1" value={currency(data.personalTaxes1)} />
+            <Field label="Taxes Year 2" value={currency(data.personalTaxes2)} />
+            <Field label="Taxes Year 3" value={currency(data.personalTaxes3)} />
           </div>
         </section>
       </CardContent>

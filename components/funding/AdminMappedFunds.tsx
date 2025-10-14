@@ -1,4 +1,7 @@
-import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
+import {
+  useApproveMappedFundsQuery,
+  useFundingApplicationsMappedFundsQuery,
+} from "@/hooks/admin/funding-application/fund-mapping";
 
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
@@ -16,11 +19,9 @@ import {
 } from "@tanstack/react-table";
 import {
   ArrowUpDown,
-  BanknoteIcon,
   CheckCircle,
   MoreHorizontal,
   ViewIcon,
-  XCircle,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import {
@@ -42,47 +43,76 @@ import IconMenu from "@/components/icon-menu";
 import { BankFormData } from "@/schema/bank-products";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import BankProductsForm from "@/app/(admin)/admin/bank-products/form";
-import CategoryBadge from "../CategoryBadge";
-import SortableHeader from "@/components/SortableHeader";
-import ApplyFundingForm from "@/components/funding/ApplyFundingForm";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import ApplyFundingSuccessful from "@/app/(client)/my-funding/_funding/ApplyFundingSuccessful";
-import { cn } from "@/lib/utils";
 
-type Props = { userId: string };
+type Props = {
+  referenceNumber: string;
+  setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+};
 
-const AdminMappedFunds = ({ userId }: Props) => {
-  const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({ userId });
+const AdminMappedFunds = ({ referenceNumber, setOpen }: Props) => {
+  return <BankProductsList referenceNumber={referenceNumber} />;
+};
 
+export default AdminMappedFunds;
+
+const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
+  const { mappedFund = [], isLoading } =
+    useFundingApplicationsMappedFundsQuery(referenceNumber);
+  const { approvedMappedFunds = [] } =
+    useApproveMappedFundsQuery(referenceNumber);
+  const approvedIds = useMemo(
+    () => new Set(approvedMappedFunds.map((fund) => fund.id)),
+    [approvedMappedFunds]
+  );
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
 
   const columns: ColumnDef<BankFormData>[] = useMemo(
     () => [
       {
-        id: "adminApprovedStatus",
-        accessorKey: "adminApprovedStatus",
-        // header: "Admin Approved Status",
-        header: ({ column }) => <SortableHeader column={column} title="Admin Approved Status" />,
+        id: "status",
+        header: "Status",
         cell: ({ row }) => {
-          const status = row.getValue("adminApprovedStatus") as string;
-          return status ? <CategoryBadge category={status} /> : null;
+          const isApproved = approvedIds.has(row.original.id);
+          return isApproved ? (
+            <div className="flex items-center text-green-500">
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Approved
+            </div>
+          ) : null;
         },
         size: 120,
       },
       {
         accessorKey: "bankName",
         id: "bankName",
-        header: ({ column }) => <SortableHeader column={column} title="Bank Name" />,
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Bank Name <ArrowUpDown />
+          </Button>
+        ),
         cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
       },
       {
         accessorKey: "productName",
         id: "productName",
-        header: ({ column }) => <SortableHeader column={column} title="Product Name" />,
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Product Name <ArrowUpDown />
+          </Button>
+        ),
         cell: ({ row }) => {
           const productNames = row.getValue("productName") as string[];
 
@@ -100,32 +130,23 @@ const AdminMappedFunds = ({ userId }: Props) => {
       {
         accessorKey: "financingTerm",
         id: "financingTerm",
-        header: ({ column }) => <SortableHeader column={column} title="Financing Term" />,
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Product Type <ArrowUpDown />
+          </Button>
+        ),
         cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
       },
       {
-        accessorKey: "clientApplicationStatus",
-        id: "clientApplicationStatus",
-        header: ({ column }) => (
-          <SortableHeader column={column} title="Client Application Status" />
-        ),
-        cell: ({ row }) => {
-          const status = row.getValue("clientApplicationStatus") as string;
-          return status ? <CategoryBadge category={status} /> : null;
-        },
-      },
-      {
-        id: "applyFunding",
-        header: "Apply Funding",
-        cell: ({ row }) => <ApplyFunding row={row} userId={userId} />,
-      },
-      {
         id: "actions",
-        cell: ({ row }) => <ActionCell row={row} userId={userId} />,
+        cell: ({ row }) => <ActionCell row={row} />,
         size: 80,
       },
     ],
-    [userId]
+    [approvedIds]
   );
 
   const table = useReactTable({
@@ -169,7 +190,10 @@ const AdminMappedFunds = ({ userId }: Props) => {
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   );
                 })}
@@ -179,17 +203,26 @@ const AdminMappedFunds = ({ userId }: Props) => {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -201,9 +234,7 @@ const AdminMappedFunds = ({ userId }: Props) => {
   );
 };
 
-export default AdminMappedFunds;
-
-const ActionCell = ({ row, userId }: { row: any; userId: string }) => {
+const ActionCell = ({ row }: { row: any }) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -220,7 +251,6 @@ const ActionCell = ({ row, userId }: { row: any; userId: string }) => {
           setOpen={setOpen}
           data={row.original}
           isAdminViewing={true}
-          userId={userId}
         />
       </ResponsiveDialog>
       <DropdownMenu modal={true}>
@@ -237,69 +267,11 @@ const ActionCell = ({ row, userId }: { row: any; userId: string }) => {
               className="cursor-pointer w-full justify-start rounded-md p-2 hover:bg-neutral-100"
               onClick={() => setOpen(true)}
             >
-              <IconMenu text="View Product" icon={<ViewIcon className="h-4 w-4" />} />
+              <IconMenu text="View" icon={<ViewIcon className="h-4 w-4" />} />
             </Button>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </>
-  );
-};
-
-const ApplyFunding = ({ row, userId }: { row: any; userId: string }) => {
-  const [open, setOpen] = React.useState(false);
-  const [congratsOpen, setCongratsOpen] = React.useState(false);
-  return (
-    <>
-      <ResponsiveDialog
-        isOpen={open}
-        setIsOpen={setOpen}
-        title="Apply Funding"
-        description={
-          <>
-            * Please make sure all the details are correct
-            <br />* You will be able to update this form once submitted
-          </>
-        }
-        descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-3/6"
-      >
-        <ApplyFundingForm
-          setOpen={setOpen}
-          setCongratsOpen={setCongratsOpen}
-          bankFormData={row.original}
-          userId={userId}
-        />
-      </ResponsiveDialog>
-
-      <Dialog open={congratsOpen} onOpenChange={setCongratsOpen}>
-        <DialogContent
-          className={cn("min-h-[30vh] overflow-y-auto w-2/5")}
-          onInteractOutside={(e) => {
-            e.preventDefault();
-          }}
-          onEscapeKeyDown={(e) => {
-            e.preventDefault();
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>{""}</DialogTitle>
-          </DialogHeader>
-          <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
-            <ApplyFundingSuccessful fire={congratsOpen} />
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Button
-        type="button"
-        variant="outline"
-        className="bg-green-200 hover:bg-green-400 cursor-pointer"
-        onClick={() => setOpen(true)}
-      >
-        <BanknoteIcon className="h-4 w-4" />
-        {"Apply Funding"}
-      </Button>
     </>
   );
 };

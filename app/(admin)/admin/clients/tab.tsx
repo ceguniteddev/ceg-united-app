@@ -19,14 +19,23 @@ type Props = {
 
 const TabView = ({ formSetOpen, data, status }: Props) => {
   return (
-    <Tabs defaultValue="application" className="w-full flex flex-col items-start justify-start">
+    <Tabs
+      defaultValue="application"
+      className="w-full flex flex-col items-start justify-start"
+    >
       <TabsList>
-        <TabsTrigger value="personal-information">Personal Information</TabsTrigger>
+        <TabsTrigger value="personal-information">
+          Personal Information
+        </TabsTrigger>
         <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
         <TabsTrigger value="documents">Documents</TabsTrigger>
         <TabsTrigger value="credit-report">Credit Report</TabsTrigger>
         <TabsTrigger value="business">Business</TabsTrigger>
-        {status && <TabsTrigger value="pre-approved-funds">Pre-approved Funds</TabsTrigger>}
+        {status && (
+          <TabsTrigger value="pre-approved-funds">
+            Pre-approved Funds
+          </TabsTrigger>
+        )}
         <TabsTrigger value="applied-funding">Applied Funding</TabsTrigger>
         <TabsTrigger value="note">Note</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
@@ -52,9 +61,9 @@ const TabView = ({ formSetOpen, data, status }: Props) => {
       <TabsContent value="personal-information" className="w-full">
         <ClientData user={data} />
       </TabsContent>
-      <TabsContent value="pre-approved-funds" className="w-full">
+      {/* <TabsContent value="pre-approved-funds" className="w-full">
         <AdminMappedFunds userId={data.id} />
-      </TabsContent>
+      </TabsContent> */}
 
       <TabsContent value="dashboard" className="w-full">
         <AdminViewUserProfile userId={data.id} />
