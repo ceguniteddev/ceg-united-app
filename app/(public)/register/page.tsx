@@ -24,6 +24,7 @@ import { PasswordStrength } from "@/components/PasswordStrength";
 import Link from "next/link";
 import { getCaptchaTokenRegistration } from "@/lib/captcha";
 import Image from "next/image";
+import { US_STATES } from "@/constant/common";
 // import { frequencyOfIncome, US_STATES } from "@/constant/common";
 const RegistrationPage = () => {
   const { recordRegistration, isRecording } = useRegistration();
@@ -155,7 +156,10 @@ const RegistrationPage = () => {
                     <CustomFormField name={"businessNet"} label="Business Net?" type="number" />
                   </div> */}
 
-                  {/* <CustomFormField name={"addressStreet"} label={"* Street Address"} />
+                  <CustomFormField
+                    name={"addressStreet"}
+                    label={"* Street Address"}
+                  />
                   <div className="grid grid-cols-3 gap-4">
                     <CustomFormField name={"addressCity"} label={"* City"} />
                     <CustomFormField
@@ -165,8 +169,11 @@ const RegistrationPage = () => {
                       placeholder="Select a state"
                       options={US_STATES}
                     />
-                    <CustomFormField name={"addressPostal"} label={"* Zip Code"} />
-                  </div> */}
+                    <CustomFormField
+                      name={"addressPostal"}
+                      label={"* Zip Code"}
+                    />
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
                       name={"ssn"}
