@@ -14,6 +14,7 @@ import {
   CheckIcon,
   CircleXIcon,
   Loader2Icon,
+  Plus,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import {
@@ -37,6 +38,19 @@ import { Separator } from "../ui/separator";
 import { ConfirmButton } from "../Confirmation";
 import { fa } from "zod/v4/locales";
 import { set } from "zod";
+import ClientBusinessManagement from "../ClientBusinessManagement";
+import IconMenu from "../icon-menu";
+import { ResponsiveDialog } from "../responsive-dialog";
+import { Business } from "@/schema";
+import {
+  useGetPlaidAccounts,
+  useHasIncomeBankVerificationQuery,
+  useHasPayrollBankVerificationQuery,
+} from "@/hooks/plaid";
+import NoBankLinked from "../NoBankLinked";
+import PlaidLink from "../PlaidLink";
+import PlaidIncomeLinkBank from "../PlaidLinkIncomeBank";
+import PlaidIncomeLinkPayroll from "../PlaidLinkIncomePayroll";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
@@ -68,12 +82,18 @@ const ApplyFundingForm = ({
   isViewing,
   userId,
 }: Props) => {
+  const { incomeBankItem, isLoading: incomeBankItemLoading } =
+    useHasIncomeBankVerificationQuery();
+  const { incomePayrollItem, isLoading: payrollBankItemLoading } =
+    useHasPayrollBankVerificationQuery();
   const { applyFunding, isRecording } = useApplyFunding();
   const [showLegalResidentOther, setShowLegalResidentOther] = useState(false);
+  const [openBusinessModal, setOpenBusinessModal] = useState(false);
   const [interestedProductSelected, setInterestedProductSelected] = useState<
     FundingProductEnumType | undefined
   >(undefined);
   const [tradelinesOrShelf, setTradelinesOrShelf] = useState<boolean>(false);
+  const [community, setCommunity] = useState<boolean>(false);
 
   const [howDoYouGetPaidSelected, setHowDoYouGetPaidSelected] = useState<
     DropdownOption | undefined
@@ -178,6 +198,8 @@ const ApplyFundingForm = ({
         interestedProductSelected.value.includes("Shelf") ||
           interestedProductSelected.value.includes("Tradelines")
       );
+
+      setCommunity(interestedProductSelected.value.includes("Community"));
     }
   }, [interestedProductSelected]);
 
@@ -268,6 +290,22 @@ const ApplyFundingForm = ({
 
   return (
     <div>
+      <ResponsiveDialog
+        isOpen={openBusinessModal}
+        setIsOpen={setOpenBusinessModal}
+        title="Manage Business Information"
+        description={""}
+        descriptionClassName="text-red-500 text-lg font-semibold"
+        className="w-3/6"
+      >
+        <ClientBusinessManagement
+          userId={userId}
+          editingBusiness={null}
+          setEditingBusiness={() => {}}
+          isModal
+          setOpen={setOpenBusinessModal}
+        />
+      </ResponsiveDialog>
       <Form {...form}>
         <form onSubmit={(e) => e.preventDefault()}>
           <fieldset disabled={isRecording}>
@@ -311,7 +349,7 @@ const ApplyFundingForm = ({
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-3 gap-4 items-start">
-                        {!tradelinesOrShelf && (
+                        {!tradelinesOrShelf && false && (
                           <CustomFormField
                             name={"isMarried"}
                             label={"Are you married?"}
@@ -335,7 +373,7 @@ const ApplyFundingForm = ({
                           />
                         )}
                       </div>
-                      {!tradelinesOrShelf && (
+                      {!tradelinesOrShelf && false && (
                         <div className="grid grid-cols-2 gap-4">
                           <CustomFormField
                             name={"driverLicenseNumber"}
@@ -484,14 +522,25 @@ const ApplyFundingForm = ({
                   )}
 
                   {interestedProductSelected?.type?.includes("Business") && (
-                    <CustomFormField
-                      name="businessName"
-                      label="Select Business (Manage your business in My Business page)"
-                      type="select"
-                      placeholder="Select your business"
-                      options={businessOptions}
-                      onSelectValue={handleBusinessSelect}
-                    />
+                    <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-end gap-4">
+                      <CustomFormField
+                        name="businessName"
+                        label="Select Business"
+                        type="select"
+                        placeholder="Select your business"
+                        options={businessOptions}
+                        onSelectValue={handleBusinessSelect}
+                      />
+                      <Button
+                        type="button"
+                        size="lg"
+                        variant="ghost"
+                        className="justify-self-start md:justify-self-end"
+                        onClick={() => setOpenBusinessModal(true)}
+                      >
+                        <IconMenu text="Add Business" icon={<Plus />} />
+                      </Button>
+                    </div>
                   )}
 
                   {businessIdSelected && (
@@ -569,55 +618,66 @@ const ApplyFundingForm = ({
                   )}
                 </CardContent>
 
-                <CardFooter className="flex justify-end">
+                <CardFooter className="flex justify-between">
                   {!data ? (
-                    <div className="grid grid-cols-2 gap-4">
-                      <Button
-                        size="lg"
-                        variant={"outline"}
-                        type="button"
-                        disabled={isRecording}
-                        onClick={() => setOpen(false)}
-                        className=" bg-red-200 hover:bg-red-300 text-black-100 cursor-pointer"
-                      >
-                        <CircleXIcon className="mr-2 h-4 w-4" /> Close
-                      </Button>
+                    <>
+                      <div>
+                        {!community && (
+                          <div className="space-x-4">
+                            <PlaidLink />
+                            {!incomeBankItem && <PlaidIncomeLinkBank />}
+                            {!incomePayrollItem && <PlaidIncomeLinkPayroll />}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-4">
+                        <Button
+                          size="lg"
+                          variant={"outline"}
+                          type="button"
+                          disabled={isRecording}
+                          onClick={() => setOpen(false)}
+                          className=" bg-red-200 hover:bg-red-300 text-black-100 cursor-pointer"
+                        >
+                          <CircleXIcon className="mr-2 h-4 w-4" /> Close
+                        </Button>
 
-                      <span onClickCapture={handleApproveClickCapture}>
-                        <ConfirmButton
-                          label="Apply"
-                          confirmLabel="Apply"
-                          description="Please confirm your application."
-                          variant="default"
-                          size="sm"
-                          icon={<CheckIcon className="h-4 w-4" />}
-                          onConfirm={() => onSubmit()}
-                          className="bg-green-600 hover:bg-green-700"
-                          classNameAction="bg-green-600 hover:bg-green-700"
-                          isLoading={form.formState.isSubmitting}
-                          trigger={
-                            <Button
-                              size="lg"
-                              type="submit"
-                              disabled={isRecording}
-                              className=" bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer"
-                            >
-                              {isRecording ? (
-                                <>
-                                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-                                  Applying...
-                                </>
-                              ) : (
-                                <>
-                                  <BanknoteIcon className="mr-2 h-4 w-4" />{" "}
-                                  Apply Funding
-                                </>
-                              )}
-                            </Button>
-                          }
-                        />
-                      </span>
-                    </div>
+                        <span onClickCapture={handleApproveClickCapture}>
+                          <ConfirmButton
+                            label="Apply"
+                            confirmLabel="Apply"
+                            description="Please confirm your application."
+                            variant="default"
+                            size="sm"
+                            icon={<CheckIcon className="h-4 w-4" />}
+                            onConfirm={() => onSubmit()}
+                            className="bg-green-600 hover:bg-green-700"
+                            classNameAction="bg-green-600 hover:bg-green-700"
+                            isLoading={form.formState.isSubmitting}
+                            trigger={
+                              <Button
+                                size="lg"
+                                type="submit"
+                                disabled={isRecording}
+                                className=" bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer"
+                              >
+                                {isRecording ? (
+                                  <>
+                                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                                    Applying...
+                                  </>
+                                ) : (
+                                  <>
+                                    <BanknoteIcon className="mr-2 h-4 w-4" />{" "}
+                                    Apply Funding
+                                  </>
+                                )}
+                              </Button>
+                            }
+                          />
+                        </span>
+                      </div>
+                    </>
                   ) : (
                     <Button
                       size="lg"

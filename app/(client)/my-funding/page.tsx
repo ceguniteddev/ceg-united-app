@@ -3,39 +3,39 @@
 import HeaderBox from "@/components/HeaderBox";
 import React from "react";
 import ApplyFundingList from "./_funding/ApplyFundingList";
-import Spinner from "@/components/Spinner";
-import {
-  useGetPlaidAccounts,
-  useHasIncomeBankVerificationQuery,
-  useHasPayrollBankVerificationQuery,
-} from "@/hooks/plaid";
+// import Spinner from "@/components/Spinner";
+// import {
+//   useGetPlaidAccounts,
+//   useHasIncomeBankVerificationQuery,
+//   useHasPayrollBankVerificationQuery,
+// } from "@/hooks/plaid";
 import { useAuth } from "@/provider/AuthContext";
-import NoBankLinked from "@/components/NoBankLinked";
+// import NoBankLinked from "@/components/NoBankLinked";
 import NoIncomeVerification from "@/components/NoIncomeVerification";
 import ApplyFunding from "./_funding/ApplyFunding";
 
 const ApplyFundingPage = () => {
-  const { plaidAccounts, isLoading } = useGetPlaidAccounts();
-  const { incomeBankItem, isLoading: incomeBankItemLoading } =
-    useHasIncomeBankVerificationQuery();
-  const { incomePayrollItem, isLoading: payrollBankItemLoading } =
-    useHasPayrollBankVerificationQuery();
+  // const { plaidAccounts, isLoading } = useGetPlaidAccounts();
+  // const { incomeBankItem, isLoading: incomeBankItemLoading } =
+  //   useHasIncomeBankVerificationQuery();
+  // const { incomePayrollItem, isLoading: payrollBankItemLoading } =
+  //   useHasPayrollBankVerificationQuery();
   const { user } = useAuth();
 
-  if (isLoading) return <Spinner />;
+  // if (isLoading) return <Spinner />;
 
   if (!user) return null;
 
-  if (isLoading || incomeBankItemLoading || payrollBankItemLoading)
-    return <Spinner />;
+  // if (isLoading || incomeBankItemLoading || payrollBankItemLoading)
+  //   return <Spinner />;
 
-  if (!plaidAccounts || !plaidAccounts.data?.length) {
-    return <NoBankLinked />;
-  }
+  // if (!plaidAccounts || !plaidAccounts.data?.length) {
+  //   return <NoBankLinked />;
+  // }
 
-  if (!incomeBankItem) {
-    return <NoIncomeVerification tokenType="INCOME_VERIFICATION_BANK" />;
-  }
+  // if (!incomeBankItem) {
+  //   return <NoIncomeVerification tokenType="INCOME_VERIFICATION_BANK" />;
+  // }
   // if (!incomePayrollItem) {
   //   return <NoIncomeVerification tokenType="INCOME_VERIFICATION_PAYROLL" />;
   // }
