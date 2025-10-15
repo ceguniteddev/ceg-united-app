@@ -343,7 +343,7 @@ const ApplyFundingForm = ({
                       )}
                   </div>
 
-                  <Card>
+                  <Card className="bg-cyan-50">
                     <CardHeader>
                       <CardTitle>Personal Information</CardTitle>
                     </CardHeader>
@@ -453,7 +453,7 @@ const ApplyFundingForm = ({
 
                   {howDoYouGetPaidSelected?.type === "yes" &&
                     !tradelinesOrShelf && (
-                      <Card>
+                      <Card className="bg-blue-50">
                         <CardHeader>
                           <CardTitle>Employment Information</CardTitle>
                         </CardHeader>
@@ -522,32 +522,33 @@ const ApplyFundingForm = ({
                       </Card>
                     )}
 
-                  {interestedProductSelected?.type?.includes("Business") && (
-                    <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-end gap-4">
-                      <CustomFormField
-                        name="businessName"
-                        label="Select Business"
-                        type="select"
-                        placeholder="Select your business"
-                        options={businessOptions}
-                        onSelectValue={handleBusinessSelect}
-                      />
-                      <Button
-                        type="button"
-                        size="lg"
-                        variant="ghost"
-                        className="justify-self-start md:justify-self-end"
-                        onClick={() => setOpenBusinessModal(true)}
-                      >
-                        <IconMenu text="Add Business" icon={<Plus />} />
-                      </Button>
-                    </div>
-                  )}
+                  {interestedProductSelected?.type?.includes("Business") &&
+                    !tradelinesOrShelf && (
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-end gap-4">
+                        <CustomFormField
+                          name="businessName"
+                          label="Select Business"
+                          type="select"
+                          placeholder="Select your business"
+                          options={businessOptions}
+                          onSelectValue={handleBusinessSelect}
+                        />
+                        <Button
+                          type="button"
+                          size="lg"
+                          variant="ghost"
+                          className="justify-self-start md:justify-self-end"
+                          onClick={() => setOpenBusinessModal(true)}
+                        >
+                          <IconMenu text="Add Business" icon={<Plus />} />
+                        </Button>
+                      </div>
+                    )}
 
                   {businessIdSelected &&
                     interestedProductSelected?.type?.includes("Business") &&
                     !tradelinesOrShelf && (
-                      <Card>
+                      <Card className="bg-emerald-50">
                         <CardHeader>
                           <CardTitle>Business Information</CardTitle>
                         </CardHeader>

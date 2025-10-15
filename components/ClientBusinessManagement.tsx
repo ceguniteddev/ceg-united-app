@@ -66,7 +66,7 @@ const ClientBusinessManagement = ({
     form.reset(defaultValues);
     form.clearErrors();
     setTimeout(() => form.setFocus("businessName"), 0);
-  }, [form]);
+  }, [form, setEditingBusiness]);
 
   const onSubmit: SubmitHandler<BusinessForm> = useCallback(
     async (values) => {
@@ -81,7 +81,14 @@ const ClientBusinessManagement = ({
         form.reset(defaultValues);
       }
     },
-    [recordBusiness, updateBusiness, editingBusiness, form]
+    [
+      recordBusiness,
+      updateBusiness,
+      editingBusiness,
+      form,
+      setEditingBusiness,
+      userId,
+    ]
   );
 
   const isSubmitting = isRecording || isUpdating;
