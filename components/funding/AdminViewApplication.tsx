@@ -47,7 +47,10 @@ const AdminViewApplication = ({ formSetOpen, formData }: Props) => {
         <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>
       <TabsContent value="fund-mapping" className="w-full">
-        <AdminMappedFunds referenceNumber={formData?.referenceNumber ?? ""} />
+        <AdminMappedFunds
+          referenceNumber={formData?.referenceNumber ?? ""}
+          userId={formData?.userId ?? ""}
+        />
       </TabsContent>
       <TabsContent value="notes" className="w-full">
         <FundApplicationNotes

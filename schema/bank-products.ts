@@ -10,9 +10,12 @@ export const CreditBureauEnum = z.enum(["Experian", "TransUnion", "Equifax"], {
   error: "Required",
 });
 
-const ClientApplicationStatus = z.enum(["Not Applied", "Pending", "Approved", "Declined"], {
-  error: "Required",
-});
+const ClientApplicationStatus = z.enum(
+  ["Not Applied", "Pending", "Approved", "Declined"],
+  {
+    error: "Required",
+  }
+);
 
 export type ClientApplicationStatus = z.infer<typeof ClientApplicationStatus>;
 
@@ -83,7 +86,12 @@ export const bankDataSchema = z.object({
   contactPhoneNumber: z.string().min(1, "Required"),
   contactEmail: z.email({ error: "Invalid email address" }),
   webUrl: z.string().min(1, "Required"),
-  clientApplicationStatus: ClientApplicationStatus.optional(),
-  adminApprovedStatus: ClientApplicationStatus.optional(),
 });
 export type BankFormData = z.infer<typeof bankDataSchema>;
+
+export type ApprovedBankFormData = BankFormData & {
+  fundMappingApprovedId: string;
+  clientApplicationStatus: ClientApplicationStatus;
+  adminApprovedStatus?: ClientApplicationStatus;
+  referenceNumber: string;
+};

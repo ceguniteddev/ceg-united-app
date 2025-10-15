@@ -23,10 +23,15 @@ type Props = {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   data?: BankFormData;
   isAdminViewing?: boolean;
-  userId?: string;
+  referenceNumber?: string;
 };
 
-const BankProductsForm = ({ setOpen, data, isAdminViewing, userId }: Props) => {
+const BankProductsForm = ({
+  setOpen,
+  data,
+  isAdminViewing,
+  referenceNumber,
+}: Props) => {
   const { products, isLoading } = useFundingProducts();
   const [interestedProducts, setInterestedProducts] = useState<
     DropdownOption[]
@@ -67,14 +72,14 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing, userId }: Props) => {
   const onSubmit: SubmitHandler<BankFormData> = useCallback(
     async (values) => {
       if (data) {
-        // if (isAdminViewing && userId) {
-        //   await approveMappedFund({
-        //     bankProductId: data.id!,
-        //     userId: userId,
-        //   });
-        // } else {
-        //   await updateBankProduct({ id: data.id!, values });
-        // }
+        if (isAdminViewing && referenceNumber) {
+          await approveMappedFund({
+            bankProductId: data.id!,
+            referenceNumber: referenceNumber,
+          });
+        } else {
+          await updateBankProduct({ id: data.id!, values });
+        }
         await updateBankProduct({ id: data.id!, values });
         form.reset();
       } else {
@@ -89,9 +94,9 @@ const BankProductsForm = ({ setOpen, data, isAdminViewing, userId }: Props) => {
       form,
       setOpen,
       data,
-      // isAdminViewing,
-      // userId,
-      // approveMappedFund,
+      isAdminViewing,
+      referenceNumber,
+      approveMappedFund,
     ]
   );
 

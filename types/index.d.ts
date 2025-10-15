@@ -1,5 +1,5 @@
 import { FundingApplicationType } from "@/schema/apply-funding";
-import { BankFormData } from "@/schema/bank-products";
+import { ApprovedBankFormData, BankFormData } from "@/schema/bank-products";
 
 declare global {
   type AdminApprovedStatus = "Approved" | "Pending";
@@ -34,7 +34,7 @@ declare global {
 
   type GetBankFormDataResponse = {
     success: boolean;
-    data?: BankFormData[];
+    data?: BankFormData[] | ApprovedBankFormData[];
     error?: "error" | "warning";
     message?: string;
   };

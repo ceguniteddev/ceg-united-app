@@ -1,5 +1,6 @@
 import {
   useApproveMappedFundsQuery,
+  useClientMappedFundingDetailsQuery,
   useFundingApplicationsMappedFundsQuery,
 } from "@/hooks/admin/funding-application/fund-mapping";
 
@@ -43,27 +44,34 @@ import IconMenu from "@/components/icon-menu";
 import { BankFormData } from "@/schema/bank-products";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import BankProductsForm from "@/app/(admin)/admin/bank-products/form";
+import SortableHeader from "../SortableHeader";
+import CategoryBadge from "../CategoryBadge";
 
 type Props = {
   referenceNumber: string;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  userId: string;
 };
 
-const AdminMappedFunds = ({ referenceNumber, setOpen }: Props) => {
-  return <BankProductsList referenceNumber={referenceNumber} />;
+const AdminMappedFunds = ({ referenceNumber, setOpen, userId }: Props) => {
+  return <BankProductsList referenceNumber={referenceNumber} userId={userId} />;
 };
 
 export default AdminMappedFunds;
 
-const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
+const BankProductsList = ({
+  referenceNumber,
+  userId,
+}: {
+  referenceNumber: string;
+  userId: string;
+}) => {
   const { mappedFund = [], isLoading } =
     useFundingApplicationsMappedFundsQuery(referenceNumber);
+
   const { approvedMappedFunds = [] } =
     useApproveMappedFundsQuery(referenceNumber);
-  const approvedIds = useMemo(
-    () => new Set(approvedMappedFunds.map((fund) => fund.id)),
-    [approvedMappedFunds]
-  );
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -79,7 +87,11 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
         id: "status",
         header: "Status",
         cell: ({ row }) => {
-          const isApproved = approvedIds.has(row.original.id);
+          const isApproved =
+            approvedMappedFunds?.some(
+              (fund) => String(fund.id) === String(row.original.id)
+            ) || false;
+
           return isApproved ? (
             <div className="flex items-center text-green-500">
               <CheckCircle className="mr-2 h-4 w-4" />
@@ -92,13 +104,9 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
       {
         accessorKey: "bankName",
         id: "bankName",
+
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Bank Name <ArrowUpDown />
-          </Button>
+          <SortableHeader column={column} title="Bank Name" />
         ),
         cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
       },
@@ -106,12 +114,7 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
         accessorKey: "productName",
         id: "productName",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Product Name <ArrowUpDown />
-          </Button>
+          <SortableHeader column={column} title="Product Name" />
         ),
         cell: ({ row }) => {
           const productNames = row.getValue("productName") as string[];
@@ -131,22 +134,34 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
         accessorKey: "financingTerm",
         id: "financingTerm",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Product Type <ArrowUpDown />
-          </Button>
+          <SortableHeader column={column} title="Financing Term" />
         ),
         cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
       },
+
+      {
+        id: "clientApplicationStatus",
+        header: "Client Application Status",
+        cell: ({ row }) => {
+          const funds = approvedMappedFunds?.find(
+            (fund) => String(fund.id) === String(row.original.id)
+          );
+
+          const status = funds?.clientApplicationStatus;
+
+          return status ? <CategoryBadge category={status} /> : null;
+        },
+      },
+
       {
         id: "actions",
-        cell: ({ row }) => <ActionCell row={row} />,
+        cell: ({ row }) => (
+          <ActionCell row={row} referenceNumber={referenceNumber} />
+        ),
         size: 80,
       },
     ],
-    [approvedIds]
+    [referenceNumber, approvedMappedFunds]
   );
 
   const table = useReactTable({
@@ -234,7 +249,13 @@ const BankProductsList = ({ referenceNumber }: { referenceNumber: string }) => {
   );
 };
 
-const ActionCell = ({ row }: { row: any }) => {
+const ActionCell = ({
+  row,
+  referenceNumber,
+}: {
+  row: any;
+  referenceNumber: string;
+}) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -251,6 +272,7 @@ const ActionCell = ({ row }: { row: any }) => {
           setOpen={setOpen}
           data={row.original}
           isAdminViewing={true}
+          referenceNumber={referenceNumber}
         />
       </ResponsiveDialog>
       <DropdownMenu modal={true}>

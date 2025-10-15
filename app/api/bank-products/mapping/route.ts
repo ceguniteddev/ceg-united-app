@@ -9,11 +9,11 @@ import z from "zod";
 const requestBodySchema = z
   .object({
     ids: z.array(z.object({ id: z.string() })),
-    // referenceNumber: z
-    //   .string({
-    //     error: "Reference number is required",
-    //   })
-    //   .min(1, { error: "Required" }),
+    referenceNumber: z
+      .string({
+        error: "Reference number is required",
+      })
+      .min(1, { error: "Required" }),
     userId: z
       .string({
         error: "User ID is required",
@@ -33,9 +33,9 @@ export const POST = withAuth(async (req: NextRequest) => {
     return badRequest(message);
   }
   try {
-    const { ids, userId } = parsedBody.data;
+    const { ids, userId, referenceNumber } = parsedBody.data;
 
-    await recordFundMappingAnalysis(userId, ids);
+    await recordFundMappingAnalysis(userId, referenceNumber, ids);
 
     return NextResponse.json({ message: "ok" }, { status: 200 });
   } catch (err) {

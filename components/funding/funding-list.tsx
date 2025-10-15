@@ -13,7 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, BanknoteIcon, User } from "lucide-react";
+import { ArrowUpDown, BanknoteIcon, Loader2Icon, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/dialog";
 import ApplyFundingSuccessful from "@/app/(client)/my-funding/_funding/ApplyFundingSuccessful";
 import { useAuth } from "@/provider/AuthContext";
+import { useApprovedMappedFundsMutation } from "@/hooks/admin/funding-application/fund-mapping";
 
 const baseColumns: ColumnDef<BankFormData>[] = [
   {
@@ -218,59 +219,36 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
 export default FundingList;
 
 const ActionCell = ({ row }: { row: any }) => {
-  const [open, setOpen] = React.useState(false);
-  const [congratsOpen, setCongratsOpen] = React.useState(false);
-  const { user } = useAuth();
+  const { applyApprovedMappedFund, isApplying } =
+    useApprovedMappedFundsMutation();
+
+  const handleApproveClickCapture = async () => {
+    await applyApprovedMappedFund({
+      fundMappingApprovedId: row.original.fundMappingApprovedId,
+      referenceNumber: row.original.referenceNumber,
+    });
+  };
+
+  if (row.original.clientApplicationStatus !== "Not Applied") return null;
+
   return (
     <>
-      <ResponsiveDialog
-        isOpen={open}
-        setIsOpen={setOpen}
-        title="Apply Funding"
-        description={
-          <>
-            * Please make sure all the details are correct
-            <br />* You will be able to update this form once submitted
-          </>
-        }
-        descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-3/6"
-      >
-        <ApplyFundingForm
-          setOpen={setOpen}
-          setCongratsOpen={setCongratsOpen}
-          bankFormData={row.original}
-          userId={user?.uid || ""}
-        />
-      </ResponsiveDialog>
-
-      <Dialog open={congratsOpen} onOpenChange={setCongratsOpen}>
-        <DialogContent
-          className={cn("min-h-[30vh] overflow-y-auto w-2/5")}
-          onInteractOutside={(e) => {
-            e.preventDefault();
-          }}
-          onEscapeKeyDown={(e) => {
-            e.preventDefault();
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>{""}</DialogTitle>
-          </DialogHeader>
-          <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
-            <ApplyFundingSuccessful fire={congratsOpen} />
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <Button
         type="button"
         variant="outline"
         className="bg-green-200 hover:bg-green-400 cursor-pointer"
-        onClick={() => setOpen(true)}
+        onClick={() => handleApproveClickCapture()}
       >
-        <BanknoteIcon className="h-4 w-4" />
-        {"Apply Funding"}
+        {isApplying ? (
+          <>
+            <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+            Applying...
+          </>
+        ) : (
+          <>
+            <BanknoteIcon className="mr-2 h-4 w-4" /> Apply
+          </>
+        )}
       </Button>
     </>
   );

@@ -28,7 +28,11 @@ const ApplyFunding = () => {
         descriptionClassName="text-red-500 text-lg font-semibold"
         className="w-4/6"
       >
-        <ApplyFundingForm setOpen={setOpen} userId={user?.uid || ""} />
+        <ApplyFundingForm
+          setOpen={setOpen}
+          userId={user?.uid || ""}
+          setCongratsOpen={setCongratsOpen}
+        />
       </ResponsiveDialog>
 
       <Dialog open={congratsOpen} onOpenChange={setCongratsOpen}>
