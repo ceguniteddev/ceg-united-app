@@ -451,75 +451,76 @@ const ApplyFundingForm = ({
                     />
                   )}
 
-                  {howDoYouGetPaidSelected?.type === "yes" && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Employment Information</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-3 gap-4">
-                          <CustomFormField
-                            name={"employmentPayPerMonth"}
-                            type="number"
-                            label={"How much money do you make per month?"}
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <CustomFormField
-                            name={"employmentEmployerName"}
-                            label={"Employer Name?"}
-                          />
-                          <CustomFormField
-                            name={"employmentEmployerPhoneNumber"}
-                            label={"Employer Phone Number?"}
-                          />
-                        </div>
-                        <CustomFormField
-                          name={"employmentEmployerAddress"}
-                          label={"Employer Address?"}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                          <CustomFormField
-                            name={"employmentOccupation"}
-                            label={"Your Occupation?"}
-                          />
-                          <CustomFormField
-                            name={"employmentDateOfHire"}
-                            type="date-picker"
-                            label={"Date of Hire?"}
-                            // dateAfterHidden={new Date()}
-                          />
-                        </div>
-                        <CustomFormField
-                          name={"personalTaxes"}
-                          label={"Did you file your personal taxes?"}
-                          type="select"
-                          options={personalTaxes}
-                          onSelectValue={handlePersonalTaxesChange}
-                        />
-                        {personalTaxesSelected?.type === "yes" && (
+                  {howDoYouGetPaidSelected?.type === "yes" &&
+                    !tradelinesOrShelf && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Employment Information</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
                           <div className="grid grid-cols-3 gap-4">
                             <CustomFormField
-                              name={"personalTaxes1"}
+                              name={"employmentPayPerMonth"}
                               type="number"
-                              label={`in ${currentYear - 1}?`}
-                            />
-                            <CustomFormField
-                              name={"personalTaxes2"}
-                              type="number"
-                              label={`in ${currentYear - 2}?`}
-                            />
-                            <CustomFormField
-                              name={"personalTaxes3"}
-                              type="number"
-                              label={`in ${currentYear - 3}?`}
+                              label={"How much money do you make per month?"}
                             />
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <CustomFormField
+                              name={"employmentEmployerName"}
+                              label={"Employer Name?"}
+                            />
+                            <CustomFormField
+                              name={"employmentEmployerPhoneNumber"}
+                              label={"Employer Phone Number?"}
+                            />
+                          </div>
+                          <CustomFormField
+                            name={"employmentEmployerAddress"}
+                            label={"Employer Address?"}
+                          />
+                          <div className="grid grid-cols-2 gap-4">
+                            <CustomFormField
+                              name={"employmentOccupation"}
+                              label={"Your Occupation?"}
+                            />
+                            <CustomFormField
+                              name={"employmentDateOfHire"}
+                              type="date-picker"
+                              label={"Date of Hire?"}
+                              // dateAfterHidden={new Date()}
+                            />
+                          </div>
+                          <CustomFormField
+                            name={"personalTaxes"}
+                            label={"Did you file your personal taxes?"}
+                            type="select"
+                            options={personalTaxes}
+                            onSelectValue={handlePersonalTaxesChange}
+                          />
+                          {personalTaxesSelected?.type === "yes" && (
+                            <div className="grid grid-cols-3 gap-4">
+                              <CustomFormField
+                                name={"personalTaxes1"}
+                                type="number"
+                                label={`in ${currentYear - 1}?`}
+                              />
+                              <CustomFormField
+                                name={"personalTaxes2"}
+                                type="number"
+                                label={`in ${currentYear - 2}?`}
+                              />
+                              <CustomFormField
+                                name={"personalTaxes3"}
+                                type="number"
+                                label={`in ${currentYear - 3}?`}
+                              />
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
 
                   {interestedProductSelected?.type?.includes("Business") && (
                     <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-end gap-4">
@@ -543,79 +544,81 @@ const ApplyFundingForm = ({
                     </div>
                   )}
 
-                  {businessIdSelected && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Business Information</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <CustomFormField
-                            name={"businessGrossProjectedRevenue1"}
-                            type="number"
-                            label={`${currentYear} (gross projected revenue)?`}
-                          />
-                          <CustomFormField
-                            name={"businessProjectedProfit1"}
-                            type="number"
-                            label={`${currentYear} (projected profit)?`}
-                          />
-                          <CustomFormField
-                            name={"businessGrossProjectedRevenue2"}
-                            type="number"
-                            label={`${
-                              currentYear - 1
-                            } (gross projected revenue)?`}
-                          />
-                          <CustomFormField
-                            name={"businessProjectedProfit2"}
-                            type="number"
-                            label={`${currentYear - 1} (projected profit)?`}
-                          />
-                          <CustomFormField
-                            name={"businessGrossProjectedRevenue3"}
-                            type="number"
-                            label={`${
-                              currentYear - 2
-                            } (gross projected revenue)?`}
-                          />
-                          <CustomFormField
-                            name={"businessProjectedProfit3"}
-                            type="number"
-                            label={`${currentYear - 2} (projected profit)?`}
-                          />
-                        </div>
-                        <CustomFormField
-                          name={"businessTaxes"}
-                          label={
-                            "How much did you report on your business taxes?"
-                          }
-                          type="select"
-                          options={businessTaxes}
-                          onSelectValue={handleBusinessTaxesChange}
-                        />
-                        {businessTaxesSelected?.type === "yes" && (
-                          <div className="grid grid-cols-3 gap-4">
+                  {businessIdSelected &&
+                    interestedProductSelected?.type?.includes("Business") &&
+                    !tradelinesOrShelf && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Business Information</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
                             <CustomFormField
-                              name={"businessTaxes1"}
+                              name={"businessGrossProjectedRevenue1"}
                               type="number"
-                              label={`in ${currentYear - 1}?`}
+                              label={`${currentYear} (gross projected revenue)?`}
                             />
                             <CustomFormField
-                              name={"businessTaxes2"}
+                              name={"businessProjectedProfit1"}
                               type="number"
-                              label={`in ${currentYear - 2}?`}
+                              label={`${currentYear} (projected profit)?`}
                             />
                             <CustomFormField
-                              name={"businessTaxes3"}
+                              name={"businessGrossProjectedRevenue2"}
                               type="number"
-                              label={`in ${currentYear - 3}?`}
+                              label={`${
+                                currentYear - 1
+                              } (gross projected revenue)?`}
+                            />
+                            <CustomFormField
+                              name={"businessProjectedProfit2"}
+                              type="number"
+                              label={`${currentYear - 1} (projected profit)?`}
+                            />
+                            <CustomFormField
+                              name={"businessGrossProjectedRevenue3"}
+                              type="number"
+                              label={`${
+                                currentYear - 2
+                              } (gross projected revenue)?`}
+                            />
+                            <CustomFormField
+                              name={"businessProjectedProfit3"}
+                              type="number"
+                              label={`${currentYear - 2} (projected profit)?`}
                             />
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
+                          <CustomFormField
+                            name={"businessTaxes"}
+                            label={
+                              "How much did you report on your business taxes?"
+                            }
+                            type="select"
+                            options={businessTaxes}
+                            onSelectValue={handleBusinessTaxesChange}
+                          />
+                          {businessTaxesSelected?.type === "yes" && (
+                            <div className="grid grid-cols-3 gap-4">
+                              <CustomFormField
+                                name={"businessTaxes1"}
+                                type="number"
+                                label={`in ${currentYear - 1}?`}
+                              />
+                              <CustomFormField
+                                name={"businessTaxes2"}
+                                type="number"
+                                label={`in ${currentYear - 2}?`}
+                              />
+                              <CustomFormField
+                                name={"businessTaxes3"}
+                                type="number"
+                                label={`in ${currentYear - 3}?`}
+                              />
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
                 </CardContent>
 
                 <CardFooter className="flex justify-between">
