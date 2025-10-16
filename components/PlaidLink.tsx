@@ -13,9 +13,15 @@ type PlaidLinkProps = {
   variant?: "primary" | "ghost";
   itemId?: string;
   isNewAccount?: boolean;
+  displayText?: string;
 };
 
-const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
+const PlaidLink = ({
+  variant,
+  itemId,
+  isNewAccount,
+  displayText,
+}: PlaidLinkProps) => {
   const { linkToken, isLoading } = useGetLinkToken({
     itemId,
     isNewAccount,
@@ -93,7 +99,7 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
           disabled={!ready || isLoading}
           className="plaidlink-primary"
         >
-          Connect bank
+          {displayText || "Connect bank"}
         </Button>
       ) : variant === "ghost" ? (
         <Button
@@ -110,7 +116,7 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
             height={24}
           />
           <p className="hiddenl text-[16px] font-semibold text-black-2 xl:block">
-            Connect bank
+            {displayText || "Connect bank"}
           </p>
         </Button>
       ) : (
@@ -131,7 +137,7 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
               ? "Reconnect bank"
               : isNewAccount
               ? "Connect new account"
-              : "Connect bank"}
+              : displayText || "Connect bank"}
           </p>
         </Button>
       )}

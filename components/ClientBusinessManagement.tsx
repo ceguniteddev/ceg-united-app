@@ -3,15 +3,8 @@ import { CustomFormField } from "@/components/CustomFormField";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  CheckIcon,
-  Loader2Icon,
-  PlusIcon,
-  SaveIcon,
-  Trash2Icon,
-  XIcon,
-} from "lucide-react";
-import { SubmitHandler, useForm, useFieldArray } from "react-hook-form";
+import { CheckIcon, Loader2Icon, SaveIcon, XIcon } from "lucide-react";
+import { SubmitHandler, useForm } from "react-hook-form";
 
 import {
   Card,
@@ -23,7 +16,7 @@ import {
 
 import { US_STATES } from "@/constant/common";
 import { Business, BusinessForm, businessFormSchema } from "@/schema";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useBusinessMutation } from "@/hooks/business";
 import IconMenu from "@/components/icon-menu";
 
@@ -35,6 +28,7 @@ const SOCIAL_MEDIA_PLATFORMS = [
   { value: "X", label: "X" },
 ];
 
+// Pre-populate the form with all social media platforms
 const defaultValues: BusinessForm = {
   businessName: "",
   businessStreetAddress: "",
@@ -44,7 +38,11 @@ const defaultValues: BusinessForm = {
   businessPhoneNumber: "",
   businessEmail: "",
   businessWebsite: "",
-  socialMedia: [],
+  // Initialize with all platforms having an empty handle
+  socialMedia: SOCIAL_MEDIA_PLATFORMS.map((p) => ({
+    platform: p.value,
+    handle: "",
+  })),
   employerIdentificationNumber: "",
 };
 
@@ -70,15 +68,28 @@ const ClientBusinessManagement = ({
     defaultValues,
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "socialMedia",
-  });
-
   useEffect(() => {
     if (editingBusiness) {
       const { userId: _omit, ...formValues } = editingBusiness;
-      form.reset(formValues);
+
+      // Merge existing social media data with the full list of platforms
+      const socialMediaData = SOCIAL_MEDIA_PLATFORMS.map((platform) => {
+        const existing = formValues.socialMedia?.find(
+          (s) => s.platform === platform.value
+        );
+        return {
+          platform: platform.value,
+          handle: existing ? existing.handle : "",
+        };
+      });
+
+      form.reset({
+        ...formValues,
+        socialMedia: socialMediaData,
+      });
+    } else {
+      // On cancellation or initial load, reset to the default state
+      form.reset(defaultValues);
     }
   }, [editingBusiness, form]);
 
@@ -91,7 +102,16 @@ const ClientBusinessManagement = ({
 
   const onSubmit: SubmitHandler<BusinessForm> = useCallback(
     async (values) => {
-      const payload: Business = { ...values, userId };
+      // Filter out social media entries with empty handles before submitting
+      const nonEmptySocialMedia = values.socialMedia?.filter(
+        (s) => s.handle && s.handle.trim() !== ""
+      );
+
+      const payload: Business = {
+        ...values,
+        socialMedia: nonEmptySocialMedia,
+        userId,
+      };
 
       if (editingBusiness?.id) {
         await updateBusiness({ id: editingBusiness.id, values: payload });
@@ -186,45 +206,26 @@ const ClientBusinessManagement = ({
                   <label className="block text-sm font-medium mb-2">
                     Social Media Handles
                   </label>
-                  <div className="space-y-4">
-                    {fields.map((field, index) => (
-                      <div key={field.id} className="flex items-end gap-2">
+                  <div className="space-y-3">
+                    {SOCIAL_MEDIA_PLATFORMS.map((platform, index) => (
+                      <div
+                        key={platform.value}
+                        className="flex items-center gap-3"
+                      >
+                        <label
+                          htmlFor={`socialMedia.${index}.handle`}
+                          className="w-24 text-sm text-muted-foreground"
+                        >
+                          {platform.label}
+                        </label>
                         <div className="flex-1">
                           <CustomFormField
-                            name={`socialMedia.${index}.platform`}
-                            type="select"
-                            placeholder="Select Platform"
-                            options={SOCIAL_MEDIA_PLATFORMS}
-                          />
-                        </div>
-                        <div className="flex-[2]">
-                          <CustomFormField
                             name={`socialMedia.${index}.handle`}
-                            placeholder="Enter handle (e.g., @username)"
+                            placeholder={`Enter ${platform.label} handle`}
                           />
                         </div>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => remove(index)}
-                          disabled={isSubmitting}
-                        >
-                          <Trash2Icon className="h-4 w-4" />
-                        </Button>
                       </div>
                     ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => append({ platform: "", handle: "" })}
-                      disabled={isSubmitting}
-                    >
-                      <IconMenu
-                        icon={<PlusIcon className="mr-2 h-4 w-4" />}
-                        text="Add Social Media"
-                      />
-                    </Button>
                   </div>
                 </div>
               </CardContent>

@@ -474,7 +474,9 @@ const ApplyFundingForm = ({
                         <CardHeader>
                           <CardTitle className="flex flex-row justify-between">
                             <div>Employment Information</div>
-                            {howDoYouGetPaidSelectedBank && <PlaidLink />}
+                            {howDoYouGetPaidSelectedBank && (
+                              <PlaidLink displayText="Link Personal Account" />
+                            )}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -572,7 +574,7 @@ const ApplyFundingForm = ({
                         <CardHeader>
                           <CardTitle className="flex flex-row justify-between">
                             <div>Business Information</div>
-                            <PlaidLink />
+                            <PlaidLink displayText="Link Business Acount" />
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
