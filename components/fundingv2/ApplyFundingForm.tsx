@@ -98,6 +98,8 @@ const ApplyFundingForm = ({
   const [howDoYouGetPaidSelected, setHowDoYouGetPaidSelected] = useState<
     DropdownOption | undefined
   >(undefined);
+  const [howDoYouGetPaidSelectedBank, setHowDoYouGetPaidSelectedBank] =
+    useState<boolean>(false);
 
   const [personalTaxesSelected, setPersonalTaxesSelected] = useState<
     DropdownOption | undefined
@@ -138,9 +140,9 @@ const ApplyFundingForm = ({
     },
   });
 
-  if (Object.keys(form.formState.errors).length > 0) {
-    console.log("There are validation errors:", form.formState.errors);
-  }
+  // if (Object.keys(form.formState.errors).length > 0) {
+  //   console.log("There are validation errors:", form.formState.errors);
+  // }
 
   const handleBusinessSelect = useCallback(
     (value: string) => {
@@ -249,10 +251,18 @@ const ApplyFundingForm = ({
       const selectedValue = howDoYouGetPaid.find((x) => x.value === value);
       if (selectedValue) {
         setHowDoYouGetPaidSelected(selectedValue);
-        // Set the 'employmentStatus' field with the type
         form.setValue("employmentStatus", selectedValue.type!, {
           shouldValidate: true,
         });
+        console.log("selectedValue.value", selectedValue.value);
+        if (
+          selectedValue.value === "yes_direct_deposit" ||
+          selectedValue.value === "yes_checks"
+        ) {
+          setHowDoYouGetPaidSelectedBank(true);
+        } else {
+          setHowDoYouGetPaidSelectedBank(false);
+        }
       }
     },
     [form]
@@ -455,7 +465,10 @@ const ApplyFundingForm = ({
                     !tradelinesOrShelf && (
                       <Card className="bg-blue-50">
                         <CardHeader>
-                          <CardTitle>Employment Information</CardTitle>
+                          <CardTitle className="flex flex-row justify-between">
+                            <div>Employment Information</div>
+                            {howDoYouGetPaidSelectedBank && <PlaidLink />}
+                          </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="grid grid-cols-3 gap-4">
@@ -548,9 +561,12 @@ const ApplyFundingForm = ({
                   {businessIdSelected &&
                     interestedProductSelected?.type?.includes("Business") &&
                     !tradelinesOrShelf && (
-                      <Card className="bg-emerald-50">
+                      <Card className="bg-orange-50">
                         <CardHeader>
-                          <CardTitle>Business Information</CardTitle>
+                          <CardTitle className="flex flex-row justify-between">
+                            <div>Business Information</div>
+                            <PlaidLink />
+                          </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="grid grid-cols-2 gap-4">
@@ -622,10 +638,10 @@ const ApplyFundingForm = ({
                     )}
                 </CardContent>
 
-                <CardFooter className="flex justify-between">
+                <CardFooter className="flex justify-end">
                   {!data ? (
                     <>
-                      <div>
+                      {/* <div>
                         {!community && (
                           <div className="space-x-4">
                             <PlaidLink />
@@ -633,7 +649,7 @@ const ApplyFundingForm = ({
                             {!incomePayrollItem && <PlaidIncomeLinkPayroll />}
                           </div>
                         )}
-                      </div>
+                      </div> */}
                       <div className="flex gap-4">
                         <Button
                           size="lg"

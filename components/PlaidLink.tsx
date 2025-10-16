@@ -35,16 +35,30 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
     (public_token: string) => {
       // If the access_token is needed, send public_token to server
       const exchangePublicTokenForAccessToken = async () => {
-        await exchangeAccessToken(public_token, user?.uid ?? "", "ITEM", itemId, isNewAccount);
+        await exchangeAccessToken(
+          public_token,
+          user?.uid ?? "",
+          "ITEM",
+          itemId,
+          isNewAccount
+        );
 
-        await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_LINK", user?.uid] });
+        await queryClient.invalidateQueries({
+          queryKey: ["GET_PLAID_ITEM_LINK", user?.uid],
+        });
         await queryClient.invalidateQueries({
           queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid, "INCOME_VERIFICATION"],
           exact: false,
         });
-        await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEMS", user?.uid] });
-        await queryClient.invalidateQueries({ queryKey: ["GET_PLAID_ITEM_ACCOUNT", user?.uid] });
-        await queryClient.invalidateQueries({ queryKey: ["USER_LINK_UPDATE_MODE", user?.uid] });
+        await queryClient.invalidateQueries({
+          queryKey: ["GET_PLAID_ITEMS", user?.uid],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["GET_PLAID_ITEM_ACCOUNT", user?.uid],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["USER_LINK_UPDATE_MODE", user?.uid],
+        });
         await queryClient.invalidateQueries({
           queryKey: ["USER_NEW_ACCOUNT_LINK_UPDATE_MODE", user?.uid],
         });
@@ -89,8 +103,15 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
           variant="ghost"
           className="plaidlink-ghost"
         >
-          <Image src="/icons/connect-bank.svg" alt="connect bank" width={24} height={24} />
-          <p className="hiddenl text-[16px] font-semibold text-black-2 xl:block">Connect bank</p>
+          <Image
+            src="/icons/connect-bank.svg"
+            alt="connect bank"
+            width={24}
+            height={24}
+          />
+          <p className="hiddenl text-[16px] font-semibold text-black-2 xl:block">
+            Connect bank
+          </p>
         </Button>
       ) : (
         <Button
@@ -99,7 +120,12 @@ const PlaidLink = ({ variant, itemId, isNewAccount }: PlaidLinkProps) => {
           disabled={!ready || isLoading}
           className="plaidlink-default shadow-none px-3 bg-green-100 hover:bg-green-200"
         >
-          <Image src="/icons/connect-bank.svg" alt="connect bank" width={24} height={24} />
+          <Image
+            src="/icons/connect-bank.svg"
+            alt="connect bank"
+            width={24}
+            height={24}
+          />
           <p className="text-[16px] font-semibold text-black-2">
             {itemId && !isNewAccount
               ? "Reconnect bank"

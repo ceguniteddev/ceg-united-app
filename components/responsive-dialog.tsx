@@ -34,13 +34,17 @@ export function ResponsiveDialog({
   descriptionClassName,
 }: Props) {
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen} modal>
+    <Dialog open={isOpen} onOpenChange={setIsOpen} modal={false}>
+      {isOpen && (
+        <div className="animate-in fade-in-0 fixed inset-0 z-50 bg-black/50" />
+      )}
       <DialogContent
         id={id}
         className={cn("max-h-screen overflow-y-auto", className)}
         onInteractOutside={(e) => {
           e.preventDefault();
         }}
+        onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
           e.preventDefault();
           onEscapeAttempt?.();
@@ -48,7 +52,9 @@ export function ResponsiveDialog({
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription className={cn(descriptionClassName)}>{description}</DialogDescription>
+          <DialogDescription className={cn(descriptionClassName)}>
+            {description}
+          </DialogDescription>
         </DialogHeader>
         {children}
       </DialogContent>
