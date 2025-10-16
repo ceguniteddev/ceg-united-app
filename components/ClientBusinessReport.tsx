@@ -153,7 +153,7 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-1">
           <div className="rounded-md border p-3">
             <div className="text-xs uppercase text-muted-foreground">
-              Last Year Taxes
+              Last Year Gross Income
             </div>
             <div className="text-lg font-semibold">
               {formatCurrency(rec.lastYearTaxes)}
@@ -161,7 +161,7 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
           </div>
           <div className="rounded-md border p-3">
             <div className="text-xs uppercase text-muted-foreground">
-              Current Year Taxes
+              Current Year Gross Income
             </div>
             <div className="text-lg font-semibold">
               {formatCurrency(rec.currentYearTaxes)}
