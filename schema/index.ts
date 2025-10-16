@@ -6,7 +6,9 @@ export const ROLESEnum = z.enum(ROLES);
 export type Role = z.infer<typeof ROLESEnum>;
 export type AppRole = Exclude<Role, "Client">;
 
-export const GenderEnum = z.enum(["Male", "Female", "Other"], { error: "Required" });
+export const GenderEnum = z.enum(["Male", "Female", "Other"], {
+  error: "Required",
+});
 export type Gender = z.infer<typeof GenderEnum>;
 
 export const genderTypes = () => {
@@ -20,7 +22,9 @@ export const genderTypes = () => {
 
 export const dateOfBirthSchema = z
   .date({ error: "Required" })
-  .refine((date) => date <= new Date(), { message: "Date cannot be in the future" });
+  .refine((date) => date <= new Date(), {
+    message: "Date cannot be in the future",
+  });
 
 export const getMessage = (error: z.ZodError) => {
   const flat = error.flatten();
@@ -103,7 +107,15 @@ export const businessRecordSchema = z.object({
   businessPhoneNumber: z.string().min(1, { message: "Required" }),
   businessEmail: z.email({ message: "Invalid email" }),
   businessWebsite: z.string({ error: "Required" }).optional(),
-  socialMedia: z.string({ error: "Required" }).optional(),
+  // socialMedia: z.string({ error: "Required" }).optional(),
+  socialMedia: z
+    .array(
+      z.object({
+        platform: z.string().min(1, "Please select a platform."),
+        handle: z.string().min(1, "Please enter a handle."),
+      })
+    )
+    .optional(),
   lastYearTaxes: z.coerce.number<number>().optional(),
   currentYearTaxes: z.coerce.number<number>().optional(),
 });
@@ -117,9 +129,15 @@ export type BusinessForm = z.infer<typeof businessFormSchema>;
 
 export const changePasswordSchema = z
   .object({
-    currentPassword: z.string().min(1, { message: "Current password is required" }),
-    newPassword: z.string().min(8, { message: "Password must be at least 8 characters" }),
-    confirmPassword: z.string().min(1, { message: "Please confirm your new password" }),
+    currentPassword: z
+      .string()
+      .min(1, { message: "Current password is required" }),
+    newPassword: z
+      .string()
+      .min(8, { message: "Password must be at least 8 characters" }),
+    confirmPassword: z
+      .string()
+      .min(1, { message: "Please confirm your new password" }),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: "Passwords do not match",

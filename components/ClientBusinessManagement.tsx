@@ -3,8 +3,16 @@ import { CustomFormField } from "@/components/CustomFormField";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckIcon, Loader2Icon, SaveIcon, XIcon } from "lucide-react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import {
+  CheckIcon,
+  Loader2Icon,
+  PlusIcon,
+  SaveIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
+import { SubmitHandler, useForm, useFieldArray } from "react-hook-form";
+
 import {
   Card,
   CardContent,
@@ -19,6 +27,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useBusinessMutation } from "@/hooks/business";
 import IconMenu from "@/components/icon-menu";
 
+const SOCIAL_MEDIA_PLATFORMS = [
+  { value: "TikTok", label: "TikTok" },
+  { value: "Youtube", label: "Youtube" },
+  { value: "Instagram", label: "Instagram" },
+  { value: "Facebook", label: "Facebook" },
+  { value: "X", label: "X" },
+];
+
 const defaultValues: BusinessForm = {
   businessName: "",
   businessStreetAddress: "",
@@ -28,7 +44,7 @@ const defaultValues: BusinessForm = {
   businessPhoneNumber: "",
   businessEmail: "",
   businessWebsite: "",
-  socialMedia: "",
+  socialMedia: [],
   employerIdentificationNumber: "",
 };
 
@@ -52,6 +68,11 @@ const ClientBusinessManagement = ({
   const form = useForm<BusinessForm>({
     resolver: zodResolver(businessFormSchema),
     defaultValues,
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "socialMedia",
   });
 
   useEffect(() => {
@@ -118,11 +139,11 @@ const ClientBusinessManagement = ({
                   <CustomFormField
                     type="number"
                     name="lastYearTaxes"
-                    label="Last Year Taxes"
+                    label="Last Year Gross Income"
                   />
                   <CustomFormField
                     name="currentYearTaxes"
-                    label="Current Year Taxes"
+                    label="Current Year Gross Income"
                     type="number"
                   />
                 </div>
@@ -158,9 +179,53 @@ const ClientBusinessManagement = ({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
-                  <CustomFormField name="businessWebsite" label="Website" />
-                  <CustomFormField name="socialMedia" label="Social Media" />
+                <CustomFormField name="businessWebsite" label="Website" />
+
+                {/* Social Media Section */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Social Media Handles
+                  </label>
+                  <div className="space-y-4">
+                    {fields.map((field, index) => (
+                      <div key={field.id} className="flex items-end gap-2">
+                        <div className="flex-1">
+                          <CustomFormField
+                            name={`socialMedia.${index}.platform`}
+                            type="select"
+                            placeholder="Select Platform"
+                            options={SOCIAL_MEDIA_PLATFORMS}
+                          />
+                        </div>
+                        <div className="flex-[2]">
+                          <CustomFormField
+                            name={`socialMedia.${index}.handle`}
+                            placeholder="Enter handle (e.g., @username)"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => remove(index)}
+                          disabled={isSubmitting}
+                        >
+                          <Trash2Icon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => append({ platform: "", handle: "" })}
+                      disabled={isSubmitting}
+                    >
+                      <IconMenu
+                        icon={<PlusIcon className="mr-2 h-4 w-4" />}
+                        text="Add Social Media"
+                      />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
 

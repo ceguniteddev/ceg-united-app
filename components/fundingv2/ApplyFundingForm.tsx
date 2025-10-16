@@ -173,9 +173,9 @@ const ApplyFundingForm = ({
         form.setValue("businessWebsite", b.businessWebsite ?? "", {
           shouldValidate: false,
         });
-        form.setValue("socialMedia", b.socialMedia ?? "", {
-          shouldValidate: false,
-        });
+        // form.setValue("socialMedia", b.socialMedia ?? [], {
+        //   shouldValidate: false,
+        // });
         form.setValue(
           "employerIdentificationNumber",
           b.employerIdentificationNumber ?? "",
@@ -452,13 +452,20 @@ const ApplyFundingForm = ({
                     </CardContent>
                   </Card>
                   {!tradelinesOrShelf && (
-                    <CustomFormField
-                      name={"howDoYouGetPaid"}
-                      label={"Do you have a job?"}
-                      type="select"
-                      options={howDoYouGetPaid}
-                      onSelectValue={handleDoYouHaveAJobChange}
-                    />
+                    <div className="flex flex-row items-center gap-4 justify-between">
+                      <CustomFormField
+                        name={"howDoYouGetPaid"}
+                        label={"Do you have a job?"}
+                        type="select"
+                        options={howDoYouGetPaid}
+                        onSelectValue={handleDoYouHaveAJobChange}
+                      />
+                      {howDoYouGetPaidSelected?.value === "no_assistance" && (
+                        <div className="mt-6">
+                          <PlaidLink />
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   {howDoYouGetPaidSelected?.type === "yes" &&
@@ -517,17 +524,17 @@ const ApplyFundingForm = ({
                               <CustomFormField
                                 name={"personalTaxes1"}
                                 type="number"
-                                label={`in ${currentYear - 1}?`}
+                                label={`Gross Revenue ${currentYear - 1}?`}
                               />
                               <CustomFormField
                                 name={"personalTaxes2"}
                                 type="number"
-                                label={`in ${currentYear - 2}?`}
+                                label={`Gross Revenue ${currentYear - 2}?`}
                               />
                               <CustomFormField
                                 name={"personalTaxes3"}
                                 type="number"
-                                label={`in ${currentYear - 3}?`}
+                                label={`Gross Revenue ${currentYear - 3}?`}
                               />
                             </div>
                           )}
