@@ -462,7 +462,7 @@ const ApplyFundingForm = ({
                       />
                       {howDoYouGetPaidSelected?.value === "no_assistance" && (
                         <div className="mt-6">
-                          <PlaidLink />
+                          <PlaidLink displayText="Link Personal Account" />
                         </div>
                       )}
                     </div>
