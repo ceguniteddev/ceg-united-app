@@ -1,10 +1,27 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged, signInWithEmailAndPassword, User } from "firebase/auth";
+import {
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  User,
+} from "firebase/auth";
 import { authFirebase } from "@/lib/firebase";
-import { createSession, deleteCookie, logoutSession, refreshSession } from "@/lib/session";
+import {
+  createSession,
+  deleteCookie,
+  logoutSession,
+  refreshSession,
+} from "@/lib/session";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { getUser } from "@/service/user";
 import { Role } from "@/schema";
@@ -18,13 +35,22 @@ interface AuthContextType {
   isOnboarded: boolean;
   role: Role | null;
   loading: boolean;
-  signIn: (token: string | null, email: string, password: string) => Promise<void>;
+  signIn: (
+    token: string | null,
+    email: string,
+    password: string
+  ) => Promise<void>;
   logOut: () => Promise<void>;
+  resetPassword: (token: string | null, email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { readonly children: React.ReactNode }) {
+export function AuthProvider({
+  children,
+}: {
+  readonly children: React.ReactNode;
+}) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -61,61 +87,47 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     router.push("/");
   }, [router, queryClient]);
 
-  // useEffect(() => {
-  //   if (!authFirebase) return;
-  //   let lastRefresh = 0;
-
-  //   const unsub = onIdTokenChanged(authFirebase, async (u) => {
-  //     if (!u) return;
-  //     // throttle to ~30 mins to avoid spamming server actions
-  //     const now = Date.now();
-  //     if (now - lastRefresh < 30 * 60 * 1000) return;
-  //     lastRefresh = now;
-
-  //     const token = await u.getIdToken(/* forceRefresh? false */);
-  //     try {
-  //       await refreshSession(token); // server action
-  //     } catch (e) {
-  //       console.error("refreshSession failed", e);
-  //     }
-  //   });
-
-  //   return () => unsub();
-  // }, []);
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(authFirebase, async (firebaseUser) => {
-      try {
-        if (firebaseUser) {
-          await loadAndSetUserData(firebaseUser);
-        } else {
-          setUser(null);
-          setRole(null);
-          setIsAdmin(false);
-          setIsOnboarded(false);
+    const unsubscribe = onAuthStateChanged(
+      authFirebase,
+      async (firebaseUser) => {
+        try {
+          if (firebaseUser) {
+            await loadAndSetUserData(firebaseUser);
+          } else {
+            setUser(null);
+            setRole(null);
+            setIsAdmin(false);
+            setIsOnboarded(false);
+          }
+        } catch (error) {
+          console.error("Error during auth state change:", error);
+          // DO NOT call logOut() here.
+          // Optionally keep firebaseUser and use a cached role, or default to 'Staff'.
+          if (firebaseUser) {
+            setUser(firebaseUser);
+            setRole((r) => r ?? ("Staff" as Role));
+          }
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error("Error during auth state change:", error);
-        // DO NOT call logOut() here.
-        // Optionally keep firebaseUser and use a cached role, or default to 'Staff'.
-        if (firebaseUser) {
-          setUser(firebaseUser);
-          setRole((r) => r ?? ("Staff" as Role));
-        }
-      } finally {
-        setLoading(false);
       }
-    });
+    );
     return () => unsubscribe();
   }, [loadAndSetUserData]);
 
   const signIn = useCallback(
     async (token: string | null, email: string, password: string) => {
       try {
-        if (!token) throw new AppError("Captcha token is missing. Please try again.");
+        if (!token)
+          throw new AppError("Captcha token is missing. Please try again.");
 
         const captchaData = await verifyCaptchaToken(token);
-        if (!captchaData?.success || captchaData.score < 0.5 || captchaData.action !== "login") {
+        if (
+          !captchaData?.success ||
+          captchaData.score < 0.5 ||
+          captchaData.action !== "login"
+        ) {
           throw new AppError("Captcha verification failed. Please try again.");
         }
 
@@ -161,12 +173,58 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     [loadAndSetUserData, queryClient, router]
   );
 
-  const authContextValue = useMemo(
-    () => ({ user, role, isAdmin, signIn, logOut, loading, isOnboarded }),
-    [user, role, isAdmin, signIn, logOut, loading, isOnboarded]
+  const resetPassword = useCallback(
+    async (token: string | null, email: string) => {
+      if (!token)
+        throw new AppError("Captcha token is missing. Please try again.");
+
+      const captchaData = await verifyCaptchaToken(token);
+      if (
+        !captchaData?.success ||
+        captchaData.score < 0.5 ||
+        captchaData.action !== "forgot_password"
+      ) {
+        throw new AppError("Captcha verification failed. Please try again.");
+      }
+
+      // Optional: where Firebase should redirect after the user finishes reset flow
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+      const actionCodeSettings = appUrl
+        ? { url: `${appUrl}/login?reset=1`, handleCodeInApp: false }
+        : undefined;
+
+      try {
+        await sendPasswordResetEmail(authFirebase, email, actionCodeSettings);
+        // NOTE: Do not reveal whether the email exists.
+      } catch (err: any) {
+        // Avoid user enumeration; swallow 'user-not-found'
+        if (err?.code === "auth/user-not-found") return;
+        // Surface a generic message to the UI
+        throw new Error("Unable to send reset link. Please try again.");
+      }
+    },
+    []
   );
 
-  return <AuthContext.Provider value={authContextValue}>{children}</AuthContext.Provider>;
+  const authContextValue = useMemo(
+    () => ({
+      user,
+      role,
+      isAdmin,
+      signIn,
+      logOut,
+      loading,
+      isOnboarded,
+      resetPassword,
+    }),
+    [user, role, isAdmin, signIn, logOut, loading, isOnboarded, resetPassword]
+  );
+
+  return (
+    <AuthContext.Provider value={authContextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

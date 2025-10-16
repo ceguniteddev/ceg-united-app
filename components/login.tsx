@@ -6,6 +6,9 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import Link from "next/link";
 import { getCaptchaTokenRegistration } from "@/lib/captcha";
+import { LoaderIcon, LogInIcon } from "lucide-react";
+import { ResponsiveDialog } from "./responsive-dialog";
+import ForgotPassword from "./ForgotPassword";
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -13,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [openForgotPassword, setOpenForgotPassword] = useState(false);
 
   const handleLogin = useCallback(
     async (e: React.FormEvent) => {
@@ -31,45 +35,87 @@ export default function LoginPage() {
     },
     [email, password, signIn]
   );
+
   return (
     <div className="flex items-center justify-center min-h-screen">
+      <ResponsiveDialog
+        isOpen={openForgotPassword}
+        setIsOpen={setOpenForgotPassword}
+        title=""
+        description={""}
+        className="w-2/6"
+      >
+        <ForgotPassword setOpenForgotPassword={setOpenForgotPassword} />
+      </ResponsiveDialog>
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-700">
           Sign In to {process.env.NEXT_PUBLIC_APP_NAME}
         </h2>
 
-        {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
+        {error && (
+          <p className="text-red-500 text-sm text-center mb-4">{error}</p>
+        )}
 
         <form onSubmit={handleLogin}>
           <fieldset disabled={loading}>
             <div className="mb-4">
-              <Label className="block text-gray-600 font-medium mb-1">Email Address</Label>
+              <Label className="block text-gray-600 font-medium mb-1">
+                Email Address
+              </Label>
               <Input
                 type="email"
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-300"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
               />
             </div>
 
-            <div className="mb-4">
-              <Label className="block text-gray-600 font-medium mb-1">Password</Label>
+            <div className="mb-2">
+              <Label className="block text-gray-600 font-medium mb-1">
+                Password
+              </Label>
               <Input
                 type="password"
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-300"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
               />
+            </div>
+
+            {/* Forgot Password button-link */}
+            <div className="mb-4 flex justify-end">
+              <Link
+                href=""
+                className={`text-sm font-medium underline underline-offset-4 hover:no-underline focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                  loading ? "pointer-events-none opacity-60" : "text-blue-600"
+                }`}
+                aria-disabled={loading}
+                onClick={() => setOpenForgotPassword(true)}
+              >
+                Forgot password?
+              </Link>
             </div>
 
             <button
               type="submit"
-              className="w-full py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 transition cursor-pointer"
+              className="w-full py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 transition cursor-pointer disabled:opacity-70"
               disabled={loading}
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? (
+                <div className="flex items-center flex-row justify-center gap-2">
+                  <LoaderIcon className="animate-spin h-4 w-4" />
+                  Signing in...
+                </div>
+              ) : (
+                <div className="flex items-center flex-row justify-center gap-2">
+                  <LogInIcon className="h-4 w-4" />
+                  Sign In
+                </div>
+              )}
             </button>
           </fieldset>
         </form>
