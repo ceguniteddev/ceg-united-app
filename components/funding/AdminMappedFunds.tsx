@@ -97,7 +97,9 @@ const BankProductsList = ({
               <CheckCircle className="mr-2 h-4 w-4" />
               Approved
             </div>
-          ) : null;
+          ) : (
+            "Pending"
+          );
         },
         size: 120,
       },
@@ -149,7 +151,11 @@ const BankProductsList = ({
 
           const status = funds?.clientApplicationStatus;
 
-          return status ? <CategoryBadge category={status} /> : null;
+          return status ? (
+            <CategoryBadge category={status} />
+          ) : (
+            <CategoryBadge category={"Not Applied"} />
+          );
         },
       },
 

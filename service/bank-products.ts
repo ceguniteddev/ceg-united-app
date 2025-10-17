@@ -219,13 +219,13 @@ export const getFundMappingAnalysis = async (referenceNumber: string) => {
   const bankProductIds = doc.docs.map((doc) => ({
     bank_products: doc.data().bank_products,
   }));
-  // console.log("bankProductIds", bankProductIds);
+  // console.log("bankProductIds", JSON.stringify(bankProductIds));
   if (!bankProductIds) return null;
 
   const result: BankFormData[] = [];
   for (const bankProductId of bankProductIds) {
     for (const id of bankProductId.bank_products) {
-      const bankProduct = await getBankProduct(id);
+      const bankProduct = await getBankProduct(id.id);
       if (bankProduct) {
         result.push(bankProduct);
       }
