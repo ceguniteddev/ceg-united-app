@@ -1,6 +1,7 @@
 import { GET_USER_CRS_REPORT } from "@/constant/react-query-keys";
 import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
+import { getApplyFunding } from "@/service/apply-funding";
 import { getCRSReport, refreshCRSData } from "@/service/crs";
 import { CreditReportWithId } from "@/types/crs";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -34,7 +35,13 @@ export const useRefreshCRSData = () => {
         throw new AppError("User not authenticated");
       }
 
-      await refreshCRSData(userId);
+      const appliedFundings = await getApplyFunding(userId);
+      let referenceNumber = "";
+      if (appliedFundings && appliedFundings.length > 0) {
+        referenceNumber = appliedFundings[0].referenceNumber!;
+      }
+
+      await refreshCRSData({ userId, referenceNumber });
     },
     onSuccess: (data, _variable) => {
       toast.success("CRS data refreshed successfully.");

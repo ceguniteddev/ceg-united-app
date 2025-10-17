@@ -110,10 +110,12 @@ export const businessRecordSchema = z.object({
   // socialMedia: z.string({ error: "Required" }).optional(),
   socialMedia: z
     .array(
-      z.object({
-        platform: z.string().min(1, "Please select a platform."),
-        handle: z.string().min(1, "Please enter a handle."),
-      })
+      z
+        .object({
+          platform: z.string().optional(),
+          handle: z.string().optional(),
+        })
+        .optional()
     )
     .optional(),
   lastYearTaxes: z.coerce.number<number>().optional(),

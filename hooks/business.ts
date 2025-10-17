@@ -1,7 +1,12 @@
 import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
 import { Business } from "@/schema";
-import { deleteBusiness, getBusiness, recordBusiness, updateBusiness } from "@/service/business";
+import {
+  deleteBusiness,
+  getBusiness,
+  recordBusiness,
+  updateBusiness,
+} from "@/service/business";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { toast } from "sonner";
@@ -9,7 +14,7 @@ import { toast } from "sonner";
 export const useBusinessQuery = (userId: string) => {
   const { user } = useAuth();
 
-  const { data: businessData, isLoading } = useQuery({
+  const { data: businessData, isLoading, refetch } = useQuery({
     queryKey: ["GET_BUSINESS_DETAILS", userId],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
@@ -24,6 +29,7 @@ export const useBusinessQuery = (userId: string) => {
   return {
     businessData,
     isLoading,
+    refetch
   };
 };
 
@@ -32,15 +38,21 @@ export const useBusinessMutation = () => {
   const { user } = useAuth();
 
   const createMutation = useMutation({
-    mutationFn: async ({ values }: { values: Business }) => {
+    mutationFn: async ({
+      values,
+      userId,
+    }: {
+      values: Business;
+      userId: string;
+    }) => {
       if (!user) throw new Error("User not authenticated");
 
       await recordBusiness(values);
     },
-    onSuccess: () => {
+    onSuccess: (data, _var) => {
       toast.success("Business details recorded successfully.");
       queryClient.invalidateQueries({
-        queryKey: ["GET_BUSINESS_DETAILS", user?.uid],
+        queryKey: ["GET_BUSINESS_DETAILS", _var.userId],
       });
     },
     onError: (error: any) => {

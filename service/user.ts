@@ -3,7 +3,11 @@ import { USER_COLLECTION } from "@/constant/collection-name";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import AppError from "@/error/AppError";
 import { normalizeAllDates, normalizeDate } from "@/lib/date-parser";
-import { authenticationAdmin, firestoreAdmin, storageAdmin } from "@/lib/fireabase-admin";
+import {
+  authenticationAdmin,
+  firestoreAdmin,
+  storageAdmin,
+} from "@/lib/fireabase-admin";
 import { logInfo } from "@/lib/logger";
 import { sendMail } from "@/lib/nodemailer";
 import { ChangePassword, CurrentUser, Role } from "@/schema";
@@ -95,9 +99,13 @@ export const registerUser = async (value: User) => {
 
   const requestBody = getVerifyEmailBody(link);
 
-  await sendMail({ emailTo: value.email, subject: "Verify Email", bodyHTML: requestBody });
+  await sendMail({
+    emailTo: value.email,
+    subject: "Verify Email",
+    bodyHTML: requestBody,
+  });
 
-  await generateCRSReport(docRef.id);
+  // await generateCRSReport(docRef.id);
 
   return {
     id: docRef.id,
@@ -170,7 +178,13 @@ export const updateUserStatus = async ({
   await docRef.update({ activeStatus: status });
 };
 
-export const addUserNotes = async ({ userId, notes }: { userId: string; notes: string[] }) => {
+export const addUserNotes = async ({
+  userId,
+  notes,
+}: {
+  userId: string;
+  notes: string[];
+}) => {
   if (!userId) throw new AppError("User ID is required.");
   if (!notes) throw new AppError("Notes is required.");
 
@@ -192,17 +206,26 @@ export const getUserNotes = async (userId: string): Promise<string[]> => {
   const collectionRef = db.collection(`${USER_COLLECTION}/${userId}/notes`);
   const docRef = collectionRef.doc(userId);
   const querySnapshot = await docRef.get();
-  return querySnapshot.exists ? (querySnapshot.data()?.notes as string[]) || [] : [];
+  return querySnapshot.exists
+    ? (querySnapshot.data()?.notes as string[]) || []
+    : [];
 };
 
-export const updateUserOnboardingStatus = async (id: string, status: boolean) => {
+export const updateUserOnboardingStatus = async (
+  id: string,
+  status: boolean
+) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(USER_COLLECTION);
   const docRef = collectionRef.doc(id);
   await docRef.update({ isOnboarded: status });
 };
 
-export const getUserDocuments = async ({ userId }: { userId: string }): Promise<UserDoc[]> => {
+export const getUserDocuments = async ({
+  userId,
+}: {
+  userId: string;
+}): Promise<UserDoc[]> => {
   const prefix = `documents/${userId}/`;
   const bucket = storageAdmin();
 
@@ -254,7 +277,10 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   // console.log("sessionCookie", sessionCookie);
   if (sessionCookie) {
     try {
-      const decoded = await authenticationAdmin().verifySessionCookie(sessionCookie, true);
+      const decoded = await authenticationAdmin().verifySessionCookie(
+        sessionCookie,
+        true
+      );
       return {
         uid: decoded.uid,
         email: decoded.email ?? null,
@@ -296,7 +322,9 @@ const validatePasswordStrength = (password: string) => {
     { regex: /[^A-Za-z0-9]/, message: "contain a special character" },
   ];
 
-  const missing = requirements.filter((req) => !req.regex.test(password)).map((req) => req.message);
+  const missing = requirements
+    .filter((req) => !req.regex.test(password))
+    .map((req) => req.message);
 
   if (missing.length > 0) {
     // This is the standard way to throw errors back to the client
@@ -317,7 +345,9 @@ export const changePassword = async (data: ChangePassword) => {
 
   // 2. Input Validation: Ensure required data is present.
   if (!newPassword || !confirmPassword) {
-    throw new AppError("Missing required fields: newPassword and confirmPassword.");
+    throw new AppError(
+      "Missing required fields: newPassword and confirmPassword."
+    );
   }
 
   if (typeof newPassword !== "string" || typeof confirmPassword !== "string") {

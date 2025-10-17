@@ -6,9 +6,7 @@ import { User, registrationSchema } from "@/schema/registration";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon, SaveIcon } from "lucide-react";
 import {
-  SubmitHandler,
   useForm,
-  UseFormReturn,
   useWatch,
 } from "react-hook-form";
 import {
@@ -24,7 +22,6 @@ import { PasswordStrength } from "@/components/PasswordStrength";
 import Link from "next/link";
 import { getCaptchaTokenRegistration } from "@/lib/captcha";
 import Image from "next/image";
-import { US_STATES } from "@/constant/common";
 // import { frequencyOfIncome, US_STATES } from "@/constant/common";
 const RegistrationPage = () => {
   const { recordRegistration, isRecording } = useRegistration();
@@ -156,7 +153,7 @@ const RegistrationPage = () => {
                     <CustomFormField name={"businessNet"} label="Business Net?" type="number" />
                   </div> */}
 
-                  <CustomFormField
+                  {/* <CustomFormField
                     name={"addressStreet"}
                     label={"* Street Address"}
                   />
@@ -173,7 +170,7 @@ const RegistrationPage = () => {
                       name={"addressPostal"}
                       label={"* Zip Code"}
                     />
-                  </div>
+                  </div> */}
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
                       name={"ssn"}

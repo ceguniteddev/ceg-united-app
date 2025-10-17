@@ -2,8 +2,10 @@
 
 import { BUSINESS_DETAIL_COLLECTION } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
+import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { Business, businessRecordSchema } from "@/schema";
+import { Timestamp } from "firebase-admin/firestore";
 
 export const recordBusiness = async (values: Business) => {
   const result = businessRecordSchema.safeParse(values);
@@ -13,20 +15,20 @@ export const recordBusiness = async (values: Business) => {
 
   const db = firestoreAdmin();
   const collectionRef = db.collection(BUSINESS_DETAIL_COLLECTION);
-  const docRef = await collectionRef.add(result.data);
+  await collectionRef.add({ ...result.data, createdAt: Timestamp.now() });
 
-  await fetch(`${process.env.n8n_HOST}/crs-report`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-    },
-    body: JSON.stringify({
-      businessId: docRef.id,
-      userId: values.userId,
-      type: "business",
-    }),
-  });
+  // await fetch(`${process.env.n8n_HOST}/crs-report`, {
+  //   method: "POST",
+  //   headers: {
+  //     "Content-Type": "application/json",
+  //     ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+  //   },
+  //   body: JSON.stringify({
+  //     businessId: docRef.id,
+  //     userId: values.userId,
+  //     type: "business",
+  //   }),
+  // });
 };
 
 export const updateBusiness = async (id: string, values: Business) => {
@@ -39,20 +41,20 @@ export const updateBusiness = async (id: string, values: Business) => {
   }
   const db = firestoreAdmin();
   const collectionRef = db.collection(BUSINESS_DETAIL_COLLECTION).doc(id);
-  await collectionRef.update(result.data);
+  await collectionRef.update({ ...result.data, updatedAt: Timestamp.now() });
 
-  await fetch(`${process.env.n8n_HOST}/crs-report`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-    },
-    body: JSON.stringify({
-      businessId: id,
-      userId: values.userId,
-      type: "business",
-    }),
-  });
+  // await fetch(`${process.env.n8n_HOST}/crs-report`, {
+  //   method: "POST",
+  //   headers: {
+  //     "Content-Type": "application/json",
+  //     ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+  //   },
+  //   body: JSON.stringify({
+  //     businessId: id,
+  //     userId: values.userId,
+  //     type: "business",
+  //   }),
+  // });
 };
 
 export const getBusiness = async (userId: string) => {
@@ -60,9 +62,14 @@ export const getBusiness = async (userId: string) => {
     throw new AppError("User ID is required.");
   }
   const db = firestoreAdmin();
-  const collectionRef = db.collection(BUSINESS_DETAIL_COLLECTION).where("userId", "==", userId);
+  const collectionRef = db
+    .collection(BUSINESS_DETAIL_COLLECTION)
+    .where("userId", "==", userId)
+    .orderBy("createdAt", "desc");
   const querySnapshot = await collectionRef.get();
-  return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Business));
+  return querySnapshot.docs.map(
+    (doc) => ({ id: doc.id, ...normalizeAllDates(doc.data()) } as Business)
+  );
 };
 
 export const deleteBusiness = async (id: string) => {
@@ -81,5 +88,5 @@ export const getBusinessById = async (id: string) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(BUSINESS_DETAIL_COLLECTION).doc(id);
   const doc = await collectionRef.get();
-  return { id: doc.id, ...doc.data() } as Business;
+  return { id: doc.id, ...normalizeAllDates(doc.data()) } as Business;
 };

@@ -23,7 +23,7 @@ const ApplyFunding = () => {
       <ResponsiveDialog
         isOpen={open}
         setIsOpen={setOpen}
-        title="Apply Funding"
+        title="Pre-Qualify"
         description={""}
         descriptionClassName="text-red-500 text-lg font-semibold"
         className="w-4/6"
@@ -55,12 +55,13 @@ const ApplyFunding = () => {
       </Dialog>
       <Button
         type="button"
+        size="lg"
         variant="outline"
         className="bg-green-200 hover:bg-green-400 cursor-pointer"
         onClick={() => setOpen(true)}
       >
         <BanknoteIcon className="h-4 w-4" />
-        {"Apply Funding"}
+        {"Get Pre-Qualify"}
       </Button>
     </div>
   );

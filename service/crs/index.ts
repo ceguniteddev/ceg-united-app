@@ -11,7 +11,11 @@ import { getBusiness } from "@/service/business";
 import { getUserById } from "@/service/user";
 import { CRSReportType } from "@/types/crs";
 
-export const recordCRSReport = async (userId: string, crsType: CRSReportType, report: any) => {
+export const recordCRSReport = async (
+  userId: string,
+  crsType: CRSReportType,
+  report: any
+) => {
   if (!userId) throw new Error("User ID is required.");
 
   const userData = await getUserById(userId);
@@ -22,27 +26,49 @@ export const recordCRSReport = async (userId: string, crsType: CRSReportType, re
   const collectionRef = db.collection(CRS_REPORT_DATA);
   const docRef = collectionRef.doc(userId);
 
-  await docRef.set({ userId, createdAt: new Date(), updatedAt: new Date() }, { merge: true });
+  await docRef.set(
+    { userId, createdAt: new Date(), updatedAt: new Date() },
+    { merge: true }
+  );
 
-  const subCollectionRef = db.collection(`${CRS_REPORT_DATA}/${userId}/${crsType}`);
+  const subCollectionRef = db.collection(
+    `${CRS_REPORT_DATA}/${userId}/${crsType}`
+  );
   const subDocRef = subCollectionRef.doc(crsType);
-  await subDocRef.set({ userId, report, createdAt: new Date() }, { merge: true });
+  await subDocRef.set(
+    { userId, report, createdAt: new Date() },
+    { merge: true }
+  );
 };
 
-export const recordCRSBusinessProfile = async (userId: string, businessId: string, report: any) => {
+export const recordCRSBusinessProfile = async (
+  userId: string,
+  businessId: string,
+  report: any
+) => {
   const db = firestoreAdmin();
 
   const collectionRef = db.collection(CRS_REPORT_BUSINESS_PROFILE);
   const docRef = collectionRef.doc(businessId);
-  await docRef.set({ userId, businessId, report, createdAt: new Date() }, { merge: true });
+  await docRef.set(
+    { userId, businessId, report, createdAt: new Date() },
+    { merge: true }
+  );
 };
 
-export const recordCRSBusinessScore = async (userId: string, businessId: string, report: any) => {
+export const recordCRSBusinessScore = async (
+  userId: string,
+  businessId: string,
+  report: any
+) => {
   const db = firestoreAdmin();
 
   const collectionRef = db.collection(CRS_REPORT_BUSINESS_SCORE);
   const docRef = collectionRef.doc(businessId);
-  await docRef.set({ userId, businessId, report, createdAt: new Date() }, { merge: true });
+  await docRef.set(
+    { userId, businessId, report, createdAt: new Date() },
+    { merge: true }
+  );
 };
 
 export const getCRSReport = async (userId: string) => {
@@ -104,7 +130,13 @@ export const getCRSBusinessScore = async (businessId: string) => {
   return { id: businessId, ...data };
 };
 
-export const generateCRSReport = async (userId: string) => {
+export const generateCRSReport = async ({
+  userId,
+  referenceNumber,
+}: {
+  userId: string;
+  referenceNumber: string;
+}) => {
   await fetch(`${process.env.n8n_HOST}/crs-report`, {
     method: "POST",
     headers: {
@@ -113,29 +145,65 @@ export const generateCRSReport = async (userId: string) => {
     },
     body: JSON.stringify({
       userId,
+      referenceNumber,
       type: "personal",
     }),
   });
 };
 
-export const refreshCRSData = async (userId: string) => {
-  await generateCRSReport(userId);
+export const generateCRSReportBusiness = async (
+  userId: string,
+  referenceNumber: string,
+  businessId: string
+) => {
+  await fetch(`${process.env.n8n_HOST}/crs-report`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      businessId: businessId,
+      referenceNumber,
+      userId: userId,
+      type: "business",
+    }),
+  });
+};
+
+export const refreshCRSData = async ({
+  userId,
+  referenceNumber,
+}: {
+  userId: string;
+  referenceNumber: string;
+}) => {
+  await generateCRSReport({ userId, referenceNumber });
 
   const businessDetails: Business[] = await getBusiness(userId);
   await Promise.all(
     businessDetails.map(async (business) => {
-      await fetch(`${process.env.n8n_HOST}/crs-report`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-        },
-        body: JSON.stringify({
-          businessId: business.id ?? "",
-          userId: userId,
-          type: "business",
-        }),
-      });
+      await generateCRSReportBusiness(userId, referenceNumber, business.id!);
     })
   );
+};
+
+export const fundAnalysis = async ({
+  referenceNumber,
+  userId,
+}: {
+  referenceNumber: string;
+  userId: string;
+}) => {
+  await fetch(`${process.env.n8n_HOST}/funding-analysis`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      referenceNumber,
+      userId,
+    }),
+  });
 };

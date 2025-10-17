@@ -25,7 +25,7 @@ const MyBusinessPage = () => {
               subtext="Manage your business information"
             />
           </header>
-          <PlaidLink />
+          <PlaidLink displayText="Link Business Account" />
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <ClientBusinessManagement

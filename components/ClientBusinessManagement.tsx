@@ -52,6 +52,7 @@ type Props = {
   setEditingBusiness: (business: Business | null) => void;
   isModal?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  onSaveSuccess?: ((businessName: string) => Promise<void>) | undefined;
 };
 
 const ClientBusinessManagement = ({
@@ -60,6 +61,7 @@ const ClientBusinessManagement = ({
   setEditingBusiness,
   setOpen,
   isModal,
+  onSaveSuccess,
 }: Props) => {
   const { recordBusiness, isRecording, updateBusiness, isUpdating } =
     useBusinessMutation();
@@ -75,7 +77,7 @@ const ClientBusinessManagement = ({
       // Merge existing social media data with the full list of platforms
       const socialMediaData = SOCIAL_MEDIA_PLATFORMS.map((platform) => {
         const existing = formValues.socialMedia?.find(
-          (s) => s.platform === platform.value
+          (s) => s?.platform === platform.value
         );
         return {
           platform: platform.value,
@@ -102,9 +104,8 @@ const ClientBusinessManagement = ({
 
   const onSubmit: SubmitHandler<BusinessForm> = useCallback(
     async (values) => {
-      // Filter out social media entries with empty handles before submitting
       const nonEmptySocialMedia = values.socialMedia?.filter(
-        (s) => s.handle && s.handle.trim() !== ""
+        (s) => s?.handle && s.handle.trim() !== ""
       );
 
       const payload: Business = {
@@ -118,7 +119,8 @@ const ClientBusinessManagement = ({
         setEditingBusiness(null);
         form.reset(defaultValues);
       } else {
-        await recordBusiness({ values: payload });
+        await recordBusiness({ values: payload, userId });
+        await onSaveSuccess?.(payload.businessName);
         form.reset(defaultValues);
       }
     },
@@ -129,6 +131,7 @@ const ClientBusinessManagement = ({
       form,
       setEditingBusiness,
       userId,
+      onSaveSuccess,
     ]
   );
 

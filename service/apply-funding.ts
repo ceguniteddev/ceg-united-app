@@ -16,6 +16,11 @@ import {
 import { updateClientApplicationStatus } from "@/service/bank-products";
 import { Timestamp } from "firebase-admin/firestore";
 import * as crypto from "node:crypto";
+import {
+  fundAnalysis,
+  generateCRSReport,
+  generateCRSReportBusiness,
+} from "./crs";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -30,35 +35,17 @@ export const applyFunding = async ({ value }: { value: ApplyFunding }) => {
   await docRef.set({ ...value });
   const data = (await docRef.get()).data();
 
-  await fetch(`${process.env.n8n_HOST}/funding-analysis`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-    },
-    body: JSON.stringify({
+  await generateCRSReport({ userId: value.userId, referenceNumber });
+
+  if (value.businessId) {
+    await generateCRSReportBusiness(
+      value.userId,
       referenceNumber,
-      userId: value.userId,
-    }),
-  });
+      value.businessId
+    );
+  }
 
-  // await updateClientApplicationStatus({
-  //   bankProductId: bankProductId,
-  //   userId: value.userId,
-  //   status: "Pending",
-  // });
-
-  // await fetch(`${process.env.n8n_HOST}/client-apply-bank-product`, {
-  //   method: "POST",
-  //   headers: {
-  //     "Content-Type": "application/json",
-  //     ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-  //   },
-  //   body: JSON.stringify({
-  //     userId: value.userId,
-  //     bankProductId: bankProductId,
-  //   }),
-  // });
+  await fundAnalysis({ referenceNumber, userId: value.userId });
 };
 
 export const getApplyFunding = async (
@@ -82,16 +69,22 @@ export const getApplyFunding = async (
 type Props = {
   state?: string;
   status?: FundingApplicationSatus;
+  userId?: string;
 };
 
 export const getFundingApplications = async ({
   state,
   status,
+  userId,
 }: Props): Promise<ApplyFundingWithUser[] | null> => {
   const db = firestoreAdmin();
   let collectionRef = db
     .collection(USER_FUNDING_APPLICATION)
     .orderBy("appliedDate", "desc");
+
+  if (userId) {
+    collectionRef = collectionRef.where("userId", "==", userId);
+  }
 
   if (state) {
     collectionRef = collectionRef.where("addressState", "==", state);

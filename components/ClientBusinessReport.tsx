@@ -132,7 +132,10 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
             rec.socialMedia.map((social, index) => (
               <a
                 key={index}
-                href={getSocialLink(social.platform, social.handle)}
+                href={getSocialLink(
+                  social?.platform ?? "",
+                  social?.handle ?? ""
+                )}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center gap-2 rounded-md border p-2 hover:bg-muted"
@@ -140,10 +143,10 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
                 <LinkIcon className="h-4 w-4" />
                 <div>
                   <span className="font-medium capitalize">
-                    {social.platform}:{" "}
+                    {social?.platform}:{" "}
                   </span>
                   <span className="truncate text-muted-foreground">
-                    {social.handle}
+                    {social?.handle}
                   </span>
                 </div>
               </a>

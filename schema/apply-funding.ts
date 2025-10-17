@@ -18,6 +18,8 @@ export const FundingApplicationType = [
   "Business",
   "Personal And Business",
   "Income",
+  "Community",
+  "Tradelines",
   "All",
 ] as const;
 export const FundingApplicationTypeEnum = z.enum(FundingApplicationType, {
@@ -129,6 +131,8 @@ export const applyFundingSchema = z
     businessTaxes3: z.coerce.number<number>().optional(),
 
     approveOrDecline: fundingApplicationApproveDeclineSchema.optional(),
+
+    reasonForJoiningCommunity: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     // Define the exclusion condition for clarity
@@ -398,6 +402,21 @@ export const applyFundingSchema = z
   )
   .refine(
     (data) => {
+      if (data.fundingType?.includes("Community")) {
+        return (
+          data.reasonForJoiningCommunity &&
+          data.reasonForJoiningCommunity.length > 0
+        );
+      }
+      return true;
+    },
+    {
+      message: "Required",
+      path: ["reasonForJoiningCommunity"],
+    }
+  )
+  .refine(
+    (data) => {
       if (
         data.fundingType?.includes("Personal") &&
         !data.interestedProduct?.includes("Tradelines") &&
@@ -484,9 +503,9 @@ export const FundingProductTypeEnum: FundingProductEnumType[] = [
     type: "Business",
   },
   {
-    value: "Knowledge Community",
-    label: "Knowledge Community",
-    type: "Personal And Business",
+    value: "Join Community",
+    label: "Join Community",
+    type: "Community",
   },
   {
     value: "Auto Loan",

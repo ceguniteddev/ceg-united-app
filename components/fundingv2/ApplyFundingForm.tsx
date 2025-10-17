@@ -36,21 +36,15 @@ import {
 import { useBusinessQuery } from "@/hooks/business";
 import { Separator } from "../ui/separator";
 import { ConfirmButton } from "../Confirmation";
-import { fa } from "zod/v4/locales";
-import { set } from "zod";
 import ClientBusinessManagement from "../ClientBusinessManagement";
 import IconMenu from "../icon-menu";
 import { ResponsiveDialog } from "../responsive-dialog";
 import { Business } from "@/schema";
 import {
-  useGetPlaidAccounts,
   useHasIncomeBankVerificationQuery,
   useHasPayrollBankVerificationQuery,
 } from "@/hooks/plaid";
-import NoBankLinked from "../NoBankLinked";
 import PlaidLink from "../PlaidLink";
-import PlaidIncomeLinkBank from "../PlaidLinkIncomeBank";
-import PlaidIncomeLinkPayroll from "../PlaidLinkIncomePayroll";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
@@ -82,10 +76,6 @@ const ApplyFundingForm = ({
   isViewing,
   userId,
 }: Props) => {
-  const { incomeBankItem, isLoading: incomeBankItemLoading } =
-    useHasIncomeBankVerificationQuery();
-  const { incomePayrollItem, isLoading: payrollBankItemLoading } =
-    useHasPayrollBankVerificationQuery();
   const { applyFunding, isRecording } = useApplyFunding();
   const [showLegalResidentOther, setShowLegalResidentOther] = useState(false);
   const [openBusinessModal, setOpenBusinessModal] = useState(false);
@@ -113,8 +103,11 @@ const ApplyFundingForm = ({
     string | undefined
   >(undefined);
 
-  const { businessData, isLoading: isBusinessLoading } =
-    useBusinessQuery(userId);
+  const {
+    businessData,
+    isLoading: isBusinessLoading,
+    refetch: refetchBusinesses,
+  } = useBusinessQuery(userId);
 
   const businessOptions = useMemo<DropdownOption[]>(
     () =>
@@ -144,12 +137,27 @@ const ApplyFundingForm = ({
   //   console.log("There are validation errors:", form.formState.errors);
   // }
 
-  const handleBusinessSelect = useCallback(
-    (value: string) => {
-      form.setValue("businessName", value, { shouldValidate: true });
+  const handleNewBusinessSaved = async (businessName: string) => {
+    // const { data: refreshedBusinessData } = await refetchBusinesses();
 
-      const b = businessData?.find((x) => x.businessName === value);
+    // if (refreshedBusinessData) {
+    //   handleBusinessSelect(businessName, refreshedBusinessData);
+    // }
+
+    setOpenBusinessModal(false);
+  };
+
+  const handleBusinessSelect = useCallback(
+    (value: string, currentData?: Business[]) => {
+      if (!value) {
+        return;
+      }
+      const dataToSearch = currentData || businessData;
+
+      const b = dataToSearch?.find((x) => x.businessName === value);
+
       if (b) {
+        form.setValue("businessName", value, { shouldValidate: true });
         setBusinessIdSelected(b.id);
         form.setValue("businessId", b.id ?? "", { shouldValidate: false });
         form.setValue("businessStreetAddress", b.businessStreetAddress ?? "", {
@@ -191,7 +199,7 @@ const ApplyFundingForm = ({
         });
       }
     },
-    [businessData, form]
+    [form, businessData]
   );
 
   useEffect(() => {
@@ -201,7 +209,7 @@ const ApplyFundingForm = ({
           interestedProductSelected.value.includes("Tradelines")
       );
 
-      setCommunity(interestedProductSelected.value.includes("Community"));
+      setCommunity(interestedProductSelected.type.includes("Community"));
     }
   }, [interestedProductSelected]);
 
@@ -314,6 +322,7 @@ const ApplyFundingForm = ({
           setEditingBusiness={() => {}}
           isModal
           setOpen={setOpenBusinessModal}
+          onSaveSuccess={handleNewBusinessSaved}
         />
       </ResponsiveDialog>
       <Form {...form}>
@@ -343,6 +352,14 @@ const ApplyFundingForm = ({
                           type="number"
                         />
                       )}
+                    {interestedProductSelected?.type?.includes("Community") &&
+                      !tradelinesOrShelf && (
+                        <CustomFormField
+                          name={"personalAmountFunding"}
+                          label="How much funding are you looking for?"
+                          type="number"
+                        />
+                      )}
                     {interestedProductSelected?.type?.includes("Business") &&
                       !tradelinesOrShelf && (
                         <CustomFormField
@@ -353,105 +370,149 @@ const ApplyFundingForm = ({
                       )}
                   </div>
 
-                  <Card className="bg-cyan-50">
-                    <CardHeader>
-                      <CardTitle>Personal Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4 items-start">
-                        {!tradelinesOrShelf && false && (
+                  {!community && (
+                    <Card className="bg-cyan-50">
+                      <CardHeader>
+                        <CardTitle>Personal Information</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-3 gap-4 items-start">
+                          {!tradelinesOrShelf && false && (
+                            <CustomFormField
+                              name={"isMarried"}
+                              label={"Are you married?"}
+                              type="select"
+                              options={isMarried}
+                            />
+                          )}
+
                           <CustomFormField
-                            name={"isMarried"}
-                            label={"Are you married?"}
+                            name={"legalResident"}
+                            onSelectValue={handleLegalResidentChange}
+                            label={"Immigration Status?"}
                             type="select"
-                            options={isMarried}
+                            options={legalResident}
                           />
+                          {showLegalResidentOther && (
+                            <CustomFormField
+                              name={"currentSituation"}
+                              type="textarea"
+                              label="Please explain your current situation"
+                            />
+                          )}
+                        </div>
+                        {!tradelinesOrShelf && false && (
+                          <div className="grid grid-cols-2 gap-4">
+                            <CustomFormField
+                              name={"driverLicenseNumber"}
+                              label={"Driver's License Number?"}
+                            />
+                            <CustomFormField
+                              name={"driverLicenseState"}
+                              label={"State?"}
+                              type="select"
+                              placeholder="Select a state"
+                              options={US_STATES}
+                            />
+                            <CustomFormField
+                              name={"driverLicenseIssueDate"}
+                              label={"Issue Date?"}
+                              type="date-picker"
+                              dateAfterHidden={new Date()}
+                            />
+                            <CustomFormField
+                              name={"driverLicenseIssueExpiryDate"}
+                              label={"Expiry Date?"}
+                              type="date-picker"
+                              // dateBeforeHidden={new Date()}
+                            />
+                            <Separator />
+                          </div>
                         )}
 
                         <CustomFormField
-                          name={"legalResident"}
-                          onSelectValue={handleLegalResidentChange}
-                          label={"Immigration Status?"}
-                          type="select"
-                          options={legalResident}
+                          name={"addressStreet"}
+                          label={"Street Address"}
                         />
-                        {showLegalResidentOther && (
+                        <div className="grid grid-cols-3 gap-4">
                           <CustomFormField
-                            name={"currentSituation"}
-                            type="textarea"
-                            label="Please explain your current situation"
-                          />
-                        )}
-                      </div>
-                      {!tradelinesOrShelf && false && (
-                        <div className="grid grid-cols-2 gap-4">
-                          <CustomFormField
-                            name={"driverLicenseNumber"}
-                            label={"Driver's License Number?"}
+                            name={"addressCity"}
+                            label={"City"}
                           />
                           <CustomFormField
-                            name={"driverLicenseState"}
-                            label={"State?"}
+                            name={"addressState"}
+                            label={"State"}
                             type="select"
                             placeholder="Select a state"
                             options={US_STATES}
                           />
                           <CustomFormField
-                            name={"driverLicenseIssueDate"}
-                            label={"Issue Date?"}
-                            type="date-picker"
-                            dateAfterHidden={new Date()}
+                            name={"addressPostal"}
+                            label={"Zip Code"}
+                          />
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          <CustomFormField
+                            name={"moveInCurrentAddress"}
+                            label={
+                              "When did you move in to your current address?"
+                            }
                           />
                           <CustomFormField
-                            name={"driverLicenseIssueExpiryDate"}
-                            label={"Expiry Date?"}
-                            type="date-picker"
-                            // dateBeforeHidden={new Date()}
+                            name={"payPerMonth"}
+                            type="number"
+                            label={"How much do you pay a month?"}
                           />
-                          <Separator />
+                          <CustomFormField
+                            name={"rentOrMortgage"}
+                            label={
+                              "Is it rent or mortgage? If else, please specify"
+                            }
+                          />
                         </div>
-                      )}
+                      </CardContent>
+                    </Card>
+                  )}
 
-                      <CustomFormField
-                        name={"addressStreet"}
-                        label={"Street Address"}
-                      />
-                      <div className="grid grid-cols-3 gap-4">
-                        <CustomFormField name={"addressCity"} label={"City"} />
+                  {community && (
+                    <Card className="bg-cyan-50">
+                      <CardHeader>
+                        <CardTitle>Community Information</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
                         <CustomFormField
-                          name={"addressState"}
-                          label={"State"}
-                          type="select"
-                          placeholder="Select a state"
-                          options={US_STATES}
-                        />
-                        <CustomFormField
-                          name={"addressPostal"}
-                          label={"Zip Code"}
-                        />
-                      </div>
-                      <div className="grid grid-cols-3 gap-4">
-                        <CustomFormField
-                          name={"moveInCurrentAddress"}
+                          name={"reasonForJoiningCommunity"}
                           label={
-                            "When did you move in to your current address?"
+                            "What's the most important reason for joining?"
                           }
                         />
+
                         <CustomFormField
-                          name={"payPerMonth"}
-                          type="number"
-                          label={"How much do you pay a month?"}
+                          name={"addressStreet"}
+                          label={"Street Address"}
                         />
-                        <CustomFormField
-                          name={"rentOrMortgage"}
-                          label={
-                            "Is it rent or mortgage? If else, please specify"
-                          }
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  {!tradelinesOrShelf && (
+                        <div className="grid grid-cols-3 gap-4">
+                          <CustomFormField
+                            name={"addressCity"}
+                            label={"City"}
+                          />
+                          <CustomFormField
+                            name={"addressState"}
+                            label={"State"}
+                            type="select"
+                            placeholder="Select a state"
+                            options={US_STATES}
+                          />
+                          <CustomFormField
+                            name={"addressPostal"}
+                            label={"Zip Code"}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {!tradelinesOrShelf && !community && (
                     <div className="flex flex-row items-center gap-4 justify-between">
                       <CustomFormField
                         name={"howDoYouGetPaid"}
@@ -544,7 +605,8 @@ const ApplyFundingForm = ({
                       </Card>
                     )}
 
-                  {interestedProductSelected?.type?.includes("Business") &&
+                  {(interestedProductSelected?.type?.includes("Business") ||
+                    community) &&
                     !tradelinesOrShelf && (
                       <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-end gap-4">
                         <CustomFormField
@@ -559,7 +621,7 @@ const ApplyFundingForm = ({
                           type="button"
                           size="lg"
                           variant="ghost"
-                          className="justify-self-start md:justify-self-end"
+                          className="justify-self-start md:justify-self-end cursor-pointer"
                           onClick={() => setOpenBusinessModal(true)}
                         >
                           <IconMenu text="Add Business" icon={<Plus />} />
@@ -568,7 +630,8 @@ const ApplyFundingForm = ({
                     )}
 
                   {businessIdSelected &&
-                    interestedProductSelected?.type?.includes("Business") &&
+                    (interestedProductSelected?.type?.includes("Business") ||
+                      community) &&
                     !tradelinesOrShelf && (
                       <Card className="bg-orange-50">
                         <CardHeader>
@@ -582,36 +645,32 @@ const ApplyFundingForm = ({
                             <CustomFormField
                               name={"businessGrossProjectedRevenue1"}
                               type="number"
-                              label={`${currentYear} (gross projected revenue)?`}
+                              label={`${currentYear} Gross Projected Revenue?`}
                             />
                             <CustomFormField
                               name={"businessProjectedProfit1"}
                               type="number"
-                              label={`${currentYear} (projected profit)?`}
+                              label={`${currentYear} Projected Profit?`}
                             />
                             <CustomFormField
                               name={"businessGrossProjectedRevenue2"}
                               type="number"
-                              label={`${
-                                currentYear - 1
-                              } (gross projected revenue)?`}
+                              label={`${currentYear - 1} Gross Revenue?`}
                             />
                             <CustomFormField
                               name={"businessProjectedProfit2"}
                               type="number"
-                              label={`${currentYear - 1} (projected profit)?`}
+                              label={`${currentYear - 1} Net Revenue?`}
                             />
                             <CustomFormField
                               name={"businessGrossProjectedRevenue3"}
                               type="number"
-                              label={`${
-                                currentYear - 2
-                              } (gross projected revenue)?`}
+                              label={`${currentYear - 2} Gross Revenue?`}
                             />
                             <CustomFormField
                               name={"businessProjectedProfit3"}
                               type="number"
-                              label={`${currentYear - 2} (projected profit)?`}
+                              label={`${currentYear - 2} Net Revenue?`}
                             />
                           </div>
                           <CustomFormField
