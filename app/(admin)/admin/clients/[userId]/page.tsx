@@ -44,7 +44,7 @@ const TabView = () => {
         <TabsTrigger value="documents">Documents</TabsTrigger>
         <TabsTrigger value="credit-report">Credit Report</TabsTrigger>
         <TabsTrigger value="business">Business</TabsTrigger>
-        <TabsTrigger value="pre-approved-funds">Pre-approved Funds</TabsTrigger>
+        {/* <TabsTrigger value="pre-approved-funds">Pre-approved Funds</TabsTrigger> */}
         <TabsTrigger value="applied-funding">Applied Funding</TabsTrigger>
         <TabsTrigger value="note">Note</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
