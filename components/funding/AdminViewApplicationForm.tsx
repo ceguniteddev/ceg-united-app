@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { CircleXIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, formatDate } from "date-fns";
 import * as React from "react";
 import {
   businessTaxes,
@@ -247,7 +247,12 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
             <Field label="City" value={data.addressCity} />
             <Field label="State" value={data.addressState} />
             <Field label="Zip Code" value={data.addressPostal} />
-            <Field label="Move-in Date" value={data.moveInCurrentAddress} />
+            {data.moveInCurrentAddress && (
+              <Field
+                label="Move-in Date"
+                value={formatDate(data.moveInCurrentAddress, "MM/dd/yyyy")}
+              />
+            )}
           </div>
         </section>
 

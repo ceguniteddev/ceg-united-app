@@ -2,7 +2,10 @@
 import { UserCreateResponse } from "plaid";
 import { getAccessToken } from ".";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
-import { PLAID_USER_COMPLETE_DATA, USER_TOKEN_COLLECTION } from "@/constant/collection-name";
+import {
+  PLAID_USER_COMPLETE_DATA,
+  USER_TOKEN_COLLECTION,
+} from "@/constant/collection-name";
 import { Timestamp } from "firebase-admin/firestore";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { plaidClient } from "@/lib/plaid";
@@ -83,7 +86,9 @@ export const recordPlaidUserToken = async (userId: string) => {
 export const getPlaidUserToken = async (userId: string) => {
   logInfo("getPlaidUserToken", { userId });
   const db = firestoreAdmin();
-  const collectionRef = db.collection(USER_TOKEN_COLLECTION).where("userId", "==", userId);
+  const collectionRef = db
+    .collection(USER_TOKEN_COLLECTION)
+    .where("userId", "==", userId);
 
   const snapshot = await collectionRef.orderBy("createdAt", "asc").get();
 
@@ -116,7 +121,8 @@ export const getPlaidCompleteData = async (userId: string) => {
   const accessTokens = await getAccessToken(userId);
   if (!accessTokens?.length) {
     logInfo("No linked bank account found");
-    throw new AppError("No linked bank account found");
+    // throw new AppError("No linked bank account found");
+    return null;
   }
 
   let userTokenRecord = await getPlaidUserToken(userId);
@@ -162,8 +168,12 @@ export const getPlaidCompleteData = async (userId: string) => {
           end_date: fmt(now),
         })
       ),
-      safeData(token.tokenType, "identityGet", () => plaidClient.identityGet(configs)),
-      safeData(token.tokenType, "liabilitiesGet", () => plaidClient.liabilitiesGet(configs)),
+      safeData(token.tokenType, "identityGet", () =>
+        plaidClient.identityGet(configs)
+      ),
+      safeData(token.tokenType, "liabilitiesGet", () =>
+        plaidClient.liabilitiesGet(configs)
+      ),
       safeData(token.tokenType, "creditBankIncomeGet", () =>
         plaidClient.creditBankIncomeGet({
           user_token: userTokenRecord?.user_token,
@@ -201,7 +211,8 @@ export const getPlaidCompleteData = async (userId: string) => {
       bank_income: bankIncomeData?.bank_income ?? [],
       payroll_income: payrollIncomeData?.items ?? [],
       investmentHoldings: investmentsHoldingsData?.holdings ?? [],
-      investmentTransactions: investmentsTransactionsData?.investment_transactions ?? [],
+      investmentTransactions:
+        investmentsTransactionsData?.investment_transactions ?? [],
     };
 
     completeData.push(row);
@@ -210,7 +221,10 @@ export const getPlaidCompleteData = async (userId: string) => {
   return completeData;
 };
 
-const recordPlaidCompleteData = async (userId: string, data: PlaidCompleteRow[]) => {
+const recordPlaidCompleteData = async (
+  userId: string,
+  data: PlaidCompleteRow[]
+) => {
   const db = firestoreAdmin();
 
   const docRef = db.collection(PLAID_USER_COMPLETE_DATA).doc(userId);
@@ -253,7 +267,8 @@ async function safeData<T>(
   ];
 
   if (
-    (tokenType === "INCOME_VERIFICATION_BANK" || tokenType === "INCOME_VERIFICATION_PAYROLL") &&
+    (tokenType === "INCOME_VERIFICATION_BANK" ||
+      tokenType === "INCOME_VERIFICATION_PAYROLL") &&
     skipLabels.includes(label)
   ) {
     logInfo(`[Plaid] Skipping ${label} for token-type ${tokenType}`);
@@ -265,7 +280,10 @@ async function safeData<T>(
     return res.data;
   } catch (err: any) {
     logError(err, { ...err.response?.data });
-    console.error(`[Plaid] ${label} failed token-type ${tokenType}`, err.response?.data);
+    console.error(
+      `[Plaid] ${label} failed token-type ${tokenType}`,
+      err.response?.data
+    );
     return null;
   }
 }

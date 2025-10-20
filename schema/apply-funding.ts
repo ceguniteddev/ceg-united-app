@@ -62,7 +62,7 @@ export const applyFundingSchema = z
     businessAmountFunding: z.coerce.number<number>().optional(),
 
     isMarried: z.string().optional(),
-    legalResident: z.string().min(1, { error: "Required" }),
+    legalResident: z.string().optional(), //TODO
     currentSituation: z.string().optional(),
 
     driverLicenseNumber: z.string().optional(),
@@ -81,9 +81,11 @@ export const applyFundingSchema = z
     addressState: z.string().min(1, { error: "Required" }),
     addressPostal: z.string().min(1, { error: "Required" }),
 
-    moveInCurrentAddress: z.string().min(1, { error: "Required" }),
-    payPerMonth: z.coerce.number<number>().min(1, { error: "Required" }),
-    rentOrMortgage: z.string().min(1, { error: "Required" }),
+    moveInCurrentAddress: z.coerce
+      .date<Date>({ error: "Require Date" })
+      .optional(), //TODO
+    payPerMonth: z.coerce.number<number>().optional(), //TODO
+    rentOrMortgage: z.string().optional(), //TODO
 
     howDoYouGetPaid: z.string().optional(),
     employmentStatus: z.string().optional(),
@@ -133,6 +135,11 @@ export const applyFundingSchema = z
     approveOrDecline: fundingApplicationApproveDeclineSchema.optional(),
 
     reasonForJoiningCommunity: z.string().optional(),
+
+    experianUsername: z.string().optional(),
+    experianPassword: z.string().optional(),
+    creditKarmaUsername: z.string().optional(),
+    creditKarmaPassword: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     // Define the exclusion condition for clarity
@@ -400,27 +407,62 @@ export const applyFundingSchema = z
       path: ["businessName"],
     }
   )
-  .refine(
-    (data) => {
-      if (data.fundingType?.includes("Community")) {
-        return (
-          data.reasonForJoiningCommunity &&
-          data.reasonForJoiningCommunity.length > 0
-        );
+  .superRefine((data, ctx) => {
+    // If funded by Community, require a non-empty reason
+    if (data.fundingType?.includes("Community")) {
+      if (
+        !data.reasonForJoiningCommunity ||
+        data.reasonForJoiningCommunity.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["reasonForJoiningCommunity"],
+        });
       }
-      return true;
-    },
-    {
-      message: "Required",
-      path: ["reasonForJoiningCommunity"],
     }
-  )
+
+    // If funded by Personal, require a positive amount
+    if (data.fundingType?.includes("Personal")) {
+      if (
+        data.personalAmountFunding == null ||
+        data.personalAmountFunding <= 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["personalAmountFunding"],
+        });
+      }
+    }
+  })
+  // .refine(
+  //   (data) => {
+  //     if (data.fundingType?.includes("Community")) {
+  //       return (
+  //         data.reasonForJoiningCommunity &&
+  //         data.reasonForJoiningCommunity.length > 0
+  //       );
+  //     }
+  //     if (data.fundingType?.includes("Community")) {
+  //       return (
+  //         data.personalAmountFunding !== undefined &&
+  //         data.personalAmountFunding > 0
+  //       );
+  //     }
+  //     return true;
+  //   },
+  //   {
+  //     message: "Required",
+  //     path: ["reasonForJoiningCommunity"],
+  //   }
+  // )
   .refine(
     (data) => {
       if (
-        data.fundingType?.includes("Personal") &&
-        !data.interestedProduct?.includes("Tradelines") &&
-        !data.interestedProduct?.includes("Shelf")
+        data.fundingType?.includes("Personal")
+        // !data.interestedProduct?.includes("Tradelines") &&
+        // !data.interestedProduct?.includes("Shelf")
       ) {
         return (
           data.personalAmountFunding !== undefined &&
@@ -436,11 +478,7 @@ export const applyFundingSchema = z
   )
   .refine(
     (data) => {
-      if (
-        data.fundingType?.includes("Business") &&
-        !data.interestedProduct?.includes("Tradelines") &&
-        !data.interestedProduct?.includes("Shelf")
-      ) {
+      if (data.fundingType?.includes("Business")) {
         return (
           data.businessAmountFunding !== undefined &&
           data.businessAmountFunding > 0
@@ -452,7 +490,57 @@ export const applyFundingSchema = z
       message: "Required",
       path: ["businessAmountFunding"],
     }
-  );
+  )
+  .superRefine((data, ctx) => {
+    // Helper that checks membership whether fundingType is string or string[]
+    const has = (needle: string) => {
+      const ft = data.fundingType;
+      if (!ft) return false;
+      return ft.includes(needle);
+    };
+
+    const triggered = has("Business") || has("Personal");
+    if (!triggered) return;
+
+    // --- Put your conditional validations here ---
+    // Examples (edit/remove as needed):
+
+    if (!data.moveInCurrentAddress) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Required",
+        path: ["moveInCurrentAddress"],
+      });
+    }
+
+    if (
+      data.payPerMonth == null ||
+      !Number.isFinite(data.payPerMonth) ||
+      data.payPerMonth <= 0
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Required",
+        path: ["payPerMonth"],
+      });
+    }
+
+    if (!data.rentOrMortgage) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Required",
+        path: ["rentOrMortgage"],
+      });
+    }
+
+    if (!data.legalResident) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Required",
+        path: ["legalResident"],
+      });
+    }
+  });
 
 export type ApplyFunding = z.infer<typeof applyFundingSchema>;
 
@@ -485,26 +573,26 @@ export const FundingProductTypeEnum: FundingProductEnumType[] = [
   {
     value: "Personal Tradelines",
     label: "Personal Tradelines",
-    type: "Personal",
+    type: "Tradelines",
   },
   {
     value: "Business Tradelines",
     label: "Business Tradelines",
-    type: "Business",
+    type: "Tradelines",
   },
   {
     value: "Personal & Business Tradelines",
     label: "Personal & Business Tradelines",
-    type: "Personal And Business",
+    type: "Tradelines",
   },
+  // {
+  //   value: "Aged Shelf Corporation",
+  //   label: "Aged Shelf Corporation",
+  //   type: "Business",
+  // },
   {
-    value: "Aged Shelf Corporation",
-    label: "Aged Shelf Corporation",
-    type: "Business",
-  },
-  {
-    value: "Join Community",
-    label: "Join Community",
+    value: "Knowledge Community",
+    label: "Knowledge Community",
     type: "Community",
   },
   {

@@ -45,6 +45,7 @@ import {
   useHasPayrollBankVerificationQuery,
 } from "@/hooks/plaid";
 import PlaidLink from "../PlaidLink";
+import { is } from "date-fns/locale";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
@@ -82,8 +83,9 @@ const ApplyFundingForm = ({
   const [interestedProductSelected, setInterestedProductSelected] = useState<
     FundingProductEnumType | undefined
   >(undefined);
-  const [tradelinesOrShelf, setTradelinesOrShelf] = useState<boolean>(false);
-  const [community, setCommunity] = useState<boolean>(false);
+  // const [tradelinesOrShelf, setTradelinesOrShelf] = useState<boolean>(false);
+  const [isCommunity, setIsCommunity] = useState<boolean>(false);
+  const [isTradeLines, setIsTradeLines] = useState<boolean>(false);
 
   const [howDoYouGetPaidSelected, setHowDoYouGetPaidSelected] = useState<
     DropdownOption | undefined
@@ -133,9 +135,9 @@ const ApplyFundingForm = ({
     },
   });
 
-  // if (Object.keys(form.formState.errors).length > 0) {
-  //   console.log("There are validation errors:", form.formState.errors);
-  // }
+  if (Object.keys(form.formState.errors).length > 0) {
+    console.log("There are validation errors:", form.formState.errors);
+  }
 
   const handleNewBusinessSaved = async (businessName: string) => {
     // const { data: refreshedBusinessData } = await refetchBusinesses();
@@ -204,12 +206,13 @@ const ApplyFundingForm = ({
 
   useEffect(() => {
     if (interestedProductSelected) {
-      setTradelinesOrShelf(
-        interestedProductSelected.value.includes("Shelf") ||
-          interestedProductSelected.value.includes("Tradelines")
-      );
+      // setTradelinesOrShelf(
+      //   interestedProductSelected.value.includes("Shelf") ||
+      //     interestedProductSelected.value.includes("Tradelines")
+      // );
 
-      setCommunity(interestedProductSelected.type.includes("Community"));
+      setIsCommunity(interestedProductSelected.type.includes("Community"));
+      setIsTradeLines(interestedProductSelected.type.includes("Tradelines"));
     }
   }, [interestedProductSelected]);
 
@@ -262,7 +265,7 @@ const ApplyFundingForm = ({
         form.setValue("employmentStatus", selectedValue.type!, {
           shouldValidate: true,
         });
-        console.log("selectedValue.value", selectedValue.value);
+        // console.log("selectedValue.value", selectedValue.value);
         if (
           selectedValue.value === "yes_direct_deposit" ||
           selectedValue.value === "yes_checks"
@@ -345,23 +348,29 @@ const ApplyFundingForm = ({
                       onSelectValue={handleInterestedProductChange}
                     />
                     {interestedProductSelected?.type?.includes("Personal") &&
-                      !tradelinesOrShelf && (
+                      !isTradeLines && (
                         <CustomFormField
                           name={"personalAmountFunding"}
                           label="How Much Personal Funding Are You Looking For?"
                           type="number"
                         />
                       )}
-                    {interestedProductSelected?.type?.includes("Community") &&
-                      !tradelinesOrShelf && (
-                        <CustomFormField
-                          name={"personalAmountFunding"}
-                          label="How much funding are you looking for?"
-                          type="number"
-                        />
-                      )}
+                    {isCommunity && (
+                      <CustomFormField
+                        name={"personalAmountFunding"}
+                        label="How much funding are you looking for?"
+                        type="number"
+                      />
+                    )}
+                    {isTradeLines && (
+                      <CustomFormField
+                        name={"personalAmountFunding"}
+                        label="How much funding are you looking for?"
+                        type="number"
+                      />
+                    )}
                     {interestedProductSelected?.type?.includes("Business") &&
-                      !tradelinesOrShelf && (
+                      !isTradeLines && (
                         <CustomFormField
                           name={"businessAmountFunding"}
                           label="How Much Business Funding Are You Looking For?"
@@ -370,14 +379,14 @@ const ApplyFundingForm = ({
                       )}
                   </div>
 
-                  {!community && (
+                  {!isCommunity && !isTradeLines && (
                     <Card className="bg-cyan-50">
                       <CardHeader>
                         <CardTitle>Personal Information</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="grid grid-cols-3 gap-4 items-start">
-                          {!tradelinesOrShelf && false && (
+                          {!isTradeLines && false && (
                             <CustomFormField
                               name={"isMarried"}
                               label={"Are you married?"}
@@ -401,7 +410,7 @@ const ApplyFundingForm = ({
                             />
                           )}
                         </div>
-                        {!tradelinesOrShelf && false && (
+                        {!isTradeLines && false && (
                           <div className="grid grid-cols-2 gap-4">
                             <CustomFormField
                               name={"driverLicenseNumber"}
@@ -457,6 +466,7 @@ const ApplyFundingForm = ({
                             label={
                               "When did you move in to your current address?"
                             }
+                            type="date-picker"
                           />
                           <CustomFormField
                             name={"payPerMonth"}
@@ -474,7 +484,7 @@ const ApplyFundingForm = ({
                     </Card>
                   )}
 
-                  {community && (
+                  {isCommunity && (
                     <Card className="bg-cyan-50">
                       <CardHeader>
                         <CardTitle>Community Information</CardTitle>
@@ -512,25 +522,80 @@ const ApplyFundingForm = ({
                     </Card>
                   )}
 
-                  {!tradelinesOrShelf && !community && (
-                    <div className="flex flex-row items-center gap-4 justify-between">
-                      <CustomFormField
-                        name={"howDoYouGetPaid"}
-                        label={"Do you have a job?"}
-                        type="select"
-                        options={howDoYouGetPaid}
-                        onSelectValue={handleDoYouHaveAJobChange}
-                      />
-                      {howDoYouGetPaidSelected?.value === "no_assistance" && (
-                        <div className="mt-6">
-                          <PlaidLink displayText="Link Personal Account" />
+                  {isTradeLines && (
+                    <Card className="bg-cyan-50">
+                      <CardHeader>
+                        <CardTitle>Tradelines Information</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <CustomFormField
+                          name={"addressStreet"}
+                          label={"Street Address"}
+                        />
+                        <div className="grid grid-cols-3 gap-4">
+                          <CustomFormField
+                            name={"addressCity"}
+                            label={"City"}
+                          />
+                          <CustomFormField
+                            name={"addressState"}
+                            label={"State"}
+                            type="select"
+                            placeholder="Select a state"
+                            options={US_STATES}
+                          />
+                          <CustomFormField
+                            name={"addressPostal"}
+                            label={"Zip Code"}
+                          />
                         </div>
-                      )}
-                    </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <CustomFormField
+                            name={"experianUsername"}
+                            label={"Experian Username"}
+                          />
+                          <CustomFormField
+                            name={"experianPassword"}
+                            label={"Experian Password"}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <CustomFormField
+                            name={"creditKarmaUsername"}
+                            label={"Credit Karma Username"}
+                          />
+                          <CustomFormField
+                            name={"creditKarmaPassword"}
+                            label={"Credit Karma Password"}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
                   )}
 
+                  {!isTradeLines &&
+                    !isCommunity &&
+                    interestedProductSelected && (
+                      <div className="flex flex-row items-center gap-4 justify-between">
+                        <CustomFormField
+                          name={"howDoYouGetPaid"}
+                          label={"Do you have a job?"}
+                          type="select"
+                          options={howDoYouGetPaid}
+                          onSelectValue={handleDoYouHaveAJobChange}
+                        />
+                        {howDoYouGetPaidSelected?.value === "no_assistance" && (
+                          <div className="mt-6">
+                            <PlaidLink displayText="Link Personal Account" />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                   {howDoYouGetPaidSelected?.type === "yes" &&
-                    !tradelinesOrShelf && (
+                    !isTradeLines &&
+                    !isCommunity && (
                       <Card className="bg-blue-50">
                         <CardHeader>
                           <CardTitle className="flex flex-row justify-between">
@@ -606,8 +671,8 @@ const ApplyFundingForm = ({
                     )}
 
                   {(interestedProductSelected?.type?.includes("Business") ||
-                    community) &&
-                    !tradelinesOrShelf && (
+                    isCommunity) &&
+                    !isTradeLines && (
                       <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-end gap-4">
                         <CustomFormField
                           name="businessName"
@@ -631,8 +696,8 @@ const ApplyFundingForm = ({
 
                   {businessIdSelected &&
                     (interestedProductSelected?.type?.includes("Business") ||
-                      community) &&
-                    !tradelinesOrShelf && (
+                      isCommunity) &&
+                    !isTradeLines && (
                       <Card className="bg-orange-50">
                         <CardHeader>
                           <CardTitle className="flex flex-row justify-between">
@@ -752,12 +817,21 @@ const ApplyFundingForm = ({
                                 {isRecording ? (
                                   <>
                                     <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-                                    Applying...
+
+                                    {isCommunity
+                                      ? "Joining..."
+                                      : isTradeLines
+                                      ? "Boosting..."
+                                      : "Applying..."}
                                   </>
                                 ) : (
                                   <>
                                     <BanknoteIcon className="mr-2 h-4 w-4" />{" "}
-                                    Apply Funding
+                                    {isCommunity
+                                      ? "Join Community"
+                                      : isTradeLines
+                                      ? "Boost My Score"
+                                      : "Apply Funding"}
                                   </>
                                 )}
                               </Button>

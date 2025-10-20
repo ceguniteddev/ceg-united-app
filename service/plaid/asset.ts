@@ -75,7 +75,9 @@ export const recordWebhookData = async (webhookData: PlaidAssetWebhookData) => {
   }
 };
 
-export const getAssetReportRequestByAssetReportId = async (assetReportId: string) => {
+export const getAssetReportRequestByAssetReportId = async (
+  assetReportId: string
+) => {
   logInfo("getAssetReportRequestByAssetReportId", { assetReportId });
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_CREATE_ASSET_REPORT);
@@ -89,14 +91,20 @@ export const getAssetReportRequestByAssetReportId = async (assetReportId: string
   }
 
   const doc = querySnapshot.docs[0];
-  return { id: doc.id, ...normalizeAllDates(doc.data()) } as PlaidAssetReportRequest & {
+  return {
+    id: doc.id,
+    ...normalizeAllDates(doc.data()),
+  } as PlaidAssetReportRequest & {
     id: string;
   };
 };
 
 type AssetReportRow = PlaidAssetReportRequest & { id: string };
 
-export const getAssetReportRequestByUserId = async (userId: string, itemId?: string) => {
+export const getAssetReportRequestByUserId = async (
+  userId: string,
+  itemId?: string
+) => {
   logInfo("getAssetReportRequestByUserId", { userId, itemId });
   const db = firestoreAdmin();
   const collectionRef = db.collection(PLAID_CREATE_ASSET_REPORT);
@@ -145,11 +153,15 @@ export const getAssetReportPDF = async (
       { responseType: "arraybuffer" }
     );
     const pdfBuffer =
-      response.data instanceof Buffer ? response.data : Buffer.from(response.data as ArrayBuffer);
+      response.data instanceof Buffer
+        ? response.data
+        : Buffer.from(response.data as ArrayBuffer);
 
     const storage = storageAdmin();
 
-    const bucketFile = storage.file(`documents/${userId}/asset-report-${itemId}.pdf`);
+    const bucketFile = storage.file(
+      `documents/${userId}/asset-report-${itemId}.pdf`
+    );
 
     await bucketFile.save(pdfBuffer, { contentType: "application/pdf" });
   } catch (e: any) {
@@ -179,7 +191,10 @@ export const getAssetReportPDFUrl = async (assetReportToken: string) => {
   return response.data.url;
 };
 
-export const getAssetReport = async (assetReportToken: string, userId: string) => {
+export const getAssetReport = async (
+  assetReportToken: string,
+  userId: string
+) => {
   if (!assetReportToken) {
     throw new Error("Asset report token is required");
   }
@@ -213,13 +228,18 @@ export const getAssetReport = async (assetReportToken: string, userId: string) =
 export const getAssetReportData = async (userId: string) => {
   logInfo("getAssetReportData", { userId });
   const db = firestoreAdmin();
-  const collectionRef = db.collection(PLAID_ASSET_REPORT_DATA).where("userId", "==", userId);
+  const collectionRef = db
+    .collection(PLAID_ASSET_REPORT_DATA)
+    .where("userId", "==", userId);
 
   const snapshot = await collectionRef.orderBy("createdAt", "asc").get();
 
   if (snapshot.empty) return null;
 
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...normalizeAllDates(doc.data()) }));
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...normalizeAllDates(doc.data()),
+  }));
 };
 
 export const createAssetReport = async (userId: string, itemId: string) => {
@@ -241,7 +261,8 @@ export const createAssetReport = async (userId: string, itemId: string) => {
   const accessTokens = await getAccessToken(userId, "ITEM", itemId);
   if (!accessTokens?.length) {
     logInfo("No linked bank account found");
-    throw new AppError("No linked bank account found");
+    // throw new AppError("No linked bank account found");
+    return null;
   }
 
   const tokens = accessTokens.map((item) => item.accessToken);
@@ -322,7 +343,10 @@ export const recordAssetReportRequest = async (
   });
 
   const doc = await docRef.get();
-  return { id: doc.id, ...normalizeAllDates(doc.data()) } as PlaidAssetReportRequest & {
+  return {
+    id: doc.id,
+    ...normalizeAllDates(doc.data()),
+  } as PlaidAssetReportRequest & {
     id: string;
   };
 };

@@ -158,7 +158,7 @@ const ClientBusinessManagement = ({
                     label="* Employer Identification Number"
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <CustomFormField
                     type="number"
                     name="lastYearTaxes"
@@ -169,7 +169,7 @@ const ClientBusinessManagement = ({
                     label="Current Year Gross Income"
                     type="number"
                   />
-                </div>
+                </div> */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <CustomFormField
                     name="businessEmail"
