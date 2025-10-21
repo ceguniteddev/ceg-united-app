@@ -28,7 +28,7 @@ export const uploadDocument = async (
   const userDocumentPrefix = `documents/${userId}/`;
   let newFilename: string;
 
-  console.log("uploadDocument", { userId, file, documentType });
+  // console.log("uploadDocument", { userId, file, documentType });
 
   // --- Branching Logic ---
   if (documentType) {

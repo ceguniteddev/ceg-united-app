@@ -249,12 +249,8 @@ export default function ClientDocuments({ userId }: { userId: string }) {
             isDeleting={isDeleting}
             isAdmin={isAdmin}
           />
-        ) : !isAdmin ? (
-          <UploadFile userId={userId} documentType={selectedDocType} />
         ) : (
-          <div className="flex items-center justify-center h-96 bg-muted rounded-md">
-            <p className="text-muted-foreground">Document not uploaded yet.</p>
-          </div>
+          <UploadFile userId={userId} documentType={selectedDocType} />
         )}
       </section>
 
