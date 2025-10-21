@@ -22,7 +22,10 @@ const Sidebar = () => {
   return (
     <section className="sidebar">
       <nav className="flex flex-col">
-        <Link href="/overview" className="mb-6 cursor-pointer flex items-center justify-center">
+        <Link
+          href="/admin/home"
+          className="mb-6 cursor-pointer flex items-center justify-center"
+        >
           <Image
             src="/icons/logo.svg"
             width={64}
@@ -52,12 +55,15 @@ const Sidebar = () => {
                   (appliedFunding?.length ?? 0) > 0 && (
                     <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
                   )}
-                {item.route === "/admin/call-requests" && (requestCallsOpen?.length ?? 0) > 0 && (
-                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
-                )}
+                {item.route === "/admin/call-requests" &&
+                  (requestCallsOpen?.length ?? 0) > 0 && (
+                    <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                  )}
               </div>
 
-              <p className={cn("sidebar-label", { "!text-white": isActive })}>{item.label}</p>
+              <p className={cn("sidebar-label", { "!text-white": isActive })}>
+                {item.label}
+              </p>
             </Link>
           );
         })}

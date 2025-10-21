@@ -18,6 +18,7 @@ import {
   howDoYouGetPaid,
   personalTaxes,
 } from "@/constant/common";
+import CategoryBadge from "../CategoryBadge";
 
 type Props = {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -98,9 +99,19 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
     <Card>
       <CardHeader>
         <CardTitle>Funding Application</CardTitle>
-        <div className="text-sm text-muted-foreground">
-          Submitted: {fmtDate(data.appliedDate) || "—"} • Status:{" "}
-          {data.status || "—"} • Reference: {data.referenceNumber || "—"}
+        <div className="flex flex-col text-sm text-muted-foreground">
+          <div>
+            <span>Submitted: {fmtDate(data.appliedDate) || "—"}</span>
+          </div>
+          <div className="flex items-center">
+            <span>Status:</span>
+            <div className="ml-1.5">
+              <CategoryBadge category={data.status} />
+            </div>
+          </div>
+          <div>
+            <span>Reference: {data.referenceNumber || "—"}</span>
+          </div>
         </div>
       </CardHeader>
 

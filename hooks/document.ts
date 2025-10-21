@@ -21,6 +21,7 @@ export const useUserDocumentMutation = () => {
       queryClient.invalidateQueries({
         queryKey: [GET_USER_DOCUMENTS, user?.uid],
       });
+      toast.success("Document deleted successfully.");
     },
     onError: (error: any) => {
       if (error instanceof AppError) {
@@ -53,7 +54,7 @@ export const useUserDocumentsQuery = ({ userId }: { userId: string }) => {
       return await getUserDocuments({ userId });
     },
     enabled: !!user,
-    staleTime: 30 * 60 * 1000,
+    // staleTime: 30 * 60 * 1000,
   });
 
   return {

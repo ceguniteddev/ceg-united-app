@@ -1,38 +1,61 @@
 import { withAuth } from "@/lib/api-validation";
-import { uploadDocuments } from "@/service/documents";
+import { uploadDocument } from "@/service/documents";
 import { NextRequest, NextResponse } from "next/server";
+import { DOCUMENT_TYPES } from "@/lib/document-types";
 
-export const POST = withAuth(async (request: NextRequest) => {
-  try {
-    const formData = await request.formData();
+export const POST = withAuth(
+  async (
+    request: NextRequest,
+    { params }: { params?: Promise<{ userId: string; businessId: string }> }
+  ) => {
+    try {
+      const formData = await request.formData();
+      const { userId } = (await params) ?? {};
 
-    const userId = formData.get("userId") as string | null;
-    const files = formData.getAll("files") as File[] | null;
+      const file = formData.get("file") as File | null;
+      // documentType is now optional
+      const documentType = formData.get("documentType") as string | null;
 
-    // --- Validation ---
-    if (!userId) {
-      return NextResponse.json({ error: "User ID is required." }, { status: 400 });
+      // --- Validation ---
+      if (!userId) {
+        return NextResponse.json(
+          { error: "User ID is missing." },
+          { status: 400 }
+        );
+      }
+      if (!file) {
+        return NextResponse.json(
+          { error: "No file was uploaded." },
+          { status: 400 }
+        );
+      }
+      // If a documentType is provided, validate it. If not, that's okay.
+      if (
+        documentType &&
+        !DOCUMENT_TYPES.some((dt) => dt.id === documentType)
+      ) {
+        return NextResponse.json(
+          { error: "Invalid document type provided." },
+          { status: 400 }
+        );
+      }
+      // --- End Validation ---
+
+      const uploadedFileData = await uploadDocument(userId, file, documentType);
+
+      return NextResponse.json(
+        {
+          message: "File uploaded successfully!",
+          data: uploadedFileData,
+        },
+        { status: 201 }
+      );
+    } catch (error) {
+      console.error("Error handling file upload:", error);
+      return NextResponse.json(
+        { error: "An unexpected error occurred during upload." },
+        { status: 500 }
+      );
     }
-    if (!files || files.length === 0) {
-      return NextResponse.json({ error: "No files were uploaded." }, { status: 400 });
-    }
-    // --- End Validation ---
-
-    // Call the server-side service function to handle the upload logic
-    const uploadedFilesData = await uploadDocuments(userId, files);
-
-    return NextResponse.json(
-      {
-        message: "Files uploaded successfully!",
-        data: uploadedFilesData,
-      },
-      { status: 201 } // 201 Created is a good status code for successful uploads
-    );
-  } catch (error) {
-    console.error("Error handling file upload:", error);
-    return NextResponse.json(
-      { error: "An unexpected error occurred during upload." },
-      { status: 500 }
-    );
   }
-});
+);

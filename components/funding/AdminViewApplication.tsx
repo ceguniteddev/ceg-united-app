@@ -43,7 +43,6 @@ const AdminViewApplication = ({ formSetOpen, formData }: Props) => {
         <TabsTrigger value="document">Document</TabsTrigger>
         <TabsTrigger value="analysis">Analysis</TabsTrigger>
         <TabsTrigger value="fund-mapping">Fund Mapping</TabsTrigger>
-        {/* <TabsTrigger value="approve-decline">Approve/Decline</TabsTrigger> */}
         <TabsTrigger value="notes">Notes</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>

@@ -1,8 +1,8 @@
 "use server";
-import { storageAdmin } from "@/lib/fireabase-admin"; // Your existing admin instance
-import { randomUUID } from "crypto";
 
-// Define the shape of the data returned after a successful upload
+import { storageAdmin } from "@/lib/fireabase-admin";
+
+// The shape of the returned data remains the same
 export interface UploadedFileData {
   originalFilename: string;
   gcsPath: string;
@@ -11,59 +11,84 @@ export interface UploadedFileData {
 }
 
 /**
- * Uploads an array of files to Google Cloud Storage for a specific user.
+ * Uploads a single document for a specific user and document type.
+ * It will first delete any existing documents of the same type for that user.
  *
- * @param userId - The ID of the user to associate the files with.
- * @param files - An array of File objects received from a FormData request.
- * @returns A promise that resolves to an array of objects containing upload details.
+ * @param userId - The ID of the user.
+ * @param file - A single File object.
+ * @param documentType - The category of the document (e.g., "DRIVERS_LICENSE").
+ * @returns A promise that resolves to the details of the uploaded file.
  */
-export const uploadDocuments = async (
+export const uploadDocument = async (
   userId: string,
-  files: File[]
-): Promise<UploadedFileData[]> => {
+  file: File,
+  documentType: string | null // <-- Now optional
+): Promise<UploadedFileData> => {
   const bucket = storageAdmin();
-  const prefix = `documents/${userId}/`;
+  const userDocumentPrefix = `documents/${userId}/`;
+  let newFilename: string;
 
-  // Use Promise.all to handle all file uploads concurrently for better performance.
-  const uploadPromises = files.map(async (file) => {
-    // The File object from the browser is not directly usable on the server.
-    // We first need to get its content as an ArrayBuffer.
-    const arrayBuffer = await file.arrayBuffer();
-    // Then convert the ArrayBuffer into a Node.js Buffer, which the Admin SDK expects.
-    const buffer = Buffer.from(arrayBuffer);
+  console.log("uploadDocument", { userId, file, documentType });
 
-    // Generate a unique filename to prevent overwrites and add security.
-    const uniqueId = randomUUID();
-    const filename = file.name;
-    const path = `${prefix}${filename}`;
+  // --- Branching Logic ---
+  if (documentType) {
+    // CATEGORIZED UPLOAD LOGIC (delete old, use structured name)
+    const oldFilesPrefix = `${userDocumentPrefix}${documentType}_`;
+    const [oldFiles] = await bucket.getFiles({ prefix: oldFilesPrefix });
+    if (oldFiles.length > 0) {
+      const deletePromises = oldFiles.map((oldFile) => oldFile.delete());
+      await Promise.all(deletePromises);
+    }
+    const extension = file.name.split(".").pop() || "bin";
+    newFilename = `${documentType}_${Date.now()}.${extension}`;
+  } else {
+    // UNCATEGORIZED ("OTHER") UPLOAD LOGIC
+    // Sanitize the original filename and make it unique to prevent conflicts.
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    newFilename = `${Date.now()}_${sanitizedName}`;
+  }
 
-    // Get a reference to the file object in GCS
-    const blob = bucket.file(path);
+  const path = `${userDocumentPrefix}${newFilename}`;
 
-    // Upload the buffer to GCS
-    await blob.save(buffer, {
-      metadata: {
-        contentType: file.type, // Set the content type for proper browser handling
-      },
-    });
-
-    // Return the essential details for this uploaded file
-    return {
-      originalFilename: file.name,
-      gcsPath: path,
-      size: file.size,
+  // --- Upload Logic (same for both branches) ---
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const blob = bucket.file(path);
+  await blob.save(buffer, {
+    metadata: {
       contentType: file.type,
-    };
+    },
   });
 
-  // Wait for all the individual uploads to complete
-  const uploadedFiles = await Promise.all(uploadPromises);
+  // console.log(`Successfully uploaded ${path}`);
 
-  return uploadedFiles;
+  return {
+    originalFilename: file.name,
+    gcsPath: path,
+    size: file.size,
+    contentType: file.type,
+  };
 };
 
+/**
+ * Deletes a single document from Google Cloud Storage based on its full path.
+ */
 export const deleteDocument = async (path: string) => {
-  const bucket = storageAdmin();
-  const blob = bucket.file(path);
-  await blob.delete();
+  try {
+    const bucket = storageAdmin();
+    const blob = bucket.file(path);
+    await blob.delete();
+    console.log(`Successfully deleted document: ${path}`);
+  } catch (error: any) {
+    // It's often safe to ignore "Not Found" errors during deletion
+    if (error.code === 404) {
+      console.warn(
+        `Attempted to delete a document that does not exist: ${path}`
+      );
+      return;
+    }
+    console.error(`Failed to delete document ${path}:`, error);
+    // Re-throw the error if it's not a 404, so the mutation hook knows it failed
+    throw error;
+  }
 };
