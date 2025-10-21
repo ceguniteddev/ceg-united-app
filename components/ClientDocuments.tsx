@@ -58,6 +58,7 @@ const DocumentPreview = ({
         {!isAdmin && !isReadOnly && (
           <Button
             variant="ghost"
+            className="cursor-pointer"
             size="icon"
             onClick={() => onDelete(doc)}
             disabled={isDeleting}
@@ -212,7 +213,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
             <button
               onClick={() => setSelectedDocType("OTHER")}
               className={cn(
-                "w-full flex items-center text-left p-3 rounded-lg transition-colors",
+                "w-full flex items-center text-left p-3 rounded-lg transition-colors cursor-pointer",
                 selectedDocType === "OTHER"
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-muted"
@@ -273,6 +274,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
           <AlertDialogFooter>
             <Button
               variant="outline"
+              className="cursor-pointer"
               onClick={() => setIsDeleteDialogOpen(false)}
               disabled={isDeleting}
             >
@@ -280,6 +282,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
             </Button>
             <Button
               variant="destructive"
+              className="cursor-pointer"
               onClick={handleConfirmDelete}
               disabled={isDeleting}
             >
@@ -314,40 +317,75 @@ const OtherDocumentsList = ({
     );
   }
 
+  function openInNewTab(url: string) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
   return (
-    <div className="space-y-3 mt-6">
-      <h4 className="font-semibold">Uploaded Other Documents</h4>
-      {docs.map((doc) => (
-        <div
-          key={doc.path}
-          className="flex items-center justify-between p-3 border rounded-md"
-        >
-          <div className="break-all">
-            {/* --- THIS IS THE CHANGE --- */}
-            <a
-              href={doc.signedUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-sm hover:underline cursor-pointer"
-            >
-              {doc.name.split("/").pop()}
-            </a>
-            <p className="text-xs text-muted-foreground">
-              {(doc.size / 1024).toFixed(1)} KB
-            </p>
-          </div>
-          {!isAdmin && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDelete(doc)}
-              disabled={isDeleting}
-            >
-              <Trash2Icon className="h-4 w-4 text-red-500" />
-            </Button>
-          )}
-        </div>
-      ))}
-    </div>
+    <main className="p-2 flex flex-col max-h-[80vh]">
+      {" "}
+      {/* 1. Set a max height and enable flexbox */}
+      <h4 className="font-semibold flex-shrink-0 mb-4">
+        {" "}
+        {/* 2. Keep heading static and add margin */}
+        Uploaded Other Documents
+      </h4>
+      {/* 3. This new div will contain the scrollable grid */}
+      <div className="flex-1 overflow-y-auto pr-2 grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+        {docs.map((doc) => (
+          <article key={doc.path} className="rounded-2xl border shadow p-4">
+            <div className="flex justify-between">
+              <header
+                className="mb-2 cursor-pointer"
+                onClick={() => openInNewTab(doc.signedUrl)}
+              >
+                <h2 className="font-semibold break-words">{doc.name}</h2>
+                <p className="text-sm opacity-70">
+                  {doc.contentType ?? "unknown"} •{" "}
+                  {(doc.size / 1024).toFixed(1)} KB
+                </p>
+              </header>
+            </div>
+
+            {doc.contentType?.startsWith("image/") ? (
+              <ImageZoom>
+                <Image
+                  src={doc.signedUrl}
+                  alt={doc.name}
+                  className="w-full h-64 object-cover rounded-lg"
+                  width={500}
+                  unoptimized
+                  height={500}
+                />
+              </ImageZoom>
+            ) : doc.contentType === "application/pdf" ? (
+              <div className="relative">
+                <iframe
+                  src={doc.signedUrl}
+                  title={doc.name}
+                  className="w-full h-64 rounded-lg"
+                  loading="lazy"
+                />
+              </div>
+            ) : (
+              <div className="text-sm opacity-70">Preview unavailable</div>
+            )}
+            <div>
+              {!isAdmin && (
+                <Button
+                  variant="ghost"
+                  className="cursor-pointer"
+                  size="icon"
+                  onClick={() => onDelete(doc)}
+                  disabled={isDeleting}
+                >
+                  <Trash2Icon className="h-4 w-4 text-red-500" />
+                </Button>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    </main>
   );
 };
