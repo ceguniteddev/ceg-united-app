@@ -21,6 +21,7 @@ import {
   generateCRSReport,
   generateCRSReportBusiness,
 } from "./crs";
+import { noteSchema, NoteSchema } from "@/schema/notes";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -291,4 +292,77 @@ export const getFundApplicationNotes = async (
   const doc = await docRef.get();
   if (!doc.exists) return [];
   return doc.data()?.notes ?? [];
+};
+
+const NOTE_COLLECTION = "internalNotes";
+const NOTE_DOC_ID = "main";
+
+export const getFundApplicationNote = async (
+  referenceNumber: string
+): Promise<NoteSchema> => {
+  if (!referenceNumber) {
+    throw new AppError("Reference number is required.");
+  }
+
+  const db = firestoreAdmin();
+  const docRef = db
+    .collection(USER_FUNDING_APPLICATION)
+    .doc(referenceNumber)
+    .collection(NOTE_COLLECTION)
+    .doc(NOTE_DOC_ID);
+
+  const docSnap = await docRef.get();
+
+  if (!docSnap.exists) {
+    // Return a default empty state if the note document hasn't been created yet
+    return { description: "", comments: [] };
+  }
+
+  const data = docSnap.data();
+
+  // Convert Firestore Timestamps back to JS Date objects for the client
+  const commentsWithDates = (data?.comments || []).map((comment: any) => ({
+    ...comment,
+    createdAt: comment.createdAt.toDate(),
+  }));
+
+  return {
+    description: data?.description || "",
+    comments: commentsWithDates,
+  };
+};
+
+/**
+ * Creates or overwrites the entire note document for a given application.
+ * This is an atomic operation.
+ */
+export const updateFundApplicationNote = async ({
+  referenceNumber,
+  note,
+}: {
+  referenceNumber: string;
+  note: NoteSchema;
+}) => {
+  if (!referenceNumber) {
+    throw new AppError("Reference number is required.");
+  }
+
+  // Validate the incoming data against our schema
+  const validationResult = noteSchema.safeParse(note);
+  if (!validationResult.success) {
+    throw new AppError(validationResult.error.message);
+  }
+  const validatedNote = validationResult.data;
+
+  const db = firestoreAdmin();
+  const docRef = db
+    .collection(USER_FUNDING_APPLICATION)
+    .doc(referenceNumber)
+    .collection(NOTE_COLLECTION)
+    .doc(NOTE_DOC_ID);
+
+  // Firebase Admin SDK automatically converts JS Date objects to Timestamps
+  await docRef.set(validatedNote);
+
+  console.log(`Note updated for application: ${referenceNumber}`);
 };

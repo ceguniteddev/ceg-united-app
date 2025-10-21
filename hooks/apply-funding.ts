@@ -13,6 +13,7 @@ import {
   getFundingApplications,
 } from "@/service/apply-funding";
 import { useAuth } from "@/provider/AuthContext";
+import { NoteSchema } from "@/schema/notes";
 
 export const useGetUserApplyFunding = () => {
   const { user } = useAuth();
@@ -216,4 +217,74 @@ export const useAddFundApplicationNotesQuery = ({
     notes,
     isLoading,
   };
+};
+
+const getNote = async (referenceNumber: string): Promise<NoteSchema> => {
+  const response = await fetch(`/api/funding-application/${referenceNumber}/notes`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch note");
+  }
+  return response.json();
+};
+
+const updateNote = async ({
+  referenceNumber,
+  note,
+}: {
+  referenceNumber: string;
+  note: NoteSchema;
+}): Promise<void> => {
+  const response = await fetch(`/api/funding-application/${referenceNumber}/notes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(note),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to save note");
+  }
+};
+
+// =================================
+// TanStack Query Hooks
+// =================================
+
+/**
+ * Hook to fetch the note data for a specific application.
+ */
+export const useGetNoteQuery = (referenceNumber: string) => {
+  return useQuery<NoteSchema, Error>({
+    // The query key is an array that uniquely identifies this data
+    queryKey: ["note", referenceNumber],
+    // The query function is the async function that fetches the data
+    queryFn: () => getNote(referenceNumber),
+    // This option prevents the query from running if referenceNumber is falsy
+    enabled: !!referenceNumber,
+    // You might want to set staleTime if you don't need to refetch constantly
+    // staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+/**
+ * Hook to update the note data.
+ */
+export const useUpdateNoteMutation = (referenceNumber: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    // The mutation function
+    mutationFn: (note: NoteSchema) => updateNote({ referenceNumber, note }),
+
+    // Handlers for different outcomes of the mutation
+    onSuccess: () => {
+      toast.success("Note saved successfully!");
+      // After a successful mutation, invalidate the query for this note.
+      // This will cause TanStack Query to refetch the data, ensuring the
+      // UI is consistent with the database state.
+      queryClient.invalidateQueries({ queryKey: ["note", referenceNumber] });
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to save note.");
+      console.error("Error updating note:", error);
+    },
+  });
 };

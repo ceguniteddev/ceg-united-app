@@ -26,8 +26,8 @@ export function RowActions({ data }: Props) {
       <ResponsiveDialog
         isOpen={open}
         setIsOpen={setOpen}
-        // title={`View Application - ${data.referenceNumber}`}
-        title={`View Application`}
+        title={`View Application - ${data.referenceNumber}`}
+        // title={`View Application`}
         description=""
         descriptionClassName="text-red-500 text-lg font-semibold"
         className="w-8/12 flex flex-col items-start justify-start min-h-[80vh] "

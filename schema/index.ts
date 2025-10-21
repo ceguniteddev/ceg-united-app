@@ -118,8 +118,8 @@ export const businessRecordSchema = z.object({
         .optional()
     )
     .optional(),
-  lastYearTaxes: z.coerce.number<number>().optional(),
-  currentYearTaxes: z.coerce.number<number>().optional(),
+  // lastYearTaxes: z.coerce.number<number>().optional(),
+  // currentYearTaxes: z.coerce.number<number>().optional(),
 });
 
 // What the DB stores / APIs expect:

@@ -153,7 +153,7 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
             ))}
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-1">
+        {/* <div className="grid grid-cols-1 gap-3 sm:grid-cols-1">
           <div className="rounded-md border p-3">
             <div className="text-xs uppercase text-muted-foreground">
               Last Year Gross Income
@@ -170,7 +170,7 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
               {formatCurrency(rec.currentYearTaxes)}
             </div>
           </div>
-        </div>
+        </div> */}
       </CardContent>
 
       <CardFooter className="flex flex-wrap items-center gap-2">

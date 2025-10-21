@@ -11,6 +11,7 @@ import {
 import { logInfo } from "@/lib/logger";
 import { sendMail } from "@/lib/nodemailer";
 import { ChangePassword, CurrentUser, Role } from "@/schema";
+import { noteSchema, NoteSchema } from "@/schema/notes";
 
 import {
   User,
@@ -378,4 +379,74 @@ export const changePassword = async (data: ChangePassword) => {
       "An unexpected error occurred while changing the password. Please try again later."
     );
   }
+};
+
+const NOTE_SUBCOLLECTION = "internalNotes";
+const NOTE_DOC_ID = "main";
+
+export const getUserNote = async (userId: string): Promise<NoteSchema> => {
+  if (!userId) {
+    throw new AppError("User ID is required.");
+  }
+
+  const db = firestoreAdmin();
+  const docRef = db
+    .collection(USER_COLLECTION)
+    .doc(userId)
+    .collection(NOTE_SUBCOLLECTION)
+    .doc(NOTE_DOC_ID);
+
+  const docSnap = await docRef.get();
+
+  if (!docSnap.exists) {
+    // Return a default empty state
+    return { description: "", comments: [] };
+  }
+
+  const data = docSnap.data();
+
+  // Convert Firestore Timestamps back to JS Date objects for the client
+  const commentsWithDates = (data?.comments || []).map((comment: any) => ({
+    ...comment,
+    createdAt: comment.createdAt.toDate(),
+  }));
+
+  return {
+    description: data?.description || "",
+    comments: commentsWithDates,
+  };
+};
+
+/**
+ * Creates or overwrites the entire note document for a given user.
+ */
+export const updateUserNote = async ({
+  userId,
+  note,
+}: {
+  userId: string;
+  note: NoteSchema;
+}) => {
+  if (!userId) {
+    throw new AppError("User ID is required.");
+  }
+
+  // Validate incoming data against the shared schema
+  const validationResult = noteSchema.safeParse(note);
+  if (!validationResult.success) {
+    throw new AppError(validationResult.error.message);
+  }
+  const validatedNote = validationResult.data;
+
+  const db = firestoreAdmin();
+  const docRef = db
+    .collection(USER_COLLECTION)
+    .doc(userId)
+    .collection(NOTE_SUBCOLLECTION)
+    .doc(NOTE_DOC_ID);
+
+  // The Admin SDK automatically converts JS Date objects to Timestamps
+  await docRef.set(validatedNote);
+
+  console.log(`Note updated for user: ${userId}`);
 };

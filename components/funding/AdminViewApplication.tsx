@@ -11,6 +11,7 @@ import AdminViewUserProfile from "./AdminViewUserProfile";
 import SendEmail from "../SendEmail";
 import FundApplicationNotes from "@/components/notes/FundApplicationNotes";
 import AdminMappedFunds from "./AdminMappedFunds";
+import FundApplicationNotesV2 from "../notes/FundApplicationNotesV2";
 // import AdminMappedFunds from "./AdminMappedFunds";
 
 type Props = {
@@ -53,7 +54,7 @@ const AdminViewApplication = ({ formSetOpen, formData }: Props) => {
         />
       </TabsContent>
       <TabsContent value="notes" className="w-full">
-        <FundApplicationNotes
+        <FundApplicationNotesV2
           applicationReferenceNumber={formData?.referenceNumber ?? ""}
         />
       </TabsContent>

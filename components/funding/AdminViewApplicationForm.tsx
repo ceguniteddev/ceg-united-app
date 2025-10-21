@@ -125,7 +125,7 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
         <Separator />
 
         {/* Driver's License */}
-        <section>
+        {/* <section>
           <h3 className="text-sm font-semibold mb-3">{"Driver's License"}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="License Number" value={data.driverLicenseNumber} />
@@ -139,7 +139,7 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
               value={fmtDate(data.driverLicenseIssueExpiryDate)}
             />
           </div>
-        </section>
+        </section> */}
 
         <Separator />
 
@@ -150,14 +150,14 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="Business Name" value={data.businessName} />
                 <Field label="EIN" value={data.employerIdentificationNumber} />
-                <Field
+                {/* <Field
                   label="Last Year Taxes"
                   value={currency(data.lastYearTaxes)}
                 />
                 <Field
                   label="Current Year Taxes"
                   value={currency(data.currentYearTaxes)}
-                />
+                /> */}
                 <Field label="Website" value={data.businessWebsite} />
                 <Field label="Email" value={data.businessEmail} />
                 <Field label="Phone" value={data.businessPhoneNumber} />
@@ -247,12 +247,13 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
             <Field label="City" value={data.addressCity} />
             <Field label="State" value={data.addressState} />
             <Field label="Zip Code" value={data.addressPostal} />
-            {data.moveInCurrentAddress && (
-              <Field
-                label="Move-in Date"
-                value={formatDate(data.moveInCurrentAddress, "MM/dd/yyyy")}
-              />
-            )}
+            {data.moveInCurrentAddress &&
+              data.moveInCurrentAddress instanceof Date && (
+                <Field
+                  label="Move-in Date"
+                  value={formatDate(data.moveInCurrentAddress, "MM/dd/yyyy")}
+                />
+              )}
           </div>
         </section>
 

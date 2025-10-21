@@ -115,8 +115,8 @@ export const applyFundingSchema = z
     businessEmail: z.email({ message: "Invalid email" }).optional(),
     businessWebsite: z.string({ error: "Required" }).optional(),
     socialMedia: z.string({ error: "Required" }).optional(),
-    lastYearTaxes: z.coerce.number<number>().optional(),
-    currentYearTaxes: z.coerce.number<number>().optional(),
+    // lastYearTaxes: z.coerce.number<number>().optional(),
+    // currentYearTaxes: z.coerce.number<number>().optional(),
 
     businessGrossProjectedRevenue1: z.coerce.number<number>().optional(),
     businessGrossProjectedRevenue2: z.coerce.number<number>().optional(),

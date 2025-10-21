@@ -6,7 +6,6 @@ import {
   useAddFundApplicationNotesMutation,
   useAddFundApplicationNotesQuery,
 } from "@/hooks/apply-funding";
-import { useAddUserNotesMutation, useUserNotesQuery } from "@/hooks/user";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon, Save, Trash2 } from "lucide-react";
 import React, { useCallback, useEffect } from "react";
@@ -44,12 +43,14 @@ const FundApplicationNotes = ({ applicationReferenceNumber }: Props) => {
 
   useEffect(() => {
     if (notes) {
-      const formattedNotes: { note: string }[] = (notes as string[]).flatMap((item) => {
-        const n = item;
-        if (Array.isArray(n)) return n.map((s) => ({ note: s }));
-        if (n != null) return [{ note: String(n) }];
-        return [];
-      });
+      const formattedNotes: { note: string }[] = (notes as string[]).flatMap(
+        (item) => {
+          const n = item;
+          if (Array.isArray(n)) return n.map((s) => ({ note: s }));
+          if (n != null) return [{ note: String(n) }];
+          return [];
+        }
+      );
 
       form.reset({ notes: formattedNotes });
     }
@@ -90,17 +91,27 @@ const FundApplicationNotes = ({ applicationReferenceNumber }: Props) => {
                 variant={"outline"}
                 className="hover:bg-blue-300 bg-blue-200 cursor-pointer"
               >
-                <IconMenu text="Save Notes" icon={<Save className="h-4 w-4" />} />
+                <IconMenu
+                  text="Save Notes"
+                  icon={<Save className="h-4 w-4" />}
+                />
               </Button>
             </div>
             {fields.map((field, index) => (
-              <div key={field.id} className="flex flex-row space-x-2 space-y-2 items-start">
+              <div
+                key={field.id}
+                className="flex flex-row space-x-2 space-y-2 items-start"
+              >
                 <CustomFormField
                   name={`notes.${index}.note`}
                   className="col-span-3 w-full"
                   type="textarea"
                 />
-                <Button variant={"destructive"} type="button" onClick={() => remove(index)}>
+                <Button
+                  variant={"destructive"}
+                  type="button"
+                  onClick={() => remove(index)}
+                >
                   <Trash2 color="black" />
                 </Button>
               </div>

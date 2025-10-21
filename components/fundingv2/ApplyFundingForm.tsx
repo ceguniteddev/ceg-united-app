@@ -193,12 +193,12 @@ const ApplyFundingForm = ({
             shouldValidate: false,
           }
         );
-        form.setValue("lastYearTaxes", b.lastYearTaxes ?? 0, {
-          shouldValidate: false,
-        });
-        form.setValue("currentYearTaxes", b.currentYearTaxes ?? 0, {
-          shouldValidate: false,
-        });
+        // form.setValue("lastYearTaxes", b.lastYearTaxes ?? 0, {
+        //   shouldValidate: false,
+        // });
+        // form.setValue("currentYearTaxes", b.currentYearTaxes ?? 0, {
+        //   shouldValidate: false,
+        // });
       }
     },
     [form, businessData]
