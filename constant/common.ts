@@ -255,6 +255,10 @@ export const transactionCategoryStyles = {
 
 export const US_STATES = [
   {
+    label: "Nationwide",
+    value: "Nationwide",
+  },
+  {
     label: "Alabama",
     value: "AL",
   },
