@@ -8,6 +8,7 @@ import {
   applyApprovedMappedFund,
   approveAppliedBankProduct,
   approveMappedFund,
+  cancelMappedFund,
   declineAppliedBankProduct,
   getApprovedMappedFunds,
   getFundMappingAnalysis,
@@ -119,7 +120,10 @@ export const useFundingApplicationsMappedFundsMutation = () => {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      const result = await approveMappedFund(referenceNumber, bankProductId);
+      const result = await approveMappedFund({
+        referenceNumber,
+        bankProductId: bankProductId,
+      });
 
       if (!result.success && result.message) {
         if (result.error === "error") {
@@ -144,6 +148,53 @@ export const useFundingApplicationsMappedFundsMutation = () => {
       queryClient.invalidateQueries({
         queryKey: ["GET_FUNDING_APPLICATIONS"],
       });
+      toast.success("Fund successfully approved.");
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+      console.error(error);
+    },
+  });
+
+  const cancelMappedFundMutation = useMutation({
+    mutationFn: async ({
+      fundMappingApprovedId,
+      referenceNumber,
+    }: {
+      fundMappingApprovedId: string;
+      referenceNumber: string;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      const result = await cancelMappedFund({
+        referenceNumber,
+        fundMappingApprovedId,
+      });
+
+      if (!result.success && result.message) {
+        if (result.error === "error") {
+          throw new Error(result.message);
+        }
+        toast.warning(result.message);
+        return null;
+      }
+
+      return result;
+    },
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "GET_FUNDING_APPLICATION_MAPPED_FUNDS",
+          variable.referenceNumber,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.referenceNumber],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_FUNDING_APPLICATIONS"],
+      });
+      toast.success("Fund successfully cancelled.");
     },
     onError: (error: any) => {
       toast.error(error.message);
@@ -154,6 +205,9 @@ export const useFundingApplicationsMappedFundsMutation = () => {
   return {
     approveMappedFund: approveMappedFundMutation.mutateAsync,
     isApproving: approveMappedFundMutation.isPending,
+
+    cancelMappedFund: cancelMappedFundMutation.mutateAsync,
+    isCancelling: cancelMappedFundMutation.isPending,
   };
 };
 
@@ -171,7 +225,7 @@ export const useFundingApplicationsMappedFundsMutationOld = () => {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      await approveMappedFund(referenceNumber, bankProductId);
+      await approveMappedFund({ referenceNumber, bankProductId });
     },
     onSuccess: (_data, variable) => {
       queryClient.invalidateQueries({

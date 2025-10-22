@@ -366,10 +366,13 @@ export const getFundMappingAnalysisDetailsOld = async ({
   return result;
 };
 
-export const approveMappedFund = async (
-  referenceNumber: string,
-  bankProductId: string
-): Promise<CommonResponse> => {
+export const approveMappedFund = async ({
+  referenceNumber,
+  bankProductId,
+}: {
+  referenceNumber: string;
+  bankProductId: string;
+}): Promise<CommonResponse> => {
   try {
     if (!referenceNumber) {
       return {
@@ -431,6 +434,68 @@ export const approveMappedFund = async (
     await updateApplicationStatus(referenceNumber, "Pre-Approved");
 
     // TODO send email to Client
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in approveMappedFund:", error);
+    return {
+      success: false,
+      error: "error",
+      message: "An unexpected error occurred.",
+    };
+  }
+};
+
+export const cancelMappedFund = async ({
+  referenceNumber,
+  fundMappingApprovedId,
+}: {
+  referenceNumber: string;
+  fundMappingApprovedId: string;
+}): Promise<CommonResponse> => {
+  try {
+    if (!fundMappingApprovedId) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Fund mapping approved id is required.",
+      };
+    }
+    if (!referenceNumber) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Reference number is required.",
+      };
+    }
+    logInfo("cancelMappedFund", { referenceNumber });
+
+    const fundingApplication = await getApplyFundingByReferenceNumber(
+      referenceNumber
+    );
+    if (!fundingApplication) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Funding application reference number not found.",
+      };
+    }
+
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return { success: false, error: "warning", message: "User not found." };
+    }
+
+    const db = firestoreAdmin();
+    const collectionRef = db.collection(
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+    );
+    const docRef = collectionRef.doc(fundMappingApprovedId);
+    const snapshot = await docRef.get();
+    if (snapshot.exists) {
+      await docRef.delete();
+      await updateApplicationStatus(referenceNumber, "Processing");
+    }
 
     return { success: true };
   } catch (error: any) {
@@ -737,7 +802,7 @@ export const applyApprovedMappedFund = async ({
 
     await collectionRef
       .doc(fundMappingApprovedId)
-      .set({ clientApplicationStatus: "Pending" }, { merge: true });
+      .set({ clientApplicationStatus: "Sent to Lender" }, { merge: true });
 
     // 4. Return a successful response
     return { success: true };

@@ -209,6 +209,12 @@ export const transactionCategoryStyles = {
     textColor: "text-amber-700",
     chipBackgroundColor: "bg-amber-100",
   },
+  "Sent to Lender": {
+    borderColor: "border-amber-500",
+    backgroundColor: "bg-amber-500",
+    textColor: "text-amber-700",
+    chipBackgroundColor: "bg-amber-100",
+  },
   "Pre-Approved": {
     borderColor: "border-emerald-100",
     backgroundColor: "bg-emerald-400",

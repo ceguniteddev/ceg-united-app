@@ -6,12 +6,16 @@ export const ApplicationMethodEnum = z.enum(["Online", "Branch", "Referral"], {
   error: "Required",
 });
 
-export const CreditBureauEnum = z.enum(["Experian", "TransUnion", "Equifax"], {
-  error: "Required",
-});
+export const CreditBureauEnum = z.enum(
+  ["Experian", "TransUnion", "Equifax", "Dun & Bradstreet or SBFE", "TRW"],
+  {
+    error: "Required",
+  }
+);
+export type CreditBureau = z.infer<typeof CreditBureauEnum>;
 
 const ClientApplicationStatus = z.enum(
-  ["Not Applied", "Pending", "Approved", "Declined"],
+  ["Not Applied", "Pending", "Sent to Lender", "Approved", "Declined"],
   {
     error: "Required",
   }

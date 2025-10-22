@@ -1,11 +1,21 @@
 import {
   useApproveMappedFundsQuery,
-  useClientMappedFundingDetailsQuery,
+  useFundingApplicationsMappedFundsMutation,
   useFundingApplicationsMappedFundsQuery,
 } from "@/hooks/admin/funding-application/fund-mapping";
 
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -20,6 +30,7 @@ import {
 } from "@tanstack/react-table";
 import {
   ArrowUpDown,
+  BanIcon,
   CheckCircle,
   MoreHorizontal,
   ViewIcon,
@@ -41,7 +52,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import IconMenu from "@/components/icon-menu";
 
-import { BankFormData } from "@/schema/bank-products";
+import {
+  ApprovedBankFormData,
+  BankFormData,
+  ClientApplicationStatus,
+} from "@/schema/bank-products";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import BankProductsForm from "@/app/(admin)/admin/bank-products/form";
 import SortableHeader from "../SortableHeader";
@@ -190,9 +205,28 @@ const BankProductsList = ({
 
       {
         id: "actions",
-        cell: ({ row }) => (
-          <ActionCell row={row} referenceNumber={referenceNumber} />
-        ),
+        cell: ({ row }) => {
+          const approvedMappedFund = approvedMappedFunds?.find(
+            (fund) => String(fund.id) === String(row.original.id)
+          );
+          const isApproved = !!approvedMappedFund || false;
+
+          const funds = approvedMappedFunds?.find(
+            (fund) => String(fund.id) === String(row.original.id)
+          );
+
+          const status = funds?.clientApplicationStatus;
+
+          return (
+            <ActionCell
+              row={row}
+              referenceNumber={referenceNumber}
+              isAdminApproved={isApproved}
+              clientApplicationStatus={status || "Not Applied"}
+              approvedMappedFund={approvedMappedFund}
+            />
+          );
+        },
         size: 80,
       },
     ],
@@ -287,11 +321,34 @@ const BankProductsList = ({
 const ActionCell = ({
   row,
   referenceNumber,
+  isAdminApproved,
+  clientApplicationStatus,
+  approvedMappedFund,
 }: {
   row: any;
   referenceNumber: string;
+  isAdminApproved: boolean;
+  clientApplicationStatus: ClientApplicationStatus;
+  approvedMappedFund?: ApprovedBankFormData;
 }) => {
   const [open, setOpen] = useState(false);
+  const { cancelMappedFund, isCancelling } =
+    useFundingApplicationsMappedFundsMutation();
+
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+
+  const showCancelButton = useMemo(
+    () => isAdminApproved && clientApplicationStatus !== "Approved",
+    [clientApplicationStatus, isAdminApproved]
+  );
+
+  const handleCancelClick = async () => {
+    await cancelMappedFund({
+      fundMappingApprovedId: approvedMappedFund?.fundMappingApprovedId || "",
+      referenceNumber: referenceNumber,
+    });
+    setIsAlertOpen(false);
+  };
 
   return (
     <>
@@ -310,6 +367,30 @@ const ActionCell = ({
           referenceNumber={referenceNumber}
         />
       </ResponsiveDialog>
+
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will cancel the approved bank product mapping.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">
+              Go Back
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelClick}
+              disabled={isCancelling}
+              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+            >
+              {isCancelling ? "Cancelling..." : "Yes, Cancel It"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
@@ -327,6 +408,21 @@ const ActionCell = ({
               <IconMenu text="View" icon={<ViewIcon className="h-4 w-4" />} />
             </Button>
           </DropdownMenuItem>
+          {showCancelButton && (
+            <DropdownMenuItem className="p-0">
+              <Button
+                variant="ghost"
+                className="cursor-pointer w-full justify-start rounded-md p-2 text-red-500 hover:bg-neutral-100"
+                // onClick={() => handleCancelClick()}
+                onClick={() => setIsAlertOpen(true)}
+              >
+                <IconMenu
+                  text="Cancel"
+                  icon={<BanIcon className="h-4 w-4" color="red" />}
+                />
+              </Button>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </>

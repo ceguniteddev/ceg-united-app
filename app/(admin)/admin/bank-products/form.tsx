@@ -80,7 +80,6 @@ const BankProductsForm = ({
         } else {
           await updateBankProduct({ id: data.id!, values });
         }
-        await updateBankProduct({ id: data.id!, values });
         form.reset();
       } else {
         await createBankProduct(values);
