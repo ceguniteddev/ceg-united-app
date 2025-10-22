@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApplyFunding } from "@/schema/apply-funding";
-import DocumentsDisplay from "./DocumentsDisplay";
+// import DocumentsDisplay from "./DocumentsDisplay";
 
 import AnalysisView from "./AnalysisView";
 import { updateApplicationStatus } from "@/service/apply-funding";
@@ -9,9 +9,11 @@ import AdminApproveDeclineApplication from "./AdminApproveDeclineApplication";
 import FundingApplicationView from "./AdminViewApplicationForm";
 import AdminViewUserProfile from "./AdminViewUserProfile";
 import SendEmail from "../SendEmail";
-import FundApplicationNotes from "@/components/notes/FundApplicationNotes";
+// import FundApplicationNotes from "@/components/notes/FundApplicationNotes";
 import AdminMappedFunds from "./AdminMappedFunds";
 import FundApplicationNotesV2 from "../notes/FundApplicationNotesV2";
+import ClientDocuments from "../ClientDocuments";
+import ApplyFundingList from "@/app/(admin)/admin/clients/client-applied-funding";
 // import AdminMappedFunds from "./AdminMappedFunds";
 
 type Props = {
@@ -40,10 +42,13 @@ const AdminViewApplication = ({ formSetOpen, formData }: Props) => {
       <TabsList>
         <TabsTrigger value="application">Application</TabsTrigger>
         <TabsTrigger value="user-profile">User Profile</TabsTrigger>
-        <TabsTrigger value="document">Document</TabsTrigger>
+        <TabsTrigger value="documents">Documents</TabsTrigger>
         <TabsTrigger value="analysis">Analysis</TabsTrigger>
         <TabsTrigger value="fund-mapping">Fund Mapping</TabsTrigger>
         <TabsTrigger value="notes">Notes</TabsTrigger>
+        {/* <TabsTrigger value="approve-decline">
+          Approve/Decline Application
+        </TabsTrigger> */}
         <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>
       <TabsContent value="fund-mapping" className="w-full">
@@ -70,11 +75,8 @@ const AdminViewApplication = ({ formSetOpen, formData }: Props) => {
         <AdminViewUserProfile userId={formData?.userId ?? ""} />
       </TabsContent>
 
-      <TabsContent value="document" className="w-full">
-        <DocumentsDisplay
-          userId={formData?.userId ?? ""}
-          referenceNumber={formData?.referenceNumber ?? ""}
-        />
+      <TabsContent value="documents" className="w-full">
+        <ClientDocuments userId={formData?.userId ?? ""} />
       </TabsContent>
 
       <TabsContent value="analysis" className="w-full">

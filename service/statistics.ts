@@ -2,9 +2,14 @@
 import { getUserById, getUsers } from "./user";
 import { getApplyFunding, getFundingApplications } from "./apply-funding";
 import { getBusiness } from "./business";
-import { getCRSBusinessProfile, getCRSBusinessScore, getCRSReport } from "./crs";
+import {
+  getCRSBusinessProfile,
+  getCRSBusinessScore,
+  getCRSReport,
+} from "./crs";
 import { Business } from "@/schema";
 import { getPlaidCompleteDataForUser } from "./plaid/data";
+import { getFundMappingAnalysisDetails } from "./bank-products";
 
 // get all registered user
 export const getAdminStatistics = async (): Promise<AdminStatistics> => {
@@ -55,6 +60,13 @@ export const getClientStatistics = async (userId: string) => {
   const userData = await getUserById(userId);
   // get total funding applications amount
   const fundingApplications = await getApplyFunding(userId);
+
+  const approvedFunds = await getFundMappingAnalysisDetails({
+    userId,
+    clientApplicationStatus: ["Approved"],
+  });
+  console.log("approvedFunds ", approvedFunds);
+
   // get total funding approved amount
   const crsReportData = await getCRSReport(userId);
 
@@ -83,6 +95,7 @@ export const getClientStatistics = async (userId: string) => {
     userData,
     crsReportData,
     fundingApplications,
+    approvedFunds,
     businessesWithCrsData,
     getPlaidCompleteData,
   };

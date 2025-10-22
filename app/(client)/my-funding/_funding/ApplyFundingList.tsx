@@ -4,7 +4,7 @@ import React from "react";
 import FundingList from "@/components/funding/funding-list";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
 import { useAuth } from "@/provider/AuthContext";
-import { BankFormData } from "@/schema/bank-products";
+import { ApprovedBankFormData } from "@/schema/bank-products";
 
 const ApplyFundingList = () => {
   const { user } = useAuth();
@@ -23,7 +23,7 @@ const ApplyFundingList = () => {
         pre-approve funding products.
       </p>
     );
-  return <FundingList appliedFunding={mappedFund as BankFormData[]} />;
+  return <FundingList appliedFunding={mappedFund as ApprovedBankFormData[]} />;
 };
 
 export default ApplyFundingList;

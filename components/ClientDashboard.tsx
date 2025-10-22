@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +33,7 @@ import { ApplyFunding } from "@/schema/apply-funding";
 import { PlaidCompleteRow } from "@/service/plaid/data";
 import { Business } from "@/schema";
 import { CreditScore } from "@/types/crs";
+import { ApprovedBankFormData } from "@/schema/bank-products";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -63,6 +70,7 @@ export interface ClientData {
   userData: User | null;
   crsReportData: CreditReportWithId[] | null; // Use the detailed type
   fundingApplications: ApplyFunding[] | null;
+  approvedFunds?: ApprovedBankFormData[] | null;
   businessesWithCrsData: BusinessWithCRSData[];
   getPlaidCompleteData: PlaidCompleteRow[] | null;
 }
@@ -76,7 +84,9 @@ function bureauLabel(sourceType?: string): string {
   return sourceType || "Unknown";
 }
 
-function detectBureau(report: CreditReport): "Experian" | "TransUnion" | "Equifax" | null {
+function detectBureau(
+  report: CreditReport
+): "Experian" | "TransUnion" | "Equifax" | null {
   const fromScore = report.scores?.[0]?.sourceType;
   if (fromScore) return bureauLabel(fromScore) as any;
 
@@ -96,7 +106,10 @@ function detectBureau(report: CreditReport): "Experian" | "TransUnion" | "Equifa
 }
 
 function groupByBureau(docs?: CreditReportWithId[] | null) {
-  const out: Record<"Experian" | "TransUnion" | "Equifax", CreditReportWithId | null> = {
+  const out: Record<
+    "Experian" | "TransUnion" | "Equifax",
+    CreditReportWithId | null
+  > = {
     Experian: null,
     TransUnion: null,
     Equifax: null,
@@ -180,11 +193,18 @@ const FundingStatusChart = ({ data }: { data: ApplyFunding[] | null }) => {
       <div className="flex flex-col items-center justify-center h-full min-h-[250px] text-center">
         <FileText className="h-8 w-8 text-muted-foreground mb-2" />
         <p className="text-sm font-medium">No Funding Applications</p>
-        <p className="text-xs text-muted-foreground">Apply for funding to see your status here.</p>
+        <p className="text-xs text-muted-foreground">
+          Apply for funding to see your status here.
+        </p>
       </div>
     );
   }
-  return <Doughnut data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />;
+  return (
+    <Doughnut
+      data={chartData}
+      options={{ responsive: true, maintainAspectRatio: false }}
+    />
+  );
 };
 
 const ScoreCard: React.FC<{
@@ -204,14 +224,19 @@ const ScoreCard: React.FC<{
         </div>
         <div className="w-28">
           <div className="h-2 w-full rounded bg-neutral-100 overflow-hidden">
-            <div className="h-2 rounded bg-black" style={{ width: `${pct}%` }} />
+            <div
+              className="h-2 rounded bg-black"
+              style={{ width: `${pct}%` }}
+            />
           </div>
           <div className="text-[10px] text-neutral-500 mt-1">
             {value ? `${pct}% of max` : "No score"}
           </div>
         </div>
       </div>
-      {score?.modelName && <div className="text-xs text-neutral-500 mt-2">{score.modelName}</div>}
+      {score?.modelName && (
+        <div className="text-xs text-neutral-500 mt-2">{score.modelName}</div>
+      )}
     </Card>
   );
 };
@@ -227,22 +252,29 @@ export const ClientDashboard = ({
   const stats = useMemo(() => {
     if (!clientData) return null;
 
-    // --- Funding and Plaid Calculations ---
     const totalRequested =
-      clientData.fundingApplications?.reduce(
-        (sum, app) => sum + (Number(app.personalAmountFunding) + Number(app.businessAmountFunding) || 0),
-        0
-      ) ?? 0;
+      clientData.fundingApplications?.reduce((sum, app) => {
+        const personalAmount = app.personalAmountFunding || 0;
+        const businessAmount = app.businessAmountFunding || 0;
+
+        return sum + Number(personalAmount) + Number(businessAmount);
+      }, 0) ?? 0;
+
     const totalApproved =
-      clientData.fundingApplications?.reduce(
-        (sum, app) => sum + (app.approveOrDecline?.amountApprove || 0),
-        0
-      ) ?? 0;
+      clientData.approvedFunds
+        ?.filter((app) => app.clientApplicationStatus === "Approved")
+        .reduce((sum, currentApp) => {
+          const amount = Number(currentApp.approvedAmount) || 0;
+          return sum + amount;
+        }, 0) ?? 0;
+
     const allPlaidData = clientData.getPlaidCompleteData || [];
     const allTransactions = allPlaidData.flatMap((d) => d.transaction || []);
     const allBalances = allPlaidData.flatMap((d) => d.balance || []);
     const allBankIncome = allPlaidData.flatMap((d) => d.bank_income || []);
-    const personalAccountsBalances = allBalances.filter((b) => b.type === "depository");
+    const personalAccountsBalances = allBalances.filter(
+      (b) => b.type === "depository"
+    );
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     const lastMonthDeposits = allTransactions
@@ -267,7 +299,10 @@ export const ClientDashboard = ({
     // --- 3. REVISED Credit Score Extraction Logic ---
     const bureauMap = groupByBureau(clientData.crsReportData || []);
 
-    const scoresByBureau: Record<"Experian" | "TransUnion" | "Equifax", CreditScore | undefined> = {
+    const scoresByBureau: Record<
+      "Experian" | "TransUnion" | "Equifax",
+      CreditScore | undefined
+    > = {
       Experian: bureauMap.Experian?.report.scores?.[0],
       TransUnion: bureauMap.TransUnion?.report.scores?.[0],
       Equifax: bureauMap.Equifax?.report.scores?.[0],
@@ -342,12 +377,20 @@ export const ClientDashboard = ({
         <Card>
           <CardHeader>
             <CardTitle>Personal Credit Scores</CardTitle>
-            <CardDescription>Scores from the three major credit bureaus.</CardDescription>
+            <CardDescription>
+              Scores from the three major credit bureaus.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <ScoreCard bureau="Experian" score={stats.scoresByBureau.Experian} />
+            <ScoreCard
+              bureau="Experian"
+              score={stats.scoresByBureau.Experian}
+            />
             <ScoreCard bureau="Equifax" score={stats.scoresByBureau.Equifax} />
-            <ScoreCard bureau="TransUnion" score={stats.scoresByBureau.TransUnion} />
+            <ScoreCard
+              bureau="TransUnion"
+              score={stats.scoresByBureau.TransUnion}
+            />
           </CardContent>
         </Card>
 
@@ -355,7 +398,9 @@ export const ClientDashboard = ({
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Personal Financial Snapshot</CardTitle>
-              <CardDescription>Based on your connected Plaid accounts.</CardDescription>
+              <CardDescription>
+                Based on your connected Plaid accounts.
+              </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-6 sm:grid-cols-3">
               <StatCard
@@ -405,16 +450,21 @@ export const ClientDashboard = ({
                 const profile = business.crsBusinessProfile?.report;
                 const commScore = profile?.scoreInformation?.commercialScore;
                 const fsrScore = profile?.scoreInformation?.fsrScore;
-                const isActive = profile?.commercialFraudShieldSummary?.activeBusinessIndicator;
+                const isActive =
+                  profile?.commercialFraudShieldSummary
+                    ?.activeBusinessIndicator;
 
                 return (
                   <Card key={business.id} className="flex flex-col">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div>
-                          <CardTitle className="text-xl">{business.businessName}</CardTitle>
+                          <CardTitle className="text-xl">
+                            {business.businessName}
+                          </CardTitle>
                           <CardDescription>
-                            Employer Idenfication Number: {business.employerIdentificationNumber}
+                            Employer Idenfication Number:{" "}
+                            {business.employerIdentificationNumber}
                           </CardDescription>
                         </div>
                         <Badge
@@ -431,8 +481,12 @@ export const ClientDashboard = ({
                           <TrendingUp className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <p className="font-semibold">{commScore?.score ?? "N/A"}</p>
-                          <p className="text-muted-foreground text-xs">Business Credit Score</p>
+                          <p className="font-semibold">
+                            {commScore?.score ?? "N/A"}
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            Business Credit Score
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -440,8 +494,12 @@ export const ClientDashboard = ({
                           <Landmark className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <p className="font-semibold">{fsrScore?.riskClass.definition ?? "N/A"}</p>
-                          <p className="text-muted-foreground text-xs">Financial Stability Risk</p>
+                          <p className="font-semibold">
+                            {fsrScore?.riskClass.definition ?? "N/A"}
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            Financial Stability Risk
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 opacity-60">
@@ -450,7 +508,9 @@ export const ClientDashboard = ({
                         </div>
                         <div>
                           <p className="font-semibold">N/A</p>
-                          <p className="text-muted-foreground text-xs">Account Balance</p>
+                          <p className="text-muted-foreground text-xs">
+                            Account Balance
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 opacity-60">
@@ -459,7 +519,9 @@ export const ClientDashboard = ({
                         </div>
                         <div>
                           <p className="font-semibold">N/A</p>
-                          <p className="text-muted-foreground text-xs">Monthly Deposits</p>
+                          <p className="text-muted-foreground text-xs">
+                            Monthly Deposits
+                          </p>
                         </div>
                       </div>
                     </CardContent>

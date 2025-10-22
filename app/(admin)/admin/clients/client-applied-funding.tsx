@@ -3,13 +3,20 @@ import Spinner from "@/components/Spinner";
 import React from "react";
 import FundingList from "@/components/funding/funding-list";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
-import { useAuth } from "@/provider/AuthContext";
-import { BankFormData } from "@/schema/bank-products";
+// import { useAuth } from "@/provider/AuthContext";
+import { ApprovedBankFormData, BankFormData } from "@/schema/bank-products";
 
-const ApplyFundingList = ({ userId }: { userId: string }) => {
+const ApplyFundingList = ({
+  userId,
+  referenceNumber,
+}: {
+  userId: string;
+  referenceNumber?: string;
+}) => {
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
     userId: userId,
     adminApprovedStatus: "Approved",
+    referenceNumber,
   });
 
   if (isLoading) return <Spinner />;
@@ -21,7 +28,12 @@ const ApplyFundingList = ({ userId }: { userId: string }) => {
         pre-approve funding products.
       </p>
     );
-  return <FundingList appliedFunding={mappedFund as BankFormData[]} />;
+  return (
+    <FundingList
+      appliedFunding={mappedFund as ApprovedBankFormData[]}
+      isAdminView
+    />
+  );
 };
 
 export default ApplyFundingList;

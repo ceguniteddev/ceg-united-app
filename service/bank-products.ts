@@ -215,6 +215,7 @@ export const getFundMappingAnalysis = async (referenceNumber: string) => {
   const collectionRef = db.collection(
     `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`
   );
+  // console.log(referenceNumber);
   const doc = await collectionRef.get();
   const bankProductIds = doc.docs.map((doc) => ({
     bank_products: doc.data().bank_products,
@@ -299,6 +300,8 @@ export const getFundMappingAnalysisDetails = async ({
         clientApplicationStatus: bankProductId.clientApplicationStatus,
         adminApprovedStatus: bankProductId.adminApprovedStatus,
         referenceNumber: bankProductId.referenceNumber,
+        approvedAmount: bankProductId.approvedAmount,
+        approvedRemarks: bankProductId.approvedRemarks,
       });
     }
   }
@@ -514,6 +517,8 @@ export const getApprovedMappedFunds = async (
         bankProductId: data.bankProductId as string,
         clientApplicationStatus: data.clientApplicationStatus,
         referenceNumber: data.referenceNumber as string,
+        approvedAmount: data.approvedAmount as number,
+        approvedRemarks: data.approvedRemarks as string,
       };
     });
 
@@ -526,6 +531,8 @@ export const getApprovedMappedFunds = async (
           clientApplicationStatus: info.clientApplicationStatus,
           fundMappingApprovedId: info.id,
           referenceNumber: info.referenceNumber,
+          approvedAmount: info.approvedAmount,
+          approvedRemarks: info.approvedRemarks,
         };
       }
       return null; // Return null if a specific bank product isn't found
@@ -687,13 +694,9 @@ export const applyBankProduct = async ({
 
 export const applyApprovedMappedFund = async ({
   referenceNumber,
-  // bankProductId,
-  // userId,
   fundMappingApprovedId,
 }: {
   referenceNumber: string;
-  // bankProductId: string;
-  // userId: string;
   fundMappingApprovedId: string;
 }): Promise<CommonResponse> => {
   try {
@@ -746,6 +749,120 @@ export const applyApprovedMappedFund = async ({
       error: "error",
       message:
         "An unexpected error occurred while applying for the bank product.",
+    };
+  }
+};
+
+export const approveAppliedBankProduct = async ({
+  referenceNumber,
+  fundMappingApprovedId,
+  approvedAmount,
+  approvedRemarks,
+}: {
+  referenceNumber: string;
+  fundMappingApprovedId: string;
+  approvedAmount: number;
+  approvedRemarks?: string;
+}): Promise<CommonResponse> => {
+  try {
+    // 1. Return structured errors for invalid inputs
+    if (!referenceNumber) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Reference number is required.",
+      };
+    }
+
+    if (!fundMappingApprovedId) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Fund mapping approved id is required.",
+      };
+    }
+
+    const db = firestoreAdmin();
+    const collectionRef = db.collection(
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+    );
+
+    await collectionRef.doc(fundMappingApprovedId).set(
+      {
+        clientApplicationStatus: "Approved",
+        approvedAmount,
+        approvedRemarks,
+      },
+      { merge: true }
+    );
+
+    // 4. Return a successful response
+    return { success: true };
+  } catch (error: any) {
+    // 5. Catch any unexpected errors and return a generic error response
+    console.error("Unexpected error in approveAppliedBankProduct:", error);
+    return {
+      success: false,
+      error: "error",
+      message:
+        "An unexpected error occurred while approving the application for the bank product.",
+    };
+  }
+};
+
+export const declineAppliedBankProduct = async ({
+  referenceNumber,
+  // bankProductId,
+  // userId,
+  fundMappingApprovedId,
+}: {
+  referenceNumber: string;
+  // bankProductId: string;
+  // userId: string;
+  fundMappingApprovedId: string;
+}): Promise<CommonResponse> => {
+  try {
+    // 1. Return structured errors for invalid inputs
+    if (!referenceNumber) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Reference number is required.",
+      };
+    }
+
+    if (!fundMappingApprovedId) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Fund mapping approved id is required.",
+      };
+    }
+
+    const db = firestoreAdmin();
+    const collectionRef = db.collection(
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+    );
+
+    await collectionRef.doc(fundMappingApprovedId).set(
+      {
+        clientApplicationStatus: "Declined",
+        approvedAmount: 0,
+        approvedRemarks: "",
+      },
+      { merge: true }
+    );
+
+    // 4. Return a successful response
+    return { success: true };
+  } catch (error: any) {
+    // 5. Catch any unexpected errors and return a generic error response
+    console.error("Unexpected error in approveAppliedBankProduct:", error);
+    return {
+      success: false,
+      error: "error",
+      message:
+        "An unexpected error occurred while approving the application for the bank product.",
     };
   }
 };

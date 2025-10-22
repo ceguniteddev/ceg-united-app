@@ -10,9 +10,15 @@ export const useRegistration = () => {
   const router = useRouter();
 
   const createMutation = useMutation({
-    mutationFn: async ({ token, values }: { values: User; token: string | null }) => {
+    mutationFn: async ({
+      token,
+      values,
+    }: {
+      values: User;
+      token: string | null;
+    }) => {
       if (!token) {
-        throw new AppError("Captcha token is missing. Please try again.");
+        throw new AppError("Failed to register. Please refresh the page.");
       }
 
       const captchaData = await verifyCaptchaToken(token);
@@ -22,7 +28,7 @@ export const useRegistration = () => {
         captchaData.score < 0.5 ||
         captchaData.action !== "registration"
       ) {
-        throw new AppError("Captcha verification failed. Please try again.");
+        throw new AppError("Failed to register. Please refresh the page.");
       }
 
       await registerUser(values);

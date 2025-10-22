@@ -13,7 +13,28 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, BanknoteIcon, Loader2Icon, User } from "lucide-react";
+import { BanknoteIcon, BanknoteX, Loader2Icon } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Form } from "@/components/ui/form";
 
 import { Button } from "@/components/ui/button";
 
@@ -27,22 +48,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DataTablePagination } from "./pagination";
-import { ApplyFundingWithUser } from "@/schema/apply-funding";
-import { cn, formatAmount, formatDateTime } from "@/lib/utils";
+import { formatAmount } from "@/lib/utils";
 import CategoryBadge from "../CategoryBadge";
-import { BankFormData } from "@/schema/bank-products";
+import { ApprovedBankFormData, BankFormData } from "@/schema/bank-products";
 import SortableHeader from "@/components/SortableHeader";
-import { ResponsiveDialog } from "@/components/responsive-dialog";
-import ApplyFundingForm from "@/components/funding/ApplyFundingForm";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import ApplyFundingSuccessful from "@/app/(client)/my-funding/_funding/ApplyFundingSuccessful";
-import { useAuth } from "@/provider/AuthContext";
 import { useApprovedMappedFundsMutation } from "@/hooks/admin/funding-application/fund-mapping";
+import z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Textarea } from "../ui/textarea";
+import { CustomFormField } from "../CustomFormField";
 
 const baseColumns: ColumnDef<BankFormData>[] = [
   {
@@ -103,14 +118,37 @@ const baseColumns: ColumnDef<BankFormData>[] = [
     },
   },
   {
-    id: "actions",
+    accessorKey: "approvedAmount",
+    id: "approvedAmount",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Approved Amount" />
+    ),
+    cell: ({ row }) => (
+      <div>{formatAmount(row.getValue("approvedAmount"))}</div>
+    ),
+  },
+  {
+    accessorKey: "approvedRemarks",
+    id: "approvedRemarks",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Approved Remarks" />
+    ),
+    cell: ({ row }) => <div>{row.getValue("approvedRemarks")}</div>,
+  },
+  {
+    id: "clientActions",
     cell: ({ row }) => <ActionCell row={row} />,
+    size: 80,
+  },
+  {
+    id: "adminActions",
+    cell: ({ row }) => <AdminActionCell row={row} />,
     size: 80,
   },
 ];
 
 type Props = {
-  appliedFunding: BankFormData[] | undefined;
+  appliedFunding: ApprovedBankFormData[] | undefined;
   isAdminView?: boolean;
 };
 
@@ -124,10 +162,46 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
 
-  const columns = React.useMemo(
-    () => baseColumns.filter((c) => (isAdminView ? c.id !== "actions" : true)),
-    [isAdminView]
-  );
+  // const columns = React.useMemo(
+  //   () =>
+  //     baseColumns.filter((c) =>
+  //       isAdminView ? c.id !== "clientActions" : c.id !== "adminActions"
+  //     ),
+  //   [isAdminView]
+  // );
+
+  const columns = React.useMemo(() => {
+    // 1. Determine if any funding application has been approved.
+    // The optional chaining (?.) prevents errors if appliedFunding is undefined.
+    const showApprovedColumns =
+      appliedFunding?.some(
+        (fund) => fund.clientApplicationStatus === "Approved"
+      ) || false;
+
+    // 2. Filter the base columns based on all conditions.
+    return baseColumns.filter((column) => {
+      // Hide clientActions for admins
+      if (isAdminView && column.id === "clientActions") {
+        return false;
+      }
+
+      // Hide adminActions for non-admins
+      if (!isAdminView && column.id === "adminActions") {
+        return false;
+      }
+
+      // Hide approval-related columns if no application is 'Approved'
+      if (
+        !showApprovedColumns &&
+        (column.id === "approvedAmount" || column.id === "approvedRemarks")
+      ) {
+        return false;
+      }
+
+      // If none of the above conditions are met, keep the column
+      return true;
+    });
+  }, [isAdminView, appliedFunding]);
 
   const table = useReactTable({
     data: appliedFunding || [],
@@ -241,15 +315,175 @@ const ActionCell = ({ row }: { row: any }) => {
       >
         {isApplying ? (
           <>
-            <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2Icon className="h-4 w-4 animate-spin" />
             Applying...
           </>
         ) : (
           <>
-            <BanknoteIcon className="mr-2 h-4 w-4" /> Apply
+            <BanknoteIcon className="h-4 w-4" /> Apply
           </>
         )}
       </Button>
     </>
+  );
+};
+
+const approvalFormSchema = z.object({
+  amountApproved: z.coerce
+    .number<number>({ error: "Approved amount is required." })
+    .min(1, { error: "Amount must be greater than 0." }),
+  remarks: z
+    .string()
+    .max(500, { error: "Remarks cannot exceed 500 characters." })
+    .optional(),
+});
+
+// Infer the type from the schema for type safety
+type ApprovalFormValues = z.infer<typeof approvalFormSchema>;
+
+const AdminActionCell = ({ row }: { row: any }) => {
+  const [isApproveDialogOpen, setApproveDialogOpen] = React.useState(false);
+
+  const {
+    approveAppliedBankProduct,
+    isApproving,
+    declineAppliedBankProduct,
+    isDeclining,
+  } = useApprovedMappedFundsMutation();
+
+  const form = useForm<ApprovalFormValues>({
+    resolver: zodResolver(approvalFormSchema),
+    defaultValues: {
+      remarks: "",
+    },
+  });
+
+  const handleDeclineClickCapture = async () => {
+    await declineAppliedBankProduct({
+      fundMappingApprovedId: row.original.fundMappingApprovedId,
+      referenceNumber: row.original.referenceNumber,
+    });
+  };
+
+  const onApproveSubmit = async (data: ApprovalFormValues) => {
+    console.log("Submitting with data:", data);
+    await approveAppliedBankProduct({
+      fundMappingApprovedId: row.original.fundMappingApprovedId,
+      referenceNumber: row.original.referenceNumber,
+      approvedAmount: data.amountApproved,
+      approvedRemarks: data.remarks,
+    });
+    // Close the dialog and reset the form on success
+    form.reset();
+    setApproveDialogOpen(false);
+  };
+
+  return (
+    <div className="flex flex-row gap-2">
+      {/* --- MODIFICATION START --- */}
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            className="bg-red-300 hover:bg-red-400 cursor-pointer"
+            disabled={
+              isDeclining ||
+              isApproving ||
+              row.original.clientApplicationStatus === "Declined"
+            }
+          >
+            {isDeclining ? (
+              <>
+                <Loader2Icon className="h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <BanknoteX className="h-4 w-4 mr-2" /> Decline
+              </>
+            )}
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to decline the funding application.
+              <br />
+              Please confirm your action.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+              onClick={handleDeclineClickCapture}
+            >
+              Yes, Decline
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={isApproveDialogOpen} onOpenChange={setApproveDialogOpen}>
+        <DialogTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            className="bg-green-200 hover:bg-green-400 cursor-pointer"
+            disabled={
+              isApproving ||
+              isDeclining ||
+              row.original.clientApplicationStatus === "Approved"
+            }
+          >
+            <BanknoteIcon className="h-4 w-4 mr-2" /> Approve
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Approve Funding Application</DialogTitle>
+            <DialogDescription>
+              Enter the approved amount and any relevant remarks below. Click
+              confirm to finalize.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onApproveSubmit)}
+              className="space-y-4 py-4"
+            >
+              <CustomFormField
+                name="amountApproved"
+                type="number"
+                label="Approved Amount *"
+              />
+
+              <CustomFormField name="remarks" type="textarea" label="Remarks" />
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                  disabled={isApproving}
+                >
+                  {isApproving ? (
+                    <>
+                      <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Confirm Approval"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };

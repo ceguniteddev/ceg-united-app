@@ -31,6 +31,7 @@ import {
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
+import Spinner from "../Spinner";
 
 type Props = {
   userId: string;
@@ -97,7 +98,7 @@ const ClientNotes = ({ userId }: Props) => {
     newCommentForm.reset();
   };
 
-  if (isLoading) return <div>Loading notes...</div>;
+  if (isLoading) return <Spinner displayText="Loading notes..." />;
   if (isError) return <div>Error loading notes.</div>;
 
   return (

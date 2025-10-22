@@ -94,4 +94,6 @@ export type ApprovedBankFormData = BankFormData & {
   clientApplicationStatus: ClientApplicationStatus;
   adminApprovedStatus?: ClientApplicationStatus;
   referenceNumber: string;
+  approvedAmount?: number;
+  approvedRemarks?: string;
 };

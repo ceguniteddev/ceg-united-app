@@ -120,7 +120,7 @@ export function AuthProvider({
     async (token: string | null, email: string, password: string) => {
       try {
         if (!token)
-          throw new AppError("Captcha token is missing. Please try again.");
+          throw new AppError("Failed to login. Please refresh the page.");
 
         const captchaData = await verifyCaptchaToken(token);
         if (
@@ -176,7 +176,7 @@ export function AuthProvider({
   const resetPassword = useCallback(
     async (token: string | null, email: string) => {
       if (!token)
-        throw new AppError("Captcha token is missing. Please try again.");
+        throw new AppError("Failed to login. Please refresh the page.");
 
       const captchaData = await verifyCaptchaToken(token);
       if (

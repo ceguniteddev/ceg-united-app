@@ -31,6 +31,7 @@ import {
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
+import Spinner from "../Spinner";
 
 type Props = {
   applicationReferenceNumber: string;
@@ -107,7 +108,7 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
     newCommentForm.reset();
   };
 
-  if (isLoading) return <div>Loading notes...</div>;
+  if (isLoading) return <Spinner displayText="Loading notes..." />;
   if (isError) return <div>Error loading notes.</div>;
 
   // No changes to JSX below this line

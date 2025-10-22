@@ -2,18 +2,18 @@ import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
 import {
   ApprovedBankFormData,
-  BankFormData,
   ClientApplicationStatus,
 } from "@/schema/bank-products";
 import {
   applyApprovedMappedFund,
+  approveAppliedBankProduct,
   approveMappedFund,
+  declineAppliedBankProduct,
   getApprovedMappedFunds,
   getFundMappingAnalysis,
   getFundMappingAnalysisDetails,
 } from "@/service/bank-products";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { is } from "date-fns/locale";
 import { toast } from "sonner";
 
 export const useFundingApplicationsMappedFundsQuery = (
@@ -211,7 +211,10 @@ export const useApprovedMappedFundsMutation = () => {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      await applyApprovedMappedFund({ referenceNumber, fundMappingApprovedId });
+      await applyApprovedMappedFund({
+        referenceNumber,
+        fundMappingApprovedId,
+      });
     },
     onSuccess: (_data, variable) => {
       queryClient.invalidateQueries({
@@ -220,7 +223,89 @@ export const useApprovedMappedFundsMutation = () => {
           variable.referenceNumber,
         ],
       });
-      toast.success("Funds successfully applied.");
+      toast.success("Fund successfully applied.");
+    },
+    onError: (error: any) => {
+      if (error instanceof AppError) {
+        toast.warning(error.message);
+      } else {
+        toast.warning(error.message);
+        console.error(error);
+      }
+    },
+  });
+
+  const approveAppliedBankProductMutation = useMutation({
+    mutationFn: async ({
+      referenceNumber,
+      fundMappingApprovedId,
+      approvedAmount,
+      approvedRemarks,
+    }: {
+      referenceNumber: string;
+      fundMappingApprovedId: string;
+      approvedAmount: number;
+      approvedRemarks?: string;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      await approveAppliedBankProduct({
+        referenceNumber,
+        fundMappingApprovedId,
+        approvedAmount,
+        approvedRemarks,
+      });
+    },
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "GET_FUNDING_APPLICATION_MAPPED_FUNDS",
+          variable.referenceNumber,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["useClientMappedFundingDetailsQuery"],
+        exact: false,
+      });
+      toast.success("Fund application approved.");
+    },
+    onError: (error: any) => {
+      if (error instanceof AppError) {
+        toast.warning(error.message);
+      } else {
+        toast.warning(error.message);
+        console.error(error);
+      }
+    },
+  });
+
+  const declineAppliedBankProductMutation = useMutation({
+    mutationFn: async ({
+      referenceNumber,
+      fundMappingApprovedId,
+    }: {
+      referenceNumber: string;
+      fundMappingApprovedId: string;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      await declineAppliedBankProduct({
+        referenceNumber,
+        fundMappingApprovedId,
+      });
+    },
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "GET_FUNDING_APPLICATION_MAPPED_FUNDS",
+          variable.referenceNumber,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["useClientMappedFundingDetailsQuery"],
+        exact: false,
+      });
+      toast.success("Fund application declined.");
     },
     onError: (error: any) => {
       if (error instanceof AppError) {
@@ -235,6 +320,12 @@ export const useApprovedMappedFundsMutation = () => {
   return {
     applyApprovedMappedFund: applyApprovedMappedFundMutation.mutateAsync,
     isApplying: applyApprovedMappedFundMutation.isPending,
+
+    approveAppliedBankProduct: approveAppliedBankProductMutation.mutateAsync,
+    isApproving: approveAppliedBankProductMutation.isPending,
+
+    declineAppliedBankProduct: declineAppliedBankProductMutation.mutateAsync,
+    isDeclining: declineAppliedBankProductMutation.isPending,
   };
 };
 
@@ -242,10 +333,12 @@ export const useClientMappedFundingDetailsQuery = ({
   userId,
   adminApprovedStatus,
   clientApplicationStatus,
+  referenceNumber,
 }: {
   userId: string;
   adminApprovedStatus?: AdminApprovedStatus;
   clientApplicationStatus?: ClientApplicationStatus[];
+  referenceNumber?: string;
 }) => {
   const { user } = useAuth();
 
@@ -258,6 +351,7 @@ export const useClientMappedFundingDetailsQuery = ({
       "useClientMappedFundingDetailsQuery",
       userId,
       adminApprovedStatus,
+      referenceNumber,
     ],
     enabled: !!user && !!userId,
     queryFn: async () => {
@@ -266,6 +360,7 @@ export const useClientMappedFundingDetailsQuery = ({
         userId,
         adminApprovedStatus,
         clientApplicationStatus,
+        referenceNumber,
       });
       return data;
     },

@@ -46,6 +46,7 @@ import { ResponsiveDialog } from "@/components/responsive-dialog";
 import BankProductsForm from "@/app/(admin)/admin/bank-products/form";
 import SortableHeader from "../SortableHeader";
 import CategoryBadge from "../CategoryBadge";
+import { formatAmount } from "@/lib/utils";
 
 type Props = {
   referenceNumber: string;
@@ -125,7 +126,7 @@ const BankProductsList = ({
             <div className="flex flex-col gap-1">
               {" "}
               {/* gap-1 adds a small space between items */}
-              {productNames.map((name, index) => (
+              {productNames?.map((name, index) => (
                 <span key={index}>{name}</span>
               ))}
             </div>
@@ -156,6 +157,34 @@ const BankProductsList = ({
           ) : (
             <CategoryBadge category={"Not Applied"} />
           );
+        },
+      },
+
+      {
+        id: "approvedAmount",
+        header: "Approved Amount",
+        cell: ({ row }) => {
+          const funds = approvedMappedFunds?.find(
+            (fund) => String(fund.id) === String(row.original.id)
+          );
+
+          const approvedAmount = funds?.approvedAmount;
+
+          return <div>{formatAmount(approvedAmount || 0)}</div>;
+        },
+      },
+
+      {
+        id: "approvedRemarks",
+        header: "Approved Remarks",
+        cell: ({ row }) => {
+          const funds = approvedMappedFunds?.find(
+            (fund) => String(fund.id) === String(row.original.id)
+          );
+
+          const approvedRemarks = funds?.approvedRemarks;
+
+          return <div>{approvedRemarks}</div>;
         },
       },
 
