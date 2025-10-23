@@ -178,6 +178,17 @@ export const refreshCRSData = async ({
   userId: string;
   referenceNumber: string;
 }) => {
+  await fetch(`${process.env.n8n_HOST}/delete-crs-qdrant`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      userId,
+    }),
+  });
+
   await generateCRSReport({ userId, referenceNumber });
 
   const businessDetails: Business[] = await getBusiness(userId);

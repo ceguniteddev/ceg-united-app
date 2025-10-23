@@ -13,13 +13,14 @@ import {
   FundingApplicationApproveDecline,
   FundingApplicationSatus,
 } from "@/schema/apply-funding";
-import { updateClientApplicationStatus } from "@/service/bank-products";
 import { Timestamp } from "firebase-admin/firestore";
 import * as crypto from "node:crypto";
 import {
   fundAnalysis,
   generateCRSReport,
   generateCRSReportBusiness,
+  getCRSBusinessProfile,
+  getCRSReport,
 } from "./crs";
 import { noteSchema, NoteSchema } from "@/schema/notes";
 
@@ -34,16 +35,23 @@ export const applyFunding = async ({ value }: { value: ApplyFunding }) => {
 
   const docRef = collectionRef.doc(referenceNumber);
   await docRef.set({ ...value });
-  const data = (await docRef.get()).data();
 
-  await generateCRSReport({ userId: value.userId, referenceNumber });
+  // check if user alreay has generated CRS report
+  const data = await getCRSReport(value.userId);
+
+  if (!data || data.length === 0) {
+    await generateCRSReport({ userId: value.userId, referenceNumber });
+  }
 
   if (value.businessId) {
-    await generateCRSReportBusiness(
-      value.userId,
-      referenceNumber,
-      value.businessId
-    );
+    const businessData = await getCRSBusinessProfile(value.businessId);
+    if (!businessData) {
+      await generateCRSReportBusiness(
+        value.userId,
+        referenceNumber,
+        value.businessId
+      );
+    }
   }
 
   await fundAnalysis({ referenceNumber, userId: value.userId });
