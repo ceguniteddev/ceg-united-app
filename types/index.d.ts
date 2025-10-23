@@ -15,6 +15,10 @@ declare global {
   type AdminStatistics = {
     totalClients: number;
     totalFundingApplications: number;
+    totalApprovedApplications: number;
+    totalFundedApplications: number;
+    totalApprovedAmount: number;
+    totalFundedAmount: number;
     countsByState: {
       [key: string]: number;
     };

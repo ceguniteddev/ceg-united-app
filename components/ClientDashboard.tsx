@@ -22,6 +22,7 @@ import {
   Banknote,
   CalendarDays,
   ArrowRight,
+  BanknoteArrowUp,
 } from "lucide-react";
 import Link from "next/link";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
@@ -262,9 +263,17 @@ export const ClientDashboard = ({
 
     const totalApproved =
       clientData.approvedFunds
-        ?.filter((app) => app.clientApplicationStatus === "Approved")
-        .reduce((sum, currentApp) => {
+        // ?.filter((app) => app.clientApplicationStatus === "Approved")
+        ?.reduce((sum, currentApp) => {
           const amount = Number(currentApp.approvedAmount) || 0;
+          return sum + amount;
+        }, 0) ?? 0;
+
+    const totalFunded =
+      clientData.approvedFunds
+        // ?.filter((app) => app.clientApplicationStatus === "Approved")
+        ?.reduce((sum, currentApp) => {
+          const amount = Number(currentApp.fundedAmount) || 0;
           return sum + amount;
         }, 0) ?? 0;
 
@@ -311,6 +320,7 @@ export const ClientDashboard = ({
     return {
       totalRequested,
       totalApproved,
+      totalFunded,
       lastMonthDeposits,
       averageMonthlyBalance,
       averageMonthlyIncome,
@@ -359,7 +369,7 @@ export const ClientDashboard = ({
       </header>
 
       <main className="grid gap-6">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           <StatCard
             title="Total Requested Amount"
             value={formatCurrency(stats.totalRequested)}
@@ -371,6 +381,12 @@ export const ClientDashboard = ({
             value={formatCurrency(stats.totalApproved)}
             description="Total funds approved to date"
             icon={DollarSign}
+          />
+          <StatCard
+            title="Total Funded Amount"
+            value={formatCurrency(stats.totalFunded)}
+            description="Total amount funded to date"
+            icon={BanknoteArrowUp}
           />
         </div>
 

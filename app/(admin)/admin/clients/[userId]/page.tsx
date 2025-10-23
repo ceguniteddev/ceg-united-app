@@ -7,7 +7,7 @@ import { UserFundMapStatus, UserWithId } from "@/schema/registration";
 import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
 import SendEmail from "@/components/SendEmail";
 import ClientNotes from "@/components/notes/ClientNotes";
-import ClientAppliedFunding from "@/app/(admin)/admin/clients/client-applied-funding";
+import ClientAppliedFunding from "@/components/ClientAppliedFundingList";
 import ClientDocuments from "@/components/ClientDocuments";
 import ClientCreditReport from "@/components/ClientCreditReport";
 import BusinessRecordsPage from "@/components/ClientBusinessReport";

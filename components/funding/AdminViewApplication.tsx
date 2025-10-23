@@ -13,7 +13,7 @@ import SendEmail from "../SendEmail";
 import AdminMappedFunds from "./AdminMappedFunds";
 import FundApplicationNotesV2 from "../notes/FundApplicationNotesV2";
 import ClientDocuments from "../ClientDocuments";
-import ApplyFundingList from "@/app/(admin)/admin/clients/client-applied-funding";
+import ApplyFundingList from "@/components/ClientAppliedFundingList";
 // import AdminMappedFunds from "./AdminMappedFunds";
 
 type Props = {

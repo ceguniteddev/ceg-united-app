@@ -4,19 +4,27 @@ import React from "react";
 import FundingList from "@/components/funding/funding-list";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
 // import { useAuth } from "@/provider/AuthContext";
-import { ApprovedBankFormData, BankFormData } from "@/schema/bank-products";
+import {
+  ApprovedBankFormData,
+  BankFormData,
+  ClientApplicationStatus,
+} from "@/schema/bank-products";
 
-const ApplyFundingList = ({
+const ClientAppliedFundingList = ({
   userId,
   referenceNumber,
+  clientApplicationStatus,
 }: {
-  userId: string;
+  userId?: string;
   referenceNumber?: string;
+
+  clientApplicationStatus?: ClientApplicationStatus[];
 }) => {
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
     userId: userId,
     adminApprovedStatus: "Approved",
     referenceNumber,
+    clientApplicationStatus,
   });
 
   if (isLoading) return <Spinner />;
@@ -36,4 +44,4 @@ const ApplyFundingList = ({
   );
 };
 
-export default ApplyFundingList;
+export default ClientAppliedFundingList;

@@ -242,7 +242,7 @@ export const getFundMappingAnalysisDetails = async ({
   referenceNumber,
   bankProductId,
 }: {
-  userId: string;
+  userId?: string;
   adminApprovedStatus?: AdminApprovedStatus;
   clientApplicationStatus?: ClientApplicationStatus[];
   referenceNumber?: string;
@@ -252,8 +252,11 @@ export const getFundMappingAnalysisDetails = async ({
 
   let collectionGroupRef = db
     .collectionGroup(USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED)
-    .where("userId", "==", userId)
+    // .where("userId", "==", userId)
     .orderBy("createdAt", "desc");
+  if (userId) {
+    collectionGroupRef = collectionGroupRef.where("userId", "==", userId);
+  }
 
   if (clientApplicationStatus) {
     collectionGroupRef = collectionGroupRef.where(

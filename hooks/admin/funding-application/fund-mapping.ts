@@ -437,7 +437,7 @@ export const useClientMappedFundingDetailsQuery = ({
   clientApplicationStatus,
   referenceNumber,
 }: {
-  userId: string;
+  userId?: string;
   adminApprovedStatus?: AdminApprovedStatus;
   clientApplicationStatus?: ClientApplicationStatus[];
   referenceNumber?: string;
@@ -455,7 +455,7 @@ export const useClientMappedFundingDetailsQuery = ({
       adminApprovedStatus,
       referenceNumber,
     ],
-    enabled: !!user && !!userId,
+    enabled: !!user,
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
       const data = await getFundMappingAnalysisDetails({

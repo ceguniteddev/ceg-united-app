@@ -10,6 +10,9 @@ import {
 import { Business } from "@/schema";
 import { getPlaidCompleteDataForUser } from "./plaid/data";
 import { getFundMappingAnalysisDetails } from "./bank-products";
+import { firestoreAdmin } from "@/lib/fireabase-admin";
+import { USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED } from "@/constant/collection-name";
+import { normalizeAllDates } from "@/lib/date-parser";
 
 // get all registered user
 export const getAdminStatistics = async (): Promise<AdminStatistics> => {
@@ -20,10 +23,16 @@ export const getAdminStatistics = async (): Promise<AdminStatistics> => {
     return {
       totalClients: usersClient?.length ?? 0,
       totalFundingApplications: 0,
+      totalApprovedApplications: 0,
+      totalFundedApplications: 0,
+      totalApprovedAmount: 0,
+      totalFundedAmount: 0,
       countsByState: {},
       countsByStatus: {},
     };
   }
+
+  const fundMappingApprovedData = await getFundMappingApproved();
 
   const counts = fundingApplications.reduce<{
     states: Record<string, number>;
@@ -46,9 +55,58 @@ export const getAdminStatistics = async (): Promise<AdminStatistics> => {
   return {
     totalClients: usersClient?.length ?? 0,
     totalFundingApplications: fundingApplications.length,
+    totalApprovedApplications:
+      fundMappingApprovedData.totalApprovedApplications,
+    totalFundedApplications: fundMappingApprovedData.totalFundedApplications,
+    totalApprovedAmount: fundMappingApprovedData.totalApprovedAmount,
+    totalFundedAmount: fundMappingApprovedData.totalFundedAmount,
     countsByState: counts.states,
     countsByStatus: counts.statuses,
   };
+};
+
+export const getFundMappingApproved = async () => {
+  const db = firestoreAdmin();
+
+  const collectionGroupRef = db
+    .collectionGroup(USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED)
+    .orderBy("createdAt", "desc")
+    .where("clientApplicationStatus", "in", ["Approved", "Funded"]);
+
+  const querySnapshot = await collectionGroupRef.get();
+  const data = querySnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...normalizeAllDates(doc.data()),
+  }));
+
+  return processApplicationData(data);
+};
+
+const processApplicationData = (applications: any) => {
+  const totals = {
+    totalApprovedApplications: 0,
+    totalFundedApplications: 0,
+    totalApprovedAmount: 0,
+    totalFundedAmount: 0,
+  };
+
+  return applications.reduce((acc: any, application: any) => {
+    if (
+      application.clientApplicationStatus === "Approved" ||
+      application.clientApplicationStatus === "Funded"
+    ) {
+      acc.totalApprovedApplications += 1;
+    }
+
+    if (application.clientApplicationStatus === "Funded") {
+      acc.totalFundedApplications += 1;
+    }
+
+    acc.totalApprovedAmount += Number(application.approvedAmount) || 0;
+    acc.totalFundedAmount += Number(application.fundedAmount) || 0;
+
+    return acc;
+  }, totals);
 };
 
 export interface BusinessWithCRSData extends Business {
@@ -63,7 +121,7 @@ export const getClientStatistics = async (userId: string) => {
 
   const approvedFunds = await getFundMappingAnalysisDetails({
     userId,
-    clientApplicationStatus: ["Approved"],
+    clientApplicationStatus: ["Approved", "Funded"],
   });
 
   // get total funding approved amount

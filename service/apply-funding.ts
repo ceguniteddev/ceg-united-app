@@ -91,6 +91,8 @@ export const getFundingApplications = async ({
     .collection(USER_FUNDING_APPLICATION)
     .orderBy("appliedDate", "desc");
 
+  console.log(state);
+
   if (userId) {
     collectionRef = collectionRef.where("userId", "==", userId);
   }

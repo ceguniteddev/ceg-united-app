@@ -8,7 +8,7 @@ import { withAdminGuard } from "@/components/wrapper";
 import AdminFundingList from "@/components/funding/admin-funding-list";
 
 const FundingApplications = () => {
-  const { appliedFunding, isLoading } = useGetFundingApplications();
+  const { appliedFunding, isLoading } = useGetFundingApplications({});
 
   if (isLoading) {
     return <Spinner displayText="Loading funding applications…" />;

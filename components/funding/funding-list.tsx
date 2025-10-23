@@ -66,6 +66,14 @@ import { CustomFormField } from "../CustomFormField";
 
 const baseColumns: ColumnDef<BankFormData>[] = [
   {
+    accessorKey: "referenceNumber",
+    id: "referenceNumber",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Reference Number" />
+    ),
+    cell: ({ row }) => <div>{row.getValue("referenceNumber")}</div>,
+  },
+  {
     accessorKey: "bankName",
     id: "bankName",
     header: ({ column }) => (
