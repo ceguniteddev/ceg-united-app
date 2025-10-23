@@ -102,9 +102,9 @@ export const recordFundMappingAnalysis = async (
 
   logInfo("recordFundMappingAnalysis", { userId, referenceNumber });
 
-  const fundingApplication = await getApplyFundingByReferenceNumber(
-    referenceNumber
-  );
+  const fundingApplication = await getApplyFundingByReferenceNumber({
+    referenceNumber,
+  });
   if (!fundingApplication)
     throw new AppError("Funding application reference number not found.");
 
@@ -302,6 +302,8 @@ export const getFundMappingAnalysisDetails = async ({
         referenceNumber: bankProductId.referenceNumber,
         approvedAmount: bankProductId.approvedAmount,
         approvedRemarks: bankProductId.approvedRemarks,
+        fundedAmount: bankProductId.fundedAmount,
+        fundedRemarks: bankProductId.fundedRemarks,
       });
     }
   }
@@ -383,9 +385,9 @@ export const approveMappedFund = async ({
     }
     logInfo("approveMappedFund", { referenceNumber });
 
-    const fundingApplication = await getApplyFundingByReferenceNumber(
-      referenceNumber
-    );
+    const fundingApplication = await getApplyFundingByReferenceNumber({
+      referenceNumber,
+    });
     if (!fundingApplication) {
       return {
         success: false,
@@ -470,9 +472,9 @@ export const cancelMappedFund = async ({
     }
     logInfo("cancelMappedFund", { referenceNumber });
 
-    const fundingApplication = await getApplyFundingByReferenceNumber(
-      referenceNumber
-    );
+    const fundingApplication = await getApplyFundingByReferenceNumber({
+      referenceNumber,
+    });
     if (!fundingApplication) {
       return {
         success: false,
@@ -516,9 +518,9 @@ export const approveMappedFundOld = async (
 
   logInfo("approveMappedFund", { referenceNumber });
 
-  const fundingApplication = await getApplyFundingByReferenceNumber(
-    referenceNumber
-  );
+  const fundingApplication = await getApplyFundingByReferenceNumber({
+    referenceNumber,
+  });
   if (!fundingApplication)
     throw new AppError("Funding application reference number not found.");
 
@@ -553,9 +555,9 @@ export const getApprovedMappedFunds = async (
         error: "warning",
       };
     }
-    const referenceData = await getApplyFundingByReferenceNumber(
-      referenceNumber
-    );
+    const referenceData = await getApplyFundingByReferenceNumber({
+      referenceNumber,
+    });
     if (!referenceData) {
       return {
         success: false,
@@ -871,6 +873,63 @@ export const approveAppliedBankProduct = async ({
       error: "error",
       message:
         "An unexpected error occurred while approving the application for the bank product.",
+    };
+  }
+};
+
+export const fundedAppliedBankProduct = async ({
+  referenceNumber,
+  fundMappingApprovedId,
+  fundedAmount,
+  fundedRemarks,
+}: {
+  referenceNumber: string;
+  fundMappingApprovedId: string;
+  fundedAmount: number;
+  fundedRemarks?: string;
+}): Promise<CommonResponse> => {
+  try {
+    // 1. Return structured errors for invalid inputs
+    if (!referenceNumber) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Reference number is required.",
+      };
+    }
+
+    if (!fundMappingApprovedId) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Fund mapping approved id is required.",
+      };
+    }
+
+    const db = firestoreAdmin();
+    const collectionRef = db.collection(
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+    );
+
+    await collectionRef.doc(fundMappingApprovedId).set(
+      {
+        clientApplicationStatus: "Funded",
+        fundedAmount,
+        fundedRemarks,
+      },
+      { merge: true }
+    );
+
+    // 4. Return a successful response
+    return { success: true };
+  } catch (error: any) {
+    // 5. Catch any unexpected errors and return a generic error response
+    console.error("Unexpected error in fundedAppliedBankProduct:", error);
+    return {
+      success: false,
+      error: "error",
+      message:
+        "An unexpected error occurred while funding the application for the bank product.",
     };
   }
 };

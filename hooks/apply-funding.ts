@@ -3,12 +3,12 @@ import { ApplyFunding, ApplyFundingWithUser } from "@/schema/apply-funding";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { verifyCaptchaToken } from "@/lib/captcha/captcha";
 import {
   addFundApplicationNotes,
   applyFunding,
   deleteApplyFunding,
   getApplyFunding,
+  getApplyFundingByReferenceNumber,
   getFundApplicationNotes,
   getFundingApplications,
 } from "@/service/apply-funding";
@@ -68,6 +68,33 @@ export const useGetFundingApplications = () => {
       return data;
     },
     enabled: !!user,
+  });
+
+  return {
+    appliedFunding,
+    isLoading,
+  };
+};
+
+export const useGetApplyFundingByReferenceNumber = ({
+  referenceNumber,
+}: {
+  referenceNumber: string;
+}) => {
+  const { user } = useAuth();
+
+  const { data: appliedFunding, isLoading } = useQuery({
+    queryKey: ["GET_FUNDING_APPLICATIONS", referenceNumber],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+
+      const data = (await getApplyFundingByReferenceNumber({
+        referenceNumber,
+      })) as ApplyFunding;
+
+      return data;
+    },
+    enabled: !!user && !!referenceNumber,
   });
 
   return {
@@ -220,7 +247,9 @@ export const useAddFundApplicationNotesQuery = ({
 };
 
 const getNote = async (referenceNumber: string): Promise<NoteSchema> => {
-  const response = await fetch(`/api/funding-application/${referenceNumber}/notes`);
+  const response = await fetch(
+    `/api/funding-application/${referenceNumber}/notes`
+  );
   if (!response.ok) {
     throw new Error("Failed to fetch note");
   }
@@ -234,11 +263,14 @@ const updateNote = async ({
   referenceNumber: string;
   note: NoteSchema;
 }): Promise<void> => {
-  const response = await fetch(`/api/funding-application/${referenceNumber}/notes`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(note),
-  });
+  const response = await fetch(
+    `/api/funding-application/${referenceNumber}/notes`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(note),
+    }
+  );
   if (!response.ok) {
     throw new Error("Failed to save note");
   }

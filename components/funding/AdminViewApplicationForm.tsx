@@ -21,7 +21,6 @@ import {
 import CategoryBadge from "../CategoryBadge";
 
 type Props = {
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   data?: ApplyFunding;
 };
 
@@ -55,7 +54,7 @@ const Field = ({
   </div>
 );
 
-export default function FundingApplicationView({ setOpen, data }: Props) {
+export default function FundingApplicationView({ data }: Props) {
   if (!data) {
     return (
       <Card>
@@ -67,7 +66,7 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
             No application data to display.
           </p>
         </CardContent>
-        <CardFooter>
+        {/* <CardFooter>
           <Button
             size="lg"
             variant="outline"
@@ -76,7 +75,7 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
           >
             <CircleXIcon className="mr-2 h-4 w-4" /> Close
           </Button>
-        </CardFooter>
+        </CardFooter> */}
       </Card>
     );
   }
@@ -332,7 +331,7 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
         </section>
       </CardContent>
 
-      <CardFooter>
+      {/* <CardFooter>
         <Button
           size="lg"
           variant="outline"
@@ -341,7 +340,7 @@ export default function FundingApplicationView({ setOpen, data }: Props) {
         >
           <CircleXIcon className="mr-2 h-4 w-4" /> Close
         </Button>
-      </CardFooter>
+      </CardFooter> */}
     </Card>
   );
 }

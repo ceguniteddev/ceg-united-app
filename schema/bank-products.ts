@@ -15,7 +15,14 @@ export const CreditBureauEnum = z.enum(
 export type CreditBureau = z.infer<typeof CreditBureauEnum>;
 
 const ClientApplicationStatus = z.enum(
-  ["Not Applied", "Pending", "Sent to Lender", "Approved", "Declined"],
+  [
+    "Not Applied",
+    "Pending",
+    "Sent to Lender",
+    "Approved",
+    "Declined",
+    "Funded",
+  ],
   {
     error: "Required",
   }
@@ -100,4 +107,6 @@ export type ApprovedBankFormData = BankFormData & {
   referenceNumber: string;
   approvedAmount?: number;
   approvedRemarks?: string;
+  fundedAmount?: number;
+  fundedRemarks?: string;
 };

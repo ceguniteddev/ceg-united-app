@@ -1,4 +1,7 @@
-import { useAnalysisMutation, useAnalysisQuery } from "@/hooks/admin/funding-application/analysis";
+import {
+  useAnalysisMutation,
+  useAnalysisQuery,
+} from "@/hooks/admin/funding-application/analysis";
 import dynamic from "next/dynamic";
 import React from "react";
 import { useDebouncedCallback } from "use-debounce";
@@ -6,14 +9,19 @@ import Spinner from "../Spinner";
 
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
-type Props = { referenceNumber: string; setOpen: React.Dispatch<React.SetStateAction<boolean>> };
+type Props = {
+  referenceNumber: string;
+};
 type Item = { id: string; analysis?: string };
 
-const AnalysisView = ({ referenceNumber, setOpen }: Props) => {
+const AnalysisView = ({ referenceNumber }: Props) => {
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
   const { updateAnalysis } = useAnalysisMutation();
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
+
+  if (!analysisData || analysisData?.length === 0)
+    return <div className="p-4">No analysis found.</div>;
 
   return (
     <div className="space-y-6">
@@ -64,8 +72,16 @@ type PropsView = {
   }) => Promise<unknown> | void;
 };
 
-const AnalysisDetailsView = ({ referenceNumber, analysis, id, updateAnalysis }: PropsView) => {
-  const initial = React.useMemo(() => extractHtmlFromFence(analysis), [analysis]);
+const AnalysisDetailsView = ({
+  referenceNumber,
+  analysis,
+  id,
+  updateAnalysis,
+}: PropsView) => {
+  const initial = React.useMemo(
+    () => extractHtmlFromFence(analysis),
+    [analysis]
+  );
   const [content, setContent] = React.useState(initial);
 
   React.useEffect(() => {

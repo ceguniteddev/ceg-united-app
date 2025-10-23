@@ -260,7 +260,7 @@ const BankProductsList = ({
   if (isLoading) return <Spinner displayText="Loading mapped funds..." />;
 
   if (!mappedFund || mappedFund.length === 0)
-    return <p className="text-center">No mapped funds found.</p>;
+    return <p className="p-4">No mapped funds found.</p>;
 
   return (
     <div className="mx-auto w-full">

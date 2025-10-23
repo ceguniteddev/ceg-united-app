@@ -1,8 +1,12 @@
 import IconMenu from "@/components/icon-menu";
 import { Button } from "@/components/ui/button";
-import { UserActiveStatus, UserActiveStatusEnum, UserWithId } from "@/schema/registration";
+import {
+  UserActiveStatus,
+  UserActiveStatusEnum,
+  UserWithId,
+} from "@/schema/registration";
 import { format } from "date-fns";
-import { CircleX, Loader2Icon, RefreshCcw, Trash2Icon, XIcon } from "lucide-react";
+import { Loader2Icon, RefreshCcw, XIcon } from "lucide-react";
 import type { Metadata } from "next";
 import React, { useCallback } from "react";
 import {
@@ -35,7 +39,11 @@ function toDate(d?: string | Date) {
 
 function fmtDate(d?: Date) {
   if (!d || isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
 }
 
 export const metadata: Metadata = {
@@ -48,13 +56,17 @@ const ClientData = ({ user }: { user: UserWithId }) => {
   }
 
   const registered = toDate(user.registrationDate);
-  const name = [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ");
+  const name = [user.firstName, user.middleName, user.lastName]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <main className="mx-auto w-full">
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <header className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight">Personal Information</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Personal Information
+          </h1>
         </header>
         <header className="mb-6 flex items-center justify-between">
           <RefreshCRSData userId={user.id} />
@@ -67,7 +79,10 @@ const ClientData = ({ user }: { user: UserWithId }) => {
           <Info label="Email" value={user.email} />
           <Info label="Phone" value={user.phoneNumber} />
 
-          <Info label="Birthdate" value={format(user.birthdate, "MMM d, yyyy")} />
+          <Info
+            label="Birthdate"
+            value={format(user.birthdate, "MMM d, yyyy")}
+          />
           <Info label="Gender" value={user.gender || "—"} />
 
           <Info label="Registered" value={fmtDate(registered)} />
@@ -87,7 +102,9 @@ export default ClientData;
 function Info({ label, value }: { label: string; value?: string }) {
   return (
     <div className="rounded-xl border border-gray-100 p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</div>
+      <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+        {label}
+      </div>
       <div className="mt-1 text-sm text-gray-900">{value || "—"}</div>
     </div>
   );
@@ -125,14 +142,18 @@ const STATUS_STYLES: Record<
 };
 
 const StatusPicker = ({ user }: { user: UserWithId }) => {
-  const styles = STATUS_STYLES[user.activeStatus || "Active"] ?? STATUS_STYLES.Active;
+  const styles =
+    STATUS_STYLES[user.activeStatus || "Active"] ?? STATUS_STYLES.Active;
 
   const { updateUserStatus, isUpdating } = useUpdateUserStatusMutation();
 
   const handleStatusChange = useCallback(
     async (value: string) => {
       if (value) {
-        await updateUserStatus({ id: user.id, status: value as UserActiveStatus });
+        await updateUserStatus({
+          id: user.id,
+          status: value as UserActiveStatus,
+        });
       }
     },
     [updateUserStatus, user.id]
@@ -146,7 +167,9 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
         styles.chipBg, // container background
       ].join(" ")}
     >
-      <span className={["text-sm font-medium", styles.text].join(" ")}>Status</span>
+      <span className={["text-sm font-medium", styles.text].join(" ")}>
+        Status
+      </span>
 
       <Select
         disabled={!!isUpdating}
@@ -186,7 +209,8 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
 };
 
 const RefreshCRSData = ({ userId }: { userId: string }) => {
-  const [refreshConfirmationOpen, setRefreshConfirmationOpen] = React.useState(false);
+  const [refreshConfirmationOpen, setRefreshConfirmationOpen] =
+    React.useState(false);
   const { isUpdating, refreshCRSData } = useRefreshCRSData();
 
   const handleRefreshCRSData = useCallback(async () => {
@@ -205,7 +229,10 @@ const RefreshCRSData = ({ userId }: { userId: string }) => {
         className="cursor-pointer bg-blue-200 hover:bg-blue-300"
         onClick={() => setRefreshConfirmationOpen(true)}
       >
-        <IconMenu icon={<RefreshCcw className="h-4 w-4" />} text="Refresh CRS Data" />
+        <IconMenu
+          icon={<RefreshCcw className="h-4 w-4" />}
+          text="Refresh CRS Data"
+        />
       </Button>
 
       {refreshConfirmationOpen && (
@@ -225,7 +252,10 @@ const RefreshCRSData = ({ userId }: { userId: string }) => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="cursor-pointer" disabled={isUpdating}>
+              <AlertDialogCancel
+                className="cursor-pointer"
+                disabled={isUpdating}
+              >
                 <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
               </AlertDialogCancel>
               <AlertDialogAction
@@ -242,7 +272,10 @@ const RefreshCRSData = ({ userId }: { userId: string }) => {
                     icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
                   />
                 ) : (
-                  <IconMenu text="Refresh" icon={<RefreshCcw className="h-4 w-4" />} />
+                  <IconMenu
+                    text="Refresh"
+                    icon={<RefreshCcw className="h-4 w-4" />}
+                  />
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>

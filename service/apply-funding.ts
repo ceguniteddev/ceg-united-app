@@ -131,9 +131,11 @@ export const getFundingApplications = async ({
   return results;
 };
 
-export const getApplyFundingByReferenceNumber = async (
-  referenceNumber: string
-): Promise<ApplyFunding | null> => {
+export const getApplyFundingByReferenceNumber = async ({
+  referenceNumber,
+}: {
+  referenceNumber: string;
+}): Promise<ApplyFunding | null> => {
   if (!referenceNumber) {
     throw new AppError("Reference number is required.");
   }
@@ -143,7 +145,11 @@ export const getApplyFundingByReferenceNumber = async (
     .doc(referenceNumber)
     .get();
   if (!doc.exists) return null;
-  return { id: doc.id, ...normalizeAllDates(doc.data()) };
+  return {
+    id: doc.id,
+    referenceNumber: doc.id,
+    ...normalizeAllDates(doc.data()),
+  };
 };
 
 export const deleteApplyFunding = async (
@@ -153,7 +159,7 @@ export const deleteApplyFunding = async (
     throw new AppError("Reference number is required.");
   }
 
-  const data = await getApplyFundingByReferenceNumber(referenceNumber);
+  const data = await getApplyFundingByReferenceNumber({ referenceNumber });
   if (!data) {
     throw new AppError("Funding application not found.");
   }
@@ -240,7 +246,7 @@ export const updateApplicationStatus = async (
 ) => {
   logInfo("updateApplicationStatus", { referenceNumber, status });
 
-  const data = await getApplyFundingByReferenceNumber(referenceNumber);
+  const data = await getApplyFundingByReferenceNumber({ referenceNumber });
   if (!data) throw new AppError("Funding application not found.");
 
   const db = firestoreAdmin();
@@ -259,9 +265,9 @@ export const addFundApplicationNotes = async ({
   if (!referenceNumber) throw new AppError("Reference number is required.");
   if (!notes) throw new AppError("Notes is required.");
 
-  const fundApplicationData = await getApplyFundingByReferenceNumber(
-    referenceNumber
-  );
+  const fundApplicationData = await getApplyFundingByReferenceNumber({
+    referenceNumber,
+  });
   if (!fundApplicationData)
     throw new AppError("Funding application not found.");
 
@@ -278,9 +284,9 @@ export const getFundApplicationNotes = async (
 ): Promise<string[]> => {
   if (!referenceNumber) throw new AppError("Reference number is required.");
 
-  const fundApplicationData = await getApplyFundingByReferenceNumber(
-    referenceNumber
-  );
+  const fundApplicationData = await getApplyFundingByReferenceNumber({
+    referenceNumber,
+  });
   if (!fundApplicationData)
     throw new AppError("Funding application not found.");
 

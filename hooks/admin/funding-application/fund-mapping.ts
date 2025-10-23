@@ -10,6 +10,7 @@ import {
   approveMappedFund,
   cancelMappedFund,
   declineAppliedBankProduct,
+  fundedAppliedBankProduct,
   getApprovedMappedFunds,
   getFundMappingAnalysis,
   getFundMappingAnalysisDetails,
@@ -148,7 +149,7 @@ export const useFundingApplicationsMappedFundsMutation = () => {
       queryClient.invalidateQueries({
         queryKey: ["GET_FUNDING_APPLICATIONS"],
       });
-      toast.success("Fund successfully approved.");
+      // toast.success("Fund successfully approved.");
     },
     onError: (error: any) => {
       toast.error(error.message);
@@ -333,6 +334,50 @@ export const useApprovedMappedFundsMutation = () => {
     },
   });
 
+  const fundedAppliedBankProductMutation = useMutation({
+    mutationFn: async ({
+      referenceNumber,
+      fundMappingApprovedId,
+      fundedAmount,
+      fundedRemarks,
+    }: {
+      referenceNumber: string;
+      fundMappingApprovedId: string;
+      fundedAmount: number;
+      fundedRemarks?: string;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      await fundedAppliedBankProduct({
+        referenceNumber,
+        fundMappingApprovedId,
+        fundedAmount,
+        fundedRemarks,
+      });
+    },
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "GET_FUNDING_APPLICATION_MAPPED_FUNDS",
+          variable.referenceNumber,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["useClientMappedFundingDetailsQuery"],
+        exact: false,
+      });
+      toast.success("Fund application approved.");
+    },
+    onError: (error: any) => {
+      if (error instanceof AppError) {
+        toast.warning(error.message);
+      } else {
+        toast.warning(error.message);
+        console.error(error);
+      }
+    },
+  });
+
   const declineAppliedBankProductMutation = useMutation({
     mutationFn: async ({
       referenceNumber,
@@ -380,6 +425,9 @@ export const useApprovedMappedFundsMutation = () => {
 
     declineAppliedBankProduct: declineAppliedBankProductMutation.mutateAsync,
     isDeclining: declineAppliedBankProductMutation.isPending,
+
+    fundedAppliedBankProduct: fundedAppliedBankProductMutation.mutateAsync,
+    isFunding: fundedAppliedBankProductMutation.isPending,
   };
 };
 

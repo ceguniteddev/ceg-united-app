@@ -21,7 +21,7 @@ export const useAnalysisQuery = (referenceNumber: string) => {
       return data;
     },
     staleTime: 0,
-    refetchOnWindowFocus: true,
+    // refetchOnWindowFocus: true,
     refetchInterval: 5 * 60 * 1000,
   });
 

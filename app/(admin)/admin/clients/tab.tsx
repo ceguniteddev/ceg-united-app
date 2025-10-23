@@ -1,7 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import ClientData from "@/app/(admin)/admin/clients/view";
-import AdminMappedFunds from "@/components/funding/AdminMappedFunds";
+// import AdminMappedFunds from "@/components/funding/AdminMappedFunds";
 import { UserFundMapStatus, UserWithId } from "@/schema/registration";
 import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
 import SendEmail from "@/components/SendEmail";

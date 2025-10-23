@@ -13,7 +13,13 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { BanknoteIcon, BanknoteX, Loader2Icon } from "lucide-react";
+import {
+  BanknoteArrowUp,
+  BanknoteIcon,
+  BanknoteX,
+  CircleDollarSign,
+  Loader2Icon,
+} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,7 +62,6 @@ import { useApprovedMappedFundsMutation } from "@/hooks/admin/funding-applicatio
 import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Textarea } from "../ui/textarea";
 import { CustomFormField } from "../CustomFormField";
 
 const baseColumns: ColumnDef<BankFormData>[] = [
@@ -136,6 +141,14 @@ const baseColumns: ColumnDef<BankFormData>[] = [
     cell: ({ row }) => <div>{row.getValue("approvedRemarks")}</div>,
   },
   {
+    accessorKey: "fundedAmount",
+    id: "fundedAmount",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Funded Amount" />
+    ),
+    cell: ({ row }) => <div>{formatAmount(row.getValue("fundedAmount"))}</div>,
+  },
+  {
     id: "clientActions",
     cell: ({ row }) => <ActionCell row={row} />,
     size: 80,
@@ -175,7 +188,14 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
     // The optional chaining (?.) prevents errors if appliedFunding is undefined.
     const showApprovedColumns =
       appliedFunding?.some(
-        (fund) => fund.clientApplicationStatus === "Approved"
+        (fund) =>
+          fund.clientApplicationStatus === "Approved" ||
+          fund.clientApplicationStatus === "Funded"
+      ) || false;
+
+    const showFundedColumns =
+      appliedFunding?.some(
+        (fund) => fund.clientApplicationStatus === "Funded"
       ) || false;
 
     // 2. Filter the base columns based on all conditions.
@@ -195,6 +215,10 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
         !showApprovedColumns &&
         (column.id === "approvedAmount" || column.id === "approvedRemarks")
       ) {
+        return false;
+      }
+
+      if (!showFundedColumns && column.id === "fundedAmount") {
         return false;
       }
 
@@ -330,7 +354,7 @@ const ActionCell = ({ row }: { row: any }) => {
 
 const approvalFormSchema = z.object({
   amountApproved: z.coerce
-    .number<number>({ error: "Approved amount is required." })
+    .number<number>({ error: "Required" })
     .min(1, { error: "Amount must be greater than 0." }),
   remarks: z
     .string()
@@ -338,23 +362,44 @@ const approvalFormSchema = z.object({
     .optional(),
 });
 
+const fundedFormSchema = z.object({
+  amountFunded: z.coerce
+    .number<number>({ error: "Required" })
+    .min(1, { error: "Amount must be greater than 0." }),
+  remarksFunded: z
+    .string()
+    .max(500, { error: "Remarks cannot exceed 500 characters." })
+    .optional(),
+});
+
 // Infer the type from the schema for type safety
 type ApprovalFormValues = z.infer<typeof approvalFormSchema>;
+type FundedFormValues = z.infer<typeof fundedFormSchema>;
 
 const AdminActionCell = ({ row }: { row: any }) => {
   const [isApproveDialogOpen, setApproveDialogOpen] = React.useState(false);
+  const [isFundedDialogOpen, setFundedDialogOpen] = React.useState(false);
 
   const {
     approveAppliedBankProduct,
     isApproving,
     declineAppliedBankProduct,
     isDeclining,
+    fundedAppliedBankProduct,
+    isFunding,
   } = useApprovedMappedFundsMutation();
 
   const form = useForm<ApprovalFormValues>({
     resolver: zodResolver(approvalFormSchema),
     defaultValues: {
       remarks: "",
+    },
+  });
+
+  const formFunded = useForm<FundedFormValues>({
+    resolver: zodResolver(fundedFormSchema),
+    defaultValues: {
+      remarksFunded: "",
     },
   });
 
@@ -366,124 +411,208 @@ const AdminActionCell = ({ row }: { row: any }) => {
   };
 
   const onApproveSubmit = async (data: ApprovalFormValues) => {
-    console.log("Submitting with data:", data);
     await approveAppliedBankProduct({
       fundMappingApprovedId: row.original.fundMappingApprovedId,
       referenceNumber: row.original.referenceNumber,
       approvedAmount: data.amountApproved,
       approvedRemarks: data.remarks,
     });
-    // Close the dialog and reset the form on success
     form.reset();
     setApproveDialogOpen(false);
   };
 
+  const onFundedSubmit = async (data: FundedFormValues) => {
+    await fundedAppliedBankProduct({
+      fundMappingApprovedId: row.original.fundMappingApprovedId,
+      referenceNumber: row.original.referenceNumber,
+      fundedAmount: data.amountFunded,
+      fundedRemarks: data.remarksFunded,
+    });
+    form.reset();
+    setFundedDialogOpen(false);
+  };
+
+  const showDeclineButton =
+    row.original.clientApplicationStatus === "Approved" ||
+    row.original.clientApplicationStatus === "Sent to Lender";
+
+  const showApproveButton =
+    row.original.clientApplicationStatus === "Sent to Lender" ||
+    row.original.clientApplicationStatus === "Declined";
+
+  const showFundedButton = row.original.clientApplicationStatus === "Approved";
+
   return (
     <div className="flex flex-row gap-2">
-      {/* --- MODIFICATION START --- */}
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            className="bg-red-300 hover:bg-red-400 cursor-pointer"
-            disabled={
-              isDeclining ||
-              isApproving ||
-              row.original.clientApplicationStatus === "Declined"
-            }
-          >
-            {isDeclining ? (
-              <>
-                <Loader2Icon className="h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <BanknoteX className="h-4 w-4 mr-2" /> Decline
-              </>
-            )}
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmation?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You are about to decline the funding application.
-              <br />
-              Please confirm your action.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
-              onClick={handleDeclineClickCapture}
+      {showDeclineButton && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="bg-red-300 hover:bg-red-400 cursor-pointer"
+              disabled={
+                isDeclining ||
+                isApproving ||
+                row.original.clientApplicationStatus === "Declined"
+              }
             >
-              Yes, Decline
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <Dialog open={isApproveDialogOpen} onOpenChange={setApproveDialogOpen}>
-        <DialogTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            className="bg-green-200 hover:bg-green-400 cursor-pointer"
-            disabled={
-              isApproving ||
-              isDeclining ||
-              row.original.clientApplicationStatus === "Approved"
-            }
-          >
-            <BanknoteIcon className="h-4 w-4 mr-2" /> Approve
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Approve Funding Application</DialogTitle>
-            <DialogDescription>
-              Enter the approved amount and any relevant remarks below. Click
-              confirm to finalize.
-            </DialogDescription>
-          </DialogHeader>
-
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onApproveSubmit)}
-              className="space-y-4 py-4"
+              {isDeclining ? (
+                <>
+                  <Loader2Icon className="h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <BanknoteX className="h-4 w-4 " /> Decline
+                </>
+              )}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmation?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You are about to decline the funding application.
+                <br />
+                Please confirm your action.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="cursor-pointer">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+                onClick={handleDeclineClickCapture}
+              >
+                Yes, Decline
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+      {showApproveButton && (
+        <Dialog open={isApproveDialogOpen} onOpenChange={setApproveDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="bg-green-200 hover:bg-green-400 cursor-pointer"
+              disabled={
+                isApproving ||
+                isDeclining ||
+                row.original.clientApplicationStatus === "Approved"
+              }
             >
-              <CustomFormField
-                name="amountApproved"
-                type="number"
-                label="Approved Amount *"
-              />
+              <BanknoteIcon className="h-4 w-4 " /> Approve
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Approve Funding Application</DialogTitle>
+              <DialogDescription>
+                Enter the approved amount and any relevant remarks below. Click
+                confirm to finalize.
+              </DialogDescription>
+            </DialogHeader>
 
-              <CustomFormField name="remarks" type="textarea" label="Remarks" />
-              <DialogFooter>
-                <Button
-                  type="submit"
-                  className="bg-green-600 hover:bg-green-700 cursor-pointer"
-                  disabled={isApproving}
-                >
-                  {isApproving ? (
-                    <>
-                      <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    "Confirm Approval"
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onApproveSubmit)}
+                className="space-y-4 py-4"
+              >
+                <CustomFormField
+                  name="amountApproved"
+                  type="number"
+                  label="Approved Amount *"
+                />
+
+                <CustomFormField
+                  name="remarks"
+                  type="textarea"
+                  label="Remarks"
+                />
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                    disabled={isApproving}
+                  >
+                    {isApproving ? (
+                      <>
+                        <Loader2Icon className=" h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Confirm Approval"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {showFundedButton && (
+        <Dialog open={isFundedDialogOpen} onOpenChange={setFundedDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="bg-green-200 hover:bg-green-400 cursor-pointer"
+              disabled={isApproving || isDeclining || isFunding}
+            >
+              <CircleDollarSign className="h-4 w-4" /> Funded
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Lender Funds</DialogTitle>
+              {/* <DialogDescription>
+                Enter the funded amount and any relevant remarks below. Click
+                confirm to finalize.
+              </DialogDescription> */}
+            </DialogHeader>
+
+            <Form {...formFunded}>
+              <form
+                onSubmit={formFunded.handleSubmit(onFundedSubmit)}
+                className="space-y-4 py-4"
+              >
+                <CustomFormField
+                  name="amountFunded"
+                  type="number"
+                  label="Funded Amount *"
+                />
+
+                <CustomFormField
+                  name="remarksFunded"
+                  type="textarea"
+                  label="Remarks"
+                />
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                    disabled={isFunding}
+                  >
+                    {isFunding ? (
+                      <>
+                        <Loader2Icon className=" h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Confirm Funded"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

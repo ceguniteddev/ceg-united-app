@@ -69,7 +69,7 @@ const AdminViewApplication = ({ formSetOpen, formData }: Props) => {
         />
       </TabsContent>
       <TabsContent value="application" className="w-full">
-        <FundingApplicationView setOpen={formSetOpen} data={formData} />
+        <FundingApplicationView data={formData} />
       </TabsContent>
       <TabsContent value="user-profile" className="w-full">
         <AdminViewUserProfile userId={formData?.userId ?? ""} />
@@ -80,10 +80,7 @@ const AdminViewApplication = ({ formSetOpen, formData }: Props) => {
       </TabsContent>
 
       <TabsContent value="analysis" className="w-full">
-        <AnalysisView
-          referenceNumber={formData?.referenceNumber ?? ""}
-          setOpen={formSetOpen}
-        />
+        <AnalysisView referenceNumber={formData?.referenceNumber ?? ""} />
       </TabsContent>
 
       <TabsContent value="approve-decline" className="w-full">

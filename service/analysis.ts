@@ -14,7 +14,7 @@ import { normalizeAllDates } from "@/lib/date-parser";
 export const getAnalysis = async (referenceNumber: string) => {
   logInfo("getAnalysis", { referenceNumber });
 
-  const data = await getApplyFundingByReferenceNumber(referenceNumber);
+  const data = await getApplyFundingByReferenceNumber({ referenceNumber });
   if (!data) throw new AppError("Funding application not found.");
 
   const db = firestoreAdmin();
@@ -41,7 +41,7 @@ export const recordAnalysis = async (userId: string, referenceNumber: string, an
 
   logInfo("recordAnalysis", { userId, referenceNumber });
 
-  const fundingApplication = await getApplyFundingByReferenceNumber(referenceNumber);
+  const fundingApplication = await getApplyFundingByReferenceNumber({ referenceNumber });
   if (!fundingApplication) throw new AppError("Funding application reference number not found.");
 
   const userData = await getUserById(userId);

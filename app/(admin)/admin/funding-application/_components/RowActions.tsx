@@ -13,6 +13,7 @@ import { MoreHorizontal, SquarePen } from "lucide-react";
 import { ApplyFunding } from "@/schema/apply-funding";
 import ViewApplication from "@/components/funding/AdminViewApplication";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Props = {
   data: ApplyFunding;
@@ -20,6 +21,11 @@ type Props = {
 
 export function RowActions({ data }: Props) {
   const [open, setOpen] = useState(false);
+
+  const router = useRouter();
+  const handleOpen = () => {
+    router.push(`/admin/funding-application/${data.referenceNumber}`);
+  };
 
   return (
     <>
@@ -46,7 +52,7 @@ export function RowActions({ data }: Props) {
           <DropdownMenuItem className="group flex w-full items-center justify-between  text-left p-0 text-sm font-base text-neutral-500 ">
             <button
               onClick={() => {
-                setOpen(true);
+                handleOpen();
               }}
               className="cursor-pointer w-full justify-start flex rounded-md p-2 transition-all duration-75 hover:bg-neutral-100 cursor-pointer"
             >

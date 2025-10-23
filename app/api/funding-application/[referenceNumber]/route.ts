@@ -14,7 +14,7 @@ export const GET = withAuth(
     }
 
     try {
-      const data = await getApplyFundingByReferenceNumber(referenceNumber);
+      const data = await getApplyFundingByReferenceNumber({ referenceNumber });
       return NextResponse.json(data, { status: 200 });
     } catch (error: any) {
       console.error("Unexpected error:", error);
