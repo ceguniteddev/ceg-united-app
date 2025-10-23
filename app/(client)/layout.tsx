@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "CEG United LLC",
   description: "CEG United LLC",
   icons: {
-    icon: "../icon.ico",
+    icon: "/icon.ico",
   },
 };
 
@@ -22,7 +22,9 @@ export default function ClientLayout({
 
       <main className="flex h-screen w-full font-inter">
         <Sidebar />
-        <div className="flex size-full flex-col overflow-y-auto">{children}</div>
+        <div className="flex size-full flex-col overflow-y-auto">
+          {children}
+        </div>
       </main>
     </div>
   );

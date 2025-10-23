@@ -1,4 +1,4 @@
-'use server";';
+"use server";
 import { getUserById, getUsers } from "./user";
 import { getApplyFunding, getFundingApplications } from "./apply-funding";
 import { getBusiness } from "./business";
@@ -65,7 +65,6 @@ export const getClientStatistics = async (userId: string) => {
     userId,
     clientApplicationStatus: ["Approved"],
   });
-  console.log("approvedFunds ", approvedFunds);
 
   // get total funding approved amount
   const crsReportData = await getCRSReport(userId);
