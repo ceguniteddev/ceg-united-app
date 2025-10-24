@@ -66,23 +66,21 @@ export async function createEnterpriseAssessment(
     parent: projectPath,
   };
 
-  console.log("request", request);
-
   const [response] = await client.createAssessment(request);
 
   // 1. Check if the token is valid.
   if (!response.tokenProperties?.valid) {
     const invalidReason =
       response.tokenProperties?.invalidReason || "NO_REASON_GIVEN";
-    console.error(`reCAPTCHA token invalid: ${invalidReason}`);
+    // console.error(`reCAPTCHA token invalid: ${invalidReason}`);
     throw new AppError(`The reCAPTCHA token was invalid: ${invalidReason}`);
   }
 
   // 2. Check if the action matches what we expect.
   if (response.tokenProperties.action !== recaptchaAction) {
-    console.error(
-      `reCAPTCHA action mismatch. Expected: ${recaptchaAction}, Got: ${response.tokenProperties.action}`
-    );
+    // console.error(
+    //   `reCAPTCHA action mismatch. Expected: ${recaptchaAction}, Got: ${response.tokenProperties.action}`
+    // );
     throw new AppError("reCAPTCHA action mismatch. Possible bot activity.");
   }
 
@@ -97,9 +95,9 @@ export async function createEnterpriseAssessment(
     throw new AppError(`Low reCAPTCHA score (${score}). Please try again.`);
   }
 
-  console.log(
-    `Successfully verified reCAPTCHA action '${recaptchaAction}' with score: ${score}`
-  );
+  // console.log(
+  //   `Successfully verified reCAPTCHA action '${recaptchaAction}' with score: ${score}`
+  // );
   return { score };
 }
 

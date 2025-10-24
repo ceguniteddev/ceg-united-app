@@ -126,7 +126,7 @@ export function AuthProvider({
           throw new AppError("Failed to login. Please refresh the page.");
 
         const captchaData = await createEnterpriseAssessment(token, "login");
-        console.log("captchaData", captchaData);
+
         if (!captchaData || captchaData.score < 0.5) {
           throw new AppError("Captcha verification failed. Please try again.");
         }
