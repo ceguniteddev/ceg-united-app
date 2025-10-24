@@ -1,0 +1,99 @@
+# Settings for Backend (on Cloud Run).
+# See https://firebase.google.com/docs/app-hosting/configure#cloud-run
+runConfig:
+  minInstances: 0
+  maxInstances: 1
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 2048
+# Environment variables and secrets.
+env:
+  # Configure environment variables.
+  # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
+  - variable: FIREBASE_DB_NAME
+    value: ceg-united-db-production
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FIREBASE_STORAGE_NAME
+    value: gs://cegunitedllc.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: ENVIRONMENT
+    value: production
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_ENVIRONMENT
+    value: production
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_APP_NAME
+    value: CEG United LLC
+    availability:
+      - RUNTIME
+  - variable: PLAID_ENV
+    value: sandbox
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: PLAID_PRODUCTS
+    value: auth,assets
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: REQUIRED_IF_SUPPORTED
+    value: identity,transactions,liabilities,investments
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: PLAID_COUNTRY_CODES
+    value: US
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    value: 6Lee4PQrAAAAALuBYm67k6mylVRb-VUyFTu9G7qm
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: EMAIL_USER
+    value: noreply@cegunited.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: n8n_HOST
+    value: https://n8n.srv967756.hstgr.cloud/webhook
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_CALENDLY_URL
+    value: https://calendly.com/cegunited-info/30min
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: PLAID_REDIRECT_URI
+    value: https://app.cegunited.com/redirect
+    availability:
+      - BUILD
+      - RUNTIME
+  # Grant access to secrets in Cloud Secret Manager.
+  # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
+  - variable: FIREBASE_CLIENT_EMAIL
+    secret: FIREBASE_CLIENT_EMAIL
+  - variable: FIREBASE_PRIVATE_KEY
+    secret: FIREBASE_PRIVATE_KEY
+  - variable: ADMIN_ACCESS_KEY
+    secret: ADMIN_ACCESS_KEY_PRODUCTION
+  - variable: PLAID_CLIENT_ID
+    secret: PLAID_CLIENT_ID
+  - variable: PLAID_SECRET
+    secret: PLAID_SECRET_PRODUCTION
+  - variable: RECAPTCHA_SECRET_KEY
+    secret: RECAPTCHA_SECRET_KEY_PRODUCTION
+  - variable: EMAIL_PASSWORD
+    secret: EMAIL_PASSWORD
+  - variable: ENCRYPTION_KEY
+    secret: ENCRYPTION_KEY
