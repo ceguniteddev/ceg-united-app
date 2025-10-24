@@ -50,80 +50,72 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { BankFormData } from "@/schema/bank-products";
-import { useBankProductsMutation, useBankProductsQuery } from "@/hooks/admin/bank-products";
+import {
+  useBankProductsMutation,
+  useBankProductsQuery,
+} from "@/hooks/admin/bank-products";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import BankProductsForm from "./form";
+import SortableHeader from "@/components/SortableHeader";
+
+const columns: ColumnDef<BankFormData>[] = [
+  {
+    accessorKey: "bankName",
+    id: "bankName",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Bank Name" />
+    ),
+
+    cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
+  },
+  {
+    accessorKey: "productName",
+    id: "productName",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Product Name" />
+    ),
+
+    cell: ({ row }) => {
+      const productNames = row.getValue("productName") as string[];
+
+      return (
+        <div className="flex flex-col gap-1">
+          {" "}
+          {/* gap-1 adds a small space between items */}
+          {productNames.map((name, index) => (
+            <span key={index}>{name}</span>
+          ))}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "financingTerm",
+    id: "financingTerm",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Product Type" />
+    ),
+
+    cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => <ActionCell row={row} />,
+    size: 80,
+  },
+];
 
 const BankProductsList = () => {
   const { products, isLoading } = useBankProductsQuery();
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [globalFilter, setGlobalFilter] = React.useState("");
-
-  const columns: ColumnDef<BankFormData>[] = useMemo(
-    () => [
-      {
-        accessorKey: "bankName",
-        id: "bankName",
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Bank Name <ArrowUpDown />
-          </Button>
-        ),
-        cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
-      },
-      {
-        accessorKey: "productName",
-        id: "productName",
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Product Name <ArrowUpDown />
-          </Button>
-        ),
-        cell: ({ row }) => {
-          const productNames = row.getValue("productName") as string[];
-
-          return (
-            <div className="flex flex-col gap-1">
-              {" "}
-              {/* gap-1 adds a small space between items */}
-              {productNames.map((name, index) => (
-                <span key={index}>{name}</span>
-              ))}
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: "financingTerm",
-        id: "financingTerm",
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Product Type <ArrowUpDown />
-          </Button>
-        ),
-        cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
-      },
-      {
-        id: "actions",
-        cell: ({ row }) => <ActionCell row={row} />,
-        size: 80,
-      },
-    ],
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [globalFilter, setGlobalFilter] = React.useState("");
 
   const table = useReactTable({
     data: products || [],
@@ -151,7 +143,8 @@ const BankProductsList = () => {
 
   if (isLoading) return <Spinner displayText="Loading bank products…" />;
 
-  if (!products || products.length === 0) return <p className="text-center">No bank products</p>;
+  if (!products || products.length === 0)
+    return <p className="text-center">No bank products</p>;
 
   return (
     <div className="mx-auto w-full">
@@ -175,7 +168,10 @@ const BankProductsList = () => {
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   );
                 })}
@@ -185,17 +181,26 @@ const BankProductsList = () => {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -213,7 +218,8 @@ export default BankProductsList;
 const ActionCell = ({ row }: { row: any }) => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [open, setOpen] = useState(false);
-  const { deleteBankProduct, isDeleting, isDeleteSuccess } = useBankProductsMutation();
+  const { deleteBankProduct, isDeleting, isDeleteSuccess } =
+    useBankProductsMutation();
 
   const handleDelete = async () => {
     await deleteBankProduct(row.original.id);
@@ -263,7 +269,10 @@ const ActionCell = ({ row }: { row: any }) => {
               className="cursor-pointer w-full justify-start rounded-md p-2 text-red-500 hover:bg-neutral-100"
               onClick={() => setIsDeleteOpen(true)}
             >
-              <IconMenu text="Delete" icon={<Trash2Icon className="h-4 w-4" />} />
+              <IconMenu
+                text="Delete"
+                icon={<Trash2Icon className="h-4 w-4" />}
+              />
             </Button>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -285,7 +294,10 @@ const ActionCell = ({ row }: { row: any }) => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting} className="cursor-pointer">
+              <AlertDialogCancel
+                disabled={isDeleting}
+                className="cursor-pointer"
+              >
                 <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
               </AlertDialogCancel>
               <AlertDialogAction
@@ -302,7 +314,10 @@ const ActionCell = ({ row }: { row: any }) => {
                     icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
                   />
                 ) : (
-                  <IconMenu text="Delete" icon={<Trash2Icon className="h-4 w-4 mr-2" />} />
+                  <IconMenu
+                    text="Delete"
+                    icon={<Trash2Icon className="h-4 w-4 mr-2" />}
+                  />
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>

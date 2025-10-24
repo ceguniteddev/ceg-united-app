@@ -32,7 +32,7 @@ const BankProductsPage = () => {
           onClick={() => setOpen(true)}
         >
           <PlusIcon className="h-4 w-4" />
-          Add New Bank Product
+          Add Bank Product
         </Button>
       </div>
 
