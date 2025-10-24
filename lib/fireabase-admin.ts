@@ -7,7 +7,8 @@ interface FirebaseAdminAppParams {
   privateKey: string;
 }
 
-export const formatPrivateKey = (privateKey: string) => privateKey.replace(/\\n/g, "\n");
+export const formatPrivateKey = (privateKey: string) =>
+  privateKey.replace(/\\n/g, "\n");
 
 const createFirebaseAdminApp = (params: FirebaseAdminAppParams) => {
   if (admin.apps.length > 0) {
@@ -40,7 +41,7 @@ const createFirebaseAdminApp = (params: FirebaseAdminAppParams) => {
 
 export const initFirebase = () => {
   const params = {
-    projectId: "cegunitedllc",
+    projectId: process.env.FIREBASE_PROJECT_ID as string,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL as string,
     storageBucket: process.env.FIREBASE_STORAGE_NAME as string,
     privateKey: process.env.FIREBASE_PRIVATE_KEY as string,
