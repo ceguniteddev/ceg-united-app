@@ -96,8 +96,8 @@ env:
     secret: PLAID_CLIENT_ID
   - variable: PLAID_SECRET
     secret: PLAID_SECRET_PRODUCTION
-  - variable: RECAPTCHA_SECRET_KEY
-    secret: RECAPTCHA_SECRET_KEY_PRODUCTION
+  # - variable: RECAPTCHA_SECRET_KEY
+  #   secret: RECAPTCHA_SECRET_KEY_PRODUCTION
   - variable: EMAIL_PASSWORD
     secret: EMAIL_PASSWORD
   - variable: ENCRYPTION_KEY
