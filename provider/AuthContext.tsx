@@ -67,7 +67,7 @@ export function AuthProvider({
     // No need to create a session here, just get user data
     const userData = await getUser(firebaseUser.email || "");
     if (!userData) {
-      throw new AppError("User not found.");
+      return;
     }
     const userRole = userData?.role ?? ("Admin" as Role);
 
