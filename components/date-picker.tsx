@@ -1,4 +1,8 @@
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Calendar } from "./ui/calendar";
@@ -7,6 +11,7 @@ import { Input } from "./ui/input";
 import React from "react";
 import { CalendarIcon, CalendarXIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FormControl } from "./ui/form";
 
 interface DatePickerProps {
   isOpen: boolean;
@@ -20,21 +25,28 @@ interface DatePickerProps {
   inputProps?: any;
   dateBeforeHidden?: Date;
   dateAfterHidden?: Date;
+  nextYear?: number;
+  previousYear?: number;
 }
 const DatePicker = ({
   isOpen,
   setIsOpen,
   date,
   handleDateChange,
-  fromYear = 1900,
-  toYear = 2099,
   isDateTime = false,
   minInterval = 5,
   inputProps,
   dateBeforeHidden,
   dateAfterHidden,
-}: DatePickerProps) => {
+}: // nextYear,
+// previousYear,
+DatePickerProps) => {
   const parseDate = date ? new Date(date) : null;
+
+  // get current year
+  const currentYear = new Date().getFullYear();
+  // const previousYearData = currentYear - previousYear;
+  const nextYear = currentYear + 20;
 
   const dateChangeHandler = (newDate: Date) => {
     handleDateChange(newDate);
@@ -61,7 +73,9 @@ const DatePicker = ({
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen} modal={true}>
-      <Input {...inputProps} />
+      <FormControl>
+        <Input {...inputProps} />
+      </FormControl>
 
       {date && (
         <Button
@@ -77,7 +91,11 @@ const DatePicker = ({
       )}
 
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className={cn("absolute right-0 rounded-none px-2")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("absolute right-0 rounded-none px-2")}
+        >
           <CalendarIcon className="h-4 w-4 text-dark-500" />
         </Button>
       </PopoverTrigger>
@@ -90,6 +108,8 @@ const DatePicker = ({
             onSelect={(newDate) => dateChangeHandler(newDate as Date)}
             defaultMonth={date}
             hidden={hidden}
+            // startMonth={new Date(previousYear, 0)}
+            endMonth={new Date(nextYear, 11)}
           />
 
           {isDateTime && (
@@ -100,7 +120,11 @@ const DatePicker = ({
                     <Button
                       key={hour}
                       size="icon"
-                      variant={parseDate && parseDate.getHours() === hour ? "default" : "ghost"}
+                      variant={
+                        parseDate && parseDate.getHours() === hour
+                          ? "default"
+                          : "ghost"
+                      }
                       className="sm:w-full shrink-0 aspect-square"
                       onClick={() => handleTimeChange("hour", hour.toString())}
                     >
@@ -112,17 +136,24 @@ const DatePicker = ({
               </ScrollArea>
               <ScrollArea className="w-64 sm:w-auto">
                 <div className="flex sm:flex-col p-2">
-                  {Array.from({ length: 60 / minInterval }, (_, i) => i * minInterval)
+                  {Array.from(
+                    { length: 60 / minInterval },
+                    (_, i) => i * minInterval
+                  )
                     .filter((minute) => minute < 60)
                     .map((minute) => (
                       <Button
                         key={minute}
                         size="icon"
                         variant={
-                          parseDate && parseDate.getMinutes() === minute ? "default" : "ghost"
+                          parseDate && parseDate.getMinutes() === minute
+                            ? "default"
+                            : "ghost"
                         }
                         className="sm:w-full shrink-0 aspect-square"
-                        onClick={() => handleTimeChange("minute", minute.toString())}
+                        onClick={() =>
+                          handleTimeChange("minute", minute.toString())
+                        }
                       >
                         {minute.toString().padStart(2, "0")}
                       </Button>

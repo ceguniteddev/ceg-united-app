@@ -1,117 +1,229 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from "firebase/auth";
+import {
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  User,
+} from "firebase/auth";
 import { authFirebase } from "@/lib/firebase";
-import { createSession, deleteCookie, logoutSession } from "@/lib/session";
+import {
+  createSession,
+  deleteCookie,
+  logoutSession,
+  refreshSession,
+} from "@/lib/session";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { getUser } from "@/service/user";
 import { Role } from "@/schema";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  verifyCaptchaToken,
+  createEnterpriseAssessment,
+} from "@/lib/captcha/captcha";
+import AppError from "@/error/AppError";
 
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
+  isOnboarded: boolean;
   role: Role | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (
+    token: string | null,
+    email: string,
+    password: string
+  ) => Promise<void>;
   logOut: () => Promise<void>;
+  resetPassword: (token: string | null, email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { readonly children: React.ReactNode }) {
+export function AuthProvider({
+  children,
+}: {
+  readonly children: React.ReactNode;
+}) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isOnboarded, setIsOnboarded] = useState(false);
   const [loading, setLoading] = useState(true); // Still true to prevent flicker on load
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // Helper function to load user role and set state
   const loadAndSetUserData = useCallback(async (firebaseUser: User) => {
     // No need to create a session here, just get user data
     const userData = await getUser(firebaseUser.email || "");
-    const userRole = userData?.role ?? "Staff";
+    if (!userData) {
+      throw new AppError("User not found.");
+    }
+    const userRole = userData?.role ?? ("Admin" as Role);
 
     setUser(firebaseUser);
-    setRole(userRole);
-    setIsAdmin(userRole === "Admin" || userRole === "IT");
+    setRole(userRole as Role);
+    setIsAdmin(userRole === "Admin");
+    setIsOnboarded(userData.isOnboarded || false);
   }, []);
 
   const logOut = useCallback(async () => {
-    // 1. Revoke server session and delete cookie
-    await logoutSession();
-    // 2. Sign out from Firebase client
-    await signOut(authFirebase);
-    // 3. Clear local state
+    await Promise.all([await logoutSession(), await authFirebase.signOut()]);
+
+    await queryClient.cancelQueries({ predicate: () => true });
+    queryClient.clear();
     setUser(null);
     setRole(null);
     setIsAdmin(false);
-    // 4. Redirect to home
+    setIsOnboarded(false);
+
     router.push("/");
-  }, [router]);
+  }, [router, queryClient]);
 
-  // useEffect now only syncs client state with Firebase auth state
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(authFirebase, async (firebaseUser) => {
-      try {
-        if (firebaseUser) {
-          // User is signed in on the client. Load their role and update state.
-          await loadAndSetUserData(firebaseUser);
-        } else {
-          // User is signed out. Clear all local state.
-          setUser(null);
-          setRole(null);
-          setIsAdmin(false);
+    const unsubscribe = onAuthStateChanged(
+      authFirebase,
+      async (firebaseUser) => {
+        try {
+          if (firebaseUser) {
+            await loadAndSetUserData(firebaseUser);
+          } else {
+            setUser(null);
+            setRole(null);
+            setIsAdmin(false);
+            setIsOnboarded(false);
+          }
+        } catch (error) {
+          console.error("Error during auth state change:", error);
+          // DO NOT call logOut() here.
+          // Optionally keep firebaseUser and use a cached role, or default to 'Staff'.
+          if (firebaseUser) {
+            setUser(firebaseUser);
+            setRole((r) => r ?? ("Staff" as Role));
+          }
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        // If loading user data fails, treat it as a logout
-        console.error("Error during auth state change:", error);
-        await logOut();
-      } finally {
-        // We are done with the initial auth check
-        setLoading(false);
       }
-    });
-
-    // Cleanup subscription on unmount
+    );
     return () => unsubscribe();
-  }, [loadAndSetUserData, logOut]);
+  }, [loadAndSetUserData]);
 
   const signIn = useCallback(
-    async (email: string, password: string) => {
+    async (token: string | null, email: string, password: string) => {
       try {
-        // 1. Sign in with Firebase
-        const userCredential = await signInWithEmailAndPassword(authFirebase, email, password);
-        const firebaseUser = userCredential.user;
+        if (!token)
+          throw new AppError("Failed to login. Please refresh the page.");
 
-        // 2. Get the ID token from the signed-in user
+        const captchaData = await createEnterpriseAssessment(token, "login");
+
+        if (!captchaData || captchaData.score < 0.5) {
+          throw new AppError("Captcha verification failed. Please try again.");
+        }
+
+        const userRole = await getUser(email || "");
+        if (!userRole) throw new AppError("Invalid email or password.");
+
+        // local cleanup only; don't revoke all sessions
+        try {
+          await authFirebase.signOut();
+        } catch {}
+        try {
+          await deleteCookie(FIREBASE_TOKEN_NAME);
+        } catch {}
+
+        const { user: firebaseUser } = await signInWithEmailAndPassword(
+          authFirebase,
+          email,
+          password
+        );
+        if (!firebaseUser?.emailVerified)
+          throw new AppError("Please verify your email before signing in.");
+
         const idToken = await firebaseUser.getIdToken(true);
-
-        // 3. Create the server-side session cookie (THIS IS THE KEY CHANGE)
         await createSession(idToken);
 
-        // 4. Load the user's role and set the local state
+        await queryClient.cancelQueries({ predicate: () => true });
+        queryClient.clear();
+
+        // Single source of truth for user/role
         await loadAndSetUserData(firebaseUser);
 
-        // 5. Redirect to the desired page
-        router.push("/overview");
+        // Use the role you just set instead of refetching
+        const nextRole = userRole.role ?? ("Admin" as Role);
+        router.push(nextRole === "Client" ? "/overview" : "/admin/home");
       } catch (error) {
-        console.error("Error signing in:", error);
-        // Ensure no stale cookie if sign-in fails
-        deleteCookie(FIREBASE_TOKEN_NAME);
+        if (error instanceof AppError) throw error;
+        try {
+          await deleteCookie(FIREBASE_TOKEN_NAME);
+        } catch {}
         throw new Error("Invalid email or password.");
       }
     },
-    [router, loadAndSetUserData]
+    [loadAndSetUserData, queryClient, router]
+  );
+
+  const resetPassword = useCallback(
+    async (token: string | null, email: string) => {
+      if (!token)
+        throw new AppError("Failed to login. Please refresh the page.");
+
+      const captchaData = await createEnterpriseAssessment(
+        token,
+        "forgot_password"
+      );
+      if (!captchaData || captchaData.score < 0.5) {
+        throw new AppError("Captcha verification failed. Please try again.");
+      }
+
+      // Optional: where Firebase should redirect after the user finishes reset flow
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+      const actionCodeSettings = appUrl
+        ? { url: `${appUrl}/login?reset=1`, handleCodeInApp: false }
+        : undefined;
+
+      try {
+        await sendPasswordResetEmail(authFirebase, email, actionCodeSettings);
+        // NOTE: Do not reveal whether the email exists.
+      } catch (err: any) {
+        // Avoid user enumeration; swallow 'user-not-found'
+        if (err?.code === "auth/user-not-found") return;
+        // Surface a generic message to the UI
+        throw new Error("Unable to send reset link. Please try again.");
+      }
+    },
+    []
   );
 
   const authContextValue = useMemo(
-    () => ({ user, role, isAdmin, signIn, logOut, loading }),
-    [user, role, isAdmin, signIn, logOut, loading]
+    () => ({
+      user,
+      role,
+      isAdmin,
+      signIn,
+      logOut,
+      loading,
+      isOnboarded,
+      resetPassword,
+    }),
+    [user, role, isAdmin, signIn, logOut, loading, isOnboarded, resetPassword]
   );
 
-  return <AuthContext.Provider value={authContextValue}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={authContextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

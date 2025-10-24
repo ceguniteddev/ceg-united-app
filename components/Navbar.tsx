@@ -6,13 +6,20 @@ import EnvironmentBanner from "@/components/development-banner";
 import Image from "next/image";
 
 import Logout from "@/components/logout";
+import { useRouter } from "next/navigation";
 
 const Navbar = () => {
+  const router = useRouter();
   return (
     <nav className="dashboard-navbar pb-1">
       <div className="dashboard-navbar__container">
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
+          <div
+            className="flex items-center space-x-2 cursor-pointer"
+            onClick={() => {
+              router.push("/");
+            }}
+          >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden">
               <Image
                 src="/icon.png"

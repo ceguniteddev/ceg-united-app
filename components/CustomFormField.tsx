@@ -1,6 +1,16 @@
 import React, { useState } from "react";
-import { ControllerRenderProps, FieldValues, useFormContext } from "react-hook-form";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  ControllerRenderProps,
+  FieldValues,
+  useFormContext,
+} from "react-hook-form";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -18,7 +28,8 @@ import DatePicker from "./date-picker";
 import { MultiSelect } from "./multi-select";
 import { SearchableInput } from "./input-search";
 import { NumberInput } from "./input-number";
-
+import dynamic from "next/dynamic";
+const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 interface FormFieldProps {
   name: string;
   label?: string;
@@ -36,6 +47,7 @@ interface FormFieldProps {
     | "multi-select"
     | "input-search"
     | "hidden"
+    | "editor"
     | "file";
   // | "multi-input";
   placeholder?: string;
@@ -67,6 +79,7 @@ interface FormFieldProps {
   dateAfterHidden?: Date | undefined;
   numberPrefix?: string;
   decimalScale?: number;
+  editorHeight?: number;
 }
 
 export const CustomFormField: React.FC<FormFieldProps> = ({
@@ -100,12 +113,15 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
   dateAfterHidden = undefined,
   numberPrefix,
   decimalScale = 2,
+  editorHeight,
 }) => {
   const { control } = useFormContext();
 
   const [isDOBCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
 
-  const renderFormControl = (field: ControllerRenderProps<FieldValues, string>) => {
+  const renderFormControl = (
+    field: ControllerRenderProps<FieldValues, string>
+  ) => {
     const handleChange = (
       // e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
       e: any
@@ -116,7 +132,9 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
       }
     };
 
-    const handleSelectChange: (value: string | string[]) => void = (value: string | string[]) => {
+    const handleSelectChange: (value: string | string[]) => void = (
+      value: string | string[]
+    ) => {
       field.onChange(value);
       if (onSelectValue) {
         onSelectValue(value);
@@ -185,6 +203,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
               handleDateChange={handleChange}
               dateBeforeHidden={dateBeforeHidden}
               dateAfterHidden={dateAfterHidden}
+              // disabled={disabled}
               inputProps={{
                 ...field,
                 readOnly: true,
@@ -264,7 +283,12 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
         );
       case "textarea":
         return (
-          <Textarea placeholder={placeholder} {...field} rows={3} className={`${inputClassName}`} />
+          <Textarea
+            placeholder={placeholder}
+            {...field}
+            rows={3}
+            className={`${inputClassName}`}
+          />
         );
       case "select":
         return (
@@ -272,10 +296,13 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
             value={field.value || (initialValue as string)}
             defaultValue={field.value || (initialValue as string)}
             onValueChange={handleSelectChange}
+            disabled={disabled}
           >
-            <SelectTrigger className={`w-full ${inputClassName}`}>
-              <SelectValue placeholder={placeholder || "Select an option"} />
-            </SelectTrigger>
+            <FormControl>
+              <SelectTrigger className={`w-full ${inputClassName}`}>
+                <SelectValue placeholder={placeholder || "Select an option"} />
+              </SelectTrigger>
+            </FormControl>
             <SelectContent
               className="w-full shadow max-h-[300px] overflow-y-auto z-50"
               position="popper"
@@ -329,7 +356,19 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
             fixedDecimalScale={true}
             value={field.value ?? undefined}
             onValueChange={handleChangeNumber}
-            className={cn(disabled || readonly ? "border-none shadow-none" : "", className)}
+            className={cn(
+              disabled || readonly ? "border-none shadow-none" : "",
+              className
+            )}
+          />
+        );
+
+      case "editor":
+        return (
+          <Editor
+            height={editorHeight}
+            content={field.value}
+            onContentChange={field.onChange}
           />
         );
 
@@ -353,7 +392,8 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
   };
 
   initialValue = initialValue || "";
-  if (type === "date-picker" || type === "datetime-picker") initialValue = undefined;
+  if (type === "date-picker" || type === "datetime-picker")
+    initialValue = undefined;
 
   return (
     <FormField
@@ -368,20 +408,27 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
         >
           {label && type !== "switch" && type !== "checkbox-group" && (
             <div className="flex justify-between items-center">
-              <FormLabel className={`text-sm ${labelClassName}`}>{label}</FormLabel>
+              <FormLabel className={`text-sm ${labelClassName}`}>
+                {label}
+              </FormLabel>
 
               {!disabled &&
                 isIcon &&
                 type !== "file" &&
                 // type !== "multi-input" &&
-                type !== "date-picker" && <Edit className="size-4 text-customgreys-dirtyGrey" />}
+                type !== "date-picker" && (
+                  <Edit className="size-4 text-customgreys-dirtyGrey" />
+                )}
             </div>
           )}
 
           <FormControl>
             {renderFormControl({
               ...field,
-              value: field.value !== undefined && field.value !== "" ? field.value : initialValue,
+              value:
+                field.value !== undefined && field.value !== ""
+                  ? field.value
+                  : initialValue,
             })}
           </FormControl>
 

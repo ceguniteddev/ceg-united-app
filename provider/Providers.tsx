@@ -7,13 +7,13 @@ import { AuthProvider } from "@/provider/AuthContext";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-      <QueryProvider>
+    <QueryProvider>
+      <AuthProvider>
         <TooltipProvider>
           {children}
           <Toaster richColors closeButton position="top-right" />
         </TooltipProvider>
-      </QueryProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </QueryProvider>
   );
 }

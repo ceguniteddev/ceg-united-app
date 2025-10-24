@@ -10,6 +10,11 @@ runConfig:
 env:
   # Configure environment variables.
   # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
+  - variable: FIREBASE_PROJECT_ID
+    value: cegunitedllc
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: FIREBASE_DB_NAME
     value: ceg-united-db-staging
     availability:
@@ -34,6 +39,51 @@ env:
     value: CEG United LLC
     availability:
       - RUNTIME
+  - variable: PLAID_ENV
+    value: sandbox
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: PLAID_PRODUCTS
+    value: auth,assets
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: REQUIRED_IF_SUPPORTED
+    value: identity,transactions,liabilities,investments
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: PLAID_COUNTRY_CODES
+    value: US
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    value: 6LehUrMrAAAAAOtQ4f5x9JzYeLnxKnGE6P-9lQ9N
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: EMAIL_USER
+    value: noreply@cegunited.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: n8n_HOST
+    value: https://n8n.srv967756.hstgr.cloud/webhook
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_CALENDLY_URL
+    value: https://calendly.com/cegunited-info/30min
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: PLAID_REDIRECT_URI
+    value: https://staging.cegunited.com/redirect
+    availability:
+      - BUILD
+      - RUNTIME
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   - variable: FIREBASE_CLIENT_EMAIL
@@ -46,7 +96,11 @@ env:
     secret: PLAID_CLIENT_ID
   - variable: PLAID_SECRET
     secret: PLAID_SECRET_STAGING
-  - variable: PLAID_ENV
-    secret: PLAID_ENV_STAGING
   - variable: PASSWORD_PEPPER
     secret: PASSWORD_PEPPER_STAGING
+  - variable: RECAPTCHA_SECRET_KEY
+    secret: RECAPTCHA_SECRET_KEY_STAGING
+  - variable: EMAIL_PASSWORD
+    secret: EMAIL_PASSWORD
+  - variable: ENCRYPTION_KEY
+    secret: ENCRYPTION_KEY

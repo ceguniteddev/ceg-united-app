@@ -10,18 +10,19 @@ import { LogOutIcon, SettingsIcon, UserCircle2 } from "lucide-react";
 import { useAuth } from "@/provider/AuthContext";
 import Image from "next/image";
 import { JSX } from "react";
+import { useRouter } from "next/navigation";
 
 export default function UserNav(): JSX.Element | null {
   const { user, logOut } = useAuth();
-
+  const router = useRouter();
   if (!user) return null;
 
   const handleLogout = async () => {
-    try {
-      await logOut();
-    } catch (error) {
-      console.error("Failed to log out:", error);
-    }
+    await logOut();
+  };
+
+  const handleProfile = () => {
+    router.push("/profile");
   };
 
   return (
@@ -49,7 +50,7 @@ export default function UserNav(): JSX.Element | null {
 
       <DropdownMenuContent className="w-64" align="end">
         <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={handleProfile}>
             {user.photoURL ? (
               <Image
                 src={user.photoURL}
@@ -63,7 +64,7 @@ export default function UserNav(): JSX.Element | null {
               <UserCircle2 className="w-10 h-10 text-gray-400" />
             )}
             <div className="min-w-0 flex-1">
-              <p className="text-sm text-gray-500 truncate">{user.email}</p>
+              <p className="text-sm text-gray-500 truncate">{user.displayName}</p>
             </div>
           </div>
         </div>

@@ -19,6 +19,7 @@ interface Props {
   readonly className?: string;
   readonly id?: string;
   readonly onEscapeAttempt?: () => void;
+  readonly descriptionClassName?: string;
 }
 
 export function ResponsiveDialog({
@@ -30,15 +31,20 @@ export function ResponsiveDialog({
   className = "w-6/12",
   id = "dialog-form",
   onEscapeAttempt,
+  descriptionClassName,
 }: Props) {
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen} modal={false}>
+      {isOpen && (
+        <div className="animate-in fade-in-0 fixed inset-0 z-50 bg-black/50" />
+      )}
       <DialogContent
         id={id}
-        className={cn("max-h-[80vh] overflow-y-auto", className)}
+        className={cn("max-h-screen overflow-y-auto", className)}
         onInteractOutside={(e) => {
           e.preventDefault();
         }}
+        onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
           e.preventDefault();
           onEscapeAttempt?.();
@@ -46,7 +52,9 @@ export function ResponsiveDialog({
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription className={cn(descriptionClassName)}>
+            {description}
+          </DialogDescription>
         </DialogHeader>
         {children}
       </DialogContent>

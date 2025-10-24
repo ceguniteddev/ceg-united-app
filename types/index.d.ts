@@ -1,25 +1,52 @@
+import { FundingApplicationType } from "@/schema/apply-funding";
+import { ApprovedBankFormData, BankFormData } from "@/schema/bank-products";
+
 declare global {
+  type AdminApprovedStatus = "Approved" | "Pending";
   type DropdownOption = {
     label: string;
     value: string;
     icon?: React.ComponentType<{ className?: string }>;
     isRequired?: boolean;
+    category?: FundingApplicationType;
+    type?: string;
   };
 
-  type LinkTokenDoc = {
-    userId: string;
-    linkToken: string;
-    requestId: string;
-    expiresAt: Date;
-    createdAt: Date;
+  type AdminStatistics = {
+    totalClients: number;
+    totalFundingApplications: number;
+    totalApprovedApplications: number;
+    totalFundedApplications: number;
+    totalApprovedAmount: number;
+    totalFundedAmount: number;
+    countsByState: {
+      [key: string]: number;
+    };
+    countsByStatus: {
+      [key: string]: number;
+    };
   };
 
-  type PlaidAccessToken = {
-    id: string;
-    userId: string;
-    accessToken: string;
-    itemId: string;
-    createdAt: Date;
+  type UserDoc = {
+    name: string;
+    path: string;
+    contentType?: string;
+    size: number;
+    updated: string;
+    signedUrl: string;
+  };
+
+  type GetBankFormDataResponse = {
+    success: boolean;
+    data?: BankFormData[] | ApprovedBankFormData[];
+    error?: "error" | "warning";
+    message?: string;
+  };
+
+  type CommonResponse = {
+    success: boolean;
+    error?: "error" | "warning";
+    message?: string;
   };
 }
 

@@ -90,7 +90,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
           onValueChange(newValue);
         }
       },
-      1000
+      200
     );
 
     const handleChange = (values: { value: string; floatValue: number | undefined }) => {
