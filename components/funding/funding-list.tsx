@@ -94,7 +94,7 @@ const baseColumns: ColumnDef<BankFormData>[] = [
         <div className="flex flex-col gap-1">
           {" "}
           {/* gap-1 adds a small space between items */}
-          {productNames.map((name, index) => (
+          {productNames?.map((name, index) => (
             <span key={index}>{name}</span>
           ))}
         </div>
