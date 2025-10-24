@@ -5,7 +5,7 @@ import { registerUser } from "@/service/user";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { verifyCaptchaToken } from "@/lib/captcha/captcha";
+import { createEnterpriseAssessment } from "@/lib/captcha/captcha";
 export const useRegistration = () => {
   const router = useRouter();
 
@@ -21,13 +21,11 @@ export const useRegistration = () => {
         throw new AppError("Failed to register. Please refresh the page.");
       }
 
-      const captchaData = await verifyCaptchaToken(token);
-      if (
-        !captchaData ||
-        !captchaData.success ||
-        captchaData.score < 0.5 ||
-        captchaData.action !== "registration"
-      ) {
+      const captchaData = await createEnterpriseAssessment(
+        token,
+        "registration"
+      );
+      if (!captchaData || captchaData.score < 0.5) {
         throw new AppError("Failed to register. Please refresh the page.");
       }
 

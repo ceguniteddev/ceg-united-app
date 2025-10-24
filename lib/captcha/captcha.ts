@@ -1,5 +1,6 @@
 "use server";
 import AppError from "@/error/AppError";
+import { RecaptchaEnterpriseServiceClient } from "@google-cloud/recaptcha-enterprise";
 
 export async function verifyCaptchaToken(token: string) {
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
@@ -16,6 +17,90 @@ export async function verifyCaptchaToken(token: string) {
 
   if (!res.ok) return null;
   return captchaData;
+}
+
+let recaptchaClient: RecaptchaEnterpriseServiceClient | null = null;
+
+function getClient(): RecaptchaEnterpriseServiceClient {
+  if (!recaptchaClient) {
+    // This will be executed only once per server instance.
+    recaptchaClient = new RecaptchaEnterpriseServiceClient();
+  }
+  return recaptchaClient;
+}
+
+export async function createEnterpriseAssessment(
+  token: string,
+  recaptchaAction: string
+): Promise<{ score: number }> {
+  const projectID = process.env.FIREBASE_PROJECT_ID;
+  const recaptchaKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+  const scoreThreshold = 0.5;
+
+  if (!projectID || !recaptchaKey) {
+    throw new AppError(
+      "Missing Google Cloud or reCAPTCHA Enterprise configuration."
+    );
+  }
+
+  const client = getClient();
+  const projectPath = client.projectPath(projectID);
+
+  // const request = {
+  //   assessment: {
+  //     event: {
+  //       token: token,
+  //       siteKey: recaptchaKey,
+  //     },
+  //   },
+  //   parent: projectPath,
+  // };
+
+  const request = {
+    assessment: {
+      event: {
+        token: token,
+        siteKey: recaptchaKey,
+      },
+    },
+    parent: projectPath,
+  };
+
+  console.log("request", request);
+
+  const [response] = await client.createAssessment(request);
+
+  // 1. Check if the token is valid.
+  if (!response.tokenProperties?.valid) {
+    const invalidReason =
+      response.tokenProperties?.invalidReason || "NO_REASON_GIVEN";
+    console.error(`reCAPTCHA token invalid: ${invalidReason}`);
+    throw new AppError(`The reCAPTCHA token was invalid: ${invalidReason}`);
+  }
+
+  // 2. Check if the action matches what we expect.
+  if (response.tokenProperties.action !== recaptchaAction) {
+    console.error(
+      `reCAPTCHA action mismatch. Expected: ${recaptchaAction}, Got: ${response.tokenProperties.action}`
+    );
+    throw new AppError("reCAPTCHA action mismatch. Possible bot activity.");
+  }
+
+  const score = response.riskAnalysis?.score;
+  if (score === null || score === undefined) {
+    throw new AppError("Could not retrieve reCAPTCHA score.");
+  }
+
+  // 3. Check if the risk score is above our threshold.
+  if (score < scoreThreshold) {
+    console.warn(`Low reCAPTCHA score: ${score}. Blocking request.`);
+    throw new AppError(`Low reCAPTCHA score (${score}). Please try again.`);
+  }
+
+  console.log(
+    `Successfully verified reCAPTCHA action '${recaptchaAction}' with score: ${score}`
+  );
+  return { score };
 }
 
 type CaptchaData =

@@ -26,7 +26,10 @@ import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { getUser } from "@/service/user";
 import { Role } from "@/schema";
 import { useQueryClient } from "@tanstack/react-query";
-import { verifyCaptchaToken } from "@/lib/captcha/captcha";
+import {
+  verifyCaptchaToken,
+  createEnterpriseAssessment,
+} from "@/lib/captcha/captcha";
 import AppError from "@/error/AppError";
 
 interface AuthContextType {
@@ -122,12 +125,9 @@ export function AuthProvider({
         if (!token)
           throw new AppError("Failed to login. Please refresh the page.");
 
-        const captchaData = await verifyCaptchaToken(token);
-        if (
-          !captchaData?.success ||
-          captchaData.score < 0.5 ||
-          captchaData.action !== "login"
-        ) {
+        const captchaData = await createEnterpriseAssessment(token, "login");
+        console.log("captchaData", captchaData);
+        if (!captchaData || captchaData.score < 0.5) {
           throw new AppError("Captcha verification failed. Please try again.");
         }
 
@@ -178,12 +178,11 @@ export function AuthProvider({
       if (!token)
         throw new AppError("Failed to login. Please refresh the page.");
 
-      const captchaData = await verifyCaptchaToken(token);
-      if (
-        !captchaData?.success ||
-        captchaData.score < 0.5 ||
-        captchaData.action !== "forgot_password"
-      ) {
+      const captchaData = await createEnterpriseAssessment(
+        token,
+        "forgot_password"
+      );
+      if (!captchaData || captchaData.score < 0.5) {
         throw new AppError("Captcha verification failed. Please try again.");
       }
 
