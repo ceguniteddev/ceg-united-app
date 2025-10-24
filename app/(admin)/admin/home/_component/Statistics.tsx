@@ -20,16 +20,16 @@ import {
   CircleDollarSign,
   CircleUser,
   Dock,
-  DollarSign,
-  FileText,
+  // DollarSign,
+  // FileText,
 } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
-import { set } from "zod";
+// import { set } from "zod";
 import ClientAppliedFundingList from "@/components/ClientAppliedFundingList";
 import { useGetFundingApplications } from "@/hooks/apply-funding";
-import HeaderBox from "@/components/HeaderBox";
+// import HeaderBox from "@/components/HeaderBox";
 import AdminFundingList from "@/components/funding/admin-funding-list";
 import { RowActions } from "../../funding-application/_components/RowActions";
 

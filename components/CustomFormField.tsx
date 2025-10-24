@@ -378,7 +378,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
             type={type}
             placeholder={placeholder}
             {...field}
-            className={`${inputClassName}`}
+            className={cn("", inputClassName)}
             disabled={disabled}
             autoComplete={autocomplete}
             onChange={handleChange}

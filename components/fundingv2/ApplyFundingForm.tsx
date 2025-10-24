@@ -334,7 +334,7 @@ const ApplyFundingForm = ({
             <input type="hidden" {...form.register("fundingType")} />
             <div>
               <Card>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 pt-6">
                   <div className="grid grid-cols-3 gap-4">
                     <CustomFormField
                       name={"interestedProduct"}
@@ -380,7 +380,7 @@ const ApplyFundingForm = ({
                   </div>
 
                   {!isCommunity && !isTradeLines && (
-                    <Card className="bg-cyan-50">
+                    <Card className="bg-slate-100 border-slate-200">
                       <CardHeader>
                         <CardTitle>Personal Information</CardTitle>
                       </CardHeader>
@@ -485,7 +485,7 @@ const ApplyFundingForm = ({
                   )}
 
                   {isCommunity && (
-                    <Card className="bg-cyan-50">
+                    <Card className="bg-slate-100 border-slate-200">
                       <CardHeader>
                         <CardTitle>Community Information</CardTitle>
                       </CardHeader>
@@ -523,7 +523,7 @@ const ApplyFundingForm = ({
                   )}
 
                   {isTradeLines && (
-                    <Card className="bg-cyan-50">
+                    <Card className="bg-slate-100 border-slate-200">
                       <CardHeader>
                         <CardTitle>Tradelines Information</CardTitle>
                       </CardHeader>
@@ -596,7 +596,7 @@ const ApplyFundingForm = ({
                   {howDoYouGetPaidSelected?.type === "yes" &&
                     !isTradeLines &&
                     !isCommunity && (
-                      <Card className="bg-blue-50">
+                      <Card className="bg-slate-100 border-slate-200">
                         <CardHeader>
                           <CardTitle className="flex flex-row justify-between">
                             <div>Employment Information</div>
@@ -698,7 +698,7 @@ const ApplyFundingForm = ({
                     (interestedProductSelected?.type?.includes("Business") ||
                       isCommunity) &&
                     !isTradeLines && (
-                      <Card className="bg-orange-50">
+                      <Card className="bg-slate-100 border-slate-200">
                         <CardHeader>
                           <CardTitle className="flex flex-row justify-between">
                             <div>Business Information</div>
