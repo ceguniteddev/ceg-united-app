@@ -1,7 +1,10 @@
 import { DataTablePagination } from "@/components/funding/pagination";
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
-import { useFundingProductMutation, useFundingProducts } from "@/hooks/admin/funding-product";
+import {
+  useFundingProductMutation,
+  useFundingProducts,
+} from "@/hooks/admin/funding-product";
 import { FundingProduct } from "@/schema/funding-products";
 import {
   ColumnDef,
@@ -51,6 +54,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import SortableHeader from "@/components/SortableHeader";
 
 type FundingProductsListProps = {
   onEdit: (product: FundingProduct) => void;
@@ -60,8 +64,11 @@ const FundingProductsList = ({ onEdit }: FundingProductsListProps) => {
   const { products, isLoading } = useFundingProducts();
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
 
@@ -71,26 +78,18 @@ const FundingProductsList = ({ onEdit }: FundingProductsListProps) => {
         accessorKey: "productName",
         id: "productName",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Product Name <ArrowUpDown />
-          </Button>
+          <SortableHeader column={column} title="Product Name" />
         ),
+
         cell: ({ row }) => <div>{row.getValue("productName")}</div>,
       },
       {
         accessorKey: "fundingType",
         id: "fundingType",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Funding Type <ArrowUpDown />
-          </Button>
+          <SortableHeader column={column} title="Funding Type" />
         ),
+
         cell: ({ row }) => <div>{row.getValue("fundingType")}</div>,
       },
       {
@@ -125,7 +124,8 @@ const FundingProductsList = ({ onEdit }: FundingProductsListProps) => {
 
   if (isLoading) return <Spinner displayText="Loading funding products…" />;
 
-  if (!products || products.length === 0) return <p className="text-center">No funding products</p>;
+  if (!products || products.length === 0)
+    return <p className="text-center">No funding products</p>;
 
   return (
     <div className="mx-auto w-full">
@@ -149,7 +149,10 @@ const FundingProductsList = ({ onEdit }: FundingProductsListProps) => {
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   );
                 })}
@@ -159,17 +162,26 @@ const FundingProductsList = ({ onEdit }: FundingProductsListProps) => {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -184,9 +196,16 @@ const FundingProductsList = ({ onEdit }: FundingProductsListProps) => {
 
 export default FundingProductsList;
 
-const ActionCell = ({ row, onEdit }: { row: any; onEdit: (product: FundingProduct) => void }) => {
+const ActionCell = ({
+  row,
+  onEdit,
+}: {
+  row: any;
+  onEdit: (product: FundingProduct) => void;
+}) => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const { deleteFundingProduct, isDeleting, isDeleteSuccess } = useFundingProductMutation();
+  const { deleteFundingProduct, isDeleting, isDeleteSuccess } =
+    useFundingProductMutation();
 
   const handleDelete = async () => {
     await deleteFundingProduct(row.original.id);
@@ -226,7 +245,10 @@ const ActionCell = ({ row, onEdit }: { row: any; onEdit: (product: FundingProduc
               className="cursor-pointer w-full justify-start rounded-md p-2 text-red-500 hover:bg-neutral-100"
               onClick={() => setIsDeleteOpen(true)}
             >
-              <IconMenu text="Delete" icon={<Trash2Icon className="h-4 w-4" />} />
+              <IconMenu
+                text="Delete"
+                icon={<Trash2Icon className="h-4 w-4" />}
+              />
             </Button>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -244,11 +266,17 @@ const ActionCell = ({ row, onEdit }: { row: any; onEdit: (product: FundingProduc
               <AlertDialogTitle>Confirmation</AlertDialogTitle>
               <AlertDialogDescription>
                 This will permanently delete{" "}
-                <span className="font-semibold">{row.original.productName}</span>.
+                <span className="font-semibold">
+                  {row.original.productName}
+                </span>
+                .
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting} className="cursor-pointer">
+              <AlertDialogCancel
+                disabled={isDeleting}
+                className="cursor-pointer"
+              >
                 <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
               </AlertDialogCancel>
               <AlertDialogAction
@@ -265,7 +293,10 @@ const ActionCell = ({ row, onEdit }: { row: any; onEdit: (product: FundingProduc
                     icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
                   />
                 ) : (
-                  <IconMenu text="Delete" icon={<Trash2Icon className="h-4 w-4 mr-2" />} />
+                  <IconMenu
+                    text="Delete"
+                    icon={<Trash2Icon className="h-4 w-4 mr-2" />}
+                  />
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
