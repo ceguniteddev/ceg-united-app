@@ -2,6 +2,7 @@
 
 ```
 gcloud storage buckets update gs://cegunitedllc-production --cors-file=cors.json
+gcloud storage buckets update gs://ceg-united-llc-prod.firebasestorage.app --cors-file=cors.json
 ```
 
 ### Extract indexes
