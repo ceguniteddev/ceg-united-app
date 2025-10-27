@@ -23,6 +23,7 @@ import {
   getApplyFundingByReferenceNumber,
   updateApplicationStatus,
 } from "./apply-funding";
+import { createAsanaTaskForLender } from "@/lib/n8n";
 
 export const recordBankProduct = async (value: BankFormData) => {
   const db = firestoreAdmin();
@@ -736,7 +737,7 @@ export const applyBankProduct = async ({
 
     await docRef.set({ clientApplicationStatus: "Pending" }, { merge: true });
 
-    await fetch(`${process.env.n8n_HOST}/client-apply-bank-product`, {
+    await fetch(`${process.env.n8n_HOST}/${await createAsanaTaskForLender()}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -778,20 +779,7 @@ export const applyApprovedMappedFund = async ({
         message: "Reference number is required.",
       };
     }
-    // if (!bankProductId) {
-    //   return {
-    //     success: false,
-    //     error: "warning",
-    //     message: "Bank product id is required.",
-    //   };
-    // }
-    // if (!userId) {
-    //   return {
-    //     success: false,
-    //     error: "warning",
-    //     message: "User id is required.",
-    //   };
-    // }
+
     if (!fundMappingApprovedId) {
       return {
         success: false,
@@ -805,9 +793,34 @@ export const applyApprovedMappedFund = async ({
       `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
     );
 
+    const docRef = collectionRef.doc(fundMappingApprovedId);
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Fund mapping approved not found.",
+      };
+    }
+
+    const docData = doc.data();
+
     await collectionRef
       .doc(fundMappingApprovedId)
       .set({ clientApplicationStatus: "Sent to Lender" }, { merge: true });
+
+    await fetch(`${process.env.n8n_HOST}/${await createAsanaTaskForLender()}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+      },
+      body: JSON.stringify({
+        userId: docData?.userId,
+        bankProductId: docData?.bankProductId,
+        referenceNumber: referenceNumber,
+      }),
+    });
 
     // 4. Return a successful response
     return { success: true };
