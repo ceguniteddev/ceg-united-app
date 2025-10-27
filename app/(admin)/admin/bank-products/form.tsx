@@ -111,7 +111,7 @@ const BankProductsForm = ({
     <div className="w-full">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} aria-busy={isSubmitting}>
-          <fieldset disabled={isSubmitting}>
+          <fieldset disabled={isSubmitting || isAdminViewing}>
             <Card>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-3 gap-4">

@@ -6,6 +6,11 @@ import {
 } from "@/constant/collection-name";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
+import {
+  deleteCRSReportN8N,
+  generateCRSReportN8N,
+  getFundingAnalysis,
+} from "@/lib/n8n";
 import { Business } from "@/schema";
 import { getBusiness } from "@/service/business";
 import { getUserById } from "@/service/user";
@@ -137,7 +142,7 @@ export const generateCRSReport = async ({
   userId: string;
   referenceNumber: string;
 }) => {
-  await fetch(`${process.env.n8n_HOST}/crs-report`, {
+  await fetch(`${process.env.n8n_HOST}/${await generateCRSReportN8N()}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -156,7 +161,7 @@ export const generateCRSReportBusiness = async (
   referenceNumber: string,
   businessId: string
 ) => {
-  await fetch(`${process.env.n8n_HOST}/crs-report`, {
+  await fetch(`${process.env.n8n_HOST}/${await generateCRSReportN8N()}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -178,7 +183,7 @@ export const refreshCRSData = async ({
   userId: string;
   referenceNumber: string;
 }) => {
-  await fetch(`${process.env.n8n_HOST}/delete-crs-qdrant`, {
+  await fetch(`${process.env.n8n_HOST}/${await deleteCRSReportN8N()}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -206,7 +211,7 @@ export const fundAnalysis = async ({
   referenceNumber: string;
   userId: string;
 }) => {
-  await fetch(`${process.env.n8n_HOST}/funding-analysis`, {
+  await fetch(`${process.env.n8n_HOST}/${await getFundingAnalysis()}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
