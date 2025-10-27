@@ -69,17 +69,22 @@ const BankProductsForm = ({
     }
   }, [products]);
 
+  const handleOnApprove = async () => {
+    if (data && isAdminViewing && referenceNumber) {
+      await approveMappedFund({
+        bankProductId: data.id!,
+        referenceNumber: referenceNumber,
+      });
+
+      setOpen(false);
+    }
+  };
+
   const onSubmit: SubmitHandler<BankFormData> = useCallback(
     async (values) => {
       if (data) {
-        if (isAdminViewing && referenceNumber) {
-          await approveMappedFund({
-            bankProductId: data.id!,
-            referenceNumber: referenceNumber,
-          });
-        } else {
-          await updateBankProduct({ id: data.id!, values });
-        }
+        await updateBankProduct({ id: data.id!, values });
+
         form.reset();
       } else {
         await createBankProduct(values);
@@ -87,16 +92,7 @@ const BankProductsForm = ({
       }
       setOpen(false);
     },
-    [
-      createBankProduct,
-      updateBankProduct,
-      form,
-      setOpen,
-      data,
-      isAdminViewing,
-      referenceNumber,
-      approveMappedFund,
-    ]
+    [createBankProduct, updateBankProduct, form, setOpen, data]
   );
 
   // const handleSelectFundingProduct = (value: string) => {
@@ -111,7 +107,7 @@ const BankProductsForm = ({
     <div className="w-full">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} aria-busy={isSubmitting}>
-          <fieldset disabled={isSubmitting || isAdminViewing}>
+          <fieldset disabled={isSubmitting}>
             <Card>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-3 gap-4">
@@ -450,8 +446,9 @@ const BankProductsForm = ({
                   </Button>
                 ) : (
                   <Button
-                    type="submit"
+                    type="button"
                     variant="outline"
+                    onClick={handleOnApprove}
                     className="cursor-pointer bg-green-200 hover:bg-green-300"
                   >
                     {isSubmitting ? (
