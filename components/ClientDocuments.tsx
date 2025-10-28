@@ -119,7 +119,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
     }
 
     // --- THE FIX IS HERE ---
-    userDocuments.forEach((doc) => {
+    userDocuments.forEach((doc: any) => {
       const fileName = doc.name.split("/").pop() || "";
 
       // Find the full document type that matches the start of the filename.

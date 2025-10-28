@@ -50,10 +50,17 @@ export const useUserDocumentsQuery = ({ userId }: { userId: string }) => {
     queryKey: [GET_USER_DOCUMENTS, userId],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
+      // const data = await getUserDocuments({ userId });
+      const response = await fetch(`/api/user/${userId}/documents`);
+      if (!response.ok) {
+        toast.error("Failed to fetch user documents.");
+        return null;
+      }
+      const data = await response.json();
 
-      return await getUserDocuments({ userId });
+      return data;
     },
-    enabled: !!user,
+    enabled: !!user && !!userId,
     // staleTime: 30 * 60 * 1000,
   });
 

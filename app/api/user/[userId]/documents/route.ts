@@ -3,6 +3,8 @@ import { uploadDocument } from "@/service/documents";
 import { NextRequest, NextResponse } from "next/server";
 import { DOCUMENT_TYPES } from "@/lib/document-types";
 import { badRequest, internalServerError } from "@/app/api/helpers";
+import { getUserDocuments } from "@/service/user";
+import AppError from "@/error/AppError";
 
 export const POST = withAuth(
   async (
@@ -44,6 +46,30 @@ export const POST = withAuth(
       );
     } catch (error) {
       console.error("Error handling file upload:", error);
+      return internalServerError();
+    }
+  }
+);
+
+export const GET = withAuth(
+  async (
+    req: NextRequest,
+    { params }: { params?: Promise<{ userId: string }> }
+  ) => {
+    const { userId } = (await params) ?? {};
+    if (!userId) {
+      return badRequest({ errors: "Missing User ID" });
+    }
+
+    try {
+      const data = await getUserDocuments({ userId });
+
+      return NextResponse.json(data, { status: 200 });
+    } catch (err) {
+      if (err instanceof AppError) {
+        return badRequest({ errors: err.message });
+      }
+      console.log(err);
       return internalServerError();
     }
   }
