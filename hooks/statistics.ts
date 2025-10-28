@@ -1,7 +1,11 @@
-import { GET_ADMIN_STATISTICS, GET_CLIENT_STATISTICS } from "@/constant/react-query-keys";
+import {
+  GET_ADMIN_STATISTICS,
+  GET_CLIENT_STATISTICS,
+} from "@/constant/react-query-keys";
 import { useAuth } from "@/provider/AuthContext";
-import { getAdminStatistics, getClientStatistics } from "@/service/statistics";
+import { getClientStatistics } from "@/service/statistics";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export const useGetAdminStatistics = (state?: string) => {
   const { user } = useAuth();
@@ -10,7 +14,14 @@ export const useGetAdminStatistics = (state?: string) => {
     queryKey: [GET_ADMIN_STATISTICS],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
-      const data = (await getAdminStatistics()) as AdminStatistics;
+      const response = await fetch("/api/admin/statistics");
+
+      if (!response.ok) {
+        toast.error("Failed to fetch admin statistics.");
+        return null;
+      }
+
+      const data = await response.json();
 
       return data;
     },

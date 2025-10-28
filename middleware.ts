@@ -5,7 +5,7 @@ import { verifySession } from "@/lib/session";
 import { getUser } from "@/service/user";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 
-const PUBLIC_ROUTES = new Set<string>(["/", "/register"]);
+const PUBLIC_ROUTES = new Set<string>(["/", "/register", "/api/auth/login"]);
 const CLIENT_HOME = "/overview";
 const ADMIN_HOME = "/admin/home";
 
@@ -33,7 +33,9 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith("/api/")) {
     const xIdToken = req.headers.get("x-id-token");
     const adminAccessKey = req.headers.get("ADMIN_ACCESS_KEY");
-    if (xIdToken || adminAccessKey || token) return NextResponse.next();
+    const authHeader = req.headers.get("Authorization");
+    if (xIdToken || adminAccessKey || token || authHeader || isPublic(pathname))
+      return NextResponse.next();
 
     if (!token && !pathname.includes("webhook"))
       return NextResponse.json("Unauthorized", { status: 401 });

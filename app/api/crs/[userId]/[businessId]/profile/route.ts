@@ -14,7 +14,10 @@ export const POST = withAuth(
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
     if (!businessId) {
-      return NextResponse.json({ error: "Missing businessId" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing businessId" },
+        { status: 400 }
+      );
     }
     const body = await req.json();
     // safeparse
@@ -24,7 +27,7 @@ export const POST = withAuth(
       return NextResponse.json({ message: "ok" }, { status: 200 });
     } catch (err) {
       if (err instanceof AppError) {
-        return badRequest(err.message);
+        return badRequest({ errors: err.message });
       }
       console.log(err);
       return internalServerError();

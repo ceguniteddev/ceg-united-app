@@ -1,9 +1,8 @@
 import { withAuth } from "@/lib/api-validation";
 import { NextRequest, NextResponse } from "next/server";
-import { badRequest, internalServerError } from "../helpers";
+import { badRequest, getMessage, internalServerError } from "../helpers";
 import { getBankProducts, recordBankProduct } from "@/service/bank-products";
 import z from "zod";
-import { getMessage } from "@/schema";
 import {
   BankFormData,
   CreditBureau,
@@ -39,7 +38,8 @@ export const POST = withAuth(async (request: NextRequest) => {
 
     if (!parsedBody.success) {
       const message = getMessage(parsedBody.error);
-      return badRequest(message);
+
+      return badRequest({ errors: message });
     }
 
     const bureauString = parsedBody.data["Bureau Pulled"];

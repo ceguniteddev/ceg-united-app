@@ -1,7 +1,6 @@
-import { badRequest, internalServerError } from "@/app/api/helpers";
+import { badRequest, getMessage, internalServerError } from "@/app/api/helpers";
 import AppError from "@/error/AppError";
 import { withAuth } from "@/lib/api-validation";
-import { getMessage } from "@/schema";
 import { recordAnalysis } from "@/service/analysis";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
@@ -33,7 +32,7 @@ export const POST = withAuth(
   ) => {
     const { referenceNumber } = (await params) ?? {};
     if (!referenceNumber) {
-      return badRequest("Missing reference number");
+      return badRequest({ errors: "Missing reference number" });
     }
     const body = await req.json();
 
@@ -42,7 +41,7 @@ export const POST = withAuth(
 
     if (!parsedBody.success) {
       const message = getMessage(parsedBody.error);
-      return badRequest(message);
+      return badRequest({ errors: message });
     }
     try {
       const { analysis, userId } = parsedBody.data;
@@ -52,7 +51,7 @@ export const POST = withAuth(
       return NextResponse.json({ message: "ok" }, { status: 200 });
     } catch (err) {
       if (err instanceof AppError) {
-        return badRequest(err.message);
+        return badRequest({ errors: err.message });
       }
       console.log(err);
       return internalServerError();
