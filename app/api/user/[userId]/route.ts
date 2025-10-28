@@ -11,7 +11,7 @@ export const GET = withAuth(
   ) => {
     const { userId } = (await params) ?? {};
     if (!userId) {
-      return NextResponse.json({ error: "Missing User ID" }, { status: 400 });
+      return badRequest({ errors: "Missing User ID" });
     }
 
     try {
