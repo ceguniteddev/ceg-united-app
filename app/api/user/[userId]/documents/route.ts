@@ -2,6 +2,7 @@ import { withAuth } from "@/lib/api-validation";
 import { uploadDocument } from "@/service/documents";
 import { NextRequest, NextResponse } from "next/server";
 import { DOCUMENT_TYPES } from "@/lib/document-types";
+import { badRequest, internalServerError } from "@/app/api/helpers";
 
 export const POST = withAuth(
   async (
@@ -18,26 +19,17 @@ export const POST = withAuth(
 
       // --- Validation ---
       if (!userId) {
-        return NextResponse.json(
-          { error: "User ID is missing." },
-          { status: 400 }
-        );
+        return badRequest({ errors: "User ID is missing." });
       }
       if (!file) {
-        return NextResponse.json(
-          { error: "No file was uploaded." },
-          { status: 400 }
-        );
+        return badRequest({ errors: "No file was uploaded." });
       }
       // If a documentType is provided, validate it. If not, that's okay.
       if (
         documentType &&
         !DOCUMENT_TYPES.some((dt) => dt.id === documentType)
       ) {
-        return NextResponse.json(
-          { error: "Invalid document type provided." },
-          { status: 400 }
-        );
+        return badRequest({ errors: "Invalid document type provided." });
       }
       // --- End Validation ---
 
@@ -52,10 +44,7 @@ export const POST = withAuth(
       );
     } catch (error) {
       console.error("Error handling file upload:", error);
-      return NextResponse.json(
-        { error: "An unexpected error occurred during upload." },
-        { status: 500 }
-      );
+      return internalServerError();
     }
   }
 );

@@ -1,8 +1,7 @@
 import { withAuth } from "@/lib/api-validation";
 import { NextRequest, NextResponse } from "next/server";
-import { badRequest, internalServerError } from "@/app/api/helpers";
+import { badRequest, getMessage, internalServerError } from "@/app/api/helpers";
 import z from "zod";
-import { getMessage } from "@/schema";
 import { getClientStatistics } from "@/service/statistics";
 
 const querySchema = z
@@ -18,7 +17,7 @@ export const GET = withAuth(async (request: NextRequest) => {
   const query = querySchema.safeParse(Object.fromEntries(searchParams));
   if (!query.success) {
     const message = getMessage(query.error);
-    return badRequest(message);
+    return badRequest({ errors: message });
   }
 
   try {

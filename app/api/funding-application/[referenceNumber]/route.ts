@@ -10,7 +10,7 @@ export const GET = withAuth(
   ) => {
     const { referenceNumber } = (await params) ?? {};
     if (!referenceNumber) {
-      return badRequest("Missing reference number");
+      return badRequest({ errors: "Missing reference number" });
     }
 
     try {

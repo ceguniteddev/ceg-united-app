@@ -26,18 +26,6 @@ export const dateOfBirthSchema = z
     message: "Date cannot be in the future",
   });
 
-export const getMessage = (error: z.ZodError) => {
-  const flat = error.flatten();
-  const fieldErrors = flat.fieldErrors;
-  const formErrors = flat.formErrors;
-
-  const fieldMessages = Object.values(fieldErrors).flat();
-
-  const allMessages = [...fieldMessages, ...formErrors];
-
-  return allMessages.length > 0 ? allMessages : ["Invalid request body"];
-};
-
 export const RequestCallStatus = ["Open", "Pending", "Resolved"] as const;
 export const RequestCallStatusEnum = z.enum(RequestCallStatus);
 export const getRequestCallStatus = () => {

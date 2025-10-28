@@ -1,7 +1,14 @@
 import AppError from "@/error/AppError";
 import { NextRequest, NextResponse } from "next/server";
+import z from "zod";
 
-export const badRequest = (errors: string | object | null = null, message = "Bad Request") => {
+export const badRequest = ({
+  message = "Bad Request",
+  errors,
+}: {
+  message?: string;
+  errors: string | string[] | object | null;
+}) => {
   let formattedErrors: unknown[] = [];
 
   if (typeof errors === "string") {
@@ -46,9 +53,11 @@ export const isJsonContentType = (request: NextRequest): boolean => {
   return contentType.includes("application/json");
 };
 
-export const ensureJsonContentType = (request: NextRequest): NextResponse | null => {
+export const ensureJsonContentType = (
+  request: NextRequest
+): NextResponse | null => {
   if (!isJsonContentType(request)) {
-    return badRequest("Content-Type must be application/json");
+    return badRequest({ errors: "Content-Type must be application/json" });
   }
   return null;
 };
@@ -61,12 +70,14 @@ export const isFormDataContentType = (request: NextRequest): boolean => {
   );
 };
 
-export const ensureFormDataContentType = (request: NextRequest): NextResponse | null => {
+export const ensureFormDataContentType = (
+  request: NextRequest
+): NextResponse | null => {
   if (!isFormDataContentType(request)) {
-    return badRequest(
-      "Invalid Request",
-      "Content-Type must be multipart/form-data or application/x-www-form-urlencoded"
-    );
+    return badRequest({
+      errors:
+        "Content-Type must be multipart/form-data or application/x-www-form-urlencoded",
+    });
   }
   return null;
 };
@@ -78,8 +89,21 @@ export const handleApiError = (error: any, customMessage?: string) => {
   }
 
   console.error(
-    customMessage ? `${customMessage}: Unexpected error: ` : "Unexpected error: ",
+    customMessage
+      ? `${customMessage}: Unexpected error: `
+      : "Unexpected error: ",
     error
   );
   return internalServerError();
+};
+
+export const getMessage = (error: z.ZodError) => {
+  const flat = z.treeifyError(error);
+  const fieldErrors = flat.errors;
+
+  const fieldMessages = Object.values(fieldErrors).flat();
+
+  const allMessages = [...fieldMessages];
+
+  return allMessages.length > 0 ? allMessages : ["Invalid request body"];
 };

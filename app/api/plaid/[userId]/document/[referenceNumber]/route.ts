@@ -1,29 +1,31 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { storageAdmin } from "@/lib/fireabase-admin";
-import { internalServerError } from "@/app/api/helpers";
+import { badRequest, internalServerError } from "@/app/api/helpers";
 import { withAuth } from "@/lib/api-validation";
 
 export const POST = withAuth(
   async (
     req: NextRequest,
-    { params }: { params?: Promise<{ userId: string; referenceNumber: string }> }
+    {
+      params,
+    }: { params?: Promise<{ userId: string; referenceNumber: string }> }
   ) => {
     try {
       const { userId, referenceNumber } = (await params) ?? {};
       if (!userId) {
-        return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+        return badRequest({ errors: "Missing userId" });
       }
 
       if (!referenceNumber) {
-        return NextResponse.json({ error: "Missing referenceNumber" }, { status: 400 });
+        return badRequest({ errors: "Missing referenceNumber" });
       }
 
       const formData = await req.formData();
       const file = formData.get("file") as File | null;
 
       if (!file) {
-        return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+        return badRequest({ errors: "No file uploaded" });
       }
 
       // GCS bucket
@@ -63,7 +65,7 @@ export const POST = withAuth(
       );
     } catch (err) {
       console.error("Upload failed", err);
-      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+      return internalServerError();
     }
   }
 );
@@ -71,15 +73,17 @@ export const POST = withAuth(
 export const GET = withAuth(
   async (
     _req: NextRequest,
-    { params }: { params?: Promise<{ userId: string; referenceNumber: string }> }
+    {
+      params,
+    }: { params?: Promise<{ userId: string; referenceNumber: string }> }
   ) => {
     const { userId, referenceNumber } = (await params) ?? {};
     if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+      return badRequest({ errors: "Missing userId" });
     }
 
     if (!referenceNumber) {
-      return NextResponse.json({ error: "Missing referenceNumber" }, { status: 400 });
+      return badRequest({ errors: "Missing referenceNumber" });
     }
 
     const prefix = `documents/${userId}/`;
