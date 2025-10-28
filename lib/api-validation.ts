@@ -18,10 +18,17 @@ export const validateXIDToken = async (xIdToken: string) => {
 
 export async function authenticateRequest(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      console.log("Validating Authorization Bearer token");
+      const idToken = authHeader.split("Bearer ")[1];
+      return await authenticationAdmin().verifyIdToken(idToken, true);
+    }
+
     let xIdToken = req.headers.get("x-id-token");
     if (xIdToken) {
       console.log("validating x-id-token");
-      return await authenticationAdmin().verifyIdToken(xIdToken);
+      return await authenticationAdmin().verifyIdToken(xIdToken, true);
     }
 
     const ADMIN_ACCESS_KEY_HEADER = req.headers.get("ADMIN_ACCESS_KEY");
@@ -38,7 +45,7 @@ export async function authenticateRequest(req: NextRequest) {
     xIdToken = await getCookie(FIREBASE_TOKEN_NAME);
     if (xIdToken) {
       console.log("validating sessionCookie");
-      return await authenticationAdmin().verifySessionCookie(xIdToken);
+      return await authenticationAdmin().verifySessionCookie(xIdToken, true);
     }
 
     console.log("authenticateRequest Unauthorized");

@@ -1,14 +1,17 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { storageAdmin } from "@/lib/fireabase-admin";
-import { internalServerError } from "@/app/api/helpers";
+import { badRequest, internalServerError } from "@/app/api/helpers";
 import { withAuth } from "@/lib/api-validation";
 
 export const GET = withAuth(
-  async (_req: NextRequest, { params }: { params?: Promise<{ userId: string }> }) => {
+  async (
+    _req: NextRequest,
+    { params }: { params?: Promise<{ userId: string }> }
+  ) => {
     const { userId } = (await params) ?? {};
     if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+      return badRequest({ errors: "Missing userId" });
     }
 
     const prefix = `documents/${userId}/`;

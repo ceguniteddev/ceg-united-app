@@ -10,7 +10,7 @@ export async function GET(
   try {
     const { userId } = (await params) ?? {};
     if (!userId) {
-      return badRequest("Missing User ID");
+      return badRequest({ errors: "Missing User ID" });
     }
     const noteData = await getUserNote(userId);
     return NextResponse.json(noteData);
@@ -31,7 +31,7 @@ export async function POST(
   try {
     const { userId } = (await params) ?? {};
     if (!userId) {
-      return badRequest("Missing User ID");
+      return badRequest({ errors: "Missing User ID" });
     }
 
     const body = await request.json();

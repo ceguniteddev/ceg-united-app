@@ -3,17 +3,11 @@ import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
 import { Role } from "@/schema";
 import { NoteSchema } from "@/schema/notes";
-import {
-  User,
-  UserActiveStatus,
-  UserPlaid,
-  UserWithId,
-} from "@/schema/registration";
+import { User, UserActiveStatus } from "@/schema/registration";
 import {
   addUserNotes,
   getUserById,
   getUserNotes,
-  getUsers,
   updateUserOnboardingStatus,
   updateUserStatus,
 } from "@/service/user";
@@ -27,7 +21,14 @@ export const useUsersQuery = (role?: Role) => {
     queryKey: [GET_USERS, role],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
-      const data = (await getUsers(role)) as UserWithId[];
+
+      // const data = (await getUsers(role)) as UserWithId[];
+      const response = await fetch(`/api/user?role=${role}`);
+      if (!response.ok) {
+        toast.error("Failed to fetch users.");
+        return null;
+      }
+      const data = await response.json();
 
       return data;
     },
@@ -48,7 +49,12 @@ export const useUserQuery = (id: string) => {
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
 
-      const data = (await getUserById(id)) as User;
+      const response = await fetch(`/api/user/${id}`);
+      if (!response.ok) {
+        toast.error("Failed to fetch user.");
+        return null;
+      }
+      const data = await response.json();
 
       return data;
     },

@@ -13,7 +13,7 @@ export async function GET(
   try {
     const { referenceNumber } = (await params) ?? {};
     if (!referenceNumber) {
-      return badRequest("Missing reference number");
+      return badRequest({ errors: "Missing reference number" });
     }
 
     const noteData = await getFundApplicationNote(referenceNumber);
@@ -35,7 +35,7 @@ export async function POST(
   try {
     const { referenceNumber } = (await params) ?? {};
     if (!referenceNumber) {
-      return badRequest("Missing reference number");
+      return badRequest({ errors: "Missing reference number" });
     }
 
     const body = await request.json();

@@ -14,7 +14,10 @@ export const GET = withAuth(
       return NextResponse.json({ error: "Missing User ID" }, { status: 400 });
     }
     if (!businessId) {
-      return NextResponse.json({ error: "Missing Business ID" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing Business ID" },
+        { status: 400 }
+      );
     }
     // safeparse
     try {
@@ -23,7 +26,7 @@ export const GET = withAuth(
       return NextResponse.json(data, { status: 200 });
     } catch (err) {
       if (err instanceof AppError) {
-        return badRequest(err.message);
+        return badRequest({ errors: err.message });
       }
       console.log(err);
       return internalServerError();

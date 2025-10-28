@@ -1,7 +1,6 @@
-import { badRequest, internalServerError } from "@/app/api/helpers";
+import { badRequest, getMessage, internalServerError } from "@/app/api/helpers";
 import AppError from "@/error/AppError";
 import { withAuth } from "@/lib/api-validation";
-import { getMessage } from "@/schema";
 import { recordFundMappingAnalysis } from "@/service/bank-products";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
@@ -30,7 +29,8 @@ export const POST = withAuth(async (req: NextRequest) => {
 
   if (!parsedBody.success) {
     const message = getMessage(parsedBody.error);
-    return badRequest(message);
+
+    return badRequest({ errors: message });
   }
   try {
     const { ids, userId, referenceNumber } = parsedBody.data;
@@ -40,7 +40,7 @@ export const POST = withAuth(async (req: NextRequest) => {
     return NextResponse.json({ message: "ok" }, { status: 200 });
   } catch (err) {
     if (err instanceof AppError) {
-      return badRequest(err.message);
+      return badRequest({ errors: err.message });
     }
     console.log(err);
     return internalServerError();
