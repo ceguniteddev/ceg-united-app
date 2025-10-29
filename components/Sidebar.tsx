@@ -15,6 +15,7 @@ import { useAuth } from "@/provider/AuthContext";
 import { driver } from "driver.js";
 import { useUpdateUserOnboardingMutation } from "@/hooks/user";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
+import { isPlaidProductionReady } from "@/lib/plaid";
 
 const Sidebar = () => {
   const { user, isOnboarded } = useAuth();
@@ -51,13 +52,16 @@ const Sidebar = () => {
 
   //   if (user && !isOnboarded) driverObj.drive();
   // }, [user, isOnboarded, updateOnboarding]);
-
+  const isPlaidProdReady = isPlaidProductionReady();
   if (!user) return null;
 
   return (
     <section className="sidebar">
       <nav className="flex flex-col">
-        <Link href="/overview" className="mb-3 cursor-pointer flex items-center justify-center">
+        <Link
+          href="/overview"
+          className="mb-3 cursor-pointer flex items-center justify-center"
+        >
           <Image
             src="/icons/logo.svg"
             width={64}
@@ -65,29 +69,41 @@ const Sidebar = () => {
             alt={process.env.NEXT_PUBLIC_APP_NAME as string}
           />
         </Link>
-        {sidebarLinks.map((item) => {
-          const isActive = pathname === item.route || pathname.startsWith(`${item.route}/`);
+        {sidebarLinks
+          .filter((item) => {
+            // If Plaid is not ready, filter out (remove) the "My Accounts" link
+            if (!isPlaidProdReady && item.route === "/my-accounts") {
+              return false;
+            }
+            // Otherwise, keep the item in the array
+            return true;
+          })
+          .map((item) => {
+            const isActive =
+              pathname === item.route || pathname.startsWith(`${item.route}/`);
 
-          return (
-            <Link
-              href={item.route}
-              key={item.label}
-              className={cn("sidebar-link", { "bg-bank-gradient": isActive })}
-            >
-              <div className="relative size-6">
-                <Image
-                  src={item.imgURL}
-                  alt={item.label}
-                  fill
-                  className={cn({
-                    "brightness-[3] invert-0": isActive,
-                  })}
-                />
-              </div>
-              <p className={cn("sidebar-label", { "!text-white": isActive })}>{item.label}</p>
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                href={item.route}
+                key={item.label}
+                className={cn("sidebar-link", { "bg-bank-gradient": isActive })}
+              >
+                <div className="relative size-6">
+                  <Image
+                    src={item.imgURL}
+                    alt={item.label}
+                    fill
+                    className={cn({
+                      "brightness-[3] invert-0": isActive,
+                    })}
+                  />
+                </div>
+                <p className={cn("sidebar-label", { "!text-white": isActive })}>
+                  {item.label}
+                </p>
+              </Link>
+            );
+          })}
       </nav>
       <div className="flex flex-col">
         <WhatsNewAccordion />

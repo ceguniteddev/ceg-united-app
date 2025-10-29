@@ -8,6 +8,7 @@ import { exchangeAccessToken } from "@/service/plaid";
 import { useAuth } from "@/provider/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { isPlaidProductionReady } from "@/lib/plaid";
 
 type PlaidLinkProps = {
   variant?: "primary" | "ghost";
@@ -88,7 +89,11 @@ const PlaidLink = ({
 
   const { open, ready } = usePlaidLink(config);
 
-  if (!user) return null;
+  const isPlaidReady = React.useMemo(() => {
+    return isPlaidProductionReady();
+  }, []);
+
+  if (!user || !isPlaidReady) return null;
 
   return (
     <>

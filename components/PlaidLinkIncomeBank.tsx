@@ -10,6 +10,7 @@ import { CheckIcon } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { IncomeVerificationSourceType } from "plaid";
+import { isPlaidProductionReady } from "@/lib/plaid";
 
 const PlaidIncomeLinkBank = () => {
   const { user } = useAuth();
@@ -27,13 +28,21 @@ const PlaidIncomeLinkBank = () => {
     (public_token: string) => {
       // If the access_token is needed, send public_token to server
       const exchangePublicTokenForAccessToken = async () => {
-        await exchangeAccessToken(public_token, user?.uid ?? "", "INCOME_VERIFICATION_BANK");
+        await exchangeAccessToken(
+          public_token,
+          user?.uid ?? "",
+          "INCOME_VERIFICATION_BANK"
+        );
 
         queryClient.invalidateQueries({
           queryKey: ["GET_PLAID_INCOME_LINK", user?.uid],
         });
         queryClient.invalidateQueries({
-          queryKey: ["GET_HAS_ACCESS_TOKEN", user?.uid, "INCOME_VERIFICATION_BANK"],
+          queryKey: [
+            "GET_HAS_ACCESS_TOKEN",
+            user?.uid,
+            "INCOME_VERIFICATION_BANK",
+          ],
         });
         queryClient.invalidateQueries({
           queryKey: ["GET_INCOME_BANK_VERIFICATION_USER_ID", user?.uid],
@@ -64,6 +73,12 @@ const PlaidIncomeLinkBank = () => {
     }
   }, [ready, open, isOauth]);
 
+  const isPlaidReady = React.useMemo(() => {
+    return isPlaidProductionReady();
+  }, []);
+
+  if (!isPlaidReady) return null;
+
   return (
     <Button
       id="plaid-link-income-bank-button"
@@ -73,9 +88,16 @@ const PlaidIncomeLinkBank = () => {
       onClick={() => open()}
     >
       {/* <BadgeDollarSignIcon className="mr-2 h-4 w-4" /> */}
-      <Image src="/icons/connect-bank.svg" alt="income verification" width={24} height={24} />
+      <Image
+        src="/icons/connect-bank.svg"
+        alt="income verification"
+        width={24}
+        height={24}
+      />
 
-      <p className="text-[16px] font-semibold text-black-2">Bank Verification</p>
+      <p className="text-[16px] font-semibold text-black-2">
+        Bank Verification
+      </p>
       {/* {!ready && !hasToken && <Loader2Icon className="ml-2 h-4 w-4 animate-spin" />} */}
       {hasToken && <CheckIcon className="ml-2 h-4 w-4 text-green-600" />}
     </Button>
