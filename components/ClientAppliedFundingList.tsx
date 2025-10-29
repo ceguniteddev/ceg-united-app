@@ -17,12 +17,10 @@ const ClientAppliedFundingList = ({
 }: {
   userId?: string;
   referenceNumber?: string;
-
   clientApplicationStatus?: ClientApplicationStatus[];
 }) => {
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
     userId: userId,
-    adminApprovedStatus: "Approved",
     referenceNumber,
     clientApplicationStatus,
   });

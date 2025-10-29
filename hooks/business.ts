@@ -14,22 +14,34 @@ import { toast } from "sonner";
 export const useBusinessQuery = (userId: string) => {
   const { user } = useAuth();
 
-  const { data: businessData, isLoading, refetch } = useQuery({
+  const {
+    data: businessData,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["GET_BUSINESS_DETAILS", userId],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
 
-      const data = await getBusiness(userId);
+      // const data = await getBusiness(userId);
+      const response = await fetch(`/api/user/${userId}/business`);
+
+      if (!response.ok) {
+        toast.error("Failed to fetch business details.");
+        return null;
+      }
+
+      const data = await response.json();
 
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && !!userId,
   });
 
   return {
     businessData,
     isLoading,
-    refetch
+    refetch,
   };
 };
 

@@ -22,6 +22,7 @@ import {
 import { Business, businessRecordSchema } from "@/schema";
 import { useBusinessQuery } from "@/hooks/business";
 import Spinner from "@/components/Spinner";
+import { EmptyState } from "./EmptyState";
 
 // ---- Utilities ----
 const formatCurrency = (n?: number) =>
@@ -199,10 +200,16 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
 export default function BusinessRecordsPage({ userId }: { userId: string }) {
   const { businessData, isLoading } = useBusinessQuery(userId);
 
-  const list = businessData?.map((r) => businessRecordSchema.parse(r));
+  const list = businessData?.map((r: Business) =>
+    businessRecordSchema.parse(r)
+  );
 
   if (isLoading) {
     return <Spinner displayText="Loading data…" />;
+  }
+
+  if (!list || list.length === 0) {
+    return <EmptyState title="No Business Records" description="" />;
   }
 
   return (
@@ -219,7 +226,7 @@ export default function BusinessRecordsPage({ userId }: { userId: string }) {
       </header>
 
       <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {list?.map((rec) => (
+        {list?.map((rec: Business) => (
           <BusinessRecordCard key={rec.id ?? rec.businessName} rec={rec} />
         ))}
       </section>
