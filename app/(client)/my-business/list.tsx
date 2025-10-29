@@ -59,11 +59,14 @@ type BusinessListProps = {
 
 const BusinessList = ({ onEdit }: BusinessListProps) => {
   const { user } = useAuth();
-  const { businessData, isLoading } = useBusinessQuery(user?.uid ?? "");
+  const { businessData, isLoading } = useBusinessQuery(user?.uid ?? "", true);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
   const columns: ColumnDef<Business>[] = useMemo(
@@ -92,7 +95,9 @@ const BusinessList = ({ onEdit }: BusinessListProps) => {
             Employer Identification Number <ArrowUpDown />
           </Button>
         ),
-        cell: ({ row }) => <div>{row.getValue("employerIdentificationNumber")}</div>,
+        cell: ({ row }) => (
+          <div>{row.getValue("employerIdentificationNumber")}</div>
+        ),
       },
       {
         id: "actions",
@@ -139,7 +144,10 @@ const BusinessList = ({ onEdit }: BusinessListProps) => {
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   );
                 })}
@@ -149,17 +157,26 @@ const BusinessList = ({ onEdit }: BusinessListProps) => {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -174,7 +191,13 @@ const BusinessList = ({ onEdit }: BusinessListProps) => {
 
 export default BusinessList;
 
-const ActionCell = ({ row, onEdit }: { row: any; onEdit: (product: Business) => void }) => {
+const ActionCell = ({
+  row,
+  onEdit,
+}: {
+  row: any;
+  onEdit: (product: Business) => void;
+}) => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const { deleteBusiness, isDeleting, isDeleteSuccess } = useBusinessMutation();
 
@@ -216,7 +239,10 @@ const ActionCell = ({ row, onEdit }: { row: any; onEdit: (product: Business) => 
               className="cursor-pointer w-full justify-start rounded-md p-2 text-red-500 hover:bg-neutral-100"
               onClick={() => setIsDeleteOpen(true)}
             >
-              <IconMenu text="Delete" icon={<Trash2Icon className="h-4 w-4" />} />
+              <IconMenu
+                text="Delete"
+                icon={<Trash2Icon className="h-4 w-4" />}
+              />
             </Button>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -234,7 +260,10 @@ const ActionCell = ({ row, onEdit }: { row: any; onEdit: (product: Business) => 
               <AlertDialogTitle>Confirmation</AlertDialogTitle>
               <AlertDialogDescription>
                 This will permanently delete{" "}
-                <span className="font-semibold">{row.original.productName}</span>.
+                <span className="font-semibold">
+                  {row.original.productName}
+                </span>
+                .
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -255,7 +284,10 @@ const ActionCell = ({ row, onEdit }: { row: any; onEdit: (product: Business) => 
                     icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
                   />
                 ) : (
-                  <IconMenu text="Delete" icon={<Trash2Icon className="h-4 w-4 mr-2" />} />
+                  <IconMenu
+                    text="Delete"
+                    icon={<Trash2Icon className="h-4 w-4 mr-2" />}
+                  />
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>

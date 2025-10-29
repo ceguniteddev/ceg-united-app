@@ -109,7 +109,7 @@ const ApplyFundingForm = ({
     businessData,
     isLoading: isBusinessLoading,
     refetch: refetchBusinesses,
-  } = useBusinessQuery(userId);
+  } = useBusinessQuery(userId, false);
 
   const businessOptions = useMemo<DropdownOption[]>(
     () =>
@@ -135,9 +135,9 @@ const ApplyFundingForm = ({
     },
   });
 
-  if (Object.keys(form.formState.errors).length > 0) {
-    console.log("There are validation errors:", form.formState.errors);
-  }
+  // if (Object.keys(form.formState.errors).length > 0) {
+  //   console.log("There are validation errors:", form.formState.errors);
+  // }
 
   const handleNewBusinessSaved = async (businessName: string) => {
     // const { data: refreshedBusinessData } = await refetchBusinesses();
@@ -145,7 +145,7 @@ const ApplyFundingForm = ({
     // if (refreshedBusinessData) {
     //   handleBusinessSelect(businessName, refreshedBusinessData);
     // }
-
+    refetchBusinesses();
     setOpenBusinessModal(false);
   };
 
@@ -252,9 +252,12 @@ const ApplyFundingForm = ({
         form.setValue("fundingType", selectedProduct.type, {
           shouldValidate: true,
         });
+        if (selectedProduct.type.includes("Business")) {
+          refetchBusinesses();
+        }
       }
     },
-    [form]
+    [form, refetchBusinesses]
   );
 
   const handleDoYouHaveAJobChange = useCallback(
