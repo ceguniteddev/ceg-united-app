@@ -42,20 +42,21 @@ export const useRefreshCRSData = () => {
         throw new AppError("User not authenticated");
       }
 
-      const appliedFundings = await getApplyFunding(userId);
-      let referenceNumber = "";
-      if (appliedFundings && appliedFundings.length > 0) {
-        referenceNumber = appliedFundings[0].referenceNumber!;
-      }
+      const response = await fetch(`/api/crs/${userId}/refresh`, {
+        method: "POST",
+      });
 
-      await refreshCRSData({ userId, referenceNumber });
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Error refreshing CRS data:", data);
+        throw new AppError("Failed to refresh CRS data.");
+      }
     },
     onSuccess: (data, _variable) => {
       toast.success("CRS data refreshed successfully.");
     },
 
     onError: (error: any) => {
-      console.log("Error refreshing CRS data:", error);
       toast.error("Failed to refresh CRS data. Please try again.");
     },
   });

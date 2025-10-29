@@ -238,13 +238,11 @@ export const getFundMappingAnalysis = async (referenceNumber: string) => {
 
 export const getFundMappingAnalysisDetails = async ({
   userId,
-  adminApprovedStatus,
   clientApplicationStatus,
   referenceNumber,
   bankProductId,
 }: {
   userId?: string;
-  adminApprovedStatus?: AdminApprovedStatus;
   clientApplicationStatus?: ClientApplicationStatus[];
   referenceNumber?: string;
   bankProductId?: string;
@@ -259,7 +257,7 @@ export const getFundMappingAnalysisDetails = async ({
     collectionGroupRef = collectionGroupRef.where("userId", "==", userId);
   }
 
-  if (clientApplicationStatus) {
+  if (clientApplicationStatus && clientApplicationStatus.length > 0) {
     collectionGroupRef = collectionGroupRef.where(
       "clientApplicationStatus",
       "in",

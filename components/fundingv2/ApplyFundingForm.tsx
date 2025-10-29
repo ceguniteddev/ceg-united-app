@@ -113,7 +113,7 @@ const ApplyFundingForm = ({
 
   const businessOptions = useMemo<DropdownOption[]>(
     () =>
-      (businessData ?? []).map((b) => ({
+      (businessData ?? []).map((b: Business) => ({
         value: b.businessName,
         label: `${b.businessName} (${b.employerIdentificationNumber})`,
       })),
@@ -156,7 +156,7 @@ const ApplyFundingForm = ({
       }
       const dataToSearch = currentData || businessData;
 
-      const b = dataToSearch?.find((x) => x.businessName === value);
+      const b = dataToSearch?.find((x: Business) => x.businessName === value);
 
       if (b) {
         form.setValue("businessName", value, { shouldValidate: true });

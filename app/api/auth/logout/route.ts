@@ -3,10 +3,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { DecodedIdToken } from "firebase-admin/auth";
-import { authenticateRequest } from "@/lib/api-validation";
+import { authenticateRequest, withAuth } from "@/lib/api-validation";
 import { authenticationAdmin } from "@/lib/fireabase-admin";
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest) => {
   // 1. Authenticate the user to get their UID
   const decodedTokenOrResponse = await authenticateRequest(request);
 
@@ -62,4 +62,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
