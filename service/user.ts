@@ -36,6 +36,9 @@ export const getUserRecordByEmail = async (email: string) => {
   return userRecord;
 };
 
+/**
+ * @deprecated use getUserById
+ */
 export const getUser = async (email: string): Promise<User | null> => {
   const userRecord = await getUserRecordByEmail(email);
 

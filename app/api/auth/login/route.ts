@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { authFirebase } from "@/lib/firebase";
-import { getUser } from "@/service/user";
+import { getUser, getUserById } from "@/service/user";
 import { Role } from "@/schema";
 import z from "zod";
 import { badRequest, getMessage } from "@/app/api/helpers";
@@ -52,11 +52,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userData = await getUser(firebaseUser.email || "");
+    const userData = await getUserById(firebaseUser.uid);
     if (!userData) {
       return NextResponse.json({ message: "User not found" }, { status: 403 });
     }
-    const nextRole = userData.role ?? ("Admin" as Role);
+    const nextRole = userData.role ?? "Client";
 
     const idToken = await firebaseUser.getIdToken();
 
