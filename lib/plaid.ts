@@ -12,3 +12,7 @@ const configuration = new Configuration({
 });
 
 export const plaidClient = new PlaidApi(configuration);
+
+export const isPlaidProductionReady = () => {
+  return process.env.IS_PLAID_PRODUCTION_READY === "true";
+};

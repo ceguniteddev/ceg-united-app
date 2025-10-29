@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/session";
 import { getUser, getUserById } from "@/service/user";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
+import { isPlaidProductionReady } from "./lib/plaid";
+import { ro } from "date-fns/locale";
 
 const PUBLIC_ROUTES = new Set<string>(["/", "/register", "/api/auth/login"]);
 const CLIENT_HOME = "/overview";
@@ -85,6 +87,13 @@ export async function middleware(req: NextRequest) {
   if (pathname === "/") {
     const dest = role === "Client" ? CLIENT_HOME : ADMIN_HOME;
     return NextResponse.redirect(new URL(dest, origin));
+  }
+
+  if (pathname === "/my-accounts" && role === "Client") {
+    const isPlaidProdReady = isPlaidProductionReady();
+    if (!isPlaidProdReady) {
+      return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+    }
   }
 
   // Clients cannot access /admin/*
