@@ -21,7 +21,10 @@ import {
   TransferCreateResponse,
 } from "plaid/dist/api";
 
-const formatCurrency = (number: number | null | undefined, code: string | null | undefined) => {
+const formatCurrency = (
+  number: number | null | undefined,
+  code: string | null | undefined
+) => {
   if (number != null && number !== undefined) {
     return ` ${parseFloat(number.toFixed(2)).toLocaleString("en")} ${code}`;
   }
@@ -558,14 +561,17 @@ export const transformAuthData = (data: AuthGetResponse) => {
   });
 };
 
-export const transformStatementsData = (data: { json: StatementsListResponse }) => {
+export const transformStatementsData = (data: {
+  json: StatementsListResponse;
+}) => {
   const account = data.json.accounts[0]!.account_name;
   const statements = data.json.accounts[0]!.statements;
   return statements!.map((s) => {
     const item: DataItem = {
-      date: Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(
-        new Date(s.year!, s.month!)
-      ),
+      date: Intl.DateTimeFormat("en", {
+        month: "long",
+        year: "numeric",
+      }).format(new Date(s.year!, s.month!)),
       account: account,
     };
     return item;
@@ -606,7 +612,12 @@ export const transformIdentityData = (data: IdentityData) => {
       return `${address.data.street} ${address.data.city}, ${address.data.region} ${address.data.postal_code}`;
     });
 
-    const num = Math.max(emails.length, names.length, phones.length, addresses.length);
+    const num = Math.max(
+      emails.length,
+      names.length,
+      phones.length,
+      addresses.length
+    );
 
     for (let i = 0; i < num; i++) {
       const obj = {
@@ -660,7 +671,10 @@ export const transformInvestmentsData = (data: InvestmentData) => {
       mask: account.mask!,
       name: security.name!,
       quantity: formatCurrency(holding.quantity, ""),
-      price: formatCurrency(security.close_price!, account.balances.iso_currency_code),
+      price: formatCurrency(
+        security.close_price!,
+        account.balances.iso_currency_code
+      ),
       value: formatCurrency(value, account.balances.iso_currency_code),
     };
     return obj;
@@ -672,13 +686,17 @@ interface InvestmentsTransactionData {
   investments_transactions: InvestmentsTransactionsGetResponse;
 }
 
-export const transformInvestmentTransactionsData = (data: InvestmentsTransactionData) => {
-  const investmentTransactionsData = data.investments_transactions.investment_transactions!.sort(
-    function (a, b) {
+export const transformInvestmentTransactionsData = (
+  data: InvestmentsTransactionData
+) => {
+  const investmentTransactionsData =
+    data.investments_transactions.investment_transactions!.sort(function (
+      a,
+      b
+    ) {
       if (a.account_id > b.account_id) return 1;
       return -1;
-    }
-  );
+    });
   return investmentTransactionsData.map((investmentTransaction) => {
     const security = data.investments_transactions.securities!.filter(
       (sec) => sec.security_id === investmentTransaction.security_id
@@ -710,7 +728,10 @@ export const transformLiabilitiesData = (data: LiabilitiesDataResponse) => {
       name: account.name,
       type: "credit card",
       date: credit.last_payment_date ?? "",
-      amount: formatCurrency(credit.last_payment_amount, account.balances.iso_currency_code),
+      amount: formatCurrency(
+        credit.last_payment_amount,
+        account.balances.iso_currency_code
+      ),
     };
     return obj;
   });
@@ -723,7 +744,10 @@ export const transformLiabilitiesData = (data: LiabilitiesDataResponse) => {
       name: account.name,
       type: "mortgage",
       date: mortgage.last_payment_date!,
-      amount: formatCurrency(mortgage.last_payment_amount!, account.balances.iso_currency_code),
+      amount: formatCurrency(
+        mortgage.last_payment_amount!,
+        account.balances.iso_currency_code
+      ),
     };
     return obj;
   });
@@ -736,7 +760,10 @@ export const transformLiabilitiesData = (data: LiabilitiesDataResponse) => {
       name: account.name,
       type: "student loan",
       date: student.last_payment_date!,
-      amount: formatCurrency(student.last_payment_amount!, account.balances.iso_currency_code),
+      amount: formatCurrency(
+        student.last_payment_amount!,
+        account.balances.iso_currency_code
+      ),
     };
     return obj;
   });
@@ -747,11 +774,16 @@ export const transformLiabilitiesData = (data: LiabilitiesDataResponse) => {
 export const transformSignalData = (data: SignalEvaluateResponse) => {
   return [
     {
-      customerInitiatedReturnRiskTier: data?.scores?.customer_initiated_return_risk!.risk_tier,
-      customerInitiatedReturnRiskScore: data?.scores?.customer_initiated_return_risk!.score,
-      bankInitiatedReturnRiskTier: data?.scores?.bank_initiated_return_risk!.risk_tier,
-      bankInitiatedReturnRiskScore: data?.scores?.bank_initiated_return_risk!.score,
-      daysSinceFirstPlaidConnection: data.core_attributes!.days_since_first_plaid_connection,
+      customerInitiatedReturnRiskTier:
+        data?.scores?.customer_initiated_return_risk!.risk_tier,
+      customerInitiatedReturnRiskScore:
+        data?.scores?.customer_initiated_return_risk!.score,
+      bankInitiatedReturnRiskTier:
+        data?.scores?.bank_initiated_return_risk!.risk_tier,
+      bankInitiatedReturnRiskScore:
+        data?.scores?.bank_initiated_return_risk!.score,
+      daysSinceFirstPlaidConnection:
+        data.core_attributes!.days_since_first_plaid_connection,
     },
   ];
 };
@@ -776,7 +808,9 @@ export const transformTransferAuthorizationData = (
   ];
 };
 
-export const transformTransferData = (data: TransferCreateResponse): Array<DataItem> => {
+export const transformTransferData = (
+  data: TransferCreateResponse
+): Array<DataItem> => {
   const transferData = data.transfer;
   return [
     {
@@ -888,7 +922,9 @@ export const transformIncomePaystubsData = (data: IncomePaystub) => {
   return finalArray;
 };
 
-export const transformIncomeInsightsData = (data: CraCheckReportIncomeInsightsGetResponse) => {
+export const transformIncomeInsightsData = (
+  data: CraCheckReportIncomeInsightsGetResponse
+) => {
   const report = data.report?.bank_income_summary;
   const historicalIncome = report?.historical_annual_income?.pop();
   const forecastedIncome = report?.forecasted_annual_income?.pop();
@@ -907,7 +943,9 @@ export const transformIncomeInsightsData = (data: CraCheckReportIncomeInsightsGe
   ] as Array<CreditInsightsGetItem>;
 };
 
-export const transformPartnerInsightsData = (data: CraCheckReportPartnerInsightsGetResponse) => {
+export const transformPartnerInsightsData = (
+  data: CraCheckReportPartnerInsightsGetResponse
+) => {
   const report = data.report?.prism;
   return [
     {
