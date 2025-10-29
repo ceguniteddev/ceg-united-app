@@ -198,7 +198,7 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
 
 // ---- Page ----
 export default function BusinessRecordsPage({ userId }: { userId: string }) {
-  const { businessData, isLoading } = useBusinessQuery(userId);
+  const { businessData, isLoading } = useBusinessQuery(userId, true);
 
   const list = businessData?.map((r: Business) =>
     businessRecordSchema.parse(r)

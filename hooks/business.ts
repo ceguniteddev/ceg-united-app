@@ -11,7 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { toast } from "sonner";
 
-export const useBusinessQuery = (userId: string) => {
+export const useBusinessQuery = (userId: string, enabled: boolean) => {
   const { user } = useAuth();
 
   const {
@@ -35,7 +35,7 @@ export const useBusinessQuery = (userId: string) => {
 
       return data;
     },
-    enabled: !!user && !!userId,
+    enabled: enabled ?? false, //!!user && !!userId,
   });
 
   return {
