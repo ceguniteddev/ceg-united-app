@@ -10,8 +10,6 @@ export const POST = withAuth(async (request: NextRequest) => {
   // 1. Authenticate the user to get their UID
   const decodedTokenOrResponse = await authenticateRequest(request);
 
-  console.log("decodedTokenOrResponse", decodedTokenOrResponse);
-
   // Check if authentication failed
   if (decodedTokenOrResponse instanceof NextResponse) {
     // Even if the token is invalid, we should still try to clear the cookie
