@@ -145,18 +145,19 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
   const styles =
     STATUS_STYLES[user.activeStatus || "Active"] ?? STATUS_STYLES.Active;
 
-  const { updateUserStatus, isUpdating } = useUpdateUserStatusMutation();
+  const { updateUserStatus, isUpdating } = useUpdateUserStatusMutation({
+    userId: user.id,
+  });
 
   const handleStatusChange = useCallback(
     async (value: string) => {
       if (value) {
         await updateUserStatus({
-          id: user.id,
           status: value as UserActiveStatus,
         });
       }
     },
-    [updateUserStatus, user.id]
+    [updateUserStatus]
   );
 
   return (
@@ -216,6 +217,7 @@ const RefreshCRSData = ({ userId }: { userId: string }) => {
   const handleRefreshCRSData = useCallback(async () => {
     try {
       await refreshCRSData({ userId });
+      setRefreshConfirmationOpen(false);
     } catch (error) {
       console.error("Error refreshing CRS data:", error);
       toast.error("Failed to refresh CRS data. Please try again.");

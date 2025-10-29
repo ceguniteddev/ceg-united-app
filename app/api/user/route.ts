@@ -20,8 +20,6 @@ export const GET = withAuth(async (request: NextRequest) => {
 
   const { role } = query.data;
 
-  console.log("role", role);
-
   try {
     const data = (await getUsers(role)) as UserWithId[];
     return NextResponse.json(data, { status: 200 });

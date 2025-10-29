@@ -10,8 +10,7 @@ const ApplyFundingList = () => {
   const { user } = useAuth();
 
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
-    userId: user?.uid || "",
-    adminApprovedStatus: "Approved",
+    userId: user?.uid,
   });
 
   if (isLoading) return <Spinner />;

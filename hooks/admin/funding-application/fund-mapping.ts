@@ -433,12 +433,10 @@ export const useApprovedMappedFundsMutation = () => {
 
 export const useClientMappedFundingDetailsQuery = ({
   userId,
-  adminApprovedStatus,
   clientApplicationStatus,
   referenceNumber,
 }: {
   userId?: string;
-  adminApprovedStatus?: AdminApprovedStatus;
   clientApplicationStatus?: ClientApplicationStatus[];
   referenceNumber?: string;
 }) => {
@@ -449,25 +447,55 @@ export const useClientMappedFundingDetailsQuery = ({
     isLoading,
     error,
   } = useQuery({
+    // IMPORTANT: Add all parameters that affect the query to the queryKey.
+    // This ensures React Query refetches when they change.
     queryKey: [
       "useClientMappedFundingDetailsQuery",
       userId,
-      adminApprovedStatus,
+      clientApplicationStatus,
       referenceNumber,
     ],
     enabled: !!user,
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
-      const data = await getFundMappingAnalysisDetails({
-        userId,
-        adminApprovedStatus,
-        clientApplicationStatus,
-        referenceNumber,
-      });
+
+      // 1. Create an empty URLSearchParams object
+      const queryParams = new URLSearchParams();
+
+      // 2. Conditionally append each parameter if it exists and is not empty
+      if (userId) {
+        queryParams.append("userId", userId);
+      }
+      if (referenceNumber) {
+        queryParams.append("referenceNumber", referenceNumber);
+      }
+
+      // 3. MOST IMPORTANT: Handle the array by appending each value separately
+      if (clientApplicationStatus && clientApplicationStatus.length > 0) {
+        clientApplicationStatus.forEach((status) => {
+          queryParams.append("clientApplicationStatus", status);
+        });
+      }
+
+      // 4. Construct the final URL
+      const queryString = queryParams.toString();
+      const url = `/api/funding-application${
+        queryString ? `?${queryString}` : ""
+      }`;
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(errorData);
+        toast.error("Failed to fetch client mapped funding details.");
+        return null;
+      }
+
+      const data = await response.json();
       return data;
     },
     staleTime: 0,
-    // refetchOnWindowFocus: true,
     refetchInterval: 5 * 60 * 1000,
   });
 

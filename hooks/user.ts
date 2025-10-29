@@ -3,13 +3,11 @@ import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
 import { Role } from "@/schema";
 import { NoteSchema } from "@/schema/notes";
-import { User, UserActiveStatus } from "@/schema/registration";
+import { UserActiveStatus } from "@/schema/registration";
 import {
   addUserNotes,
-  getUserById,
   getUserNotes,
   updateUserOnboardingStatus,
-  updateUserStatus,
 } from "@/service/user";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -112,29 +110,33 @@ export const useUpdateUserOnboardingMutation = () => {
   };
 };
 
-export const useUpdateUserStatusMutation = () => {
+export const useUpdateUserStatusMutation = ({ userId }: { userId: string }) => {
   const { user } = useAuth();
 
   const queryClient = useQueryClient();
 
   const updateUserStatusMutation = useMutation({
-    mutationFn: async ({
-      id,
-      status,
-    }: {
-      id: string;
-      status: UserActiveStatus;
-    }) => {
+    mutationFn: async ({ status }: { status: UserActiveStatus }) => {
       if (!user) {
         throw new AppError("User not authenticated");
       }
 
-      await updateUserStatus({ id, status });
+      // await updateUserStatus({ id, status });
+      const response = await fetch(`/api/user/${userId}/status`, {
+        method: "POST",
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Error updating user status:", data);
+        throw new AppError("Failed to update user status.");
+      }
     },
     onSuccess: (data, _var) => {
       toast.success("User status updated");
       queryClient.invalidateQueries({ queryKey: [GET_USERS] });
-      queryClient.invalidateQueries({ queryKey: [GET_USER, _var.id] });
+      queryClient.invalidateQueries({ queryKey: [GET_USER, userId] });
     },
 
     onError: (error: any) => {

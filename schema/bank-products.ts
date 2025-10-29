@@ -14,7 +14,7 @@ export const CreditBureauEnum = z.enum(
 );
 export type CreditBureau = z.infer<typeof CreditBureauEnum>;
 
-const ClientApplicationStatus = z.enum(
+export const ClientApplicationStatusEnum = z.enum(
   [
     "Not Applied",
     "Pending",
@@ -28,7 +28,9 @@ const ClientApplicationStatus = z.enum(
   }
 );
 
-export type ClientApplicationStatus = z.infer<typeof ClientApplicationStatus>;
+export type ClientApplicationStatus = z.infer<
+  typeof ClientApplicationStatusEnum
+>;
 
 // Main Zod Schema
 export const bankDataSchema = z.object({
