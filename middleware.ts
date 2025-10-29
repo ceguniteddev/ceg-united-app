@@ -2,7 +2,7 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/session";
-import { getUser } from "@/service/user";
+import { getUser, getUserById } from "@/service/user";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 
 const PUBLIC_ROUTES = new Set<string>(["/", "/register", "/api/auth/login"]);
@@ -65,8 +65,8 @@ export async function middleware(req: NextRequest) {
   try {
     const session = await verifySession(token); // should give you { email } or similar
     if (!session?.email) throw new Error("Invalid session");
-    const user = await getUser(session.email);
-    role = (user?.role as any) ?? null;
+    const user = await getUserById(session.uid);
+    role = (user?.role as any) ?? "Client";
   } catch {
     // Bad token/session: clear cookie and kick to "/"
     const res = NextResponse.redirect(new URL("/", origin));

@@ -16,14 +16,9 @@ import {
   User,
 } from "firebase/auth";
 import { authFirebase } from "@/lib/firebase";
-import {
-  createSession,
-  deleteCookie,
-  logoutSession,
-  refreshSession,
-} from "@/lib/session";
+import { createSession, deleteCookie, logoutSession } from "@/lib/session";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
-import { getUser } from "@/service/user";
+import { getUserById } from "@/service/user";
 import { Role } from "@/schema";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -65,11 +60,11 @@ export function AuthProvider({
   // Helper function to load user role and set state
   const loadAndSetUserData = useCallback(async (firebaseUser: User) => {
     // No need to create a session here, just get user data
-    const userData = await getUser(firebaseUser.email || "");
+    const userData = await getUserById(firebaseUser.uid);
     if (!userData) {
       return;
     }
-    const userRole = userData?.role ?? ("Admin" as Role);
+    const userRole = userData?.role ?? "Client";
 
     setUser(firebaseUser);
     setRole(userRole as Role);
@@ -131,9 +126,6 @@ export function AuthProvider({
           throw new AppError("Captcha verification failed. Please try again.");
         }
 
-        const userRole = await getUser(email || "");
-        if (!userRole) throw new AppError("Invalid email or password.");
-
         // local cleanup only; don't revoke all sessions
         try {
           await authFirebase.signOut();
@@ -147,8 +139,13 @@ export function AuthProvider({
           email,
           password
         );
-        if (!firebaseUser?.emailVerified)
+
+        if (!firebaseUser?.emailVerified) {
           throw new AppError("Please verify your email before signing in.");
+        }
+
+        const userRole = await getUserById(firebaseUser.uid);
+        if (!userRole) throw new AppError("Invalid email or password.");
 
         const idToken = await firebaseUser.getIdToken(true);
         await createSession(idToken);
@@ -160,7 +157,7 @@ export function AuthProvider({
         await loadAndSetUserData(firebaseUser);
 
         // Use the role you just set instead of refetching
-        const nextRole = userRole.role ?? ("Admin" as Role);
+        const nextRole = userRole.role || "Client";
         router.push(nextRole === "Client" ? "/overview" : "/admin/home");
       } catch (error) {
         if (error instanceof AppError) throw error;
