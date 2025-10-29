@@ -9,6 +9,7 @@ import { Timestamp } from "firebase-admin/firestore";
 
 export const recordBusiness = async (values: Business) => {
   const result = businessRecordSchema.safeParse(values);
+
   if (!result.success) {
     throw new AppError(result.error.message);
   }

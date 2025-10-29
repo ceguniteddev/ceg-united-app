@@ -41,7 +41,17 @@ export const useGetClientStatistics = () => {
     queryKey: [GET_CLIENT_STATISTICS, user?.uid],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
-      const data = await getClientStatistics(user.uid);
+      // const data = await getClientStatistics(user.uid);
+      const response = await fetch(`/api/user/${user.uid}/statistics`);
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Error fetching client statistics:", data);
+        toast.error("Failed to fetch client statistics.");
+        return null;
+      }
+
+      const data = await response.json();
 
       return data;
     },

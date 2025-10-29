@@ -17,7 +17,7 @@ export const GET = withAuth(
     try {
       const data = await getBusiness(userId);
 
-      return NextResponse.json(data, { status: 400 });
+      return NextResponse.json(data, { status: 200 });
     } catch (err) {
       if (err instanceof AppError) {
         return badRequest({ errors: err.message });
