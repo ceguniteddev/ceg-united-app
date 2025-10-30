@@ -165,9 +165,13 @@ const ApplyFundingForm = ({
         form.setValue("businessStreetAddress", b.businessStreetAddress ?? "", {
           shouldValidate: false,
         });
-        form.setValue("businessStreetHouseNumber", b.businessStreetHouseNumber ?? "", {
-          shouldValidate: false,
-        });
+        form.setValue(
+          "businessStreetHouseNumber",
+          b.businessStreetHouseNumber ?? "",
+          {
+            shouldValidate: false,
+          }
+        );
         form.setValue("businessCityAddress", b.businessCityAddress ?? "", {
           shouldValidate: false,
         });
@@ -766,6 +770,18 @@ const ApplyFundingForm = ({
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="grid grid-cols-2 gap-4">
+                            <CustomFormField
+                              name={"dateOfIncorporation"}
+                              type="date-picker"
+                              label={`Date of Incorporation?`}
+                            />
+                            <CustomFormField
+                              name={"stateOfIncorporation"}
+                              label={`State of Incorporation?`}
+                              type="select"
+                              placeholder="Select a state"
+                              options={US_STATES}
+                            />
                             <CustomFormField
                               name={"businessGrossProjectedRevenue1"}
                               type="number"

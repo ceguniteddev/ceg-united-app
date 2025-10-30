@@ -64,7 +64,12 @@ const Address = ({ rec }: { rec: Business }) => (
   <div className="flex items-start gap-2 text-sm">
     <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
     <div className="leading-tight">
-      <div className="font-medium">{rec.businessStreetAddress}</div>
+      <div className="font-medium">
+        {rec.businessStreetAddress}{" "}
+        {rec.businessStreetHouseNumber
+          ? `, ${rec.businessStreetHouseNumber}`
+          : ``}
+      </div>
       <div className="text-muted-foreground">
         {rec.businessCityAddress}, {rec.businessStateAddress}{" "}
         {rec.businessPostalAddress}

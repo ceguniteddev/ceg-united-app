@@ -126,6 +126,11 @@ export const applyFundingSchema = z
     // lastYearTaxes: z.coerce.number<number>().optional(),
     // currentYearTaxes: z.coerce.number<number>().optional(),
 
+    stateOfIncorporation: z.string().optional(),
+    dateOfIncorporation: z.coerce
+      .date<Date>({ error: "Require Date" })
+      .optional(),
+
     businessGrossProjectedRevenue1: z.coerce.number<number>().optional(),
     businessGrossProjectedRevenue2: z.coerce.number<number>().optional(),
     businessGrossProjectedRevenue3: z.coerce.number<number>().optional(),

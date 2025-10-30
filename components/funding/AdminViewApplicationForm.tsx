@@ -160,6 +160,21 @@ export default function FundingApplicationView({ data }: Props) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="Business Name" value={data.businessName} />
                 <Field label="EIN" value={data.employerIdentificationNumber} />
+
+                <Field
+                  label="State of Incorporation"
+                  value={data.stateOfIncorporation}
+                />
+                {data.dateOfIncorporation &&
+                data.dateOfIncorporation instanceof Date ? (
+                  <Field
+                    label="Date of Incorporation"
+                    value={formatDate(data.dateOfIncorporation, "MM/dd/yyyy")}
+                  />
+                ) : (
+                  <Field label="Date of Incorporation" value={null} />
+                )}
+
                 {/* <Field
                   label="Last Year Taxes"
                   value={currency(data.lastYearTaxes)}
