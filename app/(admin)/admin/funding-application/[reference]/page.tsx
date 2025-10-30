@@ -10,10 +10,9 @@ import SendEmail from "@/components/SendEmail";
 import Spinner from "@/components/Spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetApplyFundingByReferenceNumber } from "@/hooks/apply-funding";
-import { ApplyFunding } from "@/schema/apply-funding";
 import { updateApplicationStatus } from "@/service/apply-funding";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 const AdminViewApplication = () => {
   const params = useParams();
