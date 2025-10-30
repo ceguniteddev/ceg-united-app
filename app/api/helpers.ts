@@ -40,6 +40,10 @@ export const notFound = (message = "Not Found") => {
   return NextResponse.json({ message }, { status: 404 });
 };
 
+export const notAllowed = (message = "Method Not Allowed") => {
+  return NextResponse.json({ message }, { status: 405 });
+};
+
 export const tooManyRequests = (message = "Too Many Requests") => {
   return NextResponse.json({ message }, { status: 429 });
 };

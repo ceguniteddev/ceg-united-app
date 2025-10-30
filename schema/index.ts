@@ -84,6 +84,7 @@ export const businessRecordSchema = z.object({
   userId: z.string().min(1, { message: "Required" }),
   businessName: z.string().min(1, { message: "Required" }),
   businessStreetAddress: z.string().min(1, { message: "Required" }),
+  businessStreetHouseNumber: z.string().optional(),
   businessCityAddress: z.string().min(1, { message: "Required" }),
   businessStateAddress: z.string().min(1, { message: "Required" }),
   businessPostalAddress: z
