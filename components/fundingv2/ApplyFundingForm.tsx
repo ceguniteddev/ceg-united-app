@@ -165,6 +165,9 @@ const ApplyFundingForm = ({
         form.setValue("businessStreetAddress", b.businessStreetAddress ?? "", {
           shouldValidate: false,
         });
+        form.setValue("businessStreetHouseNumber", b.businessStreetHouseNumber ?? "", {
+          shouldValidate: false,
+        });
         form.setValue("businessCityAddress", b.businessCityAddress ?? "", {
           shouldValidate: false,
         });
@@ -442,10 +445,18 @@ const ApplyFundingForm = ({
                           </div>
                         )}
 
-                        <CustomFormField
-                          name={"addressStreet"}
-                          label={"Street Address"}
-                        />
+                        <div className="grid grid-cols-3 gap-4">
+                          <CustomFormField
+                            className="col-span-2"
+                            name={"addressStreet"}
+                            label={"Street Address"}
+                          />
+                          <CustomFormField
+                            name={"houseNumber"}
+                            label={"Apartment/Suite/Unit/House Number"}
+                          />
+                        </div>
+
                         <div className="grid grid-cols-3 gap-4">
                           <CustomFormField
                             name={"addressCity"}
@@ -500,10 +511,17 @@ const ApplyFundingForm = ({
                           }
                         />
 
-                        <CustomFormField
-                          name={"addressStreet"}
-                          label={"Street Address"}
-                        />
+                        <div className="grid grid-cols-3 gap-4">
+                          <CustomFormField
+                            className="col-span-2"
+                            name={"addressStreet"}
+                            label={"Street Address"}
+                          />
+                          <CustomFormField
+                            name={"houseNumber"}
+                            label={"Apartment/Suite/Unit/House Number"}
+                          />
+                        </div>
                         <div className="grid grid-cols-3 gap-4">
                           <CustomFormField
                             name={"addressCity"}
@@ -531,10 +549,17 @@ const ApplyFundingForm = ({
                         <CardTitle>Tradelines Information</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <CustomFormField
-                          name={"addressStreet"}
-                          label={"Street Address"}
-                        />
+                        <div className="grid grid-cols-3 gap-4">
+                          <CustomFormField
+                            className="col-span-2"
+                            name={"addressStreet"}
+                            label={"Street Address"}
+                          />
+                          <CustomFormField
+                            name={"houseNumber"}
+                            label={"Apartment/Suite/Unit/House Number"}
+                          />
+                        </div>
                         <div className="grid grid-cols-3 gap-4">
                           <CustomFormField
                             name={"addressCity"}
@@ -627,10 +652,41 @@ const ApplyFundingForm = ({
                               label={"Employer Phone Number?"}
                             />
                           </div>
-                          <CustomFormField
+                          {/* <CustomFormField
                             name={"employmentEmployerAddress"}
                             label={"Employer Address?"}
-                          />
+                          /> */}
+
+                          <div className="grid grid-cols-3 gap-4">
+                            <CustomFormField
+                              className="col-span-2"
+                              name={"employmentEmployerAddressStreet"}
+                              label={"Street Address"}
+                            />
+                            <CustomFormField
+                              name={"employmentEmployerHouseNumber"}
+                              label={"Apartment/Suite/Unit/House Number"}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-4">
+                            <CustomFormField
+                              name={"employmentEmployerAddressCity"}
+                              label={"City"}
+                            />
+                            <CustomFormField
+                              name={"employmentEmployerAddressState"}
+                              label={"State"}
+                              type="select"
+                              placeholder="Select a state"
+                              options={US_STATES}
+                            />
+                            <CustomFormField
+                              name={"employmentEmployerAddressPostal"}
+                              label={"Zip Code"}
+                            />
+                          </div>
+
                           <div className="grid grid-cols-2 gap-4">
                             <CustomFormField
                               name={"employmentOccupation"}
@@ -743,9 +799,7 @@ const ApplyFundingForm = ({
                           </div>
                           <CustomFormField
                             name={"businessTaxes"}
-                            label={
-                              "How much did you report on your business taxes?"
-                            }
+                            label={"Did you report on your business taxes?"}
                             type="select"
                             options={businessTaxes}
                             onSelectValue={handleBusinessTaxesChange}

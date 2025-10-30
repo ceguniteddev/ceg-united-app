@@ -32,6 +32,7 @@ const SOCIAL_MEDIA_PLATFORMS = [
 const defaultValues: BusinessForm = {
   businessName: "",
   businessStreetAddress: "",
+  businessStreetHouseNumber: "",
   businessCityAddress: "",
   businessStateAddress: "",
   businessPostalAddress: "",
@@ -182,10 +183,21 @@ const ClientBusinessManagement = ({
                   />
                 </div>
 
-                <CustomFormField
+                {/* <CustomFormField
                   name="businessStreetAddress"
                   label="* Street Address"
-                />
+                /> */}
+                <div className="grid grid-cols-3 gap-4">
+                  <CustomFormField
+                    className="col-span-2"
+                    name="businessStreetAddress"
+                    label="* Street Address"
+                  />
+                  <CustomFormField
+                    name={"businessStreetHouseNumber"}
+                    label={"Apartment/Suite/Unit/House Number"}
+                  />
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <CustomFormField name="businessCityAddress" label="* City" />

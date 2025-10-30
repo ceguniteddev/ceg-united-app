@@ -18,30 +18,31 @@ export const useRegistration = () => {
       token: string | null;
     }) => {
       if (!token) {
-        throw new AppError("Failed to register. Please refresh the page.");
+        toast.warning("Failed to register. Please refresh the page.");
+        return;
       }
 
-      const captchaData = await createEnterpriseAssessment(
-        token,
-        "registration"
-      );
-      if (!captchaData || captchaData.score < 0.5) {
-        throw new AppError("Failed to register. Please refresh the page.");
-      }
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token, values }),
+      });
 
-      await registerUser(values);
-      router.replace("/");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw errorData;
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast.success("Registered successfully.");
+      router.replace("/");
     },
     onError: (error: any) => {
-      if (error instanceof AppError) {
-        toast.warning(error.message);
-      } else {
-        toast.warning(error.message);
-        console.error(error);
-      }
+      toast.warning(error.errors[0]);
+      console.error(error);
     },
   });
 
