@@ -38,8 +38,19 @@ import { ApprovedBankFormData } from "@/schema/bank-products";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
-
+interface IssueItem {
+  issues: string[];
+  negatives: string[];
+  degoretory: string[]; // Typo from user's provided JSON
+}
 // --- 1. ADD DETAILED TYPE DEFINITIONS FOR CRS DATA ---
+interface IssuesReportData {
+  id: "issues";
+  type: "issues";
+  userId: string;
+  createdAt: string;
+  report: IssueItem[];
+}
 
 interface CreditReport {
   repositoryIncluded?: {
@@ -69,7 +80,8 @@ interface BusinessWithCRSData extends Business {
 
 export interface ClientData {
   userData: User | null;
-  crsReportData: CreditReportWithId[] | null; // Use the detailed type
+  // crsReportData: CreditReportWithId[] | null; // Use the detailed type
+  crsReportData: (CreditReportWithId | IssuesReportData)[] | null;
   fundingApplications: ApplyFunding[] | null;
   approvedFunds?: ApprovedBankFormData[] | null;
   businessesWithCrsData: BusinessWithCRSData[];
@@ -106,7 +118,9 @@ function detectBureau(
   return null;
 }
 
-function groupByBureau(docs?: CreditReportWithId[] | null) {
+function groupByBureau(
+  docs?: (CreditReportWithId | IssuesReportData)[] | null
+) {
   const out: Record<
     "Experian" | "TransUnion" | "Equifax",
     CreditReportWithId | null
@@ -116,7 +130,13 @@ function groupByBureau(docs?: CreditReportWithId[] | null) {
     Equifax: null,
   };
   if (!docs) return out;
-  for (const d of docs) {
+
+  // Filter for actual credit reports before grouping to avoid processing the 'issues' object
+  const creditDocs = docs.filter(
+    (d): d is CreditReportWithId => d.id !== "issues"
+  );
+
+  for (const d of creditDocs) {
     const bureau = d?.report ? detectBureau(d.report) : null;
     if (!bureau) continue;
     const prev = out[bureau];
@@ -317,6 +337,14 @@ export const ClientDashboard = ({
       Equifax: bureauMap.Equifax?.report.scores?.[0],
     };
 
+    const issuesData = clientData.crsReportData?.find(
+      (d) => d.id === "issues"
+    ) as IssuesReportData | undefined;
+
+    const reportIssues = issuesData?.report[0]?.issues ?? [];
+    const reportNegatives = issuesData?.report[0]?.negatives ?? [];
+    const reportDerogatory = issuesData?.report[0]?.degoretory ?? [];
+
     return {
       totalRequested,
       totalApproved,
@@ -325,6 +353,9 @@ export const ClientDashboard = ({
       averageMonthlyBalance,
       averageMonthlyIncome,
       scoresByBureau,
+      reportIssues,
+      reportNegatives,
+      reportDerogatory,
     };
   }, [clientData]);
 
@@ -560,7 +591,80 @@ export const ClientDashboard = ({
             </Card>
           )}
         </div>
+
+        <IssuesCard
+          issues={stats.reportIssues}
+          negatives={stats.reportNegatives}
+          derogatory={stats.reportDerogatory}
+        />
       </main>
     </div>
+  );
+};
+
+const IssuesCard = ({
+  issues,
+  negatives,
+  derogatory,
+}: {
+  issues: string[];
+  negatives: string[];
+  derogatory: string[];
+}) => {
+  if (
+    issues.length === 0 &&
+    negatives.length === 0 &&
+    derogatory.length === 0
+  ) {
+    return null; // Don't render the card if there's no data
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Credit Analysis</CardTitle>
+        <CardDescription>
+          Summary and potential issues from your credit analysis.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        {issues.length > 0 && (
+          <div>
+            <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">
+              Analysis Notes
+            </h4>
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              {issues.map((item, index) => (
+                <li key={`issue-${index}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {negatives.length > 0 && (
+          <div>
+            <h4 className="font-semibold text-orange-600 dark:text-orange-500 mb-1">
+              Negative Items
+            </h4>
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              {negatives.map((item, index) => (
+                <li key={`negative-${index}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {derogatory.length > 0 && (
+          <div>
+            <h4 className="font-semibold text-red-600 dark:text-red-500 mb-1">
+              Derogatory Marks
+            </h4>
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              {derogatory.map((item, index) => (
+                <li key={`derogatory-${index}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
