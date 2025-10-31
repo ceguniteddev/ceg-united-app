@@ -574,3 +574,27 @@
     background: #7878a3;
   }
 }
+
+.signup-link-playful {
+  display: inline-block;
+  /* padding: 14px 28px; */
+  background-image: linear-gradient(
+    to right,
+    #ff7e5f,
+    #feb47b
+  ); /* Warm gradient */
+  color: white;
+  text-decoration: none;
+  font-weight: 700; /* Bold font weight */
+  font-family: "Poppins", sans-serif;
+  border-radius: 50px; /* Pill shape */
+  border: none;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 15px rgba(254, 180, 123, 0.4);
+  cursor: pointer;
+}
+
+.signup-link-playful:hover {
+  transform: scale(1.05); /* Enlarge on hover */
+  box-shadow: 0 6px 20px rgba(254, 180, 123, 0.6);
+}

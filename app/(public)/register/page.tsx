@@ -5,10 +5,7 @@ import { Form } from "@/components/ui/form";
 import { User, registrationSchema } from "@/schema/registration";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon, SaveIcon } from "lucide-react";
-import {
-  useForm,
-  useWatch,
-} from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   Card,
   CardContent,
@@ -47,6 +44,7 @@ const RegistrationPage = () => {
       role: "Client",
       isOnboarded: false,
       registrationDate: new Date(),
+      denefitsSignedUp: false,
     };
     await recordRegistration({ token, values });
   };
