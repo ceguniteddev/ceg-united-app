@@ -73,14 +73,15 @@ export function AuthProvider({
   }, []);
 
   const logOut = useCallback(async () => {
-    await Promise.all([await logoutSession(), await authFirebase.signOut()]);
-
-    await queryClient.cancelQueries({ predicate: () => true });
-    queryClient.clear();
     setUser(null);
     setRole(null);
     setIsAdmin(false);
     setIsOnboarded(false);
+
+    await queryClient.cancelQueries({ predicate: () => true });
+    queryClient.clear();
+
+    await Promise.all([await logoutSession(), await authFirebase.signOut()]);
 
     router.push("/");
   }, [router, queryClient]);
