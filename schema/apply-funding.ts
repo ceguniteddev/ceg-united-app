@@ -77,22 +77,29 @@ export const applyFundingSchema = z
     // legalResidentOther: z.string().optional(),
     // motherMaidenName: z.string().min(1, { error: "Required" }),
     addressStreet: z.string().min(1, { error: "Required" }),
+    houseNumber: z.string().optional(),
     addressCity: z.string().min(1, { error: "Required" }),
     addressState: z.string().min(1, { error: "Required" }),
     addressPostal: z.string().min(1, { error: "Required" }),
 
     moveInCurrentAddress: z.coerce
       .date<Date>({ error: "Require Date" })
-      .optional(), //TODO
-    payPerMonth: z.coerce.number<number>().optional(), //TODO
-    rentOrMortgage: z.string().optional(), //TODO
+      .optional(),
+    payPerMonth: z.coerce.number<number>().optional(),
+    rentOrMortgage: z.string().optional(),
 
     howDoYouGetPaid: z.string().optional(),
     employmentStatus: z.string().optional(),
     employmentPayPerMonth: z.coerce.number<number>().optional(),
     employmentEmployerName: z.string().optional(),
     employmentEmployerPhoneNumber: z.string().optional(),
-    employmentEmployerAddress: z.string().optional(),
+    // employmentEmployerAddress: z.string().optional(),
+    employmentEmployerAddressStreet: z.string().optional(),
+    employmentEmployerHouseNumber: z.string().optional(),
+    employmentEmployerAddressCity: z.string().optional(),
+    employmentEmployerAddressState: z.string().optional(),
+    employmentEmployerAddressPostal: z.string().optional(),
+
     employmentOccupation: z.string().optional(),
     employmentDateOfHire: z.coerce
       .date<Date>({ error: "Require Date" })
@@ -107,6 +114,7 @@ export const applyFundingSchema = z
     businessId: z.string().optional(),
     businessName: z.string().optional(),
     businessStreetAddress: z.string().optional(),
+    businessStreetHouseNumber: z.string().optional(),
     businessCityAddress: z.string().optional(),
     businessStateAddress: z.string().optional(),
     businessPostalAddress: z.string().optional(),
@@ -117,6 +125,11 @@ export const applyFundingSchema = z
     socialMedia: z.string({ error: "Required" }).optional(),
     // lastYearTaxes: z.coerce.number<number>().optional(),
     // currentYearTaxes: z.coerce.number<number>().optional(),
+
+    stateOfIncorporation: z.string().optional(),
+    dateOfIncorporation: z.coerce
+      .date<Date>({ error: "Require Date" })
+      .optional(),
 
     businessGrossProjectedRevenue1: z.coerce.number<number>().optional(),
     businessGrossProjectedRevenue2: z.coerce.number<number>().optional(),
@@ -366,16 +379,72 @@ export const applyFundingSchema = z
           path: ["employmentEmployerPhoneNumber"],
         });
       }
+      // if (
+      //   !data.employmentEmployerAddress ||
+      //   data.employmentEmployerAddress.length === 0
+      // ) {
+      //   ctx.addIssue({
+      //     code: "custom",
+      //     message: "Required",
+      //     path: ["employmentEmployerAddress"],
+      //   });
+      // }
+
       if (
-        !data.employmentEmployerAddress ||
-        data.employmentEmployerAddress.length === 0
+        !data.employmentEmployerAddressStreet ||
+        data.employmentEmployerAddressStreet.length === 0
       ) {
         ctx.addIssue({
           code: "custom",
           message: "Required",
-          path: ["employmentEmployerAddress"],
+          path: ["employmentEmployerAddressStreet"],
         });
       }
+
+      if (
+        !data.employmentEmployerHouseNumber ||
+        data.employmentEmployerHouseNumber.length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentEmployerHouseNumber"],
+        });
+      }
+
+      if (
+        !data.employmentEmployerAddressCity ||
+        data.employmentEmployerAddressCity.length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentEmployerAddressCity"],
+        });
+      }
+
+      if (
+        !data.employmentEmployerAddressState ||
+        data.employmentEmployerAddressState.length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentEmployerAddressState"],
+        });
+      }
+
+      if (
+        !data.employmentEmployerAddressPostal ||
+        data.employmentEmployerAddressPostal.length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentEmployerAddressPostal"],
+        });
+      }
+
       if (
         !data.employmentOccupation ||
         data.employmentOccupation.length === 0

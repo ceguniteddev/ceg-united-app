@@ -7,7 +7,12 @@ import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { isPlaidProductionReady } from "./lib/plaid";
 import { ro } from "date-fns/locale";
 
-const PUBLIC_ROUTES = new Set<string>(["/", "/register", "/api/auth/login"]);
+const PUBLIC_ROUTES = new Set<string>([
+  "/",
+  "/register",
+  "/api/auth/login",
+  "/api/register",
+]);
 const CLIENT_HOME = "/overview";
 const ADMIN_HOME = "/admin/home";
 

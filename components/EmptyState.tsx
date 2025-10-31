@@ -14,7 +14,7 @@ type EmptyStateProps = {
 
 export function EmptyState({
   title = "No documents found",
-  description = "You don’t have any documents yet. Upload one to get started.",
+  description = "You don't have any documents yet. Upload one to get started.",
   icon = <SearchX className="h-10 w-10" aria-hidden="true" />,
   className,
   actionLabel = "Upload Document",

@@ -92,7 +92,8 @@ export async function createEnterpriseAssessment(
   // 3. Check if the risk score is above our threshold.
   if (score < scoreThreshold) {
     console.warn(`Low reCAPTCHA score: ${score}. Blocking request.`);
-    throw new AppError(`Low reCAPTCHA score (${score}). Please try again.`);
+    // throw new AppError(`Low reCAPTCHA score (${score}). Please try again.`);
+    throw new AppError("Captcha validation failed. Please try again.");
   }
 
   // console.log(

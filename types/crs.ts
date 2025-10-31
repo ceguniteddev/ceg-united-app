@@ -12,7 +12,7 @@ export interface Address {
   borrowerResidencyType?: string;
 }
 
-export type CRSReportType = "experian" | "transunion" | "equifax";
+export type CRSReportType = "experian" | "transunion" | "equifax" | "issues";
 
 export interface Name {
   firstName: string;

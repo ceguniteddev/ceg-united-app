@@ -160,6 +160,21 @@ export default function FundingApplicationView({ data }: Props) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="Business Name" value={data.businessName} />
                 <Field label="EIN" value={data.employerIdentificationNumber} />
+
+                <Field
+                  label="State of Incorporation"
+                  value={data.stateOfIncorporation}
+                />
+                {data.dateOfIncorporation &&
+                data.dateOfIncorporation instanceof Date ? (
+                  <Field
+                    label="Date of Incorporation"
+                    value={formatDate(data.dateOfIncorporation, "MM/dd/yyyy")}
+                  />
+                ) : (
+                  <Field label="Date of Incorporation" value={null} />
+                )}
+
                 {/* <Field
                   label="Last Year Taxes"
                   value={currency(data.lastYearTaxes)}
@@ -173,6 +188,10 @@ export default function FundingApplicationView({ data }: Props) {
                 <Field label="Phone" value={data.businessPhoneNumber} />
                 <Field label="Social Media" value={data.socialMedia} />
                 <Field label="Street" value={data.businessStreetAddress} />
+                <Field
+                  label="Apartment/Suite/Unit/House Number"
+                  value={data.businessStreetHouseNumber}
+                />
                 <Field label="City" value={data.businessCityAddress} />
                 <Field label="State" value={data.businessStateAddress} />
                 <Field label="Zip Code" value={data.businessPostalAddress} />
@@ -254,6 +273,10 @@ export default function FundingApplicationView({ data }: Props) {
           <h3 className="text-sm font-semibold mb-3">Current Address</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Street" value={data.addressStreet} />
+            <Field
+              label="Apartment/Suite/Unit/House Number"
+              value={data.houseNumber}
+            />
             <Field label="City" value={data.addressCity} />
             <Field label="State" value={data.addressState} />
             <Field label="Zip Code" value={data.addressPostal} />
@@ -302,14 +325,30 @@ export default function FundingApplicationView({ data }: Props) {
               label="Employer Phone"
               value={data.employmentEmployerPhoneNumber}
             />
-            <Field
+            {/* <Field
               label="Employer Address"
               value={data.employmentEmployerAddress}
-            />
+            /> */}
             <Field label="Occupation" value={data.employmentOccupation} />
             <Field
               label="Date of Hire"
               value={fmtDate(data.employmentDateOfHire)}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field
+              label="Street"
+              value={data.employmentEmployerAddressStreet}
+            />
+            <Field
+              label="Apartment/Suite/Unit/House Number"
+              value={data.employmentEmployerHouseNumber}
+            />
+            <Field label="City" value={data.employmentEmployerAddressCity} />
+            <Field label="State" value={data.employmentEmployerAddressState} />
+            <Field
+              label="Zip Code"
+              value={data.employmentEmployerAddressPostal}
             />
           </div>
         </section>
