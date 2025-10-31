@@ -20,6 +20,10 @@ export default function DashboardPage() {
 
   if (isLoading) return <Spinner displayText="Loading dashboard..." />;
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="container mx-auto py-8">
       <ResponsiveDialog
