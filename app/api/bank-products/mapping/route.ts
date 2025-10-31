@@ -42,7 +42,7 @@ export const POST = withAuth(async (req: NextRequest) => {
     if (err instanceof AppError) {
       return badRequest({ errors: err.message });
     }
-    console.log(err);
+      console.log("err", err);
     return internalServerError();
   }
 });
