@@ -112,3 +112,5 @@ env:
     secret: EMAIL_PASSWORD
   - variable: ENCRYPTION_KEY
     secret: ENCRYPTION_KEY
+  - variable: FIREBASE_PRIVATE_KEY_BASE64
+    secret: FIREBASE_PRIVATE_KEY_BASE64
