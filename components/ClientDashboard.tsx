@@ -1,27 +1,25 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   DollarSign,
   Landmark,
   FileText,
   TrendingUp,
   Scale,
-  PlusCircle,
   AlertCircle,
   Briefcase,
   Banknote,
   CalendarDays,
-  ArrowRight,
   BanknoteArrowUp,
 } from "lucide-react";
 import Link from "next/link";
@@ -35,6 +33,7 @@ import { PlaidCompleteRow } from "@/service/plaid/data";
 import { Business } from "@/schema";
 import { CreditScore } from "@/types/crs";
 import { ApprovedBankFormData } from "@/schema/bank-products";
+import { Button } from "./ui/button";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -611,6 +610,10 @@ const IssuesCard = ({
   negatives: string[];
   derogatory: string[];
 }) => {
+  const handleSignUp = useCallback(() => {
+    const url = process.env.NEXT_PUBLIC_DEFENITS_URL;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, []);
   if (
     issues.length === 0 &&
     negatives.length === 0 &&
@@ -626,6 +629,11 @@ const IssuesCard = ({
         <CardDescription>
           Summary and potential issues from your credit analysis.
         </CardDescription>
+        <CardAction>
+          <Button className="signup-link-playful" onClick={handleSignUp}>
+            Sign Up
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         {issues.length > 0 && (

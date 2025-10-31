@@ -89,6 +89,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: NEXT_PUBLIC_DEFENITS_URL
+    value: https://request.denefits.com/finance-panel?product_code=pc_2669317da155&auth_token=7554e0188f4b64b5119474d4e620c092
+    availability:
+      - BUILD
+      - RUNTIME
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   - variable: FIREBASE_CLIENT_EMAIL
@@ -101,10 +106,8 @@ env:
     secret: PLAID_CLIENT_ID
   - variable: PLAID_SECRET
     secret: PLAID_SECRET_STAGING
-  - variable: PASSWORD_PEPPER
-    secret: PASSWORD_PEPPER_STAGING
-  - variable: RECAPTCHA_SECRET_KEY
-    secret: RECAPTCHA_SECRET_KEY_STAGING
+  # - variable: RECAPTCHA_SECRET_KEY
+  #   secret: RECAPTCHA_SECRET_KEY_STAGING
   - variable: EMAIL_PASSWORD
     secret: EMAIL_PASSWORD
   - variable: ENCRYPTION_KEY

@@ -66,6 +66,7 @@ export const registrationSchema = z.object({
   //   .nonempty({ message: "Required" })
   //   .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" }),
   activeStatus: UserActiveStatusEnum.optional(),
+  denefitsSignedUp: z.boolean().optional(),
 
   // personalIncome: z.coerce.number<number>({ error: "Requires a number value" }).optional(),
   // frequencyOfIncome: z.string().optional(),
