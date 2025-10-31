@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   if (!result.success) {
     console.info("Validation failed");
-    console.log(result.error);
+    console.log("result.error", result.error);
     const message = getMessage(result.error);
     return badRequest({ errors: message });
   }
