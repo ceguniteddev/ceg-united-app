@@ -21,6 +21,7 @@ import {
   Banknote,
   CalendarDays,
   BanknoteArrowUp,
+  Receipt,
 } from "lucide-react";
 import Link from "next/link";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
@@ -37,11 +38,13 @@ import { Button } from "./ui/button";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
+
 interface IssueItem {
   issues: string[];
   negatives: string[];
   degoretory: string[]; // Typo from user's provided JSON
 }
+
 // --- 1. ADD DETAILED TYPE DEFINITIONS FOR CRS DATA ---
 interface IssuesReportData {
   id: "issues";
@@ -49,6 +52,18 @@ interface IssuesReportData {
   userId: string;
   createdAt: string;
   report: IssueItem[];
+}
+
+interface DTIReportData {
+  id: "dti";
+  type: "dti";
+  userId: string;
+  createdAt: string;
+  report: {
+    monthlyIncome: string;
+    monthlyDebtPayments: string;
+    finalDTI: string;
+  }[];
 }
 
 interface CreditReport {
@@ -79,8 +94,9 @@ interface BusinessWithCRSData extends Business {
 
 export interface ClientData {
   userData: User | null;
-  // crsReportData: CreditReportWithId[] | null; // Use the detailed type
-  crsReportData: (CreditReportWithId | IssuesReportData)[] | null;
+  crsReportData:
+    | (CreditReportWithId | IssuesReportData | DTIReportData)[]
+    | null;
   fundingApplications: ApplyFunding[] | null;
   approvedFunds?: ApprovedBankFormData[] | null;
   businessesWithCrsData: BusinessWithCRSData[];
@@ -118,7 +134,7 @@ function detectBureau(
 }
 
 function groupByBureau(
-  docs?: (CreditReportWithId | IssuesReportData)[] | null
+  docs?: (CreditReportWithId | IssuesReportData | DTIReportData)[] | null
 ) {
   const out: Record<
     "Experian" | "TransUnion" | "Equifax",
@@ -132,7 +148,7 @@ function groupByBureau(
 
   // Filter for actual credit reports before grouping to avoid processing the 'issues' object
   const creditDocs = docs.filter(
-    (d): d is CreditReportWithId => d.id !== "issues"
+    (d): d is CreditReportWithId => d.id !== "issues" && d.id !== "dti"
   );
 
   for (const d of creditDocs) {
@@ -261,6 +277,57 @@ const ScoreCard: React.FC<{
   );
 };
 
+const DTICard: React.FC<{
+  data: {
+    monthlyIncome: string;
+    monthlyDebtPayments: string;
+    finalDTI: string;
+  } | null;
+}> = ({ data }) => {
+  if (!data) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Debt-to-Income Ratio</CardTitle>
+          <CardDescription>
+            Your debt-to-income (DTI) ratio could not be calculated.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center text-muted-foreground">
+            No DTI data available.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Debt-to-Income Ratio</CardTitle>
+        <CardDescription>
+          A summary of your debt-to-income ratio.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">Monthly Income</span>
+          <span className="font-semibold">{data.monthlyIncome}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">Monthly Debt Payments</span>
+          <span className="font-semibold">{data.monthlyDebtPayments}</span>
+        </div>
+        <div className="flex items-center justify-between text-lg font-bold">
+          <span>Final DTI</span>
+          <span>{data.finalDTI}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 // --- MAIN DASHBOARD COMPONENT ---
 export const ClientDashboard = ({
   clientData,
@@ -340,9 +407,14 @@ export const ClientDashboard = ({
       (d) => d.id === "issues"
     ) as IssuesReportData | undefined;
 
+    const dtiData = clientData.crsReportData?.find((d) => d.id === "dti") as
+      | DTIReportData
+      | undefined;
+
     const reportIssues = issuesData?.report[0]?.issues ?? [];
     const reportNegatives = issuesData?.report[0]?.negatives ?? [];
     const reportDerogatory = issuesData?.report[0]?.degoretory ?? [];
+    const dtiReport = dtiData?.report[0] ?? null;
 
     return {
       totalRequested,
@@ -355,8 +427,14 @@ export const ClientDashboard = ({
       reportIssues,
       reportNegatives,
       reportDerogatory,
+      dtiReport,
     };
   }, [clientData]);
+
+  const handleSignUp = useCallback(() => {
+    const url = process.env.NEXT_PUBLIC_DEFENITS_URL;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, []);
 
   if (!clientData || !stats) {
     return (
@@ -383,19 +461,24 @@ export const ClientDashboard = ({
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6 bg-gray-50/50 dark:bg-background">
-      <header>
-        {adminView ? (
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-            {`${userData?.firstName} ${userData?.lastName}` || "Client"}!
-          </h1>
-        ) : (
-          <div>
+      <header className="flex items-start justify-between">
+        <div>
+          {adminView ? (
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-              Welcome, {userData?.firstName || "Client"}!
+              {`${userData?.firstName} ${userData?.lastName}` || "Client"}
             </h1>
-            <p className="text-muted-foreground">{`Here's a summary of your financial overview.`}</p>
-          </div>
-        )}
+          ) : (
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+                Welcome, {userData?.firstName || "Client"}!
+              </h1>
+              <p className="text-muted-foreground">{`Here's a summary of your financial overview.`}</p>
+            </div>
+          )}
+        </div>
+        <Button className="signup-link-playful" onClick={handleSignUp}>
+          Sign Up
+        </Button>
       </header>
 
       <main className="grid gap-6">
@@ -420,25 +503,33 @@ export const ClientDashboard = ({
           />
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Personal Credit Scores</CardTitle>
-            <CardDescription>
-              Scores from the three major credit bureaus.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <ScoreCard
-              bureau="Experian"
-              score={stats.scoresByBureau.Experian}
-            />
-            <ScoreCard bureau="Equifax" score={stats.scoresByBureau.Equifax} />
-            <ScoreCard
-              bureau="TransUnion"
-              score={stats.scoresByBureau.TransUnion}
-            />
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Personal Credit Scores</CardTitle>
+                <CardDescription>
+                  Scores from the three major credit bureaus.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <ScoreCard
+                  bureau="Experian"
+                  score={stats.scoresByBureau.Experian}
+                />
+                <ScoreCard
+                  bureau="Equifax"
+                  score={stats.scoresByBureau.Equifax}
+                />
+                <ScoreCard
+                  bureau="TransUnion"
+                  score={stats.scoresByBureau.TransUnion}
+                />
+              </CardContent>
+            </Card>
+          </div>
+          <DTICard data={stats.dtiReport} />
+        </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <Card className="lg:col-span-2">
@@ -610,10 +701,6 @@ const IssuesCard = ({
   negatives: string[];
   derogatory: string[];
 }) => {
-  const handleSignUp = useCallback(() => {
-    const url = process.env.NEXT_PUBLIC_DEFENITS_URL;
-    window.open(url, "_blank", "noopener,noreferrer");
-  }, []);
   if (
     issues.length === 0 &&
     negatives.length === 0 &&
@@ -629,11 +716,6 @@ const IssuesCard = ({
         <CardDescription>
           Summary and potential issues from your credit analysis.
         </CardDescription>
-        <CardAction>
-          <Button className="signup-link-playful" onClick={handleSignUp}>
-            Sign Up
-          </Button>
-        </CardAction>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         {issues.length > 0 && (
