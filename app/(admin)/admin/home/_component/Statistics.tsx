@@ -186,7 +186,7 @@ export default function AdminDashboard() {
               description="Total funding applications submitted by clients"
               icon={Dock}
               className="cursor-pointer"
-              onClick={() => router.push("/admin/funding-applications")}
+              onClick={() => router.push("/admin/funding-application")}
             />
             <StatCard
               title="Total Approved Applications"

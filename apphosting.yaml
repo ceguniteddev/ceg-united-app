@@ -90,7 +90,7 @@ env:
       - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_DEFENITS_URL
-    value: https://request.denefits.com/finance-panel?product_code=pc_2669317da155&auth_token=7554e0188f4b64b5119474d4e620c092
+    value: https://request.denefits.com/finance-panel?product_code=pc_4088bda98bce&auth_token=7554e0188f4b64b5119474d4e620c092
     availability:
       - BUILD
       - RUNTIME
