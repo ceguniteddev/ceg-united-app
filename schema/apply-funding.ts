@@ -639,21 +639,21 @@ export const FundingProductTypeEnum: FundingProductEnumType[] = [
     label: "Business Funding",
     type: "Business",
   },
-  {
-    value: "Personal Tradelines",
-    label: "Personal Tradelines",
-    type: "Tradelines",
-  },
-  {
-    value: "Business Tradelines",
-    label: "Business Tradelines",
-    type: "Tradelines",
-  },
-  {
-    value: "Personal & Business Tradelines",
-    label: "Personal & Business Tradelines",
-    type: "Tradelines",
-  },
+  // {
+  //   value: "Personal Tradelines",
+  //   label: "Personal Tradelines",
+  //   type: "Tradelines",
+  // },
+  // {
+  //   value: "Business Tradelines",
+  //   label: "Business Tradelines",
+  //   type: "Tradelines",
+  // },
+  // {
+  //   value: "Personal & Business Tradelines",
+  //   label: "Personal & Business Tradelines",
+  //   type: "Tradelines",
+  // },
   // {
   //   value: "Aged Shelf Corporation",
   //   label: "Aged Shelf Corporation",
