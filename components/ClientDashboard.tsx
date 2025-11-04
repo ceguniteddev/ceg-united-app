@@ -425,9 +425,8 @@ export const ClientDashboard = ({
     const reportDerogatory = issuesData?.report[0]?.degoretory ?? [];
     let downPaymentRequired =
       issuesData?.report[0]?.downPaymentRequired ?? false;
-
     const dtiReport = dtiData?.report[0] ?? null;
-    if (denefitsContract) {
+    if (denefitsContract && denefitsContract.length > 0) {
       downPaymentRequired = false;
     } else if (dtiReport && parseFloat(dtiReport.finalDTI) > 50) {
       downPaymentRequired = true;
@@ -464,7 +463,10 @@ export const ClientDashboard = ({
   }, [stats]);
 
   useEffect(() => {
-    if (stats?.downPaymentRequired === true && adminView === false) {
+    if (
+      stats?.downPaymentRequired === true &&
+      (adminView === false || adminView === undefined)
+    ) {
       setIsOpen(true);
     }
   }, [stats, adminView]);
