@@ -31,6 +31,7 @@ import { useUpdateUserStatusMutation } from "@/hooks/user";
 import { useRefreshCRSData } from "@/hooks/crs";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
+import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 
 function toDate(d?: string | Date) {
   if (!d) return undefined;
@@ -67,6 +68,7 @@ const ClientData = ({ user }: { user: UserWithId }) => {
           <h1 className="text-2xl font-semibold tracking-tight">
             Personal Information
           </h1>
+          <DenefitsContract user={user} />
         </header>
         <header className="mb-6 flex items-center justify-between">
           <RefreshCRSData userId={user.id} />
@@ -141,6 +143,30 @@ const STATUS_STYLES: Record<
   },
 };
 
+type ContractStatusKey = "Yes" | "No";
+const DENEFITS_CONTRACT_STYLES: Record<
+  ContractStatusKey,
+  {
+    border: string;
+    bg: string;
+    text: string;
+    chipBg: string;
+  }
+> = {
+  No: {
+    border: "border-red-700",
+    bg: "bg-red-700",
+    text: "text-red-700",
+    chipBg: "bg-inherit",
+  },
+  Yes: {
+    border: "border-emerald-300",
+    bg: "bg-emerald-600",
+    text: "text-emerald-700",
+    chipBg: "bg-emerald-50",
+  },
+};
+
 const StatusPicker = ({ user }: { user: UserWithId }) => {
   const styles =
     STATUS_STYLES[user.activeStatus || "Active"] ?? STATUS_STYLES.Active;
@@ -205,6 +231,42 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
           ))}
         </SelectContent>
       </Select>
+    </div>
+  );
+};
+
+const DenefitsContract = ({ user }: { user: UserWithId }) => {
+  const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
+    user?.id
+  );
+
+  const result = denefitsContract && denefitsContract.length > 0 ? "Yes" : "No";
+
+  const styles =
+    DENEFITS_CONTRACT_STYLES[result || "No"] ?? DENEFITS_CONTRACT_STYLES.No;
+
+  return (
+    <div
+      className={[
+        "flex items-center gap-3 rounded-md p-3 border",
+        styles.border,
+        styles.chipBg,
+      ].join(" ")}
+    >
+      <span className={["text-sm font-medium", styles.text].join(" ")}>
+        Denefits Contract Created?
+      </span>
+
+      <div className="flex items-center gap-2">
+        {/* a little color chip */}
+        <span
+          className={[
+            "inline-block h-2.5 w-2.5 rounded-full",
+            DENEFITS_CONTRACT_STYLES[result || "No"].bg,
+          ].join(" ")}
+        />
+        {result}
+      </div>
     </div>
   );
 };

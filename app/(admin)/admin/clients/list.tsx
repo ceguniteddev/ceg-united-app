@@ -42,13 +42,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import React, { useEffect, useMemo, useState } from "react";
-// import { ResponsiveDialog } from "@/components/responsive-dialog";
-// import { useFundingApplicationsMappedFundsQuery } from "@/hooks/admin/funding-application/fund-mapping";
 import CategoryBadge from "@/components/CategoryBadge";
 import SortableHeader from "@/components/SortableHeader";
-// import TabView from "@/app/(admin)/admin/clients/tab";
-// import { SelectItem } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
+import { useGetDenefitsContracts } from "@/hooks/denefits";
+import { DenefitsRequest, DenefitsStatusEnum } from "@/schema/denefits";
 
 const statusFilterFn: FilterFn<UserWithId> = (row, columnId, filterValue) => {
   const raw = row.getValue<string | undefined>(columnId);
@@ -58,28 +56,48 @@ const statusFilterFn: FilterFn<UserWithId> = (row, columnId, filterValue) => {
   return v === sel;
 };
 
+const denefitsStatusFilterFn: FilterFn<UserWithId> = (
+  row,
+  columnId,
+  filterValue
+) => {
+  // The accessorFn provides the value, which will be "Active" or "Inactive"
+  const value = row.getValue<string>(columnId);
+  const selectedFilter = String(filterValue);
+
+  // If no filter is selected, show all rows
+  if (!selectedFilter) return true;
+
+  return value === selectedFilter;
+};
+
 const ClientsList = () => {
-  // const { mappedFund: approvedMappedFunds } = useFundingApplicationsMappedFundsQuery();
   const [roleFilter, setRoleFilter] = useState("all");
-  // const approvedByIds = useMemo(
-  //   () => new Map((approvedMappedFunds ?? []).map((f) => [f.id, f.status])),
-  //   [approvedMappedFunds]
-  // );
+  const [denefitsStatusFilter, setDenefitsStatusFilter] = useState("all");
 
   const { users, isLoading } = useUsersQuery("Client");
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+  const { denefitsContracts, isLoading: denefitsContractsLoading } =
+    useGetDenefitsContracts();
+
+  const denefitsContractsMap = useMemo(() => {
+    if (!denefitsContracts) return new Map();
+    return new Map(
+      denefitsContracts.map((contract: DenefitsRequest) => [
+        contract.userId,
+        contract,
+      ])
+    );
+  }, [denefitsContracts]);
 
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const STATUS_ORDER: Record<UserFundMapStatus, number> = {
-    New: 0,
-    Processing: 1,
-  };
+
   const columns: ColumnDef<UserWithId>[] = [
     {
       accessorKey: "activeStatus",
@@ -94,6 +112,26 @@ const ClientsList = () => {
         );
       },
       filterFn: statusFilterFn,
+    },
+    {
+      id: "denefitsContract",
+      header: ({ column }) => (
+        <SortableHeader column={column} title="Denefits Contract" />
+      ),
+      accessorFn: (row) => {
+        const contract = denefitsContractsMap.get(row.id);
+        return contract ? "Active" : "Inactive";
+      },
+      cell: ({ row }) => {
+        const contract = denefitsContractsMap.get(row.original.id);
+        const status = contract ? "Active" : "Inactive";
+        return (
+          <div>
+            <CategoryBadge category={status} />
+          </div>
+        );
+      },
+      filterFn: denefitsStatusFilterFn,
     },
     {
       accessorKey: "firstName",
@@ -143,29 +181,6 @@ const ClientsList = () => {
         return <div>{row.getValue("phoneNumber")}</div>;
       },
     },
-    // {
-    //   id: "status",
-    //   accessorFn: (row) => approvedByIds.get(row.id) ?? null,
-    //   header: ({ column }) => <SortableHeader column={column} title="Funding Status" />,
-    //   cell: ({ row }) => {
-    //     const id = row.original.id;
-    //     const status = id ? approvedByIds.get(id) : undefined;
-    //     return status ? <CategoryBadge category={status} /> : null;
-    //   },
-    //   sortingFn: (a, b, columnId) => {
-    //     const va = a.getValue<UserFundMapStatus | null>(columnId);
-    //     const vb = b.getValue<UserFundMapStatus | null>(columnId);
-
-    //     const ra = va == null ? Number.POSITIVE_INFINITY : STATUS_ORDER[va];
-    //     const rb = vb == null ? Number.POSITIVE_INFINITY : STATUS_ORDER[vb];
-
-    //     if (ra < rb) return -1;
-    //     if (ra > rb) return 1;
-    //     return 0; // tie
-    //   },
-    //   sortDescFirst: false, // optional: first click = ascending (New -> Processing)
-    //   enableSorting: true,
-    // },
     {
       id: "actions",
       cell: ({ row }) => {
@@ -209,6 +224,17 @@ const ClientsList = () => {
     }
   }, [roleFilter, table]);
 
+  useEffect(() => {
+    const col = table.getColumn("denefitsContract");
+    if (!col) return;
+
+    if (denefitsStatusFilter === "all") {
+      col.setFilterValue(undefined);
+    } else {
+      col.setFilterValue(denefitsStatusFilter);
+    }
+  }, [denefitsStatusFilter, table]);
+
   if (isLoading) {
     return <Spinner displayText="Loading clients..." />;
   }
@@ -224,6 +250,7 @@ const ClientsList = () => {
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="max-w-sm"
         />
+        <span className="ml-5">Status :</span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline">
@@ -242,6 +269,34 @@ const ClientsList = () => {
                 All Status
               </DropdownMenuRadioItem>
               {UserActiveStatusEnum.options.map((status) => (
+                <DropdownMenuRadioItem key={status} value={status}>
+                  {status}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <span className="ml-5">Denefits :</span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <span className="mr-2">
+                {denefitsStatusFilter === "all"
+                  ? "All Status"
+                  : denefitsStatusFilter}
+              </span>
+              <ChevronDownIcon className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuRadioGroup
+              value={roleFilter}
+              onValueChange={setDenefitsStatusFilter}
+            >
+              <DropdownMenuRadioItem value="all">
+                All Status
+              </DropdownMenuRadioItem>
+              {DenefitsStatusEnum.options.map((status) => (
                 <DropdownMenuRadioItem key={status} value={status}>
                   {status}
                 </DropdownMenuRadioItem>

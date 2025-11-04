@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -21,7 +20,8 @@ import {
   Banknote,
   CalendarDays,
   BanknoteArrowUp,
-  Receipt,
+  AlertTriangle,
+  ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
@@ -35,6 +35,9 @@ import { Business } from "@/schema";
 import { CreditScore } from "@/types/crs";
 import { ApprovedBankFormData } from "@/schema/bank-products";
 import { Button } from "./ui/button";
+import { ResponsiveDialog } from "./responsive-dialog";
+import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+import CalendlyScheduler from "@/app/(client)/support-service/CalendlyScheduler";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -42,7 +45,8 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 interface IssueItem {
   issues: string[];
   negatives: string[];
-  degoretory: string[]; // Typo from user's provided JSON
+  degoretory: string[];
+  downPaymentRequired: boolean;
 }
 
 // --- 1. ADD DETAILED TYPE DEFINITIONS FOR CRS DATA ---
@@ -93,7 +97,7 @@ interface BusinessWithCRSData extends Business {
 }
 
 export interface ClientData {
-  userData: User | null;
+  userData: (User & { id: string }) | null;
   crsReportData:
     | (CreditReportWithId | IssuesReportData | DTIReportData)[]
     | null;
@@ -336,6 +340,11 @@ export const ClientDashboard = ({
   clientData: ClientData | null | undefined;
   adminView?: boolean;
 }) => {
+  const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
+    clientData?.userData?.id || ""
+  );
+
+  const [isOpen, setIsOpen] = useState(false);
   const stats = useMemo(() => {
     if (!clientData) return null;
 
@@ -414,7 +423,21 @@ export const ClientDashboard = ({
     const reportIssues = issuesData?.report[0]?.issues ?? [];
     const reportNegatives = issuesData?.report[0]?.negatives ?? [];
     const reportDerogatory = issuesData?.report[0]?.degoretory ?? [];
+    let downPaymentRequired =
+      issuesData?.report[0]?.downPaymentRequired ?? false;
+
     const dtiReport = dtiData?.report[0] ?? null;
+    if (denefitsContract) {
+      downPaymentRequired = false;
+    } else if (dtiReport && parseFloat(dtiReport.finalDTI) > 50) {
+      downPaymentRequired = true;
+    }
+
+    /**
+     * downPaymentRequired note
+     * If the audit contains any of the following items: 'late payments', 'charge-off', 'collections', or 'bankruptcy', set `downPaymentRequired` to `true`
+     * if DTI > 50
+     */
 
     return {
       totalRequested,
@@ -428,13 +451,23 @@ export const ClientDashboard = ({
       reportNegatives,
       reportDerogatory,
       dtiReport,
+      downPaymentRequired,
     };
-  }, [clientData]);
+  }, [clientData, denefitsContract]);
 
   const handleSignUp = useCallback(() => {
-    const url = process.env.NEXT_PUBLIC_DEFENITS_URL;
+    let url = process.env.NEXT_PUBLIC_DEFENITS_URL;
+    if (stats?.downPaymentRequired) {
+      url = process.env.NEXT_PUBLIC_FANBASIS_URL;
+    }
     window.open(url, "_blank", "noopener,noreferrer");
-  }, []);
+  }, [stats]);
+
+  useEffect(() => {
+    if (stats?.downPaymentRequired && !adminView) {
+      setIsOpen(true);
+    }
+  }, [stats, adminView, denefitsContract]);
 
   if (!clientData || !stats) {
     return (
@@ -462,6 +495,15 @@ export const ClientDashboard = ({
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6 bg-gray-50/50 dark:bg-background">
       <header className="flex items-start justify-between">
+        <ResponsiveDialog
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          title=""
+          description={""}
+          className="w-3/6"
+        >
+          <CreditRepairClientMessage setIsOpen={setIsOpen} />
+        </ResponsiveDialog>
         <div>
           {adminView ? (
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
@@ -476,9 +518,11 @@ export const ClientDashboard = ({
             </div>
           )}
         </div>
-        <Button className="signup-link-playful" onClick={handleSignUp}>
-          Sign Up
-        </Button>
+        {!adminView && (
+          <Button className="signup-link-playful" onClick={handleSignUp}>
+            Sign Up
+          </Button>
+        )}
       </header>
 
       <main className="grid gap-6">
@@ -756,5 +800,92 @@ const IssuesCard = ({
         )}
       </CardContent>
     </Card>
+  );
+};
+
+const CreditRepairClientMessage = ({
+  setIsOpen,
+}: {
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}) => {
+  return (
+    <div className="flex flex-row">
+      <div className="bg-card text-card-foreground rounded-xl border shadow-lg max-w-lg mx-auto font-sans">
+        <div className="flex flex-col space-y-1.5 p-6">
+          <h3 className="font-semibold tracking-tight text-2xl">
+            Complete Your Enrollment
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Please follow the steps below to finalize your application.
+          </p>
+        </div>
+        <div className="p-6 pt-0">
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <AlertTriangle className="h-5 w-5 mr-3 mt-1" />
+              <div className="flex-1">
+                <h5 className="font-semibold mb-1">Action Required</h5>
+                <p className="text-sm">
+                  Based on your personal credit profile, a two-step payment
+                  process is necessary to get started.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h4 className="font-semibold text-md mb-2">
+                Step 1: Initial Payment
+              </h4>
+              <p className="text-muted-foreground mb-4 text-sm">
+                First, please submit the initial payment of **$2,000** through
+                our secure Fanbasis link. This will register you in our system.
+              </p>
+              <Link
+                href={process.env.NEXT_PUBLIC_FANBASIS_URL as string}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full"
+              >
+                Pay with Fanbasis ($2,000)
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-md mb-2">
+                Step 2: Enrollment Fee
+              </h4>
+              <p className="text-muted-foreground text-sm">
+                After completing the first step, Fanbasis will automatically
+                redirect you to complete the final **$39 enrollment fee** with
+                Denefits.
+              </p>
+              <p className="text-xs text-muted-foreground mt-3">
+                This finalizes your enrollment and gives you full access to our
+                services.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center p-6 pt-0">
+          <p className="text-xs text-muted-foreground">
+            {`If you have any questions, please don't hesitate to contact our
+          support team.`}
+          </p>
+        </div>
+        <div className="flex items-center justify-end p-6 pt-0">
+          <Button
+            className="cursor-pointer bg-blue-200 hover:bg-blue-300"
+            variant={"outline"}
+            onClick={() => setIsOpen(false)}
+          >
+            Close
+          </Button>
+        </div>
+      </div>
+      <CalendlyScheduler />
+    </div>
   );
 };

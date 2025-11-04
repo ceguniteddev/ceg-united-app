@@ -56,14 +56,6 @@ export const columns: ColumnDef<ApplyFundingWithUser>[] = [
   {
     accessorKey: "referenceNumber",
     id: "referenceNumber",
-    // header: ({ column }) => (
-    //   <Button
-    //     variant="ghost"
-    //     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-    //   >
-    //     Reference Number <ArrowUpDown />
-    //   </Button>
-    // ),
     header: ({ column }) => (
       <SortableHeader column={column} title="Reference Number" />
     ),
