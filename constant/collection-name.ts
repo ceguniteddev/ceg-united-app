@@ -2,10 +2,14 @@ export const USER_COLLECTION = "user";
 export const USER_FUNDING_APPLICATION = "user-funding-application";
 export const USER_FUNDING_APPLICATION_ANALYSIS = "analysis";
 export const USER_FUNDING_APPLICATION_FUND_MAPPING = "user-fund-mapping";
-export const USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS = "fund_mapping_bank_products";
-export const USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED = "fund-mapping-approved";
+export const USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS =
+  "fund_mapping_bank_products";
+export const USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED =
+  "fund-mapping-approved";
 export const LINK_TOKEN_COLLECTION = "plaid-link-token";
 export const USER_TOKEN_COLLECTION = "plaid-user-token";
+export const USER_DENEFITS_CONTRACT = "user-denefits-contract";
+
 export const PLAID_ITEM_WEBHOOK_COLLECTION = "plaid-item-webhook-data";
 export const PLAID_ASSET_WEBHOOK_COLLECTION = "plaid-asset-webhook-data";
 export const PLAID_CREATE_ASSET_REPORT = "plaid-asset-create-report";

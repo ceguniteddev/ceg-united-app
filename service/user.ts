@@ -21,6 +21,7 @@ import {
   UserWithId,
 } from "@/schema/registration";
 import { generateCRSReport } from "@/service/crs";
+import { format } from "date-fns";
 import { cookies, headers } from "next/headers";
 
 export const getUserRecordByEmail = async (email: string) => {
@@ -109,6 +110,14 @@ export const registerUser = async (value: User) => {
     bodyHTML: requestBody,
   });
 
+  const registrationBody = getNewRegistrationBody(value);
+
+  await sendMail({
+    emailTo: "contact@cegunited.com",
+    subject: `New Registration - ${value.firstName} ${value.lastName}`,
+    bodyHTML: registrationBody,
+  });
+
   // await generateCRSReport(docRef.id);
 
   return {
@@ -134,6 +143,62 @@ const getVerifyEmailBody = (link: string) => {
 </p>
 
 <p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#6b7280; margin:12px 0 0;">Thanks, <br />CEG United LLC team</p>`;
+};
+
+const getNewRegistrationBody = (value: User) => {
+  return `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; padding: 25px;">
+    <h2 style="margin-top: 0; color: #333333; border-bottom: 2px solid #eeeeee; padding-bottom: 10px;">
+        New User Registration
+    </h2>
+    <p style="color: #555555; font-size: 16px; line-height: 1.5em; margin: 0 0 20px 0;">
+        A new user has registered on the platform. Here are their details:
+    </p>
+    
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; width: 150px; color: #555555; background-color: #f9f9f9;">
+                Full Name
+            </th>
+            <td style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; color: #333333;">
+                ${value.firstName} ${value.lastName}
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; width: 150px; color: #555555; background-color: #f9f9f9;">
+                Email Address
+            </th>
+            <td style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; color: #333333;">
+                ${value.email}
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; width: 150px; color: #555555; background-color: #f9f9f9;">
+                Phone Number
+            </th>
+            <td style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; color: #333333;">
+                ${value.phoneNumber}
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; width: 150px; color: #555555; background-color: #f9f9f9;">
+                Birthdate
+            </th>
+            <td style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; color: #333333;">
+                ${format(value.birthdate, "MMM d, yyyy")}
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; width: 150px; color: #555555; background-color: #f9f9f9;">
+                Gender
+            </th>
+            <td style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; color: #333333;">
+                ${value.gender}
+            </td>
+        </tr>
+    </table>
+</div>
+  `;
 };
 
 export const getUsers = async (role?: Role): Promise<UserWithId[]> => {

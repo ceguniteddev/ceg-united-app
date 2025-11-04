@@ -1,11 +1,8 @@
-import AppError from "@/error/AppError";
 import { User } from "@/schema/registration";
-import { registerUser } from "@/service/user";
 
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { createEnterpriseAssessment } from "@/lib/captcha/captcha";
 export const useRegistration = () => {
   const router = useRouter();
 

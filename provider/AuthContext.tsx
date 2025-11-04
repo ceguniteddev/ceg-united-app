@@ -21,10 +21,7 @@ import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { getUserById } from "@/service/user";
 import { Role } from "@/schema";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  verifyCaptchaToken,
-  createEnterpriseAssessment,
-} from "@/lib/captcha/captcha";
+import { createEnterpriseAssessment } from "@/lib/captcha/captcha";
 import AppError from "@/error/AppError";
 
 interface AuthContextType {

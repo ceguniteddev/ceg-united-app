@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { authFirebase } from "@/lib/firebase";
-import { getUser, getUserById } from "@/service/user";
-import { Role } from "@/schema";
+import { getUserById } from "@/service/user";
 import z from "zod";
 import { badRequest, getMessage } from "@/app/api/helpers";
 

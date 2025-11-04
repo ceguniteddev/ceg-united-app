@@ -6,6 +6,7 @@ import { ResponsiveDialog } from "@/components/responsive-dialog";
 import React, { useEffect } from "react";
 import { useAuth } from "@/provider/AuthContext";
 import ApplyFundingForm from "@/components/fundingv2/ApplyFundingForm";
+import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -24,7 +25,6 @@ export default function DashboardPage() {
     return null;
   }
 
-
   return (
     <div className="container mx-auto py-8">
       <ResponsiveDialog
@@ -37,6 +37,7 @@ export default function DashboardPage() {
       >
         <ApplyFundingForm setOpen={setOpen} userId={user?.uid || ""} />
       </ResponsiveDialog>
+
       <ClientDashboard clientData={clientStatistics} />
     </div>
   );
