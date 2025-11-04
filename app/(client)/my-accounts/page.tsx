@@ -77,7 +77,9 @@ const MyBanks = () => {
 
     // If Plaid returned an institutionId, use that; otherwise filter by item ids
     return all.filter((a) =>
-      g.institutionId ? a.institutionId === g.institutionId : g.bankItemIds?.includes(a.bankItemId)
+      g.institutionId
+        ? a.institutionId === g.institutionId
+        : g.bankItemIds?.includes(a.bankItemId)
     );
   }, [plaidAccounts?.data, groups, selectedGroupIdx]);
 
@@ -122,20 +124,24 @@ const MyBanks = () => {
     } catch (err) {
       console.error(err);
       // optional: surface a toast here
-      toast.error(err instanceof Error ? err.message : "Failed to remove accounts");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to remove accounts"
+      );
     }
   }, [selectedGroup, refetch, removeBankAccount]);
 
-  const handleAccountSelected = useCallback((accountId: string, bankItemId: string) => {
-    setSelectedAccount(accountId);
-    setBankItemId(bankItemId);
-  }, []);
+  const handleAccountSelected = useCallback(
+    (accountId: string, bankItemId: string) => {
+      setSelectedAccount(accountId);
+      setBankItemId(bankItemId);
+    },
+    []
+  );
 
-  if (!user && !isLoading && !plaidAccounts) return <Spinner displayText="Loading accounts..." />;
+  if (!user && !isLoading && !plaidAccounts)
+    return <Spinner displayText="Loading accounts..." />;
 
   if (isLoading) return <Spinner displayText="Loading accounts..." />;
-
-  if (!user) return null;
 
   return (
     <section className="home">
@@ -157,18 +163,28 @@ const MyBanks = () => {
             <div>
               <div className="flex flex-wrap items-center gap-3 p-3 sm:p-4">
                 <div className="flex items-center gap-3">
-                  <Label htmlFor="institution-select" className="text-sm font-medium">
+                  <Label
+                    htmlFor="institution-select"
+                    className="text-sm font-medium"
+                  >
                     Institution
                   </Label>
-                  <Select value={selectedGroupIdx} onValueChange={handleSelectGroupChange}>
-                    <SelectTrigger id="institution-select" className="w-[280px]">
+                  <Select
+                    value={selectedGroupIdx}
+                    onValueChange={handleSelectGroupChange}
+                  >
+                    <SelectTrigger
+                      id="institution-select"
+                      className="w-[280px]"
+                    >
                       <SelectValue placeholder="All institutions" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All institutions</SelectItem>
                       {groups.map((g, idx) => (
                         <SelectItem key={idx} value={String(idx)}>
-                          {g.institutionName ?? "Unknown institution"} • {g.accounts.length} account
+                          {g.institutionName ?? "Unknown institution"} •{" "}
+                          {g.accounts.length} account
                           {g.accounts.length === 1 ? "" : "s"}
                         </SelectItem>
                       ))}
@@ -204,17 +220,23 @@ const MyBanks = () => {
                           This will unlink{" "}
                           <span className="font-semibold">
                             {selectedGroup?.accounts.length ?? 0} account
-                            {(selectedGroup?.accounts.length ?? 0) === 1 ? "" : "s"}
+                            {(selectedGroup?.accounts.length ?? 0) === 1
+                              ? ""
+                              : "s"}
                           </span>{" "}
                           from{" "}
                           <span className="font-semibold">
-                            {selectedGroup?.institutionName ?? "this institution"}
+                            {selectedGroup?.institutionName ??
+                              "this institution"}
                           </span>
                           . You can re-link later if needed.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isDeleting} className="cursor-pointer">
+                        <AlertDialogCancel
+                          disabled={isDeleting}
+                          className="cursor-pointer"
+                        >
                           Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction
@@ -244,7 +266,9 @@ const MyBanks = () => {
               </div>
               {plaidItemAccounts?.transactions && (
                 <section className="flex w-full flex-col gap-6">
-                  <TransactionTable transactions={plaidItemAccounts?.transactions} />
+                  <TransactionTable
+                    transactions={plaidItemAccounts?.transactions}
+                  />
                 </section>
               )}
             </div>
