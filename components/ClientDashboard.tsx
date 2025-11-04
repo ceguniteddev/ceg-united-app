@@ -464,10 +464,10 @@ export const ClientDashboard = ({
   }, [stats]);
 
   useEffect(() => {
-    if (stats?.downPaymentRequired && !adminView) {
+    if (stats?.downPaymentRequired === true && adminView === false) {
       setIsOpen(true);
     }
-  }, [stats, adminView, denefitsContract]);
+  }, [stats, adminView]);
 
   if (!clientData || !stats) {
     return (

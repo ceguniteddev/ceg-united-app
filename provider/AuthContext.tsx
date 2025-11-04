@@ -56,6 +56,9 @@ export function AuthProvider({
 
   // Helper function to load user role and set state
   const loadAndSetUserData = useCallback(async (firebaseUser: User) => {
+    if (!firebaseUser) {
+      return;
+    }
     // No need to create a session here, just get user data
     const userData = await getUserById(firebaseUser.uid);
     if (!userData) {
