@@ -7,8 +7,6 @@ import { NextRequest, NextResponse } from "next/server";
 export const POST = withAuth(async (request: NextRequest) => {
   const requestBody = await request.json();
 
-  console.log("requestBody", requestBody);
-
   const query = DenefitsRequestSchema.safeParse(requestBody);
   if (!query.success) {
     const message = getMessage(query.error);
