@@ -111,8 +111,6 @@ export const registerUser = async (value: User) => {
     bodyHTML: registrationBody,
   });
 
-  // await generateCRSReport(docRef.id);
-
   return {
     id: docRef.id,
     ...normalizeAllDates(data),

@@ -347,7 +347,9 @@ export const ClientDashboard = ({
 
   const [isOpen, setIsOpen] = useState(false);
 
-  const [isOpenFunding, setIsOpenFunding] = useState(true);
+  const [isOpenFunding, setIsOpenFunding] = useState(
+    adminView === false || adminView === undefined
+  );
 
   const stats = useMemo(() => {
     if (!clientData) return null;

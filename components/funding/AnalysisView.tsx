@@ -1,11 +1,28 @@
 import {
   useAnalysisMutation,
   useAnalysisQuery,
+  useRefreshAnalysisData,
 } from "@/hooks/admin/funding-application/analysis";
 import dynamic from "next/dynamic";
-import React from "react";
+import React, { useCallback } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import Spinner from "../Spinner";
+import { Button } from "../ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useRefreshCRSData } from "@/hooks/crs";
+import { toast } from "sonner";
+import IconMenu from "../icon-menu";
+import { Loader2Icon, RefreshCcw, XIcon } from "lucide-react";
 
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -25,6 +42,9 @@ const AnalysisView = ({ referenceNumber }: Props) => {
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-row justify-end">
+        <RefreshAnalysisData referenceNumber={referenceNumber} />
+      </div>
       {(analysisData as Item[])?.map((item) => (
         <AnalysisDetailsView
           updateAnalysis={({ referenceNumber, id, analysis }) =>
@@ -37,6 +57,89 @@ const AnalysisView = ({ referenceNumber }: Props) => {
         />
       ))}
     </div>
+  );
+};
+
+const RefreshAnalysisData = ({
+  referenceNumber,
+}: {
+  referenceNumber: string;
+}) => {
+  const [refreshConfirmationOpen, setRefreshConfirmationOpen] =
+    React.useState(false);
+  const { isUpdating, refreshAnalysisData } = useRefreshAnalysisData();
+
+  const handleRefreshCRSData = useCallback(async () => {
+    try {
+      await refreshAnalysisData({ referenceNumber });
+      setRefreshConfirmationOpen(false);
+    } catch (error) {
+      console.error("Error refreshing CRS data:", error);
+      toast.error("Failed to refresh CRS data. Please try again.");
+    }
+  }, [refreshAnalysisData, referenceNumber]);
+
+  return (
+    <>
+      <Button
+        variant={"ghost"}
+        className="cursor-pointer bg-blue-200 hover:bg-blue-300"
+        onClick={() => setRefreshConfirmationOpen(true)}
+      >
+        <IconMenu
+          icon={<RefreshCcw className="h-4 w-4" />}
+          text="Refresh CRS Data"
+        />
+      </Button>
+
+      {refreshConfirmationOpen && (
+        <AlertDialog
+          open={refreshConfirmationOpen}
+          onOpenChange={(open) => {
+            if (!isUpdating) setRefreshConfirmationOpen(open);
+          }}
+        >
+          <AlertDialogTrigger asChild></AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmation</AlertDialogTitle>
+              <AlertDialogDescription>
+                {`Please confirm that you want to refresh the fund application analysis data. 
+                This action will delete the mapped bank products and analysis. This action cannot be undone.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                className="cursor-pointer"
+                disabled={isUpdating}
+              >
+                <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700 cursor-pointer"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  await handleRefreshCRSData();
+                }}
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <IconMenu
+                    text="Refreshing..."
+                    icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
+                  />
+                ) : (
+                  <IconMenu
+                    text="Refresh"
+                    icon={<RefreshCcw className="h-4 w-4" />}
+                  />
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </>
   );
 };
 

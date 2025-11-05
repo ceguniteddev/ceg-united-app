@@ -65,3 +65,40 @@ export const useAnalysisMutation = () => {
     isUpdating: updateMutation.isPending,
   };
 };
+
+export const useRefreshAnalysisData = () => {
+  const { user } = useAuth();
+
+  const refreshAnalysisDataMutation = useMutation({
+    mutationFn: async ({ referenceNumber }: { referenceNumber: string }) => {
+      if (!user) {
+        throw new AppError("User not authenticated");
+      }
+
+      const response = await fetch(
+        `/api/funding-application/${referenceNumber}/analysis/refresh`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Error refreshing Analysis data:", data);
+        throw new AppError("Failed to refresh Analysis data.");
+      }
+    },
+    onSuccess: (data, _variable) => {
+      toast.success("Analysis data refreshed successfully.");
+    },
+
+    onError: (error: any) => {
+      toast.error("Failed to refresh Analysis data. Please try again.");
+    },
+  });
+
+  return {
+    refreshAnalysisData: refreshAnalysisDataMutation.mutateAsync,
+    isUpdating: refreshAnalysisDataMutation.isPending,
+  };
+};
