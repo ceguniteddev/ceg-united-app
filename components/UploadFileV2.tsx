@@ -1,3 +1,5 @@
+// upload-file.tsx
+
 import {
   Dropzone,
   DropzoneContent,
@@ -5,8 +7,6 @@ import {
 } from "@/components/ui/shadcn-io/dropzone";
 import { GET_USER_DOCUMENTS } from "@/constant/react-query-keys";
 import { DocumentType } from "@/lib/document-types";
-import { useAuth } from "@/provider/AuthContext";
-import { UploadedFileData } from "@/service/documents";
 import { useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useState } from "react";
 
@@ -23,7 +23,6 @@ const UploadFile = ({ userId, documentType }: UploadFileProps) => {
   const handleDrop = useCallback(
     async (droppedFiles: File[]) => {
       if (!droppedFiles || droppedFiles.length === 0) return;
-
       setIsLoading(true);
 
       const formData = new FormData();
@@ -33,8 +32,10 @@ const UploadFile = ({ userId, documentType }: UploadFileProps) => {
         formData.append("documentType", documentType.id);
       }
 
-      // We'll upload one file at a time for a specific document type
-      formData.append("file", droppedFiles[0]);
+      // Append all dropped files to the form data
+      droppedFiles.forEach((file) => {
+        formData.append("files", file);
+      });
 
       try {
         // The API endpoint remains the same, but the backend handler will use the `documentType`
@@ -69,12 +70,12 @@ const UploadFile = ({ userId, documentType }: UploadFileProps) => {
     : "Upload any additional documents required for your application.";
 
   return (
-    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
+    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 mb-8">
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
       <p className="text-sm text-gray-500 mb-4">{description}</p>
       <Dropzone
+        maxFiles={3}
         className="cursor-pointer"
-        maxFiles={1} // Only one file per document type
         onDrop={handleDrop}
         disabled={isLoading}
       >

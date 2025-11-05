@@ -13,14 +13,7 @@ import { sendMail } from "@/lib/nodemailer";
 import { ChangePassword, CurrentUser, Role } from "@/schema";
 import { noteSchema, NoteSchema } from "@/schema/notes";
 
-import {
-  User,
-  UserActiveStatus,
-  UserActiveStatusEnum,
-  UserPlaid,
-  UserWithId,
-} from "@/schema/registration";
-import { generateCRSReport } from "@/service/crs";
+import { User, UserActiveStatus, UserWithId } from "@/schema/registration";
 import { format } from "date-fns";
 import { cookies, headers } from "next/headers";
 

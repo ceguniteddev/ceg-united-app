@@ -146,6 +146,7 @@ export default function AdminDashboard() {
       >
         <ClientAppliedFundingList
           clientApplicationStatus={["Approved", "Funded"]}
+          isAdminView={true}
         />
       </ResponsiveDialog>
       <ResponsiveDialog
@@ -164,7 +165,10 @@ export default function AdminDashboard() {
         description="Total funded applications"
         className="w-10/12 flex flex-col min-h-screen "
       >
-        <ClientAppliedFundingList clientApplicationStatus={["Funded"]} />
+        <ClientAppliedFundingList
+          clientApplicationStatus={["Funded"]}
+          isAdminView={true}
+        />
       </ResponsiveDialog>
       <Card>
         <CardHeader>

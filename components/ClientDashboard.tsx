@@ -28,7 +28,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 
 // --- IMPORT YOUR ACTUAL APPLICATION TYPES ---
-import { User } from "@/schema/registration";
+import { User, UserWithId } from "@/schema/registration";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { PlaidCompleteRow } from "@/service/plaid/data";
 import { Business } from "@/schema";
@@ -38,6 +38,7 @@ import { Button } from "./ui/button";
 import { ResponsiveDialog } from "./responsive-dialog";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import CalendlyScheduler from "@/app/(client)/support-service/CalendlyScheduler";
+import ApplyFundingForm from "@/components/fundingv2/ApplyFundingForm";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -46,7 +47,7 @@ interface IssueItem {
   issues: string[];
   negatives: string[];
   degoretory: string[];
-  downPaymentRequired: boolean;
+  downPaymentRequired: boolean | string;
 }
 
 // --- 1. ADD DETAILED TYPE DEFINITIONS FOR CRS DATA ---
@@ -97,7 +98,7 @@ interface BusinessWithCRSData extends Business {
 }
 
 export interface ClientData {
-  userData: (User & { id: string }) | null;
+  userData: UserWithId | null;
   crsReportData:
     | (CreditReportWithId | IssuesReportData | DTIReportData)[]
     | null;
@@ -345,6 +346,9 @@ export const ClientDashboard = ({
   );
 
   const [isOpen, setIsOpen] = useState(false);
+
+  const [isOpenFunding, setIsOpenFunding] = useState(true);
+
   const stats = useMemo(() => {
     if (!clientData) return null;
 
@@ -423,9 +427,14 @@ export const ClientDashboard = ({
     const reportIssues = issuesData?.report[0]?.issues ?? [];
     const reportNegatives = issuesData?.report[0]?.negatives ?? [];
     const reportDerogatory = issuesData?.report[0]?.degoretory ?? [];
-    let downPaymentRequired =
-      issuesData?.report[0]?.downPaymentRequired ?? false;
+
+    const initialValue = issuesData?.report[0]?.downPaymentRequired;
     const dtiReport = dtiData?.report[0] ?? null;
+    let downPaymentRequired =
+      typeof initialValue === "string"
+        ? initialValue.toLowerCase() === "true"
+        : Boolean(initialValue);
+
     if (denefitsContract && denefitsContract.length > 0) {
       downPaymentRequired = false;
     } else if (dtiReport && parseFloat(dtiReport.finalDTI) > 50) {
@@ -471,6 +480,12 @@ export const ClientDashboard = ({
     }
   }, [stats, adminView]);
 
+  // useEffect(() => {
+  //   if (denefitsContract && denefitsContract.length > 0) {
+  //     setIsOpenFunding(true);
+  //   }
+  // }, [denefitsContract]);
+
   if (!clientData || !stats) {
     return (
       <div className="flex items-center justify-center p-10 bg-gray-50 dark:bg-gray-900 rounded-lg">
@@ -497,6 +512,19 @@ export const ClientDashboard = ({
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6 bg-gray-50/50 dark:bg-background">
       <header className="flex items-start justify-between">
+        <ResponsiveDialog
+          isOpen={isOpenFunding}
+          setIsOpen={setIsOpenFunding}
+          title="Apply Funding"
+          description={""}
+          descriptionClassName="text-red-500 text-lg font-semibold"
+          className="w-4/6"
+        >
+          <ApplyFundingForm
+            setOpen={setIsOpenFunding}
+            userId={userData?.id || ""}
+          />
+        </ResponsiveDialog>
         <ResponsiveDialog
           isOpen={isOpen}
           setIsOpen={setIsOpen}
@@ -550,7 +578,7 @@ export const ClientDashboard = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2">
+          <div className={stats.dtiReport ? "md:col-span-2" : "md:col-span-3"}>
             <Card>
               <CardHeader>
                 <CardTitle>Personal Credit Scores</CardTitle>
@@ -574,7 +602,7 @@ export const ClientDashboard = ({
               </CardContent>
             </Card>
           </div>
-          <DTICard data={stats.dtiReport} />
+          {stats.dtiReport && <DTICard data={stats.dtiReport} />}
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

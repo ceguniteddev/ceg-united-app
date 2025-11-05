@@ -16,6 +16,8 @@ import { driver } from "driver.js";
 import { useUpdateUserOnboardingMutation } from "@/hooks/user";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
 import { isPlaidProductionReady } from "@/lib/plaid";
+import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+import { useEffect, useState } from "react";
 
 const Sidebar = () => {
   const { user, isOnboarded } = useAuth();
@@ -50,6 +52,17 @@ const Sidebar = () => {
   //     ],
   //   });
 
+  const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
+    user?.uid || ""
+  );
+  const [showMyFunding, setShowMyFunding] = useState(true);
+
+  // useEffect(() => {
+  //   if (denefitsContract && denefitsContract.length > 0) {
+  //     setShowMyFunding(true);
+  //   }
+  // }, [denefitsContract]);
+
   //   if (user && !isOnboarded) driverObj.drive();
   // }, [user, isOnboarded, updateOnboarding]);
   const isPlaidProdReady = isPlaidProductionReady();
@@ -73,6 +86,9 @@ const Sidebar = () => {
           .filter((item) => {
             // If Plaid is not ready, filter out (remove) the "My Accounts" link
             if (!isPlaidProdReady && item.route === "/my-accounts") {
+              return false;
+            }
+            if (!showMyFunding && item.route === "/my-funding") {
               return false;
             }
             // Otherwise, keep the item in the array

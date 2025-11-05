@@ -111,4 +111,5 @@ export type ApprovedBankFormData = BankFormData & {
   approvedRemarks?: string;
   fundedAmount?: number;
   fundedRemarks?: string;
+  userId: string;
 };
