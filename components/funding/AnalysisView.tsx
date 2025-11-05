@@ -1,6 +1,7 @@
 import {
   useAnalysisMutation,
   useAnalysisQuery,
+  useEmailClientAnalysisData,
   useRefreshAnalysisData,
 } from "@/hooks/admin/funding-application/analysis";
 import dynamic from "next/dynamic";
@@ -19,10 +20,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useRefreshCRSData } from "@/hooks/crs";
 import { toast } from "sonner";
 import IconMenu from "../icon-menu";
-import { Loader2Icon, RefreshCcw, XIcon } from "lucide-react";
+import { Loader2Icon, Mail, RefreshCcw, XIcon } from "lucide-react";
 
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -42,7 +42,8 @@ const AnalysisView = ({ referenceNumber }: Props) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-row justify-end">
+      <div className="flex flex-row justify-between">
+        <SendClientAnalysisData referenceNumber={referenceNumber} />
         <RefreshAnalysisData referenceNumber={referenceNumber} />
       </div>
       {(analysisData as Item[])?.map((item) => (
@@ -60,6 +61,88 @@ const AnalysisView = ({ referenceNumber }: Props) => {
   );
 };
 
+const SendClientAnalysisData = ({
+  referenceNumber,
+}: {
+  referenceNumber: string;
+}) => {
+  const [refreshConfirmationOpen, setRefreshConfirmationOpen] =
+    React.useState(false);
+  const { emailClientAnalysisData, isSending } = useEmailClientAnalysisData();
+
+  const handleRefreshAnalysisData = useCallback(async () => {
+    try {
+      await emailClientAnalysisData({ referenceNumber });
+      setRefreshConfirmationOpen(false);
+    } catch (error) {
+      console.error("Error refreshing Analysis data:", error);
+      toast.error("Failed to refresh Analysis data. Please try again.");
+    }
+  }, [emailClientAnalysisData, referenceNumber]);
+
+  return (
+    <>
+      <Button
+        variant={"ghost"}
+        className="cursor-pointer bg-blue-200 hover:bg-blue-300"
+        onClick={() => setRefreshConfirmationOpen(true)}
+      >
+        <IconMenu
+          icon={<Mail className="h-4 w-4" color="red" />}
+          text="Email Client Analysis Data"
+        />
+      </Button>
+
+      {refreshConfirmationOpen && (
+        <AlertDialog
+          open={refreshConfirmationOpen}
+          onOpenChange={(open) => {
+            if (!isSending) setRefreshConfirmationOpen(open);
+          }}
+        >
+          <AlertDialogTrigger asChild></AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmation</AlertDialogTitle>
+              <AlertDialogDescription>
+                {`Are you sure you want to send the analysis data to the client?`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                className="cursor-pointer"
+                disabled={isSending}
+              >
+                <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700 cursor-pointer"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  await handleRefreshAnalysisData();
+                }}
+                disabled={isSending}
+              >
+                {isSending ? (
+                  <IconMenu
+                    text="Refreshing..."
+                    icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
+                  />
+                ) : (
+                  <IconMenu
+                    text="Refresh"
+                    icon={<RefreshCcw className="h-4 w-4" />}
+                  />
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </>
+  );
+};
+
 const RefreshAnalysisData = ({
   referenceNumber,
 }: {
@@ -69,13 +152,13 @@ const RefreshAnalysisData = ({
     React.useState(false);
   const { isUpdating, refreshAnalysisData } = useRefreshAnalysisData();
 
-  const handleRefreshCRSData = useCallback(async () => {
+  const handleRefreshAnalysisData = useCallback(async () => {
     try {
       await refreshAnalysisData({ referenceNumber });
       setRefreshConfirmationOpen(false);
     } catch (error) {
-      console.error("Error refreshing CRS data:", error);
-      toast.error("Failed to refresh CRS data. Please try again.");
+      console.error("Error refreshing Analysis data:", error);
+      toast.error("Failed to refresh Analysis data. Please try again.");
     }
   }, [refreshAnalysisData, referenceNumber]);
 
@@ -88,7 +171,7 @@ const RefreshAnalysisData = ({
       >
         <IconMenu
           icon={<RefreshCcw className="h-4 w-4" />}
-          text="Refresh CRS Data"
+          text="Refresh Analysis Data"
         />
       </Button>
 
@@ -119,7 +202,7 @@ const RefreshAnalysisData = ({
                 className="bg-red-600 hover:bg-red-700 cursor-pointer"
                 onClick={async (e) => {
                   e.preventDefault();
-                  await handleRefreshCRSData();
+                  await handleRefreshAnalysisData();
                 }}
                 disabled={isUpdating}
               >

@@ -15,7 +15,7 @@ import {
   getFundMappingAnalysis,
 } from "./bank-products";
 import { fundAnalysis } from "./crs";
-import { deleteFundingAnalysis } from "@/lib/n8n";
+import { deleteFundingAnalysis, sendClientAnalysisN8N } from "@/lib/n8n";
 
 export const getAnalysis = async (referenceNumber: string) => {
   logInfo("getAnalysis", { referenceNumber });
@@ -94,35 +94,6 @@ export const deleteAnalysis = async (
   await collectionRef.doc(docId).delete();
 };
 
-// export const refreshAnalysis = async (referenceNumber: string) => {
-//   console.log("refreshAnalysis", { referenceNumber });
-//   const data = await getApplyFundingByReferenceNumber({ referenceNumber });
-//   if (!data) throw new AppError("Funding application not found.");
-
-//   // delete the analysis
-//   // delete the mapped bank products
-//   // what about appoved mapped bank products?
-//   // call n8n webhook.
-
-//   const analysisData = await getAnalysis(referenceNumber);
-//   if (!analysisData || analysisData.length === 0)
-//     throw new AppError("Analysis not found.");
-
-//   // delete the analysis
-//   analysisData.forEach(
-//     async (item) => await deleteAnalysis(referenceNumber, item.id)
-//   );
-
-//   const mappedProducts = await getFundMappingAnalysis(referenceNumber);
-//   if (mappedProducts && mappedProducts.length > 0) {
-//     mappedProducts.forEach(
-//       async (item) => await deleteFundMappingAnalysis(referenceNumber, item.id!)
-//     );
-//   }
-
-//   await fundAnalysis({ referenceNumber, userId: data.userId });
-// };
-
 export const refreshAnalysis = async (referenceNumber: string) => {
   console.log("refreshAnalysis", { referenceNumber });
 
@@ -182,4 +153,33 @@ export const refreshAnalysis = async (referenceNumber: string) => {
   await fundAnalysis({ referenceNumber, userId: data.userId });
 
   console.log("Successfully refreshed analysis.");
+};
+
+export const sendClientAnalysisData = async (referenceNumber: string) => {
+  console.log("sendClientAnalysisData", { referenceNumber });
+
+  // 1. Fetch initial application data
+  const data = await getApplyFundingByReferenceNumber({ referenceNumber });
+  if (!data) {
+    throw new AppError("Funding application not found.");
+  }
+
+  const userData = await getUserById(data.userId);
+  if (!userData) throw new AppError("User not found.");
+
+  const n8nWebhookURL = await sendClientAnalysisN8N();
+
+  await fetch(`${process.env.n8n_HOST}/${n8nWebhookURL}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      referenceNumber,
+      userId: data.userId,
+      email: userData.email,
+      clientName: `${userData.firstName} ${userData.lastName}`,
+    }),
+  });
 };

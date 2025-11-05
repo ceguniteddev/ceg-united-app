@@ -102,3 +102,40 @@ export const useRefreshAnalysisData = () => {
     isUpdating: refreshAnalysisDataMutation.isPending,
   };
 };
+
+export const useEmailClientAnalysisData = () => {
+  const { user } = useAuth();
+
+  const emailClientAnalysisDataMutation = useMutation({
+    mutationFn: async ({ referenceNumber }: { referenceNumber: string }) => {
+      if (!user) {
+        throw new AppError("User not authenticated");
+      }
+
+      const response = await fetch(
+        `/api/funding-application/${referenceNumber}/analysis/send-client`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Error sending Client analysis data:", data);
+        throw new AppError("Failed to send Client analysis data.");
+      }
+    },
+    onSuccess: (data, _variable) => {
+      toast.success("Client analysis data sent successfully.");
+    },
+
+    onError: (error: any) => {
+      toast.error("Failed to send Client analysis data. Please try again.");
+    },
+  });
+
+  return {
+    emailClientAnalysisData: emailClientAnalysisDataMutation.mutateAsync,
+    isSending: emailClientAnalysisDataMutation.isPending,
+  };
+};

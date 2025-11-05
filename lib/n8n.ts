@@ -18,3 +18,6 @@ export const generateCRSReportN8N = async () =>
 
 export const deleteCRSReportN8N = async () =>
   (await isProd()) ? "delete-crs-qdrant-prod" : "delete-crs-qdrant";
+
+export const sendClientAnalysisN8N = async () =>
+  (await isProd()) ? "send-client-analysis-prod" : "send-client-analysis-prod";
