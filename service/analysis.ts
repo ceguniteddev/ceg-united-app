@@ -10,6 +10,12 @@ import {
 import { getUserById } from "./user";
 import { Timestamp } from "firebase-admin/firestore";
 import { normalizeAllDates } from "@/lib/date-parser";
+import {
+  deleteFundMappingAnalysis,
+  getFundMappingAnalysis,
+} from "./bank-products";
+import { fundAnalysis } from "./crs";
+import { deleteFundingAnalysis } from "@/lib/n8n";
 
 export const getAnalysis = async (referenceNumber: string) => {
   logInfo("getAnalysis", { referenceNumber });
@@ -34,15 +40,22 @@ export const getAnalysis = async (referenceNumber: string) => {
   }));
 };
 
-export const recordAnalysis = async (userId: string, referenceNumber: string, analysis: string) => {
+export const recordAnalysis = async (
+  userId: string,
+  referenceNumber: string,
+  analysis: string
+) => {
   if (!userId) throw new AppError("User ID is required.");
   if (!referenceNumber) throw new AppError("Reference number is required.");
   if (!analysis) throw new AppError("Analysis is required.");
 
   logInfo("recordAnalysis", { userId, referenceNumber });
 
-  const fundingApplication = await getApplyFundingByReferenceNumber({ referenceNumber });
-  if (!fundingApplication) throw new AppError("Funding application reference number not found.");
+  const fundingApplication = await getApplyFundingByReferenceNumber({
+    referenceNumber,
+  });
+  if (!fundingApplication)
+    throw new AppError("Funding application reference number not found.");
 
   const userData = await getUserById(userId);
   if (!userData) throw new AppError("User not found.");
@@ -54,7 +67,11 @@ export const recordAnalysis = async (userId: string, referenceNumber: string, an
   await collectionRef.add({ analysis, userId, createdAt: Timestamp.now() });
 };
 
-export const updateAnalysis = async (referenceNumber: string, docId: string, analysis: string) => {
+export const updateAnalysis = async (
+  referenceNumber: string,
+  docId: string,
+  analysis: string
+) => {
   console.log("updateAnalysis", { referenceNumber, docId });
   if (!docId) throw new AppError("Document ID is required.");
   const db = firestoreAdmin();
@@ -62,4 +79,107 @@ export const updateAnalysis = async (referenceNumber: string, docId: string, ana
     `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`
   );
   await collectionRef.doc(docId).update({ analysis });
+};
+
+export const deleteAnalysis = async (
+  referenceNumber: string,
+  docId: string
+) => {
+  console.log("deleteAnalysis", { referenceNumber, docId });
+  if (!docId) throw new AppError("Document ID is required.");
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`
+  );
+  await collectionRef.doc(docId).delete();
+};
+
+// export const refreshAnalysis = async (referenceNumber: string) => {
+//   console.log("refreshAnalysis", { referenceNumber });
+//   const data = await getApplyFundingByReferenceNumber({ referenceNumber });
+//   if (!data) throw new AppError("Funding application not found.");
+
+//   // delete the analysis
+//   // delete the mapped bank products
+//   // what about appoved mapped bank products?
+//   // call n8n webhook.
+
+//   const analysisData = await getAnalysis(referenceNumber);
+//   if (!analysisData || analysisData.length === 0)
+//     throw new AppError("Analysis not found.");
+
+//   // delete the analysis
+//   analysisData.forEach(
+//     async (item) => await deleteAnalysis(referenceNumber, item.id)
+//   );
+
+//   const mappedProducts = await getFundMappingAnalysis(referenceNumber);
+//   if (mappedProducts && mappedProducts.length > 0) {
+//     mappedProducts.forEach(
+//       async (item) => await deleteFundMappingAnalysis(referenceNumber, item.id!)
+//     );
+//   }
+
+//   await fundAnalysis({ referenceNumber, userId: data.userId });
+// };
+
+export const refreshAnalysis = async (referenceNumber: string) => {
+  console.log("refreshAnalysis", { referenceNumber });
+
+  // 1. Fetch initial application data
+  const data = await getApplyFundingByReferenceNumber({ referenceNumber });
+  if (!data) {
+    throw new AppError("Funding application not found.");
+  }
+
+  // 2. Fetch existing analysis and mapped products
+  const analysisData = await getAnalysis(referenceNumber);
+  const mappedProducts = await getFundMappingAnalysis(referenceNumber);
+
+  // 3. Concurrently delete existing analysis and mapped products
+  const deletionPromises: Promise<any>[] = [];
+
+  if (analysisData && analysisData.length > 0) {
+    console.log(`Found ${analysisData.length} analysis items to delete.`);
+    analysisData.forEach((item) => {
+      deletionPromises.push(deleteAnalysis(referenceNumber, item.id));
+    });
+  }
+
+  if (mappedProducts && mappedProducts.length > 0) {
+    console.log(`Found ${mappedProducts.length} mapped products to delete.`);
+    // Note: The comment "what about approved mapped bank products?" in the original code
+    // suggests a potential business logic issue. You might want to filter out
+    // approved products before deleting them.
+    mappedProducts.forEach((item) => {
+      deletionPromises.push(
+        deleteFundMappingAnalysis(referenceNumber, item.id!)
+      );
+    });
+  }
+
+  // Wait for all deletion operations to complete
+  if (deletionPromises.length > 0) {
+    await Promise.all(deletionPromises);
+    console.log("All existing analysis and mappings have been deleted.");
+  }
+
+  await fetch(`${process.env.n8n_HOST}/${await deleteFundingAnalysis()}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      referenceNumber,
+      userId: data.userId,
+    }),
+  });
+
+  // 4. Trigger a new analysis
+  // Note: The comment "call n8n webhook" suggests this might be the place
+  // to trigger it after the refresh is complete.
+  await fundAnalysis({ referenceNumber, userId: data.userId });
+
+  console.log("Successfully refreshed analysis.");
 };

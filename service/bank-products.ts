@@ -24,6 +24,7 @@ import {
   updateApplicationStatus,
 } from "./apply-funding";
 import { createAsanaTaskForLender } from "@/lib/n8n";
+import { sendMail } from "@/lib/nodemailer";
 
 export const recordBankProduct = async (value: BankFormData) => {
   const db = firestoreAdmin();
@@ -234,6 +235,17 @@ export const getFundMappingAnalysis = async (referenceNumber: string) => {
     }
   }
   return result;
+};
+
+export const deleteFundMappingAnalysis = async (
+  referenceNumber: string,
+  docId: string
+) => {
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`
+  );
+  await collectionRef.doc(docId).delete();
 };
 
 export const getFundMappingAnalysisDetails = async ({
@@ -805,6 +817,15 @@ export const applyApprovedMappedFund = async ({
     }
 
     const docData = doc.data();
+
+    const userData = await getUserById(docData?.userId);
+    if (!userData) {
+      return {
+        success: false,
+        error: "warning",
+        message: "User not found.",
+      };
+    }
 
     await collectionRef
       .doc(fundMappingApprovedId)

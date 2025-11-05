@@ -5,6 +5,9 @@ export const isProd = async () => process.env.ENVIRONMENT === "production";
 export const getFundingAnalysis = async () =>
   (await isProd()) ? "funding-analysis-prod" : "funding-analysis";
 
+export const deleteFundingAnalysis = async () =>
+  (await isProd()) ? "delete-funding-analysis-prod" : "delete-funding-analysis";
+
 export const createAsanaTaskForLender = async () =>
   (await isProd())
     ? "client-apply-bank-product-prod"
