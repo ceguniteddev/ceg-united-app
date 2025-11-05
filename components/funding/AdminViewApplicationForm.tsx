@@ -175,6 +175,8 @@ export default function FundingApplicationView({ data }: Props) {
                   <Field label="Date of Incorporation" value={null} />
                 )}
 
+                <Field label="Industry Field" value={data.industryField} />
+
                 {/* <Field
                   label="Last Year Taxes"
                   value={currency(data.lastYearTaxes)}

@@ -40,12 +40,7 @@ import ClientBusinessManagement from "../ClientBusinessManagement";
 import IconMenu from "../icon-menu";
 import { ResponsiveDialog } from "../responsive-dialog";
 import { Business } from "@/schema";
-import {
-  useHasIncomeBankVerificationQuery,
-  useHasPayrollBankVerificationQuery,
-} from "@/hooks/plaid";
 import PlaidLink from "../PlaidLink";
-import { is } from "date-fns/locale";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
@@ -812,14 +807,20 @@ const ApplyFundingForm = ({
                               type="number"
                               label={`${currentYear - 2} Net Revenue?`}
                             />
+
+                            <CustomFormField
+                              name={"industryField"}
+                              label={"Industry Field?"}
+                            />
+
+                            <CustomFormField
+                              name={"businessTaxes"}
+                              label={"Did you report on your business taxes?"}
+                              type="select"
+                              options={businessTaxes}
+                              onSelectValue={handleBusinessTaxesChange}
+                            />
                           </div>
-                          <CustomFormField
-                            name={"businessTaxes"}
-                            label={"Did you report on your business taxes?"}
-                            type="select"
-                            options={businessTaxes}
-                            onSelectValue={handleBusinessTaxesChange}
-                          />
                           {businessTaxesSelected?.type === "yes" && (
                             <div className="grid grid-cols-3 gap-4">
                               <CustomFormField

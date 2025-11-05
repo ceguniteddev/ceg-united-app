@@ -33,14 +33,14 @@ export const uploadDocument = async (
   // --- Branching Logic ---
   if (documentType) {
     // CATEGORIZED UPLOAD LOGIC (delete old, use structured name)
-    const oldFilesPrefix = `${userDocumentPrefix}${documentType}_`;
-    const [oldFiles] = await bucket.getFiles({ prefix: oldFilesPrefix });
-    if (oldFiles.length > 0) {
-      const deletePromises = oldFiles.map((oldFile) => oldFile.delete());
-      await Promise.all(deletePromises);
-    }
-    const extension = file.name.split(".").pop() || "bin";
-    newFilename = `${documentType}_${Date.now()}.${extension}`;
+    // const oldFilesPrefix = `${userDocumentPrefix}${documentType}_`;
+    // const [oldFiles] = await bucket.getFiles({ prefix: oldFilesPrefix });
+    // if (oldFiles.length > 0) {
+    //   const deletePromises = oldFiles.map((oldFile) => oldFile.delete());
+    //   await Promise.all(deletePromises);
+    // }
+    // const extension = file.name.split(".").pop() || "bin";
+    newFilename = `${documentType}_${file.name}`;
   } else {
     // UNCATEGORIZED ("OTHER") UPLOAD LOGIC
     // Sanitize the original filename and make it unique to prevent conflicts.

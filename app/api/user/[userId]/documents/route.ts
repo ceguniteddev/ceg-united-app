@@ -15,18 +15,20 @@ export const POST = withAuth(
       const formData = await request.formData();
       const { userId } = (await params) ?? {};
 
-      const file = formData.get("file") as File | null;
-      // documentType is now optional
+      // --- MODIFICATION: Handle multiple files ---
+      // Use `getAll` to retrieve all files associated with the "files" key
+      const files = formData.getAll("files") as File[];
       const documentType = formData.get("documentType") as string | null;
 
       // --- Validation ---
       if (!userId) {
         return badRequest({ errors: "User ID is missing." });
       }
-      if (!file) {
-        return badRequest({ errors: "No file was uploaded." });
+      // Check if the files array is empty
+      if (!files || files.length === 0) {
+        return badRequest({ errors: "No files were uploaded." });
       }
-      // If a documentType is provided, validate it. If not, that's okay.
+      // If a documentType is provided, validate it.
       if (
         documentType &&
         !DOCUMENT_TYPES.some((dt) => dt.id === documentType)
@@ -35,12 +37,19 @@ export const POST = withAuth(
       }
       // --- End Validation ---
 
-      const uploadedFileData = await uploadDocument(userId, file, documentType);
+      // --- MODIFICATION: Upload all files concurrently ---
+      // Create an array of upload promises
+      const uploadPromises = files.map((file) =>
+        uploadDocument(userId, file, documentType)
+      );
+
+      // Wait for all promises to resolve
+      const uploadedFilesData = await Promise.all(uploadPromises);
 
       return NextResponse.json(
         {
-          message: "File uploaded successfully!",
-          data: uploadedFileData,
+          message: "Files uploaded successfully!",
+          data: uploadedFilesData, // The data is now an array of uploaded file info
         },
         { status: 201 }
       );

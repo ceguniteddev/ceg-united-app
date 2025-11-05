@@ -139,6 +139,8 @@ export const applyFundingSchema = z
     businessProjectedProfit2: z.coerce.number<number>().optional(),
     businessProjectedProfit3: z.coerce.number<number>().optional(),
 
+    industryField: z.string().optional(),
+
     businessTaxes: z.string().optional(),
     businessTaxesStatus: z.string().optional(),
     businessTaxes1: z.coerce.number<number>().optional(),

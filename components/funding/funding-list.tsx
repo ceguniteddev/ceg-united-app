@@ -63,6 +63,7 @@ import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CustomFormField } from "../CustomFormField";
+import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 
 const baseColumns: ColumnDef<BankFormData>[] = [
   {
@@ -183,14 +184,6 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
 
-  // const columns = React.useMemo(
-  //   () =>
-  //     baseColumns.filter((c) =>
-  //       isAdminView ? c.id !== "clientActions" : c.id !== "adminActions"
-  //     ),
-  //   [isAdminView]
-  // );
-
   const columns = React.useMemo(() => {
     // 1. Determine if any funding application has been approved.
     // The optional chaining (?.) prevents errors if appliedFunding is undefined.
@@ -215,6 +208,10 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
 
       // Hide adminActions for non-admins
       if (!isAdminView && column.id === "adminActions") {
+        return false;
+      }
+
+      if (!isAdminView && column.id === "referenceNumber") {
         return false;
       }
 
@@ -327,6 +324,17 @@ export default FundingList;
 const ActionCell = ({ row }: { row: any }) => {
   const { applyApprovedMappedFund, isApplying } =
     useApprovedMappedFundsMutation();
+  const [isDenefitsPaid, setIsDenefitsPaid] = React.useState(false);
+
+  const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
+    row.original.userId
+  );
+
+  React.useEffect(() => {
+    if (denefitsContract && denefitsContract.length > 0) {
+      setIsDenefitsPaid(true);
+    }
+  }, [denefitsContract]);
 
   const handleApproveClickCapture = async () => {
     await applyApprovedMappedFund({
@@ -342,6 +350,7 @@ const ActionCell = ({ row }: { row: any }) => {
       <Button
         type="button"
         variant="outline"
+        disabled={isApplying || !isDenefitsPaid}
         className="bg-green-200 hover:bg-green-400 cursor-pointer"
         onClick={() => handleApproveClickCapture()}
       >

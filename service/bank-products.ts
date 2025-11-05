@@ -306,6 +306,7 @@ export const getFundMappingAnalysisDetails = async ({
         approvedRemarks: bankProductId.approvedRemarks,
         fundedAmount: bankProductId.fundedAmount,
         fundedRemarks: bankProductId.fundedRemarks,
+        userId: bankProductId.userId,
       });
     }
   }
@@ -363,6 +364,7 @@ export const getFundMappingAnalysisDetailsOld = async ({
         clientApplicationStatus: bankProductId.clientApplicationStatus,
         adminApprovedStatus: bankProductId.adminApprovedStatus,
         referenceNumber: bankProductId.referenceNumber,
+        userId: bankProductId.userId,
       });
     }
   }
@@ -602,6 +604,7 @@ export const getApprovedMappedFunds = async (
           referenceNumber: info.referenceNumber,
           approvedAmount: info.approvedAmount,
           approvedRemarks: info.approvedRemarks,
+          userId: referenceData.userId,
         };
       }
       return null; // Return null if a specific bank product isn't found

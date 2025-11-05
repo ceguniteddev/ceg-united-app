@@ -13,6 +13,7 @@ import {
   Lightbulb,
   ReceiptText,
   ShieldAlert,
+  CreditCard,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -45,10 +46,17 @@ export const DOCUMENT_TYPES: DocumentType[] = [
     required: true,
   },
   {
+    id: "BANK_STATEMENTS",
+    title: "Bank Statements",
+    description: "Upload your most recent month's bank statements.",
+    icon: CreditCard,
+    category: "universal",
+    required: true,
+  },
+  {
     id: "PAYSTUBS",
     title: "Paystubs (1 Month)",
-    description:
-      "Only if payroll verification linking has not been done. Upload your most recent month's worth.",
+    description: "Upload your most recent month's worth.",
     icon: ReceiptText,
     category: "personal",
     required: false, // Optional

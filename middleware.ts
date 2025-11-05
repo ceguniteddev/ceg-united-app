@@ -5,7 +5,6 @@ import { verifySession } from "@/lib/session";
 import { getUser, getUserById } from "@/service/user";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { isPlaidProductionReady } from "./lib/plaid";
-import { ro } from "date-fns/locale";
 
 const PUBLIC_ROUTES = new Set<string>([
   "/",
