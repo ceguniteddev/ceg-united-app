@@ -1,5 +1,4 @@
 import { CustomFormField } from "@/components/CustomFormField";
-import IconMenu from "@/components/icon-menu";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +15,6 @@ import {
 } from "@/schema/bank-products";
 import { Loader2Icon, SaveIcon, XCircleIcon } from "lucide-react";
 import { useBankProductsMutation } from "@/hooks/admin/bank-products";
-import { toast } from "sonner";
 import { useFundingApplicationsMappedFundsMutation } from "@/hooks/admin/funding-application/fund-mapping";
 
 type Props = {
@@ -82,6 +80,7 @@ const BankProductsForm = ({
 
   const onSubmit: SubmitHandler<BankFormData> = useCallback(
     async (values) => {
+      console.log(values);
       if (data) {
         await updateBankProduct({ id: data.id!, values });
 
@@ -142,21 +141,24 @@ const BankProductsForm = ({
                   <CustomFormField
                     name="maximumFundingAmount"
                     placeholder="250,000.00"
-                    label="* Maximum Funding Amount"
+                    label="Maximum Funding Amount"
                     type="number"
+                    allowNegative={false}
                   />
                   <CustomFormField
                     name="averageApprovalAmount"
                     placeholder="250,000.00"
-                    label="* Average Approval Amount"
+                    label="Average Approval Amount"
                     type="number"
+                    allowNegative={false}
                   />
                   <CustomFormField
                     name="grossFundingPercentage"
                     placeholder="100"
-                    label="* Gross Funding %"
+                    label="Gross Funding %"
                     type="number"
                     decimalScale={0}
+                    allowNegative={false}
                   />
 
                   <CustomFormField
@@ -193,44 +195,50 @@ const BankProductsForm = ({
                   <CustomFormField
                     name="minimumFicoScore"
                     placeholder="680"
-                    label="* Minimum FICO Score"
+                    label="Minimum FICO Score"
                     type="number"
+                    allowNegative={false}
                   />
 
                   <CustomFormField
                     name="maximumInquiriesAllowed"
                     placeholder="5"
-                    label="* Maximum Inquiries Allowed"
+                    label="Maximum Inquiries Allowed"
                     type="number"
                     decimalScale={0}
+                    allowNegative={false}
                   />
                   <CustomFormField
                     name="minimumNumberOfAccountsOnCredit"
                     placeholder=""
-                    label="* Minimum Number of Accounts on Credit"
+                    label="Minimum Number of Accounts on Credit"
                     type="number"
                     decimalScale={0}
+                    allowNegative={false}
                   />
                   <CustomFormField
                     name="minimumIncomeRequired"
                     placeholder=""
-                    label="* Minimum Income Required"
+                    label="Minimum Income Required"
                     type="number"
                     decimalScale={2}
+                    allowNegative={false}
                   />
                   <CustomFormField
                     name="maximumDebtToIncomeRatio"
                     placeholder="50"
-                    label="* Maximum Debt to Income Ratio %"
+                    label="Maximum Debt to Income Ratio %"
                     type="number"
                     decimalScale={0}
+                    allowNegative={false}
                   />
                   <CustomFormField
                     name="maximumDebtServiceRatio"
                     placeholder="1.35"
-                    label="* Maximum Debt Service Ratio"
+                    label="Maximum Debt Service Ratio"
                     type="number"
                     decimalScale={2}
+                    allowNegative={false}
                   />
                   <CustomFormField
                     name="personalVerifiableIncomeRequired"
@@ -275,37 +283,39 @@ const BankProductsForm = ({
                     options={yesNo}
                   />
 
-                  <CustomFormField
-                    name="membershipRequiredBeforeApplicationRequired"
-                    placeholder=""
-                    label="* Membership Before Application"
-                    type="select"
-                    options={yesNo}
-                  />
+                  <div className="col-span-3 grid grid-cols-4 gap-4">
+                    <CustomFormField
+                      name="membershipRequiredBeforeApplicationRequired"
+                      placeholder=""
+                      label="* Membership Before Application"
+                      type="select"
+                      options={yesNo}
+                    />
 
-                  <CustomFormField
-                    name="membershipRequiredUponApprovalRequired"
-                    placeholder=""
-                    label="* Membership Upon Approval"
-                    type="select"
-                    options={yesNo}
-                  />
+                    <CustomFormField
+                      name="membershipRequiredUponApprovalRequired"
+                      placeholder=""
+                      label="* Membership Upon Approval"
+                      type="select"
+                      options={yesNo}
+                    />
 
-                  <CustomFormField
-                    name="accountOpeningBeforeApplicationRequired"
-                    placeholder=""
-                    label="* Account Opening Before Application"
-                    type="select"
-                    options={yesNo}
-                  />
+                    <CustomFormField
+                      name="accountOpeningBeforeApplicationRequired"
+                      placeholder=""
+                      label="* Account Opening Before Application"
+                      type="select"
+                      options={yesNo}
+                    />
 
-                  <CustomFormField
-                    name="accountOpeningAfterApprovalRequired"
-                    placeholder=""
-                    label="* Account Opening After Approval"
-                    type="select"
-                    options={yesNo}
-                  />
+                    <CustomFormField
+                      name="accountOpeningAfterApprovalRequired"
+                      placeholder=""
+                      label="* Account Opening After Approval"
+                      type="select"
+                      options={yesNo}
+                    />
+                  </div>
 
                   <CustomFormField
                     name="oneYearBusinessTaxes"

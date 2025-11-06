@@ -80,6 +80,7 @@ interface FormFieldProps {
   numberPrefix?: string;
   decimalScale?: number;
   editorHeight?: number;
+  allowNegative?: boolean;
 }
 
 export const CustomFormField: React.FC<FormFieldProps> = ({
@@ -114,6 +115,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
   numberPrefix,
   decimalScale = 2,
   editorHeight,
+  allowNegative,
 }) => {
   const { control } = useFormContext();
 
@@ -337,7 +339,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
       case "number":
         const { onChange, ...restField } = field;
         const handleChangeNumber = (value: number | undefined) => {
-          if (value === undefined) value = 0;
+          // if (value === undefined) value = 0;
           onChange(value);
         };
 
@@ -350,6 +352,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
             readOnly={readonly}
             min={minValue}
             max={maxValue}
+            allowNegative={allowNegative}
             thousandSeparator=","
             prefix={numberPrefix}
             decimalScale={decimalScale}

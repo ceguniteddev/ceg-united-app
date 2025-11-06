@@ -90,7 +90,7 @@ export const updateBankProduct = async (id: string, values: BankFormData) => {
 
   const db = firestoreAdmin();
   const collectionRef = db.collection(BANK_PRODUCTS_COLLECTION).doc(id);
-  await collectionRef.update(values);
+  await collectionRef.set(values);
 };
 
 export const recordFundMappingAnalysis = async (

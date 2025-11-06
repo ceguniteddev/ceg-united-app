@@ -1,3 +1,4 @@
+import { error } from "node:console";
 import { z } from "zod";
 
 export const YesNoEnum = z.enum(["Yes", "No"], { error: "Required" });
@@ -37,40 +38,25 @@ export const bankDataSchema = z.object({
   id: z.string().optional(),
   isApproved: z.boolean().optional(),
   bankName: z.string().min(1, "Required"),
-  productName: z.string().min(1, "Required").array(),
-  // productType: z.string().min(1, "Required"),
+  productName: z.array(z.string().min(1, "Required"), { error: "Required" }),
   financingTerm: z.string().min(1, "Required"),
   underwritingNotes: z.string().optional(),
-  maximumFundingAmount: z
-    .number({ error: "Numeric value is required" })
-    .positive("Must be a positive number"),
-  averageApprovalAmount: z
-    .number({ error: "Numeric value is required" })
-    .positive("Must be a positive number"),
-  grossFundingPercentage: z
-    .number({ error: "Numeric value is required" })
-    .positive("Must be a positive number"),
+  maximumFundingAmount: z.coerce.number<number>().optional(),
+  averageApprovalAmount: z.coerce.number<number>().optional(),
+  grossFundingPercentage: z.coerce.number<number>().optional(),
   doubleDipAllowed: YesNoEnum,
-  minimumFicoScore: z.number({ error: "Numeric value is required" }),
+  minimumFicoScore: z.coerce.number<number>().optional(),
   // .min(300, "Invalid FICO score")
   // .max(850, "Invalid FICO score"),
-  creditBureauPulled: CreditBureauEnum.array(),
-  maximumInquiriesAllowed: z
-    .number({ error: "Numeric value is required" })
-    .positive("Must be a positive number"),
-  minimumNumberOfAccountsOnCredit: z
-    .number({ error: "Numeric value is required" })
-    .positive("Must be a positive number"),
+  // creditBureauPulled: CreditBureauEnum.array(),
+
+  creditBureauPulled: z.array(CreditBureauEnum, { error: "Required" }),
+  maximumInquiriesAllowed: z.coerce.number<number>().optional(),
+  minimumNumberOfAccountsOnCredit: z.coerce.number<number>().optional(),
   minimumCreditAgeRequired: z.string(),
-  minimumIncomeRequired: z
-    .number({ error: "Numeric value is required" })
-    .positive("Must be a positive number"),
-  maximumDebtToIncomeRatio: z
-    .number({ error: "Numeric value is required" })
-    .positive("Must be a positive number"),
-  maximumDebtServiceRatio: z
-    .number({ error: "Numeric value is required" })
-    .positive("Must be a positive number"),
+  minimumIncomeRequired: z.coerce.number<number>().optional(),
+  maximumDebtToIncomeRatio: z.coerce.number<number>().optional(),
+  maximumDebtServiceRatio: z.coerce.number<number>().optional(),
   personalVerifiableIncomeRequired: YesNoEnum,
   noDocumentationRequired: YesNoEnum,
   businessBankStatementsRequired: YesNoEnum,
@@ -90,8 +76,11 @@ export const bankDataSchema = z.object({
   twoYearPersonalTaxes: YesNoEnum,
   threeYearPersonalTaxes: YesNoEnum,
   immigrationStatusRequirement: z.string().min(1, "Required"),
-  stateAvailability: z.string().min(1, "Required").array(),
-  applicationMethod: ApplicationMethodEnum.array(),
+  // stateAvailability: z.string().min(1, "Required").array(),
+  stateAvailability: z.array(z.string().min(1, "Required"), {
+    error: "Required",
+  }),
+  applicationMethod: z.array(ApplicationMethodEnum, { error: "Required" }),
   allowsForwardingViaEmail: YesNoEnum,
   canBeFinalizedOnline: YesNoEnum,
   clientNeedsToGoToBranch: YesNoEnum,
