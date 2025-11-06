@@ -13,27 +13,7 @@ export const getTransporter = async () => {
       pass: process.env.EMAIL_PASSWORD || "",
     },
     requireTLS: true,
-    // tls: {
-    //   ciphers: "SSLv3",
-    //   rejectUnauthorized: false,
-    // },
   });
-  // return nodemailer.createTransport({
-  //   host: "smtpout.secureserver.net",
-  //   secure: true,
-  //   // secureConnection: false,
-  //   tls: {
-  //     ciphers: "SSLv3",
-  //     rejectUnauthorized: false,
-  //   },
-  //   requireTLS: true,
-  //   port: 465,
-  //   debug: true,
-  //   auth: {
-  //     user: process.env.EMAIL_USER,
-  //     pass: process.env.EMAIL_PASSWORD,
-  //   },
-  // });
 };
 
 type MailOptions = {
@@ -43,7 +23,12 @@ type MailOptions = {
   cc?: string[];
 };
 
-export const sendMail = async ({ emailTo, subject, bodyHTML, cc }: MailOptions) => {
+export const sendMail = async ({
+  emailTo,
+  subject,
+  bodyHTML,
+  cc,
+}: MailOptions) => {
   const transporter = await getTransporter();
 
   if (transporter === null) {
