@@ -2,7 +2,7 @@ import HeaderBox from "@/components/HeaderBox";
 import React from "react";
 import AddCourse from "./courses/_components/AddCourse";
 import { getCourses } from "@/service/educational-materials/course";
-import BankProductsList from "./list";
+import CoursesList from "./list";
 
 const EducationalMaterialsPage = async () => {
   const courses = await getCourses();
@@ -15,7 +15,7 @@ const EducationalMaterialsPage = async () => {
 
       <div className="space-y-6">
         <section className="flex w-full flex-col gap-6">
-          <BankProductsList courses={courses} />
+          <CoursesList courses={courses} />
         </section>
       </div>
     </section>

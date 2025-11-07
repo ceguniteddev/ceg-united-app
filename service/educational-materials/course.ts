@@ -83,11 +83,13 @@ export const getCourses = async (): Promise<Course[] | null> => {
       const imageUrl = await getCourseDocument(data?.imageUrl);
       const chapters = await getChaptersByCourseId(doc.id);
 
+      const attachments = await getAttachmentsByCourseId(doc.id);
       return {
         id: doc.id,
         ...normalizeAllDates(data),
         imageUrl,
         chapters,
+        attachments,
       };
     })
   );

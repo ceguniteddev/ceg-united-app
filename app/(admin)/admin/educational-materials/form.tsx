@@ -68,7 +68,11 @@ const CourseCreatePage = ({
                 Cancel
               </Button>
 
-              <Button type="submit" disabled={!isValid || isSubmitting}>
+              <Button
+                type="submit"
+                disabled={!isValid || isSubmitting}
+                className="cursor-pointer"
+              >
                 Continue
               </Button>
             </div>
