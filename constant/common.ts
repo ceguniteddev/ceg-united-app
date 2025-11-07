@@ -155,6 +155,11 @@ export const adminSidebarLinks = [
     route: "/admin/whats-new",
     label: "What's New",
   },
+  {
+    imgURL: "/icons/book-open-text.svg",
+    route: "/admin/educational-materials",
+    label: "Educational Materials",
+  },
 ];
 
 export const settingsSidebar = [
@@ -252,6 +257,17 @@ export const transactionCategoryStyles = {
     chipBackgroundColor: "bg-inherit",
   },
 };
+
+export const courseCategories = [
+  {
+    label: "Personal",
+    value: "Personal",
+  },
+  {
+    label: "Business",
+    value: "Business",
+  },
+];
 
 export const US_STATES = [
   {
