@@ -12,7 +12,7 @@ export const recordCourseTitle = async (title: string) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(COURSE);
   const docRef = await collectionRef.add({ title, createdAt: Timestamp.now() });
-  revalidateTag("courses");
+  revalidateTag("courses", "max");
   const data = (await docRef.get()).data();
   return {
     id: docRef.id,

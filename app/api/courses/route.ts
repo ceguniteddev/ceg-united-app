@@ -9,7 +9,7 @@ export const POST = withAuth(async (req: NextRequest) => {
     const { title } = await req.json();
 
     const response = await recordCourseTitle(title);
-    revalidateTag("courses");
+    revalidateTag("courses", "max");
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {

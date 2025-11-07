@@ -30,7 +30,7 @@ function isClientRoute(pathname: string) {
   return pathname.startsWith("/overview");
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname, origin } = req.nextUrl;
 
   const token = req.cookies.get(FIREBASE_TOKEN_NAME)?.value;
@@ -115,7 +115,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  runtime: "nodejs",
   matcher: [
     "/", // root (we fan out to role home)
     "/register", // public page
@@ -128,5 +127,5 @@ export const config = {
     "/overview/:path*", // client area
     "/admin/:path*", // admin area
     "/api/:path*", // api guarding
-  ],
+  ]
 };
