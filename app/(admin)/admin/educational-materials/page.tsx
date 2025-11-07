@@ -1,3 +1,5 @@
+"use server";
+
 import HeaderBox from "@/components/HeaderBox";
 import React from "react";
 import AddCourse from "./courses/_components/AddCourse";
