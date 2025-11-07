@@ -117,7 +117,7 @@ export const getCourses = nextCache(
   ["all-courses"],
   {
     tags: ["courses"],
-    revalidate: 3600,
+    revalidate: 60,
   }
 );
 
