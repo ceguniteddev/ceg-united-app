@@ -2,6 +2,7 @@ import { CHAPTER, COURSE, MUX_DATA } from "@/constant/collection-name";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin, storageAdmin } from "@/lib/fireabase-admin";
 import { UploadedFileData } from "@/schema";
+import { Chapter } from "@/schema/educational-materials/course";
 import { Timestamp } from "firebase-admin/firestore";
 
 export const recordChapterTitle = async ({
@@ -91,7 +92,10 @@ export const getChaptersByCourseId = async (courseId: string) => {
   }));
 };
 
-export const getChapterById = async (courseId: string, chapterId: string) => {
+export const getChapterById = async (
+  courseId: string,
+  chapterId: string
+): Promise<Chapter | null> => {
   const db = firestoreAdmin();
   const collectionRef = db
     .collection(`${COURSE}/${courseId}/${CHAPTER}`)
@@ -103,6 +107,14 @@ export const getChapterById = async (courseId: string, chapterId: string) => {
     id: doc.id,
     ...normalizeAllDates(data),
   };
+};
+
+export const deleteChapter = async (courseId: string, chapterId: string) => {
+  const db = firestoreAdmin();
+  const collectionRef = db
+    .collection(`${COURSE}/${courseId}/${CHAPTER}`)
+    .doc(chapterId);
+  await collectionRef.delete();
 };
 
 export const recordMuxData = async ({

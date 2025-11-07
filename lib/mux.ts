@@ -78,3 +78,11 @@ export const updateChapterVideo = async ({
 
   throw new Error("Video processing failed after multiple attempts.");
 };
+
+export const deleteMuxVideo = async (assetId: string) => {
+  try {
+    await mux.video.assets.delete(assetId);
+  } catch (error) {
+    console.error("Error deleting Mux video:", error);
+  }
+};

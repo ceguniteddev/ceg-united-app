@@ -1,7 +1,5 @@
 import { withAuth } from "@/lib/api-validation";
-import { uploadDocument } from "@/service/documents";
 import { NextRequest, NextResponse } from "next/server";
-import { DOCUMENT_TYPES } from "@/lib/document-types";
 import { badRequest, internalServerError } from "@/app/api/helpers";
 import { getUserDocuments } from "@/service/user";
 import AppError from "@/error/AppError";

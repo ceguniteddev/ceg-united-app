@@ -67,7 +67,7 @@ export const ChapterActions = ({
         id: notification,
       });
       router.refresh();
-      router.push(`/teacher/courses/${courseId}`);
+      router.push(`/admin/educational-materials/courses/${courseId}`);
     } catch {
       toast.error("Something went wrong", {
         id: notification,
@@ -89,7 +89,12 @@ export const ChapterActions = ({
         {isPublished ? "Unpublish" : "Publish"}
       </Button>
       <ConfirmModal onConfirm={onDelete}>
-        <Button size="sm" variant={"destructive"} disabled={isLoading} className="cursor-pointer">
+        <Button
+          size="sm"
+          variant={"destructive"}
+          disabled={isLoading}
+          className="cursor-pointer"
+        >
           <Trash className="h-4 w-4" />
         </Button>
       </ConfirmModal>

@@ -91,12 +91,16 @@ export const ChaptersForm = ({ initialData, courseId }: ChaptersFormProps) => {
       )}
       <div className="font-medium flex items-center justify-between">
         Course chapters
-        <Button onClick={toggleCreating} variant="ghost">
+        <Button
+          onClick={toggleCreating}
+          variant="ghost"
+          className="cursor-pointer"
+        >
           {isCreating ? (
             <>Cancel</>
           ) : (
             <>
-              <PlusCircle className="h-4 w-4 mr-2" />
+              <PlusCircle className="h-4 w-4" />
               Add a chapter
             </>
           )}

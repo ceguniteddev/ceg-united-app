@@ -60,7 +60,7 @@ export const Actions = ({ disabled, courseId, isPublished }: ActionsProps) => {
         id: notification,
       });
       router.refresh();
-      router.push(`/teacher/courses`);
+      router.push(`/admin/educational-materials`);
     } catch {
       toast.error("Something went wrong", {
         id: notification,

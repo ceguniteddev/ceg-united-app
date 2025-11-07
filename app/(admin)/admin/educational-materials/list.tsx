@@ -1,6 +1,5 @@
 "use client";
 import { DataTablePagination } from "@/components/funding/pagination";
-import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import {
   ColumnDef,
@@ -14,15 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  Loader2Icon,
-  MoreHorizontal,
-  PencilIcon,
-  Trash2Icon,
-  XIcon,
-} from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import { View } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -31,33 +22,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import IconMenu from "@/components/icon-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { BankFormData } from "@/schema/bank-products";
-import {
-  useBankProductsMutation,
-  useBankProductsQuery,
-} from "@/hooks/admin/bank-products";
-import { ResponsiveDialog } from "@/components/responsive-dialog";
-import BankProductsForm from "./form";
 import SortableHeader from "@/components/SortableHeader";
+import CategoryBadge from "@/components/CategoryBadge";
+import { useRouter } from "next/navigation";
+import React from "react";
 
 const columns: ColumnDef<BankFormData>[] = [
   {
@@ -69,9 +40,32 @@ const columns: ColumnDef<BankFormData>[] = [
 
     cell: ({ row }) => <div>{row.getValue("title")}</div>,
   },
+  {
+    accessorKey: "category",
+    id: "category",
+    header: ({ column }) => <SortableHeader column={column} title="Category" />,
+    cell: ({ row }) => <div>{row.getValue("category")}</div>,
+  },
+  {
+    accessorKey: "isPublished",
+    id: "isPublished",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Is Published" />
+    ),
+    cell: ({ row }) => {
+      const isPublished = row.getValue("isPublished");
+      const status = isPublished ? "Published" : "Unpublished";
+      return <CategoryBadge category={status} />;
+    },
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => <ActionCell row={row} />,
+    size: 80,
+  },
 ];
 
-const BankProductsList = ({ courses }: { courses?: any }) => {
+const CoursesList = ({ courses }: { courses?: any }) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -172,4 +166,20 @@ const BankProductsList = ({ courses }: { courses?: any }) => {
   );
 };
 
-export default BankProductsList;
+export default CoursesList;
+
+const ActionCell = ({ row }: { row: any }) => {
+  const router = useRouter();
+
+  return (
+    <Button
+      variant="ghost"
+      className="cursor-pointer bg-blue-200 hover:bg-blue-300"
+      onClick={() =>
+        router.push(`/admin/educational-materials/courses/${row.original.id}`)
+      }
+    >
+      <IconMenu text="View" icon={<View className="h-4 w-4" />} />
+    </Button>
+  );
+};

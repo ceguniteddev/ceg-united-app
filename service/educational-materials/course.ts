@@ -65,6 +65,12 @@ export const getCourseById = async (id: string): Promise<Course | null> => {
   };
 };
 
+export const deleteCourse = async (id: string) => {
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(COURSE).doc(id);
+  await collectionRef.delete();
+};
+
 export const getCourses = async (): Promise<Course[] | null> => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(COURSE).orderBy("createdAt", "desc");
@@ -148,6 +154,7 @@ export const deleteCourseDocument = async (path: string) => {
 };
 
 export const getCourseDocument = async (path: string) => {
+  if (!path) return null;
   const bucket = storageAdmin();
   const blob = bucket.file(path);
   const [signedUrl] = await blob.getSignedUrl({

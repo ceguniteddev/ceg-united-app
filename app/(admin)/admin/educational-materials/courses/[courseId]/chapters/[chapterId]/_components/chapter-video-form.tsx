@@ -14,9 +14,7 @@ import MuxUploader from "./MuxUploader";
 import { createUploadUrl, updateChapterVideo } from "@/lib/mux";
 
 interface ChapterVideoFormProps {
-  initialData: Chapter & {
-    muxData?: { id: string; assetId: string; playbackId: string } | null;
-  };
+  initialData: Chapter;
   courseId: string;
   chapterId: string;
 }

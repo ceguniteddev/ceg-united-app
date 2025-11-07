@@ -60,12 +60,12 @@ export const CategoryForm = ({ initialData, courseId }: CategoryFormProps) => {
     <div className="mt-6 border bg-slate-100 rounded-md p-4">
       <div className="font-medium flex items-center justify-between">
         Course category
-        <Button onClick={toggleEdit} variant="ghost">
+        <Button onClick={toggleEdit} variant="ghost" className="cursor-pointer">
           {isEditing ? (
             <>Cancel</>
           ) : (
             <>
-              <Pencil className="h-4 w-4 mr-2" />
+              <Pencil className="h-4 w-4" />
               Edit category
             </>
           )}
