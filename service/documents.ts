@@ -1,9 +1,14 @@
 "use server";
 
 import { storageAdmin } from "@/lib/fireabase-admin";
-import { UploadedFileData } from "@/schema";
 
 // The shape of the returned data remains the same
+export interface UploadedFileData {
+  originalFilename: string;
+  gcsPath: string;
+  size: number;
+  contentType: string;
+}
 
 /**
  * Uploads a single document for a specific user and document type.

@@ -80,6 +80,7 @@ const BankProductsForm = ({
 
   const onSubmit: SubmitHandler<BankFormData> = useCallback(
     async (values) => {
+      console.log(values);
       if (data) {
         await updateBankProduct({ id: data.id!, values });
 

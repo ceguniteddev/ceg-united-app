@@ -99,11 +99,6 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  - variable: MUX_TOKEN_ID
-    value: adf511d4-30c2-453d-ab7d-1676069ab4ae
-    availability:
-      - BUILD
-      - RUNTIME
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   - variable: FIREBASE_CLIENT_EMAIL
@@ -124,5 +119,3 @@ env:
     secret: ENCRYPTION_KEY
   - variable: FIREBASE_PRIVATE_KEY_BASE64
     secret: FIREBASE_PRIVATE_KEY_BASE64
-  - variable: MUX_TOKEN_SECRET
-    secret: MUX_TOKEN_SECRET
