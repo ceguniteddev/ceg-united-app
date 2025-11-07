@@ -23,7 +23,7 @@ export default async function Page() {
               <p>No educational materials found.</p>
             )}
           </section>
-        </div>{" "}
+        </div>
       </Suspense>
     </section>
   );
