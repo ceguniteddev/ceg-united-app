@@ -6,13 +6,12 @@ import { UploadedFileData } from "@/schema";
 import { Attachment, Course } from "@/schema/educational-materials/course";
 import { Timestamp } from "firebase-admin/firestore";
 import { getChaptersByCourseId } from "./chapter";
-import { unstable_cache as nextCache, revalidateTag } from "next/cache";
+import { unstable_cache as nextCache } from "next/cache";
 
 export const recordCourseTitle = async (title: string) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(COURSE);
   const docRef = await collectionRef.add({ title, createdAt: Timestamp.now() });
-  revalidateTag("courses", "max");
   const data = (await docRef.get()).data();
   return {
     id: docRef.id,
