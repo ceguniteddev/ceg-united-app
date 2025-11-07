@@ -6,6 +6,7 @@ import { UploadedFileData } from "@/schema";
 import { Attachment, Course } from "@/schema/educational-materials/course";
 import { Timestamp } from "firebase-admin/firestore";
 import { getChaptersByCourseId } from "./chapter";
+import { unstable_cache as nextCache } from "next/cache";
 
 export const recordCourseTitle = async (title: string) => {
   const db = firestoreAdmin();
@@ -68,50 +69,57 @@ export const deleteCourse = async (id: string) => {
   await collectionRef.delete();
 };
 
-export const getCourses = async (): Promise<Course[] | null> => {
-  try {
-    const db = firestoreAdmin();
-    const collectionRef = db.collection(COURSE).orderBy("createdAt", "desc");
-    const querySnapshot = await collectionRef.get();
+export const getCourses = nextCache(
+  async (): Promise<Course[] | null> => {
+    try {
+      const db = firestoreAdmin();
+      const collectionRef = db.collection(COURSE).orderBy("createdAt", "desc");
+      const querySnapshot = await collectionRef.get();
 
-    if (querySnapshot.empty) {
-      return []; // Return an empty array instead of null for better type safety
+      if (querySnapshot.empty) {
+        return []; // Return an empty array instead of null for better type safety
+      }
+
+      const courses = await Promise.all(
+        querySnapshot.docs.map(async (doc) => {
+          try {
+            const data = doc.data();
+            // These can run in parallel
+            const [imageUrl, chapters, attachments] = await Promise.all([
+              getCourseDocument(data?.imageUrl),
+              getChaptersByCourseId(doc.id),
+              getAttachmentsByCourseId(doc.id),
+            ]);
+
+            return {
+              id: doc.id,
+              ...normalizeAllDates(data),
+              imageUrl,
+              chapters,
+              attachments,
+            };
+          } catch (error) {
+            console.error(`Failed to process course ${doc.id}:`, error);
+            return null; // Return null for courses that fail
+          }
+        })
+      );
+
+      // Filter out any courses that failed to process
+      return courses.filter((course) => course !== null);
+    } catch (error) {
+      console.error("Failed to get courses:", error);
+      // In a real application, you might want to throw the error
+      // to be caught by a higher-level error boundary.
+      return null;
     }
-
-    const courses = await Promise.all(
-      querySnapshot.docs.map(async (doc) => {
-        try {
-          const data = doc.data();
-          // These can run in parallel
-          const [imageUrl, chapters, attachments] = await Promise.all([
-            getCourseDocument(data?.imageUrl),
-            getChaptersByCourseId(doc.id),
-            getAttachmentsByCourseId(doc.id),
-          ]);
-
-          return {
-            id: doc.id,
-            ...normalizeAllDates(data),
-            imageUrl,
-            chapters,
-            attachments,
-          };
-        } catch (error) {
-          console.error(`Failed to process course ${doc.id}:`, error);
-          return null; // Return null for courses that fail
-        }
-      })
-    );
-
-    // Filter out any courses that failed to process
-    return courses.filter((course) => course !== null);
-  } catch (error) {
-    console.error("Failed to get courses:", error);
-    // In a real application, you might want to throw the error
-    // to be caught by a higher-level error boundary.
-    return null;
+  },
+  ["all-courses"],
+  {
+    tags: ["courses"],
+    revalidate: 3600,
   }
-};
+);
 
 export const uploadCourseDocument = async ({
   courseId,
