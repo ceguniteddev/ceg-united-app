@@ -33,3 +33,8 @@ export const CRS_REPORT_BUSINESS_SCORE = "crs-report-business-score";
 export const REQUEST_CUSTOMER_CALL = "user-request-call";
 export const WHATS_NEW_COLLECTION = "whats-new";
 export const BUSINESS_DETAIL_COLLECTION = "business-detail";
+
+export const COURSE = "course";
+export const CHAPTER = "chapter";
+export const ATTACHMENT = "attachment";
+export const MUX_DATA = "mux-data";

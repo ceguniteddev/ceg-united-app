@@ -155,6 +155,11 @@ export const adminSidebarLinks = [
     route: "/admin/whats-new",
     label: "What's New",
   },
+  {
+    imgURL: "/icons/book-open-text.svg",
+    route: "/admin/educational-materials",
+    label: "Educational Materials",
+  },
 ];
 
 export const settingsSidebar = [
@@ -245,6 +250,12 @@ export const transactionCategoryStyles = {
     textColor: "text-emerald-700",
     chipBackgroundColor: "bg-emerald-50",
   },
+  Published: {
+    borderColor: "border-emerald-300",
+    backgroundColor: "bg-emerald-600",
+    textColor: "text-emerald-700",
+    chipBackgroundColor: "bg-emerald-50",
+  },
   default: {
     borderColor: "",
     backgroundColor: "bg-blue-500",
@@ -252,6 +263,17 @@ export const transactionCategoryStyles = {
     chipBackgroundColor: "bg-inherit",
   },
 };
+
+export const courseCategories = [
+  {
+    label: "Personal",
+    value: "Personal",
+  },
+  {
+    label: "Business",
+    value: "Business",
+  },
+];
 
 export const US_STATES = [
   {

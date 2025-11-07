@@ -9,6 +9,7 @@ import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
 import { useContactUsQueryIsOpen } from "@/hooks/contact-us";
 import { useGetFundingApplicationsIsNew } from "@/hooks/apply-funding";
+import { Separator } from "./ui/separator";
 
 const Sidebar = () => {
   const { user, role } = useAuth();
@@ -68,7 +69,6 @@ const Sidebar = () => {
           );
         })}
       </nav>
-
       <Footer />
     </section>
   );
