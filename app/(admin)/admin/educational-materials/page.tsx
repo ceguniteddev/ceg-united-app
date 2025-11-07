@@ -6,6 +6,7 @@ import CoursesList from "./list";
 
 const EducationalMaterialsPage = async () => {
   const courses = await getCourses();
+  console.log("courses", { courses });
   return (
     <section className="transactions">
       <div className="transactions-header flex flex-row justify-between">

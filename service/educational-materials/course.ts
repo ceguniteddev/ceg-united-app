@@ -93,7 +93,7 @@ export const getCourses = async (): Promise<Course[] | null> => {
       };
     })
   );
-
+  console.log("getCourses", { courses });
   return courses;
 };
 
