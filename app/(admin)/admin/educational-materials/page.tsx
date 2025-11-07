@@ -4,12 +4,8 @@ import AddCourse from "./courses/_components/AddCourse";
 import { getCourses } from "@/service/educational-materials/course";
 import CoursesList from "./list";
 
-export const revalidate = 60;
-
 export default async function Page() {
-  console.log("EducationalMaterialsPage");
   const courses = await getCourses();
-  console.log("courses", { courses });
   return (
     <section className="transactions">
       <div className="transactions-header flex flex-row justify-between">
