@@ -24,7 +24,7 @@ export const PATCH = withAuth(
     }
 
     try {
-      const chapter = await getChapterById(courseId, chapterId);
+      const chapter = await getChapterById({ courseId, chapterId });
       if (!chapter) return badRequest({ errors: "Chapter not found." });
 
       const response = await updateCourseChapter({

@@ -6,7 +6,6 @@ import { UploadedFileData } from "@/schema";
 import { Attachment, Course } from "@/schema/educational-materials/course";
 import { Timestamp } from "firebase-admin/firestore";
 import { getChaptersByCourseId } from "./chapter";
-import { unstable_cache as nextCache } from "next/cache";
 
 export const recordCourseTitle = async (title: string) => {
   const db = firestoreAdmin();
@@ -41,7 +40,7 @@ export const updateCourse = async ({ id, data }: { id: string; data: any }) => {
   };
 };
 
-const getCourseByIdImpl = async (id: string): Promise<Course | null> => {
+export const getCourseById = async (id: string): Promise<Course | null> => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(COURSE).doc(id);
   const doc = await collectionRef.get();
@@ -63,18 +62,13 @@ const getCourseByIdImpl = async (id: string): Promise<Course | null> => {
   };
 };
 
-export const getCourseById = async (id: string) =>
-  nextCache(getCourseByIdImpl.bind(null, id), ["course", id], {
-    tags: [`course:${id}`],
-  })();
-
 export const deleteCourse = async (id: string) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(COURSE).doc(id);
   await collectionRef.delete();
 };
 
-const getCoursesImpl = async (): Promise<Course[] | null> => {
+export const getCourses = async (): Promise<Course[] | null> => {
   try {
     const db = firestoreAdmin();
     const collectionRef = db.collection(COURSE).orderBy("createdAt", "desc");
@@ -89,18 +83,18 @@ const getCoursesImpl = async (): Promise<Course[] | null> => {
         try {
           const data = doc.data();
           // These can run in parallel
-          const [imageUrl, chapters, attachments] = await Promise.all([
-            getCourseDocument(data?.imageUrl),
-            getChaptersByCourseId(doc.id),
-            getAttachmentsByCourseId(doc.id),
-          ]);
+          // const [imageUrl, chapters, attachments] = await Promise.all([
+          //   getCourseDocument(data?.imageUrl),
+          //   getChaptersByCourseId(doc.id),
+          //   getAttachmentsByCourseId(doc.id),
+          // ]);
 
           return {
             id: doc.id,
             ...normalizeAllDates(data),
-            imageUrl,
-            chapters,
-            attachments,
+            // imageUrl,
+            // chapters,
+            // attachments,
           };
         } catch (error) {
           console.error(`Failed to process course ${doc.id}:`, error);
@@ -115,11 +109,6 @@ const getCoursesImpl = async (): Promise<Course[] | null> => {
     return null;
   }
 };
-
-export const getCourses = nextCache(getCoursesImpl, ["courses"], {
-  tags: ["courses"],
-  revalidate: 60 * 60 * 24,
-});
 
 export const uploadCourseDocument = async ({
   courseId,

@@ -12,6 +12,7 @@ import MuxUploader from "./MuxUploader";
 
 // Import the server actions you just created
 import { createUploadUrl, updateChapterVideo } from "@/lib/mux";
+import { useChapterMutation } from "@/hooks/educational-materials/chapter";
 
 interface ChapterVideoFormProps {
   initialData: Chapter;
@@ -30,6 +31,7 @@ export const ChapterVideoForm = ({
     url: string;
   } | null>(null);
   const router = useRouter();
+  const { updateChapterVideo } = useChapterMutation();
 
   const toggleEdit = async () => {
     if (isEditing) {

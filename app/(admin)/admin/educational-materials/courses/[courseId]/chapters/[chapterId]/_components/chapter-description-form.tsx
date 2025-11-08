@@ -17,12 +17,10 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-// import EditorQuill from "@/components/editor/EditorQuill";
-import Preview from "@/components/preview";
 import { Chapter } from "@/schema/educational-materials/course";
 import { toast } from "sonner";
-import EmailTemplateEditor from "@/components/Editor";
 import dynamic from "next/dynamic";
+import { useChapterMutation } from "@/hooks/educational-materials/chapter";
 
 const EditorQuill = dynamic(() => import("@/components/editor/EditorQuill"), {
   ssr: false,
@@ -44,7 +42,7 @@ export const ChapterDescriptionForm = ({
   chapterId,
 }: ChapterDescriptionFormProps) => {
   const [isEditing, setIsEditing] = useState(false);
-
+  const { updateChapter, isUpdating } = useChapterMutation();
   const toggleEdit = () => setIsEditing((current) => !current);
 
   const router = useRouter();
@@ -60,10 +58,15 @@ export const ChapterDescriptionForm = ({
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await axios.patch(
-        `/api/courses/${courseId}/chapters/${chapterId}`,
-        values
-      );
+      // await axios.patch(
+      //   `/api/courses/${courseId}/chapters/${chapterId}`,
+      //   values
+      // );
+      await updateChapter({
+        courseId,
+        chapterId,
+        data: { description: values.description },
+      });
       toast.success("Chapter updated");
       toggleEdit();
       router.refresh();

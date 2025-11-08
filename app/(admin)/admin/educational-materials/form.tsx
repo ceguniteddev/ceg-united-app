@@ -1,16 +1,15 @@
 "use client";
 
 import * as z from "zod";
-import axios from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { CustomFormField } from "@/components/CustomFormField";
+import { useCourseMutation } from "@/hooks/educational-materials/course";
 
 const formSchema = z.object({
   title: z.string().min(1, {
@@ -24,6 +23,7 @@ const CourseCreatePage = ({
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const router = useRouter();
+  const { createCourse, isCreating } = useCourseMutation();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -35,10 +35,14 @@ const CourseCreatePage = ({
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const response = await axios.post("/api/courses", values);
-      router.refresh();
-      router.push(`/admin/educational-materials/courses/${response.data.id}`);
+      // const response = await axios.post("/api/courses", values);
+      // // router.refresh();
+      // router.push(`/admin/educational-materials/courses/${response.data.id}`);
+      // toast.success("Course created");
+      const response = await createCourse({ title: values.title });
       toast.success("Course created");
+      // router.refresh();
+      router.push(`/admin/educational-materials/courses/${response.id}`);
     } catch {
       toast.error("Something went wrong");
     }
@@ -70,7 +74,7 @@ const CourseCreatePage = ({
 
               <Button
                 type="submit"
-                disabled={!isValid || isSubmitting}
+                disabled={!isValid || isSubmitting || isCreating}
                 className="cursor-pointer"
               >
                 Continue

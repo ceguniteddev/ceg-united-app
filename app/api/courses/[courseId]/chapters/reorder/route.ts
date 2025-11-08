@@ -23,10 +23,10 @@ export const PUT = withAuth(
         });
       }
 
-      return new NextResponse("Success", { status: 200 });
+      return NextResponse.json("Success", { status: 200 });
     } catch (error) {
       console.log("[CHAPTERS]", error);
-      return new NextResponse("Internal Error", { status: 500 });
+      return NextResponse.json("Internal Error", { status: 500 });
     }
   }
 );

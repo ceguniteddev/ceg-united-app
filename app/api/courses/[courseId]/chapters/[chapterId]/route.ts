@@ -39,6 +39,37 @@ export const PATCH = withAuth(
   }
 );
 
+export const GET = withAuth(
+  async (
+    req: NextRequest,
+    { params }: { params?: Promise<{ courseId: string; chapterId: string }> }
+  ) => {
+    const { courseId, chapterId } = (await params) ?? {};
+    if (!courseId) {
+      return NextResponse.json({ error: "Missing course id" }, { status: 400 });
+    }
+    if (!chapterId) {
+      return NextResponse.json(
+        { error: "Missing chapter id" },
+        { status: 400 }
+      );
+    }
+    try {
+      const response = await getChapterById({ courseId, chapterId });
+      if (!response) {
+        return NextResponse.json(
+          { error: "Chapter not found" },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(response, { status: 200 });
+    } catch (error) {
+      console.log("[CHAPTER_ID_PATCH]", error);
+      return new NextResponse("Internal Error", { status: 500 });
+    }
+  }
+);
+
 export const POST = withAuth(
   async (
     req: NextRequest,
@@ -87,7 +118,7 @@ export const DELETE = withAuth(
 
     try {
       // delete muxData
-      const chapter = await getChapterById(courseId, chapterId);
+      const chapter = await getChapterById({ courseId, chapterId });
       if (!chapter) return badRequest({ errors: "Chapter not found." });
 
       if (chapter.videoUrl) {

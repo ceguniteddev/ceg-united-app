@@ -92,10 +92,13 @@ export const getChaptersByCourseId = async (courseId: string) => {
   }));
 };
 
-export const getChapterById = async (
-  courseId: string,
-  chapterId: string
-): Promise<Chapter | null> => {
+export const getChapterById = async ({
+  courseId,
+  chapterId,
+}: {
+  courseId: string;
+  chapterId: string;
+}): Promise<Chapter | null> => {
   const db = firestoreAdmin();
   const collectionRef = db
     .collection(`${COURSE}/${courseId}/${CHAPTER}`)

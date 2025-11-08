@@ -14,6 +14,7 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
+import { useCourseMutation } from "@/hooks/educational-materials/course";
 
 interface ImageFormProps {
   initialData: Course;
@@ -25,6 +26,7 @@ export const ImageForm = ({ initialData, courseId }: ImageFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const toggleEdit = () => setIsEditing((current) => !current);
 
+  const { updateCourse, isUpdating } = useCourseMutation();
   const router = useRouter();
 
   const handleDrop = useCallback(
@@ -49,8 +51,9 @@ export const ImageForm = ({ initialData, courseId }: ImageFormProps) => {
         }
 
         const result = await response.json();
-        await axios.patch(`/api/courses/${courseId}`, {
-          imageUrl: result.data[0].gcsPath,
+        updateCourse({
+          id: courseId,
+          data: { imageUrl: result.data[0].gcsPath },
         });
 
         toast.success("Course updated");
@@ -98,6 +101,7 @@ export const ImageForm = ({ initialData, courseId }: ImageFormProps) => {
               fill
               className="object-cover rounded-md"
               src={initialData.imageUrl}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           </div>
         ))}

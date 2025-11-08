@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useChapterMutation } from "@/hooks/educational-materials/chapter";
 
 interface ChapterTitleFormProps {
   initialData: {
@@ -37,7 +38,7 @@ export const ChapterTitleForm = ({
   chapterId,
 }: ChapterTitleFormProps) => {
   const [isEditing, setIsEditing] = useState(false);
-
+  const { updateChapter, isUpdating } = useChapterMutation();
   const toggleEdit = () => setIsEditing((current) => !current);
 
   const router = useRouter();
@@ -51,10 +52,11 @@ export const ChapterTitleForm = ({
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await axios.patch(
-        `/api/courses/${courseId}/chapters/${chapterId}`,
-        values
-      );
+      await updateChapter({
+        courseId,
+        chapterId,
+        data: { title: values.title },
+      });
       toast.success("Chapter updated");
       toggleEdit();
       router.refresh();

@@ -1,4 +1,5 @@
-import { redirect } from "next/navigation";
+"use client";
+import { redirect, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Eye, LayoutDashboard, Video } from "lucide-react";
 
@@ -7,18 +8,21 @@ import { Banner } from "@/components/banner";
 import { ChapterActions } from "./_components/chapter-actions";
 import { ChapterTitleForm } from "./_components/chapter-title-form";
 import { ChapterDescriptionForm } from "./_components/chapter-description-form";
-// import { ChapterAccessForm } from "./_components/chapter-access-form";
 import { ChapterVideoForm } from "./_components/chapter-video-form";
-import { getChapterById } from "@/service/educational-materials/chapter";
+import { useGetChapterById } from "@/hooks/educational-materials/chapter";
+import Spinner from "@/components/Spinner";
 
-const ChapterIdPage = async ({
-  params,
-}: {
-  params?: Promise<{ courseId: string; chapterId: string }>;
-}) => {
-  const { courseId, chapterId } = (await params) ?? {};
+const ChapterIdPage = () => {
+  const { courseId, chapterId } = useParams();
 
-  const chapter = await getChapterById(courseId!, chapterId!);
+  const { chapter, isLoading } = useGetChapterById({
+    courseId: courseId as string,
+    chapterId: chapterId as string,
+  });
+
+  if (isLoading) {
+    return <Spinner displayText="Loading chapter..." />;
+  }
 
   if (!chapter) {
     return redirect("/admin/educational-materials");
@@ -62,8 +66,8 @@ const ChapterIdPage = async ({
               </div>
               <ChapterActions
                 disabled={!isComplete}
-                courseId={courseId!}
-                chapterId={chapterId!}
+                courseId={courseId as string}
+                chapterId={chapterId as string}
                 isPublished={chapter.isPublished}
               />
             </div>
@@ -78,13 +82,13 @@ const ChapterIdPage = async ({
               </div>
               <ChapterTitleForm
                 initialData={chapter}
-                courseId={courseId!}
-                chapterId={chapterId!}
+                courseId={courseId as string}
+                chapterId={chapterId as string}
               />
               <ChapterDescriptionForm
                 initialData={chapter}
-                courseId={courseId!}
-                chapterId={chapterId!}
+                courseId={courseId as string}
+                chapterId={chapterId as string}
               />
             </div>
           </div>
@@ -95,8 +99,8 @@ const ChapterIdPage = async ({
             </div>
             <ChapterVideoForm
               initialData={chapter}
-              chapterId={chapterId!}
-              courseId={courseId!}
+              chapterId={chapterId as string}
+              courseId={courseId as string}
             />
           </div>
         </div>

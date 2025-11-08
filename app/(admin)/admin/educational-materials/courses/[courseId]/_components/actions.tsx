@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { toast } from "sonner";
 import { useConfettiStore } from "@/hooks/use-confetti-store";
+import { useCourseMutation } from "@/hooks/educational-materials/course";
 
 interface ActionsProps {
   disabled: boolean;
@@ -19,54 +20,50 @@ interface ActionsProps {
 export const Actions = ({ disabled, courseId, isPublished }: ActionsProps) => {
   const router = useRouter();
   const confetti = useConfettiStore();
-  const [isLoading, setIsLoading] = useState(false);
+  const {
+    deleteCourse,
+    isDeleting,
+    publishCourse,
+    isPublishing,
+    unpublishCourse,
+    isUnpublishing,
+  } = useCourseMutation();
 
   const onClick = async () => {
     const notification = toast.loading("Please wait...");
     try {
-      setIsLoading(true);
-
       if (isPublished) {
-        await axios.patch(`/api/courses/${courseId}/unpublish`);
+        await unpublishCourse(courseId);
         toast.success("Course unpublished", {
           id: notification,
         });
       } else {
-        await axios.patch(`/api/courses/${courseId}/publish`);
+        await publishCourse(courseId);
         toast.success("Course published", {
           id: notification,
         });
         confetti.onOpen();
       }
-
-      router.refresh();
     } catch {
       toast.error("Something went wrong", {
         id: notification,
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const onDelete = async () => {
     const notification = toast.loading("Please wait...");
     try {
-      setIsLoading(true);
-
-      await axios.delete(`/api/courses/${courseId}`);
-
+      await deleteCourse(courseId);
       toast.success("Course deleted", {
         id: notification,
       });
-      router.refresh();
+
       router.push(`/admin/educational-materials`);
     } catch {
       toast.error("Something went wrong", {
         id: notification,
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -74,7 +71,7 @@ export const Actions = ({ disabled, courseId, isPublished }: ActionsProps) => {
     <div className="flex items-center gap-x-2">
       <Button
         onClick={onClick}
-        disabled={disabled || isLoading}
+        disabled={disabled || isPublishing || isUnpublishing || isDeleting}
         variant="outline"
         size="sm"
         className="cursor-pointer"
@@ -85,7 +82,7 @@ export const Actions = ({ disabled, courseId, isPublished }: ActionsProps) => {
         <Button
           size="sm"
           variant={"outline"}
-          disabled={isLoading}
+          disabled={isDeleting || isPublishing || isUnpublishing}
           className="cursor-pointer"
         >
           <Trash className="h-4 w-4" color="red" />

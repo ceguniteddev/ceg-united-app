@@ -174,6 +174,7 @@ const ActionCell = ({ row }: { row: any }) => {
   return (
     <Button
       variant="ghost"
+      size={"sm"}
       className="cursor-pointer bg-blue-200 hover:bg-blue-300"
       onClick={() =>
         router.push(`/admin/educational-materials/courses/${row.original.id}`)

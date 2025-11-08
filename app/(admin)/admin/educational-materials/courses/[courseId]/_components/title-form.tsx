@@ -1,7 +1,6 @@
 "use client";
 
 import * as z from "zod";
-import axios from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Pencil } from "lucide-react";
@@ -12,6 +11,7 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CustomFormField } from "@/components/CustomFormField";
+import { useCourseMutation } from "@/hooks/educational-materials/course";
 
 interface TitleFormProps {
   initialData: {
@@ -29,6 +29,7 @@ const formSchema = z.object({
 export const TitleForm = ({ initialData, courseId }: TitleFormProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
+  const { updateCourse, isUpdating } = useCourseMutation();
   const toggleEdit = () => setIsEditing((current) => !current);
 
   const router = useRouter();
@@ -42,7 +43,8 @@ export const TitleForm = ({ initialData, courseId }: TitleFormProps) => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await axios.patch(`/api/courses/${courseId}`, values);
+      // await axios.patch(`/api/courses/${courseId}`, values);
+      await updateCourse({ id: courseId, data: { title: values.title } });
       toast.success("Course updated");
       toggleEdit();
       router.refresh();

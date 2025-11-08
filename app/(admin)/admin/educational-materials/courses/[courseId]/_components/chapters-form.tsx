@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Loader2, PlusCircle } from "lucide-react";
@@ -12,11 +11,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { ChaptersList } from "./chapters-list";
-import { Chapter, Course } from "@/schema/educational-materials/course";
+import { Course } from "@/schema/educational-materials/course";
 import { toast } from "sonner";
 import { id } from "date-fns/locale";
 import { CustomFormField } from "@/components/CustomFormField";
 import z from "zod";
+import { useChapterMutation } from "@/hooks/educational-materials/chapter";
 
 interface ChaptersFormProps {
   initialData: Course;
@@ -30,6 +30,12 @@ const formSchema = z.object({
 export const ChaptersForm = ({ initialData, courseId }: ChaptersFormProps) => {
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const {
+    createChapter,
+    isCreating: isCreatingChapter,
+    reorderChapters,
+    isReordering,
+  } = useChapterMutation();
 
   const toggleCreating = () => {
     setIsCreating((current) => !current);
@@ -48,7 +54,7 @@ export const ChaptersForm = ({ initialData, courseId }: ChaptersFormProps) => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await axios.post(`/api/courses/${courseId}/chapters`, values);
+      await createChapter({ courseId, title: values.title });
       toast.success("Chapter created");
       toggleCreating();
       router.refresh();
@@ -64,9 +70,7 @@ export const ChaptersForm = ({ initialData, courseId }: ChaptersFormProps) => {
     try {
       setIsUpdating(true);
 
-      await axios.put(`/api/courses/${courseId}/chapters/reorder`, {
-        list: updateData,
-      });
+      await reorderChapters({ courseId, list: updateData });
       toast.success("Chapters reordered");
       router.refresh();
     } catch {

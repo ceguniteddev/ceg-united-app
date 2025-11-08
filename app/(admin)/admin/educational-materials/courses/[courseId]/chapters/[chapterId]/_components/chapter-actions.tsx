@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { toast } from "sonner";
+import { useChapterMutation } from "@/hooks/educational-materials/chapter";
 
 interface ChapterActionsProps {
   disabled: boolean;
@@ -23,24 +24,31 @@ export const ChapterActions = ({
   isPublished,
 }: ChapterActionsProps) => {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const {
+    unpublishChapter,
+    isUnpublishing,
+    publishChapter,
+    isPublishing,
+    deleteChapter,
+    isDeleting,
+  } = useChapterMutation();
 
   const onClick = async () => {
     const notification = toast.loading("Please wait...");
     try {
-      setIsLoading(true);
-
       if (isPublished) {
-        await axios.patch(
-          `/api/courses/${courseId}/chapters/${chapterId}/unpublish`
-        );
+        // await axios.patch(
+        //   `/api/courses/${courseId}/chapters/${chapterId}/unpublish`
+        // );
+        await unpublishChapter({ courseId, chapterId });
         toast.success("Chapter unpublished", {
           id: notification,
         });
       } else {
-        await axios.patch(
-          `/api/courses/${courseId}/chapters/${chapterId}/publish`
-        );
+        // await axios.patch(
+        //   `/api/courses/${courseId}/chapters/${chapterId}/publish`
+        // );
+        await publishChapter({ courseId, chapterId });
         toast.success("Chapter published", {
           id: notification,
         });
@@ -51,17 +59,13 @@ export const ChapterActions = ({
       toast.error("Something went wrong", {
         id: notification,
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const onDelete = async () => {
     const notification = toast.loading("Please wait...");
     try {
-      setIsLoading(true);
-
-      await axios.delete(`/api/courses/${courseId}/chapters/${chapterId}`);
+      await deleteChapter({ courseId, chapterId });
 
       toast.success("Chapter deleted", {
         id: notification,
@@ -72,8 +76,6 @@ export const ChapterActions = ({
       toast.error("Something went wrong", {
         id: notification,
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -81,7 +83,7 @@ export const ChapterActions = ({
     <div className="flex items-center gap-x-2">
       <Button
         onClick={onClick}
-        disabled={disabled || isLoading}
+        disabled={disabled || isPublishing || isUnpublishing || isDeleting}
         variant="outline"
         className="cursor-pointer"
         size="sm"
@@ -92,7 +94,7 @@ export const ChapterActions = ({
         <Button
           size="sm"
           variant={"destructive"}
-          disabled={isLoading}
+          disabled={isPublishing || isUnpublishing || isDeleting}
           className="cursor-pointer"
         >
           <Trash className="h-4 w-4" />

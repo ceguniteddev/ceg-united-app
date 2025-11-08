@@ -1,6 +1,5 @@
-import { getCourseById } from "@/service/educational-materials/course";
-
-import { redirect } from "next/navigation";
+"use client";
+import { redirect, useParams } from "next/navigation";
 import { Banner } from "@/components/banner";
 import { IconBadge } from "@/components/icon-badge";
 import { LayoutDashboard, ListChecks, File } from "lucide-react";
@@ -11,15 +10,19 @@ import { ImageForm } from "./_components/image-form";
 import { ChaptersForm } from "./_components/chapters-form";
 import { CategoryForm } from "./_components/category-form";
 import { AttachmentForm } from "./_components/attachment-form";
+import { useGetCourseById } from "@/hooks/educational-materials/course";
+import Spinner from "@/components/Spinner";
 
-const CoursePage = async ({
-  params,
-}: {
-  params?: Promise<{ courseId: string }>;
-}) => {
-  const { courseId } = (await params) ?? {};
+const CoursePage = () => {
+  const params = useParams();
+  const courseId = params.courseId as string;
 
-  const course = await getCourseById(courseId!);
+  const { course, isLoading } = useGetCourseById(courseId);
+
+  if (isLoading) {
+    return <Spinner displayText="Loading course..." />;
+  }
+
   if (!course) {
     return redirect("/admin/educational-materials");
   }

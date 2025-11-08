@@ -5,14 +5,11 @@ import {
 } from "@/service/educational-materials/course";
 import { NextRequest, NextResponse } from "next/server";
 
-import { revalidateTag } from "next/cache";
-
 export const POST = withAuth(async (req: NextRequest) => {
   try {
     const { title } = await req.json();
 
     const response = await recordCourseTitle(title);
-    revalidateTag("courses", "max");
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {

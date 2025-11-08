@@ -14,6 +14,7 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
+import { useCourseMutation } from "@/hooks/educational-materials/course";
 
 interface AttachmentFormProps {
   initialData: Course;
@@ -30,15 +31,19 @@ export const AttachmentForm = ({
 }: AttachmentFormProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const toggleEdit = () => setIsEditing((current) => !current);
+  const {
+    uploadCourseAttachment,
+    isUploadingAttachment,
+    deleteCourseAttachment,
+    isDeletingAttachment,
+  } = useCourseMutation();
 
   const router = useRouter();
 
   const handleDrop = useCallback(
     async (droppedFiles: File[]) => {
       if (!droppedFiles || droppedFiles.length === 0) return;
-      setIsLoading(true);
 
       const formData = new FormData();
       droppedFiles.forEach((file) => {
@@ -46,24 +51,13 @@ export const AttachmentForm = ({
       });
 
       try {
-        const response = await fetch(`/api/courses/${courseId}/attachments`, {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const result = await response.json();
-          throw new Error(result.error);
-        }
+        await uploadCourseAttachment({ courseId, formData });
 
         toast.success("Course updated");
         toggleEdit();
-        router.refresh();
       } catch (error: any) {
         console.error(error);
         toast.error("Something went wrong");
-      } finally {
-        setIsLoading(false);
       }
     },
     [courseId, router]
@@ -72,9 +66,8 @@ export const AttachmentForm = ({
   const onDelete = async (id: string) => {
     try {
       setDeletingId(id);
-      await axios.delete(`/api/courses/${courseId}/attachments/${id}`);
+      await deleteCourseAttachment({ courseId, attachmentId: id });
       toast.success("Attachment deleted");
-      router.refresh();
     } catch {
       toast.error("Something went wrong");
     } finally {
@@ -138,7 +131,7 @@ export const AttachmentForm = ({
           <Dropzone
             className="cursor-pointer"
             onDrop={handleDrop}
-            disabled={isLoading}
+            disabled={isUploadingAttachment}
           >
             <DropzoneEmptyState />
             <DropzoneContent />

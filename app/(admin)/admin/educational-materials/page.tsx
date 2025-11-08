@@ -1,10 +1,17 @@
+"use client";
 import HeaderBox from "@/components/HeaderBox";
 import AddCourse from "./courses/_components/AddCourse";
-import { getCourses } from "@/service/educational-materials/course";
 import CoursesList from "./list";
+import { useGetCourses } from "@/hooks/educational-materials/course";
+import Spinner from "@/components/Spinner";
 
-export default async function Page() {
-  const courses = await getCourses();
+const Page = () => {
+  const { courses, isLoading } = useGetCourses();
+
+  if (isLoading) {
+    return <Spinner displayText="Loading courses..." />;
+  }
+
   return (
     <section className="transactions">
       <div className="transactions-header flex flex-row justify-between">
@@ -23,4 +30,6 @@ export default async function Page() {
       </div>
     </section>
   );
-}
+};
+
+export default Page;
