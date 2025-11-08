@@ -1,5 +1,6 @@
 "use client";
-import { redirect, useParams } from "next/navigation";
+import { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { Banner } from "@/components/banner";
 import { IconBadge } from "@/components/icon-badge";
 import { LayoutDashboard, ListChecks, File } from "lucide-react";
@@ -17,14 +18,30 @@ const CoursePage = () => {
   const params = useParams();
   const courseId = params.courseId as string;
 
-  const { course, isLoading } = useGetCourseById(courseId);
+  const { course, isLoading, isError, error } = useGetCourseById(courseId);
+  const router = useRouter();
 
+  // Client-side redirect when the API returned a 404 for this course.
+  // We use useEffect + router.push to perform navigation from a client component
+  // and avoid redirecting while the initial fetch is pending.
+  useEffect(() => {
+    if (!isLoading && isError) {
+      const status = (error as any)?.status;
+      if (status === 404) {
+        router.push("/admin/educational-materials");
+      }
+    }
+  }, [isLoading, isError, error, router]);
+
+  // If still loading, show spinner.
   if (isLoading) {
     return <Spinner displayText="Loading course..." />;
   }
 
+  // If there's an error that's not a 404, or course is still missing for some
+  // reason after loading finished, render null (or you can show an error UI).
   if (!course) {
-    return redirect("/admin/educational-materials");
+    return null;
   }
 
   const requiredFields = [

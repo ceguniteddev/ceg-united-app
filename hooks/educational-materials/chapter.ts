@@ -18,6 +18,8 @@ export const useGetChapterById = ({
   const {
     data: chapter,
     isLoading,
+    isError,
+    error,
     refetch,
   } = useQuery({
     queryKey: [CHAPTERS_KEY, courseId, chapterId],
@@ -29,7 +31,16 @@ export const useGetChapterById = ({
       );
 
       if (!response.ok) {
-        return;
+        let message = `Request failed with status ${response.status}`;
+        try {
+          const text = await response.text();
+          if (text) message = text;
+        } catch (e) {
+          /* ignore */
+        }
+        const err: any = new Error(message);
+        err.status = response.status;
+        throw err;
       }
 
       const data = await response.json();
@@ -42,6 +53,8 @@ export const useGetChapterById = ({
   return {
     chapter,
     isLoading,
+    isError,
+    error,
     refetch,
   };
 };

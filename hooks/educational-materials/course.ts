@@ -43,6 +43,8 @@ export const useGetCourseById = (courseId: string) => {
   const {
     data: course,
     isLoading,
+    isError,
+    error,
     refetch,
   } = useQuery({
     queryKey: [COURSES_KEY, courseId],
@@ -52,7 +54,17 @@ export const useGetCourseById = (courseId: string) => {
       const response = await fetch(`/api/courses/${courseId}`);
 
       if (!response.ok) {
-        return;
+        // Read response body (if any) for error message and attach status
+        let message = `Request failed with status ${response.status}`;
+        try {
+          const text = await response.text();
+          if (text) message = text;
+        } catch (e) {
+          /* ignore */
+        }
+        const err: any = new Error(message);
+        err.status = response.status;
+        throw err;
       }
 
       const data = await response.json();
@@ -65,6 +77,8 @@ export const useGetCourseById = (courseId: string) => {
   return {
     course,
     isLoading,
+    isError,
+    error,
     refetch,
   };
 };

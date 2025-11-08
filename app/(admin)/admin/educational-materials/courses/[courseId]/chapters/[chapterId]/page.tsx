@@ -1,7 +1,7 @@
 "use client";
-import { redirect, useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Eye, LayoutDashboard, Video } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, Video } from "lucide-react";
 
 import { IconBadge } from "@/components/icon-badge";
 import { Banner } from "@/components/banner";
@@ -11,21 +11,32 @@ import { ChapterDescriptionForm } from "./_components/chapter-description-form";
 import { ChapterVideoForm } from "./_components/chapter-video-form";
 import { useGetChapterById } from "@/hooks/educational-materials/chapter";
 import Spinner from "@/components/Spinner";
+import { useEffect } from "react";
 
 const ChapterIdPage = () => {
   const { courseId, chapterId } = useParams();
+  const router = useRouter();
 
-  const { chapter, isLoading } = useGetChapterById({
+  const { chapter, isLoading, isError, error } = useGetChapterById({
     courseId: courseId as string,
     chapterId: chapterId as string,
   });
+
+  useEffect(() => {
+    if (!isLoading && isError) {
+      const status = (error as any)?.status;
+      if (status === 404) {
+        router.push("/admin/educational-materials");
+      }
+    }
+  }, [isLoading, isError, error, router]);
 
   if (isLoading) {
     return <Spinner displayText="Loading chapter..." />;
   }
 
   if (!chapter) {
-    return redirect("/admin/educational-materials");
+    return null;
   }
 
   const requiredFields = [chapter.title, chapter.description, chapter.videoUrl];
