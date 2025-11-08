@@ -7,6 +7,7 @@ import {
 import { NextRequest, NextResponse } from "next/server";
 import { badRequest } from "../../helpers";
 import { deleteMuxVideo } from "@/lib/mux";
+import { revalidateTag } from "next/cache";
 
 export const PATCH = withAuth(
   async (
@@ -20,6 +21,8 @@ export const PATCH = withAuth(
     try {
       const values = await req.json();
       const response = await updateCourse({ id: courseId, data: values });
+      revalidateTag(`course:${courseId}`, "max");
+      revalidateTag("courses", "max");
       return NextResponse.json(response, { status: 200 });
     } catch (error) {
       console.log("[COURSE_ID_PATCH]", error);
@@ -51,6 +54,9 @@ export const DELETE = withAuth(
       }
 
       await deleteCourse(courseId);
+
+      revalidateTag(`course:${courseId}`, "max");
+      revalidateTag("courses", "max");
 
       return NextResponse.json("Success", { status: 200 });
     } catch (error) {

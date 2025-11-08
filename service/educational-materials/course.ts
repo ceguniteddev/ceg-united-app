@@ -41,7 +41,7 @@ export const updateCourse = async ({ id, data }: { id: string; data: any }) => {
   };
 };
 
-export const getCourseById = async (id: string): Promise<Course | null> => {
+const getCourseByIdImpl = async (id: string): Promise<Course | null> => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(COURSE).doc(id);
   const doc = await collectionRef.get();
@@ -63,6 +63,11 @@ export const getCourseById = async (id: string): Promise<Course | null> => {
   };
 };
 
+export const getCourseById = async (id: string) =>
+  nextCache(getCourseByIdImpl.bind(null, id), ["course", id], {
+    tags: [`course:${id}`],
+  })();
+
 export const deleteCourse = async (id: string) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(COURSE).doc(id);
@@ -76,7 +81,7 @@ const getCoursesImpl = async (): Promise<Course[] | null> => {
     const querySnapshot = await collectionRef.get();
 
     if (querySnapshot.empty) {
-      return []; // Return an empty array instead of null for better type safety
+      return [];
     }
 
     const courses = await Promise.all(
@@ -99,17 +104,14 @@ const getCoursesImpl = async (): Promise<Course[] | null> => {
           };
         } catch (error) {
           console.error(`Failed to process course ${doc.id}:`, error);
-          return null; // Return null for courses that fail
+          return null;
         }
       })
     );
 
-    // Filter out any courses that failed to process
     return courses.filter((course) => course !== null);
   } catch (error) {
     console.error("Failed to get courses:", error);
-    // In a real application, you might want to throw the error
-    // to be caught by a higher-level error boundary.
     return null;
   }
 };
