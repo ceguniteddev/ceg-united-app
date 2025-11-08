@@ -116,7 +116,7 @@ const getCoursesImpl = async (): Promise<Course[] | null> => {
   }
 };
 
-export const getCourses = nextCache(getCoursesImpl, ["all-courses"], {
+export const getCourses = nextCache(getCoursesImpl, ["courses"], {
   tags: ["courses"],
   revalidate: 60 * 60 * 24,
 });

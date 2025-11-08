@@ -1,5 +1,5 @@
 import { getCourseById } from "@/service/educational-materials/course";
-import React from "react";
+
 import { redirect } from "next/navigation";
 import { Banner } from "@/components/banner";
 import { IconBadge } from "@/components/icon-badge";
