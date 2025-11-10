@@ -60,3 +60,44 @@ export const getContractsByUserId = async (userId: string) => {
   const querySnapshot = await collectionRef.get();
   return querySnapshot.docs.map((doc) => doc.data());
 };
+
+export const getDenefitsPayments = async () => {
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(USER_DENEFITS_CONTRACT);
+  const querySnapshot = await collectionRef.get();
+  return querySnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+};
+
+export const updateDenefitsContractUserId = async ({
+  contractId,
+  userId,
+}: {
+  contractId: string;
+  userId: string;
+}) => {
+  if (!contractId) {
+    throw new AppError("Contract ID is required.");
+  }
+  if (!userId) {
+    throw new AppError("User ID is required.");
+  }
+
+  const db = firestoreAdmin();
+  const docRef = db.collection(USER_DENEFITS_CONTRACT).doc(contractId);
+
+  const docSnapshot = await docRef.get();
+  if (!docSnapshot.exists) {
+    throw new AppError("Contract not found.");
+  }
+
+  await docRef.update({ userId });
+
+  return {
+    id: contractId,
+    ...docSnapshot.data(),
+    userId,
+  };
+};
