@@ -120,7 +120,6 @@ export function AuthProvider({
     if (!user || isLoggingIn) return; // Skip check if user is actively logging in
 
     const checkSession = async () => {
-      console.log("Checking session validity...");
       try {
         // First, check if Firebase user token is still valid
         await user.getIdToken(true);
@@ -128,11 +127,9 @@ export function AuthProvider({
         // Then verify the server-side session cookie is still valid
         const response = await fetch("/api/auth/verify-session");
         if (!response.ok) {
-          console.error("Server session expired or invalid");
           await logOut();
         }
       } catch (error) {
-        console.error("Session expired or invalid:", error);
         // Session is invalid, logout and redirect
         await logOut();
       }
