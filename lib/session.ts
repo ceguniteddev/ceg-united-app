@@ -13,9 +13,12 @@ export const createSession = async (idToken: string) => {
     }
 
     const expiresIn = 1 * 60 * 60 * 1000;
-    const sessionCookie = await authenticationAdmin().createSessionCookie(idToken, {
-      expiresIn,
-    });
+    const sessionCookie = await authenticationAdmin().createSessionCookie(
+      idToken,
+      {
+        expiresIn,
+      }
+    );
 
     await setCookie(FIREBASE_TOKEN_NAME, sessionCookie, {
       maxAge: expiresIn / 1000,
@@ -73,10 +76,28 @@ export const revokeAllSessions = async (sessionCookie: string) => {
 
 export const verifySession = async (sessionCookie: string) => {
   try {
-    const decodedClaims = await authenticationAdmin().verifySessionCookie(sessionCookie, true);
+    // checkRevoked: true ensures we verify the session hasn't been revoked
+    const decodedClaims = await authenticationAdmin().verifySessionCookie(
+      sessionCookie,
+      true
+    );
     return decodedClaims;
-  } catch (error) {
-    console.error("Error verifying session:", error);
+  } catch (error: any) {
+    console.error("Error verifying session:", error?.code || error);
+
+    // Session is invalid/expired, clear the cookie
+    if (
+      error?.code === "auth/session-cookie-expired" ||
+      error?.code === "auth/session-cookie-revoked" ||
+      error?.code === "auth/argument-error"
+    ) {
+      try {
+        await deleteCookie(FIREBASE_TOKEN_NAME);
+      } catch (e) {
+        console.error("Failed to delete expired cookie:", e);
+      }
+    }
+
     return null;
   }
 };
@@ -84,8 +105,13 @@ export const verifySession = async (sessionCookie: string) => {
 export const refreshSession = async (idToken: string) => {
   if (!idToken) return null;
   const expiresIn = 1 * 60 * 60 * 1000;
-  const sessionCookie = await authenticationAdmin().createSessionCookie(idToken, { expiresIn });
-  await setCookie(FIREBASE_TOKEN_NAME, sessionCookie, { maxAge: expiresIn / 1000 });
+  const sessionCookie = await authenticationAdmin().createSessionCookie(
+    idToken,
+    { expiresIn }
+  );
+  await setCookie(FIREBASE_TOKEN_NAME, sessionCookie, {
+    maxAge: expiresIn / 1000,
+  });
   return true;
 };
 

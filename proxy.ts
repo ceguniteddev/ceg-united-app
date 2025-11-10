@@ -11,6 +11,7 @@ const PUBLIC_ROUTES = new Set<string>([
   "/register",
   "/api/auth/login",
   "/api/register",
+  "/api/auth/verify-session",
 ]);
 const CLIENT_HOME = "/overview";
 const ADMIN_HOME = "/admin/home";
@@ -59,19 +60,28 @@ export async function proxy(req: NextRequest) {
 
   const sessionCookie = await verifySession(token);
   if (!sessionCookie) {
+    // Session is expired or invalid
     if (isPublic(pathname)) return NextResponse.next();
-    const url = req.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+
+    // Clear the invalid cookie and redirect to landing page
+    const res = NextResponse.redirect(new URL("/", origin));
+    res.cookies.set(FIREBASE_TOKEN_NAME, "", {
+      path: "/",
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      expires: new Date(0),
+    });
+    return res;
   }
 
   // 4) Token present → verify + find role
   let role: "Admin" | "IT" | "Staff" | "Client" | null = null;
 
   try {
-    const session = await verifySession(token); // should give you { email } or similar
-    if (!session?.email) throw new Error("Invalid session");
-    const user = await getUserById(session.uid);
+    // Use the already verified session instead of verifying again
+    if (!sessionCookie?.email) throw new Error("Invalid session");
+    const user = await getUserById(sessionCookie.uid);
     role = (user?.role as any) ?? "Client";
   } catch {
     // Bad token/session: clear cookie and kick to "/"
@@ -127,5 +137,5 @@ export const config = {
     "/overview/:path*", // client area
     "/admin/:path*", // admin area
     "/api/:path*", // api guarding
-  ]
+  ],
 };
