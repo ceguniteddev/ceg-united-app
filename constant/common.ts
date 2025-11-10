@@ -146,6 +146,11 @@ export const adminSidebarLinks = [
     label: "Funding Applications",
   },
   {
+    imgURL: "/icons/dollar-circle.svg",
+    route: "/admin/denefits-payments",
+    label: "Denefits Payments",
+  },
+  {
     imgURL: "/icons/phone-call.svg",
     route: "/admin/call-requests",
     label: "Call Requests",
