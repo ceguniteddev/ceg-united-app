@@ -65,10 +65,32 @@ export const getDenefitsPayments = async () => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(USER_DENEFITS_CONTRACT);
   const querySnapshot = await collectionRef.get();
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+
+  const payments = await Promise.all(
+    querySnapshot.docs.map(async (doc) => {
+      const data = doc.data();
+      let mappedUser = null;
+
+      // If contract has a userId, fetch the user details
+      if (data.userId) {
+        try {
+          mappedUser = await getUserById(data.userId);
+        } catch (error) {
+          console.error(`Failed to fetch user ${data.userId}:`, error);
+        }
+      }
+
+      return {
+        id: doc.id,
+        ...data,
+        mappedEmail: mappedUser?.email || null,
+        mappedFirstName: mappedUser?.firstName || null,
+        mappedLastName: mappedUser?.lastName || null,
+      };
+    })
+  );
+
+  return payments;
 };
 
 export const updateDenefitsContractUserId = async ({
@@ -99,5 +121,31 @@ export const updateDenefitsContractUserId = async ({
     id: contractId,
     ...docSnapshot.data(),
     userId,
+  };
+};
+
+export const unmapDenefitsContract = async ({
+  contractId,
+}: {
+  contractId: string;
+}) => {
+  if (!contractId) {
+    throw new AppError("Contract ID is required.");
+  }
+
+  const db = firestoreAdmin();
+  const docRef = db.collection(USER_DENEFITS_CONTRACT).doc(contractId);
+
+  const docSnapshot = await docRef.get();
+  if (!docSnapshot.exists) {
+    throw new AppError("Contract not found.");
+  }
+
+  await docRef.update({ userId: null });
+
+  return {
+    id: contractId,
+    ...docSnapshot.data(),
+    userId: null,
   };
 };
