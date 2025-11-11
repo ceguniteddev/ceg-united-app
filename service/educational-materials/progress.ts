@@ -2,7 +2,7 @@
 
 import {
   COURSE,
-  USER_PROGRESS,
+  USER_COURSE_PROGRESS as USER_PROGRESS,
   USER_COURSE_ENROLLMENT,
   CHAPTER,
 } from "@/constant/collection-name";

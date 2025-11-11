@@ -38,5 +38,5 @@ export const COURSE = "course";
 export const CHAPTER = "chapter";
 export const ATTACHMENT = "attachment";
 export const MUX_DATA = "mux-data";
-export const USER_PROGRESS = "user-progress";
+export const USER_COURSE_PROGRESS = "user-course-progress";
 export const USER_COURSE_ENROLLMENT = "user-course-enrollment";
