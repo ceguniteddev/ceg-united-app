@@ -403,32 +403,14 @@ export const unenrollUserFromCourse = async ({
 export const updateUserProgress = async ({
   userId,
   chapterId,
+  courseId,
   isCompleted,
 }: {
   userId: string;
   chapterId: string;
+  courseId: string;
   isCompleted: boolean;
 }): Promise<UserProgress> => {
-  const db = firestoreAdmin();
-
-  // Get the chapter to find the courseId
-  const chapterDoc = await db
-    .collectionGroup(CHAPTER)
-    .where("__name__", "==", chapterId)
-    .limit(1)
-    .get();
-
-  if (chapterDoc.empty) {
-    throw new Error("Chapter not found");
-  }
-
-  const chapterData = chapterDoc.docs[0].data();
-  const courseId = chapterData.courseId;
-
-  if (!courseId) {
-    throw new Error("Course ID not found for chapter");
-  }
-
   if (isCompleted) {
     return await markChapterComplete({ userId, chapterId, courseId });
   } else {

@@ -13,17 +13,18 @@ export const POST = withAuth(
 
     try {
       const body = await req.json();
-      const { chapterId, isCompleted } = body;
+      const { chapterId, courseId, isCompleted } = body;
 
-      if (!chapterId || typeof isCompleted !== "boolean") {
+      if (!chapterId || !courseId || typeof isCompleted !== "boolean") {
         return badRequest({
-          errors: "Missing or invalid chapterId or isCompleted",
+          errors: "Missing or invalid chapterId, courseId, or isCompleted",
         });
       }
 
       const progress = await updateUserProgress({
         userId,
         chapterId,
+        courseId,
         isCompleted,
       });
 

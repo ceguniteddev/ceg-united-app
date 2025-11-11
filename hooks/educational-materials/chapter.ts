@@ -351,10 +351,12 @@ export const useChapterProgress = () => {
     mutationFn: async ({
       userId,
       chapterId,
+      courseId,
       isCompleted,
     }: {
       userId: string;
       chapterId: string;
+      courseId: string;
       isCompleted: boolean;
     }) => {
       if (!user) throw new Error("User not authenticated");
@@ -362,7 +364,7 @@ export const useChapterProgress = () => {
       const response = await fetch(`/api/user/${userId}/progress`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chapterId, isCompleted }),
+        body: JSON.stringify({ chapterId, courseId, isCompleted }),
       });
 
       if (!response.ok) {
