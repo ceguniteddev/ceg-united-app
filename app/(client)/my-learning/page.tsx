@@ -196,7 +196,11 @@ const MyLearningPage = () => {
                       <span className="text-muted-foreground">Progress</span>
                       <span className="font-medium">{progressPercentage}%</span>
                     </div>
-                    <Progress value={progressPercentage} className="h-2" />
+
+                    <Progress
+                      value={progressPercentage}
+                      className="bg-gray-200 [&>div]:bg-blue-500 [&>div]:rounded-full h-1.5"
+                    />
                     <p className="text-xs text-muted-foreground">
                       {completedChapters} of {publishedChapters} chapters
                       completed

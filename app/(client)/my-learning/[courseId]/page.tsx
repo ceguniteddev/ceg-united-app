@@ -9,7 +9,14 @@ import Spinner from "@/components/Spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Book, CheckCircle2, Lock, PlayCircle, ChevronLeft, FileText } from "lucide-react";
+import {
+  Book,
+  CheckCircle2,
+  Lock,
+  PlayCircle,
+  ChevronLeft,
+  FileText,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -25,17 +32,23 @@ const CourseDetailPage = () => {
   const router = useRouter();
   const courseId = params.courseId as string;
   const { user } = useAuth();
-  const { coursesWithProgress, isLoading } = useGetUserCoursesWithProgress(user?.uid || "");
+  const { coursesWithProgress, isLoading } = useGetUserCoursesWithProgress(
+    user?.uid || ""
+  );
   const { updateProgress } = useChapterProgress();
 
-  const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
+  const [selectedChapterId, setSelectedChapterId] = useState<string | null>(
+    null
+  );
 
   const course = coursesWithProgress?.find((c) => c.id === courseId);
 
   // Get published chapters sorted by position
   const publishedChapters = useMemo(() => {
     return (
-      course?.chapters?.filter((c) => c.isPublished).sort((a, b) => a.position - b.position) || []
+      course?.chapters
+        ?.filter((c) => c.isPublished)
+        .sort((a, b) => a.position - b.position) || []
     );
   }, [course?.chapters]);
 
@@ -43,21 +56,28 @@ const CourseDetailPage = () => {
   useEffect(() => {
     if (publishedChapters.length > 0 && !selectedChapterId) {
       const firstIncompleteChapter = publishedChapters.find((chapter) => {
-        const progress = course?.userProgress?.find((p) => p.chapterId === chapter.id);
+        const progress = course?.userProgress?.find(
+          (p) => p.chapterId === chapter.id
+        );
         return !progress?.isCompleted;
       });
 
-      const chapterId = firstIncompleteChapter?.id ?? publishedChapters[0]?.id ?? null;
+      const chapterId =
+        firstIncompleteChapter?.id ?? publishedChapters[0]?.id ?? null;
       setSelectedChapterId(chapterId);
     }
   }, [publishedChapters, selectedChapterId, course?.userProgress]);
 
-  const selectedChapter = publishedChapters.find((c) => c.id === selectedChapterId);
+  const selectedChapter = publishedChapters.find(
+    (c) => c.id === selectedChapterId
+  );
 
   const handleMarkComplete = async () => {
     if (!selectedChapter || !user?.uid) return;
 
-    const currentProgress = course?.userProgress?.find((p) => p.chapterId === selectedChapter.id);
+    const currentProgress = course?.userProgress?.find(
+      (p) => p.chapterId === selectedChapter.id
+    );
     const newCompletionStatus = !currentProgress?.isCompleted;
 
     await updateProgress({
@@ -71,7 +91,9 @@ const CourseDetailPage = () => {
   const handleVideoComplete = async () => {
     if (!selectedChapter || !user?.uid) return;
 
-    const currentProgress = course?.userProgress?.find((p) => p.chapterId === selectedChapter.id);
+    const currentProgress = course?.userProgress?.find(
+      (p) => p.chapterId === selectedChapter.id
+    );
 
     // Only mark as complete if not already completed
     if (!currentProgress?.isCompleted) {
@@ -87,7 +109,9 @@ const CourseDetailPage = () => {
   const handleNextChapter = () => {
     if (!selectedChapter) return;
 
-    const currentIndex = publishedChapters.findIndex((c) => c.id === selectedChapter.id);
+    const currentIndex = publishedChapters.findIndex(
+      (c) => c.id === selectedChapter.id
+    );
     if (currentIndex < publishedChapters.length - 1) {
       const nextChapterId = publishedChapters[currentIndex + 1]?.id;
       if (nextChapterId) {
@@ -99,7 +123,9 @@ const CourseDetailPage = () => {
   const handlePreviousChapter = () => {
     if (!selectedChapter) return;
 
-    const currentIndex = publishedChapters.findIndex((c) => c.id === selectedChapter.id);
+    const currentIndex = publishedChapters.findIndex(
+      (c) => c.id === selectedChapter.id
+    );
     if (currentIndex > 0) {
       const prevChapterId = publishedChapters[currentIndex - 1]?.id;
       if (prevChapterId) {
@@ -115,7 +141,10 @@ const CourseDetailPage = () => {
   if (!course) {
     return (
       <div className="transactions">
-        <HeaderBox title="Course Not Found" subtext="This course is not available" />
+        <HeaderBox
+          title="Course Not Found"
+          subtext="This course is not available"
+        />
         <div className="flex flex-col items-center justify-center py-12">
           <p className="text-muted-foreground mb-4">
             You don&apos;t have access to this course or it doesn&apos;t exist.
@@ -137,7 +166,9 @@ const CourseDetailPage = () => {
     (p) => p.chapterId === selectedChapter?.id
   )?.isCompleted;
 
-  const currentChapterIndex = publishedChapters.findIndex((c) => c.id === selectedChapterId);
+  const currentChapterIndex = publishedChapters.findIndex(
+    (c) => c.id === selectedChapterId
+  );
 
   return (
     <div className="transactions">
@@ -160,9 +191,14 @@ const CourseDetailPage = () => {
               <span className="font-medium">Course Progress</span>
               <span className="font-bold">{progressPercentage}%</span>
             </div>
-            <Progress value={progressPercentage} className="h-3" />
+
+            <Progress
+              value={progressPercentage}
+              className="bg-gray-200 [&>div]:bg-blue-500 [&>div]:rounded-full h-1.5"
+            />
             <p className="text-xs text-muted-foreground">
-              {completedChapters} of {publishedChapters.length} chapters completed
+              {completedChapters} of {publishedChapters.length} chapters
+              completed
             </p>
           </div>
         </CardContent>
@@ -175,7 +211,8 @@ const CourseDetailPage = () => {
             <Card>
               <CardContent className="p-0">
                 {/* Video Player */}
-                {selectedChapter.videoUrl && selectedChapter.muxData?.playbackId ? (
+                {selectedChapter.videoUrl &&
+                selectedChapter.muxData?.playbackId ? (
                   <MuxVideoPlayer
                     playbackId={selectedChapter.muxData.playbackId}
                     title={selectedChapter.title}
@@ -185,7 +222,9 @@ const CourseDetailPage = () => {
                   <div className="aspect-video bg-gray-200 flex items-center justify-center">
                     <div className="text-center">
                       <PlayCircle className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                      <p className="text-muted-foreground">No video available for this chapter</p>
+                      <p className="text-muted-foreground">
+                        No video available for this chapter
+                      </p>
                     </div>
                   </div>
                 )}
@@ -194,9 +233,15 @@ const CourseDetailPage = () => {
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h2 className="text-2xl font-bold mb-2">{selectedChapter.title}</h2>
+                      <h2 className="text-2xl font-bold mb-2">
+                        {selectedChapter.title}
+                      </h2>
                       {selectedChapter.description && (
-                        <EditorQuill value={selectedChapter.description} readOnly placeholder="" />
+                        <EditorQuill
+                          value={selectedChapter.description}
+                          readOnly
+                          placeholder=""
+                        />
                       )}
                     </div>
                     {isChapterCompleted && (
@@ -239,11 +284,14 @@ const CourseDetailPage = () => {
                       Previous
                     </Button>
                     <span className="text-sm text-muted-foreground">
-                      Chapter {currentChapterIndex + 1} of {publishedChapters.length}
+                      Chapter {currentChapterIndex + 1} of{" "}
+                      {publishedChapters.length}
                     </span>
                     <Button
                       onClick={handleNextChapter}
-                      disabled={currentChapterIndex === publishedChapters.length - 1}
+                      disabled={
+                        currentChapterIndex === publishedChapters.length - 1
+                      }
                     >
                       Next
                       <ChevronLeft className="w-4 h-4 ml-2 rotate-180" />
@@ -256,7 +304,9 @@ const CourseDetailPage = () => {
             <Card>
               <CardContent className="p-12 text-center">
                 <Book className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <p className="text-muted-foreground">Select a chapter to start learning</p>
+                <p className="text-muted-foreground">
+                  Select a chapter to start learning
+                </p>
               </CardContent>
             </Card>
           )}
@@ -294,7 +344,9 @@ const CourseDetailPage = () => {
             <CardContent className="p-0">
               <div className="p-4 border-b">
                 <h3 className="font-semibold">Course Content</h3>
-                <p className="text-sm text-muted-foreground">{publishedChapters.length} chapters</p>
+                <p className="text-sm text-muted-foreground">
+                  {publishedChapters.length} chapters
+                </p>
               </div>
               <div className="max-h-[600px] overflow-y-auto">
                 {publishedChapters.map((chapter, index) => {
@@ -327,8 +379,12 @@ const CourseDetailPage = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm line-clamp-2">{chapter.title}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Chapter {index + 1}</p>
+                          <p className="font-medium text-sm line-clamp-2">
+                            {chapter.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Chapter {index + 1}
+                          </p>
                         </div>
                       </div>
                     </button>

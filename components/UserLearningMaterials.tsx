@@ -10,7 +10,15 @@ import EmptyState from "@/components/EmptyState";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Book, FileText, CheckCircle2, Clock, Trophy, Trash2, MoreVertical } from "lucide-react";
+import {
+  Book,
+  FileText,
+  CheckCircle2,
+  Clock,
+  Trophy,
+  Trash2,
+  MoreVertical,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import EnrollUserInCourseDialog from "@/components/EnrollUserInCourseDialog";
@@ -37,8 +45,12 @@ interface UserLearningMaterialsProps {
   isAdminView?: boolean;
 }
 
-const UserLearningMaterials = ({ userId, isAdminView = false }: UserLearningMaterialsProps) => {
-  const { coursesWithProgress, isLoading } = useGetUserCoursesWithProgress(userId);
+const UserLearningMaterials = ({
+  userId,
+  isAdminView = false,
+}: UserLearningMaterialsProps) => {
+  const { coursesWithProgress, isLoading } =
+    useGetUserCoursesWithProgress(userId);
   const { unenrollUser, isUnenrolling } = useUnenrollUserFromCourse();
   const [courseToRemove, setCourseToRemove] = useState<{
     id: string;
@@ -131,7 +143,9 @@ const UserLearningMaterials = ({ userId, isAdminView = false }: UserLearningMate
       {/* Course Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Learning Materials</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Learning Materials
+          </h2>
           <p className="text-sm text-muted-foreground mt-1">
             {totalCourses} {totalCourses === 1 ? "course" : "courses"} enrolled
           </p>
@@ -145,13 +159,17 @@ const UserLearningMaterials = ({ userId, isAdminView = false }: UserLearningMate
           const totalChapters = course.totalChapters || 0;
           const completedChapters = course.completedChapters || 0;
           const progressPercentage = course.enrollment?.progressPercentage || 0;
-          const publishedChapters = course.chapters?.filter((c) => c.isPublished).length || 0;
+          const publishedChapters =
+            course.chapters?.filter((c) => c.isPublished).length || 0;
 
           const isCompleted = progressPercentage === 100;
           const isInProgress = progressPercentage > 0 && !isCompleted;
 
           return (
-            <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <Card
+              key={course.id}
+              className="overflow-hidden hover:shadow-lg transition-shadow"
+            >
               <div className="relative w-full h-48 bg-gray-200">
                 {course.imageUrl ? (
                   <Image
@@ -187,7 +205,9 @@ const UserLearningMaterials = ({ userId, isAdminView = false }: UserLearningMate
 
               <CardHeader className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold text-lg line-clamp-2">{course.title}</h3>
+                  <h3 className="font-semibold text-lg line-clamp-2">
+                    {course.title}
+                  </h3>
                   <div className="flex items-center gap-2">
                     {course.isPublished && (
                       <Badge variant="default" className="shrink-0">
@@ -197,7 +217,11 @@ const UserLearningMaterials = ({ userId, isAdminView = false }: UserLearningMate
                     {isAdminView && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -228,7 +252,9 @@ const UserLearningMaterials = ({ userId, isAdminView = false }: UserLearningMate
 
               <CardContent className="space-y-4">
                 {course.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-3">{course.description}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-3">
+                    {course.description}
+                  </p>
                 )}
 
                 {/* Progress Bar */}
@@ -237,9 +263,14 @@ const UserLearningMaterials = ({ userId, isAdminView = false }: UserLearningMate
                     <span className="text-muted-foreground">Progress</span>
                     <span className="font-medium">{progressPercentage}%</span>
                   </div>
-                  <Progress value={progressPercentage} className="h-2" />
+
+                  <Progress
+                    value={progressPercentage}
+                    className="bg-gray-200 [&>div]:bg-blue-500 [&>div]:rounded-full h-1.5"
+                  />
                   <p className="text-xs text-muted-foreground">
-                    {completedChapters} of {publishedChapters} chapters completed
+                    {completedChapters} of {publishedChapters} chapters
+                    completed
                   </p>
                 </div>
 
@@ -247,7 +278,8 @@ const UserLearningMaterials = ({ userId, isAdminView = false }: UserLearningMate
                   <div className="flex items-center gap-1">
                     <FileText className="w-4 h-4" />
                     <span>
-                      {publishedChapters} {publishedChapters === 1 ? "chapter" : "chapters"}
+                      {publishedChapters}{" "}
+                      {publishedChapters === 1 ? "chapter" : "chapters"}
                     </span>
                   </div>
                   {completedChapters > 0 && (
@@ -262,7 +294,10 @@ const UserLearningMaterials = ({ userId, isAdminView = false }: UserLearningMate
 
                 {course.attachments && course.attachments.length > 0 && (
                   <div className="text-sm text-muted-foreground">
-                    <span className="font-medium">{course.attachments.length}</span> attachment
+                    <span className="font-medium">
+                      {course.attachments.length}
+                    </span>{" "}
+                    attachment
                     {course.attachments.length !== 1 ? "s" : ""}
                   </div>
                 )}
@@ -270,7 +305,10 @@ const UserLearningMaterials = ({ userId, isAdminView = false }: UserLearningMate
                 {/* Last Accessed */}
                 {course.enrollment?.lastAccessedAt && (
                   <p className="text-xs text-muted-foreground">
-                    Last accessed: {new Date(course.enrollment.lastAccessedAt).toLocaleDateString()}
+                    Last accessed:{" "}
+                    {new Date(
+                      course.enrollment.lastAccessedAt
+                    ).toLocaleDateString()}
                   </p>
                 )}
 
@@ -301,13 +339,16 @@ const UserLearningMaterials = ({ userId, isAdminView = false }: UserLearningMate
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Course</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove <strong>{courseToRemove?.title}</strong> from this
-              user? This will delete their enrollment and all progress data for this course. This
-              action cannot be undone.
+              Are you sure you want to remove{" "}
+              <strong>{courseToRemove?.title}</strong> from this user? This will
+              delete their enrollment and all progress data for this course.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isUnenrolling}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isUnenrolling}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleRemoveCourse}
               disabled={isUnenrolling}
