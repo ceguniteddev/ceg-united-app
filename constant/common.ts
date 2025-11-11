@@ -102,6 +102,11 @@ export const sidebarLinks = [
     route: "/my-documents",
     label: "My Documents",
   },
+  {
+    imgURL: "/icons/book-open-text.svg",
+    route: "/my-learning",
+    label: "My Learning",
+  },
   // {
   //   imgURL: "/icons/dollar-circle.svg",
   //   route: "/other-services",
@@ -491,13 +496,7 @@ export const US_STATES = [
   },
 ];
 
-export const frequencyOfIncome = [
-  "Hourly",
-  "Weekly",
-  "BiWeekly",
-  "Monthly",
-  "Yearly",
-].map((f) => ({
+export const frequencyOfIncome = ["Hourly", "Weekly", "BiWeekly", "Monthly", "Yearly"].map((f) => ({
   value: f,
   label: f,
 }));
