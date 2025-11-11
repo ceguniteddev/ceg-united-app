@@ -17,6 +17,27 @@ import { Timestamp } from "firebase-admin/firestore";
 import { getCourseById } from "./course";
 
 /**
+ * Update user progress for a chapter (complete or incomplete)
+ */
+export const updateUserProgress = async ({
+  userId,
+  chapterId,
+  courseId,
+  isCompleted,
+}: {
+  userId: string;
+  chapterId: string;
+  courseId: string;
+  isCompleted: boolean;
+}): Promise<UserProgress> => {
+  if (isCompleted) {
+    return await markChapterComplete({ userId, chapterId, courseId });
+  } else {
+    return await markChapterIncomplete({ userId, chapterId, courseId });
+  }
+};
+
+/**
  * Enroll a user in a course
  */
 export const enrollUserInCourse = async ({
@@ -58,6 +79,54 @@ export const enrollUserInCourse = async ({
     id: enrollmentRef.id,
     ...normalizeAllDates(enrollmentDoc.data()),
   } as UserCourseEnrollment;
+};
+
+/**
+ * Unenroll a user from a course
+ */
+export const unenrollUserFromCourse = async ({
+  userId,
+  courseId,
+}: {
+  userId: string;
+  courseId: string;
+}): Promise<void> => {
+  const db = firestoreAdmin();
+
+  // Delete the enrollment
+  const enrollmentSnapshot = await db
+    .collection(USER_COURSE_ENROLLMENT)
+    .where("userId", "==", userId)
+    .where("courseId", "==", courseId)
+    .limit(1)
+    .get();
+
+  if (!enrollmentSnapshot.empty) {
+    await enrollmentSnapshot.docs[0].ref.delete();
+  }
+
+  // Get all chapters for this course
+  const chaptersSnapshot = await db
+    .collection(`${COURSE}/${courseId}/${CHAPTER}`)
+    .get();
+
+  const chapterIds = chaptersSnapshot.docs.map((doc) => doc.id);
+
+  if (chapterIds.length > 0) {
+    // Delete all progress records for this user and course
+    const progressSnapshot = await db
+      .collection(USER_PROGRESS)
+      .where("userId", "==", userId)
+      .where("chapterId", "in", chapterIds)
+      .get();
+
+    const batch = db.batch();
+    progressSnapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+  }
 };
 
 /**
