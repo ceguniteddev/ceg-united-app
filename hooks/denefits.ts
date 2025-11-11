@@ -118,3 +118,36 @@ export const useMapDenefitsContractToUser = () => {
     isMapping: mutation.isPending,
   };
 };
+
+export const useUnmapDenefitsContract = () => {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async ({ contractId }: { contractId: string }) => {
+      const response = await fetch(`/api/denefits/payments/${contractId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to unmap contract");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success("Contract successfully unmapped!");
+      queryClient.invalidateQueries({ queryKey: [GET_DENEFITS_PAYMENTS] });
+      queryClient.invalidateQueries({ queryKey: [GET_DENEFITS_CONTRACTS] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to unmap contract");
+      console.error("Error unmapping contract:", error);
+    },
+  });
+
+  return {
+    unmapContract: mutation.mutateAsync,
+    isUnmapping: mutation.isPending,
+  };
+};

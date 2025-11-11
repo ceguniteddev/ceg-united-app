@@ -13,7 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, Link2 } from "lucide-react";
+import { ArrowUpDown, Link2, Unlink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,8 @@ import {
 import { DataTablePagination } from "@/components/funding/pagination";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import MapDenefitsContractForm from "./form";
+import { useUnmapDenefitsContract } from "@/hooks/denefits";
+import { toast } from "sonner";
 
 export type DenefitsPayment = {
   id: string;
@@ -36,10 +38,14 @@ export type DenefitsPayment = {
   customer_first_name: string;
   customer_last_name: string;
   userId?: string | null;
+  mappedEmail?: string | null;
+  mappedFirstName?: string | null;
+  mappedLastName?: string | null;
 };
 
 const createColumns = (
-  onMapClick: (contract: DenefitsPayment) => void
+  onMapClick: (contract: DenefitsPayment) => void,
+  onUnmapClick: (contract: DenefitsPayment) => void
 ): ColumnDef<DenefitsPayment>[] => [
   {
     accessorKey: "contract_code",
@@ -100,19 +106,40 @@ const createColumns = (
       return <div>{row.getValue("customer_last_name")}</div>;
     },
   },
-  //   {
-  //     id: "userId",
-  //     accessorKey: "userId",
-  //     header: "User ID",
-  //     cell: ({ row }) => {
-  //       const userId = row.getValue("userId") as string | null;
-  //       return (
-  //         <div className="text-xs text-gray-500">
-  //           {userId ? userId.substring(0, 8) + "..." : "Not Mapped"}
-  //         </div>
-  //       );
-  //     },
-  //   },
+  {
+    id: "mappedEmail",
+    accessorKey: "mappedEmail",
+    header: ({ column }) => (
+      <div className="flex w-full">
+        <Button variant="ghost" onClick={column.getToggleSortingHandler()}>
+          Mapped Email <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
+    cell: ({ row }) => {
+      const email = row.getValue("mappedEmail") as string | null;
+      return (
+        <div className="text-sm">
+          {email || <span className="text-gray-400">Not Mapped</span>}
+        </div>
+      );
+    },
+  },
+  {
+    id: "mappedClientName",
+    header: "Mapped Client Name",
+    cell: ({ row }) => {
+      const firstName = row.original.mappedFirstName;
+      const lastName = row.original.mappedLastName;
+      const fullName =
+        firstName && lastName ? `${firstName} ${lastName}` : null;
+      return (
+        <div className="text-sm">
+          {fullName || <span className="text-gray-400">Not Mapped</span>}
+        </div>
+      );
+    },
+  },
   {
     id: "actions",
     header: "Actions",
@@ -120,15 +147,27 @@ const createColumns = (
       const contract = row.original;
       const hasUserId = !!(contract.userId && contract.userId !== null);
       return (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onMapClick(contract)}
-          disabled={hasUserId}
-        >
-          <Link2 className="mr-2 h-4 w-4" />
-          {hasUserId ? "Already Mapped" : "Map User"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onMapClick(contract)}
+            disabled={hasUserId}
+          >
+            <Link2 className="mr-2 h-4 w-4" />
+            {hasUserId ? "Already Mapped" : "Map User"}
+          </Button>
+          {hasUserId && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => onUnmapClick(contract)}
+            >
+              <Unlink className="mr-2 h-4 w-4" />
+              Unmap
+            </Button>
+          )}
+        </div>
       );
     },
   },
@@ -151,12 +190,27 @@ const DenefitsPaymentsList = ({ denefitsPayments }: Props) => {
     React.useState<DenefitsPayment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
+  const { unmapContract, isUnmapping } = useUnmapDenefitsContract();
+
   const handleMapClick = (contract: DenefitsPayment) => {
     setSelectedContract(contract);
     setIsDialogOpen(true);
   };
 
-  const columns = React.useMemo(() => createColumns(handleMapClick), []);
+  const handleUnmapClick = async (contract: DenefitsPayment) => {
+    if (window.confirm("Are you sure you want to unmap this contract?")) {
+      try {
+        await unmapContract({ contractId: contract.id });
+      } catch (error) {
+        console.error("Failed to unmap contract:", error);
+      }
+    }
+  };
+
+  const columns = React.useMemo(
+    () => createColumns(handleMapClick, handleUnmapClick),
+    []
+  );
 
   const table = useReactTable({
     data: denefitsPayments || [],
@@ -246,8 +300,8 @@ const DenefitsPaymentsList = ({ denefitsPayments }: Props) => {
         <ResponsiveDialog
           isOpen={isDialogOpen}
           setIsOpen={setIsDialogOpen}
-          title="Map Contract to User"
-          description="Select a user to map this denefits contract to."
+          title="Map Contract to Client"
+          description="Select a client to map this denefits contract to."
           className="w-11/12 max-w-4xl"
         >
           <MapDenefitsContractForm

@@ -81,13 +81,13 @@ const MapDenefitsContractForm = ({ contract, setOpen }: Props) => {
         {/* Right Side: User Search and Mapping */}
         <div className="rounded-2xl border bg-white p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Map to User
+            Map to Client
           </h3>
 
           {/* Search Input */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search Users
+              Search Clients
             </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />

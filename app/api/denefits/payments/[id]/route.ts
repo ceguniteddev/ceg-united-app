@@ -1,6 +1,9 @@
 import { badRequest, getMessage, internalServerError } from "@/app/api/helpers";
 import { withAuth } from "@/lib/api-validation";
-import { updateDenefitsContractUserId } from "@/service/denefits";
+import {
+  updateDenefitsContractUserId,
+  unmapDenefitsContract,
+} from "@/service/denefits";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -32,6 +35,27 @@ export const PATCH = withAuth(
         contractId: id,
         userId: query.data.userId,
       });
+      return NextResponse.json(result, { status: 200 });
+    } catch (error: any) {
+      console.error("Unexpected error:", error);
+      return internalServerError();
+    }
+  }
+);
+
+export const DELETE = withAuth(
+  async (
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+  ) => {
+    const { id } = await params;
+
+    if (!id) {
+      return badRequest({ errors: "Contract ID is required" });
+    }
+
+    try {
+      const result = await unmapDenefitsContract({ contractId: id });
       return NextResponse.json(result, { status: 200 });
     } catch (error: any) {
       console.error("Unexpected error:", error);
