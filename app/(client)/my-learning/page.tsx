@@ -3,22 +3,52 @@
 import React from "react";
 import { useAuth } from "@/provider/AuthContext";
 import { useGetUserCoursesWithProgress } from "@/hooks/educational-materials/course";
+import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import Spinner from "@/components/Spinner";
 import EmptyState from "@/components/EmptyState";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Book, FileText, CheckCircle2, Clock, Trophy, ArrowRight } from "lucide-react";
+import {
+  Book,
+  FileText,
+  CheckCircle2,
+  Clock,
+  Trophy,
+  ArrowRight,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import HeaderBox from "@/components/HeaderBox";
 
 const MyLearningPage = () => {
   const { user } = useAuth();
-  const { coursesWithProgress, isLoading } = useGetUserCoursesWithProgress(user?.uid || "");
+  const { coursesWithProgress, isLoading } = useGetUserCoursesWithProgress(
+    user?.uid || ""
+  );
+  const { denefitsContract, isLoading: isLoadingContract } =
+    useGetDenefitsContractsByUserId(user?.uid || "");
 
-  if (isLoading) {
+  if (isLoading || isLoadingContract) {
     return <Spinner displayText="Loading your courses..." />;
+  }
+
+  // Check if user has a paid denefits contract
+  const hasPaidContract = denefitsContract && denefitsContract.length > 0;
+
+  if (!hasPaidContract) {
+    return (
+      <div className="transactions">
+        <HeaderBox
+          title="My Learning"
+          subtext="Access your enrolled courses and track your progress"
+        />
+        <EmptyState
+          title="Denefits Contract Required"
+          description="You need an active Denefits contract to access learning materials. Please contact support or complete your contract registration to unlock courses."
+        />
+      </div>
+    );
   }
 
   if (!coursesWithProgress || coursesWithProgress.length === 0) {
@@ -97,7 +127,8 @@ const MyLearningPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {coursesWithProgress.map((course) => {
           const progressPercentage = course.enrollment?.progressPercentage || 0;
-          const publishedChapters = course.chapters?.filter((c) => c.isPublished).length || 0;
+          const publishedChapters =
+            course.chapters?.filter((c) => c.isPublished).length || 0;
           const completedChapters = course.completedChapters || 0;
 
           const isCompleted = progressPercentage === 100;
@@ -141,7 +172,9 @@ const MyLearningPage = () => {
 
                 <CardHeader className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-lg line-clamp-2">{course.title}</h3>
+                    <h3 className="font-semibold text-lg line-clamp-2">
+                      {course.title}
+                    </h3>
                   </div>
                   {course.category && (
                     <Badge variant="secondary" className="w-fit">
@@ -165,7 +198,8 @@ const MyLearningPage = () => {
                     </div>
                     <Progress value={progressPercentage} className="h-2" />
                     <p className="text-xs text-muted-foreground">
-                      {completedChapters} of {publishedChapters} chapters completed
+                      {completedChapters} of {publishedChapters} chapters
+                      completed
                     </p>
                   </div>
 
@@ -173,7 +207,8 @@ const MyLearningPage = () => {
                     <div className="flex items-center gap-1">
                       <FileText className="w-4 h-4" />
                       <span>
-                        {publishedChapters} {publishedChapters === 1 ? "chapter" : "chapters"}
+                        {publishedChapters}{" "}
+                        {publishedChapters === 1 ? "chapter" : "chapters"}
                       </span>
                     </div>
                     {completedChapters > 0 && (
@@ -190,7 +225,9 @@ const MyLearningPage = () => {
                   {course.enrollment?.lastAccessedAt && (
                     <p className="text-xs text-muted-foreground">
                       Last accessed:{" "}
-                      {new Date(course.enrollment.lastAccessedAt).toLocaleDateString()}
+                      {new Date(
+                        course.enrollment.lastAccessedAt
+                      ).toLocaleDateString()}
                     </p>
                   )}
 

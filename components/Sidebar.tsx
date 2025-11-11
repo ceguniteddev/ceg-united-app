@@ -55,13 +55,6 @@ const Sidebar = () => {
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
     user?.uid || ""
   );
-  const [showMyFunding, setShowMyFunding] = useState(true);
-
-  // useEffect(() => {
-  //   if (denefitsContract && denefitsContract.length > 0) {
-  //     setShowMyFunding(true);
-  //   }
-  // }, [denefitsContract]);
 
   //   if (user && !isOnboarded) driverObj.drive();
   // }, [user, isOnboarded, updateOnboarding]);
@@ -88,9 +81,15 @@ const Sidebar = () => {
             if (!isPlaidProdReady && item.route === "/my-accounts") {
               return false;
             }
-            if (!showMyFunding && item.route === "/my-funding") {
+
+            // If user hasn't paid denefits contract, filter out "My Learning" link
+            if (
+              item.route === "/my-learning" &&
+              (!denefitsContract || denefitsContract.length === 0)
+            ) {
               return false;
             }
+
             // Otherwise, keep the item in the array
             return true;
           })

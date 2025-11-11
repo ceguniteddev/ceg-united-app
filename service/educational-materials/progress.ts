@@ -1,6 +1,11 @@
 "use server";
 
-import { COURSE, USER_PROGRESS, USER_COURSE_ENROLLMENT, CHAPTER } from "@/constant/collection-name";
+import {
+  COURSE,
+  USER_PROGRESS,
+  USER_COURSE_ENROLLMENT,
+  CHAPTER,
+} from "@/constant/collection-name";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import {
@@ -219,7 +224,9 @@ export const getUserProgressForCourse = async ({
   const db = firestoreAdmin();
 
   // Get all chapters for this course
-  const chaptersSnapshot = await db.collection(`${COURSE}/${courseId}/${CHAPTER}`).get();
+  const chaptersSnapshot = await db
+    .collection(`${COURSE}/${courseId}/${CHAPTER}`)
+    .get();
 
   const chapterIds = chaptersSnapshot.docs.map((doc) => doc.id);
 
@@ -275,7 +282,9 @@ export const updateCourseProgress = async ({
     .get();
 
   const completedChapters = progressSnapshot.size;
-  const progressPercentage = Math.round((completedChapters / totalChapters) * 100);
+  const progressPercentage = Math.round(
+    (completedChapters / totalChapters) * 100
+  );
 
   // Update enrollment
   const enrollmentSnapshot = await db
@@ -304,7 +313,9 @@ export const updateCourseProgress = async ({
 /**
  * Get all courses with progress for a user
  */
-export const getUserCoursesWithProgress = async (userId: string): Promise<CourseWithProgress[]> => {
+export const getUserCoursesWithProgress = async (
+  userId: string
+): Promise<CourseWithProgress[]> => {
   const db = firestoreAdmin();
 
   // Get user's enrollments
@@ -336,7 +347,9 @@ export const getUserCoursesWithProgress = async (userId: string): Promise<Course
       });
 
       const totalChapters = course.chapters?.length || 0;
-      const completedChapters = userProgress.filter((p) => p.isCompleted).length;
+      const completedChapters = userProgress.filter(
+        (p) => p.isCompleted
+      ).length;
 
       coursesWithProgress.push({
         ...course,
@@ -349,71 +362,4 @@ export const getUserCoursesWithProgress = async (userId: string): Promise<Course
   }
 
   return coursesWithProgress;
-};
-
-/**
- * Unenroll a user from a course
- */
-export const unenrollUserFromCourse = async ({
-  userId,
-  courseId,
-}: {
-  userId: string;
-  courseId: string;
-}): Promise<void> => {
-  const db = firestoreAdmin();
-
-  // Delete enrollment record
-  const enrollmentSnapshot = await db
-    .collection(USER_COURSE_ENROLLMENT)
-    .where("userId", "==", userId)
-    .where("courseId", "==", courseId)
-    .limit(1)
-    .get();
-
-  if (!enrollmentSnapshot.empty) {
-    await enrollmentSnapshot.docs[0].ref.delete();
-  }
-
-  // Optionally: Delete all progress records for this course
-  // Get all chapters for this course
-  const chaptersSnapshot = await db.collection(`${COURSE}/${courseId}/${CHAPTER}`).get();
-
-  const chapterIds = chaptersSnapshot.docs.map((doc) => doc.id);
-
-  if (chapterIds.length > 0) {
-    // Delete progress records in batches (Firestore limit is 500 per batch)
-    const progressSnapshot = await db
-      .collection(USER_PROGRESS)
-      .where("userId", "==", userId)
-      .where("chapterId", "in", chapterIds)
-      .get();
-
-    const batch = db.batch();
-    progressSnapshot.docs.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-    await batch.commit();
-  }
-};
-
-/**
- * Update user progress for a chapter (toggle complete/incomplete)
- */
-export const updateUserProgress = async ({
-  userId,
-  chapterId,
-  courseId,
-  isCompleted,
-}: {
-  userId: string;
-  chapterId: string;
-  courseId: string;
-  isCompleted: boolean;
-}): Promise<UserProgress> => {
-  if (isCompleted) {
-    return await markChapterComplete({ userId, chapterId, courseId });
-  } else {
-    return await markChapterIncomplete({ userId, chapterId, courseId });
-  }
 };
