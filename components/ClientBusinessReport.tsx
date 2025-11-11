@@ -22,7 +22,7 @@ import {
 import { Business, businessRecordSchema } from "@/schema";
 import { useBusinessQuery } from "@/hooks/business";
 import Spinner from "@/components/Spinner";
-import { EmptyState } from "./EmptyState";
+import EmptyState from "./EmptyState";
 
 // ---- Utilities ----
 const formatCurrency = (n?: number) =>

@@ -10,7 +10,7 @@ import {
   ClientApplicationStatus,
 } from "@/schema/bank-products";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
-import { EmptyState } from "./EmptyState";
+import EmptyState from "./EmptyState";
 
 const ClientAppliedFundingList = ({
   userId,

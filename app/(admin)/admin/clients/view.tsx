@@ -30,7 +30,7 @@ import {
 import { useUpdateUserStatusMutation } from "@/hooks/user";
 import { useRefreshCRSData } from "@/hooks/crs";
 import { toast } from "sonner";
-import { EmptyState } from "@/components/EmptyState";
+import EmptyState from "@/components/EmptyState";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 
 function toDate(d?: string | Date) {

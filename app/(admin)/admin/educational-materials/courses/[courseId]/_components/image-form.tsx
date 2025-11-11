@@ -9,11 +9,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Course } from "@/schema/educational-materials/course";
 import { toast } from "sonner";
-import {
-  Dropzone,
-  DropzoneContent,
-  DropzoneEmptyState,
-} from "@/components/ui/shadcn-io/dropzone";
+import { Dropzone, DropzoneContent, DropzoneEmptyState } from "@/components/ui/shadcn-io/dropzone";
 import { useCourseMutation } from "@/hooks/educational-materials/course";
 
 interface ImageFormProps {
@@ -66,7 +62,7 @@ export const ImageForm = ({ initialData, courseId }: ImageFormProps) => {
         setIsLoading(false);
       }
     },
-    [courseId, router]
+    [courseId, router, updateCourse]
   );
 
   return (
@@ -116,9 +112,7 @@ export const ImageForm = ({ initialData, courseId }: ImageFormProps) => {
             <DropzoneEmptyState />
             <DropzoneContent />
           </Dropzone>
-          <div className="text-xs text-muted-foreground mt-4">
-            16:9 aspect ratio recommended
-          </div>
+          <div className="text-xs text-muted-foreground mt-4">16:9 aspect ratio recommended</div>
         </div>
       )}
     </div>

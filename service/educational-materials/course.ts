@@ -83,18 +83,18 @@ export const getCourses = async (): Promise<Course[] | null> => {
         try {
           const data = doc.data();
           // These can run in parallel
-          // const [imageUrl, chapters, attachments] = await Promise.all([
-          //   getCourseDocument(data?.imageUrl),
-          //   getChaptersByCourseId(doc.id),
-          //   getAttachmentsByCourseId(doc.id),
-          // ]);
+          const [imageUrl, chapters, attachments] = await Promise.all([
+            getCourseDocument(data?.imageUrl),
+            getChaptersByCourseId(doc.id),
+            getAttachmentsByCourseId(doc.id),
+          ]);
 
           return {
             id: doc.id,
             ...normalizeAllDates(data),
-            // imageUrl,
-            // chapters,
-            // attachments,
+            imageUrl,
+            chapters,
+            attachments,
           };
         } catch (error) {
           console.error(`Failed to process course ${doc.id}:`, error);
@@ -157,9 +157,7 @@ export const deleteCourseDocument = async (path: string) => {
   } catch (error: any) {
     // It's often safe to ignore "Not Found" errors during deletion
     if (error.code === 404) {
-      console.warn(
-        `Attempted to delete a document that does not exist: ${path}`
-      );
+      console.warn(`Attempted to delete a document that does not exist: ${path}`);
       return;
     }
     console.error(`Failed to delete document ${path}:`, error);
@@ -266,9 +264,7 @@ export const getAttachmentById = async ({
   attachmentId: string;
 }): Promise<Attachment | null> => {
   const db = firestoreAdmin();
-  const collectionRef = db
-    .collection(`${COURSE}/${courseId}/${ATTACHMENT}`)
-    .doc(attachmentId);
+  const collectionRef = db.collection(`${COURSE}/${courseId}/${ATTACHMENT}`).doc(attachmentId);
   const doc = await collectionRef.get();
   if (!doc.exists) return null;
   const data = doc.data();
@@ -286,8 +282,60 @@ export const deleteAttachment = async ({
   attachmentId: string;
 }) => {
   const db = firestoreAdmin();
-  const collectionRef = db
-    .collection(`${COURSE}/${courseId}/${ATTACHMENT}`)
-    .doc(attachmentId);
+  const collectionRef = db.collection(`${COURSE}/${courseId}/${ATTACHMENT}`).doc(attachmentId);
   await collectionRef.delete();
+};
+
+export const getUserCourses = async (userId: string): Promise<Course[]> => {
+  try {
+    // First, check if user has paid or is mapped in denefits contract
+    const db = firestoreAdmin();
+
+    // Check if user exists in USER_DENEFITS_CONTRACT collection
+    const { USER_DENEFITS_CONTRACT } = await import("@/constant/collection-name");
+    const denefitsRef = db.collection(USER_DENEFITS_CONTRACT).where("userId", "==", userId);
+    const denefitsSnapshot = await denefitsRef.get();
+
+    // If user doesn't have denefits contract, return empty array
+    if (denefitsSnapshot.empty) {
+      return [];
+    }
+
+    // If user has denefits contract, return all published courses
+    const coursesRef = db
+      .collection(COURSE)
+      .where("isPublished", "==", true)
+      .orderBy("createdAt", "desc");
+
+    const coursesSnapshot = await coursesRef.get();
+
+    if (coursesSnapshot.empty) {
+      return [];
+    }
+
+    const courses = await Promise.all(
+      coursesSnapshot.docs.map(async (doc) => {
+        try {
+          const data = doc.data();
+          const imageUrl = await getCourseDocument(data?.imageUrl);
+          const chapters = await getChaptersByCourseId(doc.id);
+
+          return {
+            id: doc.id,
+            ...normalizeAllDates(data),
+            imageUrl,
+            chapters,
+          };
+        } catch (error) {
+          console.error(`Failed to process course ${doc.id}:`, error);
+          return null;
+        }
+      })
+    );
+
+    return courses.filter((course) => course !== null) as Course[];
+  } catch (error) {
+    console.error("Failed to get user courses:", error);
+    return [];
+  }
 };

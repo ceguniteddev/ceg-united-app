@@ -13,7 +13,7 @@ import {
   Tradeline,
 } from "@/types/crs";
 import React, { useMemo } from "react";
-import { EmptyState } from "./EmptyState";
+import EmptyState from "./EmptyState";
 
 // --- Utilities ---
 const toNum = (v?: NumericString) => {

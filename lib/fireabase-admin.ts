@@ -7,8 +7,7 @@ interface FirebaseAdminAppParams {
   privateKey: string;
 }
 
-export const formatPrivateKey = (privateKey: string) =>
-  privateKey.replace(/\\n/g, "\n");
+export const formatPrivateKey = (privateKey: string) => privateKey.replace(/\\n/g, "\n");
 
 const createFirebaseAdminApp = (params: FirebaseAdminAppParams) => {
   if (admin.apps.length > 0) {
@@ -40,9 +39,13 @@ const createFirebaseAdminApp = (params: FirebaseAdminAppParams) => {
 };
 
 export const initFirebase = () => {
+  // console.log("Initializing Firebase Admin SDK...");
+
+  let projectId: string;
+  let clientEmail: string;
   let privateKey: string;
 
-  // Check if we are in a production environment (Cloud Run)
+  // Check if we are using Base64 encoded credentials
   if (process.env.FIREBASE_PRIVATE_KEY_BASE64) {
     // Decode the Base64 key from the environment variable
     const decodedServiceAccount = Buffer.from(
@@ -50,21 +53,28 @@ export const initFirebase = () => {
       "base64"
     ).toString("utf-8");
     const credentials = JSON.parse(decodedServiceAccount);
+
+    projectId = credentials.project_id;
+    clientEmail = credentials.client_email;
     privateKey = formatPrivateKey(credentials.private_key);
-  } else {
-    // Fallback for local development using the .env file
+  } else if (process.env.FIREBASE_PRIVATE_KEY) {
+    // Fallback for local development using individual environment variables
+    projectId = process.env.FIREBASE_PROJECT_ID as string;
+    clientEmail = process.env.FIREBASE_CLIENT_EMAIL as string;
     privateKey = formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY as string);
+  } else {
+    throw new Error(
+      "FIREBASE_PRIVATE_KEY_BASE64 or FIREBASE_PRIVATE_KEY must be set in environment variables"
+    );
   }
 
-  if (!privateKey) {
-    throw new Error("FIREBASE_PRIVATE_KEY not found in .env file");
+  if (!privateKey || !projectId || !clientEmail) {
+    throw new Error("Missing required Firebase credentials");
   }
-
-  // console.log(privateKey);
 
   const params = {
-    projectId: process.env.FIREBASE_PROJECT_ID as string,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL as string,
+    projectId: projectId,
+    clientEmail: clientEmail,
     storageBucket: process.env.FIREBASE_STORAGE_NAME as string,
     privateKey: privateKey,
   };

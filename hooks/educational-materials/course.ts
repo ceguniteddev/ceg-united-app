@@ -1,6 +1,6 @@
 import { COURSES_KEY } from "@/constant/react-query-keys";
 import { useAuth } from "@/provider/AuthContext";
-import { Course } from "@/schema/educational-materials/course";
+import { Course, CourseWithProgress } from "@/schema/educational-materials/course";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { toast } from "sonner";
@@ -32,6 +32,70 @@ export const useGetCourses = () => {
 
   return {
     courses,
+    isLoading,
+    refetch,
+  };
+};
+
+export const useGetUserCourses = (userId: string) => {
+  const { user } = useAuth();
+
+  const {
+    data: courses,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: [COURSES_KEY, "user", userId],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+
+      const response = await fetch(`/api/user/${userId}/courses`);
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+
+      return data as Course[];
+    },
+    enabled: !!user && !!userId,
+  });
+
+  return {
+    courses,
+    isLoading,
+    refetch,
+  };
+};
+
+export const useGetUserCoursesWithProgress = (userId: string) => {
+  const { user } = useAuth();
+
+  const {
+    data: coursesWithProgress,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: [COURSES_KEY, "user", userId, "progress"],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+
+      const response = await fetch(`/api/user/${userId}/courses/progress`);
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+
+      return data as CourseWithProgress[];
+    },
+    enabled: !!user && !!userId,
+  });
+
+  return {
+    coursesWithProgress,
     isLoading,
     refetch,
   };
@@ -191,13 +255,7 @@ export const useCourseMutation = () => {
   });
 
   const uploadCourseAttachmentMutation = useMutation({
-    mutationFn: async ({
-      courseId,
-      formData,
-    }: {
-      courseId: string;
-      formData: FormData;
-    }) => {
+    mutationFn: async ({ courseId, formData }: { courseId: string; formData: FormData }) => {
       await fetch(`/api/courses/${courseId}/attachments`, {
         method: "POST",
         body: formData,
@@ -218,13 +276,7 @@ export const useCourseMutation = () => {
   });
 
   const deleteCourseAttachmentMutation = useMutation({
-    mutationFn: async ({
-      courseId,
-      attachmentId,
-    }: {
-      courseId: string;
-      attachmentId: string;
-    }) => {
+    mutationFn: async ({ courseId, attachmentId }: { courseId: string; attachmentId: string }) => {
       await fetch(`/api/courses/${courseId}/attachments/${attachmentId}`, {
         method: "DELETE",
       });
@@ -264,5 +316,83 @@ export const useCourseMutation = () => {
 
     deleteCourseAttachment: deleteCourseAttachmentMutation.mutateAsync,
     isDeletingAttachment: deleteCourseAttachmentMutation.isPending,
+  };
+};
+
+export const useEnrollUserInCourse = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  const enrollMutation = useMutation({
+    mutationFn: async ({ userId, courseId }: { userId: string; courseId: string }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      const response = await fetch(`/api/user/${userId}/courses/${courseId}/enroll`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to enroll user in course");
+      }
+
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [COURSES_KEY, "user", variables.userId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [COURSES_KEY, "user", variables.userId, "progress"],
+      });
+      toast.success("Successfully enrolled in course");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to enroll in course");
+      console.error(error);
+    },
+  });
+
+  return {
+    enrollUser: enrollMutation.mutateAsync,
+    isEnrolling: enrollMutation.isPending,
+  };
+};
+
+export const useUnenrollUserFromCourse = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  const unenrollMutation = useMutation({
+    mutationFn: async ({ userId, courseId }: { userId: string; courseId: string }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      const response = await fetch(`/api/user/${userId}/courses/${courseId}/unenroll`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to unenroll user from course");
+      }
+
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [COURSES_KEY, "user", variables.userId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [COURSES_KEY, "user", variables.userId, "progress"],
+      });
+      toast.success("Successfully unenrolled from course");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to unenroll from course");
+      console.error(error);
+    },
+  });
+
+  return {
+    unenrollUser: unenrollMutation.mutateAsync,
+    isUnenrolling: unenrollMutation.isPending,
   };
 };

@@ -125,3 +125,26 @@ export const UserProgressSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
 });
+
+export type UserProgress = z.infer<typeof UserProgressSchema>;
+
+// Course enrollment tracking
+export const UserCourseEnrollmentSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string(),
+  courseId: z.string(),
+  enrolledAt: z.date(),
+  lastAccessedAt: z.date().optional(),
+  completedAt: z.date().optional(),
+  progressPercentage: z.number().min(0).max(100).default(0),
+});
+
+export type UserCourseEnrollment = z.infer<typeof UserCourseEnrollmentSchema>;
+
+// Extended course type with progress
+export interface CourseWithProgress extends Course {
+  enrollment?: UserCourseEnrollment;
+  completedChapters?: number;
+  totalChapters?: number;
+  userProgress?: UserProgress[];
+}
