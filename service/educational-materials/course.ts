@@ -157,7 +157,9 @@ export const deleteCourseDocument = async (path: string) => {
   } catch (error: any) {
     // It's often safe to ignore "Not Found" errors during deletion
     if (error.code === 404) {
-      console.warn(`Attempted to delete a document that does not exist: ${path}`);
+      console.warn(
+        `Attempted to delete a document that does not exist: ${path}`
+      );
       return;
     }
     console.error(`Failed to delete document ${path}:`, error);
@@ -170,9 +172,10 @@ export const getCourseDocument = async (path: string) => {
   if (!path) return null;
   const bucket = storageAdmin();
   const blob = bucket.file(path);
+  // Use 7 day expiration instead of 10 minutes for better UX
   const [signedUrl] = await blob.getSignedUrl({
     action: "read",
-    expires: Date.now() + 10 * 60 * 1000,
+    expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
   });
   return signedUrl;
 };
@@ -250,10 +253,20 @@ export const getAttachmentsByCourseId = async (courseId: string) => {
   const querySnapshot = await collectionRef.get();
   if (querySnapshot.empty) return null;
 
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...normalizeAllDates(doc.data()),
-  }));
+  const attachments = await Promise.all(
+    querySnapshot.docs.map(async (doc) => {
+      const data = doc.data();
+      // Generate signed URL with 7 day expiration
+      const url = await getCourseDocument(data?.url);
+      return {
+        id: doc.id,
+        ...normalizeAllDates(data),
+        url,
+      };
+    })
+  );
+
+  return attachments;
 };
 
 export const getAttachmentById = async ({
@@ -264,7 +277,9 @@ export const getAttachmentById = async ({
   attachmentId: string;
 }): Promise<Attachment | null> => {
   const db = firestoreAdmin();
-  const collectionRef = db.collection(`${COURSE}/${courseId}/${ATTACHMENT}`).doc(attachmentId);
+  const collectionRef = db
+    .collection(`${COURSE}/${courseId}/${ATTACHMENT}`)
+    .doc(attachmentId);
   const doc = await collectionRef.get();
   if (!doc.exists) return null;
   const data = doc.data();
@@ -282,7 +297,9 @@ export const deleteAttachment = async ({
   attachmentId: string;
 }) => {
   const db = firestoreAdmin();
-  const collectionRef = db.collection(`${COURSE}/${courseId}/${ATTACHMENT}`).doc(attachmentId);
+  const collectionRef = db
+    .collection(`${COURSE}/${courseId}/${ATTACHMENT}`)
+    .doc(attachmentId);
   await collectionRef.delete();
 };
 
@@ -292,8 +309,12 @@ export const getUserCourses = async (userId: string): Promise<Course[]> => {
     const db = firestoreAdmin();
 
     // Check if user exists in USER_DENEFITS_CONTRACT collection
-    const { USER_DENEFITS_CONTRACT } = await import("@/constant/collection-name");
-    const denefitsRef = db.collection(USER_DENEFITS_CONTRACT).where("userId", "==", userId);
+    const { USER_DENEFITS_CONTRACT } = await import(
+      "@/constant/collection-name"
+    );
+    const denefitsRef = db
+      .collection(USER_DENEFITS_CONTRACT)
+      .where("userId", "==", userId);
     const denefitsSnapshot = await denefitsRef.get();
 
     // If user doesn't have denefits contract, return empty array
