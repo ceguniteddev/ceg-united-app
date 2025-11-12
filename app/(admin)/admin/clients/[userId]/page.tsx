@@ -40,8 +40,12 @@ const ClientProfilePage = () => {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-900">User Not Found</h2>
-          <p className="mt-2 text-gray-600">The requested user could not be found.</p>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            User Not Found
+          </h2>
+          <p className="mt-2 text-gray-600">
+            The requested user could not be found.
+          </p>
         </div>
       </div>
     );
@@ -53,14 +57,18 @@ const ClientProfilePage = () => {
       className="w-full flex flex-col items-start justify-start p-10"
     >
       <TabsList>
-        <TabsTrigger value="personal-information">Personal Information</TabsTrigger>
+        <TabsTrigger value="personal-information">
+          Personal Information
+        </TabsTrigger>
         <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
         <TabsTrigger value="documents">Documents</TabsTrigger>
         <TabsTrigger value="credit-report">Credit Report</TabsTrigger>
         <TabsTrigger value="business">Business</TabsTrigger>
         <TabsTrigger value="applied-funding">Applied Funding</TabsTrigger>
         {hasLearningMaterialsAccess && (
-          <TabsTrigger value="learning-materials">Learning Materials</TabsTrigger>
+          <TabsTrigger value="learning-materials">
+            Learning Materials
+          </TabsTrigger>
         )}
         <TabsTrigger value="note">Note</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
@@ -71,7 +79,7 @@ const ClientProfilePage = () => {
       </TabsContent>
 
       <TabsContent value="dashboard" className="w-full">
-        <AdminViewUserProfile userId={userId} />
+        <AdminViewUserProfile userId={userId} adminView={true} />
       </TabsContent>
 
       <TabsContent value="documents" className="w-full">

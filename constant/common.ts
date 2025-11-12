@@ -172,6 +172,39 @@ export const adminSidebarLinks = [
   },
 ];
 
+export const brokerSidebarLinks = [
+  {
+    imgURL: "/icons/home.svg",
+    route: "/broker/home",
+    label: "Home",
+  },
+  {
+    imgURL: "/icons/users.svg",
+    route: "/broker/my-clients",
+    label: "My Clients",
+  },
+  {
+    imgURL: "/icons/dollar-circle.svg",
+    route: "/broker/my-funded-deals",
+    label: "My Funded Deals",
+  },
+  {
+    imgURL: "/icons/money-send.svg",
+    route: "/broker/submit-application",
+    label: "Submit Application",
+  },
+  {
+    imgURL: "/icons/bell.svg",
+    route: "/whats-new",
+    label: "What's New",
+  },
+  {
+    imgURL: "/icons/headset.svg",
+    route: "/support-service",
+    label: "Contact Us",
+  },
+];
+
 export const settingsSidebar = [
   {
     imgURL: "/icons/circle-user-round.svg",
@@ -186,10 +219,15 @@ export const settingsSidebarAdmin = [
     route: "/settings/personal",
     label: "Personal",
   },
+  // {
+  //   imgURL: "/icons/circle-user-round.svg",
+  //   route: "/settings/users",
+  //   label: "Users",
+  // },
   {
-    imgURL: "/icons/circle-user-round.svg",
-    route: "/settings/users",
-    label: "Users",
+    imgURL: "/icons/handshake.svg",
+    route: "/settings/broker",
+    label: "Broker Invitations",
   },
 ];
 
@@ -496,7 +534,13 @@ export const US_STATES = [
   },
 ];
 
-export const frequencyOfIncome = ["Hourly", "Weekly", "BiWeekly", "Monthly", "Yearly"].map((f) => ({
+export const frequencyOfIncome = [
+  "Hourly",
+  "Weekly",
+  "BiWeekly",
+  "Monthly",
+  "Yearly",
+].map((f) => ({
   value: f,
   label: f,
 }));

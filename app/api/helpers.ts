@@ -102,12 +102,26 @@ export const handleApiError = (error: any, customMessage?: string) => {
 };
 
 export const getMessage = (error: z.ZodError) => {
+  const allMessages: string[] = [];
+
+  // Helper function to recursively extract errors with field path
+  const extractErrors = (obj: any, fieldPath = "") => {
+    if (obj.errors && Array.isArray(obj.errors) && obj.errors.length > 0) {
+      obj.errors.forEach((error: string) => {
+        const message = fieldPath ? `${fieldPath} is ${error}` : error;
+        allMessages.push(message);
+      });
+    }
+    if (obj.properties && typeof obj.properties === "object") {
+      Object.entries(obj.properties).forEach(([key, prop]: [string, any]) => {
+        const newPath = fieldPath ? `${fieldPath}.${key}` : key;
+        extractErrors(prop, newPath);
+      });
+    }
+  };
+
   const flat = z.treeifyError(error);
-  const fieldErrors = flat.errors;
-
-  const fieldMessages = Object.values(fieldErrors).flat();
-
-  const allMessages = [...fieldMessages];
+  extractErrors(flat);
 
   return allMessages.length > 0 ? allMessages : ["Invalid request body"];
 };

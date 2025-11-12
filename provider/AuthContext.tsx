@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   onAuthStateChanged,
@@ -20,20 +27,30 @@ import AppError from "@/error/AppError";
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
+  isBroker: boolean;
   isOnboarded: boolean;
   role: Role | null;
   loading: boolean;
-  signIn: (token: string | null, email: string, password: string) => Promise<void>;
+  signIn: (
+    token: string | null,
+    email: string,
+    password: string
+  ) => Promise<void>;
   logOut: () => Promise<void>;
   resetPassword: (token: string | null, email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { readonly children: React.ReactNode }) {
+export function AuthProvider({
+  children,
+}: {
+  readonly children: React.ReactNode;
+}) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isBroker, setIsBroker] = useState(false);
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [loading, setLoading] = useState(true); // Still true to prevent flicker on load
   const [isLoggingIn, setIsLoggingIn] = useState(false); // Track if user is actively logging in
@@ -55,6 +72,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     setUser(firebaseUser);
     setRole(userRole as Role);
     setIsAdmin(userRole === "Admin");
+    setIsBroker(userRole === "Broker");
     setIsOnboarded(userData.isOnboarded || false);
   }, []);
 
@@ -65,6 +83,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     setUser(null);
     setRole(null);
     setIsAdmin(false);
+    setIsBroker(false);
     setIsOnboarded(false);
 
     await queryClient.cancelQueries({ predicate: () => true });
@@ -72,28 +91,32 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
   }, [router, queryClient]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(authFirebase, async (firebaseUser) => {
-      try {
-        if (firebaseUser) {
-          await loadAndSetUserData(firebaseUser);
-        } else {
-          setUser(null);
-          setRole(null);
-          setIsAdmin(false);
-          setIsOnboarded(false);
+    const unsubscribe = onAuthStateChanged(
+      authFirebase,
+      async (firebaseUser) => {
+        try {
+          if (firebaseUser) {
+            await loadAndSetUserData(firebaseUser);
+          } else {
+            setUser(null);
+            setRole(null);
+            setIsAdmin(false);
+            setIsBroker(false);
+            setIsOnboarded(false);
+          }
+        } catch (error) {
+          console.error("Error during auth state change:", error);
+          // DO NOT call logOut() here.
+          // Optionally keep firebaseUser and use a cached role, or default to 'Staff'.
+          if (firebaseUser) {
+            setUser(firebaseUser);
+            setRole((r) => r ?? ("Staff" as Role));
+          }
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error("Error during auth state change:", error);
-        // DO NOT call logOut() here.
-        // Optionally keep firebaseUser and use a cached role, or default to 'Staff'.
-        if (firebaseUser) {
-          setUser(firebaseUser);
-          setRole((r) => r ?? ("Staff" as Role));
-        }
-      } finally {
-        setLoading(false);
       }
-    });
+    );
     return () => unsubscribe();
   }, [loadAndSetUserData]);
 
@@ -134,7 +157,8 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
       try {
         setIsLoggingIn(true); // Mark that login is in progress
 
-        if (!token) throw new AppError("Failed to login. Please refresh the page.");
+        if (!token)
+          throw new AppError("Failed to login. Please refresh the page.");
 
         const captchaData = await createEnterpriseAssessment(token, "login");
 
@@ -178,7 +202,14 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         // Small delay to ensure session cookie is fully set before navigation
         await new Promise((resolve) => setTimeout(resolve, 500));
 
-        router.push(nextRole === "Client" ? "/overview" : "/admin/home");
+        // Route based on user role
+        if (nextRole === "Admin") {
+          router.push("/admin/home");
+        } else if (nextRole === "Broker") {
+          router.push("/broker/home");
+        } else {
+          router.push("/overview");
+        }
       } catch (error) {
         if (error instanceof AppError) throw error;
         try {
@@ -192,46 +223,68 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     [loadAndSetUserData, queryClient, router]
   );
 
-  const resetPassword = useCallback(async (token: string | null, email: string) => {
-    if (!token) throw new AppError("Failed to login. Please refresh the page.");
+  const resetPassword = useCallback(
+    async (token: string | null, email: string) => {
+      if (!token)
+        throw new AppError("Failed to login. Please refresh the page.");
 
-    const captchaData = await createEnterpriseAssessment(token, "forgot_password");
-    if (!captchaData || captchaData.score < 0.5) {
-      throw new AppError("Captcha verification failed. Please try again.");
-    }
+      const captchaData = await createEnterpriseAssessment(
+        token,
+        "forgot_password"
+      );
+      if (!captchaData || captchaData.score < 0.5) {
+        throw new AppError("Captcha verification failed. Please try again.");
+      }
 
-    // Optional: where Firebase should redirect after the user finishes reset flow
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
-    const actionCodeSettings = appUrl
-      ? { url: `${appUrl}/login?reset=1`, handleCodeInApp: false }
-      : undefined;
+      // Optional: where Firebase should redirect after the user finishes reset flow
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+      const actionCodeSettings = appUrl
+        ? { url: `${appUrl}/login?reset=1`, handleCodeInApp: false }
+        : undefined;
 
-    try {
-      await sendPasswordResetEmail(authFirebase, email, actionCodeSettings);
-      // NOTE: Do not reveal whether the email exists.
-    } catch (err: any) {
-      // Avoid user enumeration; swallow 'user-not-found'
-      if (err?.code === "auth/user-not-found") return;
-      // Surface a generic message to the UI
-      throw new Error("Unable to send reset link. Please try again.");
-    }
-  }, []);
+      try {
+        await sendPasswordResetEmail(authFirebase, email, actionCodeSettings);
+        // NOTE: Do not reveal whether the email exists.
+      } catch (err: any) {
+        // Avoid user enumeration; swallow 'user-not-found'
+        if (err?.code === "auth/user-not-found") return;
+        // Surface a generic message to the UI
+        throw new Error("Unable to send reset link. Please try again.");
+      }
+    },
+    []
+  );
 
   const authContextValue = useMemo(
     () => ({
       user,
       role,
       isAdmin,
+      isBroker,
       signIn,
       logOut,
       loading,
       isOnboarded,
       resetPassword,
     }),
-    [user, role, isAdmin, signIn, logOut, loading, isOnboarded, resetPassword]
+    [
+      user,
+      role,
+      isAdmin,
+      isBroker,
+      signIn,
+      logOut,
+      loading,
+      isOnboarded,
+      resetPassword,
+    ]
   );
 
-  return <AuthContext.Provider value={authContextValue}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={authContextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

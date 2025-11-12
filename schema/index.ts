@@ -20,8 +20,8 @@ export const genderTypes = () => {
   }));
 };
 
-export const dateOfBirthSchema = z
-  .date({ error: "Required" })
+export const dateOfBirthSchema = z.coerce
+  .date<Date>()
   .refine((date) => date <= new Date(), {
     message: "Date cannot be in the future",
   });

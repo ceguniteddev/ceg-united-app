@@ -45,6 +45,7 @@ const RegistrationPage = () => {
       isOnboarded: false,
       registrationDate: new Date(),
       denefitsSignedUp: false,
+      isBrokerInvite: false,
     };
     await recordRegistration({ token, values });
   };
