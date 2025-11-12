@@ -51,7 +51,13 @@ export const metadata: Metadata = {
   title: "User Profile",
 };
 
-const ClientData = ({ user }: { user: UserWithId }) => {
+const ClientData = ({
+  user,
+  isBrokerView,
+}: {
+  user: UserWithId;
+  isBrokerView?: boolean;
+}) => {
   if (!user) {
     return <EmptyState title="User not found" description="" />;
   }
@@ -68,12 +74,14 @@ const ClientData = ({ user }: { user: UserWithId }) => {
           <h1 className="text-2xl font-semibold tracking-tight">
             Personal Information
           </h1>
-          <DenefitsContract user={user} />
+          {!isBrokerView && <DenefitsContract user={user} />}
         </header>
-        <header className="mb-6 flex items-center justify-between">
-          <RefreshCRSData userId={user.id} />
-          <StatusPicker user={user} />
-        </header>
+        {!isBrokerView && (
+          <header className="mb-6 flex items-center justify-between">
+            <RefreshCRSData userId={user.id} />
+            <StatusPicker user={user} />
+          </header>
+        )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Info label="Name" value={name} />

@@ -12,9 +12,12 @@ const PUBLIC_ROUTES = new Set<string>([
   "/api/auth/login",
   "/api/register",
   "/api/auth/verify-session",
+  "/api/broker/validate-token",
+  "/api/broker/register",
 ]);
 const CLIENT_HOME = "/overview";
 const ADMIN_HOME = "/admin/home";
+const BROKER_HOME = "/broker/home";
 
 function isPublic(pathname: string) {
   // allow exact public pages and their subpaths (if you add any)
@@ -29,6 +32,10 @@ function isAdminRoute(pathname: string) {
 
 function isClientRoute(pathname: string) {
   return pathname.startsWith("/overview");
+}
+
+function isBrokerRoute(pathname: string) {
+  return pathname.startsWith("/broker");
 }
 
 export async function proxy(req: NextRequest) {
@@ -76,7 +83,7 @@ export async function proxy(req: NextRequest) {
   }
 
   // 4) Token present → verify + find role
-  let role: "Admin" | "IT" | "Staff" | "Client" | null = null;
+  let role: "Admin" | "IT" | "Staff" | "Client" | "Broker" | null = null;
 
   try {
     // Use the already verified session instead of verifying again
@@ -99,7 +106,9 @@ export async function proxy(req: NextRequest) {
   // 5) Role-based routing
   // Hit root → send to proper home
   if (pathname === "/") {
-    const dest = role === "Client" ? CLIENT_HOME : ADMIN_HOME;
+    let dest = CLIENT_HOME;
+    if (role === "Broker") dest = BROKER_HOME;
+    else if (role !== "Client") dest = ADMIN_HOME;
     return NextResponse.redirect(new URL(dest, origin));
   }
 
@@ -115,9 +124,21 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL(CLIENT_HOME, origin));
   }
 
+  // Brokers cannot access /admin/*
+  if (isAdminRoute(pathname) && role === "Broker") {
+    return NextResponse.redirect(new URL(BROKER_HOME, origin));
+  }
+
   // Admins/Staff/IT shouldn't live on client-only pages
   if (isClientRoute(pathname) && role !== "Client") {
-    return NextResponse.redirect(new URL(ADMIN_HOME, origin));
+    const dest = role === "Broker" ? BROKER_HOME : ADMIN_HOME;
+    return NextResponse.redirect(new URL(dest, origin));
+  }
+
+  // Admins/Staff/IT/Clients shouldn't access broker pages
+  if (isBrokerRoute(pathname) && role !== "Broker") {
+    const dest = role === "Client" ? CLIENT_HOME : ADMIN_HOME;
+    return NextResponse.redirect(new URL(dest, origin));
   }
 
   // Otherwise, allow
@@ -136,6 +157,7 @@ export const config = {
     "/support-service/:path*",
     "/overview/:path*", // client area
     "/admin/:path*", // admin area
+    "/broker/:path*", // broker area
     "/api/:path*", // api guarding
   ],
 };

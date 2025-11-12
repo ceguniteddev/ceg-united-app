@@ -57,22 +57,9 @@ export const registrationSchema = z.object({
   isOnboarded: z.boolean().optional(),
   registrationDate: z.date().optional(),
   ssn: ssnSchema,
-  // addressStreet: z.string().min(1, { error: "Required" }),
-  // addressCity: z.string().min(1, { error: "Required" }),
-  // addressState: z.string().min(1, { error: "Required" }),
-  // addressPostal: z
-  //   .string()
-  //   .trim()
-  //   .nonempty({ message: "Required" })
-  //   .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" }),
   activeStatus: UserActiveStatusEnum.optional(),
   denefitsSignedUp: z.boolean().optional(),
-
-  // personalIncome: z.coerce.number<number>({ error: "Requires a number value" }).optional(),
-  // frequencyOfIncome: z.string().optional(),
-  // paymentType: z.string().optional(),
-  // businessGross: z.coerce.number<number>({ error: "Requires a number value" }).optional(),
-  // businessNet: z.coerce.number<number>({ error: "Requires a number value" }).optional(),
+  isBrokerInvite: z.boolean().optional(),
 });
 
 export const UserFundMapStatus = z.enum(["New", "Processing"]);

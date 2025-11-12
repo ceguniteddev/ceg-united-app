@@ -65,7 +65,15 @@ export const getUserById = async (id: string): Promise<User | null> => {
   return { id: userDoc.id, ...normalizeAllDates(user) } as User;
 };
 
-export const registerUser = async (value: User) => {
+export const registerUser = async ({
+  value,
+  isBrokerRegistration,
+  brokerName,
+}: {
+  value: User;
+  isBrokerRegistration?: boolean;
+  brokerName?: string;
+}) => {
   const userRecord = await getUserRecordByEmail(value.email);
 
   if (userRecord) {
@@ -95,8 +103,17 @@ export const registerUser = async (value: User) => {
 
   const link = await authAdmin.generateEmailVerificationLink(value.email);
 
-  const requestBody = getVerifyEmailBody(link);
-
+  let requestBody = getVerifyEmailBody(link);
+  if (isBrokerRegistration && brokerName) {
+    requestBody = getBrokerInvitationToClientBody({
+      clientName: `${value.firstName} ${value.lastName}`,
+      email: value.email,
+      temporaryPassword: value.password,
+      loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
+      brokerName: brokerName,
+      verificationLink: link,
+    });
+  }
   await sendMail({
     emailTo: value.email,
     subject: "Verify Email",
@@ -106,7 +123,7 @@ export const registerUser = async (value: User) => {
   const registrationBody = getNewRegistrationBody(value);
 
   await sendMail({
-    emailTo: "contact@cegunited.com",
+    emailTo: process.env.NEW_REGISTRATION_EMAIL_NOTIF!,
     subject: `New Registration - ${value.firstName} ${value.lastName}`,
     bodyHTML: registrationBody,
   });
@@ -134,6 +151,98 @@ const getVerifyEmailBody = (link: string) => {
 </p>
 
 <p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#6b7280; margin:12px 0 0;">Thanks, <br />CEG United LLC team</p>`;
+};
+
+const getBrokerInvitationToClientBody = ({
+  clientName,
+  brokerName,
+  email,
+  temporaryPassword,
+  loginUrl,
+  verificationLink,
+}: {
+  clientName: string;
+  brokerName: string;
+  email: string;
+  temporaryPassword: string;
+  loginUrl: string;
+  verificationLink: string;
+}) => {
+  return `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; padding: 25px;">
+    <h2 style="margin-top: 0; color: #333333; border-bottom: 2px solid #eeeeee; padding-bottom: 10px;">
+        Welcome to CEG United LLC
+    </h2>
+    
+    <p style="color: #555555; font-size: 16px; line-height: 1.5em; margin: 0 0 16px 0;">
+        Hello ${clientName},
+    </p>
+    
+    <p style="color: #555555; font-size: 16px; line-height: 1.5em; margin: 0 0 16px 0;">
+        Your broker, <strong>${brokerName}</strong>, has created an account for you on the CEG United LLC platform. 
+        You can now access our financial services and funding application tools.
+    </p>
+    
+    <div style="background-color: #f9fafb; border-left: 4px solid #2563eb; padding: 16px; margin: 20px 0;">
+        <h3 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px;">Your Login Credentials</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-size: 14px; width: 140px;">
+                    <strong>Email:</strong>
+                </td>
+                <td style="padding: 8px 0; color: #111827; font-size: 14px; font-family: 'Courier New', monospace;">
+                    ${email}
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">
+                    <strong>Temporary Password:</strong>
+                </td>
+                <td style="padding: 8px 0; color: #111827; font-size: 14px; font-family: 'Courier New', monospace; background-color: #fef3c7; padding: 4px 8px; border-radius: 4px;">
+                    ${temporaryPassword}
+                </td>
+            </tr>
+        </table>
+    </div>
+    
+    <p style="color: #dc2626; font-size: 14px; line-height: 1.5em; margin: 16px 0; padding: 12px; background-color: #fef2f2; border-radius: 6px;">
+        ⚠️ <strong>Important:</strong> Please verify your email and change your password immediately after logging in for security purposes.
+    </p>
+    
+    <div style="margin: 24px 0; text-align: center;">
+        <a href="${verificationLink}" target="_blank" rel="noopener noreferrer"
+           style="display:inline-block; background:#10b981; color:#ffffff; text-decoration:none; font-weight:600; font-size:16px; padding:12px 24px; border-radius:8px; margin-right: 12px;">
+            Verify Email
+        </a>
+        <a href="${loginUrl}" target="_blank" rel="noopener noreferrer"
+           style="display:inline-block; background:#2563eb; color:#ffffff; text-decoration:none; font-weight:600; font-size:16px; padding:12px 24px; border-radius:8px;">
+            Login to Your Account
+        </a>
+    </div>
+    
+    <div style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 20px;">
+        <h3 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px;">Next Steps:</h3>
+        <ol style="color: #555555; font-size: 14px; line-height: 1.8em; padding-left: 20px; margin: 0;">
+            <li>Click the "Verify Email" button above to confirm your email address</li>
+            <li>Click "Login to Your Account" or visit the platform</li>
+            <li>Sign in with your email and temporary password</li>
+            <li>Change your password in account settings</li>
+            <li>Complete your profile information</li>
+            <li>Start exploring funding opportunities</li>
+        </ol>
+    </div>
+    
+    <p style="color: #6b7280; font-size: 13px; line-height: 1.6em; margin: 24px 0 0; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        If you have any questions or need assistance, please contact your broker <strong>${brokerName}</strong> 
+        or reach out to our support team at <a href="mailto:contact@cegunited.com" style="color: #2563eb;">contact@cegunited.com</a>.
+    </p>
+    
+    <p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#6b7280; margin:16px 0 0;">
+        Best regards,<br />
+        <strong>CEG United LLC Team</strong>
+    </p>
+  </div>
+  `;
 };
 
 const getNewRegistrationBody = (value: User) => {
@@ -341,12 +450,15 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
         sessionCookie,
         true
       );
+
+      const userData = await getUserById(decoded.uid);
+
       return {
         uid: decoded.uid,
         email: decoded.email ?? null,
         name: decoded.name ?? null,
         picture: decoded.picture ?? null,
-        role: (decoded as any).role ?? null,
+        role: userData?.role ?? "Client",
         admin: !!(decoded as any).admin,
         token: decoded,
       };

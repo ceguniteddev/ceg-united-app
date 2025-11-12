@@ -1,0 +1,323 @@
+import { firestoreAdmin } from "@/lib/fireabase-admin";
+import {
+  BROKER_COLLECTION,
+  BROKER_INVITATION,
+  BROKER_CLIENT_MAPPING,
+  BROKER_COMMISSION,
+  USER_FUNDING_APPLICATION,
+} from "@/constant/collection-name";
+import {
+  BrokerRegistration,
+  BrokerInvitation,
+  BrokerClientMapping,
+  BrokerCommission,
+  BrokerStatistics,
+} from "@/schema/broker";
+import crypto from "crypto";
+import { normalizeAllDates } from "@/lib/date-parser";
+
+const db = firestoreAdmin();
+
+// Generate unique referral code
+export const generateReferralCode = async (): Promise<string> => {
+  const code = crypto.randomBytes(4).toString("hex").toUpperCase();
+  // Check if code already exists
+  const existing = await db
+    .collection(BROKER_COLLECTION)
+    .where("referralCode", "==", code)
+    .get();
+
+  if (!existing.empty) {
+    return generateReferralCode(); // Recursively generate new code
+  }
+
+  return code;
+};
+
+// Create broker invitation
+export const createBrokerInvitation = async (
+  email: string,
+  invitedBy: string,
+  invitedByName: string
+): Promise<string> => {
+  // Check if invitation already exists for this email
+  const existingInvitations = await db
+    .collection(BROKER_INVITATION)
+    .where("email", "==", email)
+    .where("status", "==", "Pending")
+    .get();
+
+  if (!existingInvitations.empty) {
+    throw new Error("Active invitation already exists for this email");
+  }
+
+  // Check if user already exists as broker
+  const existingBroker = await db
+    .collection(BROKER_COLLECTION)
+    .where("email", "==", email)
+    .get();
+
+  if (!existingBroker.empty) {
+    throw new Error("Broker with this email already exists");
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const invitation: BrokerInvitation = {
+    email,
+    invitedBy,
+    invitedByName,
+    token,
+    status: "Pending",
+    createdAt: new Date(),
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+  };
+
+  const docRef = await db.collection(BROKER_INVITATION).add(invitation);
+  return token;
+};
+
+// Get broker invitation by token
+export const getBrokerInvitationByToken = async (
+  token: string
+): Promise<(BrokerInvitation & { id: string }) | null> => {
+  const snapshot = await db
+    .collection(BROKER_INVITATION)
+    .where("token", "==", token)
+    .where("status", "==", "Pending")
+    .get();
+
+  if (snapshot.empty) {
+    console.log("Invalid token or expired token");
+    return null;
+  }
+
+  const doc = snapshot.docs[0];
+  const data = normalizeAllDates(doc.data()) as BrokerInvitation;
+
+  // Check if expired
+  if (data.expiresAt < new Date()) {
+    await doc.ref.update({ status: "Expired" });
+    return null;
+  }
+
+  return { ...data, id: doc.id };
+};
+
+// Accept broker invitation
+export const acceptBrokerInvitation = async (token: string): Promise<void> => {
+  const invitation = await getBrokerInvitationByToken(token);
+  if (!invitation) {
+    throw new Error("Invalid or expired invitation");
+  }
+
+  await db.collection(BROKER_INVITATION).doc(invitation.id).update({
+    status: "Accepted",
+    acceptedAt: new Date(),
+  });
+};
+
+// Create broker profile
+export const createBroker = async (
+  brokerId: string,
+  data: BrokerRegistration
+): Promise<void> => {
+  const referralCode = await generateReferralCode();
+  await db
+    .collection(BROKER_COLLECTION)
+    .doc(brokerId)
+    .set({
+      ...data,
+      referralCode,
+      registrationDate: new Date(),
+    });
+};
+
+// Get broker by ID
+export const getBrokerById = async (
+  brokerId: string
+): Promise<BrokerRegistration | null> => {
+  const doc = await db.collection(BROKER_COLLECTION).doc(brokerId).get();
+
+  if (!doc.exists) {
+    return null;
+  }
+
+  return doc.data() as BrokerRegistration;
+};
+
+// Link client to broker
+export const linkClientToBroker = async ({
+  brokerId,
+  clientId,
+  clientEmail,
+  clientName,
+  createdBy = "Broker",
+}: {
+  brokerId: string;
+  clientId: string;
+  clientEmail: string;
+  clientName: string;
+  createdBy: "Broker" | "Client";
+}): Promise<void> => {
+  // Check if mapping already exists
+  const existingMapping = await db
+    .collection(BROKER_CLIENT_MAPPING)
+    .where("brokerId", "==", brokerId)
+    .where("clientId", "==", clientId)
+    .get();
+
+  if (!existingMapping.empty) {
+    return; // Already linked
+  }
+
+  const mapping: BrokerClientMapping = {
+    brokerId,
+    clientId,
+    clientEmail,
+    clientName,
+    createdAt: new Date(),
+    createdBy,
+    status: "Active",
+  };
+
+  await db.collection(BROKER_CLIENT_MAPPING).add(mapping);
+};
+
+// Get broker's clients
+export const getBrokerClients = async (
+  brokerId: string
+): Promise<BrokerClientMapping[]> => {
+  const snapshot = await db
+    .collection(BROKER_CLIENT_MAPPING)
+    .where("brokerId", "==", brokerId)
+    .where("status", "==", "Active")
+    .orderBy("createdAt", "desc")
+    .get();
+
+  return snapshot.docs.map(
+    (doc) => normalizeAllDates(doc.data()) as BrokerClientMapping
+  );
+};
+
+// Create commission record
+export const createCommission = async (
+  data: Omit<BrokerCommission, "createdAt">
+): Promise<void> => {
+  const commission: BrokerCommission = {
+    ...data,
+    createdAt: new Date(),
+  };
+
+  await db.collection(BROKER_COMMISSION).add(commission);
+};
+
+// Get broker commissions
+export const getBrokerCommissions = async (
+  brokerId: string,
+  status?: "Pending" | "Approved" | "Paid"
+): Promise<BrokerCommission[]> => {
+  let query = db
+    .collection(BROKER_COMMISSION)
+    .where("brokerId", "==", brokerId);
+
+  if (status) {
+    query = query.where("status", "==", status);
+  }
+
+  const snapshot = await query.orderBy("createdAt", "desc").get();
+
+  return snapshot.docs.map((doc) => doc.data() as BrokerCommission);
+};
+
+// Get broker statistics
+export const getBrokerStatistics = async (
+  brokerId: string
+): Promise<BrokerStatistics> => {
+  const clients = await getBrokerClients(brokerId);
+  const clientIds = clients.map((c) => c.clientId);
+
+  let totalSubmittedApplications = 0;
+  let totalApprovedApplications = 0;
+  let totalRejectedApplications = 0;
+  let totalFundedAmount = 0;
+
+  if (clientIds.length > 0) {
+    // Get all applications for broker's clients
+    const applications = await db
+      .collection(USER_FUNDING_APPLICATION)
+      .where("userId", "in", clientIds.slice(0, 10)) // Firestore limit
+      .get();
+
+    applications.docs.forEach((doc) => {
+      const data = doc.data();
+      totalSubmittedApplications++;
+
+      if (data.status === "Approved" || data.status === "Funded") {
+        totalApprovedApplications++;
+      }
+
+      if (data.status === "Denied" || data.status === "Rejected") {
+        totalRejectedApplications++;
+      }
+
+      if (data.status === "Funded" && data.fundedAmount) {
+        totalFundedAmount += data.fundedAmount;
+      }
+    });
+  }
+
+  // Get commission data
+  const commissions = await getBrokerCommissions(brokerId);
+
+  const totalCommissionEarned = commissions.reduce(
+    (sum, c) => sum + c.commissionAmount,
+    0
+  );
+  const totalCommissionPending = commissions
+    .filter((c) => c.status === "Pending")
+    .reduce((sum, c) => sum + c.commissionAmount, 0);
+  const totalCommissionPaid = commissions
+    .filter((c) => c.status === "Paid")
+    .reduce((sum, c) => sum + c.commissionAmount, 0);
+
+  return {
+    totalClients: clients.length,
+    totalSubmittedApplications,
+    totalApprovedApplications,
+    totalRejectedApplications,
+    totalFundedAmount,
+    totalCommissionEarned,
+    totalCommissionPending,
+    totalCommissionPaid,
+  };
+};
+
+// Get all invitations (admin view)
+export const getAllBrokerInvitations = async (): Promise<
+  (BrokerInvitation & { id: string })[]
+> => {
+  const snapshot = await db
+    .collection(BROKER_INVITATION)
+    .orderBy("createdAt", "desc")
+    .get();
+
+  return snapshot.docs.map((doc) => ({
+    ...(doc.data() as BrokerInvitation),
+    id: doc.id,
+  }));
+};
+
+// Get all brokers (admin view)
+export const getAllBrokers = async (): Promise<
+  (BrokerRegistration & { id: string })[]
+> => {
+  const snapshot = await db
+    .collection(BROKER_COLLECTION)
+    .orderBy("registrationDate", "desc")
+    .get();
+
+  return snapshot.docs.map((doc) => ({
+    ...(doc.data() as BrokerRegistration),
+    id: doc.id,
+  }));
+};
