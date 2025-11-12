@@ -1,11 +1,9 @@
 "use client";
 import Spinner from "@/components/Spinner";
-import React from "react";
 import FundingList from "@/components/funding/funding-list";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
 import { useAuth } from "@/provider/AuthContext";
 import { ApprovedBankFormData } from "@/schema/bank-products";
-import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 
 const ApplyFundingList = () => {
   const { user } = useAuth();

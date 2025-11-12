@@ -1,10 +1,9 @@
 "use client";
 
 import HeaderBox from "@/components/HeaderBox";
-import React from "react";
 import ApplyFundingList from "./_funding/ApplyFundingList";
 import { useAuth } from "@/provider/AuthContext";
-import ApplyFunding from "./_funding/ApplyFunding";
+import ApplyFunding from "@/components/fundingv2/ApplyFunding";
 
 const ApplyFundingPage = () => {
   const { user } = useAuth();
@@ -18,7 +17,7 @@ const ApplyFundingPage = () => {
           title="Apply Funding"
           subtext="Manage your funding applications."
         />
-        <ApplyFunding />
+        <ApplyFunding userId={user.uid} />
       </div>
 
       <div className="space-y-6">

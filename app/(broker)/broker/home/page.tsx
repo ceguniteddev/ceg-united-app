@@ -62,12 +62,6 @@ export default function BrokerHomePage() {
             Manage your clients and track your earnings
           </p>
         </div>
-        <Link href="/broker/submit-application">
-          <Button size="lg" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Submit Application
-          </Button>
-        </Link>
       </div>
 
       {/* Statistics Cards */}
@@ -198,11 +192,11 @@ export default function BrokerHomePage() {
               <div className="text-center py-8">
                 <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  No clients yet. Start by submitting an application!
+                  No clients yet. Add them now!
                 </p>
                 <Link href="/broker/submit-application">
                   <Button size="sm" className="mt-4">
-                    Submit Application
+                    Add Client
                   </Button>
                 </Link>
               </div>

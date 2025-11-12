@@ -64,22 +64,22 @@ export const topCategoryStyles = {
 export const sidebarLinks = [
   {
     imgURL: "/icons/home.svg",
-    route: "/overview",
+    route: "/client/home",
     label: "Home",
   },
   {
     imgURL: "/icons/money-send.svg",
-    route: "/my-funding",
+    route: "/client/my-funding",
     label: "My Funding",
   },
   {
     imgURL: "/icons/credit-card.svg",
-    route: "/my-accounts",
+    route: "/client/my-accounts",
     label: "My Accounts",
   },
   {
     imgURL: "/icons/building-2.svg",
-    route: "/my-business",
+    route: "/client/my-business",
     label: "My Business",
   },
   // {
@@ -89,7 +89,7 @@ export const sidebarLinks = [
   // },
   {
     imgURL: "/icons/dollar-circle.svg",
-    route: "/my-credit",
+    route: "/client/my-credit",
     label: "My Credit",
   },
   // {
@@ -99,12 +99,12 @@ export const sidebarLinks = [
   // },
   {
     imgURL: "/icons/files.svg",
-    route: "/my-documents",
+    route: "/client/my-documents",
     label: "My Documents",
   },
   {
     imgURL: "/icons/book-open-text.svg",
-    route: "/my-learning",
+    route: "/client/my-learning",
     label: "My Learning",
   },
   // {
@@ -119,7 +119,7 @@ export const sidebarLinks = [
   // },
   {
     imgURL: "/icons/headset.svg",
-    route: "/support-service",
+    route: "/client/support-service",
     label: "Contact Us",
   },
 ];
@@ -188,19 +188,19 @@ export const brokerSidebarLinks = [
     route: "/broker/my-funded-deals",
     label: "My Funded Deals",
   },
-  {
-    imgURL: "/icons/money-send.svg",
-    route: "/broker/submit-application",
-    label: "Submit Application",
-  },
-  {
-    imgURL: "/icons/bell.svg",
-    route: "/whats-new",
-    label: "What's New",
-  },
+  // {
+  //   imgURL: "/icons/money-send.svg",
+  //   route: "/broker/submit-application",
+  //   label: "Submit Application",
+  // },
+  // {
+  //   imgURL: "/icons/bell.svg",
+  //   route: "/whats-new",
+  //   label: "What's New",
+  // },
   {
     imgURL: "/icons/headset.svg",
-    route: "/support-service",
+    route: "/broker/support-service",
     label: "Contact Us",
   },
 ];

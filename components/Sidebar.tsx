@@ -65,7 +65,7 @@ const Sidebar = () => {
     <section className="sidebar">
       <nav className="flex flex-col">
         <Link
-          href="/overview"
+          href="/client/home"
           className="mb-3 cursor-pointer flex items-center justify-center"
         >
           <Image
@@ -78,13 +78,13 @@ const Sidebar = () => {
         {sidebarLinks
           .filter((item) => {
             // If Plaid is not ready, filter out (remove) the "My Accounts" link
-            if (!isPlaidProdReady && item.route === "/my-accounts") {
+            if (!isPlaidProdReady && item.route === "/client/my-accounts") {
               return false;
             }
 
             // If user hasn't paid denefits contract, filter out "My Learning" link
             if (
-              item.route === "/my-learning" &&
+              item.route === "/client/my-learning" &&
               (!denefitsContract || denefitsContract.length === 0)
             ) {
               return false;

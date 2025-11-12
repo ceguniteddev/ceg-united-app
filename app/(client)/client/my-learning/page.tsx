@@ -135,7 +135,7 @@ const MyLearningPage = () => {
           const isInProgress = progressPercentage > 0 && !isCompleted;
 
           return (
-            <Link key={course.id} href={`/my-learning/${course.id}`}>
+            <Link key={course.id} href={`/client/my-learning/${course.id}`}>
               <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer h-full">
                 <div className="relative w-full h-48 bg-gray-200">
                   {course.imageUrl ? (

@@ -16,6 +16,7 @@ import { useUserQuery } from "@/hooks/user";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import Spinner from "@/components/Spinner";
 import { useMemo } from "react";
+import ApplyFunding from "@/components/fundingv2/ApplyFunding";
 
 const ClientProfilePage = () => {
   const params = useParams();
@@ -72,7 +73,7 @@ const ClientProfilePage = () => {
       </TabsContent>
 
       <TabsContent value="dashboard" className="w-full">
-        <AdminViewUserProfile userId={userId} adminView={false} />
+        <AdminViewUserProfile userId={userId} adminView={true} />
       </TabsContent>
 
       <TabsContent value="documents" className="w-full">
@@ -88,6 +89,9 @@ const ClientProfilePage = () => {
       </TabsContent>
 
       <TabsContent value="applied-funding" className="w-full">
+        <div className="flex flex-row justify-end">
+          <ApplyFunding userId={userId} />
+        </div>
         <ClientAppliedFunding userId={userId} />
       </TabsContent>
     </Tabs>

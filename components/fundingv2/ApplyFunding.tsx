@@ -13,8 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import ApplyFundingSuccessful from "./ApplyFundingSuccessful";
 import { cn } from "@/lib/utils";
-const ApplyFunding = () => {
-  const { user } = useAuth();
+const ApplyFunding = ({ userId }: { userId: string }) => {
   const [open, setOpen] = React.useState(false);
 
   const [congratsOpen, setCongratsOpen] = React.useState(false);
@@ -30,7 +29,7 @@ const ApplyFunding = () => {
       >
         <ApplyFundingForm
           setOpen={setOpen}
-          userId={user?.uid || ""}
+          userId={userId || ""}
           setCongratsOpen={setCongratsOpen}
         />
       </ResponsiveDialog>
