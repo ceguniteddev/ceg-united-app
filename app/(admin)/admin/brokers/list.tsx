@@ -25,7 +25,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, ViewIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -123,8 +124,16 @@ const BrokersList = () => {
       },
     },
     {
+      id: "view",
+      header: "View",
+      cell: ({ row }) => {
+        return <ViewButton brokerId={row.original.id} />;
+      },
+      size: 100,
+    },
+    {
       id: "actions",
-      header: "Actions",
+      header: "Status",
       cell: ({ row }) => {
         return <StatusPicker broker={row.original} />;
       },
@@ -260,6 +269,22 @@ const BrokersList = () => {
 };
 
 export default BrokersList;
+
+const ViewButton = ({ brokerId }: { brokerId: string }) => {
+  const router = useRouter();
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => router.push(`/admin/brokers/${brokerId}`)}
+      className="cursor-pointer"
+    >
+      <ViewIcon className="h-4 w-4 mr-2" />
+      View
+    </Button>
+  );
+};
 
 type StatusKey = "Active" | "Paused" | "InActive";
 
