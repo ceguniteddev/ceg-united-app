@@ -351,14 +351,39 @@ export const getAllBrokers = async (): Promise<
   (BrokerRegistration & { id: string })[]
 > => {
   const snapshot = await db
-    .collection(BROKER_COLLECTION)
-    .orderBy("registrationDate", "desc")
+    .collection(USER_COLLECTION)
+    .where("role", "==", "Broker")
+    // .orderBy("registrationDate", "desc")
     .get();
 
   return snapshot.docs.map((doc) => ({
-    ...(doc.data() as BrokerRegistration),
+    ...(normalizeAllDates(doc.data()) as BrokerRegistration),
     id: doc.id,
   }));
+};
+
+// Update broker status
+export const updateBrokerStatus = async ({
+  id,
+  status,
+}: {
+  id: string;
+  status: "Active" | "InActive" | "Paused";
+}): Promise<void> => {
+  const brokerRef = db.collection(USER_COLLECTION).doc(id);
+  const brokerDoc = await brokerRef.get();
+
+  if (!brokerDoc.exists) {
+    throw new Error("Broker not found");
+  }
+
+  // Verify it's actually a broker
+  const brokerData = brokerDoc.data();
+  if (brokerData?.role !== "Broker") {
+    throw new Error("User is not a broker");
+  }
+
+  await brokerRef.update({ activeStatus: status });
 };
 
 // Get all mapped funding products for broker's clients

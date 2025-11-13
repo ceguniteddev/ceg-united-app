@@ -136,6 +136,11 @@ export const adminSidebarLinks = [
     label: "Clients",
   },
   {
+    imgURL: "/icons/handshake.svg",
+    route: "/admin/brokers",
+    label: "Brokers",
+  },
+  {
     imgURL: "/icons/credit-card.svg",
     route: "/admin/funding-products",
     label: "Products",
@@ -229,11 +234,11 @@ export const settingsSidebarAdmin = [
   //   route: "/settings/users",
   //   label: "Users",
   // },
-  {
-    imgURL: "/icons/handshake.svg",
-    route: "/settings/broker",
-    label: "Broker Invitations",
-  },
+  // {
+  //   imgURL: "/icons/handshake.svg",
+  //   route: "/settings/broker",
+  //   label: "Broker Invitations",
+  // },
 ];
 
 export const transactionCategoryStyles = {
