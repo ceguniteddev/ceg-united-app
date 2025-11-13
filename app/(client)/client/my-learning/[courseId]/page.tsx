@@ -149,7 +149,7 @@ const CourseDetailPage = () => {
           <p className="text-muted-foreground mb-4">
             You don&apos;t have access to this course or it doesn&apos;t exist.
           </p>
-          <Link href="/my-learning">
+          <Link href="/client/my-learning">
             <Button>
               <ChevronLeft className="w-4 h-4 mr-2" />
               Back to My Learning
@@ -174,7 +174,7 @@ const CourseDetailPage = () => {
     <div className="transactions">
       {/* Header */}
       <div className="mb-6">
-        <Link href="/my-learning">
+        <Link href="/client/my-learning">
           <Button variant="ghost" className="mb-4">
             <ChevronLeft className="w-4 h-4 mr-2" />
             Back to My Learning

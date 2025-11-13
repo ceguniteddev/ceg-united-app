@@ -977,11 +977,13 @@ export const declineAppliedBankProduct = async ({
   // bankProductId,
   // userId,
   fundMappingApprovedId,
+  declineReason,
 }: {
   referenceNumber: string;
   // bankProductId: string;
   // userId: string;
   fundMappingApprovedId: string;
+  declineReason: string;
 }): Promise<CommonResponse> => {
   try {
     // 1. Return structured errors for invalid inputs
@@ -1001,6 +1003,14 @@ export const declineAppliedBankProduct = async ({
       };
     }
 
+    if (!declineReason) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Decline reason is required.",
+      };
+    }
+
     const db = firestoreAdmin();
     const collectionRef = db.collection(
       `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
@@ -1011,6 +1021,7 @@ export const declineAppliedBankProduct = async ({
         clientApplicationStatus: "Declined",
         approvedAmount: 0,
         approvedRemarks: "",
+        declineReason,
       },
       { merge: true }
     );

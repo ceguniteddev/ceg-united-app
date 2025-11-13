@@ -62,12 +62,6 @@ export default function BrokerHomePage() {
             Manage your clients and track your earnings
           </p>
         </div>
-        <Link href="/broker/submit-application">
-          <Button size="lg" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Submit Application
-          </Button>
-        </Link>
       </div>
 
       {/* Statistics Cards */}
@@ -198,11 +192,11 @@ export default function BrokerHomePage() {
               <div className="text-center py-8">
                 <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  No clients yet. Start by submitting an application!
+                  No clients yet. Add them now!
                 </p>
                 <Link href="/broker/submit-application">
                   <Button size="sm" className="mt-4">
-                    Submit Application
+                    Add Client
                   </Button>
                 </Link>
               </div>
@@ -219,55 +213,74 @@ export default function BrokerHomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-lg border">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-lg border">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-gray-600" />
                   </div>
                   <div>
-                    <p className="font-medium">Approved Applications</p>
-                    <p className="text-sm text-muted-foreground">
-                      Successfully approved
-                    </p>
+                    <p className="font-medium text-sm">Not Applied</p>
                   </div>
                 </div>
-                <div className="text-2xl font-bold">
-                  {statistics?.totalApprovedApplications || 0}
+                <div className="text-xl font-bold">
+                  {statistics?.notAppliedCount || 0}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 rounded-lg border">
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Sent to Lender</p>
+                  </div>
+                </div>
+                <div className="text-xl font-bold">
+                  {statistics?.sentToLenderCount || 0}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg border">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
                     <XCircle className="h-5 w-5 text-red-600" />
                   </div>
                   <div>
-                    <p className="font-medium">Rejected Applications</p>
-                    <p className="text-sm text-muted-foreground">
-                      Not approved
-                    </p>
+                    <p className="font-medium text-sm">Declined</p>
                   </div>
                 </div>
-                <div className="text-2xl font-bold">
-                  {statistics?.totalRejectedApplications || 0}
+                <div className="text-xl font-bold">
+                  {statistics?.declinedCount || 0}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 rounded-lg border">
+              <div className="flex items-center justify-between p-3 rounded-lg border">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
-                    <TrendingUp className="h-5 w-5 text-amber-600" />
+                  <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="font-medium">Total Submitted</p>
-                    <p className="text-sm text-muted-foreground">
-                      All applications
-                    </p>
+                    <p className="font-medium text-sm">Approved</p>
                   </div>
                 </div>
-                <div className="text-2xl font-bold">
-                  {statistics?.totalSubmittedApplications || 0}
+                <div className="text-xl font-bold">
+                  {statistics?.approvedCount || 0}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <DollarSign className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Funded</p>
+                  </div>
+                </div>
+                <div className="text-xl font-bold">
+                  {statistics?.fundedCount || 0}
                 </div>
               </div>
             </div>

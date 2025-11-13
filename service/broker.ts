@@ -5,6 +5,9 @@ import {
   BROKER_CLIENT_MAPPING,
   BROKER_COMMISSION,
   USER_FUNDING_APPLICATION,
+  USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED,
+  BANK_PRODUCTS_COLLECTION,
+  USER_COLLECTION,
 } from "@/constant/collection-name";
 import {
   BrokerRegistration,
@@ -15,6 +18,7 @@ import {
 } from "@/schema/broker";
 import crypto from "crypto";
 import { normalizeAllDates } from "@/lib/date-parser";
+import { ApprovedBankFormData } from "@/schema/bank-products";
 
 const db = firestoreAdmin();
 
@@ -240,30 +244,60 @@ export const getBrokerStatistics = async (
   let totalApprovedApplications = 0;
   let totalRejectedApplications = 0;
   let totalFundedAmount = 0;
+  let notAppliedCount = 0;
+  let sentToLenderCount = 0;
+  let declinedCount = 0;
+  let approvedCount = 0;
+  let fundedCount = 0;
 
   if (clientIds.length > 0) {
-    // Get all applications for broker's clients
-    const applications = await db
-      .collection(USER_FUNDING_APPLICATION)
-      .where("userId", "in", clientIds.slice(0, 10)) // Firestore limit
-      .get();
+    // Process in batches to handle Firestore 'in' query limit of 10
+    for (let i = 0; i < clientIds.length; i += 10) {
+      const batch = clientIds.slice(i, i + 10);
+      const applications = await db
+        .collection(USER_FUNDING_APPLICATION)
+        .where("userId", "in", batch)
+        .get();
 
-    applications.docs.forEach((doc) => {
-      const data = doc.data();
-      totalSubmittedApplications++;
+      // For each application, get the fund mappings
+      for (const appDoc of applications.docs) {
+        const referenceNumber = appDoc.id;
+        const fundMappingsSnapshot = await db
+          .collection(USER_FUNDING_APPLICATION)
+          .doc(referenceNumber)
+          .collection(USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED)
+          .get();
 
-      if (data.status === "Approved" || data.status === "Funded") {
-        totalApprovedApplications++;
+        fundMappingsSnapshot.docs.forEach((mappingDoc) => {
+          const mappingData = normalizeAllDates(
+            mappingDoc.data()
+          ) as ApprovedBankFormData;
+          const status = mappingData.clientApplicationStatus;
+
+          totalSubmittedApplications++;
+
+          // Count by status
+          if (status === "Not Applied") notAppliedCount++;
+          else if (status === "Sent to Lender") sentToLenderCount++;
+          else if (status === "Declined") declinedCount++;
+          else if (status === "Approved") approvedCount++;
+          else if (status === "Funded") fundedCount++;
+
+          // Legacy counts
+          if (status === "Approved" || status === "Funded") {
+            totalApprovedApplications++;
+          }
+
+          if (status === "Declined") {
+            totalRejectedApplications++;
+          }
+
+          if (status === "Funded" && mappingData.fundedAmount) {
+            totalFundedAmount += mappingData.fundedAmount;
+          }
+        });
       }
-
-      if (data.status === "Denied" || data.status === "Rejected") {
-        totalRejectedApplications++;
-      }
-
-      if (data.status === "Funded" && data.fundedAmount) {
-        totalFundedAmount += data.fundedAmount;
-      }
-    });
+    }
   }
 
   // Get commission data
@@ -289,6 +323,11 @@ export const getBrokerStatistics = async (
     totalCommissionEarned,
     totalCommissionPending,
     totalCommissionPaid,
+    notAppliedCount,
+    sentToLenderCount,
+    declinedCount,
+    approvedCount,
+    fundedCount,
   };
 };
 
@@ -320,4 +359,97 @@ export const getAllBrokers = async (): Promise<
     ...(doc.data() as BrokerRegistration),
     id: doc.id,
   }));
+};
+
+// Get all mapped funding products for broker's clients
+export const getBrokerClientsMappedFunding = async (
+  brokerId: string
+): Promise<ApprovedBankFormData[]> => {
+  // First, get all clients for this broker
+  const clients = await getBrokerClients(brokerId);
+  const clientIds = clients.map((c) => c.clientId);
+
+  if (clientIds.length === 0) {
+    return [];
+  }
+  const results: ApprovedBankFormData[] = [];
+
+  // Process in batches of 10 (Firestore 'in' query limit)
+  for (let i = 0; i < clientIds.length; i += 10) {
+    const batch = clientIds.slice(i, i + 10);
+    // Step 1: Get all funding applications for these clients
+    const fundingApplicationsSnapshot = await db
+      .collection(USER_FUNDING_APPLICATION)
+      .where("userId", "in", batch)
+      .get();
+
+    // Step 2: For each funding application, get the fund mappings
+    for (const appDoc of fundingApplicationsSnapshot.docs) {
+      const appData = normalizeAllDates(appDoc.data());
+      const referenceNumber = appDoc.id;
+
+      if (!referenceNumber) continue;
+
+      // Query the subcollection for fund mappings
+      const fundMappingsSnapshot = await db
+        .collection(USER_FUNDING_APPLICATION)
+        .doc(referenceNumber)
+        .collection(USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED)
+        .get();
+
+      // Step 3: Process each fund mapping
+      for (const mappingDoc of fundMappingsSnapshot.docs) {
+        const mappingData = normalizeAllDates(mappingDoc.data());
+
+        // Only include if it's approved (isApproved = true)
+        // if (!mappingData.isApproved) continue;
+
+        // Fetch the bank product details
+        const bankProductSnapshot = await db
+          .collection(BANK_PRODUCTS_COLLECTION)
+          .doc(mappingData.bankProductId)
+          .get();
+
+        if (!bankProductSnapshot.exists) continue;
+
+        const bankProduct = normalizeAllDates(bankProductSnapshot.data());
+
+        // Fetch user details to get client name
+        const userSnapshot = await db
+          .collection(USER_COLLECTION)
+          .doc(appData.userId)
+          .get();
+
+        const userData = userSnapshot.exists ? userSnapshot.data() : null;
+        const clientName = userData
+          ? `${userData.firstName || ""} ${userData.lastName || ""}`.trim()
+          : "Unknown Client";
+
+        // Combine the data
+        const mappedFund: ApprovedBankFormData = {
+          ...bankProduct,
+          fundMappingApprovedId: mappingDoc.id,
+          clientApplicationStatus:
+            mappingData.clientApplicationStatus || "Not Applied",
+          adminApprovedStatus: mappingData.adminApprovedStatus,
+          referenceNumber: referenceNumber,
+          approvedAmount: mappingData.approvedAmount,
+          approvedRemarks: mappingData.approvedRemarks,
+          declineReason: mappingData.declineReason,
+          fundedAmount: mappingData.fundedAmount,
+          fundedRemarks: mappingData.fundedRemarks,
+          userId: appData.userId,
+          personalAmountFunding: appData.personalAmountFunding,
+          businessAmountFunding: appData.businessAmountFunding,
+          // Add client name and email for broker's view
+          clientName,
+          clientEmail: userData?.email || "",
+        } as any;
+
+        results.push(mappedFund);
+      }
+    }
+  }
+
+  return results;
 };

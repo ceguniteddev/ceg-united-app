@@ -2,6 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/provider/AuthContext";
 import { toast } from "sonner";
 import { BrokerStatistics } from "@/schema/broker";
+import {
+  ApprovedBankFormData,
+  ClientApplicationStatus,
+} from "@/schema/bank-products";
 
 // Get broker statistics
 export const useGetBrokerStatistics = () => {
@@ -146,4 +150,36 @@ export const useSubmitClientApplication = () => {
   });
 
   return mutation;
+};
+
+// Get all broker clients' mapped funding products
+export const useGetBrokerClientsMappedFunding = () => {
+  const { user } = useAuth();
+
+  const {
+    data: mappedFunding,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["BROKER_CLIENTS_MAPPED_FUNDING", user?.uid],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+
+      const response = await fetch(`/api/broker/${user.uid}/clients-funding`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch clients' funding products");
+      }
+
+      return await response.json();
+    },
+    enabled: !!user,
+  });
+
+  return {
+    mappedFunding: (mappedFunding || []) as ApprovedBankFormData[],
+    isLoading,
+    error,
+    refetch,
+  };
 };

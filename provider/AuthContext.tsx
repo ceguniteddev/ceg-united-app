@@ -208,7 +208,7 @@ export function AuthProvider({
         } else if (nextRole === "Broker") {
           router.push("/broker/home");
         } else {
-          router.push("/overview");
+          router.push("/client/home");
         }
       } catch (error) {
         if (error instanceof AppError) throw error;

@@ -1,12 +1,16 @@
 "use client";
 
-import { useGetBrokerClients } from "@/hooks/broker";
+import {
+  useGetBrokerClients,
+  useSubmitClientApplication,
+} from "@/hooks/broker";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,14 +24,83 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, Search, Mail, Phone, Calendar, Plus } from "lucide-react";
+import {
+  Users,
+  Search,
+  Mail,
+  Phone,
+  Calendar,
+  Plus,
+  Loader2Icon,
+  SaveIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { format } from "date-fns";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { CustomFormField } from "@/components/CustomFormField";
+import {
+  dateOfBirthSchema,
+  GenderEnum,
+  genderTypes,
+  ROLESEnum,
+} from "@/schema";
+import { Form } from "@/components/ui/form";
+import { ssnSchema } from "@/schema/registration";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
+
+// Client application schema
+const clientApplicationSchema = z.object({
+  // Client Information
+  firstName: z.string().min(1, { message: "Required" }),
+  middleName: z.string().optional(),
+  lastName: z.string().min(1, { message: "Required" }),
+  email: z.string().email().min(1, { message: "Required" }),
+  birthdate: dateOfBirthSchema,
+  gender: GenderEnum,
+  phoneNumber: z.string().min(1, { message: "Required" }),
+  role: ROLESEnum.optional(),
+  isOnboarded: z.boolean().optional(),
+  registrationDate: z.date().optional(),
+  ssn: ssnSchema,
+});
+
+type ClientApplicationForm = z.infer<typeof clientApplicationSchema>;
 
 export default function MyClientsPage() {
   const { clients, isLoading } = useGetBrokerClients();
+  const mutation = useSubmitClientApplication();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<ClientApplicationForm>({
+    resolver: zodResolver(clientApplicationSchema),
+    defaultValues: {
+      middleName: "",
+    },
+  });
+
+  const onSubmit = async (data: ClientApplicationForm) => {
+    setIsSubmitting(true);
+
+    try {
+      await mutation.mutateAsync({ ...data, password: data.email });
+      toast.success("Client registered successfully!", {
+        description:
+          "Your client will receive an invitation email to create their account.",
+      });
+      form.reset();
+      setIsModalOpen(false);
+    } catch (error) {
+      // Error handled by mutation
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const filteredClients =
     clients?.filter(
@@ -55,12 +128,14 @@ export default function MyClientsPage() {
             Manage and view all your clients
           </p>
         </div>
-        <Link href="/broker/submit-application">
-          <Button size="lg" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add New Client
-          </Button>
-        </Link>
+        <Button
+          size="lg"
+          className="gap-2"
+          onClick={() => setIsModalOpen(true)}
+        >
+          <Plus className="h-4 w-4" />
+          Add New Client
+        </Button>
       </div>
 
       {/* Search */}
@@ -103,15 +178,8 @@ export default function MyClientsPage() {
                   <TableRow key={client.clientId}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Users className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{client.clientName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            ID: {client.clientId.slice(0, 8)}...
-                          </p>
-                        </div>
+                        <Users className="h-4 w-4 text-primary" />
+                        <p className="font-medium">{client.clientName}</p>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -164,19 +232,125 @@ export default function MyClientsPage() {
             <p className="text-muted-foreground text-center max-w-md mb-6">
               {searchTerm
                 ? "Try adjusting your search criteria"
-                : "Start building your client portfolio by submitting your first application"}
+                : "Start building your client portfolio by adding your first client."}
             </p>
             {!searchTerm && (
-              <Link href="/broker/submit-application">
-                <Button size="lg" className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Submit First Application
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                className="gap-2"
+                onClick={() => setIsModalOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Register First Client
+              </Button>
             )}
           </CardContent>
         </Card>
       )}
+
+      {/* Add Client Modal */}
+      <ResponsiveDialog
+        isOpen={isModalOpen}
+        setIsOpen={setIsModalOpen}
+        title="Client Registration"
+        description="Register a new client to your portfolio"
+        className="max-w-[900px]"
+      >
+        <Card>
+          <CardContent className="pt-6">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
+                <fieldset disabled={isSubmitting}>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <CustomFormField
+                        name={"firstName"}
+                        placeholder={""}
+                        label="* First Name"
+                      />
+                      <CustomFormField
+                        name={"middleName"}
+                        placeholder={""}
+                        label="Middle Name"
+                      />
+                      <CustomFormField
+                        name={"lastName"}
+                        placeholder={""}
+                        label="* Last Name"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <CustomFormField
+                        name={"email"}
+                        type="email"
+                        placeholder=""
+                        label="* Email Address"
+                      />
+                      <CustomFormField
+                        name={"phoneNumber"}
+                        placeholder=""
+                        label="* Phone Number"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <CustomFormField
+                        name={"birthdate"}
+                        type="date-picker"
+                        placeholder=""
+                        label="* Birthdate"
+                        dateAfterHidden={new Date()}
+                      />
+                      <CustomFormField
+                        name={"gender"}
+                        type="select"
+                        placeholder=" "
+                        label="* Gender"
+                        options={genderTypes()}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <CustomFormField
+                        name={"ssn"}
+                        placeholder="xxx-xx-xxxx"
+                        label="* Social Security Number"
+                      />
+                    </div>
+                  </div>
+                </fieldset>
+              </form>
+            </Form>
+          </CardContent>
+          <CardFooter className="flex flex-col sm:flex-row gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsModalOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              onClick={form.handleSubmit(onSubmit)}
+              className="bg-green-400 hover:bg-green-500 text-black-100"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                  Registering...
+                </>
+              ) : (
+                <>
+                  <SaveIcon className="mr-2 h-4 w-4" />
+                  Register Client
+                </>
+              )}
+            </Button>
+          </CardFooter>
+        </Card>
+      </ResponsiveDialog>
     </div>
   );
 }

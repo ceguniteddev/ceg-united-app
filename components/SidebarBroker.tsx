@@ -18,7 +18,7 @@ const SidebarBroker = () => {
       <aside className="sidebar">
         <nav className="flex flex-col gap-4">
           <Link
-            href="/"
+            href="/broker/home"
             className="mb-3 cursor-pointer flex items-center gap-2"
           >
             <Image

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import CalendlyScheduler from "./CalendlyScheduler";
-import RequestCall from "./RequestCall";
+import CalendlyScheduler from "../../../../components/support-service/CalendlyScheduler";
+import RequestCall from "../../../../components/support-service/RequestCall";
 
 export default function ContactPage() {
   return (
@@ -19,13 +19,17 @@ export default function ContactPage() {
           <div className="flex flex-col gap-4">
             <RequestCall />
             <div className="rounded-2xl border bg-white p-6 text-center">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">General Phone</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                General Phone
+              </h3>
               <p className="text-gray-700 text-xl font-medium">
                 <a href="tel:+18884915131">888-491-5131</a>
               </p>
             </div>
             <div className="rounded-2xl border bg-white p-6 text-center">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">General Email</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                General Email
+              </h3>
               <p className="text-blue-600 font-medium">
                 <a href="mailto:Info@cegunited.com">Info@cegunited.com</a>
               </p>
@@ -45,7 +49,8 @@ export default function ContactPage() {
 
             <CalendlyScheduler />
             <p className="text-xs text-gray-500 mt-2">
-              After scheduling, we automatically record your booking in our system.
+              After scheduling, we automatically record your booking in our
+              system.
             </p>
           </div>
         </div>

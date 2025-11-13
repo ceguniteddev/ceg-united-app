@@ -37,7 +37,7 @@ import { ApprovedBankFormData } from "@/schema/bank-products";
 import { Button } from "./ui/button";
 import { ResponsiveDialog } from "./responsive-dialog";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
-import CalendlyScheduler from "@/app/(client)/support-service/CalendlyScheduler";
+import CalendlyScheduler from "@/components/support-service/CalendlyScheduler";
 import ApplyFundingForm from "@/components/fundingv2/ApplyFundingForm";
 
 // Register Chart.js components
@@ -650,12 +650,6 @@ export const ClientDashboard = ({
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">Business Profiles</h2>
-            {/* <Button asChild variant="outline">
-              <Link href="/my-business">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add New Business
-              </Link>
-            </Button> */}
           </div>
           {businessesWithCrsData && businessesWithCrsData.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

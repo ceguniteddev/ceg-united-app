@@ -98,7 +98,7 @@ function Search() {
         </p>
         <div className="flex justify-center pt-4">
           <Link
-            href="/my-accounts"
+            href="/client/my-accounts"
             className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-offset-gray-800"
           >
             View My Accounts

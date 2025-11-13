@@ -379,6 +379,13 @@ const approvalFormSchema = z.object({
     .optional(),
 });
 
+const declineFormSchema = z.object({
+  declineReason: z
+    .string()
+    .min(1, { error: "Decline reason is required." })
+    .max(500, { error: "Decline reason cannot exceed 500 characters." }),
+});
+
 const fundedFormSchema = z.object({
   amountFunded: z.coerce
     .number<number>({ error: "Required" })
@@ -391,10 +398,12 @@ const fundedFormSchema = z.object({
 
 // Infer the type from the schema for type safety
 type ApprovalFormValues = z.infer<typeof approvalFormSchema>;
+type DeclineFormValues = z.infer<typeof declineFormSchema>;
 type FundedFormValues = z.infer<typeof fundedFormSchema>;
 
 const AdminActionCell = ({ row }: { row: any }) => {
   const [isApproveDialogOpen, setApproveDialogOpen] = React.useState(false);
+  const [isDeclineDialogOpen, setDeclineDialogOpen] = React.useState(false);
   const [isFundedDialogOpen, setFundedDialogOpen] = React.useState(false);
 
   const {
@@ -413,6 +422,13 @@ const AdminActionCell = ({ row }: { row: any }) => {
     },
   });
 
+  const formDecline = useForm<DeclineFormValues>({
+    resolver: zodResolver(declineFormSchema),
+    defaultValues: {
+      declineReason: "",
+    },
+  });
+
   const formFunded = useForm<FundedFormValues>({
     resolver: zodResolver(fundedFormSchema),
     defaultValues: {
@@ -420,11 +436,14 @@ const AdminActionCell = ({ row }: { row: any }) => {
     },
   });
 
-  const handleDeclineClickCapture = async () => {
+  const onDeclineSubmit = async (data: DeclineFormValues) => {
     await declineAppliedBankProduct({
       fundMappingApprovedId: row.original.fundMappingApprovedId,
       referenceNumber: row.original.referenceNumber,
+      declineReason: data.declineReason,
     });
+    formDecline.reset();
+    setDeclineDialogOpen(false);
   };
 
   const onApproveSubmit = async (data: ApprovalFormValues) => {
@@ -462,8 +481,8 @@ const AdminActionCell = ({ row }: { row: any }) => {
   return (
     <div className="flex flex-row gap-2">
       {showDeclineButton && (
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
+        <Dialog open={isDeclineDialogOpen} onOpenChange={setDeclineDialogOpen}>
+          <DialogTrigger asChild>
             <Button
               type="button"
               variant="outline"
@@ -485,29 +504,45 @@ const AdminActionCell = ({ row }: { row: any }) => {
                 </>
               )}
             </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirmation?</AlertDialogTitle>
-              <AlertDialogDescription>
-                You are about to decline the funding application.
-                <br />
-                Please confirm your action.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="cursor-pointer">
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
-                onClick={handleDeclineClickCapture}
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Decline Funding Application</DialogTitle>
+              <DialogDescription>
+                Please provide a reason for declining this funding application.
+              </DialogDescription>
+            </DialogHeader>
+
+            <Form {...formDecline}>
+              <form
+                onSubmit={formDecline.handleSubmit(onDeclineSubmit)}
+                className="space-y-4 py-4"
               >
-                Yes, Decline
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                <CustomFormField
+                  name="declineReason"
+                  type="textarea"
+                  label="Decline Reason *"
+                />
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    className="bg-red-600 hover:bg-red-700 cursor-pointer"
+                    disabled={isDeclining}
+                  >
+                    {isDeclining ? (
+                      <>
+                        <Loader2Icon className=" h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Confirm Decline"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       )}
       {showApproveButton && (
         <Dialog open={isApproveDialogOpen} onOpenChange={setApproveDialogOpen}>

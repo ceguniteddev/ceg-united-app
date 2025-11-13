@@ -14,12 +14,15 @@ const SidebarSettings = () => {
 
   if (!user) return null;
 
-  const sidebar = role === "Client" ? settingsSidebar : settingsSidebarAdmin;
+  const sidebar = role === "Admin" ? settingsSidebarAdmin : settingsSidebar;
 
   return (
     <section className="sidebar">
       <nav className="flex flex-col">
-        <Link href="/" className="mb-3 cursor-pointer flex items-center justify-center">
+        <Link
+          href="/"
+          className="mb-3 cursor-pointer flex items-center justify-center"
+        >
           <Image
             src="/icons/logo.svg"
             width={64}
@@ -28,7 +31,8 @@ const SidebarSettings = () => {
           />
         </Link>
         {sidebar.map((item) => {
-          const isActive = pathname === item.route || pathname.startsWith(`${item.route}/`);
+          const isActive =
+            pathname === item.route || pathname.startsWith(`${item.route}/`);
 
           return (
             <Link
@@ -46,7 +50,9 @@ const SidebarSettings = () => {
                   })}
                 />
               </div>
-              <p className={cn("sidebar-label", { "!text-white": isActive })}>{item.label}</p>
+              <p className={cn("sidebar-label", { "!text-white": isActive })}>
+                {item.label}
+              </p>
             </Link>
           );
         })}
