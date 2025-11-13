@@ -184,6 +184,11 @@ export const brokerSidebarLinks = [
     label: "My Clients",
   },
   {
+    imgURL: "/icons/money-send.svg",
+    route: "/broker/client-funding",
+    label: "Client Funding Products",
+  },
+  {
     imgURL: "/icons/dollar-circle.svg",
     route: "/broker/my-funded-deals",
     label: "My Funded Deals",

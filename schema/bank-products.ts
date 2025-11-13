@@ -98,6 +98,7 @@ export type ApprovedBankFormData = BankFormData & {
   referenceNumber: string;
   approvedAmount?: number;
   approvedRemarks?: string;
+  declineReason?: string;
   fundedAmount?: number;
   fundedRemarks?: string;
   userId: string;
