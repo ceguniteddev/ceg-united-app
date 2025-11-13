@@ -4,35 +4,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClientData from "@/app/(admin)/admin/clients/view";
 import { UserWithId } from "@/schema/registration";
 import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
-import SendEmail from "@/components/SendEmail";
-import ClientNotes from "@/components/notes/ClientNotes";
-import ClientAppliedFunding from "@/components/ClientAppliedFundingList";
 import ClientDocuments from "@/components/ClientDocuments";
 import ClientCreditReport from "@/components/ClientCreditReport";
 import BusinessRecordsPage from "@/components/ClientBusinessReport";
-import UserLearningMaterials from "@/components/UserLearningMaterials";
 import { useParams } from "next/navigation";
 import { useUserQuery } from "@/hooks/user";
-import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import Spinner from "@/components/Spinner";
-import { useMemo } from "react";
 import ApplyFunding from "@/components/fundingv2/ApplyFunding";
+import FundingList from "@/components/funding/funding-list";
+import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
+import { ApprovedBankFormData } from "@/schema/bank-products";
 
 const ClientProfilePage = () => {
   const params = useParams();
   const userId = params.userId as string;
 
   const { userData, isLoading: isUserLoading } = useUserQuery(userId);
-  const { denefitsContract, isLoading: isDenefitsLoading } =
-    useGetDenefitsContractsByUserId(userId);
 
-  // Check if user has access to learning materials
-  const hasLearningMaterialsAccess = useMemo(() => {
-    return !!(denefitsContract && denefitsContract.length > 0);
-  }, [denefitsContract]);
+  const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
+    userId,
+  });
 
   // Show loading state while fetching data
-  if (isUserLoading || isDenefitsLoading) {
+  if (isUserLoading || isLoading) {
     return <Spinner displayText="Loading user profile..." />;
   }
 
@@ -92,7 +86,8 @@ const ClientProfilePage = () => {
         <div className="flex flex-row justify-end">
           <ApplyFunding userId={userId} />
         </div>
-        <ClientAppliedFunding userId={userId} />
+        {/* <ClientAppliedFunding userId={userId} /> */}
+        <FundingList appliedFunding={mappedFund as ApprovedBankFormData[]} />
       </TabsContent>
     </Tabs>
   );
