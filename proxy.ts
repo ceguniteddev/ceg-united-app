@@ -112,7 +112,7 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL(dest, origin));
   }
 
-  if (pathname === "/my-accounts" && role === "Client") {
+  if (pathname === "/client/my-accounts" && role === "Client") {
     const isPlaidProdReady = isPlaidProductionReady();
     if (!isPlaidProdReady) {
       return NextResponse.redirect(new URL(CLIENT_HOME, origin));

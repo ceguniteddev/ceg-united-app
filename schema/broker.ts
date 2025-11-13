@@ -5,14 +5,14 @@ import { passwordSchema, ssnSchema } from "./registration";
 // Broker-specific registration schema
 export const brokerRegistrationSchema = z.object({
   firstName: z.string().min(1, { message: "Required" }),
-//   middleName: z.string().optional(),
+  //   middleName: z.string().optional(),
   lastName: z.string().min(1, { message: "Required" }),
   email: z.string().email().min(1, { message: "Required" }),
   password: passwordSchema,
-//   birthdate: dateOfBirthSchema,
-//   gender: GenderEnum,
+  //   birthdate: dateOfBirthSchema,
+  //   gender: GenderEnum,
   phoneNumber: z.string().min(1, { message: "Required" }),
-//   ssn: ssnSchema,
+  //   ssn: ssnSchema,
   companyName: z.string().optional(),
   role: z.literal("Broker"),
   isOnboarded: z.boolean().default(false),
@@ -20,7 +20,7 @@ export const brokerRegistrationSchema = z.object({
   activeStatus: z.enum(["Active", "InActive", "Paused"]).default("Active"),
   // Broker-specific fields
   referralCode: z.string().optional(), // Auto-generated unique code
-//   commissionRate: z.number().min(0).max(100).default(5), // Percentage
+  //   commissionRate: z.number().min(0).max(100).default(5), // Percentage
   invitedBy: z.string().optional(), // Admin ID who invited
   invitationToken: z.string().optional(), // Token from invitation email
 });
@@ -33,7 +33,7 @@ export const brokerInvitationSchema = z.object({
   invitedBy: z.string().min(1, { message: "Required" }), // Admin ID
   invitedByName: z.string().optional(),
   token: z.string().min(1, { message: "Required" }),
-//   commissionRate: z.number().min(0).max(100).default(5),
+  //   commissionRate: z.number().min(0).max(100).default(5),
   status: z.enum(["Pending", "Accepted", "Expired"]).default("Pending"),
   createdAt: z.date(),
   expiresAt: z.date(),
@@ -84,6 +84,12 @@ export type BrokerStatistics = {
   totalCommissionEarned: number;
   totalCommissionPending: number;
   totalCommissionPaid: number;
+  // Status breakdown counts
+  notAppliedCount: number;
+  sentToLenderCount: number;
+  declinedCount: number;
+  approvedCount: number;
+  fundedCount: number;
 };
 
 // Application status for broker view

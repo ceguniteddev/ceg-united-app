@@ -244,30 +244,60 @@ export const getBrokerStatistics = async (
   let totalApprovedApplications = 0;
   let totalRejectedApplications = 0;
   let totalFundedAmount = 0;
+  let notAppliedCount = 0;
+  let sentToLenderCount = 0;
+  let declinedCount = 0;
+  let approvedCount = 0;
+  let fundedCount = 0;
 
   if (clientIds.length > 0) {
-    // Get all applications for broker's clients
-    const applications = await db
-      .collection(USER_FUNDING_APPLICATION)
-      .where("userId", "in", clientIds.slice(0, 10)) // Firestore limit
-      .get();
+    // Process in batches to handle Firestore 'in' query limit of 10
+    for (let i = 0; i < clientIds.length; i += 10) {
+      const batch = clientIds.slice(i, i + 10);
+      const applications = await db
+        .collection(USER_FUNDING_APPLICATION)
+        .where("userId", "in", batch)
+        .get();
 
-    applications.docs.forEach((doc) => {
-      const data = doc.data();
-      totalSubmittedApplications++;
+      // For each application, get the fund mappings
+      for (const appDoc of applications.docs) {
+        const referenceNumber = appDoc.id;
+        const fundMappingsSnapshot = await db
+          .collection(USER_FUNDING_APPLICATION)
+          .doc(referenceNumber)
+          .collection(USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED)
+          .get();
 
-      if (data.status === "Approved" || data.status === "Funded") {
-        totalApprovedApplications++;
+        fundMappingsSnapshot.docs.forEach((mappingDoc) => {
+          const mappingData = normalizeAllDates(
+            mappingDoc.data()
+          ) as ApprovedBankFormData;
+          const status = mappingData.clientApplicationStatus;
+
+          totalSubmittedApplications++;
+
+          // Count by status
+          if (status === "Not Applied") notAppliedCount++;
+          else if (status === "Sent to Lender") sentToLenderCount++;
+          else if (status === "Declined") declinedCount++;
+          else if (status === "Approved") approvedCount++;
+          else if (status === "Funded") fundedCount++;
+
+          // Legacy counts
+          if (status === "Approved" || status === "Funded") {
+            totalApprovedApplications++;
+          }
+
+          if (status === "Declined") {
+            totalRejectedApplications++;
+          }
+
+          if (status === "Funded" && mappingData.fundedAmount) {
+            totalFundedAmount += mappingData.fundedAmount;
+          }
+        });
       }
-
-      if (data.status === "Denied" || data.status === "Rejected") {
-        totalRejectedApplications++;
-      }
-
-      if (data.status === "Funded" && data.fundedAmount) {
-        totalFundedAmount += data.fundedAmount;
-      }
-    });
+    }
   }
 
   // Get commission data
@@ -293,6 +323,11 @@ export const getBrokerStatistics = async (
     totalCommissionEarned,
     totalCommissionPending,
     totalCommissionPaid,
+    notAppliedCount,
+    sentToLenderCount,
+    declinedCount,
+    approvedCount,
+    fundedCount,
   };
 };
 
