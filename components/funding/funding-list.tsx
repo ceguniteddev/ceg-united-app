@@ -102,24 +102,24 @@ const baseColumns: ColumnDef<BankFormData>[] = [
       );
     },
   },
-  {
-    accessorKey: "financingTerm",
-    id: "financingTerm",
-    header: ({ column }) => (
-      <SortableHeader column={column} title="Financing Term" />
-    ),
-    cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
-  },
-  {
-    accessorKey: "maximumFundingAmount",
-    id: "maximumFundingAmount",
-    header: ({ column }) => (
-      <SortableHeader column={column} title="Maximum Funding Amount" />
-    ),
-    cell: ({ row }) => (
-      <div>{formatAmount(row.getValue("maximumFundingAmount"))}</div>
-    ),
-  },
+  // {
+  //   accessorKey: "financingTerm",
+  //   id: "financingTerm",
+  //   header: ({ column }) => (
+  //     <SortableHeader column={column} title="Financing Term" />
+  //   ),
+  //   cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
+  // },
+  // {
+  //   accessorKey: "maximumFundingAmount",
+  //   id: "maximumFundingAmount",
+  //   header: ({ column }) => (
+  //     <SortableHeader column={column} title="Maximum Funding Amount" />
+  //   ),
+  //   cell: ({ row }) => (
+  //     <div>{formatAmount(row.getValue("maximumFundingAmount"))}</div>
+  //   ),
+  // },
   {
     accessorKey: "clientApplicationStatus",
     id: "clientApplicationStatus",
@@ -265,7 +265,7 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
           className="max-w-sm"
         />
       </div>
-      <div className="overflow-hidden rounded-md border">
+      <div className="overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -544,6 +544,7 @@ const AdminActionCell = ({ row }: { row: any }) => {
           </DialogContent>
         </Dialog>
       )}
+
       {showApproveButton && (
         <Dialog open={isApproveDialogOpen} onOpenChange={setApproveDialogOpen}>
           <DialogTrigger asChild>

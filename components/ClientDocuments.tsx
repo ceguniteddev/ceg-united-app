@@ -111,7 +111,7 @@ const DocumentPreviewer = ({
 };
 
 export default function ClientDocuments({ userId }: { userId: string }) {
-  const { role } = useAuth();
+  const { role, isBroker, isAdmin } = useAuth();
   const { userDocuments, isLoading, refetch } = useUserDocumentsQuery({
     userId,
   });
@@ -122,8 +122,6 @@ export default function ClientDocuments({ userId }: { userId: string }) {
   >(DOCUMENT_TYPES[0]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [docToDelete, setDocToDelete] = useState<UserDoc | null>(null);
-
-  const isAdmin = role === "Admin";
 
   const { requiredDocsMap, otherDocs } = useMemo(() => {
     // The map will now store an array of documents for each ID
@@ -247,7 +245,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
               docs={otherDocs}
               onDelete={handleOpenDeleteDialog}
               isDeleting={isDeleting}
-              isAdmin={isAdmin}
+              isAdmin={isAdmin || isBroker}
             />
           </div>
         ) : (
@@ -260,7 +258,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
               docs={currentRequiredDocuments}
               onDelete={handleOpenDeleteDialog}
               isDeleting={isDeleting}
-              isAdmin={isAdmin}
+              isAdmin={isAdmin || isBroker}
             />
           </div>
         )}
