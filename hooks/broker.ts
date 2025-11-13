@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/provider/AuthContext";
 import { toast } from "sonner";
-import { BrokerStatistics } from "@/schema/broker";
+import { BrokerStatistics, BrokerRegistration } from "@/schema/broker";
 import {
   ApprovedBankFormData,
   ClientApplicationStatus,
 } from "@/schema/bank-products";
+import { GET_ALL_BROKERS } from "@/constant/react-query-keys";
 
 // Get broker statistics
 export const useGetBrokerStatistics = () => {
@@ -181,5 +182,83 @@ export const useGetBrokerClientsMappedFunding = () => {
     isLoading,
     error,
     refetch,
+  };
+};
+
+// Get all brokers (admin only)
+export const useGetAllBrokers = () => {
+  const { user } = useAuth();
+
+  const {
+    data: brokers,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: [GET_ALL_BROKERS],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+
+      const response = await fetch("/api/broker");
+      if (!response.ok) {
+        throw new Error("Failed to fetch brokers");
+      }
+
+      return await response.json();
+    },
+    enabled: !!user,
+  });
+
+  return {
+    brokers: (brokers || []) as (BrokerRegistration & { id: string })[],
+    isLoading,
+    error,
+    refetch,
+  };
+};
+
+// Update broker status (admin only)
+export const useUpdateBrokerStatusMutation = ({
+  brokerId,
+}: {
+  brokerId: string;
+}) => {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async ({
+      status,
+    }: {
+      status: "Active" | "InActive" | "Paused";
+    }) => {
+      const response = await fetch(`/api/broker/${brokerId}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.errors || "Failed to update broker status");
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast.success("Broker status updated successfully!");
+      queryClient.invalidateQueries({ queryKey: [GET_ALL_BROKERS] });
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to update broker status", {
+        description: error.message,
+      });
+    },
+  });
+
+  return {
+    updateBrokerStatus: mutation.mutateAsync,
+    isUpdating: mutation.isPending,
   };
 };

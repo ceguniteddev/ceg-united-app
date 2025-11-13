@@ -14,7 +14,7 @@ interface Props {
   readonly children: React.ReactNode;
   readonly isOpen: boolean;
   readonly setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  readonly title: string;
+  readonly title: string | React.ReactNode;
   readonly description?: string | React.ReactNode;
   readonly className?: string;
   readonly id?: string;
