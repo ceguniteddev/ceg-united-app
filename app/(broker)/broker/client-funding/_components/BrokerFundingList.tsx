@@ -18,14 +18,6 @@ import { BanknoteIcon, Loader2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTablePagination } from "@/components/funding/pagination";
 import { formatAmount } from "@/lib/utils";
@@ -35,14 +27,16 @@ import SortableHeader from "@/components/SortableHeader";
 import { useApprovedMappedFundsMutation } from "@/hooks/admin/funding-application/fund-mapping";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 
-const columns: ColumnDef<
-  ApprovedBankFormData & {
-    clientName?: string;
-    clientEmail?: string;
-    personalAmountFunding?: number;
-    businessAmountFunding?: number;
-  }
->[] = [
+type BrokerFundingData = ApprovedBankFormData & {
+  clientName?: string;
+  clientEmail?: string;
+  personalAmountFunding?: number;
+  businessAmountFunding?: number;
+  commissionRate?: number;
+  commissionAmount?: number;
+};
+
+const columns: ColumnDef<BrokerFundingData>[] = [
   {
     accessorKey: "clientName",
     id: "clientName",
@@ -50,8 +44,11 @@ const columns: ColumnDef<
       <SortableHeader column={column} title="Client Name" />
     ),
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("clientName")}</div>
+      <div className="font-medium whitespace-nowrap">
+        {row.getValue("clientName")}
+      </div>
     ),
+    size: 180,
   },
   {
     accessorKey: "clientEmail",
@@ -60,8 +57,11 @@ const columns: ColumnDef<
       <SortableHeader column={column} title="Client Email" />
     ),
     cell: ({ row }) => (
-      <div className="text-sm">{row.getValue("clientEmail")}</div>
+      <div className="text-sm whitespace-nowrap">
+        {row.getValue("clientEmail")}
+      </div>
     ),
+    size: 200,
   },
   {
     accessorKey: "bankName",
@@ -69,7 +69,10 @@ const columns: ColumnDef<
     header: ({ column }) => (
       <SortableHeader column={column} title="Bank Name" />
     ),
-    cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
+    cell: ({ row }) => (
+      <div className="whitespace-nowrap">{row.getValue("bankName")}</div>
+    ),
+    size: 180,
   },
   {
     accessorKey: "productName",
@@ -82,11 +85,14 @@ const columns: ColumnDef<
       return (
         <div className="flex flex-col gap-1">
           {productNames?.map((name, index) => (
-            <span key={index}>{name}</span>
+            <span key={index} className="whitespace-nowrap">
+              {name}
+            </span>
           ))}
         </div>
       );
     },
+    size: 200,
   },
   {
     accessorKey: "personalAmountFunding",
@@ -95,8 +101,11 @@ const columns: ColumnDef<
       <SortableHeader column={column} title="Personal Amount" />
     ),
     cell: ({ row }) => (
-      <div>{formatAmount(row.getValue("personalAmountFunding"))}</div>
+      <div className="whitespace-nowrap">
+        {formatAmount(row.getValue("personalAmountFunding"))}
+      </div>
     ),
+    size: 150,
   },
   {
     accessorKey: "businessAmountFunding",
@@ -105,8 +114,11 @@ const columns: ColumnDef<
       <SortableHeader column={column} title="Business Amount" />
     ),
     cell: ({ row }) => (
-      <div>{formatAmount(row.getValue("businessAmountFunding"))}</div>
+      <div className="whitespace-nowrap">
+        {formatAmount(row.getValue("businessAmountFunding"))}
+      </div>
     ),
+    size: 150,
   },
   {
     accessorKey: "clientApplicationStatus",
@@ -116,6 +128,7 @@ const columns: ColumnDef<
       const status = row.getValue("clientApplicationStatus") as string;
       return status ? <CategoryBadge category={status} /> : null;
     },
+    size: 150,
   },
   {
     accessorKey: "declineReason",
@@ -126,11 +139,12 @@ const columns: ColumnDef<
     cell: ({ row }) => {
       const reason = row.getValue("declineReason") as string;
       return reason ? (
-        <div className="text-sm text-red-600">{reason}</div>
+        <div className="text-sm text-red-600 whitespace-nowrap">{reason}</div>
       ) : (
         <div className="text-muted-foreground">-</div>
       );
     },
+    size: 180,
   },
   {
     accessorKey: "approvedAmount",
@@ -141,11 +155,14 @@ const columns: ColumnDef<
     cell: ({ row }) => {
       const amount = row.getValue("approvedAmount");
       return amount ? (
-        <div>{formatAmount(amount as number)}</div>
+        <div className="whitespace-nowrap">
+          {formatAmount(amount as number)}
+        </div>
       ) : (
         <div className="text-muted-foreground">-</div>
       );
     },
+    size: 150,
   },
   {
     accessorKey: "fundedAmount",
@@ -156,18 +173,54 @@ const columns: ColumnDef<
     cell: ({ row }) => {
       const amount = row.getValue("fundedAmount");
       return amount ? (
-        <div className="font-semibold text-emerald-600">
+        <div className="font-semibold text-emerald-600 whitespace-nowrap">
           {formatAmount(amount as number)}
         </div>
       ) : (
         <div className="text-muted-foreground">-</div>
       );
     },
+    size: 150,
+  },
+  {
+    accessorKey: "commissionRate",
+    id: "commissionRate",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Commission %" />
+    ),
+    cell: ({ row }) => {
+      const rate = row.getValue("commissionRate") as number;
+      return rate ? (
+        <div className="font-medium whitespace-nowrap">{rate}%</div>
+      ) : (
+        <div className="text-muted-foreground">-</div>
+      );
+    },
+    size: 130,
+  },
+  {
+    accessorKey: "commissionAmount",
+    id: "commissionAmount",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Commission Amount" />
+    ),
+    cell: ({ row }) => {
+      const amount = row.getValue("commissionAmount");
+      return amount ? (
+        <div className="font-semibold text-blue-600 whitespace-nowrap">
+          {formatAmount(amount as number)}
+        </div>
+      ) : (
+        <div className="text-muted-foreground">-</div>
+      );
+    },
+    size: 170,
   },
   {
     id: "clientActions",
     header: "Actions",
     cell: ({ row }) => <ActionCell row={row} />,
+    size: 150,
   },
 ];
 
@@ -225,10 +278,7 @@ const ActionCell = ({ row }: { row: any }) => {
 };
 
 type Props = {
-  appliedFunding: (ApprovedBankFormData & {
-    clientName?: string;
-    clientEmail?: string;
-  })[];
+  appliedFunding: BrokerFundingData[];
 };
 
 type StatusFilter =
@@ -284,52 +334,60 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
   // Determine which columns to show based on active tab
   const visibleColumns = React.useMemo(() => {
     return columns.filter((column) => {
-      // Not Applied: Hide approvedAmount, fundedAmount, declineReason
+      // Not Applied: Hide approvedAmount, fundedAmount, declineReason, commission columns
       if (activeTab === "Not Applied") {
         if (
           column.id === "approvedAmount" ||
           column.id === "fundedAmount" ||
-          column.id === "declineReason"
+          column.id === "declineReason" ||
+          column.id === "commissionRate" ||
+          column.id === "commissionAmount"
         ) {
           return false;
         }
       }
 
-      // Sent to Lender: Hide approvedAmount, fundedAmount, clientActions, declineReason
+      // Sent to Lender: Hide approvedAmount, fundedAmount, clientActions, declineReason, commission columns
       if (activeTab === "Sent to Lender") {
         if (
           column.id === "approvedAmount" ||
           column.id === "fundedAmount" ||
           column.id === "clientActions" ||
-          column.id === "declineReason"
+          column.id === "declineReason" ||
+          column.id === "commissionRate" ||
+          column.id === "commissionAmount"
         ) {
           return false;
         }
       }
 
-      // Declined: Hide approvedAmount, fundedAmount, clientActions
+      // Declined: Hide approvedAmount, fundedAmount, clientActions, commission columns
       if (activeTab === "Declined") {
         if (
           column.id === "approvedAmount" ||
           column.id === "fundedAmount" ||
-          column.id === "clientActions"
+          column.id === "clientActions" ||
+          column.id === "commissionRate" ||
+          column.id === "commissionAmount"
         ) {
           return false;
         }
       }
 
-      // Approved: Hide fundedAmount, clientActions, declineReason
+      // Approved: Hide fundedAmount, clientActions, declineReason, commission columns
       if (activeTab === "Approved") {
         if (
           column.id === "fundedAmount" ||
           column.id === "clientActions" ||
-          column.id === "declineReason"
+          column.id === "declineReason" ||
+          column.id === "commissionRate" ||
+          column.id === "commissionAmount"
         ) {
           return false;
         }
       }
 
-      // Funded: Hide clientActions, declineReason
+      // Funded: Hide clientActions, declineReason (show commission columns)
       if (activeTab === "Funded") {
         if (column.id === "clientActions" || column.id === "declineReason") {
           return false;
@@ -410,55 +468,69 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
               className="max-w-sm"
             />
           </div>
-          <div className="overflow-hidden rounded-md border">
-            <Table>
-              <TableHeader>
+          <div className="overflow-x-auto rounded-md border">
+            <table
+              style={{
+                width: "max-content",
+                minWidth: "100%",
+                borderCollapse: "separate",
+                borderSpacing: 0,
+              }}
+            >
+              <thead>
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
+                  <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
                       return (
-                        <TableHead key={header.id}>
+                        <th
+                          key={header.id}
+                          colSpan={header.colSpan}
+                          className="h-12 px-4 text-left align-middle font-medium text-muted-foreground border-b"
+                        >
                           {header.isPlaceholder
                             ? null
                             : flexRender(
                                 header.column.columnDef.header,
                                 header.getContext()
                               )}
-                        </TableHead>
+                        </th>
                       );
                     })}
-                  </TableRow>
+                  </tr>
                 ))}
-              </TableHeader>
-              <TableBody>
+              </thead>
+              <tbody>
                 {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
-                    <TableRow
+                    <tr
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
+                      className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
+                      {row.getVisibleCells().map((cell) => {
+                        return (
+                          <td key={cell.id} className="p-4 align-middle">
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
                   ))
                 ) : (
-                  <TableRow>
-                    <TableCell
+                  <tr>
+                    <td
                       colSpan={visibleColumns.length}
                       className="h-24 text-center"
                     >
                       No results.
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 )}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
           <DataTablePagination table={table} />
         </TabsContent>

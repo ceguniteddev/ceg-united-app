@@ -450,6 +450,27 @@ export const getBrokerClientsMappedFunding = async (
           ? `${userData.firstName || ""} ${userData.lastName || ""}`.trim()
           : "Unknown Client";
 
+        // Fetch commission data if status is Funded
+        let commissionRate: number | undefined;
+        let commissionAmount: number | undefined;
+
+        if (mappingData.clientApplicationStatus === "Funded") {
+          // Match by fundMappingApprovedId to ensure we get the correct commission
+          // for this specific bank product, even if multiple products are funded
+          // under the same reference number
+          const commissionSnapshot = await db
+            .collection(BROKER_COMMISSION)
+            .where("fundMappingApprovedId", "==", mappingDoc.id)
+            .limit(1)
+            .get();
+
+          if (!commissionSnapshot.empty) {
+            const commissionData = commissionSnapshot.docs[0].data();
+            commissionRate = commissionData.commissionRate;
+            commissionAmount = commissionData.commissionAmount;
+          }
+        }
+
         // Combine the data
         const mappedFund: ApprovedBankFormData = {
           ...bankProduct,
@@ -469,6 +490,9 @@ export const getBrokerClientsMappedFunding = async (
           // Add client name and email for broker's view
           clientName,
           clientEmail: userData?.email || "",
+          // Add commission data
+          commissionRate,
+          commissionAmount,
         } as any;
 
         results.push(mappedFund);

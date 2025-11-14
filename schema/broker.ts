@@ -20,7 +20,7 @@ export const brokerRegistrationSchema = z.object({
   activeStatus: z.enum(["Active", "InActive", "Paused"]).default("Active"),
   // Broker-specific fields
   referralCode: z.string().optional(), // Auto-generated unique code
-  //   commissionRate: z.number().min(0).max(100).default(5), // Percentage
+  commissionRate: z.number().min(0).max(100).default(10), // Percentage
   invitedBy: z.string().optional(), // Admin ID who invited
   invitationToken: z.string().optional(), // Token from invitation email
 });
@@ -33,7 +33,7 @@ export const brokerInvitationSchema = z.object({
   invitedBy: z.string().min(1, { message: "Required" }), // Admin ID
   invitedByName: z.string().optional(),
   token: z.string().min(1, { message: "Required" }),
-  //   commissionRate: z.number().min(0).max(100).default(5),
+  //   commissionRate: z.number().min(0).max(100).default(10),
   status: z.enum(["Pending", "Accepted", "Expired"]).default("Pending"),
   createdAt: z.date(),
   expiresAt: z.date(),
@@ -61,6 +61,7 @@ export const brokerCommissionSchema = z.object({
   clientId: z.string().min(1, { message: "Required" }),
   clientName: z.string(),
   fundingApplicationId: z.string().min(1, { message: "Required" }),
+  fundMappingApprovedId: z.string().min(1, { message: "Required" }),
   bankName: z.string(),
   fundedAmount: z.number().min(0),
   commissionRate: z.number().min(0).max(100),

@@ -60,6 +60,12 @@ export const registrationSchema = z.object({
   activeStatus: UserActiveStatusEnum.optional(),
   denefitsSignedUp: z.boolean().optional(),
   isBrokerInvite: z.boolean().optional(),
+  commissionRate: z.coerce
+    .number<number>()
+    .min(0)
+    .max(100)
+    .default(10)
+    .optional(),
 });
 
 export const UserFundMapStatus = z.enum(["New", "Processing"]);

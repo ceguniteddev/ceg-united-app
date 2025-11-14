@@ -6,6 +6,9 @@ import {
   USER_FUNDING_APPLICATION_FUND_MAPPING,
   USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED,
   USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS,
+  BROKER_CLIENT_MAPPING,
+  BROKER_COMMISSION,
+  USER_COLLECTION,
 } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
@@ -920,11 +923,15 @@ export const fundedAppliedBankProduct = async ({
   fundMappingApprovedId,
   fundedAmount,
   fundedRemarks,
+  userId,
+  bankName,
 }: {
   referenceNumber: string;
   fundMappingApprovedId: string;
   fundedAmount: number;
   fundedRemarks?: string;
+  userId: string;
+  bankName: string;
 }): Promise<CommonResponse> => {
   try {
     // 1. Return structured errors for invalid inputs
@@ -949,6 +956,7 @@ export const fundedAppliedBankProduct = async ({
       `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
     );
 
+    // Update funding status
     await collectionRef.doc(fundMappingApprovedId).set(
       {
         clientApplicationStatus: "Funded",
@@ -957,6 +965,68 @@ export const fundedAppliedBankProduct = async ({
       },
       { merge: true }
     );
+
+    // Calculate and create commission record for broker
+    try {
+      // Find broker-client mapping
+      const brokerMappingSnapshot = await db
+        .collection(BROKER_CLIENT_MAPPING)
+        .where("clientId", "==", userId)
+        .limit(1)
+        .get();
+
+      if (!brokerMappingSnapshot.empty) {
+        const mapping = brokerMappingSnapshot.docs[0].data();
+        const brokerId = mapping.brokerId;
+
+        // Get broker's commission rate
+        const brokerDoc = await db
+          .collection(USER_COLLECTION)
+          .doc(brokerId)
+          .get();
+
+        if (brokerDoc.exists) {
+          const brokerData = brokerDoc.data();
+          const commissionRate = brokerData?.commissionRate ?? 10; // Default 10% if not set
+
+          // Calculate commission
+          const commissionAmount = (fundedAmount * commissionRate) / 100;
+
+          // Get client name
+          const clientDoc = await db
+            .collection(USER_COLLECTION)
+            .doc(userId)
+            .get();
+          const clientName = clientDoc.exists
+            ? `${clientDoc.data()?.firstName || ""} ${
+                clientDoc.data()?.lastName || ""
+              }`.trim()
+            : "Unknown Client";
+
+          // Create commission record
+          await db.collection(BROKER_COMMISSION).add({
+            brokerId,
+            clientId: userId,
+            clientName,
+            fundingApplicationId: referenceNumber,
+            fundMappingApprovedId,
+            bankName,
+            fundedAmount,
+            commissionRate,
+            commissionAmount,
+            status: "Pending",
+            createdAt: new Date(),
+          });
+
+          console.log(
+            `Commission created: ${commissionAmount} (${commissionRate}% of ${fundedAmount}) for broker ${brokerId}`
+          );
+        }
+      }
+    } catch (commissionError) {
+      // Log commission error but don't fail the funding operation
+      console.error("Error creating commission record:", commissionError);
+    }
 
     // 4. Return a successful response
     return { success: true };
