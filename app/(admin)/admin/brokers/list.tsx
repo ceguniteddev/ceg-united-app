@@ -123,14 +123,7 @@ const BrokersList = () => {
         return <div>{row.getValue("phoneNumber")}</div>;
       },
     },
-    {
-      id: "view",
-      header: "View",
-      cell: ({ row }) => {
-        return <ViewButton brokerId={row.original.id} />;
-      },
-      size: 100,
-    },
+
     {
       id: "actions",
       header: "Status",
@@ -138,6 +131,14 @@ const BrokersList = () => {
         return <StatusPicker broker={row.original} />;
       },
       size: 200,
+    },
+    {
+      id: "view",
+      header: "View",
+      cell: ({ row }) => {
+        return <ViewButton brokerId={row.original.id} />;
+      },
+      size: 100,
     },
   ];
 
@@ -278,7 +279,7 @@ const ViewButton = ({ brokerId }: { brokerId: string }) => {
       variant="ghost"
       size="sm"
       onClick={() => router.push(`/admin/brokers/${brokerId}`)}
-      className="cursor-pointer"
+      className="cursor-pointer bg-blue-200 hover:bg-blue-300"
     >
       <ViewIcon className="h-4 w-4 mr-2" />
       View

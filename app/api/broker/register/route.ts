@@ -49,6 +49,7 @@ export const POST = async (request: NextRequest) => {
       isOnboarded: false,
       activeStatus: "Active",
       denefitsSignedUp: false,
+      commissionRate: 10,
     };
 
     await registerUser({ value: user });

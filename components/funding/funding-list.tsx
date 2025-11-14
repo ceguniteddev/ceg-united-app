@@ -463,6 +463,8 @@ const AdminActionCell = ({ row }: { row: any }) => {
       referenceNumber: row.original.referenceNumber,
       fundedAmount: data.amountFunded,
       fundedRemarks: data.remarksFunded,
+      userId: row.original.userId,
+      bankName: row.original.bankName,
     });
     form.reset();
     setFundedDialogOpen(false);

@@ -60,19 +60,21 @@ export default function ClientFundingPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              All Client Funding Products ({mappedFunding.length})
-            </CardTitle>
-            <CardDescription>
-              Track the status of funding applications for all your clients
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <BrokerFundingList appliedFunding={mappedFunding} />
-          </CardContent>
-        </Card>
+        <div className="max-w-screen-2xl">
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle>
+                All Client Funding Products ({mappedFunding.length})
+              </CardTitle>
+              <CardDescription>
+                Track the status of funding applications for all your clients
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <BrokerFundingList appliedFunding={mappedFunding} />
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

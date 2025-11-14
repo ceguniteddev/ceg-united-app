@@ -344,11 +344,15 @@ export const useApprovedMappedFundsMutation = () => {
       fundMappingApprovedId,
       fundedAmount,
       fundedRemarks,
+      userId,
+      bankName,
     }: {
       referenceNumber: string;
       fundMappingApprovedId: string;
       fundedAmount: number;
       fundedRemarks?: string;
+      userId: string;
+      bankName: string;
     }) => {
       if (!user) throw new Error("User not authenticated");
 
@@ -357,6 +361,8 @@ export const useApprovedMappedFundsMutation = () => {
         fundMappingApprovedId,
         fundedAmount,
         fundedRemarks,
+        userId,
+        bankName,
       });
     },
     onSuccess: (_data, variable) => {
