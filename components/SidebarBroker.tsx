@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import Footer from "./Footer";
 import UserNav from "./logout";
 import { useAuth } from "@/provider/AuthContext";
+import { WhatsNewAccordion } from "./WhatsNewAccordion";
 
 const SidebarBroker = () => {
   const { user, loading } = useAuth();
@@ -81,7 +82,10 @@ const SidebarBroker = () => {
         })}
       </nav>
 
-      <Footer />
+      <div className="flex flex-col">
+        <WhatsNewAccordion />
+        <Footer />
+      </div>
     </aside>
   );
 };
