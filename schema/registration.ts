@@ -66,6 +66,16 @@ export const registrationSchema = z.object({
     .max(100)
     .default(10)
     .optional(),
+  // Feature flags
+  letterFeatureEnabled: z.boolean().default(false).optional(),
+  latePaymentRemovalEnabled: z.boolean().default(false).optional(),
+  unauthorizedInquiryRemovalEnabled: z.boolean().default(false).optional(),
+  verifiedAccountDisputeEnabled: z.boolean().default(false).optional(),
+  noResponseFollowUpEnabled: z.boolean().default(false).optional(),
+  reinsertedAccountDisputeEnabled: z.boolean().default(false).optional(),
+  accountErrorCorrectionEnabled: z.boolean().default(false).optional(),
+  collectionAccountRemovalEnabled: z.boolean().default(false).optional(),
+  fraudulentAccountRemovalEnabled: z.boolean().default(false).optional(),
 });
 
 export const UserFundMapStatus = z.enum(["New", "Processing"]);

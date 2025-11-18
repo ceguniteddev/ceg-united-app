@@ -45,3 +45,8 @@ export const BROKER_COLLECTION = "broker";
 export const BROKER_INVITATION = "broker-invitation";
 export const BROKER_CLIENT_MAPPING = "broker-client-mapping";
 export const BROKER_COMMISSION = "broker-commission";
+
+export const DISPUTE_LETTER = "dispute-letter";
+export const LETTER_TEMPLATE = "letter-template";
+export const DISPUTE_TRACKING = "dispute-tracking";
+export const LETTER_RECIPIENT = "letter-recipient";

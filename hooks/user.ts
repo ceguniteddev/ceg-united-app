@@ -151,6 +151,63 @@ export const useUpdateUserStatusMutation = ({ userId }: { userId: string }) => {
   };
 };
 
+export const useToggleLetterFeatureMutation = ({
+  userId,
+}: {
+  userId: string;
+}) => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const toggleLetterFeatureMutation = useMutation({
+    mutationFn: async ({
+      enabled,
+      featureKey,
+    }: {
+      enabled: boolean;
+      featureKey?: string;
+    }) => {
+      if (!user) {
+        throw new AppError("User not authenticated");
+      }
+
+      const response = await fetch(`/api/user/${userId}/letter-feature`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ enabled, featureKey }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Error toggling letter feature:", data);
+        throw new AppError("Failed to toggle letter feature.");
+      }
+
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      toast.success(
+        `Letter feature ${
+          variables.enabled ? "enabled" : "disabled"
+        } successfully`
+      );
+      queryClient.invalidateQueries({ queryKey: [GET_USER, userId] });
+      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
+    },
+    onError: (error: any) => {
+      console.error("Error toggling letter feature:", error);
+      toast.error("Failed to toggle letter feature. Please try again.");
+    },
+  });
+
+  return {
+    toggleLetterFeature: toggleLetterFeatureMutation.mutateAsync,
+    isToggling: toggleLetterFeatureMutation.isPending,
+  };
+};
+
 export const useAddUserNotesMutation = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();

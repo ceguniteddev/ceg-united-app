@@ -11,6 +11,7 @@ import ClientDocuments from "@/components/ClientDocuments";
 import ClientCreditReport from "@/components/ClientCreditReport";
 import BusinessRecordsPage from "@/components/ClientBusinessReport";
 import UserLearningMaterials from "@/components/UserLearningMaterials";
+import AdminLetterFeatureManagement from "@/components/AdminLetterFeatureManagement";
 import { useParams } from "next/navigation";
 import { useUserQuery } from "@/hooks/user";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
@@ -70,6 +71,7 @@ const ClientProfilePage = () => {
             Learning Materials
           </TabsTrigger>
         )}
+        <TabsTrigger value="letters">Letters</TabsTrigger>
         <TabsTrigger value="note">Note</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>
@@ -103,6 +105,10 @@ const ClientProfilePage = () => {
           <UserLearningMaterials userId={userId} isAdminView />
         </TabsContent>
       )}
+
+      <TabsContent value="letters" className="w-full">
+        <AdminLetterFeatureManagement user={userData as UserWithId} />
+      </TabsContent>
 
       <TabsContent value="note" className="w-full">
         <ClientNotes userId={userId} />
