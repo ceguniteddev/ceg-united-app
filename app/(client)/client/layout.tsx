@@ -1,0 +1,33 @@
+import Sidebar from "@/components/Sidebar";
+import MobileNavClient from "@/components/MobileNavClient";
+import "driver.js/dist/driver.css";
+import UserBanners from "@/components/UserBanners";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "CEG United LLC",
+  description: "CEG United LLC",
+  icons: {
+    icon: "/icon.ico",
+  },
+};
+
+export default function ClientLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <div>
+      <UserBanners />
+
+      <main className="flex h-screen w-full font-inter">
+        <Sidebar />
+        <div className="flex size-full flex-col overflow-y-auto">
+          <MobileNavClient />
+          <div className="md:pt-0 pt-[60px]">{children}</div>
+        </div>
+      </main>
+    </div>
+  );
+}

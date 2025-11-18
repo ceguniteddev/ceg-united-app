@@ -17,3 +17,9 @@ export const GET_USER_CRS_REPORT = "get-user-crs-report";
 export const GET_DENEFITS_CONTRACT_BY_USER_ID =
   "get-denefits-contract-by-user-id";
 export const GET_DENEFITS_CONTRACTS = "get-denefits-contracts";
+export const GET_DENEFITS_PAYMENTS = "get-denefits-payments";
+
+export const COURSES_KEY = "COURSES";
+export const CHAPTERS_KEY = "CHAPTERS";
+
+export const GET_ALL_BROKERS = "get-all-brokers";

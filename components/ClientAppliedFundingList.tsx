@@ -3,14 +3,12 @@ import Spinner from "@/components/Spinner";
 import React from "react";
 import FundingList from "@/components/funding/funding-list";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
-// import { useAuth } from "@/provider/AuthContext";
 import {
   ApprovedBankFormData,
   BankFormData,
   ClientApplicationStatus,
 } from "@/schema/bank-products";
-import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
-import { EmptyState } from "./EmptyState";
+import EmptyState from "./EmptyState";
 
 const ClientAppliedFundingList = ({
   userId,

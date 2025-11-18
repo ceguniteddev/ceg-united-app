@@ -13,7 +13,7 @@ import {
   Tradeline,
 } from "@/types/crs";
 import React, { useMemo } from "react";
-import { EmptyState } from "./EmptyState";
+import EmptyState from "./EmptyState";
 
 // --- Utilities ---
 const toNum = (v?: NumericString) => {
@@ -205,9 +205,9 @@ const SectionTitle: React.FC<{ title: string; sub?: string }> = ({
   title,
   sub,
 }) => (
-  <div className="mb-4">
-    <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-    {sub && <p className="text-sm text-neutral-500 mt-1">{sub}</p>}
+  <div className="mb-3 sm:mb-4">
+    <h2 className="text-lg sm:text-xl font-semibold tracking-tight">{title}</h2>
+    {sub && <p className="text-xs sm:text-sm text-neutral-500 mt-1">{sub}</p>}
   </div>
 );
 
@@ -230,26 +230,30 @@ const ScoreCard: React.FC<{
   const pct = value && max ? Math.min(100, Math.round((value / max) * 100)) : 0;
 
   return (
-    <Card className="p-4">
+    <Card className="p-3 sm:p-4">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-sm text-neutral-500">{bureau}</div>
-          <div className="text-3xl font-bold mt-1">{value ?? "—"}</div>
+          <div className="text-xs sm:text-sm text-neutral-500">{bureau}</div>
+          <div className="text-2xl sm:text-3xl font-bold mt-1">
+            {value ?? "—"}
+          </div>
         </div>
-        <div className="w-28">
-          <div className="h-2 w-full rounded bg-neutral-100 overflow-hidden">
+        <div className="w-20 sm:w-28">
+          <div className="h-1.5 sm:h-2 w-full rounded bg-neutral-100 overflow-hidden">
             <div
-              className="h-2 rounded bg-black"
+              className="h-1.5 sm:h-2 rounded bg-black"
               style={{ width: `${pct}%` }}
             />
           </div>
-          <div className="text-[10px] text-neutral-500 mt-1">
+          <div className="text-[9px] sm:text-[10px] text-neutral-500 mt-1">
             {value ? `${pct}% of max` : "No score"}
           </div>
         </div>
       </div>
       {score?.modelName && (
-        <div className="text-xs text-neutral-500 mt-2">{score.modelName}</div>
+        <div className="text-[10px] sm:text-xs text-neutral-500 mt-2">
+          {score.modelName}
+        </div>
       )}
     </Card>
   );
@@ -345,9 +349,11 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-6 bg-neutral-50 min-h-screen">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">My Credit</h1>
+    <div className="mx-auto max-w-6xl p-3 sm:p-4 md:p-6 bg-neutral-50 min-h-screen">
+      <header className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
+          My Credit
+        </h1>
         {pulledAt && (
           <p className="text-neutral-600 text-sm mt-1">Pulled {pulledAt}</p>
         )}
@@ -358,40 +364,46 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         title="Credit Scores"
         sub="Across Experian, Equifax, and TransUnion"
       />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <ScoreCard bureau="Experian" score={scoresByBureau.Experian} />
         <ScoreCard bureau="Equifax" score={scoresByBureau.Equifax} />
         <ScoreCard bureau="TransUnion" score={scoresByBureau.TransUnion} />
       </div>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-        <Card className="p-4">
-          <div className="text-sm text-neutral-500">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-10">
+        <Card className="p-3 sm:p-4">
+          <div className="text-xs sm:text-sm text-neutral-500">
             Total Open Revolving Utilization
           </div>
-          <div className="mt-1 text-2xl font-semibold">
+          <div className="mt-1 text-xl sm:text-2xl font-semibold">
             {util.pct.toFixed(0)}%
           </div>
-          <div className="text-xs text-neutral-500 mt-1">
+          <div className="text-[10px] sm:text-xs text-neutral-500 mt-1">
             {fmtCurrency(util.totalBal)} / {fmtCurrency(util.totalLimit)}
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="text-sm text-neutral-500">Open Accounts</div>
-          <div className="mt-1 text-2xl font-semibold">
+        <Card className="p-3 sm:p-4">
+          <div className="text-xs sm:text-sm text-neutral-500">
+            Open Accounts
+          </div>
+          <div className="mt-1 text-xl sm:text-2xl font-semibold">
             {
               allTradelines.filter(
                 (t) => t.accountStatusType?.toLowerCase() === "open"
               ).length
             }
           </div>
-          <div className="text-xs text-neutral-500 mt-1">{`Reporting with status "Open"`}</div>
+          <div className="text-[10px] sm:text-xs text-neutral-500 mt-1">{`Reporting with status "Open"`}</div>
         </Card>
-        <Card className="p-4">
-          <div className="text-sm text-neutral-500">Negative Items</div>
-          <div className="mt-1 text-2xl font-semibold">{negItems.length}</div>
-          <div className="text-xs text-neutral-500 mt-1">
+        <Card className="p-3 sm:p-4">
+          <div className="text-xs sm:text-sm text-neutral-500">
+            Negative Items
+          </div>
+          <div className="mt-1 text-xl sm:text-2xl font-semibold">
+            {negItems.length}
+          </div>
+          <div className="text-[10px] sm:text-xs text-neutral-500 mt-1">
             Derogatory flags or late payments
           </div>
         </Card>
@@ -402,11 +414,11 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         title="Inquiries by Bureau"
         sub="Each hard inquiry listed per bureau"
       />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-10">
         {(["Experian", "Equifax", "TransUnion"] as const).map((b) => (
-          <Card key={b} className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="font-medium">{b}</div>
+          <Card key={b} className="p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <div className="text-sm sm:text-base font-medium">{b}</div>
               <Badge>
                 {inquiriesByBureau[b].length} inquiry
                 {inquiriesByBureau[b].length !== 1 ? "ies" : ""}
@@ -422,18 +434,18 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
                     className="text-sm"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="truncate mr-2">
+                      <span className="truncate flex-1 min-w-0">
                         {q.creditorName || "Unknown"}
                         {q.businessType ? ` · ${q.businessType}` : ""}
                       </span>
-                      <span className="text-neutral-500 text-xs">
+                      <span className="text-neutral-500 text-[10px] sm:text-xs flex-shrink-0">
                         {q.inquiryDate
                           ? new Date(q.inquiryDate).toLocaleDateString()
                           : "—"}
                       </span>
                     </div>
                     {q.subscriberCode && (
-                      <div className="text-[11px] text-neutral-500">
+                      <div className="text-[10px] sm:text-[11px] text-neutral-500">
                         Code: {q.subscriberCode}
                       </div>
                     )}
@@ -450,27 +462,35 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         title="Negative Items"
         sub="Accounts with derogatories or any reported late payments (all bureaus)"
       />
-      <Card className="overflow-hidden  mb-10">
+      <Card className="overflow-hidden mb-6 sm:mb-10">
         {negItems.length === 0 ? (
           <Empty>
             No negative items detected from the provided tradelines.
           </Empty>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+          <div className="overflow-x-auto -mx-3 sm:mx-0">
+            <table className="min-w-full text-xs sm:text-sm">
               <thead className="bg-neutral-100 text-neutral-700">
                 <tr>
-                  <th className="text-left px-4 py-2 font-medium">Bureau</th>
-                  <th className="text-left px-4 py-2 font-medium">Creditor</th>
-                  <th className="text-left px-4 py-2 font-medium">Acct #</th>
-                  <th className="text-left px-4 py-2 font-medium">Status</th>
-                  <th className="text-left px-4 py-2 font-medium">
+                  <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2 font-medium text-[10px] sm:text-sm">
+                    Bureau
+                  </th>
+                  <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2 font-medium text-[10px] sm:text-sm">
+                    Creditor
+                  </th>
+                  <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2 font-medium text-[10px] sm:text-sm">
+                    Acct #
+                  </th>
+                  <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2 font-medium text-[10px] sm:text-sm">
+                    Status
+                  </th>
+                  <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2 font-medium text-[10px] sm:text-sm">
                     Late 30/60/90
                   </th>
-                  <th className="text-left px-4 py-2 font-medium">
+                  <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2 font-medium text-[10px] sm:text-sm">
                     Current Balance
                   </th>
-                  <th className="text-left px-4 py-2 font-medium">
+                  <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2 font-medium text-[10px] sm:text-sm">
                     Last Activity
                   </th>
                 </tr>
@@ -481,25 +501,27 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
                     key={`${t.sourceType}-${t.accountIdentifier}-${i}`}
                     className="border-t"
                   >
-                    <td className="px-4 py-2 whitespace-nowrap">
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap">
                       {bureauLabel(t.sourceType)}
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap">
                       {t.creditorName || "—"}
                     </td>
-                    <td className="px-4 py-2">{maskId(t.accountIdentifier)}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2">
+                      {maskId(t.accountIdentifier)}
+                    </td>
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2">
                       {t.accountStatusType || "—"}
                       {t.derogatoryDataIndicator ? " · Derogatory" : ""}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2">
                       {toNum(t._30DayLates)}/{toNum(t._60DayLates)}/
                       {toNum(t._90DayLates)}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2">
                       {fmtCurrency(toNum(t.currentBalanceAmount))}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2">
                       {t.lastActivityDate
                         ? new Date(t.lastActivityDate).toLocaleDateString()
                         : "—"}
@@ -517,14 +539,14 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         title="Positive Factors"
         sub="Strengths inferred from the combined tradelines and score context"
       />
-      <Card className="p-4 mb-10">
+      <Card className="p-3 sm:p-4 mb-6 sm:mb-10">
         {positives.length === 0 ? (
           <Empty>
             No explicit positive factors detected. Provide more bureau data for
             a fuller picture.
           </Empty>
         ) : (
-          <ul className="list-disc pl-5 space-y-2 text-sm">
+          <ul className="list-disc pl-4 sm:pl-5 space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
             {positives.map((p, i) => (
               <li key={i}>{p}</li>
             ))}
@@ -534,12 +556,12 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
 
       {/* Call to action */}
       {!isAdminView && false && (
-        <Card className="p-5 flex items-center justify-between">
-          <div>
-            <div className="text-lg font-semibold">
+        <Card className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-0 sm:justify-between">
+          <div className="flex-1">
+            <div className="text-base sm:text-lg font-semibold">
               Need help improving your credit?
             </div>
-            <div className="text-neutral-600 text-sm mt-1">
+            <div className="text-neutral-600 text-xs sm:text-sm mt-1">
               Tap the button to start credit repair with Rapid Repair Now.
             </div>
           </div>
@@ -547,7 +569,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
             href="https://rapidrepairnow.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-neutral-900 hover:bg-neutral-900 hover:text-white transition"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-neutral-900 hover:bg-neutral-900 hover:text-white transition w-full sm:w-auto justify-center text-sm sm:text-base"
             aria-label="Fix my credit at Rapid Repair Now"
           >
             Fix my credit
@@ -555,7 +577,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         </Card>
       )}
 
-      <p className="text-xs text-neutral-500 mt-4">
+      <p className="text-[10px] sm:text-xs text-neutral-500 mt-3 sm:mt-4">
         Note: When multiple docs per bureau exist, the newest is used.
       </p>
     </div>

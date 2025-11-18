@@ -217,6 +217,11 @@ const BankProductsList = ({
 
           const status = funds?.clientApplicationStatus;
 
+          // Hide actions if status is Approved or Funded
+          if (status === "Approved" || status === "Funded") {
+            return null;
+          }
+
           return (
             <ActionCell
               row={row}

@@ -99,6 +99,21 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: MUX_TOKEN_ID
+    value: 0d9782a4-b4cb-42c3-844e-cb0822886a82
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEW_REGISTRATION_EMAIL_NOTIF
+    value: contact@cegunited.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_APP_URL
+    value: https://app.cegunited.com
+    availability:
+      - BUILD
+      - RUNTIME
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   - variable: FIREBASE_CLIENT_EMAIL
@@ -119,3 +134,5 @@ env:
     secret: ENCRYPTION_KEY
   - variable: FIREBASE_PRIVATE_KEY_BASE64
     secret: FIREBASE_PRIVATE_KEY_BASE64
+  - variable: MUX_TOKEN_SECRET
+    secret: MUX_TOKEN_SECRET

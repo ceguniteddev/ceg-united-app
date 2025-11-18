@@ -64,22 +64,22 @@ export const topCategoryStyles = {
 export const sidebarLinks = [
   {
     imgURL: "/icons/home.svg",
-    route: "/overview",
+    route: "/client/home",
     label: "Home",
   },
   {
     imgURL: "/icons/money-send.svg",
-    route: "/my-funding",
+    route: "/client/my-funding",
     label: "My Funding",
   },
   {
     imgURL: "/icons/credit-card.svg",
-    route: "/my-accounts",
+    route: "/client/my-accounts",
     label: "My Accounts",
   },
   {
     imgURL: "/icons/building-2.svg",
-    route: "/my-business",
+    route: "/client/my-business",
     label: "My Business",
   },
   // {
@@ -89,7 +89,7 @@ export const sidebarLinks = [
   // },
   {
     imgURL: "/icons/dollar-circle.svg",
-    route: "/my-credit",
+    route: "/client/my-credit",
     label: "My Credit",
   },
   // {
@@ -99,8 +99,13 @@ export const sidebarLinks = [
   // },
   {
     imgURL: "/icons/files.svg",
-    route: "/my-documents",
+    route: "/client/my-documents",
     label: "My Documents",
+  },
+  {
+    imgURL: "/icons/book-open-text.svg",
+    route: "/client/my-learning",
+    label: "My Learning",
   },
   // {
   //   imgURL: "/icons/dollar-circle.svg",
@@ -114,7 +119,7 @@ export const sidebarLinks = [
   // },
   {
     imgURL: "/icons/headset.svg",
-    route: "/support-service",
+    route: "/client/support-service",
     label: "Contact Us",
   },
 ];
@@ -129,6 +134,11 @@ export const adminSidebarLinks = [
     imgURL: "/icons/users.svg",
     route: "/admin/clients",
     label: "Clients",
+  },
+  {
+    imgURL: "/icons/handshake.svg",
+    route: "/admin/brokers",
+    label: "Brokers",
   },
   {
     imgURL: "/icons/credit-card.svg",
@@ -146,6 +156,11 @@ export const adminSidebarLinks = [
     label: "Funding Applications",
   },
   {
+    imgURL: "/icons/dollar-circle.svg",
+    route: "/admin/denefits-payments",
+    label: "Denefits Payments",
+  },
+  {
     imgURL: "/icons/phone-call.svg",
     route: "/admin/call-requests",
     label: "Call Requests",
@@ -154,6 +169,49 @@ export const adminSidebarLinks = [
     imgURL: "/icons/bell.svg",
     route: "/admin/whats-new",
     label: "What's New",
+  },
+  {
+    imgURL: "/icons/book-open-text.svg",
+    route: "/admin/educational-materials",
+    label: "Educational Materials",
+  },
+];
+
+export const brokerSidebarLinks = [
+  {
+    imgURL: "/icons/home.svg",
+    route: "/broker/home",
+    label: "Home",
+  },
+  {
+    imgURL: "/icons/users.svg",
+    route: "/broker/my-clients",
+    label: "My Clients",
+  },
+  {
+    imgURL: "/icons/money-send.svg",
+    route: "/broker/client-funding",
+    label: "Client Funding Products",
+  },
+  // {
+  //   imgURL: "/icons/dollar-circle.svg",
+  //   route: "/broker/my-funded-deals",
+  //   label: "My Funded Deals",
+  // },
+  // {
+  //   imgURL: "/icons/money-send.svg",
+  //   route: "/broker/submit-application",
+  //   label: "Submit Application",
+  // },
+  // {
+  //   imgURL: "/icons/bell.svg",
+  //   route: "/whats-new",
+  //   label: "What's New",
+  // },
+  {
+    imgURL: "/icons/headset.svg",
+    route: "/broker/support-service",
+    label: "Contact Us",
   },
 ];
 
@@ -171,11 +229,16 @@ export const settingsSidebarAdmin = [
     route: "/settings/personal",
     label: "Personal",
   },
-  {
-    imgURL: "/icons/circle-user-round.svg",
-    route: "/settings/users",
-    label: "Users",
-  },
+  // {
+  //   imgURL: "/icons/circle-user-round.svg",
+  //   route: "/settings/users",
+  //   label: "Users",
+  // },
+  // {
+  //   imgURL: "/icons/handshake.svg",
+  //   route: "/settings/broker",
+  //   label: "Broker Invitations",
+  // },
 ];
 
 export const transactionCategoryStyles = {
@@ -245,6 +308,12 @@ export const transactionCategoryStyles = {
     textColor: "text-emerald-700",
     chipBackgroundColor: "bg-emerald-50",
   },
+  Published: {
+    borderColor: "border-emerald-300",
+    backgroundColor: "bg-emerald-600",
+    textColor: "text-emerald-700",
+    chipBackgroundColor: "bg-emerald-50",
+  },
   default: {
     borderColor: "",
     backgroundColor: "bg-blue-500",
@@ -252,6 +321,17 @@ export const transactionCategoryStyles = {
     chipBackgroundColor: "bg-inherit",
   },
 };
+
+export const courseCategories = [
+  {
+    label: "Personal",
+    value: "Personal",
+  },
+  {
+    label: "Business",
+    value: "Business",
+  },
+];
 
 export const US_STATES = [
   {

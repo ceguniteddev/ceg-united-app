@@ -20,8 +20,8 @@ export const genderTypes = () => {
   }));
 };
 
-export const dateOfBirthSchema = z
-  .date({ error: "Required" })
+export const dateOfBirthSchema = z.coerce
+  .date<Date>()
   .refine((date) => date <= new Date(), {
     message: "Date cannot be in the future",
   });
@@ -135,3 +135,11 @@ export const changePasswordSchema = z
     path: ["confirmPassword"], // Apply the error to the confirmPassword field
   });
 export type ChangePassword = z.infer<typeof changePasswordSchema>;
+
+export interface UploadedFileData {
+  originalFilename: string;
+  gcsPath: string;
+  size: number;
+  contentType: string;
+  publicUrl?: string;
+}

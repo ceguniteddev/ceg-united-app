@@ -278,6 +278,10 @@ export const useApprovedMappedFundsMutation = () => {
           variable.referenceNumber,
         ],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["BROKER_CLIENTS_MAPPED_FUNDING", user?.uid],
+      });
+
       toast.success("Fund successfully applied.");
     },
     onError: (error: any) => {
@@ -340,11 +344,15 @@ export const useApprovedMappedFundsMutation = () => {
       fundMappingApprovedId,
       fundedAmount,
       fundedRemarks,
+      userId,
+      bankName,
     }: {
       referenceNumber: string;
       fundMappingApprovedId: string;
       fundedAmount: number;
       fundedRemarks?: string;
+      userId: string;
+      bankName: string;
     }) => {
       if (!user) throw new Error("User not authenticated");
 
@@ -353,6 +361,8 @@ export const useApprovedMappedFundsMutation = () => {
         fundMappingApprovedId,
         fundedAmount,
         fundedRemarks,
+        userId,
+        bankName,
       });
     },
     onSuccess: (_data, variable) => {
@@ -382,15 +392,18 @@ export const useApprovedMappedFundsMutation = () => {
     mutationFn: async ({
       referenceNumber,
       fundMappingApprovedId,
+      declineReason,
     }: {
       referenceNumber: string;
       fundMappingApprovedId: string;
+      declineReason: string;
     }) => {
       if (!user) throw new Error("User not authenticated");
 
       await declineAppliedBankProduct({
         referenceNumber,
         fundMappingApprovedId,
+        declineReason,
       });
     },
     onSuccess: (_data, variable) => {

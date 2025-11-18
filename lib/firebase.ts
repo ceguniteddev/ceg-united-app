@@ -24,11 +24,11 @@ const firebaseConfigProd = {
 };
 
 const getConfig = () => {
-  return process.env.NEXT_PUBLIC_ENVIRONMENT === "production"
-    ? firebaseConfigProd
-    : firebaseConfig;
+  return process.env.NEXT_PUBLIC_ENVIRONMENT === "production" ? firebaseConfigProd : firebaseConfig;
 };
 
+// console.log("Firebase config:", process.env.NEXT_PUBLIC_ENVIRONMENT);
+// console.log("Firebase config:", getConfig().projectId);
 const app = initializeApp(getConfig());
 
 export const authFirebase = getAuth(app);

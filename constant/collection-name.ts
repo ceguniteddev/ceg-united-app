@@ -33,3 +33,15 @@ export const CRS_REPORT_BUSINESS_SCORE = "crs-report-business-score";
 export const REQUEST_CUSTOMER_CALL = "user-request-call";
 export const WHATS_NEW_COLLECTION = "whats-new";
 export const BUSINESS_DETAIL_COLLECTION = "business-detail";
+
+export const COURSE = "course";
+export const CHAPTER = "chapter";
+export const ATTACHMENT = "attachment";
+export const MUX_DATA = "mux-data";
+export const USER_COURSE_PROGRESS = "user-course-progress";
+export const USER_COURSE_ENROLLMENT = "user-course-enrollment";
+
+export const BROKER_COLLECTION = "broker";
+export const BROKER_INVITATION = "broker-invitation";
+export const BROKER_CLIENT_MAPPING = "broker-client-mapping";
+export const BROKER_COMMISSION = "broker-commission";

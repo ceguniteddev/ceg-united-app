@@ -1,0 +1,96 @@
+"use client";
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ClientData from "@/app/(admin)/admin/clients/view";
+import { UserWithId } from "@/schema/registration";
+import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
+import ClientDocuments from "@/components/ClientDocuments";
+import ClientCreditReport from "@/components/ClientCreditReport";
+import BusinessRecordsPage from "@/components/ClientBusinessReport";
+import { useParams } from "next/navigation";
+import { useUserQuery } from "@/hooks/user";
+import Spinner from "@/components/Spinner";
+import ApplyFunding from "@/components/fundingv2/ApplyFunding";
+import FundingList from "@/components/funding/funding-list";
+import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
+import { ApprovedBankFormData } from "@/schema/bank-products";
+
+const ClientProfilePage = () => {
+  const params = useParams();
+  const userId = params.userId as string;
+
+  const { userData, isLoading: isUserLoading } = useUserQuery(userId);
+
+  const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
+    userId,
+  });
+
+  // Show loading state while fetching data
+  if (isUserLoading || isLoading) {
+    return <Spinner displayText="Loading user profile..." />;
+  }
+
+  // If no user data, show error state
+  if (!userData) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-gray-900">
+            User Not Found
+          </h2>
+          <p className="mt-2 text-gray-600">
+            The requested user could not be found.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Tabs
+      defaultValue="personal-information"
+      className="w-full flex flex-col items-start justify-start p-4 sm:p-6 lg:p-10"
+    >
+      <TabsList className="flex-wrap h-auto">
+        <TabsTrigger value="personal-information">
+          Personal Information
+        </TabsTrigger>
+        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+        <TabsTrigger value="documents">Documents</TabsTrigger>
+        <TabsTrigger value="credit-report">Credit Report</TabsTrigger>
+        <TabsTrigger value="business">Business</TabsTrigger>
+        <TabsTrigger value="applied-funding">Applied Funding</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="personal-information" className="w-full">
+        <ClientData user={userData as UserWithId} isBrokerView />
+      </TabsContent>
+
+      <TabsContent value="dashboard" className="w-full">
+        <AdminViewUserProfile userId={userId} adminView={true} />
+      </TabsContent>
+
+      <TabsContent value="documents" className="w-full">
+        <ClientDocuments userId={userId} />
+      </TabsContent>
+
+      <TabsContent value="credit-report" className="w-full">
+        <ClientCreditReport userId={userId} isAdminView />
+      </TabsContent>
+
+      <TabsContent value="business" className="w-full">
+        <BusinessRecordsPage userId={userId} />
+      </TabsContent>
+
+      <TabsContent value="applied-funding" className="w-full">
+        <div className="flex flex-row justify-end">
+          <ApplyFunding userId={userId} />
+        </div>
+        {/* <ClientAppliedFunding userId={userId} /> */}
+        <FundingList appliedFunding={mappedFund as ApprovedBankFormData[]} />
+      </TabsContent>
+    </Tabs>
+  );
+};
+
+export default ClientProfilePage;

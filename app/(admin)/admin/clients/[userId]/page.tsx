@@ -1,9 +1,8 @@
 "use client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClientData from "@/app/(admin)/admin/clients/view";
-import AdminMappedFunds from "@/components/funding/AdminMappedFunds";
-import { UserFundMapStatus, UserWithId } from "@/schema/registration";
+import { UserWithId } from "@/schema/registration";
 import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
 import SendEmail from "@/components/SendEmail";
 import ClientNotes from "@/components/notes/ClientNotes";
@@ -11,24 +10,45 @@ import ClientAppliedFunding from "@/components/ClientAppliedFundingList";
 import ClientDocuments from "@/components/ClientDocuments";
 import ClientCreditReport from "@/components/ClientCreditReport";
 import BusinessRecordsPage from "@/components/ClientBusinessReport";
+import UserLearningMaterials from "@/components/UserLearningMaterials";
 import { useParams } from "next/navigation";
 import { useUserQuery } from "@/hooks/user";
+import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import Spinner from "@/components/Spinner";
+import { useMemo } from "react";
 
-type Props = {
-  formSetOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  data: UserWithId;
-  status?: UserFundMapStatus | null;
-};
-
-const TabView = () => {
+const ClientProfilePage = () => {
   const params = useParams();
   const userId = params.userId as string;
 
-  const { userData, isLoading } = useUserQuery(userId);
+  const { userData, isLoading: isUserLoading } = useUserQuery(userId);
+  const { denefitsContract, isLoading: isDenefitsLoading } =
+    useGetDenefitsContractsByUserId(userId);
 
-  if (isLoading) {
+  // Check if user has access to learning materials
+  const hasLearningMaterialsAccess = useMemo(() => {
+    return !!(denefitsContract && denefitsContract.length > 0);
+  }, [denefitsContract]);
+
+  // Show loading state while fetching data
+  if (isUserLoading || isDenefitsLoading) {
     return <Spinner displayText="Loading user profile..." />;
+  }
+
+  // If no user data, show error state
+  if (!userData) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-gray-900">
+            User Not Found
+          </h2>
+          <p className="mt-2 text-gray-600">
+            The requested user could not be found.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -44,41 +64,55 @@ const TabView = () => {
         <TabsTrigger value="documents">Documents</TabsTrigger>
         <TabsTrigger value="credit-report">Credit Report</TabsTrigger>
         <TabsTrigger value="business">Business</TabsTrigger>
-        {/* <TabsTrigger value="pre-approved-funds">Pre-approved Funds</TabsTrigger> */}
         <TabsTrigger value="applied-funding">Applied Funding</TabsTrigger>
+        {hasLearningMaterialsAccess && (
+          <TabsTrigger value="learning-materials">
+            Learning Materials
+          </TabsTrigger>
+        )}
         <TabsTrigger value="note">Note</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>
-      <TabsContent value="business" className="w-full">
-        <BusinessRecordsPage userId={userId} />
-      </TabsContent>
-      <TabsContent value="credit-report" className="w-full">
-        <ClientCreditReport userId={userId} isAdminView />
-      </TabsContent>
-      <TabsContent value="documents" className="w-full">
-        <ClientDocuments userId={userId} />
-      </TabsContent>
-      <TabsContent value="applied-funding" className="w-full">
-        <ClientAppliedFunding userId={userId} />
-      </TabsContent>
-      <TabsContent value="email" className="w-full">
-        <SendEmail userId={userId} />
-      </TabsContent>
-      <TabsContent value="note" className="w-full">
-        <ClientNotes userId={userId} />
-      </TabsContent>
+
       <TabsContent value="personal-information" className="w-full">
         <ClientData user={userData as UserWithId} />
       </TabsContent>
-      {/* <TabsContent value="pre-approved-funds" className="w-full">
-        <AdminMappedFunds userId={userId} />
-      </TabsContent> */}
 
       <TabsContent value="dashboard" className="w-full">
-        <AdminViewUserProfile userId={userId} />
+        <AdminViewUserProfile userId={userId} adminView={true} />
+      </TabsContent>
+
+      <TabsContent value="documents" className="w-full">
+        <ClientDocuments userId={userId} />
+      </TabsContent>
+
+      <TabsContent value="credit-report" className="w-full">
+        <ClientCreditReport userId={userId} isAdminView />
+      </TabsContent>
+
+      <TabsContent value="business" className="w-full">
+        <BusinessRecordsPage userId={userId} />
+      </TabsContent>
+
+      <TabsContent value="applied-funding" className="w-full">
+        <ClientAppliedFunding userId={userId} />
+      </TabsContent>
+
+      {hasLearningMaterialsAccess && (
+        <TabsContent value="learning-materials" className="w-full">
+          <UserLearningMaterials userId={userId} isAdminView />
+        </TabsContent>
+      )}
+
+      <TabsContent value="note" className="w-full">
+        <ClientNotes userId={userId} />
+      </TabsContent>
+
+      <TabsContent value="email" className="w-full">
+        <SendEmail userId={userId} />
       </TabsContent>
     </Tabs>
   );
 };
 
-export default TabView;
+export default ClientProfilePage;

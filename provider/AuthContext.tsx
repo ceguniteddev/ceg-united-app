@@ -27,6 +27,7 @@ import AppError from "@/error/AppError";
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
+  isBroker: boolean;
   isOnboarded: boolean;
   role: Role | null;
   loading: boolean;
@@ -49,8 +50,10 @@ export function AuthProvider({
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isBroker, setIsBroker] = useState(false);
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [loading, setLoading] = useState(true); // Still true to prevent flicker on load
+  const [isLoggingIn, setIsLoggingIn] = useState(false); // Track if user is actively logging in
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -69,6 +72,7 @@ export function AuthProvider({
     setUser(firebaseUser);
     setRole(userRole as Role);
     setIsAdmin(userRole === "Admin");
+    setIsBroker(userRole === "Broker");
     setIsOnboarded(userData.isOnboarded || false);
   }, []);
 
@@ -79,6 +83,7 @@ export function AuthProvider({
     setUser(null);
     setRole(null);
     setIsAdmin(false);
+    setIsBroker(false);
     setIsOnboarded(false);
 
     await queryClient.cancelQueries({ predicate: () => true });
@@ -96,6 +101,7 @@ export function AuthProvider({
             setUser(null);
             setRole(null);
             setIsAdmin(false);
+            setIsBroker(false);
             setIsOnboarded(false);
           }
         } catch (error) {
@@ -114,9 +120,43 @@ export function AuthProvider({
     return () => unsubscribe();
   }, [loadAndSetUserData]);
 
+  // Check session validity periodically
+  useEffect(() => {
+    if (!user || isLoggingIn) return; // Skip check if user is actively logging in
+
+    const checkSession = async () => {
+      try {
+        // First, check if Firebase user token is still valid
+        await user.getIdToken(true);
+
+        // Then verify the server-side session cookie is still valid
+        const response = await fetch("/api/auth/verify-session");
+        if (!response.ok) {
+          await logOut();
+        }
+      } catch (error) {
+        // Session is invalid, logout and redirect
+        await logOut();
+      }
+    };
+
+    // Delay initial check by 2 seconds to allow session cookie to be set
+    const timeoutId = setTimeout(checkSession, 2000);
+
+    // Then check every 5 minutes
+    const intervalId = setInterval(checkSession, 5 * 60 * 1000);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
+  }, [user, logOut, isLoggingIn]);
+
   const signIn = useCallback(
     async (token: string | null, email: string, password: string) => {
       try {
+        setIsLoggingIn(true); // Mark that login is in progress
+
         if (!token)
           throw new AppError("Failed to login. Please refresh the page.");
 
@@ -158,13 +198,26 @@ export function AuthProvider({
 
         // Use the role you just set instead of refetching
         const nextRole = userRole.role || "Client";
-        router.push(nextRole === "Client" ? "/overview" : "/admin/home");
+
+        // Small delay to ensure session cookie is fully set before navigation
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Route based on user role
+        if (nextRole === "Admin") {
+          router.push("/admin/home");
+        } else if (nextRole === "Broker") {
+          router.push("/broker/home");
+        } else {
+          router.push("/client/home");
+        }
       } catch (error) {
         if (error instanceof AppError) throw error;
         try {
           await deleteCookie(FIREBASE_TOKEN_NAME);
         } catch {}
         throw new Error("Invalid email or password.");
+      } finally {
+        setIsLoggingIn(false); // Reset login flag
       }
     },
     [loadAndSetUserData, queryClient, router]
@@ -207,13 +260,24 @@ export function AuthProvider({
       user,
       role,
       isAdmin,
+      isBroker,
       signIn,
       logOut,
       loading,
       isOnboarded,
       resetPassword,
     }),
-    [user, role, isAdmin, signIn, logOut, loading, isOnboarded, resetPassword]
+    [
+      user,
+      role,
+      isAdmin,
+      isBroker,
+      signIn,
+      logOut,
+      loading,
+      isOnboarded,
+      resetPassword,
+    ]
   );
 
   return (
