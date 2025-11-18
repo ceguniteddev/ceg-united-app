@@ -1,4 +1,5 @@
 import Sidebar from "@/components/SidebarAdmin";
+import MobileNavAdmin from "@/components/MobileNavAdmin";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -17,10 +18,12 @@ export default function AdminLayout({
 }) {
   return (
     <div className="flex h-dvh w-full overflow-hidden font-inter">
-      <Sidebar />{" "}
-      {/* add its own scroll if needed: className="min-h-0 overflow-y-auto" */}
+      <Sidebar />
       <div className="flex flex-1 min-h-0 flex-col">
-        <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
+        <MobileNavAdmin />
+        <div className="flex-1 min-h-0 overflow-y-auto md:pt-0 pt-[60px]">
+          {children}
+        </div>
       </div>
     </div>
   );

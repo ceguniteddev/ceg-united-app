@@ -512,15 +512,15 @@ export const ClientDashboard = ({
     }).format(amount);
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6 bg-gray-50/50 dark:bg-background">
-      <header className="flex items-start justify-between">
+    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-4 md:p-6 bg-gray-50/50 dark:bg-background">
+      <header className="flex flex-col sm:flex-row items-start gap-3 sm:gap-0 sm:justify-between">
         <ResponsiveDialog
           isOpen={isOpenFunding}
           setIsOpen={setIsOpenFunding}
           title="Apply Funding"
           description={""}
           descriptionClassName="text-red-500 text-lg font-semibold"
-          className="w-4/6"
+          className="w-full sm:w-5/6 lg:w-4/6 max-w-4xl"
         >
           <ApplyFundingForm
             setOpen={setIsOpenFunding}
@@ -532,33 +532,36 @@ export const ClientDashboard = ({
           setIsOpen={setIsOpen}
           title=""
           description={""}
-          className="w-3/6"
+          className="w-full sm:w-5/6 md:w-4/6 lg:w-3/6 max-w-2xl"
         >
           <CreditRepairClientMessage setIsOpen={setIsOpen} />
         </ResponsiveDialog>
-        <div>
+        <div className="flex-1">
           {adminView ? (
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
               {`${userData?.firstName} ${userData?.lastName}` || "Client"}
             </h1>
           ) : (
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
                 Welcome, {userData?.firstName || "Client"}!
               </h1>
-              <p className="text-muted-foreground">{`Here's a summary of your financial overview.`}</p>
+              <p className="text-sm sm:text-base text-muted-foreground">{`Here's a summary of your financial overview.`}</p>
             </div>
           )}
         </div>
         {!adminView && (
-          <Button className="signup-link-playful" onClick={handleSignUp}>
+          <Button
+            className="signup-link-playful w-full sm:w-auto"
+            onClick={handleSignUp}
+          >
             Sign Up
           </Button>
         )}
       </header>
 
-      <main className="grid gap-6">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <main className="grid gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-3">
           <StatCard
             title="Total Requested Amount"
             value={formatCurrency(stats.totalRequested)}
@@ -579,7 +582,7 @@ export const ClientDashboard = ({
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
           <div className={stats.dtiReport ? "md:col-span-2" : "md:col-span-3"}>
             <Card>
               <CardHeader>
@@ -607,7 +610,7 @@ export const ClientDashboard = ({
           {stats.dtiReport && <DTICard data={stats.dtiReport} />}
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Personal Financial Snapshot</CardTitle>
@@ -648,11 +651,11 @@ export const ClientDashboard = ({
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">Business Profiles</h2>
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold">Business Profiles</h2>
           </div>
           {businessesWithCrsData && businessesWithCrsData.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
               {businessesWithCrsData.map((business) => {
                 const profile = business.crsBusinessProfile?.report;
                 const commScore = profile?.scoreInformation?.commercialScore;
@@ -663,13 +666,13 @@ export const ClientDashboard = ({
 
                 return (
                   <Card key={business.id} className="flex flex-col">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-xl">
+                    <CardHeader className="pb-3 sm:pb-6">
+                      <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-0 sm:justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg sm:text-xl">
                             {business.businessName}
                           </CardTitle>
-                          <CardDescription>
+                          <CardDescription className="text-xs sm:text-sm">
                             Employer Idenfication Number:{" "}
                             {business.employerIdentificationNumber}
                           </CardDescription>
@@ -682,7 +685,7 @@ export const ClientDashboard = ({
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="grid flex-grow grid-cols-2 gap-4 text-sm">
+                    <CardContent className="grid flex-grow grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-md">
                           <TrendingUp className="h-5 w-5 text-primary" />
@@ -835,17 +838,17 @@ const CreditRepairClientMessage = ({
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   return (
-    <div className="flex flex-row">
+    <div className="flex flex-col lg:flex-row gap-4">
       <div className="bg-card text-card-foreground rounded-xl border shadow-lg max-w-lg mx-auto font-sans">
-        <div className="flex flex-col space-y-1.5 p-6">
-          <h3 className="font-semibold tracking-tight text-2xl">
+        <div className="flex flex-col space-y-1.5 p-4 sm:p-6">
+          <h3 className="font-semibold tracking-tight text-xl sm:text-2xl">
             Complete Your Enrollment
           </h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Please follow the steps below to finalize your application.
           </p>
         </div>
-        <div className="p-6 pt-0">
+        <div className="p-4 sm:p-6 pt-0">
           <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-lg p-4 mb-6">
             <div className="flex items-start">
               <AlertTriangle className="h-5 w-5 mr-3 mt-1" />
@@ -859,9 +862,9 @@ const CreditRepairClientMessage = ({
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <div>
-              <h4 className="font-semibold text-md mb-2">
+              <h4 className="font-semibold text-sm sm:text-md mb-2">
                 Step 1: Initial Payment
               </h4>
               <p className="text-muted-foreground mb-4 text-sm">
@@ -880,7 +883,7 @@ const CreditRepairClientMessage = ({
             </div>
 
             <div>
-              <h4 className="font-semibold text-md mb-2">
+              <h4 className="font-semibold text-sm sm:text-md mb-2">
                 Step 2: Enrollment Fee
               </h4>
               <p className="text-muted-foreground text-sm">
@@ -895,13 +898,13 @@ const CreditRepairClientMessage = ({
             </div>
           </div>
         </div>
-        <div className="flex items-center p-6 pt-0">
+        <div className="flex items-center p-4 sm:p-6 pt-0">
           <p className="text-xs text-muted-foreground">
             {`If you have any questions, please don't hesitate to contact our
           support team.`}
           </p>
         </div>
-        <div className="flex items-center justify-end p-6 pt-0">
+        <div className="flex items-center justify-end p-4 sm:p-6 pt-0">
           <Button
             className="cursor-pointer bg-blue-200 hover:bg-blue-300"
             variant={"outline"}
