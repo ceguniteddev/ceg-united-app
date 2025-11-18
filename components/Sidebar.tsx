@@ -62,7 +62,7 @@ const Sidebar = () => {
   if (!user) return null;
 
   return (
-    <section className="sidebar">
+    <section className="sidebar max-md:hidden">
       <nav className="flex flex-col">
         <Link
           href="/client/home"

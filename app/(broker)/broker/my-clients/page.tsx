@@ -111,26 +111,28 @@ export default function MyClientsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full flex-col p-8 space-y-6">
-        <Skeleton className="h-12 w-64" />
-        <Skeleton className="h-96" />
+      <div className="flex h-full w-full flex-col p-4 sm:p-6 lg:p-8 space-y-6">
+        <Skeleton className="h-12 w-48 sm:w-64" />
+        <Skeleton className="h-64 sm:h-96" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-full w-full flex-col p-8">
+    <div className="flex h-full w-full flex-col p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Clients</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            My Clients
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Manage and view all your clients
           </p>
         </div>
         <Button
           size="lg"
-          className="gap-2"
+          className="gap-2 w-full sm:w-auto"
           onClick={() => setIsModalOpen(true)}
         >
           <Plus className="h-4 w-4" />
@@ -163,73 +165,138 @@ export default function MyClientsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Client Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Added Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredClients.map((client: any) => (
-                  <TableRow key={client.clientId}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Users className="h-4 w-4 text-primary" />
-                        <p className="font-medium">{client.clientName}</p>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Added Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredClients.map((client: any) => (
+                    <TableRow key={client.clientId}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Users className="h-4 w-4 text-primary" />
+                          <p className="font-medium">{client.clientName}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{client.clientEmail}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {client.createdAt
+                              ? format(
+                                  new Date(client.createdAt),
+                                  "MMM dd, yyyy"
+                                )
+                              : "N/A"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            client.status === "Active" ? "default" : "secondary"
+                          }
+                        >
+                          {client.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link href={`/broker/my-clients/${client.clientId}`}>
+                          <Button variant="outline" size="sm">
+                            View Dashboard
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {filteredClients.map((client: any) => (
+                <Card key={client.clientId} className="overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <Users className="h-5 w-5 text-primary" />
+                          <div>
+                            <p className="font-semibold text-base">
+                              {client.clientName}
+                            </p>
+                            <Badge
+                              variant={
+                                client.status === "Active"
+                                  ? "default"
+                                  : "secondary"
+                              }
+                              className="mt-1"
+                            >
+                              {client.status}
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{client.clientEmail}</span>
+
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Mail className="h-4 w-4" />
+                          <span className="truncate">{client.clientEmail}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            {client.createdAt
+                              ? format(
+                                  new Date(client.createdAt),
+                                  "MMM dd, yyyy"
+                                )
+                              : "N/A"}
+                          </span>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">
-                          {client.createdAt
-                            ? format(new Date(client.createdAt), "MMM dd, yyyy")
-                            : "N/A"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          client.status === "Active" ? "default" : "secondary"
-                        }
+
+                      <Link
+                        href={`/broker/my-clients/${client.clientId}`}
+                        className="block"
                       >
-                        {client.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Link href={`/broker/my-clients/${client.clientId}`}>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="w-full">
                           View Dashboard
                         </Button>
                       </Link>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </CardContent>
         </Card>
       ) : (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="rounded-full bg-muted p-6 mb-4">
-              <Users className="h-12 w-12 text-muted-foreground" />
+          <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16">
+            <div className="rounded-full bg-muted p-4 sm:p-6 mb-4">
+              <Users className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">
+            <h3 className="text-lg sm:text-xl font-semibold mb-2 text-center">
               {searchTerm ? "No clients found" : "No clients yet"}
             </h3>
-            <p className="text-muted-foreground text-center max-w-md mb-6">
+            <p className="text-sm sm:text-base text-muted-foreground text-center max-w-md mb-6 px-4">
               {searchTerm
                 ? "Try adjusting your search criteria"
                 : "Start building your client portfolio by adding your first client."}
@@ -237,7 +304,7 @@ export default function MyClientsPage() {
             {!searchTerm && (
               <Button
                 size="lg"
-                className="gap-2"
+                className="gap-2 w-full sm:w-auto"
                 onClick={() => setIsModalOpen(true)}
               >
                 <Plus className="h-4 w-4" />
@@ -254,7 +321,7 @@ export default function MyClientsPage() {
         setIsOpen={setIsModalOpen}
         title="Client Registration"
         description="Register a new client to your portfolio"
-        className="max-w-[900px]"
+        className="max-w-[95vw] sm:max-w-[600px] lg:max-w-[900px]"
       >
         <Card>
           <CardContent className="pt-6">
@@ -262,7 +329,7 @@ export default function MyClientsPage() {
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <fieldset disabled={isSubmitting}>
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       <CustomFormField
                         name={"firstName"}
                         placeholder={""}
@@ -279,7 +346,7 @@ export default function MyClientsPage() {
                         label="* Last Name"
                       />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <CustomFormField
                         name={"email"}
                         type="email"
@@ -292,7 +359,7 @@ export default function MyClientsPage() {
                         label="* Phone Number"
                       />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <CustomFormField
                         name={"birthdate"}
                         type="date-picker"
@@ -309,7 +376,7 @@ export default function MyClientsPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <CustomFormField
                         name={"ssn"}
                         placeholder="xxx-xx-xxxx"
@@ -321,12 +388,13 @@ export default function MyClientsPage() {
               </form>
             </Form>
           </CardContent>
-          <CardFooter className="flex flex-col sm:flex-row gap-4">
+          <CardFooter className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsModalOpen(false)}
               disabled={isSubmitting}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
@@ -334,7 +402,7 @@ export default function MyClientsPage() {
               type="submit"
               disabled={isSubmitting}
               onClick={form.handleSubmit(onSubmit)}
-              className="bg-green-400 hover:bg-green-500 text-black-100"
+              className="w-full sm:w-auto bg-green-400 hover:bg-green-500 text-black-100"
             >
               {isSubmitting ? (
                 <>

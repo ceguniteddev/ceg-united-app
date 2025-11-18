@@ -1,4 +1,5 @@
 import SidebarBroker from "@/components/SidebarBroker";
+import MobileNavBroker from "@/components/MobileNavBroker";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -18,7 +19,10 @@ export default function BrokerLayout({
     <div className="flex h-screen w-full overflow-hidden font-inter">
       <SidebarBroker />
       <div className="flex flex-1 min-h-0 flex-col">
-        <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
+        <MobileNavBroker />
+        <div className="flex-1 min-h-0 overflow-y-auto lg:pt-0 pt-[60px]">
+          {children}
+        </div>
       </div>
     </div>
   );

@@ -21,7 +21,7 @@ const Sidebar = () => {
   if (role === "Client") return null;
 
   return (
-    <section className="sidebar">
+    <section className="sidebar max-md:hidden">
       <nav className="flex flex-col">
         <Link
           href="/admin/home"

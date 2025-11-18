@@ -1,5 +1,6 @@
 import IconMenu from "@/components/icon-menu";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   UserActiveStatus,
   UserActiveStatusEnum,
@@ -69,40 +70,44 @@ const ClientData = ({
 
   return (
     <main className="mx-auto w-full">
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <header className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Personal Information
-          </h1>
-          {!isBrokerView && <DenefitsContract user={user} />}
-        </header>
-        {!isBrokerView && (
-          <header className="mb-6 flex items-center justify-between">
-            <RefreshCRSData userId={user.id} />
-            <StatusPicker user={user} />
-          </header>
-        )}
+      <Card className="max-w-full overflow-hidden">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <CardTitle className="text-xl sm:text-2xl">
+              Personal Information
+            </CardTitle>
+            {!isBrokerView && <DenefitsContract user={user} />}
+          </div>
+          {!isBrokerView && (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
+              <RefreshCRSData userId={user.id} />
+              <StatusPicker user={user} />
+            </div>
+          )}
+        </CardHeader>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Info label="Name" value={name} />
-          <Info label="SSN" value={user.ssn} />
-          <Info label="Email" value={user.email} />
-          <Info label="Phone" value={user.phoneNumber} />
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <Info label="Name" value={name} />
+            <Info label="SSN" value={user.ssn} />
+            <Info label="Email" value={user.email} />
+            <Info label="Phone" value={user.phoneNumber} />
 
-          <Info
-            label="Birthdate"
-            value={format(user.birthdate, "MMM d, yyyy")}
-          />
-          <Info label="Gender" value={user.gender || "—"} />
+            <Info
+              label="Birthdate"
+              value={format(user.birthdate, "MMM d, yyyy")}
+            />
+            <Info label="Gender" value={user.gender || "—"} />
 
-          <Info label="Registered" value={fmtDate(registered)} />
+            <Info label="Registered" value={fmtDate(registered)} />
 
-          {/* <Info label="Street" value={user.addressStreet} />
+            {/* <Info label="Street" value={user.addressStreet} />
           <Info label="City" value={user.addressCity} />
           <Info label="State" value={user.addressState} />
           <Info label="Zip Code" value={user.addressPostal} /> */}
-        </div>
-      </section>
+          </div>
+        </CardContent>
+      </Card>
     </main>
   );
 };
@@ -111,12 +116,16 @@ export default ClientData;
 
 function Info({ label, value }: { label: string; value?: string }) {
   return (
-    <div className="rounded-xl border border-gray-100 p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-        {label}
-      </div>
-      <div className="mt-1 text-sm text-gray-900">{value || "—"}</div>
-    </div>
+    <Card className="overflow-hidden">
+      <CardContent className="p-3 sm:p-4">
+        <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          {label}
+        </div>
+        <div className="mt-1 text-sm break-words text-gray-900">
+          {value || "—"}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -197,7 +206,7 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
   return (
     <div
       className={[
-        "flex items-center gap-3 rounded-md p-3 border",
+        "flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 rounded-md p-3 border w-full sm:w-auto",
         styles.border, // border color
         styles.chipBg, // container background
       ].join(" ")}
@@ -213,7 +222,7 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
       >
         <SelectTrigger
           className={[
-            "w-[180px] h-9",
+            "w-full sm:w-[180px] h-9",
             "border-2", // make color more visible
             styles.border, // trigger border color
             "bg-white", // readable input background
@@ -256,7 +265,7 @@ const DenefitsContract = ({ user }: { user: UserWithId }) => {
   return (
     <div
       className={[
-        "flex items-center gap-3 rounded-md p-3 border",
+        "flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 rounded-md p-3 border w-full sm:w-auto",
         styles.border,
         styles.chipBg,
       ].join(" ")}
@@ -298,7 +307,7 @@ const RefreshCRSData = ({ userId }: { userId: string }) => {
     <>
       <Button
         variant={"ghost"}
-        className="cursor-pointer bg-blue-200 hover:bg-blue-300"
+        className="w-full sm:w-auto cursor-pointer bg-blue-200 hover:bg-blue-300"
         onClick={() => setRefreshConfirmationOpen(true)}
       >
         <IconMenu

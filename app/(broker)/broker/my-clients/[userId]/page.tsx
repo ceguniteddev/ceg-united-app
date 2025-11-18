@@ -49,9 +49,9 @@ const ClientProfilePage = () => {
   return (
     <Tabs
       defaultValue="personal-information"
-      className="w-full flex flex-col items-start justify-start p-10"
+      className="w-full flex flex-col items-start justify-start p-4 sm:p-6 lg:p-10"
     >
-      <TabsList>
+      <TabsList className="flex-wrap h-auto">
         <TabsTrigger value="personal-information">
           Personal Information
         </TabsTrigger>
