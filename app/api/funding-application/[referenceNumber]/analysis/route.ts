@@ -1,7 +1,7 @@
 import { badRequest, getMessage, internalServerError } from "@/app/api/helpers";
 import AppError from "@/error/AppError";
 import { withAuth } from "@/lib/api-validation";
-import { recordAnalysis } from "@/service/analysis";
+import { getAnalysis, recordAnalysis } from "@/service/analysis";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
 
@@ -24,6 +24,29 @@ const requestBodySchema = z
       .min(1, { error: "Required" }),
   })
   .strict();
+
+export const GET = withAuth(
+  async (
+    req: NextRequest,
+    { params }: { params?: Promise<{ referenceNumber: string }> }
+  ) => {
+    const { referenceNumber } = (await params) ?? {};
+    if (!referenceNumber) {
+      return badRequest({ errors: "Missing reference number" });
+    }
+
+    try {
+      const analysis = await getAnalysis(referenceNumber);
+      return NextResponse.json(analysis, { status: 200 });
+    } catch (err) {
+      if (err instanceof AppError) {
+        return badRequest({ errors: err.message });
+      }
+      console.log("err", err);
+      return internalServerError();
+    }
+  }
+);
 
 export const POST = withAuth(
   async (

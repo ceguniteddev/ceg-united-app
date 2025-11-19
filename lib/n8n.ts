@@ -21,3 +21,6 @@ export const deleteCRSReportN8N = async () =>
 
 export const sendClientAnalysisN8N = async () =>
   (await isProd()) ? "send-client-analysis-prod" : "send-client-analysis-prod";
+
+export const createFundingAnalysisToPDFN8N = async () =>
+  (await isProd()) ? "credit-analysis-to-pdf-prod" : "credit-analysis-to-pdf";
