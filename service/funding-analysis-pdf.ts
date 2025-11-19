@@ -2,9 +2,26 @@
 
 import { storageAdmin } from "@/lib/fireabase-admin";
 import { logError, logInfo } from "@/lib/logger";
-import chromium from "@sparticuz/chromium";
-import puppeteer from "puppeteer-core";
 import { getAnalysis } from "./analysis";
+
+// Dynamic import for puppeteer to avoid Next.js build issues
+let puppeteer: any;
+let chromium: any;
+
+async function getPuppeteer() {
+  if (!puppeteer) {
+    const isServerless =
+      !!process.env.FUNCTION_TARGET || !!process.env.K_SERVICE;
+
+    if (isServerless) {
+      chromium = (await import("@sparticuz/chromium")).default;
+      puppeteer = (await import("puppeteer-core")).default;
+    } else {
+      puppeteer = (await import("puppeteer")).default;
+    }
+  }
+  return { puppeteer, chromium };
+}
 
 /**
  * Converts the funding analysis HTML content to PDF and saves it to Firebase Storage
@@ -270,63 +287,51 @@ function generateAnalysisHTML(
  * Generates a PDF buffer from HTML content using Puppeteer
  */
 async function generatePDFFromHTML(html: string): Promise<Buffer> {
-  let browser;
-
   try {
-    // Check if we're running in a serverless environment (Firebase/Cloud Functions)
+    const { puppeteer, chromium } = await getPuppeteer();
     const isServerless =
       !!process.env.FUNCTION_TARGET || !!process.env.K_SERVICE;
 
+    let browser;
+
     if (isServerless) {
-      // Use @sparticuz/chromium for serverless environments
+      // Serverless environment (Firebase/Cloud Run)
       browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: { width: 1920, height: 1080 },
+        args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
+        defaultViewport: chromium.defaultViewport,
         executablePath: await chromium.executablePath(),
-        headless: true,
+        headless: chromium.headless,
       });
     } else {
-      // Local development - find Chrome executable
-      const executablePath =
-        process.platform === "win32"
-          ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-          : process.platform === "darwin"
-          ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-          : "/usr/bin/google-chrome";
-
+      // Local development
       browser = await puppeteer.launch({
-        executablePath,
         headless: true,
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu",
-        ],
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });
     }
 
-    const page = await browser.newPage();
-    await page.setContent(html, {
-      waitUntil: "networkidle0",
-    });
+    try {
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: "networkidle0" });
 
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: {
-        top: "20mm",
-        right: "15mm",
-        bottom: "20mm",
-        left: "15mm",
-      },
-    });
+      const pdfBuffer = await page.pdf({
+        format: "a4",
+        printBackground: true,
+        margin: {
+          top: "20mm",
+          right: "15mm",
+          bottom: "20mm",
+          left: "15mm",
+        },
+      });
 
-    return Buffer.from(pdfBuffer);
-  } finally {
-    if (browser) {
+      return Buffer.from(pdfBuffer);
+    } finally {
       await browser.close();
     }
+  } catch (error: any) {
+    logError(new Error(`generatePDFFromHTML error: ${error.message}`));
+    throw error;
   }
 }
 /**
