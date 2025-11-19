@@ -139,3 +139,47 @@ export const useEmailClientAnalysisData = () => {
     isSending: emailClientAnalysisDataMutation.isPending,
   };
 };
+
+export const useSaveToDocuments = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const saveToDocumentsMutation = useMutation({
+    mutationFn: async ({ referenceNumber }: { referenceNumber: string }) => {
+      if (!user) {
+        throw new AppError("User not authenticated");
+      }
+
+      const response = await fetch(
+        `/api/funding-application/${referenceNumber}/save-to-documents`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Error saving analysis to documents:", data);
+        throw new AppError("Failed to save analysis to documents.");
+      }
+
+      return response.json();
+    },
+    onSuccess: (data, variable) => {
+      toast.success("Analysis saved to My Documents successfully.");
+      // Invalidate client documents query to refresh the documents list
+      queryClient.invalidateQueries({
+        queryKey: [GET_CLIENT_DOCUMENTS],
+      });
+    },
+
+    onError: (error: any) => {
+      toast.error("Failed to save analysis to documents. Please try again.");
+    },
+  });
+
+  return {
+    saveToDocuments: saveToDocumentsMutation.mutateAsync,
+    isSaving: saveToDocumentsMutation.isPending,
+  };
+};
