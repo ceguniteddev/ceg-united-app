@@ -20,7 +20,7 @@ import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import { useEffect, useState } from "react";
 
 const Sidebar = () => {
-  const { user, isOnboarded } = useAuth();
+  const { user, isOnboarded, userData } = useAuth();
   const pathname = usePathname();
   // const { updateOnboarding } = useUpdateUserOnboardingMutation();
   // useEffect(() => {
@@ -88,6 +88,23 @@ const Sidebar = () => {
               (!denefitsContract || denefitsContract.length === 0)
             ) {
               return false;
+            }
+
+            // Filter out "Letter Stream" if user has no letter features enabled
+            if (item.route === "/client/letter-stream") {
+              const hasAnyLetterFeature =
+                userData?.letterFeatureEnabled ||
+                userData?.latePaymentRemovalEnabled ||
+                userData?.unauthorizedInquiryRemovalEnabled ||
+                userData?.verifiedAccountDisputeEnabled ||
+                userData?.noResponseFollowUpEnabled ||
+                userData?.accountErrorCorrectionEnabled ||
+                userData?.collectionAccountRemovalEnabled ||
+                userData?.fraudulentAccountRemovalEnabled;
+
+              if (!hasAnyLetterFeature) {
+                return false;
+              }
             }
 
             // Otherwise, keep the item in the array

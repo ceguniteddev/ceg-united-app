@@ -17,7 +17,6 @@ import {
   Search,
   FileWarning,
   RefreshCcw,
-  RotateCcw,
   CheckCircle,
   Banknote,
   ShieldAlert,
@@ -38,7 +37,7 @@ const LETTER_FEATURES: LetterFeatureConfig[] = [
     description:
       "Allow user to generate and send dispute letters for credit report errors",
     icon: <FileText className="h-5 w-5" />,
-    color: "blue",
+    color: "green",
   },
   {
     key: "latePaymentRemovalEnabled",
@@ -46,7 +45,7 @@ const LETTER_FEATURES: LetterFeatureConfig[] = [
     description:
       "Generate letters to remove late payments using USC 1666b billing error provisions",
     icon: <Clock className="h-5 w-5" />,
-    color: "amber",
+    color: "green",
   },
   {
     key: "unauthorizedInquiryRemovalEnabled",
@@ -54,7 +53,7 @@ const LETTER_FEATURES: LetterFeatureConfig[] = [
     description:
       "Create letters to dispute and remove unauthorized credit inquiries",
     icon: <Search className="h-5 w-5" />,
-    color: "red",
+    color: "green",
   },
   {
     key: "verifiedAccountDisputeEnabled",
@@ -62,7 +61,7 @@ const LETTER_FEATURES: LetterFeatureConfig[] = [
     description:
       "Generate follow-up letters when accounts come back verified after initial dispute",
     icon: <RefreshCcw className="h-5 w-5" />,
-    color: "purple",
+    color: "green",
   },
   {
     key: "noResponseFollowUpEnabled",
@@ -73,20 +72,12 @@ const LETTER_FEATURES: LetterFeatureConfig[] = [
     color: "green",
   },
   {
-    key: "reinsertedAccountDisputeEnabled",
-    label: "Reinserted Account Disputes",
-    description:
-      "Challenge accounts that were previously deleted but reappeared without proper notification",
-    icon: <RotateCcw className="h-5 w-5" />,
-    color: "purple",
-  },
-  {
     key: "accountErrorCorrectionEnabled",
     label: "Account Error Corrections",
     description:
       "Dispute accounts with data accuracy issues like incorrect balances, wrong dates, or inaccurate payment status",
     icon: <CheckCircle className="h-5 w-5" />,
-    color: "blue",
+    color: "green",
   },
   {
     key: "collectionAccountRemovalEnabled",
@@ -94,7 +85,7 @@ const LETTER_FEATURES: LetterFeatureConfig[] = [
     description:
       "Challenge collection accounts using validation disputes, statute of limitations, and FDCPA violations",
     icon: <Banknote className="h-5 w-5" />,
-    color: "red",
+    color: "green",
   },
   {
     key: "fraudulentAccountRemovalEnabled",
@@ -102,7 +93,7 @@ const LETTER_FEATURES: LetterFeatureConfig[] = [
     description:
       "Remove identity theft and fraudulent accounts with FTC Identity Theft Reports and police reports",
     icon: <ShieldAlert className="h-5 w-5" />,
-    color: "red",
+    color: "green",
   },
 ];
 
@@ -237,7 +228,7 @@ const AdminLetterFeatureManagement = ({
         </CardContent>
       </Card>
 
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="text-lg">Feature Details</CardTitle>
         </CardHeader>
@@ -291,18 +282,6 @@ const AdminLetterFeatureManagement = ({
             </div>
 
             <div className="border-t pt-4">
-              <h4 className="font-semibold mb-2">
-                Reinserted Account Disputes
-              </h4>
-              <p className="text-gray-600">
-                Specialized letters for accounts that were previously removed
-                but illegally reinserted without proper FCRA notice. Cites
-                violations of 15 USC § 1681i(a)(5) requiring written notice
-                before reinsertion.
-              </p>
-            </div>
-
-            <div className="border-t pt-4">
               <h4 className="font-semibold mb-2">Account Error Corrections</h4>
               <p className="text-gray-600">
                 Targeted letters for accounts with specific reporting errors
@@ -348,7 +327,7 @@ const AdminLetterFeatureManagement = ({
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 };

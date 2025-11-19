@@ -50,7 +50,7 @@ export const getUser = async (email: string): Promise<User | null> => {
   return { id: userDoc.id, ...normalizeAllDates(user) } as User;
 };
 
-export const getUserById = async (id: string): Promise<User | null> => {
+export const getUserById = async (id: string): Promise<UserWithId | null> => {
   const db = firestoreAdmin();
 
   const collectionRef = db.collection(USER_COLLECTION);
@@ -62,7 +62,7 @@ export const getUserById = async (id: string): Promise<User | null> => {
   const userDoc = docSnapshot;
   const user = userDoc.data();
 
-  return { id: userDoc.id, ...normalizeAllDates(user) } as User;
+  return { id: userDoc.id, ...normalizeAllDates(user) } as UserWithId;
 };
 
 export const registerUser = async ({
