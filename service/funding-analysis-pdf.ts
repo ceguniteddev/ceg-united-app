@@ -5,22 +5,30 @@ import { logError, logInfo } from "@/lib/logger";
 import { getAnalysis } from "./analysis";
 
 // Dynamic import for puppeteer to avoid Next.js build issues
-let puppeteer: any;
-let chromium: any;
+async function launchBrowser() {
+  const isServerless = !!process.env.FUNCTION_TARGET || !!process.env.K_SERVICE;
 
-async function getPuppeteer() {
-  if (!puppeteer) {
-    const isServerless =
-      !!process.env.FUNCTION_TARGET || !!process.env.K_SERVICE;
+  if (isServerless) {
+    // Firebase/Cloud Run environment - use @sparticuz/chromium
+    const chromium = (await import("@sparticuz/chromium")).default;
+    const puppeteerCore = (await import("puppeteer-core")).default;
 
-    if (isServerless) {
-      chromium = (await import("@sparticuz/chromium")).default;
-      puppeteer = (await import("puppeteer-core")).default;
-    } else {
-      puppeteer = (await import("puppeteer")).default;
-    }
+    // Note: Cloud Run Gen 2 requires at least 1GB RAM for Chrome
+    return await puppeteerCore.launch({
+      args: chromium.args,
+      defaultViewport: { width: 1920, height: 1080 },
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    });
+  } else {
+    // Local development - use regular puppeteer
+    const puppeteer = (await import("puppeteer")).default;
+
+    return await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
   }
-  return { puppeteer, chromium };
 }
 
 /**
@@ -288,27 +296,7 @@ function generateAnalysisHTML(
  */
 async function generatePDFFromHTML(html: string): Promise<Buffer> {
   try {
-    const { puppeteer, chromium } = await getPuppeteer();
-    const isServerless =
-      !!process.env.FUNCTION_TARGET || !!process.env.K_SERVICE;
-
-    let browser;
-
-    if (isServerless) {
-      // Serverless environment (Firebase/Cloud Run)
-      browser = await puppeteer.launch({
-        args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-      });
-    } else {
-      // Local development
-      browser = await puppeteer.launch({
-        headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      });
-    }
+    const browser = await launchBrowser();
 
     try {
       const page = await browser.newPage();
