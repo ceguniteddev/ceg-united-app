@@ -83,6 +83,7 @@
     "nodemailer": "^7.0.5",
     "plaid": "^38.0.0",
     "plaid-threads": "^14.5.0",
+    "puppeteer": "^24.30.0",
     "query-string": "^9.2.2",
     "quill": "^2.0.3",
     "radix-ui": "^1.4.3",

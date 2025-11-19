@@ -3,6 +3,7 @@ import {
   useAnalysisQuery,
   useEmailClientAnalysisData,
   useRefreshAnalysisData,
+  useSaveToDocuments,
 } from "@/hooks/admin/funding-application/analysis";
 import dynamic from "next/dynamic";
 import React, { useCallback } from "react";
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import IconMenu from "../icon-menu";
-import { Loader2Icon, Mail, RefreshCcw, XIcon } from "lucide-react";
+import { FileDown, Loader2Icon, Mail, RefreshCcw, XIcon } from "lucide-react";
 
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -43,7 +44,10 @@ const AnalysisView = ({ referenceNumber }: Props) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-row justify-between">
-        <SendClientAnalysisData referenceNumber={referenceNumber} />
+        <div className="flex flex-row gap-2">
+          <SendClientAnalysisData referenceNumber={referenceNumber} />
+          <SaveToDocumentsButton referenceNumber={referenceNumber} />
+        </div>
         <RefreshAnalysisData referenceNumber={referenceNumber} />
       </div>
       {(analysisData as Item[])?.map((item) => (
@@ -132,6 +136,84 @@ const SendClientAnalysisData = ({
                   <IconMenu
                     text="Refresh"
                     icon={<RefreshCcw className="h-4 w-4" />}
+                  />
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </>
+  );
+};
+
+const SaveToDocumentsButton = ({
+  referenceNumber,
+}: {
+  referenceNumber: string;
+}) => {
+  const [confirmationOpen, setConfirmationOpen] = React.useState(false);
+  const { saveToDocuments, isSaving } = useSaveToDocuments();
+
+  const handleSaveToDocuments = useCallback(async () => {
+    try {
+      await saveToDocuments({ referenceNumber });
+      setConfirmationOpen(false);
+    } catch (error) {
+      console.error("Error saving analysis to documents:", error);
+      toast.error("Failed to save analysis to documents. Please try again.");
+    }
+  }, [saveToDocuments, referenceNumber]);
+
+  return (
+    <>
+      <Button
+        variant={"ghost"}
+        className="cursor-pointer bg-green-200 hover:bg-green-300"
+        onClick={() => setConfirmationOpen(true)}
+      >
+        <IconMenu
+          icon={<FileDown className="h-4 w-4" color="green" />}
+          text="Save to My Documents"
+        />
+      </Button>
+
+      {confirmationOpen && (
+        <AlertDialog
+          open={confirmationOpen}
+          onOpenChange={(open) => {
+            if (!isSaving) setConfirmationOpen(open);
+          }}
+        >
+          <AlertDialogTrigger asChild></AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Save to My Documents</AlertDialogTitle>
+              <AlertDialogDescription>
+                {`This will convert the funding analysis to a PDF and save it to the client's My Documents section. Do you want to continue?`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="cursor-pointer" disabled={isSaving}>
+                <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  await handleSaveToDocuments();
+                }}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <IconMenu
+                    text="Saving..."
+                    icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
+                  />
+                ) : (
+                  <IconMenu
+                    text="Save"
+                    icon={<FileDown className="h-4 w-4" />}
                   />
                 )}
               </AlertDialogAction>

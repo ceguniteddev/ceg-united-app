@@ -66,9 +66,9 @@ export const sendBrokerInvitationEmail = async (
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #0179FE 0%, #4893FF 100%); padding: 40px 30px; text-align: center;">
+            <td style="background-color: #0179FE; padding: 40px 30px; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">You're Invited!</h1>
-              <p style="margin: 10px 0 0; color: #ffffff; font-size: 16px; opacity: 0.9;">Join CEG United LLC as a Broker</p>
+              <p style="margin: 10px 0 0; color: #ffffff; font-size: 16px;">Join CEG United LLC as a Broker</p>
             </td>
           </tr>
           
@@ -98,7 +98,7 @@ export const sendBrokerInvitationEmail = async (
               </p>
               
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${registrationUrl}" style="display: inline-block; background: linear-gradient(135deg, #0179FE 0%, #4893FF 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 6px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 12px rgba(1,121,254,0.3);">
+                <a href="${registrationUrl}" style="display: inline-block; background-color: #0179FE; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 6px; font-size: 16px; font-weight: 600;">
                   Complete Registration
                 </a>
               </div>
