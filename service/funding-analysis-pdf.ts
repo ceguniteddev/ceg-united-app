@@ -2,7 +2,8 @@
 
 import { storageAdmin } from "@/lib/fireabase-admin";
 import { logError, logInfo } from "@/lib/logger";
-import puppeteer from "puppeteer";
+import chromium from "@sparticuz/chromium";
+import puppeteer from "puppeteer-core";
 import { getAnalysis } from "./analysis";
 
 /**
@@ -272,15 +273,38 @@ async function generatePDFFromHTML(html: string): Promise<Buffer> {
   let browser;
 
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-      ],
-    });
+    // Check if we're running in a serverless environment (Firebase/Cloud Functions)
+    const isServerless =
+      !!process.env.FUNCTION_TARGET || !!process.env.K_SERVICE;
+
+    if (isServerless) {
+      // Use @sparticuz/chromium for serverless environments
+      browser = await puppeteer.launch({
+        args: chromium.args,
+        defaultViewport: { width: 1920, height: 1080 },
+        executablePath: await chromium.executablePath(),
+        headless: true,
+      });
+    } else {
+      // Local development - find Chrome executable
+      const executablePath =
+        process.platform === "win32"
+          ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+          : process.platform === "darwin"
+          ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+          : "/usr/bin/google-chrome";
+
+      browser = await puppeteer.launch({
+        executablePath,
+        headless: true,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+        ],
+      });
+    }
 
     const page = await browser.newPage();
     await page.setContent(html, {
@@ -305,7 +329,6 @@ async function generatePDFFromHTML(html: string): Promise<Buffer> {
     }
   }
 }
-
 /**
  * Extracts HTML content from code fences (if present)
  * Copied from AnalysisView.tsx to maintain consistency
