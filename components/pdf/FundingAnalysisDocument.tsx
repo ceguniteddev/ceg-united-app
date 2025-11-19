@@ -14,7 +14,10 @@ import parse, { DOMNode, Element, Text as TextNode } from "html-react-parser";
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    paddingTop: 40,
+    paddingBottom: 80,
+    paddingLeft: 40,
+    paddingRight: 40,
     fontFamily: "Helvetica",
     fontSize: 11,
     lineHeight: 1.5,
@@ -467,13 +470,6 @@ export const FundingAnalysisDocument = ({
           </View>
         );
       })}
-
-      <Text style={styles.footer} fixed>
-        This document was automatically generated from the funding analysis
-        system.
-        {"\n"}
-        CEG United LLC - Confidential
-      </Text>
     </Page>
   );
 };
