@@ -73,6 +73,7 @@ export interface TradelineComment {
 export interface Tradeline {
   accountIdentifier: string;
   creditorName?: string;
+  originalCreditorName?: string;
   subscriberCode?: string;
   accountType?: string;
   loanType?: string;
@@ -87,6 +88,7 @@ export interface Tradeline {
   paymentPatternStartDate?: ISODate;
   monthsReviewedCount?: NumericString;
   termsMonthsCount?: NumericString;
+  termsDescription?: string;
   creditLimitAmount?: NumericString;
   highBalanceAmount?: NumericString;
   currentBalanceAmount?: NumericString;
@@ -135,6 +137,14 @@ export interface OfacResult {
   resultText?: string;
   resultStatusType?: string;
 }
+export interface ResponseAlertMessage {
+  borrowerSourceType?: string;
+  sourceType?: string;
+  responseAlertMessageCategoryType?: string;
+  responseAlertMessageServiceType?: string;
+  responseAlertMessageText?: string;
+}
+
 export interface ErrorMessage {
   code: string;
   message: string;
@@ -145,7 +155,7 @@ export interface CreditReport {
   requestData: RequestData;
   repositoryIncluded: RepositoryIncluded;
   responseDetail?: ResponseDetail;
-  responseAlertMessages?: unknown[];
+  responseAlertMessages?: ResponseAlertMessage[];
   errorMessages?: ErrorMessage[];
   creditFiles?: CreditFile[];
   inquiries?: Inquiry[]; // present on some bureaus
