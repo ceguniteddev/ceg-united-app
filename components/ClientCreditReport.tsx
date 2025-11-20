@@ -13,8 +13,15 @@ import {
   ResponseAlertMessage,
   Tradeline,
 } from "@/types/crs";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import EmptyState from "./EmptyState";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // --- Utilities ---
 const toNum = (v?: NumericString) => {
@@ -269,7 +276,58 @@ type Props = {
 const ClientCreditReport = ({ userId, isAdminView }: Props) => {
   const { crsReport, isLoading } = useClientCRSReportQuery({ userId });
 
-  const bureauMap = useMemo(() => groupByBureau(crsReport || []), [crsReport]);
+  // Group reports by createdAt timestamp (only for bureau reports)
+  const reportsByTimestamp = useMemo(() => {
+    if (!crsReport) return {};
+    const grouped: Record<string, CreditReportWithId[]> = {};
+    crsReport.forEach((doc: CreditReportWithId) => {
+      // Only include Equifax, Experian, and TransUnion reports
+      if (
+        doc.createdAt &&
+        doc.type &&
+        ["equifax", "experian", "transunion"].includes(doc.type.toLowerCase())
+      ) {
+        const dateKey = new Date(doc.createdAt).toDateString();
+
+        if (!grouped[dateKey]) {
+          grouped[dateKey] = [];
+        }
+        grouped[dateKey].push(doc);
+      }
+    });
+    return grouped;
+  }, [crsReport]);
+
+  // Get sorted timestamps (most recent first)
+  const timestamps = useMemo(
+    () =>
+      Array.from(new Set(Object.keys(reportsByTimestamp))).sort(
+        (a, b) => new Date(b).getTime() - new Date(a).getTime()
+      ),
+    [reportsByTimestamp]
+  );
+
+  // State for selected timestamp (default to most recent)
+  const [selectedTimestamp, setSelectedTimestamp] = useState<string>("");
+
+  // Set initial timestamp when data loads
+  React.useEffect(() => {
+    if (timestamps.length > 0 && !selectedTimestamp) {
+      setSelectedTimestamp(timestamps[0]);
+    }
+  }, [timestamps, selectedTimestamp]);
+
+  // Get reports for selected timestamp
+  const selectedReports = useMemo(
+    () =>
+      selectedTimestamp ? reportsByTimestamp[selectedTimestamp] || [] : [],
+    [selectedTimestamp, reportsByTimestamp]
+  );
+
+  const bureauMap = useMemo(
+    () => groupByBureau(selectedReports),
+    [selectedReports]
+  );
 
   // Scores per bureau
   const scoresByBureau: Record<
@@ -372,12 +430,44 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
   return (
     <div className="mx-auto max-w-6xl p-3 sm:p-4 md:p-6 bg-neutral-50 min-h-screen">
       <header className="mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
-          My Credit
-        </h1>
-        {pulledAt && (
-          <p className="text-neutral-600 text-sm mt-1">Pulled {pulledAt}</p>
-        )}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
+              My Credit
+            </h1>
+            {pulledAt && (
+              <p className="text-neutral-600 text-sm mt-1">Pulled {pulledAt}</p>
+            )}
+          </div>
+          {timestamps.length > 1 && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-neutral-600 whitespace-nowrap">
+                Report Date:
+              </label>
+              <Select
+                value={selectedTimestamp}
+                onValueChange={setSelectedTimestamp}
+              >
+                <SelectTrigger className="w-[200px] sm:w-[240px]">
+                  <SelectValue placeholder="Select report date" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timestamps.map((timestamp) => (
+                    <SelectItem key={timestamp} value={timestamp}>
+                      {new Date(timestamp).toLocaleString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Scores */}
