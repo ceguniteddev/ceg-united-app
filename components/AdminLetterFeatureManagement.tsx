@@ -125,7 +125,7 @@ const AdminLetterFeatureManagement = ({
         iconText: isEnabled ? "text-blue-600" : "text-gray-500",
       },
       green: {
-        border: "border-green-300",
+        border: isEnabled ? "border-green-300" : "border-blue-300",
         bg: isEnabled ? "bg-green-50" : "bg-gray-50",
         text: isEnabled ? "text-green-700" : "text-gray-600",
         iconBg: isEnabled ? "bg-green-100" : "bg-gray-100",

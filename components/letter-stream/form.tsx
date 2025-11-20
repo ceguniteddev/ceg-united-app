@@ -108,7 +108,6 @@ const LETTER_TYPE_CONFIG = [
       "incorrect-balance",
       "incorrect-payment-history",
       "mixed-file",
-      "other",
     ],
   },
   {
@@ -304,18 +303,19 @@ export default function LetterForm({ onSuccess, onCancel }: LetterFormProps) {
                 />
               )}
 
-              {/* Letter Title */}
-              <CustomFormField
-                name="letterTitle"
-                label="Letter Title *"
-                type="text"
-                placeholder="e.g., Dispute for Chase Credit Card"
-              />
+              {selectedLetterType && (
+                <CustomFormField
+                  name="letterTitle"
+                  label="Letter Title *"
+                  type="text"
+                  placeholder="e.g., Dispute for Chase Credit Card"
+                />
+              )}
 
               {/* Render specialized form based on letter type */}
               {selectedLetterType === "latePaymentRemovalEnabled" ? (
                 <LatePaymentRemovalForm />
-              ) : selectedLetterType === "verifiedAccountDisputeEnabled" ? (
+              ) : selectedLetterType === "letterFeatureEnabled" ? (
                 <ReinsertedAccountDisputeForm />
               ) : selectedLetterType ? (
                 <>
