@@ -10,10 +10,18 @@ import {
   Inquiry,
   ISODate,
   NumericString,
+  ResponseAlertMessage,
   Tradeline,
 } from "@/types/crs";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import EmptyState from "./EmptyState";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // --- Utilities ---
 const toNum = (v?: NumericString) => {
@@ -268,7 +276,58 @@ type Props = {
 const ClientCreditReport = ({ userId, isAdminView }: Props) => {
   const { crsReport, isLoading } = useClientCRSReportQuery({ userId });
 
-  const bureauMap = useMemo(() => groupByBureau(crsReport || []), [crsReport]);
+  // Group reports by createdAt timestamp (only for bureau reports)
+  const reportsByTimestamp = useMemo(() => {
+    if (!crsReport) return {};
+    const grouped: Record<string, CreditReportWithId[]> = {};
+    crsReport.forEach((doc: CreditReportWithId) => {
+      // Only include Equifax, Experian, and TransUnion reports
+      if (
+        doc.createdAt &&
+        doc.type &&
+        ["equifax", "experian", "transunion"].includes(doc.type.toLowerCase())
+      ) {
+        const dateKey = new Date(doc.createdAt).toDateString();
+
+        if (!grouped[dateKey]) {
+          grouped[dateKey] = [];
+        }
+        grouped[dateKey].push(doc);
+      }
+    });
+    return grouped;
+  }, [crsReport]);
+
+  // Get sorted timestamps (most recent first)
+  const timestamps = useMemo(
+    () =>
+      Array.from(new Set(Object.keys(reportsByTimestamp))).sort(
+        (a, b) => new Date(b).getTime() - new Date(a).getTime()
+      ),
+    [reportsByTimestamp]
+  );
+
+  // State for selected timestamp (default to most recent)
+  const [selectedTimestamp, setSelectedTimestamp] = useState<string>("");
+
+  // Set initial timestamp when data loads
+  React.useEffect(() => {
+    if (timestamps.length > 0 && !selectedTimestamp) {
+      setSelectedTimestamp(timestamps[0]);
+    }
+  }, [timestamps, selectedTimestamp]);
+
+  // Get reports for selected timestamp
+  const selectedReports = useMemo(
+    () =>
+      selectedTimestamp ? reportsByTimestamp[selectedTimestamp] || [] : [],
+    [selectedTimestamp, reportsByTimestamp]
+  );
+
+  const bureauMap = useMemo(
+    () => groupByBureau(selectedReports),
+    [selectedReports]
+  );
 
   // Scores per bureau
   const scoresByBureau: Record<
@@ -289,6 +348,26 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
     TransUnion: bureauMap.TransUnion?.report.inquiries ?? [],
     Equifax: bureauMap.Equifax?.report.inquiries ?? [],
   };
+
+  // Tradelines per bureau
+  const tradelinesByBureau: Record<
+    "Experian" | "TransUnion" | "Equifax",
+    Tradeline[]
+  > = {
+    Experian: bureauMap.Experian?.report.tradelines ?? [],
+    TransUnion: bureauMap.TransUnion?.report.tradelines ?? [],
+    Equifax: bureauMap.Equifax?.report.tradelines ?? [],
+  };
+
+  // Alert messages across all bureaus
+  const allAlertMessages: ResponseAlertMessage[] = useMemo(
+    () => [
+      ...(bureauMap.Experian?.report.responseAlertMessages ?? []),
+      ...(bureauMap.TransUnion?.report.responseAlertMessages ?? []),
+      ...(bureauMap.Equifax?.report.responseAlertMessages ?? []),
+    ],
+    [bureauMap]
+  );
 
   // Aggregate tradelines across all bureaus
   const allTradelines: Tradeline[] = useMemo(
@@ -351,12 +430,42 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
   return (
     <div className="mx-auto max-w-6xl p-3 sm:p-4 md:p-6 bg-neutral-50 min-h-screen">
       <header className="mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
-          My Credit
-        </h1>
-        {pulledAt && (
-          <p className="text-neutral-600 text-sm mt-1">Pulled {pulledAt}</p>
-        )}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
+              My Credit
+            </h1>
+            {pulledAt && (
+              <p className="text-neutral-600 text-sm mt-1">Pulled {pulledAt}</p>
+            )}
+          </div>
+          {timestamps.length > 1 && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-neutral-600 whitespace-nowrap">
+                Report Date:
+              </label>
+              <Select
+                value={selectedTimestamp}
+                onValueChange={setSelectedTimestamp}
+              >
+                <SelectTrigger className="w-[200px] sm:w-[240px]">
+                  <SelectValue placeholder="Select report date" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timestamps.map((timestamp) => (
+                    <SelectItem key={timestamp} value={timestamp}>
+                      {new Date(timestamp).toLocaleString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Scores */}
@@ -409,6 +518,57 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         </Card>
       </div>
 
+      {/* Alert Messages */}
+      {allAlertMessages.length > 0 && (
+        <>
+          <SectionTitle
+            title="Alert Messages"
+            sub="Important alerts and notifications from credit bureaus"
+          />
+          <Card className="p-3 sm:p-4 mb-6 sm:mb-10">
+            <div className="space-y-3">
+              {allAlertMessages.map((alert, i) => (
+                <div
+                  key={i}
+                  className="p-3 bg-amber-50 border border-amber-200 rounded-lg"
+                >
+                  <div className="flex items-start gap-2">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <svg
+                        className="w-5 h-5 text-amber-600"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-medium text-amber-900">
+                          {bureauLabel(alert.sourceType)}
+                        </span>
+                        {alert.responseAlertMessageCategoryType && (
+                          <Badge>
+                            {alert.responseAlertMessageCategoryType}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-amber-800">
+                        {alert.responseAlertMessageText}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
+
       {/* Inquiries per bureau */}
       <SectionTitle
         title="Inquiries by Bureau"
@@ -454,6 +614,275 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
               </ul>
             )}
           </Card>
+        ))}
+      </div>
+
+      {/* Tradelines by Bureau */}
+      <SectionTitle
+        title="Credit"
+        sub="Credit account information from each bureau"
+      />
+      <div className="space-y-6 mb-6 sm:mb-10">
+        {(["Experian", "Equifax", "TransUnion"] as const).map((bureau) => (
+          <div key={bureau}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base sm:text-lg font-semibold">{bureau}</h3>
+              <Badge>
+                {tradelinesByBureau[bureau].length} account
+                {tradelinesByBureau[bureau].length !== 1 ? "s" : ""}
+              </Badge>
+            </div>
+            {tradelinesByBureau[bureau].length === 0 ? (
+              <Card className="p-4">
+                <Empty>No accounts present for {bureau}.</Empty>
+              </Card>
+            ) : (
+              <Card className="overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-[10px] sm:text-xs">
+                    <thead className="bg-neutral-100 border-b-2 border-neutral-300">
+                      <tr>
+                        <th className="text-left px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>E</div>
+                          <div>C</div>
+                          <div>O</div>
+                          <div>A</div>
+                        </th>
+                        <th className="text-left px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[120px]">
+                          Creditor
+                        </th>
+                        <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>Date</div>
+                          <div>Reported</div>
+                        </th>
+                        <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>Date</div>
+                          <div>Opened</div>
+                          <div className="font-normal">DLA</div>
+                        </th>
+                        <th className="text-right px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>High Credit</div>
+                          <div>or Limit</div>
+                          <div className="font-normal">Acct Type</div>
+                        </th>
+                        <th className="text-right px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>Balance</div>
+                          <div className="font-normal">Terms</div>
+                        </th>
+                        <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>Past</div>
+                          <div>Due</div>
+                        </th>
+                        <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>Mo</div>
+                          <div>Rev</div>
+                        </th>
+                        <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          30
+                        </th>
+                        <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          60
+                        </th>
+                        <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          90+
+                        </th>
+                        <th className="text-left px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[100px]">
+                          <div>Status</div>
+                          <div className="font-normal">Source</div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tradelinesByBureau[bureau].map((t, i) => {
+                        const acctOwnershipCode =
+                          t.accountOwnershipType?.charAt(0).toUpperCase() ||
+                          "-";
+                        return (
+                          <React.Fragment key={`${t.accountIdentifier}-${i}`}>
+                            <tr className="border-b hover:bg-neutral-50">
+                              {/* ECOA Column */}
+                              <td className="px-2 py-2 text-center align-top font-medium">
+                                {acctOwnershipCode}
+                              </td>
+
+                              {/* Creditor Column */}
+                              <td className="px-2 py-2 align-top">
+                                <div className="font-semibold">
+                                  {t.creditorName || "Unknown"}
+                                </div>
+                                <div className="text-[9px] text-neutral-500 font-mono mt-0.5">
+                                  {t.accountIdentifier}
+                                </div>
+                              </td>
+
+                              {/* Date Reported Column */}
+                              <td className="px-2 py-2 text-center align-top">
+                                <div>
+                                  {t.accountReportedDate
+                                    ? new Date(
+                                        t.accountReportedDate
+                                      ).toLocaleDateString("en-US", {
+                                        month: "2-digit",
+                                        year: "2-digit",
+                                      })
+                                    : "-"}
+                                </div>
+                              </td>
+
+                              {/* Date Opened / DLA Column */}
+                              <td className="px-2 py-2 text-center align-top">
+                                <div>
+                                  {t.accountOpenedDate
+                                    ? new Date(
+                                        t.accountOpenedDate
+                                      ).toLocaleDateString("en-US", {
+                                        month: "2-digit",
+                                        year: "2-digit",
+                                      })
+                                    : "-"}
+                                </div>
+                                <div className="text-[9px] text-neutral-500 mt-1">
+                                  {t.lastActivityDate
+                                    ? new Date(
+                                        t.lastActivityDate
+                                      ).toLocaleDateString("en-US", {
+                                        month: "2-digit",
+                                        year: "2-digit",
+                                      })
+                                    : "--/--"}
+                                </div>
+                              </td>
+
+                              {/* High Credit/Limit Column */}
+                              <td className="px-2 py-2 text-right align-top">
+                                <div className="font-semibold">
+                                  {t.creditLimitAmount
+                                    ? `$${toNum(t.creditLimitAmount)}`
+                                    : t.highBalanceAmount
+                                    ? `$${toNum(t.highBalanceAmount)}`
+                                    : "-"}
+                                </div>
+                                <div className="text-[9px] text-neutral-500 mt-1">
+                                  {t.accountType || "-"}
+                                </div>
+                              </td>
+
+                              {/* Balance Column */}
+                              <td className="px-2 py-2 text-right align-top">
+                                <div className="font-semibold">
+                                  {t.currentBalanceAmount
+                                    ? `$${toNum(t.currentBalanceAmount)}`
+                                    : "-"}
+                                </div>
+                                <div className="text-[9px] text-neutral-500 mt-1">
+                                  {t.monthlyPaymentAmount
+                                    ? `$${toNum(t.monthlyPaymentAmount)}`
+                                    : "-"}
+                                </div>
+                              </td>
+
+                              {/* Past Due Column */}
+                              <td className="px-2 py-2 text-center align-top">
+                                <div>
+                                  {t.pastDueAmount && toNum(t.pastDueAmount) > 0
+                                    ? `$${toNum(t.pastDueAmount)}`
+                                    : "-"}
+                                </div>
+                              </td>
+
+                              {/* Mo Rev Column */}
+                              <td className="px-2 py-2 text-center align-top">
+                                <div>{t.monthsReviewedCount || "-"}</div>
+                              </td>
+
+                              {/* 30 Days Late Column */}
+                              <td className="px-2 py-2 text-center align-top">
+                                <div
+                                  className={
+                                    toNum(t._30DayLates) > 0
+                                      ? "text-red-600 font-semibold"
+                                      : ""
+                                  }
+                                >
+                                  {toNum(t._30DayLates)}
+                                </div>
+                              </td>
+
+                              {/* 60 Days Late Column */}
+                              <td className="px-2 py-2 text-center align-top">
+                                <div
+                                  className={
+                                    toNum(t._60DayLates) > 0
+                                      ? "text-red-600 font-semibold"
+                                      : ""
+                                  }
+                                >
+                                  {toNum(t._60DayLates)}
+                                </div>
+                              </td>
+
+                              {/* 90+ Days Late Column */}
+                              <td className="px-2 py-2 text-center align-top">
+                                <div
+                                  className={
+                                    toNum(t._90DayLates) > 0
+                                      ? "text-red-600 font-semibold"
+                                      : ""
+                                  }
+                                >
+                                  {toNum(t._90DayLates)}
+                                </div>
+                              </td>
+
+                              {/* Status Column */}
+                              <td className="px-2 py-2 align-top">
+                                <div className="font-medium">
+                                  {t.currentRatingType || "AS AGREED"}
+                                </div>
+                                <div className="text-[9px] text-neutral-500 mt-0.5">
+                                  {bureauLabel(t.sourceType)
+                                    ?.toUpperCase()
+                                    .slice(0, 3)}
+                                </div>
+                              </td>
+                            </tr>
+
+                            {/* Additional Row for Original Creditor / Comments */}
+                            {(t.originalCreditorName ||
+                              (t.comments && t.comments.length > 0)) && (
+                              <tr className="border-b bg-blue-50">
+                                <td></td>
+                                <td
+                                  colSpan={11}
+                                  className="px-2 py-2 text-[9px] sm:text-[10px]"
+                                >
+                                  {t.originalCreditorName && (
+                                    <div className="text-blue-700 font-medium uppercase">
+                                      ORIGINAL CREDITOR:{" "}
+                                      {t.originalCreditorName}
+                                    </div>
+                                  )}
+                                  {t.comments && t.comments.length > 0 && (
+                                    <div className="text-neutral-700 mt-1">
+                                      {t.comments.map((comment, idx) => (
+                                        <div key={idx}>
+                                          {comment.commentText}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+          </div>
         ))}
       </div>
 
