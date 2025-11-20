@@ -40,6 +40,7 @@ export const recordCRSReport = async (
   //backup old crs data
   await renameDocument({
     userId,
+    crsType,
     oldDocId: crsType,
     newDocId: `${crsType}-${timestamp}`,
   });
@@ -234,10 +235,12 @@ export const fundAnalysis = async ({
 
 const renameDocument = async ({
   userId,
+  crsType,
   oldDocId,
   newDocId,
 }: {
   userId: string;
+  crsType: CRSReportType;
   oldDocId: string;
   newDocId: string;
 }) => {
@@ -245,15 +248,15 @@ const renameDocument = async ({
   const batch = db.batch();
 
   const oldDocRef = db
-    .collection("crs-report-data")
+    .collection(CRS_REPORT_DATA)
     .doc(userId)
-    .collection("equifax")
+    .collection(crsType)
     .doc(oldDocId);
 
   const newDocRef = db
-    .collection("crs-report-data")
+    .collection(CRS_REPORT_DATA)
     .doc(userId)
-    .collection("equifax")
+    .collection(crsType)
     .doc(newDocId);
 
   // Read old document first
