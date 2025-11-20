@@ -19,7 +19,7 @@ export const POST = async (req: NextRequest) => {
 
     await createEnterpriseAssessment(token, "registration");
 
-    await registerUser(values);
+    await registerUser({ value: values });
 
     return NextResponse.json({ message: "ok" }, { status: 200 });
   } catch (error: any) {
