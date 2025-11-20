@@ -36,6 +36,14 @@ export const recordCRSReport = async (
     { merge: true }
   );
 
+  const timestamp = Date.now();
+  //backup old crs data
+  await renameDocument({
+    userId,
+    oldDocId: crsType,
+    newDocId: `${crsType}-${timestamp}`,
+  });
+
   const subCollectionRef = db.collection(
     `${CRS_REPORT_DATA}/${userId}/${crsType}`
   );
@@ -222,4 +230,45 @@ export const fundAnalysis = async ({
       userId,
     }),
   });
+};
+
+const renameDocument = async ({
+  userId,
+  oldDocId,
+  newDocId,
+}: {
+  userId: string;
+  oldDocId: string;
+  newDocId: string;
+}) => {
+  const db = firestoreAdmin();
+  const batch = db.batch();
+
+  const oldDocRef = db
+    .collection("crs-report-data")
+    .doc(userId)
+    .collection("equifax")
+    .doc(oldDocId);
+
+  const newDocRef = db
+    .collection("crs-report-data")
+    .doc(userId)
+    .collection("equifax")
+    .doc(newDocId);
+
+  // Read old document first
+  const oldDoc = await oldDocRef.get();
+
+  if (!oldDoc.exists) {
+    throw new Error("Original document does not exist");
+  }
+
+  // Add to batch: create new doc and delete old doc
+  batch.set(newDocRef, oldDoc.data()!);
+  batch.delete(oldDocRef);
+
+  // Commit batch
+  await batch.commit();
+
+  console.log(`Document renamed atomically from ${oldDocId} to ${newDocId}`);
 };
