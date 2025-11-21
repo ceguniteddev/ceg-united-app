@@ -17,19 +17,9 @@ import {
   TrendingUp,
   CheckCircle2,
   XCircle,
-  Plus,
-  ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 import { formatAmount } from "@/lib/utils";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 export default function BrokerHomePage() {
   const { statistics, isLoading: statsLoading } = useGetBrokerStatistics();
@@ -212,7 +202,7 @@ export default function BrokerHomePage() {
                 <p className="text-sm text-muted-foreground">
                   No clients yet. Add them now!
                 </p>
-                <Link href="/broker/submit-application">
+                <Link href="/broker/my-clients">
                   <Button size="sm" className="mt-4">
                     Add Client
                   </Button>
