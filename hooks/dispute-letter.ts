@@ -1,20 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DisputeLetter } from "@/schema/dispute-letter";
+import { useAuth } from "@/provider/AuthContext";
 
 /**
  * Hook to get all dispute letters for the current user
  */
 export const useGetDisputeLetters = () => {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ["dispute-letters"],
+    queryKey: ["dispute-letters", user?.uid],
     queryFn: async () => {
-      const response = await fetch("/api/dispute-letter");
+      if (!user?.uid) throw new Error("User not authenticated");
+      const response = await fetch(`/api/user/${user.uid}/dispute-letter`);
       if (!response.ok) {
         throw new Error("Failed to fetch dispute letters");
       }
       return response.json() as Promise<DisputeLetter[]>;
     },
+    enabled: !!user?.uid,
   });
 };
 
@@ -22,16 +27,21 @@ export const useGetDisputeLetters = () => {
  * Hook to get a single dispute letter
  */
 export const useGetDisputeLetter = (id: string) => {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ["dispute-letter", id],
+    queryKey: ["dispute-letter", user?.uid, id],
     queryFn: async () => {
-      const response = await fetch(`/api/dispute-letter/${id}`);
+      if (!user?.uid) throw new Error("User not authenticated");
+      const response = await fetch(
+        `/api/user/${user.uid}/dispute-letter/${id}`
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch dispute letter");
       }
       return response.json() as Promise<DisputeLetter>;
     },
-    enabled: !!id,
+    enabled: !!id && !!user?.uid,
   });
 };
 
@@ -40,10 +50,12 @@ export const useGetDisputeLetter = (id: string) => {
  */
 export const useCreateDisputeLetter = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (data: Partial<DisputeLetter>) => {
-      const response = await fetch("/api/dispute-letter", {
+      if (!user?.uid) throw new Error("User not authenticated");
+      const response = await fetch(`/api/user/${user.uid}/dispute-letter`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -71,14 +83,19 @@ export const useCreateDisputeLetter = () => {
  */
 export const useUpdateDisputeLetter = (id: string) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (data: Partial<DisputeLetter>) => {
-      const response = await fetch(`/api/dispute-letter/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      if (!user?.uid) throw new Error("User not authenticated");
+      const response = await fetch(
+        `/api/user/${user.uid}/dispute-letter/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -89,7 +106,9 @@ export const useUpdateDisputeLetter = (id: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dispute-letters"] });
-      queryClient.invalidateQueries({ queryKey: ["dispute-letter", id] });
+      queryClient.invalidateQueries({
+        queryKey: ["dispute-letter", user?.uid, id],
+      });
       toast.success("Letter updated successfully");
     },
     onError: (error: Error) => {
@@ -103,12 +122,17 @@ export const useUpdateDisputeLetter = (id: string) => {
  */
 export const useDeleteDisputeLetter = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/dispute-letter/${id}`, {
-        method: "DELETE",
-      });
+      if (!user?.uid) throw new Error("User not authenticated");
+      const response = await fetch(
+        `/api/user/${user.uid}/dispute-letter/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -132,12 +156,17 @@ export const useDeleteDisputeLetter = () => {
  */
 export const useSubmitLetterForReview = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/dispute-letter/${id}/submit`, {
-        method: "POST",
-      });
+      if (!user?.uid) throw new Error("User not authenticated");
+      const response = await fetch(
+        `/api/user/${user.uid}/dispute-letter/${id}/submit`,
+        {
+          method: "POST",
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();

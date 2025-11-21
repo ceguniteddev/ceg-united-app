@@ -34,9 +34,12 @@ import LatePaymentRemovalForm from "@/components/letter-stream/forms/LatePayment
 import ReinsertedAccountDisputeForm from "@/components/letter-stream/forms/ReinsertedAccountDisputeForm";
 
 const letterFormSchema = z.object({
-  letterType: z.string().min(1, "Please select a letter type"),
+  letterType: z
+    .string({ error: "Please select a letter type" })
+    .min(1, "Please select a letter type"),
   letterTitle: z.string().min(1, "Letter title is required"),
   disputeType: DisputeTypeEnum,
+  disputeMessage: z.string().min(1, "Dispute message is required"),
   accountName: z.string().min(1, "Account name is required"),
   creditorName: z.string().min(1, "Creditor name is required"),
   accountNumber: z.string().optional(),
@@ -101,62 +104,62 @@ const LETTER_TYPE_CONFIG = [
     description: "General credit dispute letters for inaccuracies and errors",
     disputeTypes: [
       "reinserted-account",
-      "inaccurate-information",
-      "identity-theft",
-      "duplicate-account",
-      "outdated-information",
-      "incorrect-balance",
-      "incorrect-payment-history",
-      "mixed-file",
+      // "inaccurate-information",
+      // "identity-theft",
+      // "duplicate-account",
+      // "outdated-information",
+      // "incorrect-balance",
+      // "incorrect-payment-history",
+      // "mixed-file",
     ],
   },
-  {
-    key: "latePaymentRemovalEnabled",
-    label: "Late Payment Removal (USC 1666b)",
-    description:
-      "Remove late payments using USC 1666b billing error provisions",
-    disputeTypes: ["incorrect-payment-history"],
-  },
-  {
-    key: "unauthorizedInquiryRemovalEnabled",
-    label: "Unauthorized Inquiry Removal",
-    description: "Dispute and remove unauthorized credit inquiries",
-    disputeTypes: ["unauthorized-inquiry"],
-  },
-  {
-    key: "verifiedAccountDisputeEnabled",
-    label: "Verified Account Re-Dispute",
-    description: "Follow-up letters when accounts come back verified",
-    disputeTypes: ["inaccurate-information", "duplicate-account"],
-  },
-  {
-    key: "noResponseFollowUpEnabled",
-    label: "No Response Follow-Up",
-    description: "Follow-up when bureaus fail to respond within 30 days",
-    disputeTypes: ["inaccurate-information"],
-  },
-  {
-    key: "accountErrorCorrectionEnabled",
-    label: "Account Error Corrections",
-    description: "Dispute accounts with data accuracy issues",
-    disputeTypes: [
-      "incorrect-balance",
-      "incorrect-payment-history",
-      "inaccurate-information",
-    ],
-  },
-  {
-    key: "collectionAccountRemovalEnabled",
-    label: "Collection Account Removal",
-    description: "Challenge collection accounts using validation disputes",
-    disputeTypes: ["inaccurate-information", "outdated-information"],
-  },
-  {
-    key: "fraudulentAccountRemovalEnabled",
-    label: "Fraudulent Account Removal",
-    description: "Remove identity theft and fraudulent accounts",
-    disputeTypes: ["identity-theft"],
-  },
+  // {
+  //   key: "latePaymentRemovalEnabled",
+  //   label: "Late Payment Removal (USC 1666b)",
+  //   description:
+  //     "Remove late payments using USC 1666b billing error provisions",
+  //   disputeTypes: ["incorrect-payment-history"],
+  // },
+  // {
+  //   key: "unauthorizedInquiryRemovalEnabled",
+  //   label: "Unauthorized Inquiry Removal",
+  //   description: "Dispute and remove unauthorized credit inquiries",
+  //   disputeTypes: ["unauthorized-inquiry"],
+  // },
+  // {
+  //   key: "verifiedAccountDisputeEnabled",
+  //   label: "Verified Account Re-Dispute",
+  //   description: "Follow-up letters when accounts come back verified",
+  //   disputeTypes: ["inaccurate-information", "duplicate-account"],
+  // },
+  // {
+  //   key: "noResponseFollowUpEnabled",
+  //   label: "No Response Follow-Up",
+  //   description: "Follow-up when bureaus fail to respond within 30 days",
+  //   disputeTypes: ["inaccurate-information"],
+  // },
+  // {
+  //   key: "accountErrorCorrectionEnabled",
+  //   label: "Account Error Corrections",
+  //   description: "Dispute accounts with data accuracy issues",
+  //   disputeTypes: [
+  //     "incorrect-balance",
+  //     "incorrect-payment-history",
+  //     "inaccurate-information",
+  //   ],
+  // },
+  // {
+  //   key: "collectionAccountRemovalEnabled",
+  //   label: "Collection Account Removal",
+  //   description: "Challenge collection accounts using validation disputes",
+  //   disputeTypes: ["inaccurate-information", "outdated-information"],
+  // },
+  // {
+  //   key: "fraudulentAccountRemovalEnabled",
+  //   label: "Fraudulent Account Removal",
+  //   description: "Remove identity theft and fraudulent accounts",
+  //   disputeTypes: ["identity-theft"],
+  // },
 ];
 
 export default function LetterForm({ onSuccess, onCancel }: LetterFormProps) {
@@ -171,6 +174,10 @@ export default function LetterForm({ onSuccess, onCancel }: LetterFormProps) {
       fullName: user && user.displayName ? user.displayName : "",
     },
   });
+
+  if (Object.keys(form.formState.errors).length > 0) {
+    console.log("There are validation errors:", form.formState.errors);
+  }
 
   // Get enabled letter types based on user's permissions
   const enabledLetterTypes = useMemo(() => {
@@ -249,61 +256,25 @@ export default function LetterForm({ onSuccess, onCancel }: LetterFormProps) {
       <CardContent>
         <FormProvider {...form}>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
               {/* Letter Type Selection */}
-              <div className="space-y-2">
-                <Label>Letter Type *</Label>
-                <Select
-                  value={selectedLetterType}
-                  onValueChange={(value) => {
-                    setSelectedLetterType(value);
-                    form.setValue("letterType", value);
-                    form.setValue("disputeType", "" as any); // Reset dispute type
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a letter type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {enabledLetterTypes.map((type) => (
-                      <SelectItem key={type.key} value={type.key}>
-                        <div>
-                          <div className="font-medium">{type.label}</div>
-                          <div className="text-xs text-gray-500">
-                            {type.description}
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.letterType && (
-                  <p className="text-sm text-red-600">
-                    {form.formState.errors.letterType.message}
-                  </p>
-                )}
-              </div>
+              <CustomFormField
+                name="letterType"
+                label="Letter Type *"
+                type="select"
+                placeholder="Select letter type"
+                options={enabledLetterTypes.map((type) => ({
+                  value: type.key,
+                  label: type.label,
+                }))}
+                onSelectValue={(value) => {
+                  setSelectedLetterType(value);
+                  form.setValue("letterType", value);
+                  form.setValue("disputeType", "" as any);
+                }}
+              />
 
-              {/* Dispute Type */}
-              {selectedLetterType && (
-                <CustomFormField
-                  name="disputeType"
-                  label="Dispute Type *"
-                  type="select"
-                  placeholder="Select dispute type"
-                  options={availableDisputeTypes.map((type) => ({
-                    value: type,
-                    label: type
-                      .split("-")
-                      .map(
-                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                      )
-                      .join(" "),
-                  }))}
-                />
-              )}
-
-              {selectedLetterType && (
+              {false && selectedLetterType && (
                 <CustomFormField
                   name="letterTitle"
                   label="Letter Title *"
@@ -316,7 +287,9 @@ export default function LetterForm({ onSuccess, onCancel }: LetterFormProps) {
               {selectedLetterType === "latePaymentRemovalEnabled" ? (
                 <LatePaymentRemovalForm />
               ) : selectedLetterType === "letterFeatureEnabled" ? (
-                <ReinsertedAccountDisputeForm />
+                <ReinsertedAccountDisputeForm
+                  availableDisputeTypes={availableDisputeTypes}
+                />
               ) : selectedLetterType ? (
                 <>
                   {/* Generic Form for other letter types */}

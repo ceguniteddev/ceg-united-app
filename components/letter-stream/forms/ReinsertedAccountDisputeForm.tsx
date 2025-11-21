@@ -3,25 +3,125 @@
 import { useFormContext } from "react-hook-form";
 import { CustomFormField } from "@/components/CustomFormField";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader, Mailbox } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useGenerateDisputeLetter } from "@/hooks/dispute-letter-generate";
+import dynamic from "next/dynamic";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
+const EditorQuill = dynamic(() => import("@/components/editor/EditorQuill"), {
+  ssr: false,
+});
+interface ReinsertedAccountDisputeFormProps {
+  availableDisputeTypes?: string[];
+}
 
-export default function ReinsertedAccountDisputeForm() {
+export default function ReinsertedAccountDisputeForm({
+  availableDisputeTypes = [],
+}: ReinsertedAccountDisputeFormProps) {
   const form = useFormContext();
+  const [generatedContent, setGeneratedContent] = useState<string | null>(null);
+  const [selectedDisputeType, setSelectedDisputeType] = useState<string | null>(
+    null
+  );
+
+  const { mutate: generateLetter, isPending: isGenerating } =
+    useGenerateDisputeLetter();
+
+  const handleGenerateDisputeReinserted = () => {
+    generateLetter(
+      {
+        disputeType: "reinserted-account",
+      },
+      {
+        onSuccess: (content) => {
+          setGeneratedContent(content);
+        },
+      }
+    );
+  };
 
   return (
     <div className="space-y-4">
-      <div className="bg-blue-50 p-4 rounded-md mb-4">
-        <h4 className="font-semibold text-blue-900 mb-2">
-          Reinserted Account Dispute
-        </h4>
-        <p className="text-sm text-blue-800">
-          This letter disputes accounts that were previously deleted but have been 
-          reinserted onto your credit report, which violates FCRA Section 611(a)(5).
-        </p>
-      </div>
+      {/* Dispute Type Selection */}
+      <CustomFormField
+        name="disputeType"
+        label="Dispute Type *"
+        type="select"
+        placeholder="Select dispute type"
+        options={availableDisputeTypes.map((type) => ({
+          value: type,
+          label: type
+            .split("-")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" "),
+        }))}
+        onSelectValue={(value) => {
+          setSelectedDisputeType(value);
+        }}
+      />
+
+      {selectedDisputeType && (
+        <div>
+          <div className="rounded-md mb-4 p-4 flex flex-row justify-between bg-blue-50 items-center">
+            <div>
+              <h4 className="font-semibold text-blue-900 mb-2">
+                Reinserted Account Dispute
+              </h4>
+              <p className="text-sm text-blue-800">
+                This letter disputes accounts that were previously deleted but
+                have been reinserted onto your credit report, which violates
+                FCRA Section 611(a)(5).
+              </p>
+            </div>
+
+            <Button
+              className="bg-green-200 hover-green-300"
+              type="button"
+              variant={"outline"}
+              onClick={handleGenerateDisputeReinserted}
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader className="h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Mailbox className="h-4 w-4" />
+                  Generate Dispute
+                </>
+              )}
+            </Button>
+          </div>
+          <FormField
+            control={form.control}
+            name="disputeMessage"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <EditorQuill
+                    {...field}
+                    value={generatedContent ?? ""}
+                    placeholder=""
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      )}
 
       {/* Previous Dispute Information */}
-      <div className="space-y-4 border-t pt-4">
+      {/* <div className="space-y-4 border-t pt-4">
         <h3 className="font-semibold">Previous Dispute Details</h3>
 
         <CustomFormField
@@ -70,10 +170,10 @@ export default function ReinsertedAccountDisputeForm() {
           type="text"
           placeholder="Enter confirmation or reference number if available"
         />
-      </div>
+      </div> */}
 
       {/* Account Information */}
-      <div className="space-y-4 border-t pt-4">
+      {/* <div className="space-y-4 border-t pt-4">
         <h3 className="font-semibold">Reinserted Account Information</h3>
 
         <CustomFormField
@@ -131,10 +231,10 @@ export default function ReinsertedAccountDisputeForm() {
           numberPrefix="$"
           decimalScale={2}
         />
-      </div>
+      </div> */}
 
       {/* Reason for Reinsertion Dispute */}
-      <div className="space-y-4 border-t pt-4">
+      {/* <div className="space-y-4 border-t pt-4">
         <h3 className="font-semibold">Dispute Grounds</h3>
 
         <CustomFormField
@@ -172,10 +272,10 @@ export default function ReinsertedAccountDisputeForm() {
           type="date-picker"
           placeholder="When did you receive the notice?"
         />
-      </div>
+      </div> */}
 
       {/* Supporting Documentation */}
-      <div className="space-y-4 border-t pt-4">
+      {/* <div className="space-y-4 border-t pt-4">
         <h3 className="font-semibold">Supporting Documentation</h3>
 
         <div className="space-y-3">
@@ -219,10 +319,10 @@ export default function ReinsertedAccountDisputeForm() {
           type="textarea"
           placeholder="List all documents you're including with this dispute letter..."
         />
-      </div>
+      </div> */}
 
       {/* Credit Bureau Information */}
-      <div className="space-y-4 border-t pt-4">
+      {/* <div className="space-y-4 border-t pt-4">
         <h3 className="font-semibold">Credit Bureau Reporting</h3>
 
         <div className="space-y-2">
@@ -263,10 +363,10 @@ export default function ReinsertedAccountDisputeForm() {
           label="Was account reinserted on all bureaus?"
           type="switch"
         />
-      </div>
+      </div> */}
 
       {/* Desired Resolution */}
-      <div className="space-y-4 border-t pt-4">
+      {/* <div className="space-y-4 border-t pt-4">
         <h3 className="font-semibold">Requested Action</h3>
 
         <CustomFormField
@@ -288,10 +388,10 @@ export default function ReinsertedAccountDisputeForm() {
           type="textarea"
           placeholder="Describe how this reinsertion has affected you (e.g., loan denial, higher interest rates, emotional distress)..."
         />
-      </div>
+      </div> */}
 
       {/* Sender Address */}
-      <div className="space-y-4 border-t pt-4">
+      {/* <div className="space-y-4 border-t pt-4">
         <h3 className="font-semibold">Your Contact Information</h3>
 
         <CustomFormField
@@ -365,23 +465,31 @@ export default function ReinsertedAccountDisputeForm() {
           type="text"
           placeholder="Last 4 digits only"
         />
-      </div>
+      </div> */}
 
-      <Alert className="bg-red-50 border-red-200">
+      {/* <Alert className="bg-red-50 border-red-200">
         <AlertCircle className="h-4 w-4 text-red-600" />
         <AlertDescription className="text-red-800">
-          <h4 className="font-semibold mb-2">FCRA Section 611(a)(5) Requirements</h4>
+          <h4 className="font-semibold mb-2">
+            FCRA Section 611(a)(5) Requirements
+          </h4>
           <ul className="text-sm space-y-1 list-disc list-inside">
-            <li>Bureaus must notify you within 5 business days before reinsertion</li>
-            <li>Notice must include name, address, phone number of furnisher</li>
-            <li>Must provide notice that you have the right to add a statement</li>
+            <li>
+              Bureaus must notify you within 5 business days before reinsertion
+            </li>
+            <li>
+              Notice must include name, address, phone number of furnisher
+            </li>
+            <li>
+              Must provide notice that you have the right to add a statement
+            </li>
             <li>Reinsertion requires new or additional information</li>
             <li>You can file complaints with CFPB if rights are violated</li>
           </ul>
         </AlertDescription>
-      </Alert>
+      </Alert> */}
 
-      <div className="bg-yellow-50 p-4 rounded-md">
+      {/* <div className="bg-yellow-50 p-4 rounded-md">
         <h4 className="font-semibold text-yellow-900 mb-2 flex items-center gap-2">
           <span>⚠️</span> Important Tips
         </h4>
@@ -393,7 +501,7 @@ export default function ReinsertedAccountDisputeForm() {
           <li>Consider filing CFPB complaint if FCRA violations occurred</li>
           <li>Follow up if no response within 30 days</li>
         </ul>
-      </div>
+      </div> */}
     </div>
   );
 }

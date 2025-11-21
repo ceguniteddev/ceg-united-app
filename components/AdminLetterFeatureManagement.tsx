@@ -39,62 +39,62 @@ const LETTER_FEATURES: LetterFeatureConfig[] = [
     icon: <FileText className="h-5 w-5" />,
     color: "green",
   },
-  {
-    key: "latePaymentRemovalEnabled",
-    label: "Late Payment Removal (USC 1666b)",
-    description:
-      "Generate letters to remove late payments using USC 1666b billing error provisions",
-    icon: <Clock className="h-5 w-5" />,
-    color: "green",
-  },
-  {
-    key: "unauthorizedInquiryRemovalEnabled",
-    label: "Unauthorized Inquiry Removal",
-    description:
-      "Create letters to dispute and remove unauthorized credit inquiries",
-    icon: <Search className="h-5 w-5" />,
-    color: "green",
-  },
-  {
-    key: "verifiedAccountDisputeEnabled",
-    label: "Verified Account Re-Dispute",
-    description:
-      "Generate follow-up letters when accounts come back verified after initial dispute",
-    icon: <RefreshCcw className="h-5 w-5" />,
-    color: "green",
-  },
-  {
-    key: "noResponseFollowUpEnabled",
-    label: "No Response Follow-Up",
-    description:
-      "Send follow-up letters when bureaus fail to respond within statutory timeframes",
-    icon: <AlertTriangle className="h-5 w-5" />,
-    color: "green",
-  },
-  {
-    key: "accountErrorCorrectionEnabled",
-    label: "Account Error Corrections",
-    description:
-      "Dispute accounts with data accuracy issues like incorrect balances, wrong dates, or inaccurate payment status",
-    icon: <CheckCircle className="h-5 w-5" />,
-    color: "green",
-  },
-  {
-    key: "collectionAccountRemovalEnabled",
-    label: "Collection Account Removal",
-    description:
-      "Challenge collection accounts using validation disputes, statute of limitations, and FDCPA violations",
-    icon: <Banknote className="h-5 w-5" />,
-    color: "green",
-  },
-  {
-    key: "fraudulentAccountRemovalEnabled",
-    label: "Fraudulent Account Removal",
-    description:
-      "Remove identity theft and fraudulent accounts with FTC Identity Theft Reports and police reports",
-    icon: <ShieldAlert className="h-5 w-5" />,
-    color: "green",
-  },
+  // {
+  //   key: "latePaymentRemovalEnabled",
+  //   label: "Late Payment Removal (USC 1666b)",
+  //   description:
+  //     "Generate letters to remove late payments using USC 1666b billing error provisions",
+  //   icon: <Clock className="h-5 w-5" />,
+  //   color: "green",
+  // },
+  // {
+  //   key: "unauthorizedInquiryRemovalEnabled",
+  //   label: "Unauthorized Inquiry Removal",
+  //   description:
+  //     "Create letters to dispute and remove unauthorized credit inquiries",
+  //   icon: <Search className="h-5 w-5" />,
+  //   color: "green",
+  // },
+  // {
+  //   key: "verifiedAccountDisputeEnabled",
+  //   label: "Verified Account Re-Dispute",
+  //   description:
+  //     "Generate follow-up letters when accounts come back verified after initial dispute",
+  //   icon: <RefreshCcw className="h-5 w-5" />,
+  //   color: "green",
+  // },
+  // {
+  //   key: "noResponseFollowUpEnabled",
+  //   label: "No Response Follow-Up",
+  //   description:
+  //     "Send follow-up letters when bureaus fail to respond within statutory timeframes",
+  //   icon: <AlertTriangle className="h-5 w-5" />,
+  //   color: "green",
+  // },
+  // {
+  //   key: "accountErrorCorrectionEnabled",
+  //   label: "Account Error Corrections",
+  //   description:
+  //     "Dispute accounts with data accuracy issues like incorrect balances, wrong dates, or inaccurate payment status",
+  //   icon: <CheckCircle className="h-5 w-5" />,
+  //   color: "green",
+  // },
+  // {
+  //   key: "collectionAccountRemovalEnabled",
+  //   label: "Collection Account Removal",
+  //   description:
+  //     "Challenge collection accounts using validation disputes, statute of limitations, and FDCPA violations",
+  //   icon: <Banknote className="h-5 w-5" />,
+  //   color: "green",
+  // },
+  // {
+  //   key: "fraudulentAccountRemovalEnabled",
+  //   label: "Fraudulent Account Removal",
+  //   description:
+  //     "Remove identity theft and fraudulent accounts with FTC Identity Theft Reports and police reports",
+  //   icon: <ShieldAlert className="h-5 w-5" />,
+  //   color: "green",
+  // },
 ];
 
 interface AdminLetterFeatureManagementProps {

@@ -14,18 +14,21 @@ export const DisputeLetterStatusEnum = z.enum([
 export type DisputeLetterStatus = z.infer<typeof DisputeLetterStatusEnum>;
 
 // Dispute type enum
-export const DisputeTypeEnum = z.enum([
-  "reinserted-account",
-  "inaccurate-information",
-  "identity-theft",
-  "duplicate-account",
-  "outdated-information",
-  "incorrect-balance",
-  "incorrect-payment-history",
-  "unauthorized-inquiry",
-  "mixed-file",
-  "other",
-]);
+export const DisputeTypeEnum = z.enum(
+  [
+    "reinserted-account",
+    "inaccurate-information",
+    "identity-theft",
+    "duplicate-account",
+    "outdated-information",
+    "incorrect-balance",
+    "incorrect-payment-history",
+    "unauthorized-inquiry",
+    "mixed-file",
+    "other",
+  ],
+  { error: "Please select dispute type" }
+);
 export type DisputeType = z.infer<typeof DisputeTypeEnum>;
 
 // Bureau enum
