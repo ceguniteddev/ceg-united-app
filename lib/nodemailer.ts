@@ -48,8 +48,7 @@ export const sendMail = async ({
 
 export const sendBrokerInvitationEmail = async (
   email: string,
-  registrationUrl: string,
-  invitedByName: string
+  registrationUrl: string
 ) => {
   const bodyHTML = `
 <!DOCTYPE html>
@@ -80,7 +79,7 @@ export const sendBrokerInvitationEmail = async (
               </p>
               
               <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.6;">
-                <strong>${invitedByName}</strong> has invited you to join CEG United LLC's broker program. As a broker, you'll be able to submit funding applications on behalf of your clients and earn commissions on approved deals.
+                <strong>You have been invited to join CEG United LLC's broker program. As a broker, you'll be able to submit funding applications on behalf of your clients and earn commissions on approved deals.
               </p>
               
               <div style="background-color: #f8f9fa; border-left: 4px solid #0179FE; padding: 20px; margin: 30px 0; border-radius: 4px;">
