@@ -245,7 +245,6 @@ const renameDocument = async ({
   newDocId: string;
 }) => {
   const db = firestoreAdmin();
-  const batch = db.batch();
 
   const oldDocRef = db
     .collection(CRS_REPORT_DATA)
@@ -253,18 +252,22 @@ const renameDocument = async ({
     .collection(crsType)
     .doc(oldDocId);
 
+  // Read old document first
+  const oldDoc = await oldDocRef.get();
+
+  // If document doesn't exist, skip the rename operation
+  if (!oldDoc.exists) {
+    console.log(`No existing document to rename: ${oldDocId}`);
+    return;
+  }
+
   const newDocRef = db
     .collection(CRS_REPORT_DATA)
     .doc(userId)
     .collection(crsType)
     .doc(newDocId);
 
-  // Read old document first
-  const oldDoc = await oldDocRef.get();
-
-  if (!oldDoc.exists) {
-    throw new Error("Original document does not exist");
-  }
+  const batch = db.batch();
 
   // Add to batch: create new doc and delete old doc
   batch.set(newDocRef, oldDoc.data()!);
