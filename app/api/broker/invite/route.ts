@@ -38,11 +38,7 @@ export const POST = withAuth(async (request: NextRequest) => {
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     }/broker-registration?token=${token}`;
 
-    await sendBrokerInvitationEmail(
-      email,
-      registrationUrl,
-      `${currentUser.name}`
-    );
+    await sendBrokerInvitationEmail(email, registrationUrl);
 
     return NextResponse.json(
       {
