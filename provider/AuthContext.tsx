@@ -187,7 +187,7 @@ export function AuthProvider({
         const userData = await getUserById(firebaseUser.uid);
         if (!userData) throw new AppError("Invalid email or password.");
 
-        if (!userData.activeStatus || userData.activeStatus === "InActive") {
+        if (userData.activeStatus === "InActive") {
           throw new AppError(
             "Your account has been deactivated. Please contact contact@cegunited.com."
           );
