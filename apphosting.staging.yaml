@@ -39,6 +39,7 @@ env:
     value: CEG United LLC
     availability:
       - RUNTIME
+      - BUILD
   - variable: PLAID_ENV
     value: sandbox
     availability:
