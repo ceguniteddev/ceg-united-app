@@ -190,8 +190,14 @@ export function AuthProvider({
           throw new AppError("Please verify your email before signing in.");
         }
 
-        const userRole = await getUserById(firebaseUser.uid);
-        if (!userRole) throw new AppError("Invalid email or password.");
+        const userData = await getUserById(firebaseUser.uid);
+        if (!userData) throw new AppError("Invalid email or password.");
+
+        if (userData.activeStatus === "InActive") {
+          throw new AppError(
+            "Your account has been deactivated. Please contact contact@cegunited.com."
+          );
+        }
 
         const idToken = await firebaseUser.getIdToken(true);
         await createSession(idToken);
@@ -203,7 +209,7 @@ export function AuthProvider({
         await loadAndSetUserData(firebaseUser);
 
         // Use the role you just set instead of refetching
-        const nextRole = userRole.role || "Client";
+        const nextRole = userData.role || "Client";
 
         // Small delay to ensure session cookie is fully set before navigation
         await new Promise((resolve) => setTimeout(resolve, 500));
