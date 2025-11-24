@@ -51,6 +51,7 @@ export const brokerClientMappingSchema = z.object({
   createdAt: z.date(),
   createdBy: z.enum(["Broker", "Client"]), // Who initiated the relationship
   status: z.enum(["Active", "Inactive"]).default("Active"),
+  clientActiveStatus: z.enum(["Active", "InActive", "Paused"]).optional(), // User's activeStatus from user collection
 });
 
 export type BrokerClientMapping = z.infer<typeof brokerClientMappingSchema>;

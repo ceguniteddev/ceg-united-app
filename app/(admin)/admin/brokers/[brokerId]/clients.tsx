@@ -22,6 +22,7 @@ import { Users, Search, Mail, Calendar } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
+import CategoryBadge from "@/components/CategoryBadge";
 
 interface BrokerClientsProps {
   brokerId: string;
@@ -118,13 +119,16 @@ export default function BrokerClients({ brokerId }: BrokerClientsProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge
+                      {/* <Badge
                         variant={
-                          client.status === "Active" ? "default" : "secondary"
+                          client.clientActiveStatus === "Active"
+                            ? "default"
+                            : "secondary"
                         }
                       >
-                        {client.status}
-                      </Badge>
+                        {client.clientActiveStatus}
+                      </Badge> */}
+                      <CategoryBadge category={client.clientActiveStatus} />
                     </TableCell>
                   </TableRow>
                 ))}
