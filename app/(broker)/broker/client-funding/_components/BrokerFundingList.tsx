@@ -26,6 +26,15 @@ import { ApprovedBankFormData } from "@/schema/bank-products";
 import SortableHeader from "@/components/SortableHeader";
 import { useApprovedMappedFundsMutation } from "@/hooks/admin/funding-application/fund-mapping";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type BrokerFundingData = ApprovedBankFormData & {
   clientName?: string;
@@ -468,69 +477,64 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
               className="max-w-sm"
             />
           </div>
-          <div className="overflow-x-auto rounded-md border">
-            <table
-              style={{
-                width: "max-content",
-                minWidth: "100%",
-                borderCollapse: "separate",
-                borderSpacing: 0,
-              }}
-            >
-              <thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <th
-                          key={header.id}
-                          colSpan={header.colSpan}
-                          className="h-12 px-4 text-left align-middle font-medium text-muted-foreground border-b"
-                        >
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </th>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </thead>
-              <tbody>
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <tr
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
-                    >
-                      {row.getVisibleCells().map((cell) => {
+          <div className="rounded-md border flex">
+            <ScrollArea type="always" className="w-1 flex-1">
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => {
                         return (
-                          <td key={cell.id} className="p-4 align-middle">
+                          <TableHead
+                            key={header.id}
+                            className="whitespace-nowrap"
+                          >
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </TableHead>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows?.length ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            className="whitespace-nowrap"
+                          >
                             {flexRender(
                               cell.column.columnDef.cell,
                               cell.getContext()
                             )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={visibleColumns.length}
-                      className="h-24 text-center"
-                    >
-                      No results.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-24 text-center"
+                      >
+                        No results.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+              <ScrollBar orientation="horizontal" className="w-full" />
+            </ScrollArea>
           </div>
           <DataTablePagination table={table} />
         </TabsContent>
