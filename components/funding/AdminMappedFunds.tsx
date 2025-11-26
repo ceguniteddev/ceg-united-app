@@ -34,6 +34,8 @@ import {
   CheckCircle,
   MoreHorizontal,
   ViewIcon,
+  PlusCircleIcon,
+  Trash2Icon,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import {
@@ -59,6 +61,7 @@ import {
 } from "@/schema/bank-products";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import BankProductsForm from "@/app/(admin)/admin/bank-products/form";
+import ManualAddBankProduct from "./ManualAddBankProduct";
 import SortableHeader from "../SortableHeader";
 import CategoryBadge from "../CategoryBadge";
 import { formatAmount } from "@/lib/utils";
@@ -96,6 +99,24 @@ const BankProductsList = ({
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  const { addManualMappedFund, isAddingManual } =
+    useFundingApplicationsMappedFundsMutation();
+
+  // Get IDs of already mapped products to exclude from manual selection
+  const mappedProductIds = useMemo(() => {
+    return (mappedFund || []).map((fund) => fund.id || "").filter(Boolean);
+  }, [mappedFund]);
+
+  const handleManualAdd = async (selectedIds: string[]) => {
+    await addManualMappedFund({
+      bankProductIds: selectedIds,
+      referenceNumber,
+      userId,
+    });
+    setIsAddDialogOpen(false);
+  };
 
   const columns: ColumnDef<BankFormData>[] = useMemo(
     () => [
@@ -265,10 +286,58 @@ const BankProductsList = ({
   if (isLoading) return <Spinner displayText="Loading mapped funds..." />;
 
   if (!mappedFund || mappedFund.length === 0)
-    return <p className="p-4">No mapped funds found.</p>;
+    return (
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <p>No mapped funds found.</p>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <PlusCircleIcon className="h-4 w-4 mr-2" />
+            Add Bank Product
+          </Button>
+        </div>
+        <ResponsiveDialog
+          isOpen={isAddDialogOpen}
+          setIsOpen={setIsAddDialogOpen}
+          title="Add Bank Products to Fund Mapping"
+          description="Select bank products to manually add to this funding application."
+          className="w-11/12 max-w-5xl"
+        >
+          <ManualAddBankProduct
+            referenceNumber={referenceNumber}
+            userId={userId}
+            onAdd={handleManualAdd}
+            isAdding={isAddingManual}
+            excludeIds={mappedProductIds}
+          />
+        </ResponsiveDialog>
+      </div>
+    );
 
   return (
     <div className="mx-auto w-full">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold">Mapped Bank Products</h3>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <PlusCircleIcon className="h-4 w-4 mr-2" />
+          Add Bank Product
+        </Button>
+      </div>
+
+      <ResponsiveDialog
+        isOpen={isAddDialogOpen}
+        setIsOpen={setIsAddDialogOpen}
+        title="Add Bank Products to Fund Mapping"
+        description="Select bank products to manually add to this funding application."
+        className="w-11/12 max-w-5xl"
+      >
+        <ManualAddBankProduct
+          referenceNumber={referenceNumber}
+          userId={userId}
+          onAdd={handleManualAdd}
+          isAdding={isAddingManual}
+          excludeIds={mappedProductIds}
+        />
+      </ResponsiveDialog>
       <div className="overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
@@ -337,15 +406,23 @@ const ActionCell = ({
   approvedMappedFund?: ApprovedBankFormData;
 }) => {
   const [open, setOpen] = useState(false);
-  const { cancelMappedFund, isCancelling } =
-    useFundingApplicationsMappedFundsMutation();
+  const {
+    cancelMappedFund,
+    isCancelling,
+    removeMappedBankProduct,
+    isRemoving,
+  } = useFundingApplicationsMappedFundsMutation();
 
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
 
   const showCancelButton = useMemo(
     () => isAdminApproved && clientApplicationStatus !== "Approved",
     [clientApplicationStatus, isAdminApproved]
   );
+
+  // Show delete button only if not approved
+  const showDeleteButton = useMemo(() => !isAdminApproved, [isAdminApproved]);
 
   const handleCancelClick = async () => {
     await cancelMappedFund({
@@ -353,6 +430,14 @@ const ActionCell = ({
       referenceNumber: referenceNumber,
     });
     setIsAlertOpen(false);
+  };
+
+  const handleDeleteClick = async () => {
+    await removeMappedBankProduct({
+      referenceNumber,
+      bankProductId: row.original.id || "",
+    });
+    setIsDeleteAlertOpen(false);
   };
 
   return (
@@ -396,6 +481,31 @@ const ActionCell = ({
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Bank Product?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove{" "}
+              <span className="font-semibold">{row.original.bankName}</span>{" "}
+              from the fund mapping. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer" disabled={isRemoving}>
+              Go Back
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteClick}
+              disabled={isRemoving}
+              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+            >
+              {isRemoving ? "Deleting..." : "Yes, Delete It"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
@@ -413,6 +523,20 @@ const ActionCell = ({
               <IconMenu text="View" icon={<ViewIcon className="h-4 w-4" />} />
             </Button>
           </DropdownMenuItem>
+          {showDeleteButton && (
+            <DropdownMenuItem className="p-0">
+              <Button
+                variant="ghost"
+                className="cursor-pointer w-full justify-start rounded-md p-2 text-red-500 hover:bg-neutral-100"
+                onClick={() => setIsDeleteAlertOpen(true)}
+              >
+                <IconMenu
+                  text="Delete"
+                  icon={<Trash2Icon className="h-4 w-4" />}
+                />
+              </Button>
+            </DropdownMenuItem>
+          )}
           {showCancelButton && (
             <DropdownMenuItem className="p-0">
               <Button
