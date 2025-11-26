@@ -95,7 +95,7 @@ const ClientProfilePage = () => {
       </TabsContent>
 
       <TabsContent value="applied-funding" className="w-full">
-        <ClientAppliedFunding userId={userId} />
+        <ClientAppliedFunding userId={userId} isAdminView={true} />
       </TabsContent>
 
       {hasLearningMaterialsAccess && (
