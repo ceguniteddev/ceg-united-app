@@ -77,7 +77,10 @@ const AdminViewApplication = () => {
         <FundingApplicationView data={formData} />
       </TabsContent>
       <TabsContent value="user-profile" className="w-full">
-        <AdminViewUserProfile userId={formData?.userId ?? ""} />
+        <AdminViewUserProfile
+          userId={formData?.userId ?? ""}
+          adminView={true}
+        />
       </TabsContent>
 
       <TabsContent value="documents" className="w-full">
