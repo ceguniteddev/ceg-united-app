@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import CategoryBadge from "@/components/CategoryBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -206,13 +207,7 @@ export default function MyClientsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            client.status === "Active" ? "default" : "secondary"
-                          }
-                        >
-                          {client.status}
-                        </Badge>
+                        <CategoryBadge category={client.clientActiveStatus} />
                       </TableCell>
                       <TableCell className="text-right">
                         <Link href={`/broker/my-clients/${client.clientId}`}>
@@ -240,16 +235,11 @@ export default function MyClientsPage() {
                             <p className="font-semibold text-base">
                               {client.clientName}
                             </p>
-                            <Badge
-                              variant={
-                                client.status === "Active"
-                                  ? "default"
-                                  : "secondary"
-                              }
-                              className="mt-1"
-                            >
-                              {client.status}
-                            </Badge>
+                            <div className="mt-1">
+                              <CategoryBadge
+                                category={client.clientActiveStatus}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>

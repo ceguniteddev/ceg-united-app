@@ -182,6 +182,19 @@ const ClientsList = () => {
       },
     },
     {
+      id: "brokerName",
+      accessorKey: "brokerName",
+      header: ({ column }) => <SortableHeader column={column} title="Broker" />,
+      cell: ({ row }) => {
+        const brokerName = row.getValue("brokerName") as string | undefined;
+        return (
+          <div className={brokerName === "" ? "text-muted-foreground" : ""}>
+            {brokerName}
+          </div>
+        );
+      },
+    },
+    {
       id: "actions",
       cell: ({ row }) => {
         const id = row.original.id;

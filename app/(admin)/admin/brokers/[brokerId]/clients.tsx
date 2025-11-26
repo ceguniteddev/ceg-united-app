@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import CategoryBadge from "@/components/CategoryBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -118,13 +119,9 @@ export default function BrokerClients({ brokerId }: BrokerClientsProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          client.status === "Active" ? "default" : "secondary"
-                        }
-                      >
-                        {client.status}
-                      </Badge>
+                      <CategoryBadge
+                        category={client.clientActiveStatus || "InActive"}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

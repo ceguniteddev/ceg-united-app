@@ -1,5 +1,8 @@
 "use server";
-import { USER_COLLECTION } from "@/constant/collection-name";
+import {
+  BROKER_CLIENT_MAPPING,
+  USER_COLLECTION,
+} from "@/constant/collection-name";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import AppError from "@/error/AppError";
 import { normalizeAllDates, normalizeDate } from "@/lib/date-parser";
@@ -16,6 +19,7 @@ import { noteSchema, NoteSchema } from "@/schema/notes";
 import { User, UserActiveStatus, UserWithId } from "@/schema/registration";
 import { format } from "date-fns";
 import { cookies, headers } from "next/headers";
+import { FieldPath } from "firebase-admin/firestore";
 
 export const getUserRecordByEmail = async (email: string) => {
   const authentication = authenticationAdmin();
@@ -50,7 +54,7 @@ export const getUser = async (email: string): Promise<User | null> => {
   return { id: userDoc.id, ...normalizeAllDates(user) } as User;
 };
 
-export const getUserById = async (id: string): Promise<User | null> => {
+export const getUserById = async (id: string): Promise<UserWithId | null> => {
   const db = firestoreAdmin();
 
   const collectionRef = db.collection(USER_COLLECTION);
@@ -61,8 +65,48 @@ export const getUserById = async (id: string): Promise<User | null> => {
 
   const userDoc = docSnapshot;
   const user = userDoc.data();
+  const userData = { id: userDoc.id, ...normalizeAllDates(user) } as UserWithId;
 
-  return { id: userDoc.id, ...normalizeAllDates(user) } as User;
+  // If this is a client, fetch broker information
+  if (userData.role === "Client") {
+    const mappingSnapshot = await db
+      .collection(BROKER_CLIENT_MAPPING)
+      .where("clientId", "==", id)
+      .where("status", "==", "Active")
+      .limit(1)
+      .get();
+
+    if (!mappingSnapshot.empty) {
+      const mappingData = mappingSnapshot.docs[0].data();
+      const brokerId = mappingData.brokerId;
+
+      // Fetch broker details
+      const brokerDoc = await db
+        .collection(USER_COLLECTION)
+        .doc(brokerId)
+        .get();
+      if (brokerDoc.exists) {
+        const brokerData = brokerDoc.data();
+        const brokerName = `${brokerData?.firstName || ""} ${
+          brokerData?.lastName || ""
+        }`.trim();
+
+        return {
+          ...userData,
+          brokerId,
+          brokerName: brokerName || "",
+        } as UserWithId;
+      }
+    }
+
+    // No broker mapping found
+    return {
+      ...userData,
+      brokerName: "",
+    } as UserWithId;
+  }
+
+  return userData;
 };
 
 export const registerUser = async ({
@@ -320,9 +364,80 @@ export const getUsers = async (role?: Role): Promise<UserWithId[]> => {
   const users: UserWithId[] = [];
   querySnapshot.forEach((doc) => {
     const data = doc.data();
-
     users.push({ id: doc.id, ...normalizeAllDates(data) } as UserWithId);
   });
+
+  // If getting clients, fetch broker mappings
+  if (role === "Client") {
+    const clientIds = users.map((u) => u.id);
+    const brokerMappings = new Map<
+      string,
+      { brokerId: string; brokerName: string }
+    >();
+
+    // Fetch broker mappings in batches
+    for (let i = 0; i < clientIds.length; i += 10) {
+      const batch = clientIds.slice(i, i + 10);
+      const mappingsSnapshot = await db
+        .collection(BROKER_CLIENT_MAPPING)
+        .where("clientId", "in", batch)
+        .where("status", "==", "Active")
+        .get();
+
+      for (const doc of mappingsSnapshot.docs) {
+        const data = doc.data();
+        brokerMappings.set(data.clientId, {
+          brokerId: data.brokerId,
+          brokerName: "", // Will be filled below
+        });
+      }
+    }
+
+    // console.log("brokerMappings before fetching names", brokerMappings);
+
+    // Fetch broker names if we have any mappings
+    if (brokerMappings.size > 0) {
+      const brokerIds = [
+        ...new Set([...brokerMappings.values()].map((m) => m.brokerId)),
+      ];
+
+      for (let i = 0; i < brokerIds.length; i += 10) {
+        const batch = brokerIds.slice(i, i + 10);
+        const brokersSnapshot = await db
+          .collection(USER_COLLECTION)
+          .where(FieldPath.documentId(), "in", batch)
+          .get();
+
+        brokersSnapshot.docs.forEach((doc) => {
+          const brokerData = doc.data();
+          const brokerName = `${brokerData.firstName || ""} ${
+            brokerData.lastName || ""
+          }`.trim();
+
+          // Update all mappings for this broker
+          brokerMappings.forEach((mapping, clientId) => {
+            if (mapping.brokerId === doc.id) {
+              mapping.brokerName = brokerName;
+            }
+          });
+        });
+      }
+    }
+    // console.log("brokerMappings after fetching names", brokerMappings);
+    // Add broker info to users
+
+    const dataResult = users.map((user) => {
+      const brokerInfo = brokerMappings.get(user.id);
+      return {
+        ...user,
+        brokerId: brokerInfo?.brokerId,
+        brokerName: brokerInfo?.brokerName || "",
+      } as UserWithId;
+    });
+
+    return dataResult;
+  }
+
   return users;
 };
 
