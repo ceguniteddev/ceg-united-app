@@ -148,12 +148,12 @@ const LETTER_TYPE_CONFIG = [
   //     "inaccurate-information",
   //   ],
   // },
-  {
-    key: "collectionAccountRemovalEnabled",
-    label: "Collection Account Removal",
-    description: "Challenge collection accounts using validation disputes",
-    disputeTypes: ["inaccurate-information", "outdated-information"],
-  },
+  // {
+  //   key: "collectionAccountRemovalEnabled",
+  //   label: "Collection Account Removal",
+  //   description: "Challenge collection accounts using validation disputes",
+  //   disputeTypes: ["inaccurate-information", "outdated-information"],
+  // },
   // {
   //   key: "fraudulentAccountRemovalEnabled",
   //   label: "Fraudulent Account Removal",

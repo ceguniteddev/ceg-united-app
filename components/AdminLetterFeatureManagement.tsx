@@ -71,22 +71,22 @@ const LETTER_FEATURES: LetterFeatureConfig[] = [
   //   icon: <AlertTriangle className="h-5 w-5" />,
   //   color: "green",
   // },
-  {
-    key: "accountErrorCorrectionEnabled",
-    label: "Account Error Corrections",
-    description:
-      "Dispute accounts with data accuracy issues like incorrect balances, wrong dates, or inaccurate payment status",
-    icon: <CheckCircle className="h-5 w-5" />,
-    color: "green",
-  },
-  {
-    key: "collectionAccountRemovalEnabled",
-    label: "Collection Account Removal",
-    description:
-      "Challenge collection accounts using validation disputes, statute of limitations, and FDCPA violations",
-    icon: <Banknote className="h-5 w-5" />,
-    color: "green",
-  },
+  // {
+  //   key: "accountErrorCorrectionEnabled",
+  //   label: "Account Error Corrections",
+  //   description:
+  //     "Dispute accounts with data accuracy issues like incorrect balances, wrong dates, or inaccurate payment status",
+  //   icon: <CheckCircle className="h-5 w-5" />,
+  //   color: "green",
+  // },
+  // {
+  //   key: "collectionAccountRemovalEnabled",
+  //   label: "Collection Account Removal",
+  //   description:
+  //     "Challenge collection accounts using validation disputes, statute of limitations, and FDCPA violations",
+  //   icon: <Banknote className="h-5 w-5" />,
+  //   color: "green",
+  // },
   // {
   //   key: "fraudulentAccountRemovalEnabled",
   //   label: "Fraudulent Account Removal",

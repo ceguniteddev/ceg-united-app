@@ -198,39 +198,9 @@ export const getBrokerClients = async (
     .orderBy("createdAt", "desc")
     .get();
 
-  // Join with user collection to get latest client data
-  const clientsWithUserData = await Promise.all(
-    snapshot.docs.map(async (doc) => {
-      const mappingData = normalizeAllDates(doc.data()) as BrokerClientMapping;
-
-      // Fetch user data
-      const userDoc = await db
-        .collection(USER_COLLECTION)
-        .doc(mappingData.clientId)
-        .get();
-
-      if (userDoc.exists) {
-        const userData = userDoc.data();
-        // Update with latest user data
-        return {
-          ...mappingData,
-          clientEmail: userData?.email || mappingData.clientEmail,
-          clientName:
-            `${userData?.firstName || ""} ${userData?.lastName || ""}`.trim() ||
-            mappingData.clientName,
-          clientActiveStatus: userData?.activeStatus as
-            | "Active"
-            | "InActive"
-            | "Paused"
-            | undefined,
-        };
-      }
-
-      return mappingData;
-    })
+  return snapshot.docs.map(
+    (doc) => normalizeAllDates(doc.data()) as BrokerClientMapping
   );
-
-  return clientsWithUserData;
 };
 
 // Create commission record
