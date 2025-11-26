@@ -9,6 +9,7 @@ import {
   ClientApplicationStatus,
 } from "@/schema/bank-products";
 import EmptyState from "./EmptyState";
+import ManualFundedDialog from "./funding/ManualFundedDialog";
 
 const ClientAppliedFundingList = ({
   userId,
@@ -29,23 +30,30 @@ const ClientAppliedFundingList = ({
 
   if (isLoading) return <Spinner />;
 
-  if (!mappedFund || mappedFund.length === 0) {
-    if (isAdminView) {
-      return <EmptyState title="No application found" description="" />;
-    }
-    return (
-      <p className="text-center text-xl font-medium text-gray-600">
-        The {process.env.NEXT_PUBLIC_APP_NAME} team is currently processing your
-        pre-approve funding products.
-      </p>
-    );
-  }
-
   return (
-    <FundingList
-      appliedFunding={mappedFund as ApprovedBankFormData[]}
-      isAdminView
-    />
+    <div className="space-y-4">
+      {isAdminView && userId && (
+        <div className="flex justify-end">
+          <ManualFundedDialog userId={userId} />
+        </div>
+      )}
+
+      {!mappedFund || mappedFund.length === 0 ? (
+        isAdminView ? (
+          <EmptyState title="No application found" description="" />
+        ) : (
+          <p className="text-center text-xl font-medium text-gray-600">
+            The {process.env.NEXT_PUBLIC_APP_NAME} team is currently processing
+            your pre-approve funding products.
+          </p>
+        )
+      ) : (
+        <FundingList
+          appliedFunding={mappedFund as ApprovedBankFormData[]}
+          isAdminView
+        />
+      )}
+    </div>
   );
 };
 

@@ -111,6 +111,56 @@ export const useFundingApplicationsMappedFundsMutation = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  const addManualMappedFundMutation = useMutation({
+    mutationFn: async ({
+      bankProductIds,
+      referenceNumber,
+      userId,
+    }: {
+      bankProductIds: string[];
+      referenceNumber: string;
+      userId: string;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      const response = await fetch("/api/bank-products/mapping", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ids: bankProductIds.map((id) => ({ id })),
+          referenceNumber,
+          userId,
+          append: true, // Important: This tells the service to append instead of replace
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.errors || "Failed to add bank products");
+      }
+
+      return await response.json();
+    },
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "GET_FUNDING_APPLICATION_MAPPED_FUNDS",
+          variable.referenceNumber,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.referenceNumber],
+      });
+      toast.success("Bank products successfully added to fund mapping.");
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+      console.error(error);
+    },
+  });
+
   const approveMappedFundMutation = useMutation({
     mutationFn: async ({
       bankProductId,
@@ -203,12 +253,64 @@ export const useFundingApplicationsMappedFundsMutation = () => {
     },
   });
 
+  const removeMappedBankProductMutation = useMutation({
+    mutationFn: async ({
+      referenceNumber,
+      bankProductId,
+    }: {
+      referenceNumber: string;
+      bankProductId: string;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      const response = await fetch("/api/bank-products/mapping/remove", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          referenceNumber,
+          bankProductId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.errors || "Failed to remove bank product");
+      }
+
+      return await response.json();
+    },
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "GET_FUNDING_APPLICATION_MAPPED_FUNDS",
+          variable.referenceNumber,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.referenceNumber],
+      });
+      toast.success("Bank product successfully removed from fund mapping.");
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+      console.error(error);
+    },
+  });
+
   return {
+    addManualMappedFund: addManualMappedFundMutation.mutateAsync,
+    isAddingManual: addManualMappedFundMutation.isPending,
+
     approveMappedFund: approveMappedFundMutation.mutateAsync,
     isApproving: approveMappedFundMutation.isPending,
 
     cancelMappedFund: cancelMappedFundMutation.mutateAsync,
     isCancelling: cancelMappedFundMutation.isPending,
+
+    removeMappedBankProduct: removeMappedBankProductMutation.mutateAsync,
+    isRemoving: removeMappedBankProductMutation.isPending,
   };
 };
 
@@ -441,6 +543,74 @@ export const useApprovedMappedFundsMutation = () => {
 
     fundedAppliedBankProduct: fundedAppliedBankProductMutation.mutateAsync,
     isFunding: fundedAppliedBankProductMutation.isPending,
+  };
+};
+
+export const useManualFundedMutation = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const manualFundedMutation = useMutation({
+    mutationFn: async ({
+      userId,
+      bankProductId,
+      fundedAmount,
+      fundedRemarks,
+      bankName,
+      productName,
+    }: {
+      userId: string;
+      bankProductId: string;
+      fundedAmount: number;
+      fundedRemarks?: string;
+      bankName: string;
+      productName?: string;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      const response = await fetch("/api/bank-products/manual-funded", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+          bankProductId,
+          fundedAmount,
+          fundedRemarks,
+          bankName,
+          productName,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || "Failed to add funded bank product"
+        );
+      }
+
+      return await response.json();
+    },
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({
+        queryKey: ["useClientMappedFundingDetailsQuery"],
+        exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_USERS"],
+      });
+      toast.success("Funded bank product successfully added.");
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+      console.error(error);
+    },
+  });
+
+  return {
+    addManualFunded: manualFundedMutation.mutateAsync,
+    isAdding: manualFundedMutation.isPending,
   };
 };
 

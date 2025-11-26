@@ -98,6 +98,9 @@ const ClientData = ({
               value={format(user.birthdate, "MMM d, yyyy")}
             />
             <Info label="Gender" value={user.gender || "—"} />
+            {!isBrokerView && (
+              <Info label="Broker" value={user.brokerName || ""} />
+            )}
 
             <Info label="Registered" value={fmtDate(registered)} />
 

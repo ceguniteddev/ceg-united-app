@@ -18,6 +18,7 @@ const requestBodySchema = z
         error: "User ID is required",
       })
       .min(1, { error: "Required" }),
+    append: z.boolean().optional().default(false),
   })
   .strict();
 
@@ -33,16 +34,16 @@ export const POST = withAuth(async (req: NextRequest) => {
     return badRequest({ errors: message });
   }
   try {
-    const { ids, userId, referenceNumber } = parsedBody.data;
+    const { ids, userId, referenceNumber, append } = parsedBody.data;
 
-    await recordFundMappingAnalysis(userId, referenceNumber, ids);
+    await recordFundMappingAnalysis(userId, referenceNumber, ids, append);
 
     return NextResponse.json({ message: "ok" }, { status: 200 });
   } catch (err) {
     if (err instanceof AppError) {
       return badRequest({ errors: err.message });
     }
-      console.log("err", err);
+    console.log("err", err);
     return internalServerError();
   }
 });
