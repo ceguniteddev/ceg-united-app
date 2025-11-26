@@ -12,7 +12,7 @@ export const createSession = async (idToken: string) => {
       throw new Error("Invalid ID token.");
     }
 
-    const expiresIn = 1 * 60 * 60 * 1000;
+    const expiresIn = 6 * 60 * 60 * 1000; // 6 hours
     const sessionCookie = await authenticationAdmin().createSessionCookie(
       idToken,
       {
@@ -104,7 +104,7 @@ export const verifySession = async (sessionCookie: string) => {
 
 export const refreshSession = async (idToken: string) => {
   if (!idToken) return null;
-  const expiresIn = 1 * 60 * 60 * 1000;
+  const expiresIn = 6 * 60 * 60 * 1000; // 6 hours
   const sessionCookie = await authenticationAdmin().createSessionCookie(
     idToken,
     { expiresIn }

@@ -120,31 +120,42 @@ export function AuthProvider({
     return () => unsubscribe();
   }, [loadAndSetUserData]);
 
-  // Check session validity periodically
+  // Check session validity periodically and refresh if needed
   useEffect(() => {
     if (!user || isLoggingIn) return; // Skip check if user is actively logging in
 
-    const checkSession = async () => {
+    const checkAndRefreshSession = async () => {
       try {
-        // First, check if Firebase user token is still valid
-        await user.getIdToken(true);
+        // Get a fresh Firebase ID token (force refresh)
+        const idToken = await user.getIdToken(true);
 
-        // Then verify the server-side session cookie is still valid
+        // Verify the server-side session cookie is still valid
         const response = await fetch("/api/auth/verify-session");
         if (!response.ok) {
           await logOut();
+          return;
         }
+
+        // Refresh the session to extend expiration by another 6 hours
+        await fetch("/api/auth/refresh-session", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ idToken }),
+        });
       } catch (error) {
+        console.error("Session check/refresh error:", error);
         // Session is invalid, logout and redirect
         await logOut();
       }
     };
 
     // Delay initial check by 2 seconds to allow session cookie to be set
-    const timeoutId = setTimeout(checkSession, 2000);
+    const timeoutId = setTimeout(checkAndRefreshSession, 2000);
 
-    // Then check every 5 minutes
-    const intervalId = setInterval(checkSession, 5 * 60 * 1000);
+    // Then check and refresh every 30 minutes (halfway through 6-hour session)
+    const intervalId = setInterval(checkAndRefreshSession, 30 * 60 * 1000);
 
     return () => {
       clearTimeout(timeoutId);
