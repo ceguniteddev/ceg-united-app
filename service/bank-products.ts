@@ -99,13 +99,14 @@ export const updateBankProduct = async (id: string, values: BankFormData) => {
 export const recordFundMappingAnalysis = async (
   userId: string,
   referenceNumber: string,
-  ids: { id: string }[]
+  ids: { id: string }[],
+  append: boolean = false
 ) => {
   if (!userId) throw new AppError("User ID is required.");
   if (!referenceNumber) throw new AppError("Reference number is required.");
   if (!ids || ids.length === 0) throw new AppError("Analysis is required.");
 
-  logInfo("recordFundMappingAnalysis", { userId, referenceNumber });
+  logInfo("recordFundMappingAnalysis", { userId, referenceNumber, append });
 
   const fundingApplication = await getApplyFundingByReferenceNumber({
     referenceNumber,
@@ -122,11 +123,42 @@ export const recordFundMappingAnalysis = async (
       `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`
     )
     .doc(referenceNumber);
-  await collectionRef.set({
-    bank_products: ids,
-    userId,
-    createdAt: Timestamp.now(),
-  });
+
+  if (append) {
+    // Get existing document
+    const existingDoc = await collectionRef.get();
+    let existingBankProducts: { id: string }[] = [];
+
+    if (existingDoc.exists) {
+      const data = existingDoc.data();
+      existingBankProducts = data?.bank_products || [];
+    }
+
+    // Get existing IDs to avoid duplicates
+    const existingIds = new Set(existingBankProducts.map((p) => p.id));
+
+    // Filter out duplicates from new IDs
+    const newIds = ids.filter((id) => !existingIds.has(id.id));
+
+    // Combine existing and new bank products
+    const combinedBankProducts = [...existingBankProducts, ...newIds];
+
+    await collectionRef.set({
+      bank_products: combinedBankProducts,
+      userId,
+      createdAt: existingDoc.exists
+        ? existingDoc.data()?.createdAt
+        : Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+  } else {
+    // Replace mode (original behavior)
+    await collectionRef.set({
+      bank_products: ids,
+      userId,
+      createdAt: Timestamp.now(),
+    });
+  }
 };
 
 export const recordFundMappingAnalysisOld = async (
@@ -249,6 +281,40 @@ export const deleteFundMappingAnalysis = async (
     `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`
   );
   await collectionRef.doc(docId).delete();
+};
+
+export const removeBankProductFromMapping = async (
+  referenceNumber: string,
+  bankProductId: string
+) => {
+  if (!referenceNumber) throw new AppError("Reference number is required.");
+  if (!bankProductId) throw new AppError("Bank product ID is required.");
+
+  const db = firestoreAdmin();
+  const docRef = db
+    .collection(
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`
+    )
+    .doc(referenceNumber);
+
+  const doc = await docRef.get();
+  if (!doc.exists) {
+    throw new AppError("Fund mapping document not found.");
+  }
+
+  const data = doc.data();
+  const bankProducts = (data?.bank_products || []) as { id: string }[];
+
+  // Filter out the bank product to remove
+  const updatedBankProducts = bankProducts.filter(
+    (product) => product.id !== bankProductId
+  );
+
+  // Update the document with the filtered array
+  await docRef.update({
+    bank_products: updatedBankProducts,
+    updatedAt: Timestamp.now(),
+  });
 };
 
 export const getFundMappingAnalysisDetails = async ({
