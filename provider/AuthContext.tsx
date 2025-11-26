@@ -256,7 +256,7 @@ export function AuthProvider({
       // Optional: where Firebase should redirect after the user finishes reset flow
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
       const actionCodeSettings = appUrl
-        ? { url: `${appUrl}/login?reset=1`, handleCodeInApp: false }
+        ? { url: `${appUrl}`, handleCodeInApp: false }
         : undefined;
 
       try {
