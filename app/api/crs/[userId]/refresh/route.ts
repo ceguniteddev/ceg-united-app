@@ -13,11 +13,19 @@ export const POST = withAuth(
   ) => {
     const { userId } = (await params) ?? {};
     if (!userId) {
-      //   return NextResponse.json({ error: "Missing userId" }, { status: 400 });
-
       return badRequest({ errors: "Missing userId" });
     }
     try {
+      const body = await req.json().catch(() => ({}));
+      const { bureaus } = body;
+
+      if (
+        !bureaus ||
+        (!bureaus.equifax && !bureaus.experian && !bureaus.transunion)
+      ) {
+        return badRequest({ errors: "At least one bureau must be selected." });
+      }
+
       const appliedFundings = await getApplyFunding(userId);
       let referenceNumber = "";
       if (appliedFundings && appliedFundings.length > 0) {
@@ -28,7 +36,7 @@ export const POST = withAuth(
         return badRequest({ errors: "Missing reference number" });
       }
 
-      await refreshCRSData({ userId, referenceNumber });
+      await refreshCRSData({ userId, referenceNumber, bureaus });
 
       return NextResponse.json({ message: "ok" }, { status: 200 });
     } catch (err) {
