@@ -33,6 +33,8 @@ import { useRefreshCRSData } from "@/hooks/crs";
 import { toast } from "sonner";
 import EmptyState from "@/components/EmptyState";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 function toDate(d?: string | Date) {
   if (!d) return undefined;
@@ -295,16 +297,31 @@ const RefreshCRSData = ({ userId }: { userId: string }) => {
   const [refreshConfirmationOpen, setRefreshConfirmationOpen] =
     React.useState(false);
   const { isUpdating, refreshCRSData } = useRefreshCRSData();
+  const [selectedBureaus, setSelectedBureaus] = React.useState({
+    equifax: true,
+    experian: true,
+    transunion: true,
+  });
 
   const handleRefreshCRSData = useCallback(async () => {
+    if (
+      !selectedBureaus.equifax &&
+      !selectedBureaus.experian &&
+      !selectedBureaus.transunion
+    ) {
+      toast.error("Please select at least one bureau.");
+      return;
+    }
+
     try {
-      await refreshCRSData({ userId });
+      // console.log("Refreshing CRS data for bureaus:", selectedBureaus);
+      await refreshCRSData({ userId, bureaus: selectedBureaus });
       setRefreshConfirmationOpen(false);
     } catch (error) {
       console.error("Error refreshing CRS data:", error);
       toast.error("Failed to refresh CRS data. Please try again.");
     }
-  }, [refreshCRSData, userId]);
+  }, [refreshCRSData, userId, selectedBureaus]);
 
   return (
     <>
@@ -331,9 +348,53 @@ const RefreshCRSData = ({ userId }: { userId: string }) => {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmation</AlertDialogTitle>
               <AlertDialogDescription>
-                {`Please confirm that you want to refresh the client's CRS data. This action cannot be
-                undone.`}
+                Please confirm that you want to refresh the client&apos;s CRS
+                data. Select the bureaus you want to refresh:
               </AlertDialogDescription>
+              <div className="flex flex-col gap-2 py-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="equifax"
+                    checked={selectedBureaus.equifax}
+                    onCheckedChange={(checked) =>
+                      setSelectedBureaus((prev) => ({
+                        ...prev,
+                        equifax: checked as boolean,
+                      }))
+                    }
+                  />
+                  <Label htmlFor="equifax">Equifax</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="experian"
+                    checked={selectedBureaus.experian}
+                    onCheckedChange={(checked) =>
+                      setSelectedBureaus((prev) => ({
+                        ...prev,
+                        experian: checked as boolean,
+                      }))
+                    }
+                  />
+                  <Label htmlFor="experian">Experian</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="transunion"
+                    checked={selectedBureaus.transunion}
+                    onCheckedChange={(checked) =>
+                      setSelectedBureaus((prev) => ({
+                        ...prev,
+                        transunion: checked as boolean,
+                      }))
+                    }
+                  />
+                  <Label htmlFor="transunion">TransUnion</Label>
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                This action cannot be undone.
+              </div>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel
