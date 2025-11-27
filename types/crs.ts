@@ -170,3 +170,14 @@ export interface CreditReportWithId extends Record<string, any> {
   report: CreditReport;
   createdAt: ISODate;
 }
+
+export interface CRSPersonalInfo extends Name {
+  ssn?: string;
+}
+
+export interface CRSAddressInfo {
+  addressLine1: string;
+  city: string;
+  state: string;
+  postalCode: string;
+}

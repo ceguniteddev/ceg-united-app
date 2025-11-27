@@ -35,6 +35,26 @@ export const useGetUserApplyFunding = () => {
   };
 };
 
+export const useGetClientApplyFunding = (userId: string) => {
+  const { user } = useAuth();
+
+  const { data: appliedFunding, isLoading } = useQuery({
+    queryKey: ["GET_USER_APPLY_FUNDING", userId],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+      const data = (await getApplyFunding(userId)) as ApplyFunding[];
+
+      return data;
+    },
+    enabled: !!user && !!userId,
+  });
+
+  return {
+    appliedFunding,
+    isLoading,
+  };
+};
+
 export const useGetClientApprovedMappedFunding = () => {
   const { user } = useAuth();
 

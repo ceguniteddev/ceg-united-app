@@ -3,6 +3,7 @@ import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
 import { getApplyFunding } from "@/service/apply-funding";
 import { refreshCRSData } from "@/service/crs";
+import { CRSAddressInfo, CRSPersonalInfo } from "@/types/crs";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -40,9 +41,13 @@ export const useRefreshCRSData = () => {
     mutationFn: async ({
       userId,
       bureaus,
+      personalInfo,
+      addressInfo,
     }: {
       userId: string;
       bureaus?: { equifax: boolean; experian: boolean; transunion: boolean };
+      personalInfo?: CRSPersonalInfo;
+      addressInfo?: CRSAddressInfo;
     }) => {
       if (!user) {
         throw new AppError("User not authenticated");
@@ -53,7 +58,7 @@ export const useRefreshCRSData = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ bureaus }),
+        body: JSON.stringify({ bureaus, personalInfo, addressInfo }),
       });
 
       if (!response.ok) {

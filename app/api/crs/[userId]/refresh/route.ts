@@ -17,7 +17,7 @@ export const POST = withAuth(
     }
     try {
       const body = await req.json().catch(() => ({}));
-      const { bureaus } = body;
+      const { bureaus, personalInfo, addressInfo } = body;
 
       if (
         !bureaus ||
@@ -36,7 +36,13 @@ export const POST = withAuth(
         return badRequest({ errors: "Missing reference number" });
       }
 
-      await refreshCRSData({ userId, referenceNumber, bureaus });
+      await refreshCRSData({
+        userId,
+        referenceNumber,
+        bureaus,
+        personalInfo,
+        addressInfo,
+      });
 
       return NextResponse.json({ message: "ok" }, { status: 200 });
     } catch (err) {

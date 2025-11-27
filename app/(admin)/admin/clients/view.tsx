@@ -35,6 +35,10 @@ import EmptyState from "@/components/EmptyState";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { CRSAddressInfo, CRSPersonalInfo } from "@/types/crs";
+import { useGetClientApplyFunding } from "@/hooks/apply-funding";
+import { US_STATES } from "@/constant/common";
 
 function toDate(d?: string | Date) {
   if (!d) return undefined;
@@ -82,7 +86,7 @@ const ClientData = ({
           </div>
           {!isBrokerView && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
-              <RefreshCRSData userId={user.id} />
+              <RefreshCRSData user={user} />
               <StatusPicker user={user} />
             </div>
           )}
@@ -293,15 +297,44 @@ const DenefitsContract = ({ user }: { user: UserWithId }) => {
   );
 };
 
-const RefreshCRSData = ({ userId }: { userId: string }) => {
+const RefreshCRSData = ({ user }: { user: UserWithId }) => {
   const [refreshConfirmationOpen, setRefreshConfirmationOpen] =
     React.useState(false);
   const { isUpdating, refreshCRSData } = useRefreshCRSData();
+  const { appliedFunding } = useGetClientApplyFunding(user.id);
   const [selectedBureaus, setSelectedBureaus] = React.useState({
     equifax: true,
     experian: true,
     transunion: true,
   });
+
+  const [showPersonalInfo, setShowPersonalInfo] = React.useState(false);
+  const [showAddressInfo, setShowAddressInfo] = React.useState(false);
+  const [personalInfo, setPersonalInfo] = React.useState<CRSPersonalInfo>({
+    firstName: user.firstName || "",
+    lastName: user.lastName || "",
+    middleName: user.middleName || "",
+    suffix: "",
+    ssn: user.ssn || "",
+  });
+  const [addressInfo, setAddressInfo] = React.useState<CRSAddressInfo>({
+    addressLine1: "",
+    city: "",
+    state: "",
+    postalCode: "",
+  });
+
+  React.useEffect(() => {
+    if (appliedFunding && appliedFunding.length > 0) {
+      const latestApp = appliedFunding[0];
+      setAddressInfo({
+        addressLine1: latestApp.addressStreet || "",
+        city: latestApp.addressCity || "",
+        state: latestApp.addressState || "",
+        postalCode: latestApp.addressPostal || "",
+      });
+    }
+  }, [appliedFunding]);
 
   const handleRefreshCRSData = useCallback(async () => {
     if (
@@ -315,13 +348,26 @@ const RefreshCRSData = ({ userId }: { userId: string }) => {
 
     try {
       // console.log("Refreshing CRS data for bureaus:", selectedBureaus);
-      await refreshCRSData({ userId, bureaus: selectedBureaus });
+      await refreshCRSData({
+        userId: user.id,
+        bureaus: selectedBureaus,
+        personalInfo: showPersonalInfo ? personalInfo : undefined,
+        addressInfo: showAddressInfo ? addressInfo : undefined,
+      });
       setRefreshConfirmationOpen(false);
     } catch (error) {
       console.error("Error refreshing CRS data:", error);
       toast.error("Failed to refresh CRS data. Please try again.");
     }
-  }, [refreshCRSData, userId, selectedBureaus]);
+  }, [
+    refreshCRSData,
+    user.id,
+    selectedBureaus,
+    showPersonalInfo,
+    personalInfo,
+    showAddressInfo,
+    addressInfo,
+  ]);
 
   return (
     <>
@@ -391,6 +437,195 @@ const RefreshCRSData = ({ userId }: { userId: string }) => {
                   />
                   <Label htmlFor="transunion">TransUnion</Label>
                 </div>
+
+                <div className="flex items-center space-x-2 pt-2">
+                  <Checkbox
+                    id="showPersonalInfo"
+                    checked={showPersonalInfo}
+                    onCheckedChange={(checked) =>
+                      setShowPersonalInfo(checked as boolean)
+                    }
+                  />
+                  <Label htmlFor="showPersonalInfo">
+                    Enter Personal Information
+                  </Label>
+                </div>
+
+                {showPersonalInfo && (
+                  <div className="grid grid-cols-2 gap-2 pl-6">
+                    <div className="space-y-1">
+                      <Label htmlFor="firstName" className="text-xs">
+                        First Name
+                      </Label>
+                      <Input
+                        id="firstName"
+                        value={personalInfo.firstName}
+                        onChange={(e) =>
+                          setPersonalInfo((prev) => ({
+                            ...prev,
+                            firstName: e.target.value,
+                          }))
+                        }
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="middleName" className="text-xs">
+                        Middle Name
+                      </Label>
+                      <Input
+                        id="middleName"
+                        value={personalInfo.middleName}
+                        onChange={(e) =>
+                          setPersonalInfo((prev) => ({
+                            ...prev,
+                            middleName: e.target.value,
+                          }))
+                        }
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="lastName" className="text-xs">
+                        Last Name
+                      </Label>
+                      <Input
+                        id="lastName"
+                        value={personalInfo.lastName}
+                        onChange={(e) =>
+                          setPersonalInfo((prev) => ({
+                            ...prev,
+                            lastName: e.target.value,
+                          }))
+                        }
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="suffix" className="text-xs">
+                        Suffix
+                      </Label>
+                      <Input
+                        id="suffix"
+                        value={personalInfo.suffix}
+                        onChange={(e) =>
+                          setPersonalInfo((prev) => ({
+                            ...prev,
+                            suffix: e.target.value,
+                          }))
+                        }
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="space-y-1 col-span-2">
+                      <Label htmlFor="ssn" className="text-xs">
+                        SSN
+                      </Label>
+                      <Input
+                        id="ssn"
+                        value={personalInfo.ssn}
+                        onChange={(e) =>
+                          setPersonalInfo((prev) => ({
+                            ...prev,
+                            ssn: e.target.value,
+                          }))
+                        }
+                        className="h-8"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center space-x-2 pt-2">
+                  <Checkbox
+                    id="showAddressInfo"
+                    checked={showAddressInfo}
+                    onCheckedChange={(checked) =>
+                      setShowAddressInfo(checked as boolean)
+                    }
+                  />
+                  <Label htmlFor="showAddressInfo">
+                    Client has different address
+                  </Label>
+                </div>
+
+                {showAddressInfo && (
+                  <div className="grid grid-cols-2 gap-2 pl-6">
+                    <div className="space-y-1 col-span-2">
+                      <Label htmlFor="addressLine1" className="text-xs">
+                        Address Line 1
+                      </Label>
+                      <Input
+                        id="addressLine1"
+                        value={addressInfo.addressLine1}
+                        onChange={(e) =>
+                          setAddressInfo((prev) => ({
+                            ...prev,
+                            addressLine1: e.target.value,
+                          }))
+                        }
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="city" className="text-xs">
+                        City
+                      </Label>
+                      <Input
+                        id="city"
+                        value={addressInfo.city}
+                        onChange={(e) =>
+                          setAddressInfo((prev) => ({
+                            ...prev,
+                            city: e.target.value,
+                          }))
+                        }
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="state" className="text-xs">
+                        State
+                      </Label>
+                      <Select
+                        value={addressInfo.state}
+                        onValueChange={(value) =>
+                          setAddressInfo((prev) => ({
+                            ...prev,
+                            state: value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="h-8">
+                          <SelectValue placeholder="Select a state" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {US_STATES.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1 col-span-2">
+                      <Label htmlFor="postalCode" className="text-xs">
+                        Postal Code
+                      </Label>
+                      <Input
+                        id="postalCode"
+                        value={addressInfo.postalCode}
+                        onChange={(e) =>
+                          setAddressInfo((prev) => ({
+                            ...prev,
+                            postalCode: e.target.value,
+                          }))
+                        }
+                        className="h-8"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="text-sm text-muted-foreground">
                 This action cannot be undone.
