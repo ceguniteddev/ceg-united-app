@@ -222,6 +222,7 @@ export const refreshCRSData = async ({
     },
     body: JSON.stringify({
       userId,
+      bureaus,
     }),
   });
 
