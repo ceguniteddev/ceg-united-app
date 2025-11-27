@@ -132,8 +132,8 @@ export default function MyClientsPage() {
           </p>
         </div>
         <Button
-          size="lg"
-          className="gap-2 w-full sm:w-auto"
+          variant={"outline"}
+          className="bg-blue-200 hover:bg-blue-300 cursor-pointer"
           onClick={() => setIsModalOpen(true)}
         >
           <Plus className="h-4 w-4" />
