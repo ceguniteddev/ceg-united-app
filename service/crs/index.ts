@@ -151,7 +151,7 @@ export const generateCRSReport = async ({
 }: {
   userId: string;
   referenceNumber: string;
-  bureaus?: { equifax: boolean; experian: boolean; transunion: boolean };
+  bureaus: { equifax: boolean; experian: boolean; transunion: boolean };
 }) => {
   await fetch(`${process.env.n8n_HOST}/${await generateCRSReportN8N()}`, {
     method: "POST",
