@@ -37,13 +37,23 @@ export const useRefreshCRSData = () => {
   const { user } = useAuth();
 
   const refreshCRSDataMutation = useMutation({
-    mutationFn: async ({ userId }: { userId: string }) => {
+    mutationFn: async ({
+      userId,
+      bureaus,
+    }: {
+      userId: string;
+      bureaus?: { equifax: boolean; experian: boolean; transunion: boolean };
+    }) => {
       if (!user) {
         throw new AppError("User not authenticated");
       }
 
       const response = await fetch(`/api/crs/${userId}/refresh`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ bureaus }),
       });
 
       if (!response.ok) {

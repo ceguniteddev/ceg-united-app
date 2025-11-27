@@ -147,9 +147,11 @@ export const getCRSBusinessScore = async (businessId: string) => {
 export const generateCRSReport = async ({
   userId,
   referenceNumber,
+  bureaus,
 }: {
   userId: string;
   referenceNumber: string;
+  bureaus?: { equifax: boolean; experian: boolean; transunion: boolean };
 }) => {
   await fetch(`${process.env.n8n_HOST}/${await generateCRSReportN8N()}`, {
     method: "POST",
@@ -161,6 +163,7 @@ export const generateCRSReport = async ({
       userId,
       referenceNumber,
       type: "personal",
+      bureaus,
     }),
   });
 };
@@ -188,10 +191,19 @@ export const generateCRSReportBusiness = async (
 export const refreshCRSData = async ({
   userId,
   referenceNumber,
+  bureaus,
 }: {
   userId: string;
   referenceNumber: string;
+  bureaus?: { equifax: boolean; experian: boolean; transunion: boolean };
 }) => {
+  if (
+    !bureaus ||
+    (!bureaus.equifax && !bureaus.experian && !bureaus.transunion)
+  ) {
+    throw new Error("At least one bureau must be selected.");
+  }
+
   await fetch(`${process.env.n8n_HOST}/${await deleteCRSReportN8N()}`, {
     method: "POST",
     headers: {
@@ -203,7 +215,7 @@ export const refreshCRSData = async ({
     }),
   });
 
-  await generateCRSReport({ userId, referenceNumber });
+  await generateCRSReport({ userId, referenceNumber, bureaus });
 
   const businessDetails: Business[] = await getBusiness(userId);
   await Promise.all(
