@@ -40,7 +40,11 @@ export const applyFunding = async ({ value }: { value: ApplyFunding }) => {
   const data = await getCRSReport(value.userId);
 
   if (!data || data.length === 0) {
-    await generateCRSReport({ userId: value.userId, referenceNumber });
+    await generateCRSReport({
+      userId: value.userId,
+      referenceNumber,
+      bureaus: { equifax: true, experian: true, transunion: true },
+    });
   }
 
   if (value.businessId) {
