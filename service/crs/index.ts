@@ -14,7 +14,7 @@ import {
 import { Business } from "@/schema";
 import { getBusiness } from "@/service/business";
 import { getUserById } from "@/service/user";
-import { CRSReportType } from "@/types/crs";
+import { CRSAddressInfo, CRSPersonalInfo, CRSReportType } from "@/types/crs";
 
 export const recordCRSReport = async (
   userId: string,
@@ -148,10 +148,14 @@ export const generateCRSReport = async ({
   userId,
   referenceNumber,
   bureaus,
+  personalInfo,
+  addressInfo,
 }: {
   userId: string;
   referenceNumber: string;
   bureaus: { equifax: boolean; experian: boolean; transunion: boolean };
+  personalInfo?: CRSPersonalInfo;
+  addressInfo?: CRSAddressInfo;
 }) => {
   await fetch(`${process.env.n8n_HOST}/${await generateCRSReportN8N()}`, {
     method: "POST",
@@ -164,6 +168,8 @@ export const generateCRSReport = async ({
       referenceNumber,
       type: "personal",
       bureaus,
+      personalInfo,
+      addressInfo,
     }),
   });
 };
@@ -192,10 +198,14 @@ export const refreshCRSData = async ({
   userId,
   referenceNumber,
   bureaus,
+  personalInfo,
+  addressInfo,
 }: {
   userId: string;
   referenceNumber: string;
   bureaus?: { equifax: boolean; experian: boolean; transunion: boolean };
+  personalInfo?: CRSPersonalInfo;
+  addressInfo?: CRSAddressInfo;
 }) => {
   if (
     !bureaus ||
@@ -215,7 +225,13 @@ export const refreshCRSData = async ({
     }),
   });
 
-  await generateCRSReport({ userId, referenceNumber, bureaus });
+  await generateCRSReport({
+    userId,
+    referenceNumber,
+    bureaus,
+    personalInfo,
+    addressInfo,
+  });
 
   const businessDetails: Business[] = await getBusiness(userId);
   await Promise.all(
