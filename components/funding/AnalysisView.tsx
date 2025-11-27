@@ -38,8 +38,14 @@ const AnalysisView = ({ referenceNumber }: Props) => {
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
 
-  if (!analysisData || analysisData?.length === 0)
-    return <div className="p-4">No analysis found.</div>;
+  if (!analysisData || analysisData?.length === 0) {
+    return (
+      <div className="flex flex-row justify-between">
+        <div className="p-4">No analysis found.</div>
+        <RefreshAnalysisData referenceNumber={referenceNumber} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
