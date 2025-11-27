@@ -99,6 +99,12 @@ const columns: ColumnDef<BankFormData>[] = [
     cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
   },
   {
+    accessorKey: "priorityLevel",
+    id: "priorityLevel",
+    header: ({ column }) => <SortableHeader column={column} title="Priority" />,
+    cell: ({ row }) => <div>{row.getValue("priorityLevel") || "-"}</div>,
+  },
+  {
     id: "actions",
     cell: ({ row }) => <ActionCell row={row} />,
     size: 80,
