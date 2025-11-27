@@ -248,3 +248,40 @@ export const useUpdateUserNoteMutation = (userId: string) => {
     },
   });
 };
+
+export const useAdminAddClientMutation = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  const mutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (!user) throw new Error("User not authenticated");
+
+      const response = await fetch(`/api/admin/clients/add`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.errors || "Failed to add client");
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast.success("Client added successfully!");
+      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to add client", {
+        description: error.message,
+      });
+    },
+  });
+
+  return mutation;
+};
