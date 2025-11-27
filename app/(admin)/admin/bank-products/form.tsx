@@ -108,7 +108,7 @@ const BankProductsForm = ({
           <fieldset disabled={isSubmitting}>
             <Card>
               <CardContent className="space-y-3">
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-4 gap-4">
                   <CustomFormField
                     name="bankName"
                     placeholder="Chase"
@@ -128,6 +128,19 @@ const BankProductsForm = ({
                     name="financingTerm"
                     placeholder="12-60 months"
                     label="* Financing Term"
+                  />
+                  <CustomFormField
+                    name="priorityLevel"
+                    placeholder="Select Priority"
+                    label="Priority Level"
+                    type="select"
+                    options={[
+                      { value: "1", label: "1 - Highest" },
+                      { value: "2", label: "2 - High" },
+                      { value: "3", label: "3 - Medium" },
+                      { value: "4", label: "4 - Low" },
+                      { value: "5", label: "5 - Lowest" },
+                    ]}
                   />
                 </div>
                 <CustomFormField
