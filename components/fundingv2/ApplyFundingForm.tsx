@@ -62,6 +62,7 @@ type Props = {
   setCongratsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   data?: ApplyFunding;
   isViewing?: boolean;
+  isEditing?: boolean;
   userId: string;
 };
 
@@ -70,9 +71,11 @@ const ApplyFundingForm = ({
   setCongratsOpen,
   data,
   isViewing,
+  isEditing,
   userId,
 }: Props) => {
-  const { applyFunding, isRecording } = useApplyFunding();
+  const { applyFunding, updateApplyFunding, isRecording, isUpdating } =
+    useApplyFunding();
   const [showLegalResidentOther, setShowLegalResidentOther] = useState(false);
   const [openBusinessModal, setOpenBusinessModal] = useState(false);
   const [interestedProductSelected, setInterestedProductSelected] = useState<
@@ -105,6 +108,55 @@ const ApplyFundingForm = ({
     isLoading: isBusinessLoading,
     refetch: refetchBusinesses,
   } = useBusinessQuery(userId, false);
+
+  useEffect(() => {
+    if (data) {
+      if (data.interestedProduct) {
+        const product = FundingProductTypeEnum.find(
+          (p) => p.value === data.interestedProduct
+        );
+        if (product) {
+          setInterestedProductSelected(product);
+          if (product.type.includes("Business")) {
+            refetchBusinesses();
+          }
+        }
+      }
+
+      if (data.howDoYouGetPaid) {
+        const option = howDoYouGetPaid.find(
+          (x) => x.value === data.howDoYouGetPaid
+        );
+        if (option) {
+          setHowDoYouGetPaidSelected(option);
+          if (
+            option.value === "yes_direct_deposit" ||
+            option.value === "yes_checks"
+          ) {
+            setHowDoYouGetPaidSelectedBank(true);
+          }
+        }
+      }
+
+      if (data.personalTaxes) {
+        const option = personalTaxes.find(
+          (x) => x.value === data.personalTaxes
+        );
+        if (option) setPersonalTaxesSelected(option);
+      }
+
+      if (data.businessTaxes) {
+        const option = businessTaxes.find(
+          (x) => x.value === data.businessTaxes
+        );
+        if (option) setBusinessTaxesSelected(option);
+      }
+
+      if (data.businessId) {
+        setBusinessIdSelected(data.businessId);
+      }
+    }
+  }, [data, refetchBusinesses]);
 
   const businessOptions = useMemo<DropdownOption[]>(
     () =>
@@ -220,10 +272,24 @@ const ApplyFundingForm = ({
 
   const onSubmit = useCallback(async () => {
     const values = form.getValues();
-    await applyFunding({ values });
+    if (isEditing && data?.referenceNumber) {
+      await updateApplyFunding({
+        values: { ...values, referenceNumber: data.referenceNumber },
+      });
+    } else {
+      await applyFunding({ values });
+    }
     setOpen(false);
     if (setCongratsOpen) setCongratsOpen(true);
-  }, [setOpen, setCongratsOpen, applyFunding, form]);
+  }, [
+    setOpen,
+    setCongratsOpen,
+    applyFunding,
+    updateApplyFunding,
+    form,
+    isEditing,
+    data,
+  ]);
 
   const handleApproveClickCapture: React.MouseEventHandler<
     HTMLSpanElement
@@ -846,7 +912,7 @@ const ApplyFundingForm = ({
                 </CardContent>
 
                 <CardFooter className="flex justify-end">
-                  {!data ? (
+                  {!isViewing ? (
                     <>
                       {/* <div>
                         {!community && (
@@ -871,9 +937,13 @@ const ApplyFundingForm = ({
 
                         <span onClickCapture={handleApproveClickCapture}>
                           <ConfirmButton
-                            label="Apply"
-                            confirmLabel="Apply"
-                            description="Please confirm your application."
+                            label={isEditing ? "Update" : "Apply"}
+                            confirmLabel={isEditing ? "Update" : "Apply"}
+                            description={
+                              isEditing
+                                ? "Please confirm your update."
+                                : "Please confirm your application."
+                            }
                             variant="default"
                             size="sm"
                             icon={<CheckIcon className="h-4 w-4" />}
@@ -885,14 +955,16 @@ const ApplyFundingForm = ({
                               <Button
                                 size="lg"
                                 type="submit"
-                                disabled={isRecording}
+                                disabled={isRecording || isUpdating}
                                 className=" bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer"
                               >
-                                {isRecording ? (
+                                {isRecording || isUpdating ? (
                                   <>
                                     <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
 
-                                    {isCommunity
+                                    {isEditing
+                                      ? "Updating..."
+                                      : isCommunity
                                       ? "Joining..."
                                       : isTradeLines
                                       ? "Boosting..."
@@ -901,7 +973,9 @@ const ApplyFundingForm = ({
                                 ) : (
                                   <>
                                     <BanknoteIcon className="mr-2 h-4 w-4" />{" "}
-                                    {isCommunity
+                                    {isEditing
+                                      ? "Update Application"
+                                      : isCommunity
                                       ? "Join Community"
                                       : isTradeLines
                                       ? "Boost My Score"

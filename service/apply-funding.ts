@@ -384,3 +384,26 @@ export const updateFundApplicationNote = async ({
 
   console.log(`Note updated for application: ${referenceNumber}`);
 };
+
+export const updateApplyFunding = async ({
+  value,
+}: {
+  value: ApplyFunding;
+}) => {
+  const db = firestoreAdmin();
+
+  if (!value.referenceNumber) {
+    throw new AppError("Reference number is required for update.");
+  }
+
+  const collectionRef = db.collection(USER_FUNDING_APPLICATION);
+  const docRef = collectionRef.doc(value.referenceNumber);
+
+  // Check if document exists
+  const doc = await docRef.get();
+  if (!doc.exists) {
+    throw new AppError("Funding application not found.");
+  }
+
+  await docRef.set({ ...value }, { merge: true });
+};
