@@ -19,6 +19,7 @@ import {
 import crypto from "crypto";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { ApprovedBankFormData } from "@/schema/bank-products";
+import { FieldPath } from "firebase-admin/firestore";
 
 const db = firestoreAdmin();
 
@@ -198,9 +199,43 @@ export const getBrokerClients = async (
     .orderBy("createdAt", "desc")
     .get();
 
-  return snapshot.docs.map(
-    (doc) => normalizeAllDates(doc.data()) as BrokerClientMapping
-  );
+  const mappings = snapshot.docs.map((doc) => ({
+    ...(normalizeAllDates(doc.data()) as BrokerClientMapping),
+    mappingId: doc.id,
+  }));
+  if (mappings.length === 0) {
+    return [];
+  }
+
+  // Extract all unique client IDs
+  const clientIds = [...new Set(mappings.map((m) => m.clientId))];
+  // console.log("clientIds", clientIds);
+  // console.log("mappings", mappings);
+  // Fetch all users in batches (Firestore 'in' query limit is 10)
+  const userDataMap = new Map<string, any>();
+
+  for (let i = 0; i < clientIds.length; i += 10) {
+    const batch = clientIds.slice(i, i + 10);
+
+    const usersSnapshot = await db
+      .collection(USER_COLLECTION)
+      .where(FieldPath.documentId(), "in", batch)
+      .get();
+
+    usersSnapshot.docs.forEach((doc) => {
+      userDataMap.set(doc.id, doc.data());
+    });
+  }
+
+  // Map the user data to the mappings
+  const enrichedMappings = mappings.map((mapping) => {
+    const userData = userDataMap.get(mapping.clientId);
+    return {
+      ...mapping,
+      clientActiveStatus: userData?.activeStatus || "Active",
+    };
+  });
+  return enrichedMappings;
 };
 
 // Create commission record

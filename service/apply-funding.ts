@@ -40,7 +40,11 @@ export const applyFunding = async ({ value }: { value: ApplyFunding }) => {
   const data = await getCRSReport(value.userId);
 
   if (!data || data.length === 0) {
-    await generateCRSReport({ userId: value.userId, referenceNumber });
+    await generateCRSReport({
+      userId: value.userId,
+      referenceNumber,
+      bureaus: { equifax: true, experian: true, transunion: true },
+    });
   }
 
   if (value.businessId) {
@@ -379,4 +383,27 @@ export const updateFundApplicationNote = async ({
   await docRef.set(validatedNote);
 
   console.log(`Note updated for application: ${referenceNumber}`);
+};
+
+export const updateApplyFunding = async ({
+  value,
+}: {
+  value: ApplyFunding;
+}) => {
+  const db = firestoreAdmin();
+
+  if (!value.referenceNumber) {
+    throw new AppError("Reference number is required for update.");
+  }
+
+  const collectionRef = db.collection(USER_FUNDING_APPLICATION);
+  const docRef = collectionRef.doc(value.referenceNumber);
+
+  // Check if document exists
+  const doc = await docRef.get();
+  if (!doc.exists) {
+    throw new AppError("Funding application not found.");
+  }
+
+  await docRef.set({ ...value }, { merge: true });
 };

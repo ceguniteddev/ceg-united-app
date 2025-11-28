@@ -1,5 +1,8 @@
 "use server";
-import { USER_COLLECTION } from "@/constant/collection-name";
+import {
+  BROKER_CLIENT_MAPPING,
+  USER_COLLECTION,
+} from "@/constant/collection-name";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import AppError from "@/error/AppError";
 import { normalizeAllDates, normalizeDate } from "@/lib/date-parser";
@@ -16,6 +19,7 @@ import { noteSchema, NoteSchema } from "@/schema/notes";
 import { User, UserActiveStatus, UserWithId } from "@/schema/registration";
 import { format } from "date-fns";
 import { cookies, headers } from "next/headers";
+import { FieldPath } from "firebase-admin/firestore";
 
 export const getUserRecordByEmail = async (email: string) => {
   const authentication = authenticationAdmin();
@@ -61,18 +65,60 @@ export const getUserById = async (id: string): Promise<UserWithId | null> => {
 
   const userDoc = docSnapshot;
   const user = userDoc.data();
+  const userData = { id: userDoc.id, ...normalizeAllDates(user) } as UserWithId;
 
-  return { id: userDoc.id, ...normalizeAllDates(user) } as UserWithId;
+  // If this is a client, fetch broker information
+  if (userData.role === "Client") {
+    const mappingSnapshot = await db
+      .collection(BROKER_CLIENT_MAPPING)
+      .where("clientId", "==", id)
+      .where("status", "==", "Active")
+      .limit(1)
+      .get();
+
+    if (!mappingSnapshot.empty) {
+      const mappingData = mappingSnapshot.docs[0].data();
+      const brokerId = mappingData.brokerId;
+
+      // Fetch broker details
+      const brokerDoc = await db
+        .collection(USER_COLLECTION)
+        .doc(brokerId)
+        .get();
+      if (brokerDoc.exists) {
+        const brokerData = brokerDoc.data();
+        const brokerName = `${brokerData?.firstName || ""} ${
+          brokerData?.lastName || ""
+        }`.trim();
+
+        return {
+          ...userData,
+          brokerId,
+          brokerName: brokerName || "",
+        } as UserWithId;
+      }
+    }
+
+    // No broker mapping found
+    return {
+      ...userData,
+      brokerName: "",
+    } as UserWithId;
+  }
+
+  return userData;
 };
 
 export const registerUser = async ({
   value,
   isBrokerRegistration,
   brokerName,
+  isAdminRegistration,
 }: {
   value: User;
   isBrokerRegistration?: boolean;
   brokerName?: string;
+  isAdminRegistration?: boolean;
 }) => {
   const userRecord = await getUserRecordByEmail(value.email);
 
@@ -111,6 +157,14 @@ export const registerUser = async ({
       temporaryPassword: value.password,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
       brokerName: brokerName,
+      verificationLink: link,
+    });
+  } else if (isAdminRegistration) {
+    requestBody = getAdminInvitationToClientBody({
+      clientName: `${value.firstName} ${value.lastName}`,
+      email: value.email,
+      temporaryPassword: value.password,
+      loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
       verificationLink: link,
     });
   }
@@ -245,6 +299,95 @@ const getBrokerInvitationToClientBody = ({
   `;
 };
 
+const getAdminInvitationToClientBody = ({
+  clientName,
+  email,
+  temporaryPassword,
+  loginUrl,
+  verificationLink,
+}: {
+  clientName: string;
+  email: string;
+  temporaryPassword: string;
+  loginUrl: string;
+  verificationLink: string;
+}) => {
+  return `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; padding: 25px;">
+    <h2 style="margin-top: 0; color: #333333; border-bottom: 2px solid #eeeeee; padding-bottom: 10px;">
+        Welcome to CEG United LLC
+    </h2>
+    
+    <p style="color: #555555; font-size: 16px; line-height: 1.5em; margin: 0 0 16px 0;">
+        Hello ${clientName},
+    </p>
+    
+    <p style="color: #555555; font-size: 16px; line-height: 1.5em; margin: 0 0 16px 0;">
+        An administrator has created an account for you on the CEG United LLC platform. 
+        You can now access our financial services and funding application tools.
+    </p>
+    
+    <div style="background-color: #f9fafb; border-left: 4px solid #2563eb; padding: 16px; margin: 20px 0;">
+        <h3 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px;">Your Login Credentials</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-size: 14px; width: 140px;">
+                    <strong>Email:</strong>
+                </td>
+                <td style="padding: 8px 0; color: #111827; font-size: 14px; font-family: 'Courier New', monospace;">
+                    ${email}
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">
+                    <strong>Temporary Password:</strong>
+                </td>
+                <td style="padding: 8px 0; color: #111827; font-size: 14px; font-family: 'Courier New', monospace; background-color: #fef3c7; padding: 4px 8px; border-radius: 4px;">
+                    ${temporaryPassword}
+                </td>
+            </tr>
+        </table>
+    </div>
+    
+    <p style="color: #dc2626; font-size: 14px; line-height: 1.5em; margin: 16px 0; padding: 12px; background-color: #fef2f2; border-radius: 6px;">
+        ⚠️ <strong>Important:</strong> Please verify your email and change your password immediately after logging in for security purposes.
+    </p>
+    
+    <div style="margin: 24px 0; text-align: center;">
+        <a href="${verificationLink}" target="_blank" rel="noopener noreferrer"
+           style="display:inline-block; background:#10b981; color:#ffffff; text-decoration:none; font-weight:600; font-size:16px; padding:12px 24px; border-radius:8px; margin-right: 12px;">
+            Verify Email
+        </a>
+        <a href="${loginUrl}" target="_blank" rel="noopener noreferrer"
+           style="display:inline-block; background:#2563eb; color:#ffffff; text-decoration:none; font-weight:600; font-size:16px; padding:12px 24px; border-radius:8px;">
+            Login to Your Account
+        </a>
+    </div>
+    
+    <div style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 20px;">
+        <h3 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px;">Next Steps:</h3>
+        <ol style="color: #555555; font-size: 14px; line-height: 1.8em; padding-left: 20px; margin: 0;">
+            <li>Click the "Verify Email" button above to confirm your email address</li>
+            <li>Click "Login to Your Account" or visit the platform</li>
+            <li>Sign in with your email and temporary password</li>
+            <li>Change your password in account settings</li>
+            <li>Complete your profile information</li>
+            <li>Start exploring funding opportunities</li>
+        </ol>
+    </div>
+    
+    <p style="color: #6b7280; font-size: 13px; line-height: 1.6em; margin: 24px 0 0; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        If you have any questions or need assistance, please reach out to our support team at <a href="mailto:contact@cegunited.com" style="color: #2563eb;">contact@cegunited.com</a>.
+    </p>
+    
+    <p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#6b7280; margin:16px 0 0;">
+        Best regards,<br />
+        <strong>CEG United LLC Team</strong>
+    </p>
+  </div>
+  `;
+};
+
 const getNewRegistrationBody = (value: User) => {
   return `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; padding: 25px;">
@@ -320,9 +463,80 @@ export const getUsers = async (role?: Role): Promise<UserWithId[]> => {
   const users: UserWithId[] = [];
   querySnapshot.forEach((doc) => {
     const data = doc.data();
-
     users.push({ id: doc.id, ...normalizeAllDates(data) } as UserWithId);
   });
+
+  // If getting clients, fetch broker mappings
+  if (role === "Client") {
+    const clientIds = users.map((u) => u.id);
+    const brokerMappings = new Map<
+      string,
+      { brokerId: string; brokerName: string }
+    >();
+
+    // Fetch broker mappings in batches
+    for (let i = 0; i < clientIds.length; i += 10) {
+      const batch = clientIds.slice(i, i + 10);
+      const mappingsSnapshot = await db
+        .collection(BROKER_CLIENT_MAPPING)
+        .where("clientId", "in", batch)
+        .where("status", "==", "Active")
+        .get();
+
+      for (const doc of mappingsSnapshot.docs) {
+        const data = doc.data();
+        brokerMappings.set(data.clientId, {
+          brokerId: data.brokerId,
+          brokerName: "", // Will be filled below
+        });
+      }
+    }
+
+    // console.log("brokerMappings before fetching names", brokerMappings);
+
+    // Fetch broker names if we have any mappings
+    if (brokerMappings.size > 0) {
+      const brokerIds = [
+        ...new Set([...brokerMappings.values()].map((m) => m.brokerId)),
+      ];
+
+      for (let i = 0; i < brokerIds.length; i += 10) {
+        const batch = brokerIds.slice(i, i + 10);
+        const brokersSnapshot = await db
+          .collection(USER_COLLECTION)
+          .where(FieldPath.documentId(), "in", batch)
+          .get();
+
+        brokersSnapshot.docs.forEach((doc) => {
+          const brokerData = doc.data();
+          const brokerName = `${brokerData.firstName || ""} ${
+            brokerData.lastName || ""
+          }`.trim();
+
+          // Update all mappings for this broker
+          brokerMappings.forEach((mapping, clientId) => {
+            if (mapping.brokerId === doc.id) {
+              mapping.brokerName = brokerName;
+            }
+          });
+        });
+      }
+    }
+    // console.log("brokerMappings after fetching names", brokerMappings);
+    // Add broker info to users
+
+    const dataResult = users.map((user) => {
+      const brokerInfo = brokerMappings.get(user.id);
+      return {
+        ...user,
+        brokerId: brokerInfo?.brokerId,
+        brokerName: brokerInfo?.brokerName || "",
+      } as UserWithId;
+    });
+
+    return dataResult;
+  }
+
   return users;
 };
 

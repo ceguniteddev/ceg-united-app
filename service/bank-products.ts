@@ -375,20 +375,124 @@ export const getFundMappingAnalysisDetails = async ({
 
   const result: ApprovedBankFormData[] = [];
   for (const bankProductId of bankProductIds) {
-    const bankProduct = await getBankProduct(bankProductId.bankProductId);
-    if (bankProduct) {
+    // Check if this is a manual entry or has a valid bankProductId
+    if (bankProductId.isManualEntry || !bankProductId.bankProductId) {
+      // For manual entries, use the manually entered bank name and product name
       result.push({
-        ...bankProduct,
+        id: bankProductId.id,
+        bankName: bankProductId.manualBankName || "",
+        productName: bankProductId.manualProductName
+          ? [bankProductId.manualProductName]
+          : [],
         fundMappingApprovedId: bankProductId.id,
         clientApplicationStatus: bankProductId.clientApplicationStatus,
         adminApprovedStatus: bankProductId.adminApprovedStatus,
-        referenceNumber: bankProductId.referenceNumber,
-        approvedAmount: bankProductId.approvedAmount,
-        approvedRemarks: bankProductId.approvedRemarks,
-        fundedAmount: bankProductId.fundedAmount,
-        fundedRemarks: bankProductId.fundedRemarks,
+        referenceNumber: bankProductId.referenceNumber || "",
+        approvedAmount: bankProductId.approvedAmount || 0,
+        approvedRemarks: bankProductId.approvedRemarks || "",
+        fundedAmount: bankProductId.fundedAmount || 0,
+        fundedRemarks: bankProductId.fundedRemarks || "",
         userId: bankProductId.userId,
-      });
+        // Add required BankFormData fields with default values for manual entries
+        financingTerm: "",
+        doubleDipAllowed: "No",
+        creditBureauPulled: [],
+        personalGuaranteeRequired: "No",
+        collateralRequired: "No",
+        minimumCreditScore: 0,
+        minimumTimeInBusiness: 0,
+        minimumAnnualRevenue: 0,
+        maximumFundingAmount: 0,
+        fundingSpeed: "",
+        industryRestriction: [],
+        minimumCreditAgeRequired: "",
+        personalVerifiableIncomeRequired: "No",
+        noDocumentationRequired: "No",
+        businessBankStatementsRequired: "No",
+        businessTaxReturnsRequired: "No",
+        personalTaxReturnsRequired: "No",
+        profitAndLossStatementsRequired: "No",
+        balanceSheetRequired: "No",
+        businessPlanRequired: "No",
+        useOfFundsLetterRequired: "No",
+        accountsReceivableRequired: "No",
+        accountsPayableRequired: "No",
+        assetBasedLending: "No",
+        revenueBasedLending: "No",
+        equipmentFinancingAvailable: "No",
+        realEstateFinancingAvailable: "No",
+        inventoryFinancingAvailable: "No",
+        invoiceFactoringAvailable: "No",
+        lineOfCreditAvailable: "No",
+        termLoanAvailable: "No",
+        merchantCashAdvanceAvailable: "No",
+        sbaLoansAvailable: "No",
+        profitAndLossStatementRequired: "No",
+        membershipRequiredBeforeApplicationRequired: "No",
+        membershipRequiredUponApprovalRequired: "No",
+        accountOpeningBeforeApplicationRequired: "No",
+        accountOpeningUponApprovalRequired: "No",
+        businessCreditCardRequired: "No",
+        personalCreditCardRequired: "No",
+        ownershipPercentageRequired: 0,
+        minimumMonthlyRevenue: 0,
+        minimumCashFlow: 0,
+        debtToIncomeRatioMax: 0,
+        loanToValueRatioMax: 0,
+        maximumNumberOfNSFsAllowed: 0,
+        maximumNumberOfOverdraftsAllowed: 0,
+        bankruptcyRestrictions: "No",
+        taxLienRestrictions: "No",
+        judgmentRestrictions: "No",
+        defaultRestrictions: "No",
+        accountOpeningAfterApprovalRequired: "No",
+        oneYearBusinessTaxes: "No",
+        twoYearBusinessTaxes: "No",
+        threeYearBusinessTaxes: "No",
+        oneYearPersonalTaxes: "No",
+        twoYearPersonalTaxes: "No",
+        threeYearPersonalTaxes: "No",
+        threeMonthsBusinessBankStatements: "No",
+        sixMonthsBusinessBankStatements: "No",
+        twelveMonthsBusinessBankStatements: "No",
+        threeMonthsPersonalBankStatements: "No",
+        sixMonthsPersonalBankStatements: "No",
+        twelveMonthsPersonalBankStatements: "No",
+        articlesOfIncorporation: "No",
+        dbaFiling: "No",
+        voided_check: "No",
+        immigrationStatusRequirement: "",
+        stateAvailability: [],
+        applicationMethod: [],
+        allowsForwardingViaEmail: "No",
+        applicationLink: "",
+        contactInformation: "",
+        additionalNotes: "",
+        canBeFinalizedOnline: "No",
+        clientNeedsToGoToBranch: "No",
+        contactName: "",
+        contactPhoneNumber: "",
+        contactEmail: "",
+        website: "",
+        webUrl: "",
+      } as ApprovedBankFormData);
+    } else {
+      // For regular entries, fetch from bank products collection
+      const bankProduct = await getBankProduct(bankProductId.bankProductId);
+      if (bankProduct) {
+        result.push({
+          ...bankProduct,
+          fundMappingApprovedId: bankProductId.id,
+          clientApplicationStatus: bankProductId.clientApplicationStatus,
+          adminApprovedStatus: bankProductId.adminApprovedStatus,
+          referenceNumber: bankProductId.referenceNumber,
+          approvedAmount: bankProductId.approvedAmount,
+          approvedRemarks: bankProductId.approvedRemarks,
+          fundedAmount: bankProductId.fundedAmount,
+          fundedRemarks: bankProductId.fundedRemarks,
+          userId: bankProductId.userId,
+        });
+      }
     }
   }
 
@@ -1172,6 +1276,142 @@ export const declineAppliedBankProduct = async ({
       error: "error",
       message:
         "An unexpected error occurred while approving the application for the bank product.",
+    };
+  }
+};
+
+export const manuallyAddFundedBankProduct = async ({
+  userId,
+  bankProductId,
+  fundedAmount,
+  fundedRemarks,
+  bankName,
+  productName,
+}: {
+  userId: string;
+  bankProductId?: string;
+  fundedAmount: number;
+  fundedRemarks?: string;
+  bankName: string;
+  productName?: string;
+}): Promise<CommonResponse> => {
+  try {
+    if (!userId) {
+      return {
+        success: false,
+        error: "warning",
+        message: "User ID is required.",
+      };
+    }
+
+    if (!fundedAmount || fundedAmount <= 0) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Funded amount must be greater than 0.",
+      };
+    }
+
+    const userData = await getUserById(userId);
+    if (!userData) {
+      return {
+        success: false,
+        error: "warning",
+        message: "User not found.",
+      };
+    }
+
+    // Only validate bank product if ID is provided
+    if (bankProductId) {
+      const bankProduct = await getBankProduct(bankProductId);
+      if (!bankProduct) {
+        return {
+          success: false,
+          error: "warning",
+          message: "Bank product not found.",
+        };
+      }
+    }
+
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Current user not found.",
+      };
+    }
+
+    const db = firestoreAdmin();
+
+    // Create a manual funded entry in a dedicated collection
+    const manualFundedRef = db.collection(
+      `${USER_FUNDING_APPLICATION}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+    );
+
+    await manualFundedRef.add({
+      bankProductId: bankProductId || "",
+      userId,
+      clientApplicationStatus: "Funded",
+      fundedAmount,
+      fundedRemarks: fundedRemarks || "",
+      fundedAt: Timestamp.now(),
+      fundedById: currentUser.uid,
+      isManualEntry: true,
+      manualBankName: bankName, // Store manually entered bank name
+      manualProductName: productName || "", // Store manually entered product name
+      referenceNumber: "", // No reference number for manual entries
+      createdAt: Timestamp.now(),
+    });
+
+    // Create commission record for broker if client has one
+    const brokerMappingSnapshot = await db
+      .collection(BROKER_CLIENT_MAPPING)
+      .where("clientId", "==", userId)
+      .where("status", "==", "Active")
+      .limit(1)
+      .get();
+
+    if (!brokerMappingSnapshot.empty) {
+      const brokerMapping = brokerMappingSnapshot.docs[0].data();
+      const brokerId = brokerMapping.brokerId;
+
+      // Fetch broker to get commission rate
+      const brokerDoc = await db
+        .collection(USER_COLLECTION)
+        .doc(brokerId)
+        .get();
+      if (brokerDoc.exists) {
+        const brokerData = brokerDoc.data();
+        const commissionRate = brokerData?.commissionRate || 10;
+        const commissionAmount = (fundedAmount * commissionRate) / 100;
+
+        await db.collection(BROKER_COMMISSION).add({
+          brokerId,
+          clientId: userId,
+          clientName: `${userData.firstName || ""} ${
+            userData.lastName || ""
+          }`.trim(),
+          fundingApplicationId: "", // No funding application for manual entries
+          fundMappingApprovedId: "", // Will be updated if needed
+          bankName: bankName,
+          fundedAmount,
+          commissionRate,
+          commissionAmount,
+          status: "Pending",
+          createdAt: Timestamp.now(),
+          notes: `Manual entry - ${fundedRemarks || "No remarks"}`,
+        });
+      }
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Unexpected error in manuallyAddFundedBankProduct:", error);
+    return {
+      success: false,
+      error: "error",
+      message: "An unexpected error occurred while adding funded bank product.",
     };
   }
 };

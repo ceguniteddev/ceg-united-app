@@ -3,6 +3,7 @@ import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
 import { getApplyFunding } from "@/service/apply-funding";
 import { refreshCRSData } from "@/service/crs";
+import { CRSAddressInfo, CRSPersonalInfo } from "@/types/crs";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -37,13 +38,27 @@ export const useRefreshCRSData = () => {
   const { user } = useAuth();
 
   const refreshCRSDataMutation = useMutation({
-    mutationFn: async ({ userId }: { userId: string }) => {
+    mutationFn: async ({
+      userId,
+      bureaus,
+      personalInfo,
+      addressInfo,
+    }: {
+      userId: string;
+      bureaus?: { equifax: boolean; experian: boolean; transunion: boolean };
+      personalInfo?: CRSPersonalInfo;
+      addressInfo?: CRSAddressInfo;
+    }) => {
       if (!user) {
         throw new AppError("User not authenticated");
       }
 
       const response = await fetch(`/api/crs/${userId}/refresh`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ bureaus, personalInfo, addressInfo }),
       });
 
       if (!response.ok) {
