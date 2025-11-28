@@ -11,6 +11,7 @@ import {
   getApplyFundingByReferenceNumber,
   getFundApplicationNotes,
   getFundingApplications,
+  updateApplyFunding,
 } from "@/service/apply-funding";
 import { useAuth } from "@/provider/AuthContext";
 import { NoteSchema } from "@/schema/notes";
@@ -179,6 +180,34 @@ export const useApplyFunding = () => {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ values }: { values: ApplyFunding }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      await updateApplyFunding({ value: values });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["GET_USER_APPLY_FUNDING", user?.uid],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_FUNDING_APPLICATIONS"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_FUNDING_APPLICATIONS_NEW"],
+      });
+      toast.success("Application updated successfully.");
+    },
+    onError: (error: any) => {
+      if (error instanceof AppError) {
+        toast.warning(error.message);
+      } else {
+        toast.warning(error.message);
+        console.error(error);
+      }
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (referenceNumber: string) => {
       await deleteApplyFunding(referenceNumber);
@@ -204,6 +233,9 @@ export const useApplyFunding = () => {
 
     deleteAppliedFunding: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
+
+    updateApplyFunding: updateMutation.mutateAsync,
+    isUpdating: updateMutation.isPending,
   };
 };
 
