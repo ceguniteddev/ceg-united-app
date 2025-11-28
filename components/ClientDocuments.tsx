@@ -34,7 +34,6 @@ import {
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 
-import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
 import { DOCUMENT_TYPES, DocumentType } from "@/lib/document-types";
@@ -290,7 +289,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
         {selectedDocType === "OTHER" ? (
           // --- View for "Other Documents" ---
           <div>
-            {!isAdmin && <UploadFile userId={userId} />}
+            {<UploadFile userId={userId} />}
             <DocumentPreviewer
               docs={otherDocs}
               onDelete={handleOpenDeleteDialog}
@@ -301,9 +300,8 @@ export default function ClientDocuments({ userId }: { userId: string }) {
         ) : (
           // --- View for Required Documents ---
           <div>
-            {!isAdmin && (
-              <UploadFile userId={userId} documentType={selectedDocType} />
-            )}
+            <UploadFile userId={userId} documentType={selectedDocType} />
+
             <DocumentPreviewer
               docs={currentRequiredDocuments}
               onDelete={handleOpenDeleteDialog}
