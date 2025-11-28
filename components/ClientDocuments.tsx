@@ -76,7 +76,7 @@ const DocumentPreviewer = ({
                   {(doc.size / 1024).toFixed(1)} KB
                 </p>
               </div>
-              {!isAdmin && !isReadOnly && (
+              {!isReadOnly && (
                 <Button
                   variant="ghost"
                   className="cursor-pointer touch-manipulation flex-shrink-0"
