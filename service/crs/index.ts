@@ -200,46 +200,64 @@ export const refreshCRSData = async ({
   bureaus,
   personalInfo,
   addressInfo,
+  refreshBusinessCredit = true,
+  businessIds,
 }: {
   userId: string;
   referenceNumber: string;
   bureaus?: { equifax: boolean; experian: boolean; transunion: boolean };
   personalInfo?: CRSPersonalInfo;
   addressInfo?: CRSAddressInfo;
+  refreshBusinessCredit?: boolean;
+  businessIds?: string[];
 }) => {
-  if (
-    !bureaus ||
-    (!bureaus.equifax && !bureaus.experian && !bureaus.transunion)
-  ) {
-    throw new Error("At least one bureau must be selected.");
+  const hasSelectedBureaus =
+    bureaus && (bureaus.equifax || bureaus.experian || bureaus.transunion);
+
+  if (!hasSelectedBureaus && !refreshBusinessCredit) {
+    throw new Error("At least one bureau or business credit must be selected.");
   }
 
-  await fetch(`${process.env.n8n_HOST}/${await deleteCRSReportN8N()}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-    },
-    body: JSON.stringify({
+  if (hasSelectedBureaus) {
+    await fetch(`${process.env.n8n_HOST}/${await deleteCRSReportN8N()}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+      },
+      body: JSON.stringify({
+        userId,
+        bureaus,
+      }),
+    });
+
+    await generateCRSReport({
       userId,
+      referenceNumber,
       bureaus,
-    }),
-  });
+      personalInfo,
+      addressInfo,
+    });
+  }
 
-  await generateCRSReport({
-    userId,
-    referenceNumber,
-    bureaus,
-    personalInfo,
-    addressInfo,
-  });
+  if (refreshBusinessCredit) {
+    let businessesToRefresh: Business[] = [];
+    const allBusinesses = await getBusiness(userId);
 
-  const businessDetails: Business[] = await getBusiness(userId);
-  await Promise.all(
-    businessDetails.map(async (business) => {
-      await generateCRSReportBusiness(userId, referenceNumber, business.id!);
-    })
-  );
+    if (businessIds && businessIds.length > 0) {
+      businessesToRefresh = allBusinesses.filter((b) =>
+        businessIds.includes(b.id!)
+      );
+    } else {
+      businessesToRefresh = allBusinesses;
+    }
+
+    await Promise.all(
+      businessesToRefresh.map(async (business) => {
+        await generateCRSReportBusiness(userId, referenceNumber, business.id!);
+      })
+    );
+  }
 };
 
 export const fundAnalysis = async ({

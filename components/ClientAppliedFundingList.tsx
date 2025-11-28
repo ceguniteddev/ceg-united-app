@@ -10,6 +10,7 @@ import {
 } from "@/schema/bank-products";
 import EmptyState from "./EmptyState";
 import ManualFundedDialog from "./funding/ManualFundedDialog";
+import ApplyFunding from "./fundingv2/ApplyFunding";
 
 const ClientAppliedFundingList = ({
   userId,
@@ -33,7 +34,8 @@ const ClientAppliedFundingList = ({
   return (
     <div className="space-y-4">
       {isAdminView && userId && (
-        <div className="flex justify-end">
+        <div className="flex justify-between">
+          <ApplyFunding userId={userId} />
           <ManualFundedDialog userId={userId} />
         </div>
       )}

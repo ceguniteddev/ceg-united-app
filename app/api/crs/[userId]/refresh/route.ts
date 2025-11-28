@@ -17,13 +17,32 @@ export const POST = withAuth(
     }
     try {
       const body = await req.json().catch(() => ({}));
-      const { bureaus, personalInfo, addressInfo } = body;
+      const {
+        bureaus,
+        personalInfo,
+        addressInfo,
+        refreshBusinessCredit,
+        businessIds,
+      } = body;
+
+      const hasSelectedBureaus =
+        bureaus && (bureaus.equifax || bureaus.experian || bureaus.transunion);
+
+      if (!hasSelectedBureaus && !refreshBusinessCredit) {
+        return badRequest({
+          errors: "At least one bureau or business credit must be selected.",
+        });
+      }
 
       if (
-        !bureaus ||
-        (!bureaus.equifax && !bureaus.experian && !bureaus.transunion)
+        refreshBusinessCredit &&
+        (!businessIds ||
+          !Array.isArray(businessIds) ||
+          businessIds.length === 0)
       ) {
-        return badRequest({ errors: "At least one bureau must be selected." });
+        return badRequest({
+          errors: "Please select at least one business to refresh.",
+        });
       }
 
       const appliedFundings = await getApplyFunding(userId);
@@ -42,6 +61,8 @@ export const POST = withAuth(
         bureaus,
         personalInfo,
         addressInfo,
+        refreshBusinessCredit,
+        businessIds,
       });
 
       return NextResponse.json({ message: "ok" }, { status: 200 });

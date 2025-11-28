@@ -39,6 +39,9 @@ import { Input } from "@/components/ui/input";
 import { CRSAddressInfo, CRSPersonalInfo } from "@/types/crs";
 import { useGetClientApplyFunding } from "@/hooks/apply-funding";
 import { US_STATES } from "@/constant/common";
+import { Separator } from "@/components/ui/separator";
+import { useBusinessQuery } from "@/hooks/business";
+import { Business } from "@/schema";
 
 function toDate(d?: string | Date) {
   if (!d) return undefined;
@@ -302,14 +305,20 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
     React.useState(false);
   const { isUpdating, refreshCRSData } = useRefreshCRSData();
   const { appliedFunding } = useGetClientApplyFunding(user.id);
+  const { businessData } = useBusinessQuery(user.id, true);
   const [selectedBureaus, setSelectedBureaus] = React.useState({
-    equifax: true,
-    experian: true,
-    transunion: true,
+    equifax: false,
+    experian: false,
+    transunion: false,
   });
 
   const [showPersonalInfo, setShowPersonalInfo] = React.useState(false);
   const [showAddressInfo, setShowAddressInfo] = React.useState(false);
+  const [refreshBusinessCredit, setRefreshBusinessCredit] =
+    React.useState(false);
+  const [selectedBusinessIds, setSelectedBusinessIds] = React.useState<
+    string[]
+  >([]);
   const [personalInfo, setPersonalInfo] = React.useState<CRSPersonalInfo>({
     firstName: user.firstName || "",
     lastName: user.lastName || "",
@@ -337,12 +346,19 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
   }, [appliedFunding]);
 
   const handleRefreshCRSData = useCallback(async () => {
-    if (
-      !selectedBureaus.equifax &&
-      !selectedBureaus.experian &&
-      !selectedBureaus.transunion
-    ) {
-      toast.error("Please select at least one bureau.");
+    const hasSelectedBureaus =
+      selectedBureaus &&
+      (selectedBureaus.equifax ||
+        selectedBureaus.experian ||
+        selectedBureaus.transunion);
+
+    if (!hasSelectedBureaus && !refreshBusinessCredit) {
+      toast.error("Please select at least one bureau or business credit.");
+      return;
+    }
+
+    if (refreshBusinessCredit && selectedBusinessIds.length === 0) {
+      toast.error("Please select at least one business.");
       return;
     }
 
@@ -353,6 +369,8 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
         bureaus: selectedBureaus,
         personalInfo: showPersonalInfo ? personalInfo : undefined,
         addressInfo: showAddressInfo ? addressInfo : undefined,
+        refreshBusinessCredit,
+        businessIds: refreshBusinessCredit ? selectedBusinessIds : [],
       });
       setRefreshConfirmationOpen(false);
     } catch (error) {
@@ -367,6 +385,8 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
     personalInfo,
     showAddressInfo,
     addressInfo,
+    refreshBusinessCredit,
+    selectedBusinessIds,
   ]);
 
   return (
@@ -438,7 +458,66 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
                   <Label htmlFor="transunion">TransUnion</Label>
                 </div>
 
-                <div className="flex items-center space-x-2 pt-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="refreshBusinessCredit"
+                    checked={refreshBusinessCredit}
+                    onCheckedChange={(checked) =>
+                      setRefreshBusinessCredit(checked as boolean)
+                    }
+                  />
+                  <Label htmlFor="refreshBusinessCredit">
+                    Refresh Business Credit
+                  </Label>
+                </div>
+
+                {refreshBusinessCredit &&
+                  businessData &&
+                  businessData.length > 0 && (
+                    <div className="pl-6 flex flex-col gap-2">
+                      <Label className="text-xs font-semibold">
+                        Select Businesses:
+                      </Label>
+                      {businessData.map((business: Business) => (
+                        <div
+                          key={business.id}
+                          className="flex items-center space-x-2"
+                        >
+                          <Checkbox
+                            id={`business-${business.id}`}
+                            checked={selectedBusinessIds.includes(business.id!)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedBusinessIds((prev) => [
+                                  ...prev,
+                                  business.id!,
+                                ]);
+                              } else {
+                                setSelectedBusinessIds((prev) =>
+                                  prev.filter((id) => id !== business.id)
+                                );
+                              }
+                            }}
+                          />
+                          <Label
+                            htmlFor={`business-${business.id}`}
+                            className="text-sm font-normal"
+                          >
+                            {business.businessName}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                {refreshBusinessCredit &&
+                  (!businessData || businessData.length === 0) && (
+                    <div className="pl-6 text-sm text-muted-foreground">
+                      No businesses found for this client.
+                    </div>
+                  )}
+
+                <Separator className="my-2" />
+                <div className="flex items-center space-x-2">
                   <Checkbox
                     id="showPersonalInfo"
                     checked={showPersonalInfo}
@@ -536,7 +615,7 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
                   </div>
                 )}
 
-                <div className="flex items-center space-x-2 pt-2">
+                <div className="flex items-center space-x-2">
                   <Checkbox
                     id="showAddressInfo"
                     checked={showAddressInfo}
