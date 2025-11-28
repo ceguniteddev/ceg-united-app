@@ -599,7 +599,7 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
                         <SelectTrigger className="h-8">
                           <SelectValue placeholder="Select a state" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-[200px]">
                           {US_STATES.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
