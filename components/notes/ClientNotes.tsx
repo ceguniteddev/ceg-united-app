@@ -117,7 +117,7 @@ const ClientNotes = ({ userId }: Props) => {
             key={funding.referenceNumber}
             value={funding.referenceNumber!}
           >
-            {funding.referenceNumber}
+            {format(new Date(funding.appliedDate), "MMM d, yyyy")}
           </TabsTrigger>
         ))}
       </TabsList>
