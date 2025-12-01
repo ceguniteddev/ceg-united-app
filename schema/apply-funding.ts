@@ -245,47 +245,47 @@ export const applyFundingSchema = z
     // The condition: Only run this validation if a business name has been entered.
     if (data.businessName && data.businessName.trim().length > 0) {
       // Validate the three Gross Projected Revenue fields
-      if ((data.businessGrossProjectedRevenue1 ?? 0) <= 0) {
+      const r1 = data.businessGrossProjectedRevenue1 ?? 0;
+      const r2 = data.businessGrossProjectedRevenue2 ?? 0;
+      const r3 = data.businessGrossProjectedRevenue3 ?? 0;
+
+      if (r1 <= 0 && r2 <= 0 && r3 <= 0) {
         ctx.addIssue({
           code: "custom",
-          message: "Required",
+          message: "At least one revenue year is required",
           path: ["businessGrossProjectedRevenue1"],
         });
-      }
-      if ((data.businessGrossProjectedRevenue2 ?? 0) <= 0) {
         ctx.addIssue({
           code: "custom",
-          message: "Required",
+          message: "At least one revenue year is required",
           path: ["businessGrossProjectedRevenue2"],
         });
-      }
-      if ((data.businessGrossProjectedRevenue3 ?? 0) <= 0) {
         ctx.addIssue({
           code: "custom",
-          message: "Required",
+          message: "At least one revenue year is required",
           path: ["businessGrossProjectedRevenue3"],
         });
       }
 
       // Validate the three Projected Profit fields
-      if ((data.businessProjectedProfit1 ?? 0) <= 0) {
+      const p1 = data.businessProjectedProfit1 ?? 0;
+      const p2 = data.businessProjectedProfit2 ?? 0;
+      const p3 = data.businessProjectedProfit3 ?? 0;
+
+      if (p1 <= 0 && p2 <= 0 && p3 <= 0) {
         ctx.addIssue({
           code: "custom",
-          message: "Required",
+          message: "At least one profit year is required",
           path: ["businessProjectedProfit1"],
         });
-      }
-      if ((data.businessProjectedProfit2 ?? 0) <= 0) {
         ctx.addIssue({
           code: "custom",
-          message: "Required",
+          message: "At least one profit year is required",
           path: ["businessProjectedProfit2"],
         });
-      }
-      if ((data.businessProjectedProfit3 ?? 0) <= 0) {
         ctx.addIssue({
           code: "custom",
-          message: "Required",
+          message: "At least one profit year is required",
           path: ["businessProjectedProfit3"],
         });
       }
@@ -325,26 +325,25 @@ export const applyFundingSchema = z
   .superRefine((data, ctx) => {
     // Check if the user has filed taxes before
     if (data.personalTaxesStatus === "yes") {
-      // If yes, validate that all three year fields have a value greater than 0.
-      // An empty field is coerced to 0, so this check works for "required".
-      if ((data.personalTaxes1 ?? 0) <= 0) {
+      const t1 = data.personalTaxes1 ?? 0;
+      const t2 = data.personalTaxes2 ?? 0;
+      const t3 = data.personalTaxes3 ?? 0;
+
+      // Only validate if ALL three fields are empty/zero
+      if (t1 <= 0 && t2 <= 0 && t3 <= 0) {
         ctx.addIssue({
           code: "custom",
-          message: "Required",
-          path: ["personalTaxes1"], // Associates error with the correct field
+          message: "At least one tax year is required",
+          path: ["personalTaxes1"],
         });
-      }
-      if ((data.personalTaxes2 ?? 0) <= 0) {
         ctx.addIssue({
           code: "custom",
-          message: "Required",
+          message: "At least one tax year is required",
           path: ["personalTaxes2"],
         });
-      }
-      if ((data.personalTaxes3 ?? 0) <= 0) {
         ctx.addIssue({
           code: "custom",
-          message: "Required",
+          message: "At least one tax year is required",
           path: ["personalTaxes3"],
         });
       }
