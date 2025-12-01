@@ -520,7 +520,7 @@ export const ClientDashboard = ({
           title="Apply Funding"
           description={""}
           descriptionClassName="text-red-500 text-lg font-semibold"
-          className="w-full sm:w-5/6 lg:w-4/6 max-w-4xl"
+          className="w-full sm:w-5/6 lg:w-4/6 max-w-6xl"
         >
           <ApplyFundingForm
             setOpen={setIsOpenFunding}
