@@ -810,7 +810,8 @@ const ApplyFundingForm = ({
                     </Card>
                   )}
 
-                  {interestedProductSelected?.type?.includes("Business") &&
+                  {(interestedProductSelected?.type?.includes("Business") ||
+                    isCommunity) &&
                     !isTradeLines && (
                       <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-end gap-4">
                         <CustomFormField
@@ -834,7 +835,8 @@ const ApplyFundingForm = ({
                     )}
 
                   {businessIdSelected &&
-                    interestedProductSelected?.type?.includes("Business") &&
+                    (interestedProductSelected?.type?.includes("Business") ||
+                    isCommunity) &&
                     !isTradeLines && (
                       <Card className="bg-slate-100 border-slate-200">
                         <CardHeader>
