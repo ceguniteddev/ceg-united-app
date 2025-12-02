@@ -627,6 +627,14 @@ export const getUserDocuments = async ({
           expires: expiresAt,
         });
 
+        const [downloadUrl] = await file.getSignedUrl({
+          action: "read",
+          expires: expiresAt,
+          responseDisposition: `attachment; filename="${file.name
+            .split("/")
+            .pop()!}"`,
+        });
+
         return {
           name: file.name.split("/").pop()!,
           path: file.name,
@@ -634,6 +642,7 @@ export const getUserDocuments = async ({
           size: Number(meta.size ?? 0),
           updated: meta.updated ?? "",
           signedUrl,
+          downloadUrl,
         };
       })
   );
