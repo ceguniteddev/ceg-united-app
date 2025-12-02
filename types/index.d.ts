@@ -34,6 +34,7 @@ declare global {
     size: number;
     updated: string;
     signedUrl: string;
+    downloadUrl?: string;
   };
 
   type GetBankFormDataResponse = {
