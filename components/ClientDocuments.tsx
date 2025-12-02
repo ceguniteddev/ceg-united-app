@@ -31,6 +31,7 @@ import {
   Loader2Icon,
   Trash2Icon,
   XCircle,
+  Download,
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 
@@ -76,17 +77,32 @@ const DocumentPreviewer = ({
                   {(doc.size / 1024).toFixed(1)} KB
                 </p>
               </div>
-              {!isReadOnly && (
+              <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   className="cursor-pointer touch-manipulation flex-shrink-0"
                   size="icon"
-                  onClick={() => onDelete(doc)}
-                  disabled={isDeleting}
+                  asChild
                 >
-                  <Trash2Icon className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
+                  <a
+                    href={doc.downloadUrl || doc.signedUrl}
+                    download={doc.name.split("/").pop()}
+                  >
+                    <Download className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </a>
                 </Button>
-              )}
+                {!isReadOnly && (
+                  <Button
+                    variant="ghost"
+                    className="cursor-pointer touch-manipulation flex-shrink-0"
+                    size="icon"
+                    onClick={() => onDelete(doc)}
+                    disabled={isDeleting}
+                  >
+                    <Trash2Icon className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
+                  </Button>
+                )}
+              </div>
             </div>
 
             {doc.contentType?.startsWith("image/") ? (
