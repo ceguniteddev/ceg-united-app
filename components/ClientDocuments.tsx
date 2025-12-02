@@ -102,7 +102,7 @@ const DocumentPreviewer = ({
               </ImageZoom>
             ) : doc.contentType === "application/pdf" ? (
               <iframe
-                src={doc.signedUrl}
+                src={`${doc.signedUrl}#toolbar=1&view=FitH`}
                 title={doc.name}
                 className="w-full h-64 sm:h-80 md:h-96 rounded-md border"
                 loading="lazy"
