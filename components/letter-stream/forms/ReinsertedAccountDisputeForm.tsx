@@ -42,6 +42,7 @@ export default function ReinsertedAccountDisputeForm({
       {
         onSuccess: (content) => {
           setGeneratedContent(content);
+          form.setValue("disputeMessage", content);
         },
       }
     );
@@ -49,8 +50,8 @@ export default function ReinsertedAccountDisputeForm({
 
   return (
     <div className="space-y-4">
-      {/* Dispute Type Selection */}
-      <CustomFormField
+      {/* Dispute Type Selection - REMOVED as it's already selected in parent form */}
+      {/* <CustomFormField
         name="disputeType"
         label="Dispute Type *"
         type="select"
@@ -65,60 +66,58 @@ export default function ReinsertedAccountDisputeForm({
         onSelectValue={(value) => {
           setSelectedDisputeType(value);
         }}
-      />
+      /> */}
 
-      {selectedDisputeType && (
-        <div>
-          <div className="rounded-md mb-4 p-4 flex flex-row justify-between bg-blue-50 items-center">
-            <div>
-              <h4 className="font-semibold text-blue-900 mb-2">
-                Reinserted Account Dispute
-              </h4>
-              <p className="text-sm text-blue-800">
-                This letter disputes accounts that were previously deleted but
-                have been reinserted onto your credit report, which violates
-                FCRA Section 611(a)(5).
-              </p>
-            </div>
-
-            <Button
-              className="bg-green-200 hover-green-300"
-              type="button"
-              variant={"outline"}
-              onClick={handleGenerateDisputeReinserted}
-              disabled={isGenerating}
-            >
-              {isGenerating ? (
-                <>
-                  <Loader className="h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Mailbox className="h-4 w-4" />
-                  Generate Dispute
-                </>
-              )}
-            </Button>
+      <div>
+        <div className="rounded-md mb-4 p-4 flex flex-row justify-between bg-blue-50 items-center">
+          <div>
+            <h4 className="font-semibold text-blue-900 mb-2">
+              Reinserted Account Dispute
+            </h4>
+            <p className="text-sm text-blue-800">
+              This letter disputes accounts that were previously deleted but
+              have been reinserted onto your credit report, which violates FCRA
+              Section 611(a)(5).
+            </p>
           </div>
-          <FormField
-            control={form.control}
-            name="disputeMessage"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <EditorQuill
-                    {...field}
-                    value={generatedContent ?? ""}
-                    placeholder=""
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+
+          <Button
+            className="bg-green-200 hover-green-300"
+            type="button"
+            variant={"outline"}
+            onClick={handleGenerateDisputeReinserted}
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <>
+                <Loader className="h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Mailbox className="h-4 w-4" />
+                Generate Dispute
+              </>
             )}
-          />
+          </Button>
         </div>
-      )}
+        <FormField
+          control={form.control}
+          name="disputeMessage"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <EditorQuill
+                  {...field}
+                  value={field.value || ""}
+                  placeholder=""
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
 
       {/* Previous Dispute Information */}
       {/* <div className="space-y-4 border-t pt-4">

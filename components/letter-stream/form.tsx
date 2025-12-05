@@ -32,27 +32,25 @@ import {
 } from "@/components/ui/select";
 import LatePaymentRemovalForm from "@/components/letter-stream/forms/LatePaymentRemovalForm";
 import ReinsertedAccountDisputeForm from "@/components/letter-stream/forms/ReinsertedAccountDisputeForm";
+import InaccurateInformationDisputeForm from "./forms/InaccurateInformationDisputeForm";
 
 const letterFormSchema = z.object({
-  letterType: z
-    .string({ error: "Please select a letter type" })
-    .min(1, "Please select a letter type"),
-  letterTitle: z.string().min(1, "Letter title is required"),
+  // letterTitle: z.string().min(1, "Letter title is required"),
   disputeType: DisputeTypeEnum,
-  disputeMessage: z.string().min(1, "Dispute message is required"),
-  accountName: z.string().min(1, "Account name is required"),
-  creditorName: z.string().min(1, "Creditor name is required"),
+  disputeMessage: z.string().optional(),
+  accountName: z.string().optional(),
+  creditorName: z.string().optional(),
   accountNumber: z.string().optional(),
   disputeReason: z.string().optional(),
   additionalDetails: z.string().optional(),
-  affectedBureaus: z.array(BureauEnum).min(1, "Select at least one bureau"),
+  affectedBureaus: z.array(BureauEnum).optional(),
   // Sender address
-  fullName: z.string().min(1, "Full name is required"),
-  addressLine1: z.string().min(1, "Address is required"),
+  fullName: z.string().optional(),
+  addressLine1: z.string().optional(),
   addressLine2: z.string().optional(),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  postalCode: z.string().regex(/^\d{5}(-\d{4})?$/, "Invalid postal code"),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  postalCode: z.string().optional(),
   // Late Payment Removal specific fields (optional)
   originalCreditor: z.string().optional(),
   paymentDate: z.date().optional(),
@@ -97,75 +95,9 @@ interface LetterFormProps {
   onCancel?: () => void;
 }
 
-const LETTER_TYPE_CONFIG = [
-  {
-    key: "letterFeatureEnabled",
-    label: "Credit Report Disputes",
-    description: "General credit dispute letters for inaccuracies and errors",
-    disputeTypes: [
-      "reinserted-account",
-      // "inaccurate-information",
-      // "identity-theft",
-      // "duplicate-account",
-      // "outdated-information",
-      // "incorrect-balance",
-      // "incorrect-payment-history",
-      // "mixed-file",
-    ],
-  },
-  // {
-  //   key: "latePaymentRemovalEnabled",
-  //   label: "Late Payment Removal (USC 1666b)",
-  //   description:
-  //     "Remove late payments using USC 1666b billing error provisions",
-  //   disputeTypes: ["incorrect-payment-history"],
-  // },
-  // {
-  //   key: "unauthorizedInquiryRemovalEnabled",
-  //   label: "Unauthorized Inquiry Removal",
-  //   description: "Dispute and remove unauthorized credit inquiries",
-  //   disputeTypes: ["unauthorized-inquiry"],
-  // },
-  // {
-  //   key: "verifiedAccountDisputeEnabled",
-  //   label: "Verified Account Re-Dispute",
-  //   description: "Follow-up letters when accounts come back verified",
-  //   disputeTypes: ["inaccurate-information", "duplicate-account"],
-  // },
-  // {
-  //   key: "noResponseFollowUpEnabled",
-  //   label: "No Response Follow-Up",
-  //   description: "Follow-up when bureaus fail to respond within 30 days",
-  //   disputeTypes: ["inaccurate-information"],
-  // },
-  // {
-  //   key: "accountErrorCorrectionEnabled",
-  //   label: "Account Error Corrections",
-  //   description: "Dispute accounts with data accuracy issues",
-  //   disputeTypes: [
-  //     "incorrect-balance",
-  //     "incorrect-payment-history",
-  //     "inaccurate-information",
-  //   ],
-  // },
-  // {
-  //   key: "collectionAccountRemovalEnabled",
-  //   label: "Collection Account Removal",
-  //   description: "Challenge collection accounts using validation disputes",
-  //   disputeTypes: ["inaccurate-information", "outdated-information"],
-  // },
-  // {
-  //   key: "fraudulentAccountRemovalEnabled",
-  //   label: "Fraudulent Account Removal",
-  //   description: "Remove identity theft and fraudulent accounts",
-  //   disputeTypes: ["identity-theft"],
-  // },
-];
-
 export default function LetterForm({ onSuccess, onCancel }: LetterFormProps) {
   const { user, userData } = useAuth();
   const { mutate: createLetter, isPending } = useCreateDisputeLetter();
-  const [selectedLetterType, setSelectedLetterType] = useState<string>("");
 
   const form = useForm<LetterFormData>({
     resolver: zodResolver(letterFormSchema),
@@ -175,54 +107,43 @@ export default function LetterForm({ onSuccess, onCancel }: LetterFormProps) {
     },
   });
 
+  const selectedDisputeType = form.watch("disputeType");
+
   if (Object.keys(form.formState.errors).length > 0) {
     console.log("There are validation errors:", form.formState.errors);
   }
 
-  // Get enabled letter types based on user's permissions
-  const enabledLetterTypes = useMemo(() => {
-    if (!userData) return [];
-    return LETTER_TYPE_CONFIG.filter((config) => {
-      const key = config.key as keyof typeof userData;
-      return userData[key] === true;
-    });
-  }, [userData, user]);
-
-  // Get available dispute types based on selected letter type
-  const availableDisputeTypes = useMemo(() => {
-    if (!selectedLetterType) return [];
-    const config = LETTER_TYPE_CONFIG.find((c) => c.key === selectedLetterType);
-    return config?.disputeTypes || [];
-  }, [selectedLetterType]);
+  // Check if user has access to letter features
+  const hasAccess = userData?.letterFeatureEnabled;
 
   const onSubmit = (data: LetterFormData) => {
     createLetter(
       {
         userId: user?.uid || "",
         disputeType: data.disputeType,
-        letterTitle: data.letterTitle,
-        letterContent: "", // Will be generated by admin or AI
+        letterTitle: "Dispute Letter", // Default title since field is removed
+        letterContent: data.disputeMessage || "", // Will be generated by admin or AI
         status: "draft",
-        disputedAccounts: [
-          {
-            accountName: data.accountName,
-            creditorName: data.creditorName,
-            accountNumber: data.accountNumber,
-            disputeReason: data.disputeReason || "",
-            additionalDetails: data.additionalDetails,
-            affectedBureaus: data.affectedBureaus,
-            previouslyRemoved: false,
-          },
-        ],
-        recipients: [], // Will be added later
-        senderAddress: {
-          fullName: data.fullName,
-          addressLine1: data.addressLine1,
-          addressLine2: data.addressLine2,
-          city: data.city,
-          state: data.state,
-          postalCode: data.postalCode,
-        },
+        // disputedAccounts: [
+        //   {
+        //     accountName: data.accountName || "",
+        //     creditorName: data.creditorName || "",
+        //     accountNumber: data.accountNumber,
+        //     disputeReason: data.disputeReason || "",
+        //     additionalDetails: data.additionalDetails,
+        //     affectedBureaus: data.affectedBureaus || [],
+        //     previouslyRemoved: false,
+        //   },
+        // ],
+        // recipients: [], // Will be added later
+        // senderAddress: {
+        //   fullName: data.fullName || "",
+        //   addressLine1: data.addressLine1 || "",
+        //   addressLine2: data.addressLine2,
+        //   city: data.city || "",
+        //   state: data.state || "",
+        //   postalCode: data.postalCode || "",
+        // },
       },
       {
         onSuccess: () => {
@@ -233,12 +154,12 @@ export default function LetterForm({ onSuccess, onCancel }: LetterFormProps) {
     );
   };
 
-  if (enabledLetterTypes.length === 0) {
+  if (!hasAccess) {
     return (
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          You don't have access to any letter types yet. Please contact support
+          You don't have access to letter features yet. Please contact support
           to enable letter features for your account.
         </AlertDescription>
       </Alert>
@@ -257,42 +178,33 @@ export default function LetterForm({ onSuccess, onCancel }: LetterFormProps) {
         <FormProvider {...form}>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
-              {/* Letter Type Selection */}
+              {/* Dispute Type Selection */}
               <CustomFormField
-                name="letterType"
-                label="Letter Type *"
+                name="disputeType"
+                label="Dispute Type *"
                 type="select"
-                placeholder="Select letter type"
-                options={enabledLetterTypes.map((type) => ({
-                  value: type.key,
-                  label: type.label,
+                placeholder="Select dispute type"
+                options={DisputeTypeEnum.options.map((type) => ({
+                  value: type,
+                  label: type
+                    .split("-")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" "),
                 }))}
-                onSelectValue={(value) => {
-                  setSelectedLetterType(value);
-                  form.setValue("letterType", value);
-                  form.setValue("disputeType", "" as any);
-                }}
               />
 
-              {false && selectedLetterType && (
-                <CustomFormField
-                  name="letterTitle"
-                  label="Letter Title *"
-                  type="text"
-                  placeholder="e.g., Dispute for Chase Credit Card"
-                />
-              )}
-
-              {/* Render specialized form based on letter type */}
-              {selectedLetterType === "latePaymentRemovalEnabled" ? (
-                <LatePaymentRemovalForm />
-              ) : selectedLetterType === "letterFeatureEnabled" ? (
+              {/* Render specialized form based on dispute type */}
+              {selectedDisputeType === "reinserted-account" ? (
                 <ReinsertedAccountDisputeForm
-                  availableDisputeTypes={availableDisputeTypes}
+                  availableDisputeTypes={DisputeTypeEnum.options}
                 />
-              ) : selectedLetterType ? (
+              ) : selectedDisputeType === "inaccurate-information" ? (
+                <InaccurateInformationDisputeForm
+                  availableDisputeTypes={DisputeTypeEnum.options}
+                />
+              ) : selectedDisputeType ? (
                 <>
-                  {/* Generic Form for other letter types */}
+                  {/* Generic Form for other dispute types */}
                   {/* Account Information */}
                   <div className="space-y-4 border-t pt-4">
                     <h3 className="font-semibold">Account Information</h3>
@@ -432,7 +344,6 @@ export default function LetterForm({ onSuccess, onCancel }: LetterFormProps) {
                   </div>
                 </>
               ) : null}
-
               {/* Actions */}
               <div className="flex justify-end gap-2">
                 {onCancel && (

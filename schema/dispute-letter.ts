@@ -18,14 +18,14 @@ export const DisputeTypeEnum = z.enum(
   [
     "reinserted-account",
     "inaccurate-information",
-    "identity-theft",
-    "duplicate-account",
-    "outdated-information",
-    "incorrect-balance",
-    "incorrect-payment-history",
-    "unauthorized-inquiry",
-    "mixed-file",
-    "other",
+    // "identity-theft",
+    // "duplicate-account",
+    // "outdated-information",
+    // "incorrect-balance",
+    // "incorrect-payment-history",
+    // "unauthorized-inquiry",
+    // "mixed-file",
+    // "other",
   ],
   { error: "Please select dispute type" }
 );
@@ -101,24 +101,24 @@ export const DisputeLetterSchema = z.object({
   letterContent: z.string().min(1, "Letter content is required"), // HTML content
 
   // Disputed accounts
-  disputedAccounts: z
-    .array(DisputedAccountSchema)
-    .min(1, "At least one account required"),
+  // disputedAccounts: z
+  //   .array(DisputedAccountSchema)
+  //   .min(1, "At least one account required"),
 
   // Recipient information
-  recipients: z
-    .array(LetterRecipientSchema)
-    .min(1, "At least one recipient required"),
+  // recipients: z
+  //   .array(LetterRecipientSchema)
+  //   .min(1, "At least one recipient required"),
 
   // Sender information (user's address)
-  senderAddress: z.object({
-    fullName: z.string().min(1, "Full name is required"),
-    addressLine1: z.string().min(1, "Address is required"),
-    addressLine2: z.string().optional(),
-    city: z.string().min(1, "City is required"),
-    state: z.string().min(1, "State is required"),
-    postalCode: z.string().regex(/^\d{5}(-\d{4})?$/, "Invalid postal code"),
-  }),
+  // senderAddress: z.object({
+  //   fullName: z.string().min(1, "Full name is required"),
+  //   addressLine1: z.string().min(1, "Address is required"),
+  //   addressLine2: z.string().optional(),
+  //   city: z.string().min(1, "City is required"),
+  //   state: z.string().min(1, "State is required"),
+  //   postalCode: z.string().regex(/^\d{5}(-\d{4})?$/, "Invalid postal code"),
+  // }),
 
   // AI generation metadata
   aiGenerated: z.boolean().default(false),

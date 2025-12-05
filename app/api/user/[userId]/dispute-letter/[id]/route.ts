@@ -64,21 +64,12 @@ export const GET = withAuth(
 export const PUT = withAuth(
   async (
     request: NextRequest,
-    context: {
-      params?: Promise<{ userId: string; id: string }>;
-      currentUser: any;
-    }
+    { params }: { params?: Promise<{ userId: string; id: string }> }
   ) => {
-    const { currentUser } = context;
-    const { userId, id } = (await context.params) ?? {};
+    const { userId, id } = (await params) ?? {};
 
     if (!userId || !id) {
       return badRequest({ errors: "User ID and Letter ID are required" });
-    }
-
-    // Check authorization - user can only update their own letters unless admin
-    if (!currentUser.admin && currentUser.uid !== userId) {
-      return unauthorized();
     }
 
     try {
@@ -117,21 +108,12 @@ export const PUT = withAuth(
 export const DELETE = withAuth(
   async (
     request: NextRequest,
-    context: {
-      params?: Promise<{ userId: string; id: string }>;
-      currentUser: any;
-    }
+    { params }: { params?: Promise<{ userId: string; id: string }> }
   ) => {
-    const { currentUser } = context;
-    const { userId, id } = (await context.params) ?? {};
+    const { userId, id } = (await params) ?? {};
 
     if (!userId || !id) {
       return badRequest({ errors: "User ID and Letter ID are required" });
-    }
-
-    // Check authorization - user can only delete their own letters unless admin
-    if (!currentUser.admin && currentUser.uid !== userId) {
-      return unauthorized();
     }
 
     try {

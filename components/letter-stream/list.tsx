@@ -27,10 +27,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Eye, Trash2, FileText, Clock, CheckCircle, Send } from "lucide-react";
+import {
+  Eye,
+  Trash2,
+  FileText,
+  Clock,
+  CheckCircle,
+  Send,
+  Loader,
+} from "lucide-react";
 import { format } from "date-fns";
 import Spinner from "../Spinner";
 import EmptyState from "../EmptyState";
+import DisputeLetterPreviewModal from "./DisputeLetterPreviewModal";
 
 interface LetterListProps {
   onViewLetter?: (letter: DisputeLetter) => void;
@@ -70,13 +79,19 @@ export default function LetterList({
   onCreateNew,
 }: LetterListProps) {
   const { data: letters, isLoading } = useGetDisputeLetters();
-  const { mutate: deleteLetter } = useDeleteDisputeLetter();
+  const { mutateAsync: deleteLetter, isPending: isDeleting } =
+    useDeleteDisputeLetter();
   const [letterToDelete, setLetterToDelete] = useState<string | null>(null);
+  const [viewLetter, setViewLetter] = useState<DisputeLetter | null>(null);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (letterToDelete) {
-      deleteLetter(letterToDelete);
-      setLetterToDelete(null);
+      try {
+        await deleteLetter(letterToDelete);
+        setLetterToDelete(null);
+      } catch (error) {
+        console.error("Failed to delete letter", error);
+      }
     }
   };
 
@@ -100,12 +115,6 @@ export default function LetterList({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Your Dispute Letters</CardTitle>
-          {onCreateNew && (
-            <Button onClick={onCreateNew}>
-              <FileText className="h-4 w-4 mr-2" />
-              Create New Letter
-            </Button>
-          )}
         </CardHeader>
         <CardContent>
           <Table>
@@ -113,8 +122,8 @@ export default function LetterList({
               <TableRow>
                 <TableHead>Title</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Recipients</TableHead>
+                {/* <TableHead>Status</TableHead> */}
+                {/* <TableHead>Recipients</TableHead> */}
                 <TableHead>Created</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -135,17 +144,17 @@ export default function LetterList({
                           letter.disputeType}
                       </span>
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       <Badge className={`${statusInfo.color} text-white`}>
                         <StatusIcon className="h-3 w-3 mr-1" />
                         {statusInfo.label}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
+                    </TableCell> */}
+                    {/* <TableCell>
                       <span className="text-sm text-gray-600">
                         {letter.recipients?.length || 0} recipient(s)
                       </span>
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell>
                       <span className="text-sm text-gray-600">
                         {letter.createdAt
@@ -155,15 +164,16 @@ export default function LetterList({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        {onViewLetter && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onViewLetter(letter)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setViewLetter(letter);
+                            onViewLetter?.(letter);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         {(letter.status === "draft" ||
                           letter.status === "pending-review") && (
                           <Button
@@ -197,16 +207,33 @@ export default function LetterList({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
               className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
             >
-              Delete
+              {isDeleting ? (
+                <>
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <DisputeLetterPreviewModal
+        letter={viewLetter}
+        isOpen={!!viewLetter}
+        onClose={() => setViewLetter(null)}
+      />
     </>
   );
 }

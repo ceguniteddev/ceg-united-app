@@ -216,154 +216,154 @@ export async function approveDisputeLetter(
 /**
  * Send dispute letter via Letterstream
  */
-export async function sendDisputeLetter(id: string): Promise<DisputeLetter> {
-  logInfo("Sending dispute letter", { id });
+// export async function sendDisputeLetter(id: string): Promise<DisputeLetter> {
+//   logInfo("Sending dispute letter", { id });
 
-  try {
-    const letter = await getDisputeLetter(id);
+//   try {
+//     const letter = await getDisputeLetter(id);
 
-    if (!letter) {
-      throw new AppError("Letter not found");
-    }
+//     if (!letter) {
+//       throw new AppError("Letter not found");
+//     }
 
-    if (letter.status !== "approved") {
-      throw new AppError("Letter must be approved before sending");
-    }
+//     if (letter.status !== "approved") {
+//       throw new AppError("Letter must be approved before sending");
+//     }
 
-    if (letter.delivery?.letterId) {
-      throw new AppError("Letter has already been sent");
-    }
+//     if (letter.delivery?.letterId) {
+//       throw new AppError("Letter has already been sent");
+//     }
 
-    // Format letter content
-    const htmlContent = await formatLetterHTML(letter.letterContent, {
-      includeDate: true,
-      includeSignature: true,
-      signatureName: letter.senderAddress.fullName,
-    });
+//     // Format letter content
+//     const htmlContent = await formatLetterHTML(letter.letterContent, {
+//       includeDate: true,
+//       includeSignature: true,
+//       signatureName: letter.senderAddress.fullName,
+//     });
 
-    // Send to each recipient
-    const deliveryResults = [];
+//     // Send to each recipient
+//     const deliveryResults = [];
 
-    for (const recipient of letter.recipients) {
-      const from: LetterAddress = {
-        name: letter.senderAddress.fullName,
-        address_line1: letter.senderAddress.addressLine1,
-        address_line2: letter.senderAddress.addressLine2,
-        city: letter.senderAddress.city,
-        state: letter.senderAddress.state,
-        postal_code: letter.senderAddress.postalCode,
-      };
+//     for (const recipient of letter.recipients) {
+//       const from: LetterAddress = {
+//         name: letter.senderAddress.fullName,
+//         address_line1: letter.senderAddress.addressLine1,
+//         address_line2: letter.senderAddress.addressLine2,
+//         city: letter.senderAddress.city,
+//         state: letter.senderAddress.state,
+//         postal_code: letter.senderAddress.postalCode,
+//       };
 
-      const to: LetterAddress = {
-        name: recipient.name,
-        address_line1: recipient.addressLine1,
-        address_line2: recipient.addressLine2,
-        city: recipient.city,
-        state: recipient.state,
-        postal_code: recipient.postalCode,
-      };
+//       const to: LetterAddress = {
+//         name: recipient.name,
+//         address_line1: recipient.addressLine1,
+//         address_line2: recipient.addressLine2,
+//         city: recipient.city,
+//         state: recipient.state,
+//         postal_code: recipient.postalCode,
+//       };
 
-      const result = await sendLetter({
-        html: htmlContent,
-        from,
-        to,
-        description: `${letter.disputeType} - ${letter.letterTitle}`,
-        certified: true, // Always send certified for disputes
-        return_receipt: true,
-        metadata: {
-          letterId: id,
-          userId: letter.userId,
-          disputeType: letter.disputeType,
-          recipientType: recipient.recipientType,
-        },
-      });
+//       const result = await sendLetter({
+//         html: htmlContent,
+//         from,
+//         to,
+//         description: `${letter.disputeType} - ${letter.letterTitle}`,
+//         certified: true, // Always send certified for disputes
+//         return_receipt: true,
+//         metadata: {
+//           letterId: id,
+//           userId: letter.userId,
+//           disputeType: letter.disputeType,
+//           recipientType: recipient.recipientType,
+//         },
+//       });
 
-      deliveryResults.push(result);
-    }
+//       deliveryResults.push(result);
+//     }
 
-    // Use the first result for primary tracking
-    const primaryDelivery = deliveryResults[0];
+//     // Use the first result for primary tracking
+//     const primaryDelivery = deliveryResults[0];
 
-    // Update letter with delivery info
-    const followUpDate = new Date();
-    followUpDate.setDate(followUpDate.getDate() + 30); // 30 days follow-up
+//     // Update letter with delivery info
+//     const followUpDate = new Date();
+//     followUpDate.setDate(followUpDate.getDate() + 30); // 30 days follow-up
 
-    const updatedLetter = await updateDisputeLetter(id, {
-      status: "sent",
-      sentAt: new Date(),
-      followUpDate,
-      delivery: {
-        letterId: primaryDelivery.id,
-        status: primaryDelivery.status,
-        trackingNumber: primaryDelivery.tracking_number,
-        estimatedDeliveryDate: new Date(primaryDelivery.expected_delivery_date),
-        cost: primaryDelivery.price,
-        sentAt: new Date(primaryDelivery.sent_at || primaryDelivery.created_at),
-      },
-    });
+//     const updatedLetter = await updateDisputeLetter(id, {
+//       status: "sent",
+//       sentAt: new Date(),
+//       followUpDate,
+//       delivery: {
+//         letterId: primaryDelivery.id,
+//         status: primaryDelivery.status,
+//         trackingNumber: primaryDelivery.tracking_number,
+//         estimatedDeliveryDate: new Date(primaryDelivery.expected_delivery_date),
+//         cost: primaryDelivery.price,
+//         sentAt: new Date(primaryDelivery.sent_at || primaryDelivery.created_at),
+//       },
+//     });
 
-    // Create dispute tracking records
-    await createDisputeTrackingRecords(letter, id);
+//     // Create dispute tracking records
+//     await createDisputeTrackingRecords(letter, id);
 
-    logInfo("Letter sent successfully", {
-      id,
-      letterId: primaryDelivery.id,
-      trackingNumber: primaryDelivery.tracking_number,
-    });
+//     logInfo("Letter sent successfully", {
+//       id,
+//       letterId: primaryDelivery.id,
+//       trackingNumber: primaryDelivery.tracking_number,
+//     });
 
-    return updatedLetter;
-  } catch (error) {
-    logError(
-      error instanceof Error
-        ? error
-        : new Error("Failed to send dispute letter"),
-      { id }
-    );
-    throw error;
-  }
-}
+//     return updatedLetter;
+//   } catch (error) {
+//     logError(
+//       error instanceof Error
+//         ? error
+//         : new Error("Failed to send dispute letter"),
+//       { id }
+//     );
+//     throw error;
+//   }
+// }
 
 /**
  * Create dispute tracking records for each bureau
  */
-async function createDisputeTrackingRecords(
-  letter: DisputeLetter,
-  letterId: string
-): Promise<void> {
-  const db = firestoreAdmin();
-  const collectionRef = db.collection(DISPUTE_TRACKING);
+// async function createDisputeTrackingRecords(
+//   letter: DisputeLetter,
+//   letterId: string
+// ): Promise<void> {
+//   const db = firestoreAdmin();
+//   const collectionRef = db.collection(DISPUTE_TRACKING);
 
-  // Get unique bureaus from all disputed accounts
-  const bureaus = new Set<string>();
-  letter.disputedAccounts.forEach((account) => {
-    account.affectedBureaus.forEach((bureau) => bureaus.add(bureau));
-  });
+//   // Get unique bureaus from all disputed accounts
+//   const bureaus = new Set<string>();
+//   letter.disputedAccounts.forEach((account) => {
+//     account.affectedBureaus.forEach((bureau) => bureaus.add(bureau));
+//   });
 
-  const initialDisputeDate = new Date();
-  const responseDeadline = new Date();
-  responseDeadline.setDate(responseDeadline.getDate() + 30);
+//   const initialDisputeDate = new Date();
+//   const responseDeadline = new Date();
+//   responseDeadline.setDate(responseDeadline.getDate() + 30);
 
-  for (const bureau of bureaus) {
-    await collectionRef.add({
-      userId: letter.userId,
-      letterId,
-      bureau,
-      status: "letter-sent",
-      initialDisputeDate: Timestamp.fromDate(initialDisputeDate),
-      responseDeadline: Timestamp.fromDate(responseDeadline),
-      notes: [
-        {
-          note: `Dispute letter sent via certified mail`,
-          createdBy: letter.userId,
-          createdAt: Timestamp.now(),
-        },
-      ],
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    });
-  }
-}
-
+//   for (const bureau of bureaus) {
+//     await collectionRef.add({
+//       userId: letter.userId,
+//       letterId,
+//       bureau,
+//       status: "letter-sent",
+//       initialDisputeDate: Timestamp.fromDate(initialDisputeDate),
+//       responseDeadline: Timestamp.fromDate(responseDeadline),
+//       notes: [
+//         {
+//           note: `Dispute letter sent via certified mail`,
+//           createdBy: letter.userId,
+//           createdAt: Timestamp.now(),
+//         },
+//       ],
+//       createdAt: Timestamp.now(),
+//       updatedAt: Timestamp.now(),
+//     });
+//   }
+// }
+  
 /**
  * Get dispute tracking for a user
  */
