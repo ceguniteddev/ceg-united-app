@@ -15,15 +15,20 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
+import { UserWithId } from "@/schema/registration";
 const EditorQuill = dynamic(() => import("@/components/editor/EditorQuill"), {
   ssr: false,
 });
 interface ReinsertedAccountDisputeFormProps {
   availableDisputeTypes?: string[];
+  userId?: string;
+  userData?: UserWithId | null;
 }
 
 export default function ReinsertedAccountDisputeForm({
   availableDisputeTypes = [],
+  userId,
+  userData,
 }: ReinsertedAccountDisputeFormProps) {
   const form = useFormContext();
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
@@ -32,7 +37,7 @@ export default function ReinsertedAccountDisputeForm({
   );
 
   const { mutate: generateLetter, isPending: isGenerating } =
-    useGenerateDisputeLetter();
+    useGenerateDisputeLetter(userId);
 
   const handleGenerateDisputeReinserted = () => {
     generateLetter(

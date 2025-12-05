@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Loader, Mailbox } from "lucide-react";
+import { UserWithId } from "@/schema/registration";
 
 const EditorQuill = dynamic(() => import("@/components/editor/EditorQuill"), {
   ssr: false,
@@ -20,16 +21,20 @@ const EditorQuill = dynamic(() => import("@/components/editor/EditorQuill"), {
 
 interface InaccurateInformationDisputeFormProps {
   availableDisputeTypes?: string[];
+  userId?: string;
+  userData?: UserWithId | null;
 }
 
 export default function InaccurateInformationDisputeForm({
   availableDisputeTypes = [],
+  userId,
+  userData,
 }: InaccurateInformationDisputeFormProps) {
   const form = useFormContext();
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
 
   const { mutate: generateLetter, isPending: isGenerating } =
-    useGenerateDisputeLetter();
+    useGenerateDisputeLetter(userId);
 
   const handleGenerateDisputeInaccurate = () => {
     generateLetter(
