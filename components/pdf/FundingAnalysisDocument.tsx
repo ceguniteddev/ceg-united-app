@@ -9,6 +9,14 @@ import {
 } from "@react-pdf/renderer";
 import parse, { DOMNode, Element, Text as TextNode } from "html-react-parser";
 
+// Register Emoji Source to fix rendering issues with variation selectors
+// See: https://github.com/diegomura/react-pdf/issues/2466
+Font.registerEmojiSource({
+  format: "png",
+  url: "https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.0.1/img/apple/64/",
+  withVariationSelectors: true,
+});
+
 // Register fonts if needed, but standard fonts work out of the box for basic usage
 // Font.register({ family: 'Roboto', src: '...' });
 
@@ -33,7 +41,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     color: "#1e40af",
-    marginBottom: 5,
+    marginBottom: 10,
     fontWeight: "bold",
   },
   headerReference: {
@@ -104,20 +112,20 @@ const styles = StyleSheet.create({
     width: "100%",
     borderStyle: "solid",
     borderWidth: 1,
-    borderColor: "#dddddd",
+    borderColor: "#000000",
     marginBottom: 10,
     marginTop: 10,
   },
   tr: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "#dddddd",
+    borderBottomColor: "#000000",
     minHeight: 20,
     alignItems: "center",
   },
   th: {
-    backgroundColor: "#1e40af",
-    color: "#ffffff",
+    // backgroundColor: "#1e40af",
+    color: "#000000",
     padding: 5,
     flex: 1,
     fontSize: 10,
@@ -207,16 +215,6 @@ const HtmlContent = ({ content }: { content: string }) => {
   return <View>{renderHtmlNodes(parse(content))}</View>;
 };
 
-// Helper to clean text from unsupported characters (like emojis)
-const cleanText = (text: string): string => {
-  // Remove emojis and other non-supported characters
-  // This regex matches many common emoji ranges and symbols not in WinAnsi
-  return text.replace(
-    /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E0}-\u{1F1FF}]/gu,
-    ""
-  );
-};
-
 // Recursive helper to convert React nodes (from html-react-parser) to React-PDF nodes
 const renderHtmlNodes = (
   nodes: React.ReactNode,
@@ -227,12 +225,12 @@ const renderHtmlNodes = (
     if (typeof node === "string" || typeof node === "number") {
       if (isTextContext) {
         // Inside a Text component, strings are allowed
-        return cleanText(String(node));
+        return String(node);
       }
       // Inside a View component, strings are NOT allowed.
       // We must wrap them in <Text>.
       // We also filter out whitespace-only strings to avoid empty lines/gaps in Views.
-      const str = cleanText(String(node));
+      const str = String(node);
       if (!str.trim()) return null;
       return <Text key={index}>{str}</Text>;
     }
