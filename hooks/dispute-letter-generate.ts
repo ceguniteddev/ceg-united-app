@@ -18,16 +18,18 @@ interface GenerateDisputeLetterResponse {
 /**
  * Hook to generate dispute letter via n8n webhook
  */
-export const useGenerateDisputeLetter = () => {
+export const useGenerateDisputeLetter = (userId?: string) => {
   const { user } = useAuth();
+  const targetUserId = userId || user?.uid;
+
   return useMutation({
     mutationFn: async (params: GenerateDisputeLetterParams) => {
-      if (!user?.uid) {
-        throw new Error("User not authenticated");
+      if (!targetUserId) {
+        throw new Error("User ID required");
       }
 
       const response = await fetch(
-        `/api/user/${user.uid}/dispute-letter/generate`,
+        `/api/user/${targetUserId}/dispute-letter/generate`,
         {
           method: "POST",
           headers: {

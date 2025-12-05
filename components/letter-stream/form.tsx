@@ -209,10 +209,14 @@ export default function LetterForm({
               {selectedDisputeType === "reinserted-account" ? (
                 <ReinsertedAccountDisputeForm
                   availableDisputeTypes={DisputeTypeEnum.options}
+                  userId={targetUserId}
+                  userData={currentUserData}
                 />
               ) : selectedDisputeType === "inaccurate-information" ? (
                 <InaccurateInformationDisputeForm
                   availableDisputeTypes={DisputeTypeEnum.options}
+                  userId={targetUserId}
+                  userData={currentUserData}
                 />
               ) : selectedDisputeType ? (
                 <>
