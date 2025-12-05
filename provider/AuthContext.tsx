@@ -23,9 +23,11 @@ import { Role } from "@/schema";
 import { useQueryClient } from "@tanstack/react-query";
 import { createEnterpriseAssessment } from "@/lib/captcha/captcha";
 import AppError from "@/error/AppError";
+import { UserWithId } from "@/schema/registration";
 
 interface AuthContextType {
   user: User | null;
+  userData: UserWithId | null;
   isAdmin: boolean;
   isBroker: boolean;
   isOnboarded: boolean;
@@ -48,6 +50,7 @@ export function AuthProvider({
   readonly children: React.ReactNode;
 }) {
   const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<UserWithId | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isBroker, setIsBroker] = useState(false);
@@ -73,6 +76,7 @@ export function AuthProvider({
     setRole(userRole as Role);
     setIsAdmin(userRole === "Admin");
     setIsBroker(userRole === "Broker");
+    setUserData(userData);
     setIsOnboarded(userData.isOnboarded || false);
   }, []);
 
@@ -85,6 +89,7 @@ export function AuthProvider({
     setIsAdmin(false);
     setIsBroker(false);
     setIsOnboarded(false);
+    setUserData(null);
 
     await queryClient.cancelQueries({ predicate: () => true });
     queryClient.clear();
@@ -103,6 +108,7 @@ export function AuthProvider({
             setIsAdmin(false);
             setIsBroker(false);
             setIsOnboarded(false);
+            setUserData(null);
           }
         } catch (error) {
           console.error("Error during auth state change:", error);
@@ -275,6 +281,7 @@ export function AuthProvider({
   const authContextValue = useMemo(
     () => ({
       user,
+      userData,
       role,
       isAdmin,
       isBroker,
@@ -286,6 +293,7 @@ export function AuthProvider({
     }),
     [
       user,
+      userData,
       role,
       isAdmin,
       isBroker,

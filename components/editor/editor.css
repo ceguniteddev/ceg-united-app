@@ -1,7 +1,15 @@
+.custom-editor-container {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+}
+
 .ql-toolbar.ql-snow {
   border: none !important;
-  border-bottom: 1px solid #ccc !important;
-  border-radius: 4px 4px 0 0;
+  border-bottom: 1px solid #d1d5db !important;
+  border-radius: 0;
+  background: #f9fafb;
 }
 
 .ql-container.ql-snow {
