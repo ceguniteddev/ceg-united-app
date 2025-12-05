@@ -4,22 +4,23 @@ import { DisputeLetter } from "@/schema/dispute-letter";
 import { useAuth } from "@/provider/AuthContext";
 
 /**
- * Hook to get all dispute letters for the current user
+ * Hook to get all dispute letters for the current user or a specific user (admin view)
  */
-export const useGetDisputeLetters = () => {
+export const useGetDisputeLetters = (userId?: string) => {
   const { user } = useAuth();
+  const targetUserId = userId || user?.uid;
 
   return useQuery({
-    queryKey: ["dispute-letters", user?.uid],
+    queryKey: ["dispute-letters", targetUserId],
     queryFn: async () => {
-      if (!user?.uid) throw new Error("User not authenticated");
-      const response = await fetch(`/api/user/${user.uid}/dispute-letter`);
+      if (!targetUserId) throw new Error("User ID required");
+      const response = await fetch(`/api/user/${targetUserId}/dispute-letter`);
       if (!response.ok) {
         throw new Error("Failed to fetch dispute letters");
       }
       return response.json() as Promise<DisputeLetter[]>;
     },
-    enabled: !!user?.uid,
+    enabled: !!targetUserId,
   });
 };
 
@@ -48,14 +49,15 @@ export const useGetDisputeLetter = (id: string) => {
 /**
  * Hook to create a new dispute letter
  */
-export const useCreateDisputeLetter = () => {
+export const useCreateDisputeLetter = (userId?: string) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const targetUserId = userId || user?.uid;
 
   return useMutation({
     mutationFn: async (data: Partial<DisputeLetter>) => {
-      if (!user?.uid) throw new Error("User not authenticated");
-      const response = await fetch(`/api/user/${user.uid}/dispute-letter`, {
+      if (!targetUserId) throw new Error("User ID required");
+      const response = await fetch(`/api/user/${targetUserId}/dispute-letter`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

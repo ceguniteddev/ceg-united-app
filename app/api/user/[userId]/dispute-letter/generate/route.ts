@@ -45,7 +45,7 @@ export const POST = withAuth(
       // console.log("🔍 Data keys:", Object.keys(data));
 
       if (!response.ok) {
-        throw new Error("Failed to generate dispute letter from n8n webhook");
+        throw new Error("Failed to generate dispute letter");
       }
 
       return NextResponse.json(data, { status: 200 });

@@ -12,15 +12,19 @@ import ClientCreditReport from "@/components/ClientCreditReport";
 import BusinessRecordsPage from "@/components/ClientBusinessReport";
 import UserLearningMaterials from "@/components/UserLearningMaterials";
 import AdminLetterFeatureManagement from "@/components/AdminLetterFeatureManagement";
+import LetterList from "@/components/letter-stream/list";
+import LetterForm from "@/components/letter-stream/form";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { useParams } from "next/navigation";
 import { useUserQuery } from "@/hooks/user";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import Spinner from "@/components/Spinner";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 const ClientProfilePage = () => {
   const params = useParams();
   const userId = params.userId as string;
+  const [isLetterFormOpen, setIsLetterFormOpen] = useState(false);
 
   const { userData, isLoading: isUserLoading } = useUserQuery(userId);
   const { denefitsContract, isLoading: isDenefitsLoading } =
@@ -30,6 +34,11 @@ const ClientProfilePage = () => {
   const hasLearningMaterialsAccess = useMemo(() => {
     return !!(denefitsContract && denefitsContract.length > 0);
   }, [denefitsContract]);
+
+  // Check if user has letter feature enabled
+  const hasLetterFeatureEnabled = useMemo(() => {
+    return !!userData?.letterFeatureEnabled;
+  }, [userData]);
 
   // Show loading state while fetching data
   if (isUserLoading || isDenefitsLoading) {
@@ -72,6 +81,9 @@ const ClientProfilePage = () => {
           </TabsTrigger>
         )}
         <TabsTrigger value="letters">Letters</TabsTrigger>
+        {hasLetterFeatureEnabled && (
+          <TabsTrigger value="dispute-letters">Dispute Letters</TabsTrigger>
+        )}
         <TabsTrigger value="note">Note</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
       </TabsList>
@@ -110,6 +122,15 @@ const ClientProfilePage = () => {
         <AdminLetterFeatureManagement user={userData as UserWithId} />
       </TabsContent>
 
+      {hasLetterFeatureEnabled && (
+        <TabsContent value="dispute-letters" className="w-full">
+          <LetterList
+            userId={userId}
+            onCreateNew={() => setIsLetterFormOpen(true)}
+          />
+        </TabsContent>
+      )}
+
       <TabsContent value="note" className="w-full">
         <ClientNotes userId={userId} />
       </TabsContent>
@@ -117,6 +138,21 @@ const ClientProfilePage = () => {
       <TabsContent value="email" className="w-full">
         <SendEmail userId={userId} />
       </TabsContent>
+
+      <ResponsiveDialog
+        isOpen={isLetterFormOpen}
+        setIsOpen={setIsLetterFormOpen}
+        title="Create New Dispute Letter"
+        description="Create a dispute letter for this client."
+        className="w-4/6"
+      >
+        <LetterForm
+          userId={userId}
+          userData={userData as UserWithId}
+          onSuccess={() => setIsLetterFormOpen(false)}
+          onCancel={() => setIsLetterFormOpen(false)}
+        />
+      </ResponsiveDialog>
     </Tabs>
   );
 };
