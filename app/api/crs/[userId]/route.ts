@@ -27,13 +27,20 @@ import { NextRequest, NextResponse } from "next/server";
 // );
 
 export const GET = withAuth(
-  async (request: NextRequest, { params }: { params?: Promise<{ userId: string }> }) => {
+  async (
+    request: NextRequest,
+    { params }: { params?: Promise<{ userId: string }> }
+  ) => {
     const { userId } = (await params) ?? {};
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
+
+    const { searchParams } = new URL(request.url);
+    const isLatest = searchParams.get("isLatest") === "true";
+
     try {
-      const data = await getCRSReport(userId);
+      const data = await getCRSReport(userId, isLatest);
       return NextResponse.json(data, { status: 200 });
     } catch (error: any) {
       console.error("Unexpected error:", error);

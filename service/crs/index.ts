@@ -85,7 +85,7 @@ export const recordCRSBusinessScore = async (
   );
 };
 
-export const getCRSReport = async (userId: string) => {
+export const getCRSReport = async (userId: string, isLatest?: boolean) => {
   const db = firestoreAdmin();
 
   const collectionRef = db.collection(CRS_REPORT_DATA);
@@ -99,7 +99,13 @@ export const getCRSReport = async (userId: string) => {
     subcols
       .filter((col) => ["equifax", "experian", "transunion"].includes(col.id))
       .map(async (colRef) => {
-        const qs = await colRef.orderBy("createdAt", "desc").get();
+        let query = colRef.orderBy("createdAt", "desc");
+
+        if (isLatest) {
+          query = query.limit(1);
+        }
+
+        const qs = await query.get();
         return qs.docs.map((doc) => ({
           type: colRef.id,
           id: doc.id,
