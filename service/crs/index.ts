@@ -96,14 +96,16 @@ export const getCRSReport = async (userId: string) => {
   const subcols = await docRef.listCollections();
 
   const nested = await Promise.all(
-    subcols.map(async (colRef) => {
-      const qs = await colRef.get();
-      return qs.docs.map((doc) => ({
-        type: colRef.id,
-        id: doc.id,
-        ...normalizeAllDates(doc.data() || {}),
-      }));
-    })
+    subcols
+      .filter((col) => ["equifax", "experian", "transunion"].includes(col.id))
+      .map(async (colRef) => {
+        const qs = await colRef.orderBy("createdAt", "desc").get();
+        return qs.docs.map((doc) => ({
+          type: colRef.id,
+          id: doc.id,
+          ...normalizeAllDates(doc.data() || {}),
+        }));
+      })
   );
 
   return nested.flat();
