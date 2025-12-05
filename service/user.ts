@@ -561,6 +561,32 @@ export const updateUserStatus = async ({
   await docRef.update({ activeStatus: status });
 };
 
+export const toggleLetterFeature = async (
+  userId: string,
+  enabled: boolean,
+  featureKey:
+    | "letterFeatureEnabled"
+    | "latePaymentRemovalEnabled"
+    | "unauthorizedInquiryRemovalEnabled"
+    | "verifiedAccountDisputeEnabled"
+    | "noResponseFollowUpEnabled"
+    | "reinsertedAccountDisputeEnabled"
+    | "accountErrorCorrectionEnabled"
+    | "collectionAccountRemovalEnabled"
+    | "fraudulentAccountRemovalEnabled" = "letterFeatureEnabled"
+): Promise<void> => {
+  logInfo(`Toggling letter feature for user`, { userId, enabled, featureKey });
+  if (!userId) throw new AppError("User ID is required.");
+
+  const userData = await getUserById(userId);
+  if (!userData) throw new AppError("User not found.");
+
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(USER_COLLECTION);
+  const docRef = collectionRef.doc(userId);
+  await docRef.update({ [featureKey]: enabled });
+};
+
 export const addUserNotes = async ({
   userId,
   notes,

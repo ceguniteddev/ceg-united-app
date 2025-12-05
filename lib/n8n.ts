@@ -24,3 +24,6 @@ export const sendClientAnalysisN8N = async () =>
 
 export const createFundingAnalysisToPDFN8N = async () =>
   (await isProd()) ? "credit-analysis-to-pdf-prod" : "credit-analysis-to-pdf";
+
+export const generateDisputeLetterN8N = async () =>
+  (await isProd()) ? "generate-dispute-letter-prod" : "generate-dispute-letter";

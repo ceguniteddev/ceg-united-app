@@ -103,6 +103,11 @@ export const sidebarLinks = [
     label: "My Documents",
   },
   {
+    imgURL: "/icons/mail.svg",
+    route: "/client/letter-stream",
+    label: "Letter Stream",
+  },
+  {
     imgURL: "/icons/book-open-text.svg",
     route: "/client/my-learning",
     label: "My Learning",
