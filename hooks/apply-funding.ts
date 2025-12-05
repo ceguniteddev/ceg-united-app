@@ -300,7 +300,7 @@ export const useAddFundApplicationNotesQuery = ({
   };
 };
 
-const getNote = async (referenceNumber: string): Promise<NoteSchema> => {
+export const getNote = async (referenceNumber: string): Promise<NoteSchema> => {
   const response = await fetch(
     `/api/funding-application/${referenceNumber}/notes`
   );

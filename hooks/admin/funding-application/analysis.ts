@@ -1,4 +1,7 @@
-import { GET_CLIENT_DOCUMENTS } from "@/constant/react-query-keys";
+import {
+  GET_CLIENT_DOCUMENTS,
+  GET_USER_DOCUMENTS,
+} from "@/constant/react-query-keys";
 import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
 import { getAnalysis, updateAnalysis } from "@/service/analysis";
@@ -170,6 +173,10 @@ export const useSaveToDocuments = () => {
       // Invalidate client documents query to refresh the documents list
       queryClient.invalidateQueries({
         queryKey: [GET_CLIENT_DOCUMENTS],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [GET_USER_DOCUMENTS],
+        exact: false,
       });
     },
 

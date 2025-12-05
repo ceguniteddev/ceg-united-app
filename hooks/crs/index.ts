@@ -43,11 +43,15 @@ export const useRefreshCRSData = () => {
       bureaus,
       personalInfo,
       addressInfo,
+      refreshBusinessCredit,
+      businessIds,
     }: {
       userId: string;
       bureaus?: { equifax: boolean; experian: boolean; transunion: boolean };
       personalInfo?: CRSPersonalInfo;
       addressInfo?: CRSAddressInfo;
+      refreshBusinessCredit?: boolean;
+      businessIds?: string[];
     }) => {
       if (!user) {
         throw new AppError("User not authenticated");
@@ -58,7 +62,13 @@ export const useRefreshCRSData = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ bureaus, personalInfo, addressInfo }),
+        body: JSON.stringify({
+          bureaus,
+          personalInfo,
+          addressInfo,
+          refreshBusinessCredit,
+          businessIds,
+        }),
       });
 
       if (!response.ok) {

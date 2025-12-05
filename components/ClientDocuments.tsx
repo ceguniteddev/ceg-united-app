@@ -31,10 +31,10 @@ import {
   Loader2Icon,
   Trash2Icon,
   XCircle,
+  Download,
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 
-import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
 import { DOCUMENT_TYPES, DocumentType } from "@/lib/document-types";
@@ -77,17 +77,32 @@ const DocumentPreviewer = ({
                   {(doc.size / 1024).toFixed(1)} KB
                 </p>
               </div>
-              {!isAdmin && !isReadOnly && (
+              <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   className="cursor-pointer touch-manipulation flex-shrink-0"
                   size="icon"
-                  onClick={() => onDelete(doc)}
-                  disabled={isDeleting}
+                  asChild
                 >
-                  <Trash2Icon className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
+                  <a
+                    href={doc.downloadUrl || doc.signedUrl}
+                    download={doc.name.split("/").pop()}
+                  >
+                    <Download className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </a>
                 </Button>
-              )}
+                {!isReadOnly && (
+                  <Button
+                    variant="ghost"
+                    className="cursor-pointer touch-manipulation flex-shrink-0"
+                    size="icon"
+                    onClick={() => onDelete(doc)}
+                    disabled={isDeleting}
+                  >
+                    <Trash2Icon className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
+                  </Button>
+                )}
+              </div>
             </div>
 
             {doc.contentType?.startsWith("image/") ? (
@@ -103,7 +118,7 @@ const DocumentPreviewer = ({
               </ImageZoom>
             ) : doc.contentType === "application/pdf" ? (
               <iframe
-                src={doc.signedUrl}
+                src={`${doc.signedUrl}#toolbar=1&view=FitH`}
                 title={doc.name}
                 className="w-full h-64 sm:h-80 md:h-96 rounded-md border"
                 loading="lazy"
@@ -290,7 +305,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
         {selectedDocType === "OTHER" ? (
           // --- View for "Other Documents" ---
           <div>
-            {!isAdmin && <UploadFile userId={userId} />}
+            {<UploadFile userId={userId} />}
             <DocumentPreviewer
               docs={otherDocs}
               onDelete={handleOpenDeleteDialog}
@@ -301,9 +316,8 @@ export default function ClientDocuments({ userId }: { userId: string }) {
         ) : (
           // --- View for Required Documents ---
           <div>
-            {!isAdmin && (
-              <UploadFile userId={userId} documentType={selectedDocType} />
-            )}
+            <UploadFile userId={userId} documentType={selectedDocType} />
+
             <DocumentPreviewer
               docs={currentRequiredDocuments}
               onDelete={handleOpenDeleteDialog}
