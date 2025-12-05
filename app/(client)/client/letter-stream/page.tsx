@@ -68,7 +68,7 @@ export default function LetterStreamPage() {
         <section className="flex w-full flex-col gap-6">
           <LetterList
             onViewLetter={handleViewLetter}
-            onCreateNew={handleCreateNew}
+            // onCreateNew={handleCreateNew}
           />
         </section>
       </div>

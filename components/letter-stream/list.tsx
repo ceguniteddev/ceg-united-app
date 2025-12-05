@@ -44,6 +44,7 @@ import DisputeLetterPreviewModal from "./DisputeLetterPreviewModal";
 interface LetterListProps {
   onViewLetter?: (letter: DisputeLetter) => void;
   onCreateNew?: () => void;
+  userId?: string;
 }
 
 const statusConfig = {
@@ -77,8 +78,9 @@ const disputeTypeLabels: Record<string, string> = {
 export default function LetterList({
   onViewLetter,
   onCreateNew,
+  userId,
 }: LetterListProps) {
-  const { data: letters, isLoading } = useGetDisputeLetters();
+  const { data: letters, isLoading } = useGetDisputeLetters(userId);
   const { mutateAsync: deleteLetter, isPending: isDeleting } =
     useDeleteDisputeLetter();
   const [letterToDelete, setLetterToDelete] = useState<string | null>(null);
@@ -115,6 +117,21 @@ export default function LetterList({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Your Dispute Letters</CardTitle>
+          {onCreateNew && (
+            // <Button onClick={onCreateNew} size="sm">
+            //   Create New Letter
+            // </Button>
+            <Button
+              type="button"
+              size="lg"
+              variant="outline"
+              className="bg-green-200 hover:bg-green-400 cursor-pointer"
+              onClick={onCreateNew}
+            >
+              <FileText className="h-4 w-4" />
+              Create New Letter
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <Table>
