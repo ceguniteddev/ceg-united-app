@@ -27,3 +27,8 @@ export const createFundingAnalysisToPDFN8N = async () =>
 
 export const generateDisputeLetterN8N = async () =>
   (await isProd()) ? "generate-dispute-letter-prod" : "generate-dispute-letter";
+
+export const generateDisputeLetterFactualErrorN8N = async () =>
+  (await isProd())
+    ? "generate-dispute-letter-factual-error"
+    : "generate-dispute-letter-factual-error";
