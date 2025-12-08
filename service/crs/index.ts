@@ -249,6 +249,12 @@ export const refreshCRSData = async ({
   }
 
   if (refreshBusinessCredit) {
+    const user = await getUserById(userId);
+    if (!user) throw new Error("User not found.");
+    if (!user.isPremiumClient) {
+      throw new Error("Only premium clients can refresh business credit.");
+    }
+
     let businessesToRefresh: Business[] = [];
     const allBusinesses = await getBusiness(userId);
 

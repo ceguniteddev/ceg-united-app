@@ -3,6 +3,7 @@ import AppError from "@/error/AppError";
 import { withAuth } from "@/lib/api-validation";
 import { getApplyFunding } from "@/service/apply-funding";
 import { refreshCRSData } from "@/service/crs";
+import { getUserById } from "@/service/user";
 
 import { NextRequest, NextResponse } from "next/server";
 
@@ -43,6 +44,18 @@ export const POST = withAuth(
         return badRequest({
           errors: "Please select at least one business to refresh.",
         });
+      }
+
+      if (refreshBusinessCredit) {
+        const user = await getUserById(userId);
+        if (!user) {
+          return badRequest({ errors: "User not found" });
+        }
+        if (!user.isPremiumClient) {
+          return badRequest({
+            errors: "Only premium clients can refresh business credit.",
+          });
+        }
       }
 
       const appliedFundings = await getApplyFunding(userId);

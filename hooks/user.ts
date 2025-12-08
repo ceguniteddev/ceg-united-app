@@ -151,6 +151,50 @@ export const useUpdateUserStatusMutation = ({ userId }: { userId: string }) => {
   };
 };
 
+export const useUpdateUserPremiumStatusMutation = ({
+  userId,
+}: {
+  userId: string;
+}) => {
+  const { user } = useAuth();
+
+  const queryClient = useQueryClient();
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ isPremium }: { isPremium: boolean }) => {
+      if (!user) {
+        throw new AppError("User not authenticated");
+      }
+
+      const response = await fetch(`/api/user/${userId}/premium`, {
+        method: "POST",
+        body: JSON.stringify({ isPremium }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Error updating premium status:", data);
+        throw new AppError("Failed to update premium status.");
+      }
+    },
+    onSuccess: () => {
+      toast.success("Premium status updated");
+      queryClient.invalidateQueries({ queryKey: [GET_USERS, "Client"] });
+      queryClient.invalidateQueries({ queryKey: [GET_USER, userId] });
+    },
+
+    onError: (error: any) => {
+      console.log("Error updating premium status:", error);
+      toast.error("Failed to update premium status. Please try again.");
+    },
+  });
+
+  return {
+    updatePremiumStatus: updateMutation.mutateAsync,
+    isUpdating: updateMutation.isPending,
+  };
+};
+
 export const useToggleLetterFeatureMutation = ({
   userId,
 }: {
