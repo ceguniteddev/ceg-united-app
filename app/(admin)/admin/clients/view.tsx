@@ -28,7 +28,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useUpdateUserStatusMutation } from "@/hooks/user";
+import {
+  useUpdateUserStatusMutation,
+  useUpdateUserPremiumStatusMutation,
+} from "@/hooks/user";
 import { useRefreshCRSData } from "@/hooks/crs";
 import { toast } from "sonner";
 import EmptyState from "@/components/EmptyState";
@@ -42,6 +45,7 @@ import { US_STATES } from "@/constant/common";
 import { Separator } from "@/components/ui/separator";
 import { useBusinessQuery } from "@/hooks/business";
 import { Business } from "@/schema";
+import { Switch } from "@/components/ui/switch";
 
 function toDate(d?: string | Date) {
   if (!d) return undefined;
@@ -90,7 +94,10 @@ const ClientData = ({
           {!isBrokerView && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
               <RefreshCRSData user={user} />
-              <StatusPicker user={user} />
+              <div className="flex flex-col sm:flex-row gap-3">
+                <PremiumStatusPicker user={user} />
+                <StatusPicker user={user} />
+              </div>
             </div>
           )}
         </CardHeader>
@@ -194,6 +201,45 @@ const DENEFITS_CONTRACT_STYLES: Record<
     text: "text-emerald-700",
     chipBg: "bg-emerald-50",
   },
+};
+
+const PremiumStatusPicker = ({ user }: { user: UserWithId }) => {
+  const isPremium = user.isPremiumClient || false;
+  const { updatePremiumStatus, isUpdating } =
+    useUpdateUserPremiumStatusMutation({
+      userId: user.id,
+    });
+
+  const handleToggle = useCallback(
+    async (checked: boolean) => {
+      await updatePremiumStatus({ isPremium: checked });
+    },
+    [updatePremiumStatus]
+  );
+
+  return (
+    <div
+      className={[
+        "flex flex-row items-center gap-3 rounded-md p-3 border w-full sm:w-auto",
+        isPremium ? "border-purple-300 bg-purple-50" : "border-gray-200",
+      ].join(" ")}
+    >
+      <span
+        className={[
+          "text-sm font-medium",
+          isPremium ? "text-purple-700" : "text-gray-700",
+        ].join(" ")}
+      >
+        Premium Client
+      </span>
+      <Switch
+        checked={isPremium}
+        onCheckedChange={handleToggle}
+        disabled={isUpdating}
+        className="data-[state=checked]:bg-purple-600"
+      />
+    </div>
+  );
 };
 
 const StatusPicker = ({ user }: { user: UserWithId }) => {
@@ -462,12 +508,19 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
                   <Checkbox
                     id="refreshBusinessCredit"
                     checked={refreshBusinessCredit}
+                    disabled={!user.isPremiumClient}
                     onCheckedChange={(checked) =>
                       setRefreshBusinessCredit(checked as boolean)
                     }
                   />
-                  <Label htmlFor="refreshBusinessCredit">
-                    Refresh Business Credit
+                  <Label
+                    htmlFor="refreshBusinessCredit"
+                    className={
+                      !user.isPremiumClient ? "text-muted-foreground" : ""
+                    }
+                  >
+                    Refresh Business Credit{" "}
+                    {!user.isPremiumClient && "(Premium Only)"}
                   </Label>
                 </div>
 

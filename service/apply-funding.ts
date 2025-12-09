@@ -23,10 +23,16 @@ import {
   getCRSReport,
 } from "./crs";
 import { noteSchema, NoteSchema } from "@/schema/notes";
+import { getUserById } from "./user";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const applyFunding = async ({ value }: { value: ApplyFunding }) => {
+  const userData = await getUserById(value.userId);
+  if (!userData) {
+    throw new AppError("User not found");
+  }
+
   const db = firestoreAdmin();
 
   const collectionRef = db.collection(USER_FUNDING_APPLICATION);
@@ -47,7 +53,7 @@ export const applyFunding = async ({ value }: { value: ApplyFunding }) => {
     });
   }
 
-  if (value.businessId) {
+  if (userData.isPremiumClient === true && value.businessId) {
     const businessData = await getCRSBusinessProfile(value.businessId);
     if (!businessData) {
       await generateCRSReportBusiness(
