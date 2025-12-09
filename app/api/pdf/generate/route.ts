@@ -7,6 +7,37 @@ export async function POST(req: NextRequest) {
     const { experian, transunion, equifax, letterContent, title } =
       await req.json();
 
+    // If a dedicated PDF generation function is configured, use it.
+    if (process.env.PDF_GENERATION_URL) {
+      const response = await fetch(process.env.PDF_GENERATION_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          experian,
+          transunion,
+          equifax,
+          letterContent,
+          title,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `PDF Function failed: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const pdfBuffer = await response.arrayBuffer();
+      return new NextResponse(pdfBuffer, {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="${(
+            title || "letter"
+          ).replace(/\s+/g, "_")}.pdf"`,
+        },
+      });
+    }
+
     let browser;
     let page;
 
