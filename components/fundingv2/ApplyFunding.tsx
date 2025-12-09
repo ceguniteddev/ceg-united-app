@@ -13,10 +13,17 @@ import {
 } from "@/components/ui/dialog";
 import ApplyFundingSuccessful from "./ApplyFundingSuccessful";
 import { cn } from "@/lib/utils";
+import { useUserQuery } from "@/hooks/user";
+import Spinner from "../Spinner";
 const ApplyFunding = ({ userId }: { userId: string }) => {
   const [open, setOpen] = React.useState(false);
 
+  const { userData, isLoading } = useUserQuery(userId);
+
   const [congratsOpen, setCongratsOpen] = React.useState(false);
+
+  if (isLoading) return <Spinner displayText="Loading data..." />;
+
   return (
     <div>
       <ResponsiveDialog
@@ -29,8 +36,8 @@ const ApplyFunding = ({ userId }: { userId: string }) => {
       >
         <ApplyFundingForm
           setOpen={setOpen}
-          userId={userId || ""}
           setCongratsOpen={setCongratsOpen}
+          userData={userData}
         />
       </ResponsiveDialog>
 

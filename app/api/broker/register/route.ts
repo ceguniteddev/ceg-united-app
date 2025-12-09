@@ -33,9 +33,6 @@ export const POST = async (request: NextRequest) => {
       });
     }
 
-    // Accept the invitation
-    await acceptBrokerInvitation(invitationToken);
-
     const user: User = {
       firstName,
       lastName,
@@ -50,9 +47,18 @@ export const POST = async (request: NextRequest) => {
       activeStatus: "Active",
       denefitsSignedUp: false,
       commissionRate: 10,
+
+      addressStreet: "",
+      houseNumber: "",
+      addressCity: "",
+      addressState: "",
+      addressPostal: "",
     };
 
     await registerUser({ value: user });
+
+    // Accept the invitation
+    await acceptBrokerInvitation(invitationToken);
 
     return NextResponse.json(
       {

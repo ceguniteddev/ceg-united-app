@@ -21,6 +21,7 @@ import {
 import { ssnSchema } from "@/schema/registration";
 import { useAdminAddClientMutation } from "@/hooks/user";
 import { toast } from "sonner";
+import { US_STATES } from "@/constant/common";
 
 // Client application schema
 const clientApplicationSchema = z.object({
@@ -28,7 +29,7 @@ const clientApplicationSchema = z.object({
   firstName: z.string().min(1, { message: "Required" }),
   middleName: z.string().optional(),
   lastName: z.string().min(1, { message: "Required" }),
-  email: z.string().email().min(1, { message: "Required" }),
+  email: z.string().min(1, { message: "Required" }),
   birthdate: dateOfBirthSchema,
   gender: GenderEnum,
   phoneNumber: z.string().min(1, { message: "Required" }),
@@ -36,6 +37,12 @@ const clientApplicationSchema = z.object({
   isOnboarded: z.boolean().optional(),
   registrationDate: z.date().optional(),
   ssn: ssnSchema,
+
+  addressStreet: z.string().min(1, { error: "Required" }),
+  houseNumber: z.string().optional(),
+  addressCity: z.string().min(1, { error: "Required" }),
+  addressState: z.string().min(1, { error: "Required" }),
+  addressPostal: z.string().min(1, { error: "Required" }),
 });
 
 type ClientApplicationForm = z.infer<typeof clientApplicationSchema>;
@@ -47,9 +54,6 @@ const ClientsPage = () => {
 
   const form = useForm<ClientApplicationForm>({
     resolver: zodResolver(clientApplicationSchema),
-    defaultValues: {
-      middleName: "",
-    },
   });
 
   const onSubmit = async (data: ClientApplicationForm) => {
@@ -102,7 +106,7 @@ const ClientsPage = () => {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                   <fieldset disabled={isSubmitting}>
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <CustomFormField
                           name={"firstName"}
@@ -147,6 +151,32 @@ const ClientsPage = () => {
                           placeholder=" "
                           label="* Gender"
                           options={genderTypes()}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <CustomFormField
+                          name={"addressStreet"}
+                          label={"Street Address"}
+                        />
+                        <CustomFormField
+                          name={"houseNumber"}
+                          label={"Apartment/Suite/Unit/House Number"}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4">
+                        <CustomFormField name={"addressCity"} label={"City"} />
+                        <CustomFormField
+                          name={"addressState"}
+                          label={"State"}
+                          type="select"
+                          placeholder="Select a state"
+                          options={US_STATES}
+                        />
+                        <CustomFormField
+                          name={"addressPostal"}
+                          label={"Zip Code"}
                         />
                       </div>
 

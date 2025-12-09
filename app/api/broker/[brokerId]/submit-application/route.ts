@@ -47,6 +47,12 @@ export const POST = withAuth(
         activeStatus: "Active",
         denefitsSignedUp: false,
         isBrokerInvite: true,
+
+        addressStreet: data.addressStreet,
+        houseNumber: data.houseNumber,
+        addressCity: data.addressCity,
+        addressState: data.addressState,
+        addressPostal: data.addressPostal,
       };
 
       const clientData = await registerUser({

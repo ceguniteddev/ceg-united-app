@@ -41,6 +41,8 @@ import IconMenu from "../icon-menu";
 import { ResponsiveDialog } from "../responsive-dialog";
 import { Business } from "@/schema";
 import PlaidLink from "../PlaidLink";
+import { UserWithId } from "@/schema/registration";
+import { da } from "date-fns/locale";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
@@ -63,7 +65,7 @@ type Props = {
   data?: ApplyFunding;
   isViewing?: boolean;
   isEditing?: boolean;
-  userId: string;
+  userData: UserWithId;
 };
 
 const ApplyFundingForm = ({
@@ -72,7 +74,7 @@ const ApplyFundingForm = ({
   data,
   isViewing,
   isEditing,
-  userId,
+  userData,
 }: Props) => {
   const { applyFunding, updateApplyFunding, isRecording, isUpdating } =
     useApplyFunding();
@@ -107,7 +109,7 @@ const ApplyFundingForm = ({
     businessData,
     isLoading: isBusinessLoading,
     refetch: refetchBusinesses,
-  } = useBusinessQuery(userId, false);
+  } = useBusinessQuery(userData.id, false);
 
   useEffect(() => {
     if (data) {
@@ -173,12 +175,18 @@ const ApplyFundingForm = ({
     defaultValues: {
       ...data,
       appliedDate: data?.appliedDate ?? new Date(),
-      userId: userId,
+      userId: userData.id,
       status: data?.status ?? "New",
       fundingType: "Personal",
       employmentStatus: "",
       personalTaxesStatus: "",
       businessTaxesStatus: "",
+
+      addressStreet: data?.addressStreet || userData.addressStreet || "",
+      houseNumber: data?.houseNumber || userData.houseNumber || "",
+      addressCity: data?.addressCity || userData.addressCity || "",
+      addressState: data?.addressState || userData.addressState || "",
+      addressPostal: data?.addressPostal || userData.addressPostal || "",
     },
   });
 
@@ -391,7 +399,7 @@ const ApplyFundingForm = ({
         className="w-3/6"
       >
         <ClientBusinessManagement
-          userId={userId}
+          userId={userData.id}
           editingBusiness={null}
           setEditingBusiness={() => {}}
           isModal
@@ -836,7 +844,7 @@ const ApplyFundingForm = ({
 
                   {businessIdSelected &&
                     (interestedProductSelected?.type?.includes("Business") ||
-                    isCommunity) &&
+                      isCommunity) &&
                     !isTradeLines && (
                       <Card className="bg-slate-100 border-slate-200">
                         <CardHeader>
