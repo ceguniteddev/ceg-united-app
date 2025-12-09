@@ -11,7 +11,10 @@ export async function POST(req: NextRequest) {
     let page;
 
     // Determine environment and launch appropriate browser
-    if (process.env.NODE_ENV === "production") {
+    if (
+      process.env.ENVIRONMENT === "production" ||
+      process.env.ENVIRONMENT === "staging"
+    ) {
       const chromium = require("@sparticuz/chromium");
       const puppeteer = require("puppeteer-core");
 
