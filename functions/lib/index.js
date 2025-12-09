@@ -3,12 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.generatePdf = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
+const params_1 = require("firebase-functions/params");
 const puppeteer = require("puppeteer");
+const pdfApiKey = (0, params_1.defineSecret)("PDF_API_KEY");
 // Set memory to 4GB and timeout to 540s as recommended
-exports.generatePdf = (0, https_1.onRequest)({ memory: "4GiB", timeoutSeconds: 540 }, async (req, res) => {
+exports.generatePdf = (0, https_1.onRequest)({ memory: "4GiB", timeoutSeconds: 540, secrets: [pdfApiKey] }, async (req, res) => {
     // Verify API Key
     const apiKey = req.headers["x-ceg-api-key"];
-    if (!apiKey || apiKey !== process.env.PDF_API_KEY) {
+    if (!apiKey || apiKey !== pdfApiKey.value()) {
         logger.warn("Unauthorized PDF generation attempt");
         res.status(401).send("Unauthorized");
         return;
