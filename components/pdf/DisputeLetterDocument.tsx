@@ -260,6 +260,40 @@ interface DisputeLetterDocumentProps {
 export default function DisputeLetterDocument({
   letter,
 }: DisputeLetterDocumentProps) {
+  // If we have bureau-specific content, create separate pages for each
+  if (
+    letter.letterContentExperian ||
+    letter.letterContentTransunion ||
+    letter.letterContentEquifax
+  ) {
+    return (
+      <Document>
+        {letter.letterContentExperian && (
+          <Page size="A4" style={styles.page}>
+            <View style={styles.content}>
+              {renderHtmlNodes(letter.letterContentTransunion)}
+            </View>
+          </Page>
+        )}
+        {letter.letterContentTransunion && (
+          <Page size="A4" style={styles.page}>
+            <View style={styles.content}>
+              {renderHtmlNodes(parse(letter.letterContentTransunion))}
+            </View>
+          </Page>
+        )}
+        {letter.letterContentEquifax && (
+          <Page size="A4" style={styles.page}>
+            <View style={styles.content}>
+              {renderHtmlNodes(parse(letter.letterContentEquifax))}
+            </View>
+          </Page>
+        )}
+      </Document>
+    );
+  }
+
+  // Fallback to single page with aggregated content
   return (
     <Document>
       <Page size="A4" style={styles.page}>

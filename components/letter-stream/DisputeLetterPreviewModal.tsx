@@ -10,7 +10,7 @@ import { Download, Printer, Save, Loader } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useUpdateDisputeLetter } from "@/hooks/dispute-letter";
 
-const EditorQuill = dynamic(() => import("@/components/editor/EditorQuill"), {
+const Editor = dynamic(() => import("@/components/Editor"), {
   ssr: false,
 });
 
@@ -27,6 +27,11 @@ export default function DisputeLetterPreviewModal({
 }: DisputeLetterPreviewModalProps) {
   const [isClient, setIsClient] = useState(false);
   const [content, setContent] = useState("");
+  const [contentExperian, setContentExperian] = useState("");
+  const [contentTransunion, setContentTransunion] = useState("");
+  const [contentEquifax, setContentEquifax] = useState("");
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
   const { mutate: updateLetter, isPending: isUpdating } =
     useUpdateDisputeLetter(letter?.id || "");
 
@@ -37,14 +42,63 @@ export default function DisputeLetterPreviewModal({
   useEffect(() => {
     if (letter) {
       setContent(letter.letterContent || "");
+      setContentExperian(letter.letterContentExperian || "");
+      setContentTransunion(letter.letterContentTransunion || "");
+      setContentEquifax(letter.letterContentEquifax || "");
     }
-  }, [letter?.id]);
+  }, [letter]);
 
   const handleSave = () => {
-    updateLetter({ letterContent: content });
+    updateLetter({
+      letterContent: content,
+      letterContentExperian: contentExperian,
+      letterContentTransunion: contentTransunion,
+      letterContentEquifax: contentEquifax,
+    });
+  };
+
+  const handlePrintPuppeteer = async () => {
+    try {
+      setIsGeneratingPdf(true);
+      const response = await fetch("/api/pdf/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          experian: contentExperian,
+          transunion: contentTransunion,
+          equifax: contentEquifax,
+          letterContent: content,
+          title: letter?.letterTitle,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to generate PDF");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(letter?.letterTitle || "letter").replace(
+        /\s+/g,
+        "_"
+      )}_printed.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   if (!letter) return null;
+
+  const hasBureauSpecificContent =
+    contentExperian || contentTransunion || contentEquifax;
 
   return (
     <ResponsiveDialog
@@ -59,27 +113,52 @@ export default function DisputeLetterPreviewModal({
       <div className="flex flex-col gap-4 h-[70vh]">
         <div className="flex justify-end gap-2 border-b pb-4">
           {isClient && (
-            <PDFDownloadLink
-              document={
-                <DisputeLetterDocument
-                  letter={{ ...letter, letterContent: content }}
-                />
-              }
-              fileName={`${letter.letterTitle.replace(/\s+/g, "_")}.pdf`}
-            >
-              {({ blob, url, loading, error }) => (
-                <Button disabled={loading} variant="outline">
-                  {loading ? (
-                    "Preparing PDF..."
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      Download PDF
-                    </>
-                  )}
-                </Button>
-              )}
-            </PDFDownloadLink>
+            <>
+              <Button
+                onClick={handlePrintPuppeteer}
+                disabled={isGeneratingPdf || isUpdating}
+                variant="outline"
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Printing...
+                  </>
+                ) : (
+                  <>
+                    <Printer className="mr-2 h-4 w-4" />
+                    Print (Puppeteer)
+                  </>
+                )}
+              </Button>
+              {/* <PDFDownloadLink
+                document={
+                  <DisputeLetterDocument
+                    letter={{
+                      ...letter,
+                      letterContent: content,
+                      letterContentExperian: contentExperian,
+                      letterContentTransunion: contentTransunion,
+                      letterContentEquifax: contentEquifax,
+                    }}
+                  />
+                }
+                fileName={`${letter.letterTitle.replace(/\s+/g, "_")}.pdf`}
+              >
+                {({ blob, url, loading, error }) => (
+                  <Button disabled={loading} variant="outline">
+                    {loading ? (
+                      "Preparing PDF..."
+                    ) : (
+                      <>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download PDF
+                      </>
+                    )}
+                  </Button>
+                )}
+              </PDFDownloadLink> */}
+            </>
           )}
 
           <Button onClick={handleSave} disabled={isUpdating}>
@@ -98,14 +177,46 @@ export default function DisputeLetterPreviewModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 border rounded-md bg-white print:border-none print:p-0">
-          <div className="prose max-w-none print:block">
-            {/* Render HTML content for preview */}
-            <EditorQuill
-              value={content}
-              onChange={setContent}
-              readOnly={false}
-              placeholder="Type your letter content here..."
-            />
+          <div className="prose max-w-none print:block space-y-8">
+            {hasBureauSpecificContent ? (
+              <>
+                {contentExperian && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2 text-blue-900">
+                      Experian
+                    </h3>
+                    <Editor
+                      content={contentExperian}
+                      onContentChange={setContentExperian}
+                    />
+                  </div>
+                )}
+                {contentTransunion && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2 text-blue-900">
+                      TransUnion
+                    </h3>
+                    <Editor
+                      content={contentTransunion}
+                      onContentChange={setContentTransunion}
+                    />
+                  </div>
+                )}
+                {contentEquifax && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2 text-blue-900">
+                      Equifax
+                    </h3>
+                    <Editor
+                      content={contentEquifax}
+                      onContentChange={setContentEquifax}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <Editor content={content} onContentChange={setContent} />
+            )}
           </div>
         </div>
       </div>
