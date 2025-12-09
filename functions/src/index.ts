@@ -1,14 +1,17 @@
 import { onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
+import { defineSecret } from "firebase-functions/params";
 import * as puppeteer from "puppeteer";
+
+const pdfApiKey = defineSecret("PDF_API_KEY");
 
 // Set memory to 4GB and timeout to 540s as recommended
 export const generatePdf = onRequest(
-  { memory: "4GiB", timeoutSeconds: 540 },
+  { memory: "4GiB", timeoutSeconds: 540, secrets: [pdfApiKey] },
   async (req, res) => {
     // Verify API Key
     const apiKey = req.headers["x-ceg-api-key"];
-    if (!apiKey || apiKey !== process.env.PDF_API_KEY) {
+    if (!apiKey || apiKey !== pdfApiKey.value()) {
       logger.warn("Unauthorized PDF generation attempt");
       res.status(401).send("Unauthorized");
       return;
