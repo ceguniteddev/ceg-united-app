@@ -69,8 +69,11 @@ const EmailTemplateEditor: React.FC<TinyEditorProps> = ({
           init_instance_callback(editor) {
             const dialogContainer = document.getElementById("dialog-form");
             if (dialogContainer) {
-              const auxElements = document.querySelectorAll("body > .tox-tinymce-aux");
-              if (auxElements.length) dialogContainer.append(auxElements[auxElements.length - 1]);
+              const auxElements = document.querySelectorAll(
+                "body > .tox-tinymce-aux"
+              );
+              if (auxElements.length)
+                dialogContainer.append(auxElements[auxElements.length - 1]);
             }
           },
           height,
@@ -85,7 +88,8 @@ const EmailTemplateEditor: React.FC<TinyEditorProps> = ({
 
           toolbar: toolbar,
           width: "auto",
-          content_css: "document",
+          content_css: "writer",
+          content_style: "body { padding: 24px; }",
         }}
       />
     </div>

@@ -99,6 +99,9 @@ export const DisputeLetterSchema = z.object({
   // Letter content
   letterTitle: z.string().min(1, "Letter title is required"),
   letterContent: z.string().min(1, "Letter content is required"), // HTML content
+  letterContentExperian: z.string().optional(),
+  letterContentTransunion: z.string().optional(),
+  letterContentEquifax: z.string().optional(),
 
   // Disputed accounts
   // disputedAccounts: z

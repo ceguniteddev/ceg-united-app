@@ -16,6 +16,9 @@ interface GenerateInaccurateDisputeResponse {
   response?: string;
   bodyHTML?: string;
   statusCode?: string;
+  experian?: string | null;
+  transunion?: string | null;
+  equifax?: string | null;
 }
 
 /**
@@ -50,7 +53,65 @@ export const useGenerateInaccurateDisputeLetter = (userId?: string) => {
       }
 
       const data: GenerateInaccurateDisputeResponse = await response.json();
-      return data.content || data.letter || data.response || "";
+
+      // Check if response contains bureau-specific content
+      if (data.experian || data.transunion || data.equifax) {
+        return {
+          // experian: cleanHtmlContent(data.experian),
+          // transunion: cleanHtmlContent(data.transunion),
+          // equifax: cleanHtmlContent(data.equifax),
+          experian: data.experian,
+          transunion: data.transunion,
+          equifax: data.equifax,
+        };
+      }
+
+      const rawContent = data.content || data.letter || data.response || "";
+      return cleanHtmlContent(rawContent);
     },
   });
+};
+
+const cleanHtmlContent = (content: string | null | undefined): string => {
+  if (!content) return "";
+  let extractedContent = content;
+
+  // Remove outer div wrapper if present
+  extractedContent = extractedContent.replace(
+    /^<div[^>]*>([\s\S]*)<\/div>$/i,
+    "$1"
+  );
+
+  // Convert <br> and <br/> tags to paragraph breaks first
+  extractedContent = extractedContent.replace(/<br\s*\/?>/gi, "</p><p>");
+
+  // Convert inner divs to paragraphs (preserve content, remove inline styles)
+  extractedContent = extractedContent.replace(
+    /<div[^>]*>([\s\S]*?)<\/div>/gi,
+    "<p>$1</p>"
+  );
+
+  // Remove all types of newlines: \n, \r\n, \r (both escaped and actual)
+  extractedContent = extractedContent
+    .replace(/\\n/g, " ")
+    .replace(/\n/g, " ")
+    .replace(/\r/g, "");
+
+  // Trim whitespace inside paragraph tags
+  extractedContent = extractedContent.replace(/<p>\s+/g, "<p>");
+  extractedContent = extractedContent.replace(/\s+<\/p>/g, "</p>");
+
+  // Clean up multiple spaces
+  extractedContent = extractedContent.replace(/\s+/g, " ");
+
+  // Clean up empty paragraphs
+  extractedContent = extractedContent.replace(/<p><\/p>/g, "");
+  extractedContent = extractedContent.replace(/<p>\s*<\/p>/g, "");
+
+  // Ensure content is wrapped in paragraph tags if not already
+  if (!extractedContent.startsWith("<p>")) {
+    extractedContent = `<p>${extractedContent}</p>`;
+  }
+
+  return extractedContent.trim();
 };

@@ -10,19 +10,9 @@ import {
   IdentifyFactualErrorsResponse,
   FactualError,
 } from "@/hooks/identify-factual-errors";
-import dynamic from "next/dynamic";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@/components/ui/form";
+
 import { Loader, Mailbox, Search } from "lucide-react";
 import { UserWithId } from "@/schema/registration";
-
-const EditorQuill = dynamic(() => import("@/components/editor/EditorQuill"), {
-  ssr: false,
-});
 
 interface InaccurateInformationDisputeFormProps {
   availableDisputeTypes?: string[];
@@ -36,7 +26,11 @@ export default function InaccurateInformationDisputeForm({
   userData,
 }: InaccurateInformationDisputeFormProps) {
   const form = useFormContext();
-  const [generatedContent, setGeneratedContent] = useState<string | null>(null);
+  const [generatedContent, setGeneratedContent] = useState<{
+    experian?: string | null;
+    transunion?: string | null;
+    equifax?: string | null;
+  } | null>(null);
   const [factualErrors, setFactualErrors] =
     useState<IdentifyFactualErrorsResponse | null>(null);
   const [selectedErrors, setSelectedErrors] = useState<{
@@ -57,9 +51,19 @@ export default function InaccurateInformationDisputeForm({
         selectedErrors,
       },
       {
-        onSuccess: (content) => {
+        onSuccess: (data) => {
+          // If data is a string, wrap it in the expected structure
+          const content =
+            typeof data === "string"
+              ? { experian: data, transunion: data, equifax: data }
+              : data;
           setGeneratedContent(content);
-          form.setValue("disputeMessage", content);
+          if (content.experian)
+            form.setValue("disputeMessageExperian", content.experian);
+          if (content.transunion)
+            form.setValue("disputeMessageTransunion", content.transunion);
+          if (content.equifax)
+            form.setValue("disputeMessageEquifax", content.equifax);
         },
       }
     );
@@ -292,9 +296,7 @@ export default function InaccurateInformationDisputeForm({
               type="button"
               variant={"outline"}
               onClick={handleGenerateDisputeInaccurate}
-              disabled={
-                isGenerating || (factualErrors !== null && !hasSelectedErrors)
-              }
+              disabled={isGenerating || !hasSelectedErrors}
             >
               {isGenerating ? (
                 <>
@@ -310,22 +312,33 @@ export default function InaccurateInformationDisputeForm({
             </Button>
           </div>
         </div>
-        <FormField
-          control={form.control}
-          name="disputeMessage"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <EditorQuill
-                  {...field}
-                  value={field.value || ""}
-                  placeholder=""
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {generatedContent?.experian && (
+          <CustomFormField
+            type="editor"
+            name="disputeMessageExperian"
+            label="Experian Dispute Letter"
+            labelClassName="font-semibold text-blue-900 mb-2 text-base"
+          />
+        )}
+        {generatedContent?.transunion && (
+          <CustomFormField
+            type="editor"
+            name="disputeMessageTransunion"
+            label="TransUnion Dispute Letter"
+            labelClassName="font-semibold text-blue-900 mb-2 text-base"
+          />
+        )}
+        {generatedContent?.equifax && (
+          <CustomFormField
+            type="editor"
+            name="disputeMessageEquifax"
+            label="Equifax Dispute Letter"
+            labelClassName="font-semibold text-blue-900 mb-2 text-base"
+          />
+        )}
+        {!generatedContent && (
+          <CustomFormField type="editor" name="disputeMessage" />
+        )}
       </div>
     </div>
   );

@@ -186,7 +186,7 @@ export default function LetterList({
                           size="sm"
                           onClick={() => {
                             setViewLetter(letter);
-                            onViewLetter?.(letter);
+                            // onViewLetter?.(letter); // Removed to prevent conflict with modal
                           }}
                         >
                           <Eye className="h-4 w-4" />
