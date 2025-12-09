@@ -41,7 +41,6 @@ export const MUX_DATA = "mux-data";
 export const USER_COURSE_PROGRESS = "user-course-progress";
 export const USER_COURSE_ENROLLMENT = "user-course-enrollment";
 
-export const BROKER_COLLECTION = "broker";
 export const BROKER_INVITATION = "broker-invitation";
 export const BROKER_CLIENT_MAPPING = "broker-client-mapping";
 export const BROKER_COMMISSION = "broker-commission";

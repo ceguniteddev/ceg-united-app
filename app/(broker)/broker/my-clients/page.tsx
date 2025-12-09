@@ -52,6 +52,7 @@ import {
 import { Form } from "@/components/ui/form";
 import { ssnSchema } from "@/schema/registration";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { US_STATES } from "@/constant/common";
 
 // Client application schema
 const clientApplicationSchema = z.object({
@@ -67,6 +68,12 @@ const clientApplicationSchema = z.object({
   isOnboarded: z.boolean().optional(),
   registrationDate: z.date().optional(),
   ssn: ssnSchema,
+
+  addressStreet: z.string().min(1, { error: "Required" }),
+  houseNumber: z.string().optional(),
+  addressCity: z.string().min(1, { error: "Required" }),
+  addressState: z.string().min(1, { error: "Required" }),
+  addressPostal: z.string().min(1, { error: "Required" }),
 });
 
 type ClientApplicationForm = z.infer<typeof clientApplicationSchema>;
@@ -363,6 +370,32 @@ export default function MyClientsPage() {
                         placeholder=" "
                         label="* Gender"
                         options={genderTypes()}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <CustomFormField
+                        name={"addressStreet"}
+                        label={"Street Address"}
+                      />
+                      <CustomFormField
+                        name={"houseNumber"}
+                        label={"Apartment/Suite/Unit/House Number"}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <CustomFormField name={"addressCity"} label={"City"} />
+                      <CustomFormField
+                        name={"addressState"}
+                        label={"State"}
+                        type="select"
+                        placeholder="Select a state"
+                        options={US_STATES}
+                      />
+                      <CustomFormField
+                        name={"addressPostal"}
+                        label={"Zip Code"}
                       />
                     </div>
 

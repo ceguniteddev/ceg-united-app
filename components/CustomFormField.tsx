@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  ControllerFieldState,
   ControllerRenderProps,
   FieldValues,
   useFormContext,
@@ -122,7 +123,8 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
   const [isDOBCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
 
   const renderFormControl = (
-    field: ControllerRenderProps<FieldValues, string>
+    field: ControllerRenderProps<FieldValues, string>,
+    fieldState: ControllerFieldState
   ) => {
     const handleChange = (
       // e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
@@ -301,7 +303,12 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
             disabled={disabled}
           >
             <FormControl>
-              <SelectTrigger className={`w-full ${inputClassName}`}>
+              <SelectTrigger
+                className={cn(
+                  `w-full ${inputClassName}`,
+                  fieldState?.error && "border-red-500"
+                )}
+              >
                 <SelectValue placeholder={placeholder || "Select an option"} />
               </SelectTrigger>
             </FormControl>
@@ -403,7 +410,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
       control={control}
       name={name}
       defaultValue={initialValue}
-      render={({ field }) => (
+      render={({ field, fieldState }) => (
         <FormItem
           className={`${
             type !== "switch" && type !== "checkbox-group" && "rounded-md"
@@ -426,13 +433,16 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
           )}
 
           <FormControl>
-            {renderFormControl({
-              ...field,
-              value:
-                field.value !== undefined && field.value !== ""
-                  ? field.value
-                  : initialValue,
-            })}
+            {renderFormControl(
+              {
+                ...field,
+                value:
+                  field.value !== undefined && field.value !== ""
+                    ? field.value
+                    : initialValue,
+              },
+              fieldState
+            )}
           </FormControl>
 
           <FormMessage className="text-red-400" />
