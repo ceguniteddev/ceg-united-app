@@ -221,7 +221,9 @@ const PremiumStatusPicker = ({ user }: { user: UserWithId }) => {
     <div
       className={[
         "flex flex-row items-center gap-3 rounded-md p-3 border w-full sm:w-auto",
-        isPremium ? "border-purple-300 bg-purple-50" : "border-gray-200",
+        isPremium
+          ? "border-purple-300 bg-purple-50"
+          : "border-blue-300 bg-blue-50",
       ].join(" ")}
     >
       <span
@@ -380,16 +382,13 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
   });
 
   React.useEffect(() => {
-    if (appliedFunding && appliedFunding.length > 0) {
-      const latestApp = appliedFunding[0];
-      setAddressInfo({
-        addressLine1: latestApp.addressStreet || "",
-        city: latestApp.addressCity || "",
-        state: latestApp.addressState || "",
-        postalCode: latestApp.addressPostal || "",
-      });
-    }
-  }, [appliedFunding]);
+    setAddressInfo({
+      addressLine1: user.addressStreet || "",
+      city: user.addressCity || "",
+      state: user.addressState || "",
+      postalCode: user.addressPostal || "",
+    });
+  }, [user]);
 
   const handleRefreshCRSData = useCallback(async () => {
     const hasSelectedBureaus =
