@@ -77,6 +77,12 @@ export const registrationSchema = z.object({
   accountErrorCorrectionEnabled: z.boolean().default(false).optional(),
   collectionAccountRemovalEnabled: z.boolean().default(false).optional(),
   fraudulentAccountRemovalEnabled: z.boolean().default(false).optional(),
+
+  addressStreet: z.string().min(1, { error: "Required" }),
+  houseNumber: z.string().optional(),
+  addressCity: z.string().min(1, { error: "Required" }),
+  addressState: z.string().min(1, { error: "Required" }),
+  addressPostal: z.string().min(1, { error: "Required" }),
 });
 
 export const UserFundMapStatus = z.enum(["New", "Processing"]);

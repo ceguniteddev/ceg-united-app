@@ -15,6 +15,7 @@ import ViewApplication from "@/components/funding/AdminViewApplication";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ApplyFundingForm from "@/components/fundingv2/ApplyFundingForm";
+import { useUserQuery } from "@/hooks/user";
 
 type Props = {
   data: ApplyFunding;
@@ -23,6 +24,7 @@ type Props = {
 export function RowActions({ data }: Props) {
   const [open, setOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const { userData } = useUserQuery(data.userId);
 
   const router = useRouter();
   const handleOpen = () => {
@@ -50,12 +52,14 @@ export function RowActions({ data }: Props) {
         description=""
         className="w-8/12 flex flex-col items-start justify-start min-h-[80vh]"
       >
-        <ApplyFundingForm
-          setOpen={setIsEditOpen}
-          data={data}
-          isEditing={true}
-          userId={data.userId}
-        />
+        {userData && (
+          <ApplyFundingForm
+            setOpen={setIsEditOpen}
+            data={data}
+            isEditing={true}
+            userData={userData}
+          />
+        )}
       </ResponsiveDialog>
 
       <DropdownMenu modal={true}>

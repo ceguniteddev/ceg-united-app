@@ -11,5 +11,18 @@
       "indexes": "firestore.indexes.json"
     }
   ],
-  "firebase-commands": "firebase deploy --only firestore:ceg-united-db-production --project ceg-united-llc-prod"
+  "firebase-commands": "firebase deploy --only firestore:ceg-united-db-production --project ceg-united-llc-prod",
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ],
+      "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
+    }
+  ]
 }

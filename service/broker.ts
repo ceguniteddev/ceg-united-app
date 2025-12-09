@@ -1,6 +1,5 @@
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import {
-  BROKER_COLLECTION,
   BROKER_INVITATION,
   BROKER_CLIENT_MAPPING,
   BROKER_COMMISSION,
@@ -23,22 +22,6 @@ import { FieldPath } from "firebase-admin/firestore";
 
 const db = firestoreAdmin();
 
-// Generate unique referral code
-export const generateReferralCode = async (): Promise<string> => {
-  const code = crypto.randomBytes(4).toString("hex").toUpperCase();
-  // Check if code already exists
-  const existing = await db
-    .collection(BROKER_COLLECTION)
-    .where("referralCode", "==", code)
-    .get();
-
-  if (!existing.empty) {
-    return generateReferralCode(); // Recursively generate new code
-  }
-
-  return code;
-};
-
 // Create broker invitation
 export const createBrokerInvitation = async (
   email: string,
@@ -58,7 +41,7 @@ export const createBrokerInvitation = async (
 
   // Check if user already exists as broker
   const existingBroker = await db
-    .collection(BROKER_COLLECTION)
+    .collection(BROKER_INVITATION)
     .where("email", "==", email)
     .get();
 
@@ -119,35 +102,6 @@ export const acceptBrokerInvitation = async (token: string): Promise<void> => {
     status: "Accepted",
     acceptedAt: new Date(),
   });
-};
-
-// Create broker profile
-export const createBroker = async (
-  brokerId: string,
-  data: BrokerRegistration
-): Promise<void> => {
-  const referralCode = await generateReferralCode();
-  await db
-    .collection(BROKER_COLLECTION)
-    .doc(brokerId)
-    .set({
-      ...data,
-      referralCode,
-      registrationDate: new Date(),
-    });
-};
-
-// Get broker by ID
-export const getBrokerById = async (
-  brokerId: string
-): Promise<BrokerRegistration | null> => {
-  const doc = await db.collection(BROKER_COLLECTION).doc(brokerId).get();
-
-  if (!doc.exists) {
-    return null;
-  }
-
-  return doc.data() as BrokerRegistration;
 };
 
 // Link client to broker

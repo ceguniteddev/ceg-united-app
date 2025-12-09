@@ -524,7 +524,8 @@ export const ClientDashboard = ({
         >
           <ApplyFundingForm
             setOpen={setIsOpenFunding}
-            userId={userData?.id || ""}
+            // userId={userData?.id || ""}
+            userData={userData!}
           />
         </ResponsiveDialog>
         <ResponsiveDialog
