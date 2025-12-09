@@ -6,11 +6,18 @@ const logger = require("firebase-functions/logger");
 const puppeteer = require("puppeteer");
 // Set memory to 4GB and timeout to 540s as recommended
 exports.generatePdf = (0, https_1.onRequest)({ memory: "4GiB", timeoutSeconds: 540 }, async (req, res) => {
+    // Verify API Key
+    const apiKey = req.headers["x-ceg-api-key"];
+    if (!apiKey || apiKey !== process.env.PDF_API_KEY) {
+        logger.warn("Unauthorized PDF generation attempt");
+        res.status(401).send("Unauthorized");
+        return;
+    }
     // Enable CORS
     res.set("Access-Control-Allow-Origin", "*");
     if (req.method === "OPTIONS") {
         res.set("Access-Control-Allow-Methods", "POST");
-        res.set("Access-Control-Allow-Headers", "Content-Type");
+        res.set("Access-Control-Allow-Headers", "Content-Type, x-ceg-api-key");
         res.status(204).send("");
         return;
     }

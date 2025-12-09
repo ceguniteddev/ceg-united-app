@@ -142,3 +142,5 @@ env:
     secret: FIREBASE_PRIVATE_KEY_BASE64
   - variable: MUX_TOKEN_SECRET
     secret: MUX_TOKEN_SECRET
+  - variable: PDF_API_KEY
+    secret: PDF_API_KEY_STAGING

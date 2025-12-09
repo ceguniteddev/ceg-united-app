@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { DisputeLetter } from "@/schema/dispute-letter";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { Button } from "@/components/ui/button";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import DisputeLetterDocument from "@/components/pdf/DisputeLetterDocument";
 import { Download, Printer, Save, Loader } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useUpdateDisputeLetter } from "@/hooks/dispute-letter";
@@ -113,52 +111,23 @@ export default function DisputeLetterPreviewModal({
       <div className="flex flex-col gap-4 h-[70vh]">
         <div className="flex justify-end gap-2 border-b pb-4">
           {isClient && (
-            <>
-              <Button
-                onClick={handlePrintPuppeteer}
-                disabled={isGeneratingPdf || isUpdating}
-                variant="outline"
-              >
-                {isGeneratingPdf ? (
-                  <>
-                    <Loader className="mr-2 h-4 w-4 animate-spin" />
-                    Printing...
-                  </>
-                ) : (
-                  <>
-                    <Printer className="mr-2 h-4 w-4" />
-                    Print (Puppeteer)
-                  </>
-                )}
-              </Button>
-              {/* <PDFDownloadLink
-                document={
-                  <DisputeLetterDocument
-                    letter={{
-                      ...letter,
-                      letterContent: content,
-                      letterContentExperian: contentExperian,
-                      letterContentTransunion: contentTransunion,
-                      letterContentEquifax: contentEquifax,
-                    }}
-                  />
-                }
-                fileName={`${letter.letterTitle.replace(/\s+/g, "_")}.pdf`}
-              >
-                {({ blob, url, loading, error }) => (
-                  <Button disabled={loading} variant="outline">
-                    {loading ? (
-                      "Preparing PDF..."
-                    ) : (
-                      <>
-                        <Download className="mr-2 h-4 w-4" />
-                        Download PDF
-                      </>
-                    )}
-                  </Button>
-                )}
-              </PDFDownloadLink> */}
-            </>
+            <Button
+              onClick={handlePrintPuppeteer}
+              disabled={isGeneratingPdf || isUpdating}
+              variant="outline"
+            >
+              {isGeneratingPdf ? (
+                <>
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                  Printing...
+                </>
+              ) : (
+                <>
+                  <Printer className="mr-2 h-4 w-4" />
+                  Print
+                </>
+              )}
+            </Button>
           )}
 
           <Button onClick={handleSave} disabled={isUpdating}>
