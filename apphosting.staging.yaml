@@ -115,6 +115,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: PDF_GENERATION_URL
+    value: https://generatepdf-ffuzmpuyia-uc.a.run.app
+    availability:
+      - BUILD
+      - RUNTIME
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   - variable: FIREBASE_CLIENT_EMAIL
