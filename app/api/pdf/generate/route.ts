@@ -12,32 +12,25 @@ export async function POST(req: NextRequest) {
 
     // Determine environment and launch appropriate browser
     if (
+      process.env.NODE_ENV === "production" ||
       process.env.ENVIRONMENT === "production" ||
       process.env.ENVIRONMENT === "staging"
     ) {
       const chromium = require("@sparticuz/chromium");
       const puppeteer = require("puppeteer-core");
 
-      // Optional: Load fonts if needed
-      // await chromium.font("https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf");
-
-      // browser = await puppeteer.launch({
-      //   args: [
-      //     ...chromium.args,
-      //     "--no-sandbox",
-      //     "--disable-setuid-sandbox",
-      //     "--disable-dev-shm-usage", // Handle Docker memory limits
-      //     "--disable-gpu",
-      //   ],
-      //   defaultViewport: chromium.defaultViewport,
-      //   executablePath: await chromium.executablePath(),
-      //   headless: chromium.headless,
-      //   ignoreHTTPSErrors: true,
-      // });
-      browser = await chromium.puppeteer.launch({
-        executablePath: await chromium.executablePath,
-        args: [...chromium.args, "--no-sandbox"],
-        headless: true,
+      browser = await puppeteer.launch({
+        args: [
+          ...chromium.args,
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+        ],
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+        ignoreHTTPSErrors: true,
       });
     } else {
       // Local development
