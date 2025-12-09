@@ -1,140 +1,33 @@
+import { withAuth } from "@/lib/api-validation";
 import { NextRequest, NextResponse } from "next/server";
 
-export const maxDuration = 60; // Set max duration to 60 seconds for PDF generation
-
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async (req: NextRequest) => {
   try {
     const { experian, transunion, equifax, letterContent, title } =
       await req.json();
 
-    // If a dedicated PDF generation function is configured, use it.
-    if (process.env.PDF_GENERATION_URL) {
-      const response = await fetch(process.env.PDF_GENERATION_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          experian,
-          transunion,
-          equifax,
-          letterContent,
-          title,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `PDF Function failed: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const pdfBuffer = await response.arrayBuffer();
-      return new NextResponse(pdfBuffer, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="${(
-            title || "letter"
-          ).replace(/\s+/g, "_")}.pdf"`,
-        },
-      });
-    }
-
-    let browser;
-    let page;
-
-    // Determine environment and launch appropriate browser
-    if (
-      process.env.NODE_ENV === "production" ||
-      process.env.ENVIRONMENT === "production" ||
-      process.env.ENVIRONMENT === "staging"
-    ) {
-      const chromium = require("@sparticuz/chromium");
-      const puppeteer = require("puppeteer-core");
-
-      browser = await puppeteer.launch({
-        args: [
-          ...chromium.args,
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu",
-        ],
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true,
-      });
-    } else {
-      // Local development
-      const puppeteer = require("puppeteer");
-      browser = await puppeteer.launch({
-        headless: true,
-      });
-    }
-
-    page = await browser.newPage();
-
-    // Construct HTML content
-    // We'll use a simple template with page breaks
-    const styles = `
-      <style>
-        body { font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.5; padding: 40px; }
-        .page-break { page-break-before: always; }
-        .bureau-header { font-size: 14pt; font-weight: bold; margin-bottom: 20px; color: #1e40af; }
-        p { margin-bottom: 10px; text-align: justify; }
-        ul, ol { margin-bottom: 10px; margin-left: 20px; }
-      </style>
-    `;
-
-    let fullHtml = `<html><head>${styles}</head><body>`;
-
-    const hasBureauSpecific = experian || transunion || equifax;
-
-    if (hasBureauSpecific) {
-      let isFirst = true;
-
-      if (experian) {
-        fullHtml += `<div class="bureau-section">
-          ${experian}
-        </div>`;
-        isFirst = false;
-      }
-
-      if (transunion) {
-        fullHtml += `${!isFirst ? '<div class="page-break"></div>' : ""}
-        <div class="bureau-section">
-          ${transunion}
-        </div>`;
-        isFirst = false;
-      }
-
-      if (equifax) {
-        fullHtml += `${!isFirst ? '<div class="page-break"></div>' : ""}
-        <div class="bureau-section">
-          ${equifax}
-        </div>`;
-      }
-    } else {
-      // Fallback to generic content
-      fullHtml += `<div>${letterContent || ""}</div>`;
-    }
-
-    fullHtml += "</body></html>";
-
-    await page.setContent(fullHtml, { waitUntil: "networkidle0" });
-
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: {
-        top: "40px",
-        bottom: "40px",
-        left: "40px",
-        right: "40px",
+    const response = await fetch(process.env.PDF_GENERATION_URL!, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-ceg-api-key": process.env.PDF_API_KEY || "",
       },
+      body: JSON.stringify({
+        experian,
+        transunion,
+        equifax,
+        letterContent,
+        title,
+      }),
     });
 
-    await browser.close();
+    if (!response.ok) {
+      throw new Error(
+        `PDF Function failed: ${response.status} ${response.statusText}`
+      );
+    }
 
+    const pdfBuffer = await response.arrayBuffer();
     return new NextResponse(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
@@ -150,4 +43,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
