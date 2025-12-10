@@ -355,6 +355,50 @@ export default function FundingApplicationView({ data }: Props) {
           </div>
         </section>
 
+        {data.employments && data.employments.length > 0 && (
+          <>
+            <Separator />
+            <section>
+              <h3 className="text-sm font-semibold mb-3">
+                Additional Employments
+              </h3>
+              {data.employments.map((emp, index) => {
+                const empPaidOption = howDoYouGetPaid.find(
+                  (x) => x.value === emp.howDoYouGetPaid
+                );
+                return (
+                  <div
+                    key={index}
+                    className="mb-4 border-b pb-4 last:border-0 last:pb-0"
+                  >
+                    <h4 className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wide">
+                      Employment {index + 1}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Field
+                        label="How are you paid?"
+                        value={empPaidOption?.label}
+                      />
+                      <Field
+                        label="Pay Per Month"
+                        value={currency(emp.employmentPayPerMonth)}
+                      />
+                      <Field
+                        label="Employer Name"
+                        value={emp.employmentEmployerName}
+                      />
+                      <Field
+                        label="Occupation"
+                        value={emp.employmentOccupation}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </section>
+          </>
+        )}
+
         <Separator />
 
         {/* Personal Taxes */}
