@@ -48,6 +48,17 @@ export type FundingApplicationApproveDecline = z.infer<
   typeof fundingApplicationApproveDeclineSchema
 >;
 
+export const employmentSchema = z.object({
+  howDoYouGetPaid: z.string().min(1, { message: "Required" }),
+  employmentPayPerMonth: z.coerce
+    .number<number>({ error: "Required" })
+    .min(1, { message: "Required" }),
+  employmentEmployerName: z.string().min(1, { message: "Required" }),
+  employmentOccupation: z.string().min(1, { message: "Required" }),
+});
+
+export type Employment = z.infer<typeof employmentSchema>;
+
 export const applyFundingSchema = z
   .object({
     userId: z.string().min(1, { error: "Required" }),
@@ -104,6 +115,8 @@ export const applyFundingSchema = z
     employmentDateOfHire: z.coerce
       .date<Date>({ error: "Require Date" })
       .optional(),
+
+    employments: z.array(employmentSchema).optional(),
 
     personalTaxes: z.string().optional(),
     personalTaxesStatus: z.string().optional(),
@@ -295,31 +308,53 @@ export const applyFundingSchema = z
     // Check if the business taxes status is 'yes'.
     // This value would be set by your handleBusinessTaxesChange callback.
     if (data.businessTaxesStatus === "yes") {
-      // If the status is 'yes', then all three tax year fields are required.
-      // We check if the coerced number is 0 or less, which covers empty inputs.
-      if ((data.businessTaxes1 ?? 0) <= 0) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Required",
-          path: ["businessTaxes1"], // Links the error to the correct input field.
-        });
-      }
+      const t1 = data.businessTaxes1 ?? 0;
+      const t2 = data.businessTaxes2 ?? 0;
+      const t3 = data.businessTaxes3 ?? 0;
 
-      if ((data.businessTaxes2 ?? 0) <= 0) {
+      if (t1 <= 0 && t2 <= 0 && t3 <= 0) {
         ctx.addIssue({
           code: "custom",
-          message: "Required",
+          message: "At least one tax year is required",
+          path: ["businessTaxes1"],
+        });
+        ctx.addIssue({
+          code: "custom",
+          message: "At least one tax year is required",
           path: ["businessTaxes2"],
         });
-      }
-
-      if ((data.businessTaxes3 ?? 0) <= 0) {
         ctx.addIssue({
           code: "custom",
-          message: "Required",
+          message: "At least one tax year is required",
           path: ["businessTaxes3"],
         });
       }
+
+      // If the status is 'yes', then all three tax year fields are required.
+      // We check if the coerced number is 0 or less, which covers empty inputs.
+      // if ((data.businessTaxes1 ?? 0) <= 0) {
+      //   ctx.addIssue({
+      //     code: "custom",
+      //     message: "Required",
+      //     path: ["businessTaxes1"], // Links the error to the correct input field.
+      //   });
+      // }
+
+      // if ((data.businessTaxes2 ?? 0) <= 0) {
+      //   ctx.addIssue({
+      //     code: "custom",
+      //     message: "Required",
+      //     path: ["businessTaxes2"],
+      //   });
+      // }
+
+      // if ((data.businessTaxes3 ?? 0) <= 0) {
+      //   ctx.addIssue({
+      //     code: "custom",
+      //     message: "Required",
+      //     path: ["businessTaxes3"],
+      //   });
+      // }
     }
   })
   .superRefine((data, ctx) => {
@@ -402,16 +437,16 @@ export const applyFundingSchema = z
         });
       }
 
-      if (
-        !data.employmentEmployerHouseNumber ||
-        data.employmentEmployerHouseNumber.length === 0
-      ) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Required",
-          path: ["employmentEmployerHouseNumber"],
-        });
-      }
+      // if (
+      //   !data.employmentEmployerHouseNumber ||
+      //   data.employmentEmployerHouseNumber.length === 0
+      // ) {
+      //   ctx.addIssue({
+      //     code: "custom",
+      //     message: "Required",
+      //     path: ["employmentEmployerHouseNumber"],
+      //   });
+      // }
 
       if (
         !data.employmentEmployerAddressCity ||

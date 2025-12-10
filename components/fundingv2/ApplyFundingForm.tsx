@@ -15,8 +15,9 @@ import {
   CircleXIcon,
   Loader2Icon,
   Plus,
+  Trash2,
 } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import {
   Card,
   CardContent,
@@ -188,6 +189,11 @@ const ApplyFundingForm = ({
       addressState: data?.addressState || userData.addressState || "",
       addressPostal: data?.addressPostal || userData.addressPostal || "",
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "employments",
   });
 
   // if (Object.keys(form.formState.errors).length > 0) {
@@ -788,6 +794,83 @@ const ApplyFundingForm = ({
                             // dateAfterHidden={new Date()}
                           />
                         </div>
+
+                        {fields.map((field, index) => {
+                          const colors = [
+                            "bg-blue-50 border-blue-200",
+                            "bg-green-50 border-green-200",
+                            "bg-orange-50 border-orange-200",
+                            "bg-purple-50 border-purple-200",
+                          ];
+                          const colorClass = colors[index % colors.length];
+
+                          return (
+                            <div
+                              key={field.id}
+                              className={`space-y-4 border rounded-md p-4 mt-4 ${colorClass}`}
+                            >
+                              <div className="flex justify-between items-center">
+                                <h4 className="text-sm font-medium">
+                                  Additional Employment {index + 1}
+                                </h4>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => remove(index)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <CustomFormField
+                                  name={`employments.${index}.howDoYouGetPaid`}
+                                  label={"Do you have a job?"}
+                                  type="select"
+                                  options={howDoYouGetPaid.filter(
+                                    (x) => x.value !== "no_work"
+                                  )}
+                                />
+                                <CustomFormField
+                                  name={`employments.${index}.employmentPayPerMonth`}
+                                  type="number"
+                                  label={
+                                    "How much money do you make per month?"
+                                  }
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <CustomFormField
+                                  name={`employments.${index}.employmentEmployerName`}
+                                  label={"Employer Name?"}
+                                />
+                                <CustomFormField
+                                  name={`employments.${index}.employmentOccupation`}
+                                  label={"Your Occupation?"}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-2 w-fit"
+                          onClick={() =>
+                            append({
+                              howDoYouGetPaid: "",
+                              employmentPayPerMonth: 0,
+                              employmentEmployerName: "",
+                              employmentOccupation: "",
+                            })
+                          }
+                        >
+                          <Plus className="mr-2 h-4 w-4" /> Add Another
+                          Employment
+                        </Button>
+
                         <CustomFormField
                           name={"personalTaxes"}
                           label={"Did you file your personal taxes?"}
