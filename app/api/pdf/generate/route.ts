@@ -1,6 +1,7 @@
 import { withAuth } from "@/lib/api-validation";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleAuth } from "google-auth-library";
+import { authenticationAdmin } from "@/lib/fireabase-admin";
 
 export const POST = withAuth(async (req: NextRequest) => {
   try {
@@ -21,6 +22,7 @@ export const POST = withAuth(async (req: NextRequest) => {
       credentials = {
         client_email: json.client_email,
         private_key: json.private_key,
+        project_id: process.env.FIREBASE_PROJECT_ID,
       };
     } else if (
       process.env.FIREBASE_CLIENT_EMAIL &&
