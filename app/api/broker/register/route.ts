@@ -53,6 +53,8 @@ export const POST = async (request: NextRequest) => {
       addressCity: "",
       addressState: "",
       addressPostal: "",
+
+      employmentPayPerMonth: 0,
     };
 
     await registerUser({ value: user });

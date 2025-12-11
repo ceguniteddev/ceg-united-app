@@ -20,6 +20,8 @@ import { User, UserActiveStatus, UserWithId } from "@/schema/registration";
 import { format } from "date-fns";
 import { cookies, headers } from "next/headers";
 import { FieldPath } from "firebase-admin/firestore";
+import { ApplyFunding } from "@/schema/apply-funding";
+import { applyFunding } from "./apply-funding";
 
 export const getUserRecordByEmail = async (email: string) => {
   const authentication = authenticationAdmin();
@@ -135,6 +137,26 @@ export const registerUser = async ({
 
   const docRef = await collectionRef.add(userData);
   const data = (await docRef.get()).data();
+
+  if (userData.employmentPayPerMonth && userData.employmentPayPerMonth > 0) {
+    const fundApplication: ApplyFunding = {
+      userId: docRef.id,
+      employmentPayPerMonth: userData.employmentPayPerMonth,
+      payPerMonth: userData.payPerMonth,
+      // rentOrMortgage: userData.rentOrMortgage,
+      appliedDate: new Date(),
+      status: "New",
+      addressStreet: userData.addressStreet,
+      addressCity: userData.addressCity,
+      addressState: userData.addressState,
+      addressPostal: userData.addressPostal,
+      houseNumber: userData.houseNumber,
+      interestedProduct: "Knowledge Community",
+      fundingType: "Community",
+    };
+
+    await applyFunding({ value: fundApplication });
+  }
 
   const authAdmin = authenticationAdmin();
 
