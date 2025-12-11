@@ -402,6 +402,7 @@ export default function MyClientsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <CustomFormField
                         name={"ssn"}
+                        type="ssn"
                         placeholder="xxx-xx-xxxx"
                         label="* Social Security Number"
                       />
