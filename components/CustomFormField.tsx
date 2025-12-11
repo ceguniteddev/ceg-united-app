@@ -49,7 +49,8 @@ interface FormFieldProps {
     | "input-search"
     | "hidden"
     | "editor"
-    | "file";
+    | "file"
+    | "ssn";
   // | "multi-input";
   placeholder?: string;
   options?: DropdownOption[];
@@ -379,6 +380,40 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
             height={editorHeight}
             content={field.value}
             onContentChange={field.onChange}
+          />
+        );
+
+      case "ssn":
+        return (
+          <Input
+            placeholder={placeholder}
+            {...field}
+            className={cn("", inputClassName)}
+            disabled={disabled}
+            autoComplete={autocomplete}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, "");
+              let formatted = val;
+              if (val.length > 3 && val.length <= 5) {
+                formatted = val.slice(0, 3) + "-" + val.slice(3);
+              } else if (val.length > 5) {
+                formatted =
+                  val.slice(0, 3) +
+                  "-" +
+                  val.slice(3, 5) +
+                  "-" +
+                  val.slice(5, 9);
+              }
+              field.onChange(formatted);
+              // if (onChange) {
+              //   onChange(formatted);
+              // }
+            }}
+            value={fieldValue}
+            readOnly={readonly}
+            ref={reference}
+            hidden={hidden}
+            maxLength={11}
           />
         );
 
