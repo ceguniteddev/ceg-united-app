@@ -178,7 +178,7 @@ const ApplyFundingForm = ({
       appliedDate: data?.appliedDate ?? new Date(),
       userId: userData.id,
       status: data?.status ?? "New",
-      fundingType: "Personal",
+      fundingType: data?.fundingType ?? "Personal",
       employmentStatus: "",
       personalTaxesStatus: "",
       businessTaxesStatus: "",
@@ -196,9 +196,9 @@ const ApplyFundingForm = ({
     name: "employments",
   });
 
-  // if (Object.keys(form.formState.errors).length > 0) {
-  //   console.log("There are validation errors:", form.formState.errors);
-  // }
+  if (Object.keys(form.formState.errors).length > 0) {
+    console.log("There are validation errors:", form.formState.errors);
+  }
 
   const handleNewBusinessSaved = async (businessName: string) => {
     // const { data: refreshedBusinessData } = await refetchBusinesses();
