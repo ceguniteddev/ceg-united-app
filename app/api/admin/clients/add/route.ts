@@ -11,7 +11,7 @@ export const POST = withAuth(async (req: NextRequest) => {
     const body = await req.json();
     // Validate request body - exclude password since admin is creating client
     const validatedData = registrationSchema
-      .omit({ password: true })
+      .omit({ password: true, employmentPayPerMonth: true })
       .safeParse(body);
 
     if (!validatedData.success) {
