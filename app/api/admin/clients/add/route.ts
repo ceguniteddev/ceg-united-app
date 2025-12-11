@@ -42,6 +42,8 @@ export const POST = withAuth(async (req: NextRequest) => {
       addressCity: data.addressCity,
       addressState: data.addressState,
       addressPostal: data.addressPostal,
+
+      employmentPayPerMonth: 0,
     };
 
     await registerUser({

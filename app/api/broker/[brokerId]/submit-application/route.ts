@@ -53,6 +53,8 @@ export const POST = withAuth(
         addressCity: data.addressCity,
         addressState: data.addressState,
         addressPostal: data.addressPostal,
+
+        employmentPayPerMonth: 0,
       };
 
       const clientData = await registerUser({

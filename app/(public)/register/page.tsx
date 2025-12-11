@@ -47,6 +47,8 @@ const RegistrationPage = () => {
       registrationDate: new Date(),
       denefitsSignedUp: false,
       isBrokerInvite: false,
+      isPremiumClient: false,
+      activeStatus: "Active",
     };
     await recordRegistration({ token, values });
   };
@@ -65,7 +67,7 @@ const RegistrationPage = () => {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <fieldset disabled={isRecording}>
             <div className="flex justify-center">
-              <Card className="w-[800px]">
+              <Card className="max-w-4xl">
                 <CardHeader>
                   <CardTitle className="text-center flex flex-col">
                     <span className="text-2xl font-bold">
@@ -180,7 +182,25 @@ const RegistrationPage = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <CustomFormField
+                      name={"employmentPayPerMonth"}
+                      type="number"
+                      label={"Monthly income"}
+                    />
+
+                    <CustomFormField
+                      name={"payPerMonth"}
+                      type="number"
+                      label={"Rent/Mortgage payment"}
+                    />
+                    {/* <CustomFormField
+                      name={"rentOrMortgage"}
+                      label={"Is it rent or mortgage? If else, please specify"}
+                    /> */}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <CustomFormField
                       name={"ssn"}
+                      type="ssn"
                       placeholder="xxx-xx-xxxx"
                       label="* Social Security Number"
                     />
@@ -219,7 +239,7 @@ const RegistrationPage = () => {
           </fieldset>
         </form>
       </Form>
-      <div className="text-sm text-gray-600 text-center mt-4">
+      <div className="text-sm text-gray-600 text-center mt-4 mb-8">
         Already have an account?{" "}
         <Link
           href="/"
