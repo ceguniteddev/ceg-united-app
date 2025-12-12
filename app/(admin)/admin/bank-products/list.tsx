@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-table";
 import {
   ArrowUpDown,
+  DownloadIcon,
   Loader2Icon,
   MoreHorizontal,
   PencilIcon,
@@ -147,6 +148,137 @@ const BankProductsList = () => {
     },
   });
 
+  const handleExportCSV = () => {
+    if (!products) return;
+
+    const headers = [
+      "ID",
+      "Is Approved",
+      "Bank Name",
+      "Product Name",
+      "Product Type",
+      "Priority Level",
+      "Underwriting Notes",
+      "Maximum Funding Amount",
+      "Average Approval Amount",
+      "Gross Funding Percentage",
+      "Double Dip Allowed",
+      "Minimum FICO Score",
+      "Credit Bureau Pulled",
+      "Maximum Inquiries Allowed",
+      "Minimum Number Of Accounts On Credit",
+      "Minimum Credit Age Required",
+      "Minimum Income Required",
+      "Maximum Debt To Income Ratio",
+      "Maximum Debt Service Ratio",
+      "Personal Verifiable Income Required",
+      "No Documentation Required",
+      "Business Bank Statements Required",
+      "Profit And Loss Statement Required",
+      "Balance Sheet Required",
+      "Business Plan Required",
+      "Membership Required Before Application Required",
+      "Membership Required Upon Approval Required",
+      "Account Opening Before Application Required",
+      "Account Opening After Approval Required",
+      "One Year Business Taxes",
+      "Two Year Business Taxes",
+      "Three Year Business Taxes",
+      "One Year Personal Taxes",
+      "Two Year Personal Taxes",
+      "Three Year Personal Taxes",
+      "Immigration Status Requirement",
+      "State Availability",
+      "Application Method",
+      "Allows Forwarding Via Email",
+      "Can Be Finalized Online",
+      "Client Needs To Go To Branch",
+      "Contact Name",
+      "Contact Phone Number",
+      "Contact Email",
+      "Web Url",
+    ];
+
+    const csvRows = [headers.join(",")];
+
+    for (const row of products) {
+      const productNames = Array.isArray(row.productName)
+        ? row.productName.join("; ")
+        : row.productName;
+
+      const creditBureauPulled = Array.isArray(row.creditBureauPulled)
+        ? row.creditBureauPulled.join("; ")
+        : row.creditBureauPulled;
+
+      const stateAvailability = Array.isArray(row.stateAvailability)
+        ? row.stateAvailability.join("; ")
+        : row.stateAvailability;
+
+      const applicationMethod = Array.isArray(row.applicationMethod)
+        ? row.applicationMethod.join("; ")
+        : row.applicationMethod;
+
+      const values = [
+        `"${row.id || ""}"`,
+        `"${row.isApproved ? "Yes" : "No"}"`,
+        `"${row.bankName || ""}"`,
+        `"${productNames || ""}"`,
+        `"${row.financingTerm || ""}"`,
+        `"${row.priorityLevel || ""}"`,
+        `"${row.underwritingNotes || ""}"`,
+        `"${row.maximumFundingAmount || ""}"`,
+        `"${row.averageApprovalAmount || ""}"`,
+        `"${row.grossFundingPercentage || ""}"`,
+        `"${row.doubleDipAllowed || ""}"`,
+        `"${row.minimumFicoScore || ""}"`,
+        `"${creditBureauPulled || ""}"`,
+        `"${row.maximumInquiriesAllowed || ""}"`,
+        `"${row.minimumNumberOfAccountsOnCredit || ""}"`,
+        `"${row.minimumCreditAgeRequired || ""}"`,
+        `"${row.minimumIncomeRequired || ""}"`,
+        `"${row.maximumDebtToIncomeRatio || ""}"`,
+        `"${row.maximumDebtServiceRatio || ""}"`,
+        `"${row.personalVerifiableIncomeRequired || ""}"`,
+        `"${row.noDocumentationRequired || ""}"`,
+        `"${row.businessBankStatementsRequired || ""}"`,
+        `"${row.profitAndLossStatementRequired || ""}"`,
+        `"${row.balanceSheetRequired || ""}"`,
+        `"${row.businessPlanRequired || ""}"`,
+        `"${row.membershipRequiredBeforeApplicationRequired || ""}"`,
+        `"${row.membershipRequiredUponApprovalRequired || ""}"`,
+        `"${row.accountOpeningBeforeApplicationRequired || ""}"`,
+        `"${row.accountOpeningAfterApprovalRequired || ""}"`,
+        `"${row.oneYearBusinessTaxes || ""}"`,
+        `"${row.twoYearBusinessTaxes || ""}"`,
+        `"${row.threeYearBusinessTaxes || ""}"`,
+        `"${row.oneYearPersonalTaxes || ""}"`,
+        `"${row.twoYearPersonalTaxes || ""}"`,
+        `"${row.threeYearPersonalTaxes || ""}"`,
+        `"${row.immigrationStatusRequirement || ""}"`,
+        `"${stateAvailability || ""}"`,
+        `"${applicationMethod || ""}"`,
+        `"${row.allowsForwardingViaEmail || ""}"`,
+        `"${row.canBeFinalizedOnline || ""}"`,
+        `"${row.clientNeedsToGoToBranch || ""}"`,
+        `"${row.contactName || ""}"`,
+        `"${row.contactPhoneNumber || ""}"`,
+        `"${row.contactEmail || ""}"`,
+        `"${row.webUrl || ""}"`,
+      ];
+      csvRows.push(values.join(","));
+    }
+
+    const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.setAttribute("hidden", "");
+    a.setAttribute("href", url);
+    a.setAttribute("download", "bank-products.csv");
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   if (isLoading) return <Spinner displayText="Loading bank products…" />;
 
   if (!products || products.length === 0)
@@ -154,7 +286,7 @@ const BankProductsList = () => {
 
   return (
     <div className="mx-auto w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-4 gap-2">
         <Input
           placeholder="Filter"
           // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
@@ -163,6 +295,14 @@ const BankProductsList = () => {
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="max-w-sm"
         />
+        <Button
+          variant="outline"
+          className="ml-auto cursor-pointer"
+          onClick={handleExportCSV}
+        >
+          <DownloadIcon className="mr-2 h-4 w-4" />
+          Export CSV
+        </Button>
       </div>
       <div className="overflow-hidden rounded-md border">
         <Table>
