@@ -714,7 +714,9 @@ export const getUserDocuments = async ({
       })
   );
 
-  return docs;
+  return docs.sort(
+    (a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime()
+  );
 };
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
