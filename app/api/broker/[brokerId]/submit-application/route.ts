@@ -20,7 +20,7 @@ export const POST = withAuth(
       const body = await req.json();
       // Validate request body - exclude password since broker is creating client
       const validatedData = registrationSchema
-        .omit({ password: true, employmentPayPerMonth: true })
+        .omit({ password: true })
         .safeParse(body);
 
       if (!validatedData.success) {
@@ -54,7 +54,8 @@ export const POST = withAuth(
         addressState: data.addressState,
         addressPostal: data.addressPostal,
 
-        employmentPayPerMonth: 0,
+        employmentPayPerMonth: data.employmentPayPerMonth,
+        payPerMonth: data.payPerMonth,
       };
 
       const clientData = await registerUser({
