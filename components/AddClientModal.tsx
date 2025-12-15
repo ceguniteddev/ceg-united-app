@@ -6,13 +6,7 @@ import { Form } from "@/components/ui/form";
 import { CustomFormField } from "@/components/CustomFormField";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { US_STATES } from "@/constant/common";
-import {
-  dateOfBirthSchema,
-  GenderEnum,
-  genderTypes,
-  ROLESEnum,
-} from "@/schema";
-import { ssnSchema } from "@/schema/registration";
+import { genderTypes } from "@/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon, SaveIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -29,7 +23,6 @@ import {
 } from "@/store/client-application";
 import { useDebounce } from "use-debounce";
 import { useEffect, useMemo } from "react";
-import { toast } from "sonner";
 
 interface AddClientModalProps {
   isOpen: boolean;
