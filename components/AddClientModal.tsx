@@ -15,39 +15,21 @@ import {
 import { ssnSchema } from "@/schema/registration";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon, SaveIcon } from "lucide-react";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
-
-// Client application schema
-const clientApplicationSchema = z.object({
-  // Client Information
-  firstName: z.string().min(1, { message: "Required" }),
-  middleName: z.string().optional(),
-  lastName: z.string().min(1, { message: "Required" }),
-  email: z.string().min(1, { message: "Required" }),
-  birthdate: dateOfBirthSchema,
-  gender: GenderEnum,
-  phoneNumber: z.string().min(1, { message: "Required" }),
-  role: ROLESEnum.optional(),
-  isOnboarded: z.boolean().optional(),
-  registrationDate: z.date().optional(),
-  ssn: ssnSchema,
-
-  addressStreet: z.string().min(1, { error: "Required" }),
-  houseNumber: z.string().optional(),
-  addressCity: z.string().min(1, { error: "Required" }),
-  addressState: z.string().min(1, { error: "Required" }),
-  addressPostal: z.string().min(1, { error: "Required" }),
-
-  payPerMonth: z.coerce.number<number>().optional(),
-  employmentPayPerMonth: z.coerce
-    .number<number>({ error: "Required" })
-    .min(1, { message: "Required" }),
-});
-
-export type ClientApplicationForm = z.infer<typeof clientApplicationSchema>;
+import {
+  ClientApplicationForm,
+  clientApplicationSchema,
+} from "@/schema/client-application";
+import { useAuth } from "@/provider/AuthContext";
+import { useStateMachine } from "little-state-machine";
+import {
+  updateClientApplicationAction,
+  clearClientApplicationAction,
+} from "@/store/client-application";
+import { useDebounce } from "use-debounce";
+import { useEffect, useMemo } from "react";
+import { toast } from "sonner";
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -62,15 +44,84 @@ export function AddClientModal({
   onSubmit,
   isSubmitting = false,
 }: AddClientModalProps) {
-  const form = useForm<ClientApplicationForm>({
-    resolver: zodResolver(clientApplicationSchema),
-    defaultValues: {
-      middleName: "",
+  const { user } = useAuth();
+  const { state, actions } = useStateMachine({
+    actions: {
+      updateClientApplicationAction,
+      clearClientApplicationAction,
     },
   });
 
+  const savedDraft = user ? state.clientApplication?.[user.uid] : undefined;
+
+  const defaultValues = useMemo(() => {
+    if (savedDraft && Object.keys(savedDraft).length > 0) {
+      // Ensure dates are converted back to Date objects if they were serialized as strings
+      const restored = { ...savedDraft };
+      if (typeof restored.birthdate === "string") {
+        restored.birthdate = new Date(restored.birthdate);
+      }
+      if (typeof restored.registrationDate === "string") {
+        restored.registrationDate = new Date(restored.registrationDate);
+      }
+      return restored;
+    }
+    return {
+      middleName: "",
+    };
+  }, [savedDraft]);
+
+  const form = useForm<ClientApplicationForm>({
+    resolver: zodResolver(clientApplicationSchema),
+    defaultValues,
+  });
+
+  const { isDirty, dirtyFields } = form.formState;
+
+  // Reset form when defaultValues change (e.g. when draft is loaded)
+  useEffect(() => {
+    if (savedDraft && Object.keys(savedDraft).length > 0 && !isDirty) {
+      const restored = { ...savedDraft };
+      // Handle date restoration
+      if (restored.birthdate && typeof restored.birthdate === "string") {
+        restored.birthdate = new Date(restored.birthdate);
+      }
+      if (
+        restored.registrationDate &&
+        typeof restored.registrationDate === "string"
+      ) {
+        restored.registrationDate = new Date(restored.registrationDate);
+      }
+      form.reset(restored);
+    }
+  }, [savedDraft, form, isDirty]);
+
+  const [debouncedFormValues] = useDebounce(form.watch(), 1000);
+
+  useEffect(() => {
+    if (
+      user &&
+      isDirty &&
+      Object.keys(dirtyFields).length > 0 &&
+      !isSubmitting
+    ) {
+      const hasValues = Object.values(debouncedFormValues).some(
+        (val) => val !== "" && val !== undefined && val !== null
+      );
+      if (hasValues) {
+        actions.updateClientApplicationAction({
+          userId: user.uid,
+          data: debouncedFormValues,
+        });
+      }
+    }
+  }, [debouncedFormValues, isDirty, dirtyFields, isSubmitting, user, actions]);
+
   const handleSubmit = async (data: ClientApplicationForm) => {
     await onSubmit(data);
+    if (user) {
+      actions.clearClientApplicationAction({ userId: user.uid });
+    }
     form.reset();
   };
 
