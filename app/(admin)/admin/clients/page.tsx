@@ -7,10 +7,8 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useAdminAddClientMutation } from "@/hooks/user";
 import { toast } from "sonner";
-import {
-  AddClientModal,
-  ClientApplicationForm,
-} from "@/components/AddClientModal";
+import { AddClientModal } from "@/components/AddClientModal";
+import { ClientApplicationForm } from "@/schema/client-application";
 
 const ClientsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

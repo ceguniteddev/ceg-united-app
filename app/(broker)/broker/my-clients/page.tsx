@@ -28,10 +28,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import {
-  AddClientModal,
-  ClientApplicationForm,
-} from "@/components/AddClientModal";
+import { AddClientModal } from "@/components/AddClientModal";
+import { ClientApplicationForm } from "@/schema/client-application";
 
 export default function MyClientsPage() {
   const { clients, isLoading } = useGetBrokerClients();
