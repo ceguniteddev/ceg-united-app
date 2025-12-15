@@ -43,7 +43,6 @@ import { ResponsiveDialog } from "../responsive-dialog";
 import { Business } from "@/schema";
 import PlaidLink from "../PlaidLink";
 import { UserWithId } from "@/schema/registration";
-import { da } from "date-fns/locale";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import { useStateMachine } from "little-state-machine";

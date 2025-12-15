@@ -17,6 +17,7 @@ declare module "little-state-machine" {
 createStore(
   {
     applyFunding: {},
+    clientApplication: {},
   },
   {
     name: "apply-funding-store", // This key is used for localStorage persistence
