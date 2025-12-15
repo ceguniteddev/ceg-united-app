@@ -46,6 +46,11 @@ import { UserWithId } from "@/schema/registration";
 import { da } from "date-fns/locale";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
+import { useStateMachine } from "little-state-machine";
+import {
+  updateApplyFundingAction,
+  clearApplyFundingAction,
+} from "@/store/apply-funding";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
@@ -81,7 +86,15 @@ const ApplyFundingForm = ({
 }: Props) => {
   const { applyFunding, updateApplyFunding, isRecording, isUpdating } =
     useApplyFunding();
+  const { state, actions } = useStateMachine({
+    actions: {
+      updateApplyFundingAction,
+      clearApplyFundingAction,
+    },
+  });
+
   const [showLegalResidentOther, setShowLegalResidentOther] = useState(false);
+  // ...
   const [openBusinessModal, setOpenBusinessModal] = useState(false);
   const [interestedProductSelected, setInterestedProductSelected] = useState<
     FundingProductEnumType | undefined
@@ -172,24 +185,34 @@ const ApplyFundingForm = ({
     [businessData]
   );
 
+  const savedDraft = state.applyFunding?.[userData.id];
+  const defaultValues = useMemo(() => {
+    if (data) return data;
+    if (isViewing || isEditing) return data;
+    if (savedDraft && Object.keys(savedDraft).length > 0) return savedDraft;
+    return undefined;
+  }, [data, isViewing, isEditing, savedDraft]);
+
   const form = useForm<ApplyFunding>({
     resolver: zodResolver(applyFundingSchema),
     mode: "onChange",
     defaultValues: {
-      ...data,
-      appliedDate: data?.appliedDate ?? new Date(),
+      ...defaultValues,
+      appliedDate: defaultValues?.appliedDate ?? new Date(),
       userId: userData.id,
-      status: data?.status || "New",
-      fundingType: data?.fundingType || "Personal",
-      employmentStatus: data?.employmentStatus || "",
-      personalTaxesStatus: data?.personalTaxesStatus || "",
-      businessTaxesStatus: data?.businessTaxesStatus || "",
+      status: defaultValues?.status || "New",
+      fundingType: defaultValues?.fundingType || "Personal",
+      employmentStatus: defaultValues?.employmentStatus || "",
+      personalTaxesStatus: defaultValues?.personalTaxesStatus || "",
+      businessTaxesStatus: defaultValues?.businessTaxesStatus || "",
 
-      addressStreet: data?.addressStreet || userData.addressStreet || "",
-      houseNumber: data?.houseNumber || userData.houseNumber || "",
-      addressCity: data?.addressCity || userData.addressCity || "",
-      addressState: data?.addressState || userData.addressState || "",
-      addressPostal: data?.addressPostal || userData.addressPostal || "",
+      addressStreet:
+        defaultValues?.addressStreet || userData.addressStreet || "",
+      houseNumber: defaultValues?.houseNumber || userData.houseNumber || "",
+      addressCity: defaultValues?.addressCity || userData.addressCity || "",
+      addressState: defaultValues?.addressState || userData.addressState || "",
+      addressPostal:
+        defaultValues?.addressPostal || userData.addressPostal || "",
     },
   });
 
@@ -198,136 +221,130 @@ const ApplyFundingForm = ({
     name: "employments",
   });
 
-  if (Object.keys(form.formState.errors).length > 0) {
-    console.log("There are validation errors:", form.formState.errors);
-  }
+  // if (Object.keys(form.formState.errors).length > 0) {
+  //   console.log("There are validation errors:", form.formState.errors);
+  // }
 
   const { isDirty, dirtyFields } = form.formState;
-  const STORAGE_KEY = `apply_funding_snapshot_${userData.id}`;
   const [debouncedFormValues] = useDebounce(form.watch(), 1000);
 
   useEffect(() => {
-    console.log("debouncedFormValues", debouncedFormValues);
-    console.log("isDirty", isDirty);
-    console.log("dirtyFields", dirtyFields);
-    console.log("isViewing", isViewing);
-    console.log("data", data);
-    console.log("isEditing", isEditing);
     if (
       !isViewing &&
       !data &&
       !isEditing &&
       isDirty &&
-      Object.keys(dirtyFields).length > 0
+      Object.keys(dirtyFields).length > 0 &&
+      !isRecording &&
+      !isUpdating &&
+      !form.formState.isSubmitting
     ) {
-      console.log("Saving draft to localStorage:", debouncedFormValues);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(debouncedFormValues));
+      const hasValues = Object.values(debouncedFormValues).some(
+        (val) => val !== "" && val !== undefined && val !== null
+      );
+      if (hasValues) {
+        actions.updateApplyFundingAction({
+          userId: userData.id,
+          data: debouncedFormValues,
+        });
+      }
     }
   }, [
     debouncedFormValues,
     isViewing,
     data,
     isEditing,
-    STORAGE_KEY,
     isDirty,
     dirtyFields,
+    actions,
+    userData.id,
+    isRecording,
+    isUpdating,
+    form.formState.isSubmitting,
   ]);
 
   useEffect(() => {
-    if (!isViewing && !data && !isEditing) {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      console.log("Checking for saved draft...", STORAGE_KEY, saved);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          console.log("Parsed draft:", parsed);
-          // Check if parsed has meaningful data
-          if (
-            parsed.interestedProduct ||
-            parsed.personalAmountFunding ||
-            parsed.businessAmountFunding
-          ) {
-            console.log("Restoring draft...");
-            form.reset(parsed);
-
-            if (parsed.interestedProduct) {
-              const product = FundingProductTypeEnum.find(
-                (p) => p.value === parsed.interestedProduct
-              );
-              if (product) {
-                setInterestedProductSelected(product);
-              }
-            }
-
-            if (parsed.howDoYouGetPaid) {
-              const option = howDoYouGetPaid.find(
-                (x) => x.value === parsed.howDoYouGetPaid
-              );
-              if (option) {
-                setHowDoYouGetPaidSelected(option);
-                if (
-                  option.value === "yes_direct_deposit" ||
-                  option.value === "yes_checks"
-                ) {
-                  setHowDoYouGetPaidSelectedBank(true);
-                }
-              }
-            }
-
-            if (parsed.personalTaxes) {
-              const option = personalTaxes.find(
-                (x) => x.value === parsed.personalTaxes
-              );
-              if (option) setPersonalTaxesSelected(option);
-            }
-
-            if (parsed.businessTaxes) {
-              const option = businessTaxes.find(
-                (x) => x.value === parsed.businessTaxes
-              );
-              if (option) setBusinessTaxesSelected(option);
-            }
-
-            if (parsed.businessId) {
-              setBusinessIdSelected(parsed.businessId);
-            }
-
-            toast("We restored your previous application draft.", {
-              action: {
-                label: "Start Over",
-                onClick: () => {
-                  form.reset({
-                    appliedDate: new Date(),
-                    userId: userData.id,
-                    status: "New",
-                    fundingType: "Personal",
-                    employmentStatus: "",
-                    personalTaxesStatus: "",
-                    businessTaxesStatus: "",
-                    addressStreet: userData.addressStreet || "",
-                    houseNumber: userData.houseNumber || "",
-                    addressCity: userData.addressCity || "",
-                    addressState: userData.addressState || "",
-                    addressPostal: userData.addressPostal || "",
-                  });
-                  setInterestedProductSelected(undefined);
-                  setHowDoYouGetPaidSelected(undefined);
-                  setHowDoYouGetPaidSelectedBank(false);
-                  setPersonalTaxesSelected(undefined);
-                  setBusinessTaxesSelected(undefined);
-                  setBusinessIdSelected(undefined);
-                  localStorage.removeItem(STORAGE_KEY);
-                },
-              },
-            });
+    if (!isViewing && !data && !isEditing && savedDraft) {
+      // Check if savedDraft has meaningful data
+      if (
+        savedDraft.interestedProduct ||
+        savedDraft.personalAmountFunding ||
+        savedDraft.businessAmountFunding
+      ) {
+        if (savedDraft.interestedProduct) {
+          const product = FundingProductTypeEnum.find(
+            (p) => p.value === savedDraft.interestedProduct
+          );
+          if (product) {
+            setInterestedProductSelected(product);
           }
-        } catch (e) {
-          console.error("Failed to parse saved draft", e);
         }
+
+        if (savedDraft.howDoYouGetPaid) {
+          const option = howDoYouGetPaid.find(
+            (x) => x.value === savedDraft.howDoYouGetPaid
+          );
+          if (option) {
+            setHowDoYouGetPaidSelected(option);
+            if (
+              option.value === "yes_direct_deposit" ||
+              option.value === "yes_checks"
+            ) {
+              setHowDoYouGetPaidSelectedBank(true);
+            }
+          }
+        }
+
+        if (savedDraft.personalTaxes) {
+          const option = personalTaxes.find(
+            (x) => x.value === savedDraft.personalTaxes
+          );
+          if (option) setPersonalTaxesSelected(option);
+        }
+
+        if (savedDraft.businessTaxes) {
+          const option = businessTaxes.find(
+            (x) => x.value === savedDraft.businessTaxes
+          );
+          if (option) setBusinessTaxesSelected(option);
+        }
+
+        if (savedDraft.businessId) {
+          setBusinessIdSelected(savedDraft.businessId);
+        }
+
+        toast("We restored your previous application draft.", {
+          action: {
+            label: "Start Over",
+            onClick: () => {
+              form.reset({
+                appliedDate: new Date(),
+                userId: userData.id,
+                status: "New",
+                fundingType: "Personal",
+                employmentStatus: "",
+                personalTaxesStatus: "",
+                businessTaxesStatus: "",
+                addressStreet: userData.addressStreet || "",
+                houseNumber: userData.houseNumber || "",
+                addressCity: userData.addressCity || "",
+                addressState: userData.addressState || "",
+                addressPostal: userData.addressPostal || "",
+              });
+              setInterestedProductSelected(undefined);
+              setHowDoYouGetPaidSelected(undefined);
+              setHowDoYouGetPaidSelectedBank(false);
+              setPersonalTaxesSelected(undefined);
+              setBusinessTaxesSelected(undefined);
+              setBusinessIdSelected(undefined);
+              actions.clearApplyFundingAction({ userId: userData.id });
+            },
+          },
+        });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [STORAGE_KEY, isViewing, data, isEditing]);
+  }, []);
 
   const handleNewBusinessSaved = async (businessName: string) => {
     // const { data: refreshedBusinessData } = await refetchBusinesses();
@@ -437,7 +454,8 @@ const ApplyFundingForm = ({
     } else {
       await applyFunding({ values });
     }
-    localStorage.removeItem(`apply_funding_snapshot_${userData.id}`);
+    console.log("Clearing saved draft for user:", userData.id);
+    actions.clearApplyFundingAction({ userId: userData.id });
     setOpen(false);
     if (setCongratsOpen) setCongratsOpen(true);
   }, [
@@ -449,6 +467,7 @@ const ApplyFundingForm = ({
     isEditing,
     data,
     userData.id,
+    actions,
   ]);
 
   const handleApproveClickCapture: React.MouseEventHandler<
