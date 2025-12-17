@@ -21,8 +21,7 @@ import {
   updateClientApplicationAction,
   clearClientApplicationAction,
 } from "@/store/client-application";
-import { useDebounce } from "use-debounce";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -89,7 +88,8 @@ export function AddClientModal({
     }
   }, [savedDraft, form, isDirty]);
 
-  const [debouncedFormValues] = useDebounce(form.watch(), 1000);
+  // Auto-save form with debounce - uses getValues() to avoid re-render issues
+  const lastSavedRef = useRef<string>("");
 
   useEffect(() => {
     if (
@@ -98,17 +98,28 @@ export function AddClientModal({
       Object.keys(dirtyFields).length > 0 &&
       !isSubmitting
     ) {
-      const hasValues = Object.values(debouncedFormValues).some(
-        (val) => val !== "" && val !== undefined && val !== null
-      );
-      if (hasValues) {
-        actions.updateClientApplicationAction({
-          userId: user.uid,
-          data: debouncedFormValues,
-        });
-      }
+      const timeoutId = setTimeout(() => {
+        const formValues = form.getValues();
+        const formValuesStr = JSON.stringify(formValues);
+
+        // Only save if values have changed since last save
+        if (formValuesStr !== lastSavedRef.current) {
+          const hasValues = Object.values(formValues).some(
+            (val) => val !== "" && val !== undefined && val !== null
+          );
+          if (hasValues) {
+            actions.updateClientApplicationAction({
+              userId: user.uid,
+              data: formValues,
+            });
+            lastSavedRef.current = formValuesStr;
+          }
+        }
+      }, 1000);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [debouncedFormValues, isDirty, dirtyFields, isSubmitting, user, actions]);
+  }, [form.formState, user, isDirty, dirtyFields, isSubmitting, actions, form]);
 
   const handleSubmit = async (data: ClientApplicationForm) => {
     await onSubmit(data);
