@@ -26,7 +26,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApplyFunding } from "@/hooks/apply-funding";
 import {
   businessTaxes,
@@ -44,7 +44,6 @@ import { Business } from "@/schema";
 import PlaidLink from "../PlaidLink";
 import { UserWithId } from "@/schema/registration";
 import { toast } from "sonner";
-import { useDebounce } from "use-debounce";
 import { useStateMachine } from "little-state-machine";
 import {
   updateApplyFundingAction,
@@ -225,7 +224,9 @@ const ApplyFundingForm = ({
   // }
 
   const { isDirty, dirtyFields } = form.formState;
-  const [debouncedFormValues] = useDebounce(form.watch(), 1000);
+
+  // Auto-save form with debounce - uses getValues() to avoid re-render issues
+  const lastSavedRef = useRef<string>("");
 
   useEffect(() => {
     if (
@@ -238,18 +239,29 @@ const ApplyFundingForm = ({
       !isUpdating &&
       !form.formState.isSubmitting
     ) {
-      const hasValues = Object.values(debouncedFormValues).some(
-        (val) => val !== "" && val !== undefined && val !== null
-      );
-      if (hasValues) {
-        actions.updateApplyFundingAction({
-          userId: userData.id,
-          data: debouncedFormValues,
-        });
-      }
+      const timeoutId = setTimeout(() => {
+        const formValues = form.getValues();
+        const formValuesStr = JSON.stringify(formValues);
+
+        // Only save if values have changed since last save
+        if (formValuesStr !== lastSavedRef.current) {
+          const hasValues = Object.values(formValues).some(
+            (val) => val !== "" && val !== undefined && val !== null
+          );
+          if (hasValues) {
+            actions.updateApplyFundingAction({
+              userId: userData.id,
+              data: formValues,
+            });
+            lastSavedRef.current = formValuesStr;
+          }
+        }
+      }, 1000);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [
-    debouncedFormValues,
+    form.formState,
     isViewing,
     data,
     isEditing,
@@ -259,7 +271,7 @@ const ApplyFundingForm = ({
     userData.id,
     isRecording,
     isUpdating,
-    form.formState.isSubmitting,
+    form,
   ]);
 
   useEffect(() => {

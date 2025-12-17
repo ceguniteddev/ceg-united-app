@@ -7,9 +7,9 @@ import {
   UserWithId,
 } from "@/schema/registration";
 import { format } from "date-fns";
-import { Loader2Icon, RefreshCcw, XIcon } from "lucide-react";
+import { Loader2Icon, RefreshCcw, XIcon, Edit2Icon } from "lucide-react";
 import type { Metadata } from "next";
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -31,6 +31,7 @@ import {
 import {
   useUpdateUserStatusMutation,
   useUpdateUserPremiumStatusMutation,
+  useUpdateUserProfileMutation,
 } from "@/hooks/user";
 import { useRefreshCRSData } from "@/hooks/crs";
 import { toast } from "sonner";
@@ -46,6 +47,13 @@ import { Separator } from "@/components/ui/separator";
 import { useBusinessQuery } from "@/hooks/business";
 import { Business } from "@/schema";
 import { Switch } from "@/components/ui/switch";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { CustomFormField } from "@/components/CustomFormField";
+import { Form } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { genderTypes } from "@/schema";
+import { registrationSchema } from "@/schema/registration";
 
 function toDate(d?: string | Date) {
   if (!d) return undefined;
@@ -72,6 +80,8 @@ const ClientData = ({
   user: UserWithId;
   isBrokerView?: boolean;
 }) => {
+  const [editModalOpen, setEditModalOpen] = useState(false);
+
   if (!user) {
     return <EmptyState title="User not found" description="" />;
   }
@@ -86,10 +96,23 @@ const ClientData = ({
       <Card className="max-w-full overflow-hidden">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <CardTitle className="text-xl sm:text-2xl">
-              Personal Information
+            <CardTitle className="text-xl sm:text-2xl gap-2 flex items-center">
+              <span>Personal Information</span>
+              {!isBrokerView && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditModalOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <Edit2Icon className="h-4 w-4" />
+                  Edit
+                </Button>
+              )}
             </CardTitle>
-            {!isBrokerView && <DenefitsContract user={user} />}
+            <div className="flex flex-col sm:flex-row gap-2">
+              {!isBrokerView && <DenefitsContract user={user} />}
+            </div>
           </div>
           {!isBrokerView && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
@@ -127,6 +150,12 @@ const ClientData = ({
           </div>
         </CardContent>
       </Card>
+
+      <EditClientModal
+        isOpen={editModalOpen}
+        setIsOpen={setEditModalOpen}
+        user={user}
+      />
     </main>
   );
 };
@@ -794,5 +823,172 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
         </AlertDialog>
       )}
     </>
+  );
+};
+
+const EditClientModal = ({
+  isOpen,
+  setIsOpen,
+  user,
+}: {
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  user: UserWithId;
+}) => {
+  const { updateUserProfile, isUpdating } = useUpdateUserProfileMutation({
+    userId: user.id,
+  });
+
+  const updateSchema = registrationSchema.partial().omit({
+    password: true,
+    email: true,
+    role: true,
+    ssn: true,
+  });
+
+  const form = useForm({
+    resolver: zodResolver(updateSchema),
+    defaultValues: {
+      firstName: user.firstName || "",
+      middleName: user.middleName || "",
+      lastName: user.lastName || "",
+      phoneNumber: user.phoneNumber || "",
+      birthdate: user.birthdate ? new Date(user.birthdate) : undefined,
+      gender: user.gender || "",
+      addressStreet: user.addressStreet || "",
+      houseNumber: user.houseNumber || "",
+      addressCity: user.addressCity || "",
+      addressState: user.addressState || "",
+      addressPostal: user.addressPostal || "",
+      employmentPayPerMonth: user.employmentPayPerMonth || 0,
+      payPerMonth: user.payPerMonth || 0,
+    },
+  });
+
+  const handleSubmit = async (data: any) => {
+    try {
+      await updateUserProfile(data);
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Error updating user:", error);
+    }
+  };
+
+  return (
+    <ResponsiveDialog
+      isOpen={isOpen}
+      setIsOpen={setIsOpen}
+      title="Edit Client Information"
+      description="Update client personal information"
+      className="max-w-4xl"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto px-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <CustomFormField
+                name="firstName"
+                label="* First Name"
+                placeholder=""
+              />
+              <CustomFormField
+                name="middleName"
+                label="Middle Name"
+                placeholder=""
+              />
+              <CustomFormField
+                name="lastName"
+                label="* Last Name"
+                placeholder=""
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <CustomFormField
+                name="phoneNumber"
+                label="* Phone Number"
+                placeholder=""
+              />
+              <CustomFormField
+                name="birthdate"
+                type="date-picker"
+                label="* Birthdate"
+                placeholder=""
+                dateAfterHidden={new Date()}
+              />
+              <CustomFormField
+                name="gender"
+                type="select"
+                label="* Gender"
+                placeholder=" "
+                options={genderTypes()}
+              />
+            </div>
+
+            <Separator className="my-4" />
+
+            <div className="grid grid-cols-2 gap-4">
+              <CustomFormField
+                name="addressStreet"
+                label="Street Address"
+                className="col-span-2 sm:col-span-1"
+              />
+              <CustomFormField
+                name="houseNumber"
+                label="Apartment/Suite/Unit/House Number"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <CustomFormField name="addressCity" label="City" />
+              <CustomFormField
+                name="addressState"
+                label="State"
+                type="select"
+                placeholder="Select a state"
+                options={US_STATES}
+              />
+              <CustomFormField name="addressPostal" label="Zip Code" />
+            </div>
+
+            <Separator className="my-4" />
+
+            <div className="grid grid-cols-2 gap-4">
+              <CustomFormField
+                name="employmentPayPerMonth"
+                type="number"
+                label="Monthly Income"
+              />
+              <CustomFormField
+                name="payPerMonth"
+                type="number"
+                label="Rent/Mortgage Payment"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              disabled={isUpdating}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isUpdating}>
+              {isUpdating ? (
+                <>
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </ResponsiveDialog>
   );
 };
