@@ -195,6 +195,51 @@ export const useUpdateUserPremiumStatusMutation = ({
   };
 };
 
+export const useUpdateUserProfileMutation = ({
+  userId,
+}: {
+  userId: string;
+}) => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: Partial<any>) => {
+      if (!user) {
+        throw new AppError("User not authenticated");
+      }
+
+      const response = await fetch(`/api/user/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error updating user profile:", errorData);
+        throw new AppError("Failed to update user profile.");
+      }
+    },
+    onSuccess: () => {
+      toast.success("User profile updated successfully");
+      queryClient.invalidateQueries({ queryKey: [GET_USER, userId] });
+      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
+    },
+    onError: (error: any) => {
+      console.log("Error updating user profile:", error);
+      toast.error("Failed to update user profile. Please try again.");
+    },
+  });
+
+  return {
+    updateUserProfile: updateMutation.mutateAsync,
+    isUpdating: updateMutation.isPending,
+  };
+};
+
 export const useToggleLetterFeatureMutation = ({
   userId,
 }: {

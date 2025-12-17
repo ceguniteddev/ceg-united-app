@@ -602,6 +602,28 @@ export const updateUserPremiumStatus = async ({
   await docRef.update({ isPremiumClient: isPremium });
 };
 
+export const updateUserProfile = async ({
+  userId,
+  data,
+}: {
+  userId: string;
+  data: Partial<User>;
+}) => {
+  logInfo("Updating user profile", { userId });
+  if (!userId) throw new AppError("User ID is required.");
+
+  const userData = await getUserById(userId);
+  if (!userData) throw new AppError("User not found.");
+
+  // Remove fields that shouldn't be updated via this endpoint
+  const { password, email, role, ...updateData } = data;
+
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(USER_COLLECTION);
+  const docRef = collectionRef.doc(userId);
+  await docRef.update(updateData);
+};
+
 export const toggleLetterFeature = async (
   userId: string,
   enabled: boolean,
