@@ -299,6 +299,52 @@ export const useFundingApplicationsMappedFundsMutation = () => {
     },
   });
 
+  const refreshBankProductsMutation = useMutation({
+    mutationFn: async ({
+      referenceNumber,
+      userId,
+    }: {
+      referenceNumber: string;
+      userId: string;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      const response = await fetch("/api/bank-products/mapping/refresh", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          referenceNumber,
+          userId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.errors || "Failed to refresh bank products");
+      }
+
+      return await response.json();
+    },
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "GET_FUNDING_APPLICATION_MAPPED_FUNDS",
+          variable.referenceNumber,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.referenceNumber],
+      });
+      toast.success("Bank products successfully refreshed.");
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+      console.error(error);
+    },
+  });
+
   return {
     addManualMappedFund: addManualMappedFundMutation.mutateAsync,
     isAddingManual: addManualMappedFundMutation.isPending,
@@ -311,6 +357,9 @@ export const useFundingApplicationsMappedFundsMutation = () => {
 
     removeMappedBankProduct: removeMappedBankProductMutation.mutateAsync,
     isRemoving: removeMappedBankProductMutation.isPending,
+
+    refreshBankProducts: refreshBankProductsMutation.mutateAsync,
+    isRefreshing: refreshBankProductsMutation.isPending,
   };
 };
 

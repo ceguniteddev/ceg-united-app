@@ -36,6 +36,9 @@ import {
   ViewIcon,
   PlusCircleIcon,
   Trash2Icon,
+  RefreshCwIcon,
+  XIcon,
+  Loader2Icon,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import {
@@ -100,9 +103,14 @@ const BankProductsList = ({
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isRefreshAlertOpen, setIsRefreshAlertOpen] = useState(false);
 
-  const { addManualMappedFund, isAddingManual } =
-    useFundingApplicationsMappedFundsMutation();
+  const {
+    addManualMappedFund,
+    isAddingManual,
+    refreshBankProducts,
+    isRefreshing,
+  } = useFundingApplicationsMappedFundsMutation();
 
   // Get IDs of already mapped products to exclude from manual selection
   const mappedProductIds = useMemo(() => {
@@ -116,6 +124,19 @@ const BankProductsList = ({
       userId,
     });
     setIsAddDialogOpen(false);
+  };
+
+  const handleRefresh = async () => {
+    try {
+      await refreshBankProducts({
+        referenceNumber,
+        userId,
+      });
+      setIsRefreshAlertOpen(false);
+    } catch (error) {
+      // Error is handled by the mutation's onError
+      // Keep dialog open to show error state
+    }
   };
 
   const columns: ColumnDef<BankFormData>[] = useMemo(
@@ -290,11 +311,75 @@ const BankProductsList = ({
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
           <p>No mapped funds found.</p>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <PlusCircleIcon className="h-4 w-4 mr-2" />
-            Add Bank Product
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant={"outline"}
+              className="bg-green-200 hover:bg-green-300"
+              onClick={() => setIsRefreshAlertOpen(true)}
+              disabled={isRefreshing}
+            >
+              <RefreshCwIcon
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              {isRefreshing ? "Refreshing..." : "Refresh Bank Products"}
+            </Button>
+            <Button
+              variant={"outline"}
+              className="bg-blue-200 hover:bg-blue-300"
+              onClick={() => setIsAddDialogOpen(true)}
+            >
+              <PlusCircleIcon className="h-4 w-4" />
+              Add Bank Product
+            </Button>
+          </div>
         </div>
+
+        <AlertDialog
+          open={isRefreshAlertOpen}
+          onOpenChange={(open) => {
+            if (!isRefreshing) setIsRefreshAlertOpen(open);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Refresh Bank Products?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will re-analyze the funding application and update the
+                mapped bank products. Existing approved products will not be
+                affected.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                className="cursor-pointer"
+                disabled={isRefreshing}
+              >
+                <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async (e) => {
+                  e.preventDefault();
+                  await handleRefresh();
+                }}
+                disabled={isRefreshing}
+                className="bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+              >
+                {isRefreshing ? (
+                  <IconMenu
+                    text="Refreshing..."
+                    icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
+                  />
+                ) : (
+                  <IconMenu
+                    text="Yes, Refresh"
+                    icon={<RefreshCwIcon className="h-4 w-4 mr-2" />}
+                  />
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <ResponsiveDialog
           isOpen={isAddDialogOpen}
           setIsOpen={setIsAddDialogOpen}
@@ -317,11 +402,73 @@ const BankProductsList = ({
     <div className="mx-auto w-full">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Mapped Bank Products</h3>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <PlusCircleIcon className="h-4 w-4 mr-2" />
-          Add Bank Product
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={"outline"}
+            className="bg-green-200 hover:bg-green-300"
+            onClick={() => setIsRefreshAlertOpen(true)}
+            disabled={isRefreshing}
+          >
+            <RefreshCwIcon
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            {isRefreshing ? "Refreshing..." : "Refresh Bank Products"}
+          </Button>
+          <Button
+            variant={"outline"}
+            className="bg-blue-200 hover:bg-blue-300"
+            onClick={() => setIsAddDialogOpen(true)}
+          >
+            <PlusCircleIcon className="h-4 w-4" />
+            Add Bank Product
+          </Button>
+        </div>
       </div>
+
+      <AlertDialog
+        open={isRefreshAlertOpen}
+        onOpenChange={(open) => {
+          if (!isRefreshing) setIsRefreshAlertOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Refresh Bank Products?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will re-analyze the funding application and update the mapped
+              bank products. Existing approved products will not be affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="cursor-pointer"
+              disabled={isRefreshing}
+            >
+              <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                await handleRefresh();
+              }}
+              disabled={isRefreshing}
+              className="bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+            >
+              {isRefreshing ? (
+                <IconMenu
+                  text="Refreshing..."
+                  icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
+                />
+              ) : (
+                <IconMenu
+                  text="Yes, Refresh"
+                  icon={<RefreshCwIcon className="h-4 w-4 mr-2" />}
+                />
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ResponsiveDialog
         isOpen={isAddDialogOpen}
