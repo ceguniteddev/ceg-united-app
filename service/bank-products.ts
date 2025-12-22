@@ -117,6 +117,38 @@ export const recordFundMappingAnalysis = async (
   const userData = await getUserById(userId);
   if (!userData) throw new AppError("User not found.");
 
+  // Get all bank products to validate IDs
+  const bankProductsResponse = await getBankProducts();
+  if (!bankProductsResponse.success || !bankProductsResponse.data) {
+    throw new AppError("Failed to fetch bank products for validation.");
+  }
+
+  // Create a Set of valid bank product IDs
+  const validBankProductIds = new Set(
+    bankProductsResponse.data.map((product) => product.id)
+  );
+
+  // Filter ids to only include those that exist in BANK_PRODUCTS_COLLECTION
+  const validIds = ids.filter((id) => validBankProductIds.has(id.id));
+
+  // Log if some IDs were filtered out
+  if (validIds.length < ids.length) {
+    const invalidCount = ids.length - validIds.length;
+    logInfo("recordFundMappingAnalysis - removed invalid IDs", {
+      totalProvided: ids.length,
+      validCount: validIds.length,
+      invalidCount,
+    });
+  }
+
+  // If no valid IDs remain, still proceed but with empty array
+  if (validIds.length === 0) {
+    logInfo("recordFundMappingAnalysis - no valid IDs found", {
+      totalProvided: ids.length,
+    });
+    throw new AppError("No valid bank product IDs provided.");
+  }
+
   const db = firestoreAdmin();
   const collectionRef = db
     .collection(
@@ -137,8 +169,8 @@ export const recordFundMappingAnalysis = async (
     // Get existing IDs to avoid duplicates
     const existingIds = new Set(existingBankProducts.map((p) => p.id));
 
-    // Filter out duplicates from new IDs
-    const newIds = ids.filter((id) => !existingIds.has(id.id));
+    // Filter out duplicates from new valid IDs
+    const newIds = validIds.filter((id) => !existingIds.has(id.id));
 
     // Combine existing and new bank products
     const combinedBankProducts = [...existingBankProducts, ...newIds];
@@ -152,9 +184,9 @@ export const recordFundMappingAnalysis = async (
       updatedAt: Timestamp.now(),
     });
   } else {
-    // Replace mode (original behavior)
+    // Replace mode (original behavior) - use validIds instead of ids
     await collectionRef.set({
-      bank_products: ids,
+      bank_products: validIds,
       userId,
       createdAt: Timestamp.now(),
     });
