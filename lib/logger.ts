@@ -17,6 +17,10 @@ export const logInfo = async (message: string, data?: Record<string, any>) => {
     message,
     ...data,
   });
+
+  // Log to local console
+  console.log(`[INFO] ${message}`, data || "");
+
   await log.info(entry);
 };
 
@@ -30,6 +34,12 @@ export const logError = async (err: Error, data?: Record<string, any>) => {
       timestamp: new Date().toISOString(),
     }
   );
+
+  // Log to local console
+  console.error(`[ERROR] ${err.message}`, {
+    stack: err.stack,
+    ...data,
+  });
 
   await log.error(entry);
 };

@@ -28,6 +28,7 @@ import {
 } from "./apply-funding";
 import { createAsanaTaskForLender } from "@/lib/n8n";
 import { sendMail } from "@/lib/nodemailer";
+import { log } from "console";
 
 export const recordBankProduct = async (value: BankFormData) => {
   const db = firestoreAdmin();
@@ -130,6 +131,7 @@ export const recordFundMappingAnalysis = async (
 
   // Filter ids to only include those that exist in BANK_PRODUCTS_COLLECTION
   const validIds = ids.filter((id) => validBankProductIds.has(id.id));
+  // logInfo("recordFundMappingAnalysis - valid IDs", { validIds });
 
   // Log if some IDs were filtered out
   if (validIds.length < ids.length) {
@@ -157,6 +159,7 @@ export const recordFundMappingAnalysis = async (
     .doc(referenceNumber);
 
   if (append) {
+    logInfo("recordFundMappingAnalysis - append mode", { referenceNumber });
     // Get existing document
     const existingDoc = await collectionRef.get();
     let existingBankProducts: { id: string }[] = [];
@@ -175,6 +178,12 @@ export const recordFundMappingAnalysis = async (
     // Combine existing and new bank products
     const combinedBankProducts = [...existingBankProducts, ...newIds];
 
+    // logInfo("recordFundMappingAnalysis - saving to database (append)", {
+    //   totalProducts: combinedBankProducts.length,
+    //   newProducts: newIds.length,
+    //   existingProducts: existingBankProducts.length,
+    // });
+
     await collectionRef.set({
       bank_products: combinedBankProducts,
       userId,
@@ -183,13 +192,35 @@ export const recordFundMappingAnalysis = async (
         : Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
+
+    logInfo("recordFundMappingAnalysis - saved successfully (append)");
   } else {
     // Replace mode (original behavior) - use validIds instead of ids
-    await collectionRef.set({
+    logInfo("recordFundMappingAnalysis - replace mode", {
+      referenceNumber,
+      productsCount: validIds.length,
+    });
+
+    const dataToSave = {
       bank_products: validIds,
       userId,
       createdAt: Timestamp.now(),
-    });
+      updatedAt: Timestamp.now(),
+    };
+
+    // logInfo("recordFundMappingAnalysis - data to save", {
+    //   collectionPath: `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`,
+    //   docId: referenceNumber,
+    //   dataToSave,
+    // });
+
+    try {
+      await collectionRef.set(dataToSave);
+      logInfo("recordFundMappingAnalysis - saved successfully");
+    } catch (error) {
+      console.error("Error saving to Firestore:", error);
+      throw new AppError(`Failed to save fund mapping: ${error}`);
+    }
   }
 };
 
