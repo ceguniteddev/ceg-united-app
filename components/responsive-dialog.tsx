@@ -40,7 +40,7 @@ export function ResponsiveDialog({
       )}
       <DialogContent
         id={id}
-        className={cn("max-h-screen overflow-y-auto", className)}
+        className={cn("max-h-screen overflow-y-auto p-4 md:p-6", className)}
         onInteractOutside={(e) => {
           e.preventDefault();
         }}

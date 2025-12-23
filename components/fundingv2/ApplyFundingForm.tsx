@@ -582,7 +582,7 @@ const ApplyFundingForm = ({
         title="Manage Business Information"
         description={""}
         descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-3/6"
+        className="w-11/12 md:w-3/4 lg:w-3/6"
       >
         <ClientBusinessManagement
           userId={userData.id}
@@ -599,8 +599,8 @@ const ApplyFundingForm = ({
             <input type="hidden" {...form.register("fundingType")} />
             <div>
               <Card>
-                <CardContent className="space-y-4 pt-6">
-                  <div className="grid grid-cols-3 gap-4">
+                <CardContent className="space-y-4 pt-6 px-4 md:px-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <CustomFormField
                       name={"interestedProduct"}
                       label="The Product You're Most Interested In"
@@ -646,11 +646,13 @@ const ApplyFundingForm = ({
 
                   {!isCommunity && !isTradeLines && (
                     <Card className="bg-slate-100 border-slate-200">
-                      <CardHeader>
-                        <CardTitle>Personal Information</CardTitle>
+                      <CardHeader className="px-4 md:px-6">
+                        <CardTitle className="text-base md:text-lg">
+                          Personal Information
+                        </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-3 gap-4 items-start">
+                      <CardContent className="space-y-4 px-4 md:px-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                           {!isTradeLines && false && (
                             <CustomFormField
                               name={"isMarried"}
@@ -676,7 +678,7 @@ const ApplyFundingForm = ({
                           )}
                         </div>
                         {!isTradeLines && false && (
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <CustomFormField
                               name={"driverLicenseNumber"}
                               label={"Driver's License Number?"}
@@ -704,9 +706,9 @@ const ApplyFundingForm = ({
                           </div>
                         )}
 
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <CustomFormField
-                            className="col-span-2"
+                            className="md:col-span-2"
                             name={"addressStreet"}
                             label={"Street Address"}
                           />
@@ -716,7 +718,7 @@ const ApplyFundingForm = ({
                           />
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <CustomFormField
                             name={"addressCity"}
                             label={"City"}
@@ -733,7 +735,7 @@ const ApplyFundingForm = ({
                             label={"Zip Code"}
                           />
                         </div>
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <CustomFormField
                             name={"moveInCurrentAddress"}
                             label={
@@ -759,10 +761,12 @@ const ApplyFundingForm = ({
 
                   {isCommunity && (
                     <Card className="bg-slate-100 border-slate-200">
-                      <CardHeader>
-                        <CardTitle>Community Information</CardTitle>
+                      <CardHeader className="px-4 md:px-6">
+                        <CardTitle className="text-base md:text-lg">
+                          Community Information
+                        </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+                      <CardContent className="space-y-4 px-4 md:px-6">
                         <CustomFormField
                           name={"reasonForJoiningCommunity"}
                           label={
@@ -770,9 +774,9 @@ const ApplyFundingForm = ({
                           }
                         />
 
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <CustomFormField
-                            className="col-span-2"
+                            className="md:col-span-2"
                             name={"addressStreet"}
                             label={"Street Address"}
                           />
@@ -781,7 +785,7 @@ const ApplyFundingForm = ({
                             label={"Apartment/Suite/Unit/House Number"}
                           />
                         </div>
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <CustomFormField
                             name={"addressCity"}
                             label={"City"}
@@ -798,7 +802,7 @@ const ApplyFundingForm = ({
                             label={"Zip Code"}
                           />
                         </div>
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <CustomFormField
                             name={"moveInCurrentAddress"}
                             label={
@@ -824,13 +828,15 @@ const ApplyFundingForm = ({
 
                   {isTradeLines && (
                     <Card className="bg-slate-100 border-slate-200">
-                      <CardHeader>
-                        <CardTitle>Tradelines Information</CardTitle>
+                      <CardHeader className="px-4 md:px-6">
+                        <CardTitle className="text-base md:text-lg">
+                          Tradelines Information
+                        </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-3 gap-4">
+                      <CardContent className="space-y-4 px-4 md:px-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <CustomFormField
-                            className="col-span-2"
+                            className="md:col-span-2"
                             name={"addressStreet"}
                             label={"Street Address"}
                           />
@@ -839,7 +845,7 @@ const ApplyFundingForm = ({
                             label={"Apartment/Suite/Unit/House Number"}
                           />
                         </div>
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <CustomFormField
                             name={"addressCity"}
                             label={"City"}
@@ -857,7 +863,7 @@ const ApplyFundingForm = ({
                           />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <CustomFormField
                             name={"experianUsername"}
                             label={"Experian Username"}
@@ -867,7 +873,7 @@ const ApplyFundingForm = ({
                             label={"Experian Password"}
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <CustomFormField
                             name={"creditKarmaUsername"}
                             label={"Credit Karma Username"}
@@ -900,16 +906,16 @@ const ApplyFundingForm = ({
 
                   {howDoYouGetPaidSelected?.type === "yes" && !isTradeLines && (
                     <Card className="bg-slate-100 border-slate-200">
-                      <CardHeader>
-                        <CardTitle className="flex flex-row justify-between">
+                      <CardHeader className="px-4 md:px-6">
+                        <CardTitle className="flex flex-col md:flex-row justify-between gap-2 text-base md:text-lg">
                           <div>Employment Information</div>
                           {howDoYouGetPaidSelectedBank && (
                             <PlaidLink displayText="Link Personal Account" />
                           )}
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-3 gap-4">
+                      <CardContent className="space-y-4 px-4 md:px-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <CustomFormField
                             name={"employmentPayPerMonth"}
                             type="number"
@@ -917,7 +923,7 @@ const ApplyFundingForm = ({
                           />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <CustomFormField
                             name={"employmentEmployerName"}
                             label={"Employer Name?"}
@@ -932,9 +938,9 @@ const ApplyFundingForm = ({
                             label={"Employer Address?"}
                           /> */}
 
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <CustomFormField
-                            className="col-span-2"
+                            className="md:col-span-2"
                             name={"employmentEmployerAddressStreet"}
                             label={"Street Address"}
                           />
@@ -944,7 +950,7 @@ const ApplyFundingForm = ({
                           />
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <CustomFormField
                             name={"employmentEmployerAddressCity"}
                             label={"City"}
@@ -962,7 +968,7 @@ const ApplyFundingForm = ({
                           />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <CustomFormField
                             name={"employmentOccupation"}
                             label={"Your Occupation?"}
@@ -1002,7 +1008,7 @@ const ApplyFundingForm = ({
                                   <Trash2 className="h-4 w-4 text-red-500" />
                                 </Button>
                               </div>
-                              <div className="grid grid-cols-2 gap-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <CustomFormField
                                   name={`employments.${index}.howDoYouGetPaid`}
                                   label={"Do you have a job?"}
@@ -1019,7 +1025,7 @@ const ApplyFundingForm = ({
                                   }
                                 />
                               </div>
-                              <div className="grid grid-cols-2 gap-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <CustomFormField
                                   name={`employments.${index}.employmentEmployerName`}
                                   label={"Employer Name?"}
@@ -1059,7 +1065,7 @@ const ApplyFundingForm = ({
                           onSelectValue={handlePersonalTaxesChange}
                         />
                         {personalTaxesSelected?.type === "yes" && (
-                          <div className="grid grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <CustomFormField
                               name={"personalTaxes1"}
                               type="number"
@@ -1110,14 +1116,14 @@ const ApplyFundingForm = ({
                       isCommunity) &&
                     !isTradeLines && (
                       <Card className="bg-slate-100 border-slate-200">
-                        <CardHeader>
-                          <CardTitle className="flex flex-row justify-between">
+                        <CardHeader className="px-4 md:px-6">
+                          <CardTitle className="flex flex-col md:flex-row justify-between gap-2 text-base md:text-lg">
                             <div>Business Information</div>
                             <PlaidLink displayText="Link Business Acount" />
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
+                        <CardContent className="space-y-4 px-4 md:px-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <CustomFormField
                               name={"dateOfIncorporation"}
                               type="date-picker"
@@ -1175,7 +1181,7 @@ const ApplyFundingForm = ({
                             />
                           </div>
                           {businessTaxesSelected?.type === "yes" && (
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               <CustomFormField
                                 name={"businessTaxes1"}
                                 type="number"
@@ -1198,7 +1204,7 @@ const ApplyFundingForm = ({
                     )}
                 </CardContent>
 
-                <CardFooter className="flex justify-end">
+                <CardFooter className="flex justify-end px-4 md:px-6 py-4">
                   {!isViewing ? (
                     <>
                       {/* <div>
@@ -1210,14 +1216,14 @@ const ApplyFundingForm = ({
                           </div>
                         )}
                       </div> */}
-                      <div className="flex gap-4">
+                      <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                         <Button
                           size="lg"
                           variant={"outline"}
                           type="button"
                           disabled={isRecording}
                           onClick={() => setOpen(false)}
-                          className=" bg-red-200 hover:bg-red-300 text-black-100 cursor-pointer"
+                          className="w-full md:w-auto bg-red-200 hover:bg-red-300 text-black-100 cursor-pointer"
                         >
                           <CircleXIcon className="mr-2 h-4 w-4" /> Close
                         </Button>
@@ -1243,7 +1249,7 @@ const ApplyFundingForm = ({
                                 size="lg"
                                 type="submit"
                                 disabled={isRecording || isUpdating}
-                                className=" bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer"
+                                className="w-full md:w-auto bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer"
                               >
                                 {isRecording || isUpdating ? (
                                   <>
