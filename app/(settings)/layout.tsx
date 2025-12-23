@@ -1,29 +1,30 @@
-import "driver.js/dist/driver.css";
-import UserBanners from "@/components/UserBanners";
+// import "driver.js/dist/driver.css";
 import { Metadata } from "next";
 import SidebarSettings from "@/components/SidebarSettings";
+import MobileNavSettings from "@/components/MobileNavSettings";
 
 export const metadata: Metadata = {
   title: "CEG United LLC",
   description: "CEG United LLC",
   icons: {
-    icon: "../icon.ico",
+    icon: "/icon.ico",
   },
 };
 
-export default function ClientLayout({
+export default function SettingsLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <div>
-      <UserBanners />
-
-      <main className="flex h-screen w-full font-inter">
-        <SidebarSettings />
-        <div className="flex size-full flex-col overflow-y-auto">{children}</div>
-      </main>
+    <div className="flex h-screen w-full overflow-hidden font-inter">
+      <SidebarSettings />
+      <div className="flex flex-1 min-h-0 flex-col">
+        <MobileNavSettings />
+        <div className="flex-1 min-h-0 overflow-y-auto lg:pt-0 pt-[60px]">
+          {children}
+        </div>
+      </div>
     </div>
   );
 }

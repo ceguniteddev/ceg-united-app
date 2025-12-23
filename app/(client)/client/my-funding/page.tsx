@@ -12,7 +12,7 @@ const ApplyFundingPage = () => {
 
   return (
     <section className="home-content">
-      <div className="home-header flex flex-row justify-between">
+      <div className="home-header flex flex-col md:flex-row md:justify-between gap-4">
         <HeaderBox
           title="Apply Funding"
           subtext="Manage your funding applications."

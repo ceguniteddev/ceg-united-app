@@ -42,12 +42,12 @@ export default function LetterStreamPage() {
         setIsOpen={setOpen}
         title="Create New Dispute Letter"
         description=""
-        className="w-4/6"
+        className="w-11/12 md:w-5/6 lg:w-4/6"
       >
         <LetterForm onSuccess={handleFormSuccess} onCancel={handleFormCancel} />
       </ResponsiveDialog>
 
-      <div className="home-header flex flex-row justify-between">
+      <div className="home-header flex flex-col md:flex-row justify-between gap-4 md:gap-0">
         <HeaderBox
           title="Letter Stream"
           subtext="Create and manage your credit dispute letters"
@@ -56,7 +56,7 @@ export default function LetterStreamPage() {
           type="button"
           size="lg"
           variant="outline"
-          className="bg-green-200 hover:bg-green-400 cursor-pointer"
+          className="w-full md:w-auto bg-green-200 hover:bg-green-400 cursor-pointer"
           onClick={handleCreateNew}
         >
           <FileText className="h-4 w-4" />
