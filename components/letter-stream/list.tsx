@@ -115,7 +115,7 @@ export default function LetterList({
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
           <CardTitle>Your Dispute Letters</CardTitle>
           {onCreateNew && (
             // <Button onClick={onCreateNew} size="sm">
@@ -125,7 +125,7 @@ export default function LetterList({
               type="button"
               size="lg"
               variant="outline"
-              className="bg-green-200 hover:bg-green-400 cursor-pointer"
+              className="w-full md:w-auto bg-green-200 hover:bg-green-400 cursor-pointer"
               onClick={onCreateNew}
             >
               <FileText className="h-4 w-4" />
@@ -134,80 +134,144 @@ export default function LetterList({
           )}
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Type</TableHead>
-                {/* <TableHead>Status</TableHead> */}
-                {/* <TableHead>Recipients</TableHead> */}
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {letters.map((letter) => {
-                const statusInfo = statusConfig[letter.status];
-                const StatusIcon = statusInfo.icon;
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Type</TableHead>
+                  {/* <TableHead>Status</TableHead> */}
+                  {/* <TableHead>Recipients</TableHead> */}
+                  <TableHead>Created</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {letters.map((letter) => {
+                  const statusInfo = statusConfig[letter.status];
+                  const StatusIcon = statusInfo.icon;
 
-                return (
-                  <TableRow key={letter.id}>
-                    <TableCell className="font-medium">
-                      {letter.letterTitle}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600">
-                        {disputeTypeLabels[letter.disputeType] ||
-                          letter.disputeType}
-                      </span>
-                    </TableCell>
-                    {/* <TableCell>
+                  return (
+                    <TableRow key={letter.id}>
+                      <TableCell className="font-medium">
+                        {letter.letterTitle}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-gray-600">
+                          {disputeTypeLabels[letter.disputeType] ||
+                            letter.disputeType}
+                        </span>
+                      </TableCell>
+                      {/* <TableCell>
                       <Badge className={`${statusInfo.color} text-white`}>
                         <StatusIcon className="h-3 w-3 mr-1" />
                         {statusInfo.label}
                       </Badge>
                     </TableCell> */}
-                    {/* <TableCell>
+                      {/* <TableCell>
                       <span className="text-sm text-gray-600">
                         {letter.recipients?.length || 0} recipient(s)
                       </span>
                     </TableCell> */}
-                    <TableCell>
-                      <span className="text-sm text-gray-600">
-                        {letter.createdAt
-                          ? format(new Date(letter.createdAt), "MMM dd, yyyy")
-                          : "N/A"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <TableCell>
+                        <span className="text-sm text-gray-600">
+                          {letter.createdAt
+                            ? format(new Date(letter.createdAt), "MMM dd, yyyy")
+                            : "N/A"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setViewLetter(letter);
+                              // onViewLetter?.(letter); // Removed to prevent conflict with modal
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {(letter.status === "draft" ||
+                            letter.status === "pending-review") && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setLetterToDelete(letter.id!)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            {letters.map((letter) => {
+              const statusInfo = statusConfig[letter.status];
+              const StatusIcon = statusInfo.icon;
+
+              return (
+                <Card key={letter.id}>
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div>
+                        <h3 className="font-semibold text-base">
+                          {letter.letterTitle}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {disputeTypeLabels[letter.disputeType] ||
+                            letter.disputeType}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Created</span>
+                        <span className="text-gray-600 font-medium">
+                          {letter.createdAt
+                            ? format(new Date(letter.createdAt), "MMM dd, yyyy")
+                            : "N/A"}
+                        </span>
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
+                          className="flex-1"
                           onClick={() => {
                             setViewLetter(letter);
-                            // onViewLetter?.(letter); // Removed to prevent conflict with modal
                           }}
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
                         </Button>
                         {(letter.status === "draft" ||
                           letter.status === "pending-review") && (
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
+                            className="flex-1"
                             onClick={() => setLetterToDelete(letter.id!)}
                           >
-                            <Trash2 className="h-4 w-4 text-red-600" />
+                            <Trash2 className="h-4 w-4 mr-2 text-red-600" />
+                            Delete
                           </Button>
                         )}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
 

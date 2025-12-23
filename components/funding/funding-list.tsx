@@ -258,14 +258,14 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
       <div className="flex items-center py-4">
         <Input
           placeholder="Filter"
-          // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
           value={globalFilter}
-          // onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="max-w-sm"
         />
       </div>
-      <div className="overflow-x-auto rounded-md border">
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -315,11 +315,121 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
           </TableBody>
         </Table>
       </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {table.getRowModel().rows?.length ? (
+          table
+            .getRowModel()
+            .rows.map((row) => (
+              <FundingCard
+                key={row.id}
+                row={row}
+                isAdminView={isAdminView}
+                appliedFunding={appliedFunding}
+              />
+            ))
+        ) : (
+          <div className="text-center py-8 text-gray-500">No results.</div>
+        )}
+      </div>
+
       <DataTablePagination table={table} />
     </div>
   );
 };
 export default FundingList;
+
+const FundingCard = ({
+  row,
+  isAdminView,
+  appliedFunding,
+}: {
+  row: any;
+  isAdminView?: boolean;
+  appliedFunding: ApprovedBankFormData[] | undefined;
+}) => {
+  const data = row.original;
+
+  const showApprovedFields =
+    appliedFunding?.some(
+      (fund) =>
+        fund.clientApplicationStatus === "Approved" ||
+        fund.clientApplicationStatus === "Funded"
+    ) || false;
+
+  const showFundedFields =
+    appliedFunding?.some((fund) => fund.clientApplicationStatus === "Funded") ||
+    false;
+
+  return (
+    <div className="border rounded-lg p-4 bg-white shadow-sm space-y-3">
+      {isAdminView && data.referenceNumber && (
+        <div className="pb-2 border-b">
+          <p className="text-xs text-gray-500">Reference Number</p>
+          <p className="font-semibold text-sm">{data.referenceNumber}</p>
+        </div>
+      )}
+
+      <div>
+        <p className="text-xs text-gray-500">Bank Name</p>
+        <p className="font-semibold">{data.bankName}</p>
+      </div>
+
+      <div>
+        <p className="text-xs text-gray-500">Product Name</p>
+        <div className="flex flex-col gap-1">
+          {data.productName?.map((name: string, index: number) => (
+            <span key={index} className="text-sm">
+              {name}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs text-gray-500">Status</p>
+        <div className="mt-1">
+          <CategoryBadge category={data.clientApplicationStatus} />
+        </div>
+      </div>
+
+      {showApprovedFields && (
+        <>
+          {data.approvedAmount > 0 && (
+            <div>
+              <p className="text-xs text-gray-500">Approved Amount</p>
+              <p className="font-semibold text-green-600">
+                {formatAmount(data.approvedAmount)}
+              </p>
+            </div>
+          )}
+
+          {data.approvedRemarks && (
+            <div>
+              <p className="text-xs text-gray-500">Approved Remarks</p>
+              <p className="text-sm">{data.approvedRemarks}</p>
+            </div>
+          )}
+        </>
+      )}
+
+      {showFundedFields && data.fundedAmount > 0 && (
+        <div>
+          <p className="text-xs text-gray-500">Funded Amount</p>
+          <p className="font-semibold text-blue-600">
+            {formatAmount(data.fundedAmount)}
+          </p>
+        </div>
+      )}
+
+      <div className="pt-2 flex gap-2">
+        {!isAdminView && <ActionCell row={row} />}
+        {isAdminView && <AdminActionCell row={row} />}
+      </div>
+    </div>
+  );
+};
 
 const ActionCell = ({ row }: { row: any }) => {
   const { applyApprovedMappedFund, isApplying } =
@@ -351,17 +461,18 @@ const ActionCell = ({ row }: { row: any }) => {
         type="button"
         variant="outline"
         disabled={isApplying || !isDenefitsPaid}
-        className="bg-green-200 hover:bg-green-400 cursor-pointer"
+        className="bg-green-200 hover:bg-green-400 cursor-pointer w-full md:w-auto"
         onClick={() => handleApproveClickCapture()}
       >
         {isApplying ? (
           <>
             <Loader2Icon className="h-4 w-4 animate-spin" />
-            Applying...
+            <span className="ml-2">Applying...</span>
           </>
         ) : (
           <>
-            <BanknoteIcon className="h-4 w-4" /> Apply
+            <BanknoteIcon className="h-4 w-4" />
+            <span className="ml-2">Apply</span>
           </>
         )}
       </Button>
@@ -481,14 +592,14 @@ const AdminActionCell = ({ row }: { row: any }) => {
   const showFundedButton = row.original.clientApplicationStatus === "Approved";
 
   return (
-    <div className="flex flex-row gap-2">
+    <div className="flex flex-col md:flex-row gap-2 w-full">
       {showDeclineButton && (
         <Dialog open={isDeclineDialogOpen} onOpenChange={setDeclineDialogOpen}>
           <DialogTrigger asChild>
             <Button
               type="button"
               variant="outline"
-              className="bg-red-300 hover:bg-red-400 cursor-pointer"
+              className="bg-red-300 hover:bg-red-400 cursor-pointer w-full md:w-auto"
               disabled={
                 isDeclining ||
                 isApproving ||
@@ -498,16 +609,17 @@ const AdminActionCell = ({ row }: { row: any }) => {
               {isDeclining ? (
                 <>
                   <Loader2Icon className="h-4 w-4 animate-spin" />
-                  Processing...
+                  <span className="ml-2">Processing...</span>
                 </>
               ) : (
                 <>
-                  <BanknoteX className="h-4 w-4 " /> Decline
+                  <BanknoteX className="h-4 w-4" />
+                  <span className="ml-2">Decline</span>
                 </>
               )}
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="w-11/12 max-w-md">
             <DialogHeader>
               <DialogTitle>Decline Funding Application</DialogTitle>
               <DialogDescription>
@@ -553,17 +665,18 @@ const AdminActionCell = ({ row }: { row: any }) => {
             <Button
               type="button"
               variant="outline"
-              className="bg-green-200 hover:bg-green-400 cursor-pointer"
+              className="bg-green-200 hover:bg-green-400 cursor-pointer w-full md:w-auto"
               disabled={
                 isApproving ||
                 isDeclining ||
                 row.original.clientApplicationStatus === "Approved"
               }
             >
-              <BanknoteIcon className="h-4 w-4 " /> Approve
+              <BanknoteIcon className="h-4 w-4" />
+              <span className="ml-2">Approve</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="w-11/12 max-w-md">
             <DialogHeader>
               <DialogTitle>Approve Funding Application</DialogTitle>
               <DialogDescription>
@@ -616,13 +729,14 @@ const AdminActionCell = ({ row }: { row: any }) => {
             <Button
               type="button"
               variant="outline"
-              className="bg-green-200 hover:bg-green-400 cursor-pointer"
+              className="bg-green-200 hover:bg-green-400 cursor-pointer w-full md:w-auto"
               disabled={isApproving || isDeclining || isFunding}
             >
-              <CircleDollarSign className="h-4 w-4" /> Funded
+              <CircleDollarSign className="h-4 w-4" />
+              <span className="ml-2">Funded</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="w-11/12 max-w-md">
             <DialogHeader>
               <DialogTitle>Lender Funds</DialogTitle>
               {/* <DialogDescription>

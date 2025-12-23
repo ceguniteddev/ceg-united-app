@@ -24,13 +24,15 @@ export default function PersonalSettingsPage() {
         setIsOpen={setOpenChangePassword}
         title={`Change password`}
         description=""
-        className="w-3/12 flex flex-col  "
+        className="w-11/12 max-w-md"
       >
         <ChangePasswordModal setOpen={setOpenChangePassword} />
       </ResponsiveDialog>
       <div className="max-w-4xl mx-auto">
         <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4 sm:mb-0">Personal Settings</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 sm:mb-0">
+            Personal Settings
+          </h1>
         </header>
 
         <main className="space-y-10">

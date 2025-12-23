@@ -187,9 +187,9 @@ const ClientBusinessManagement = ({
                   name="businessStreetAddress"
                   label="* Street Address"
                 /> */}
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <CustomFormField
-                    className="col-span-2"
+                    className="md:col-span-2"
                     name="businessStreetAddress"
                     label="* Street Address"
                   />
@@ -225,11 +225,11 @@ const ClientBusinessManagement = ({
                     {SOCIAL_MEDIA_PLATFORMS.map((platform, index) => (
                       <div
                         key={platform.value}
-                        className="flex items-center gap-3"
+                        className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3"
                       >
                         <label
                           htmlFor={`socialMedia.${index}.handle`}
-                          className="w-24 text-sm text-muted-foreground"
+                          className="text-sm text-muted-foreground md:w-24"
                         >
                           {platform.label}
                         </label>
@@ -246,13 +246,13 @@ const ClientBusinessManagement = ({
               </CardContent>
 
               <CardFooter>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full">
                   {isEditing && (
                     <Button
                       type="button"
                       variant="outline"
                       disabled={isSubmitting}
-                      className="disabled:cursor-not-allowed"
+                      className="w-full md:w-auto disabled:cursor-not-allowed"
                       onClick={handleCancelEdit}
                     >
                       <IconMenu
@@ -267,7 +267,7 @@ const ClientBusinessManagement = ({
                       type="button"
                       variant="outline"
                       disabled={isSubmitting}
-                      className="cursor-pointer"
+                      className="w-full md:w-auto cursor-pointer"
                       onClick={() => setOpen(false)}
                     >
                       <IconMenu
@@ -281,7 +281,7 @@ const ClientBusinessManagement = ({
                     type="submit"
                     variant="outline"
                     disabled={isSubmitting}
-                    className="cursor-pointer bg-emerald-200 hover:bg-emerald-300 disabled:cursor-not-allowed"
+                    className="w-full md:w-auto cursor-pointer bg-emerald-200 hover:bg-emerald-300 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <IconMenu
