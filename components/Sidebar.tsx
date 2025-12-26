@@ -12,8 +12,8 @@ import { useAuth } from "@/provider/AuthContext";
 // import PlaidIncomeLinkPayroll from "./PlaidLinkIncomePayroll";
 // import { useEffect } from "react";
 
-import { driver } from "driver.js";
-import { useUpdateUserOnboardingMutation } from "@/hooks/user";
+// import { driver } from "driver.js";
+// import { useUpdateUserOnboardingMutation } from "@/hooks/user";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
 import { isPlaidProductionReady } from "@/lib/plaid";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
@@ -85,7 +85,7 @@ const Sidebar = () => {
             // If user hasn't paid denefits contract, filter out "My Learning" link
             if (
               item.route === "/client/my-learning" &&
-              (!denefitsContract || denefitsContract.length === 0)
+              (!userData || !userData.isPremiumClient)
             ) {
               return false;
             }

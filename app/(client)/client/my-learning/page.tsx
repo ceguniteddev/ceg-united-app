@@ -3,7 +3,7 @@
 import React from "react";
 import { useAuth } from "@/provider/AuthContext";
 import { useGetUserCoursesWithProgress } from "@/hooks/educational-materials/course";
-import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+// import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import Spinner from "@/components/Spinner";
 import EmptyState from "@/components/EmptyState";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -22,19 +22,19 @@ import Image from "next/image";
 import HeaderBox from "@/components/HeaderBox";
 
 const MyLearningPage = () => {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
   const { coursesWithProgress, isLoading } = useGetUserCoursesWithProgress(
     user?.uid || ""
   );
-  const { denefitsContract, isLoading: isLoadingContract } =
-    useGetDenefitsContractsByUserId(user?.uid || "");
+  // const { denefitsContract, isLoading: isLoadingContract } =
+  //   useGetDenefitsContractsByUserId(user?.uid || "");
 
-  if (isLoading || isLoadingContract) {
+  if (isLoading) {
     return <Spinner displayText="Loading your courses..." />;
   }
 
   // Check if user has a paid denefits contract
-  const hasPaidContract = denefitsContract && denefitsContract.length > 0;
+  const hasPaidContract = userData?.isPremiumClient || false;
 
   if (!hasPaidContract) {
     return (
