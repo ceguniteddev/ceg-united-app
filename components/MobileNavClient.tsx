@@ -20,7 +20,7 @@ import { isPlaidProductionReady } from "@/lib/plaid";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 
 const MobileNavClient = () => {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
   const pathname = usePathname();
   const { denefitsContract } = useGetDenefitsContractsByUserId(user?.uid || "");
   const isPlaidProdReady = isPlaidProductionReady();
@@ -70,7 +70,7 @@ const MobileNavClient = () => {
                   }
                   if (
                     item.route === "/client/my-learning" &&
-                    (!denefitsContract || denefitsContract.length === 0)
+                    (!userData || !userData.isPremiumClient)
                   ) {
                     return false;
                   }
