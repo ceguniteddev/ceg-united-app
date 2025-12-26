@@ -263,7 +263,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
               </div>
             </SelectValue>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="max-h-[50vh] overflow-y-auto">
             {DOCUMENT_TYPES.map((docType) => {
               const uploadedDocs = requiredDocsMap.get(docType.id) || [];
               const isUploaded = uploadedDocs.length > 0;

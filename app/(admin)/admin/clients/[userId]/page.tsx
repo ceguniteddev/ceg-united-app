@@ -17,7 +17,7 @@ import LetterForm from "@/components/letter-stream/form";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { useParams } from "next/navigation";
 import { useUserQuery } from "@/hooks/user";
-import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+// import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import Spinner from "@/components/Spinner";
 import { useMemo, useState } from "react";
 
@@ -27,13 +27,13 @@ const ClientProfilePage = () => {
   const [isLetterFormOpen, setIsLetterFormOpen] = useState(false);
 
   const { userData, isLoading: isUserLoading } = useUserQuery(userId);
-  const { denefitsContract, isLoading: isDenefitsLoading } =
-    useGetDenefitsContractsByUserId(userId);
+  // const { denefitsContract, isLoading: isDenefitsLoading } =
+  //   useGetDenefitsContractsByUserId(userId);
 
   // Check if user has access to learning materials
   const hasLearningMaterialsAccess = useMemo(() => {
-    return !!(denefitsContract && denefitsContract.length > 0);
-  }, [denefitsContract]);
+    return userData?.isPremiumClient;
+  }, [userData]);
 
   // Check if user has letter feature enabled
   const hasLetterFeatureEnabled = useMemo(() => {
@@ -41,7 +41,7 @@ const ClientProfilePage = () => {
   }, [userData]);
 
   // Show loading state while fetching data
-  if (isUserLoading || isDenefitsLoading) {
+  if (isUserLoading) {
     return <Spinner displayText="Loading user profile..." />;
   }
 
