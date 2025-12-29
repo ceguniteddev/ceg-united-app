@@ -24,18 +24,18 @@ export default function ClientFundingPage() {
   }
 
   return (
-    <div className="flex h-full w-full flex-col p-8">
+    <div className="flex h-full w-full flex-col p-3 sm:p-4 md:p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <HandCoins className="h-6 w-6 text-primary" />
+          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <HandCoins className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
               Client Funding Products
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               View all approved funding products for your clients
             </p>
           </div>
@@ -60,17 +60,17 @@ export default function ClientFundingPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="max-w-screen-2xl">
+        <div className="w-full">
           <Card className="w-full">
             <CardHeader>
-              <CardTitle>
+              <CardTitle className="text-lg sm:text-xl">
                 All Client Funding Products ({mappedFunding.length})
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Track the status of funding applications for all your clients
               </CardDescription>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent className="p-3 sm:p-6">
               <BrokerFundingList appliedFunding={mappedFunding} />
             </CardContent>
           </Card>
