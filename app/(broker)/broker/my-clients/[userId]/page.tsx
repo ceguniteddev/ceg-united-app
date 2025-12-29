@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -61,9 +61,22 @@ const ClientProfilePage = () => {
       onValueChange={setActiveTab}
       className="w-full flex flex-col items-start justify-start p-2 sm:p-4 md:p-6 lg:p-10"
     >
-      <div className="w-full mb-6">
+      {/* Desktop Tabs */}
+      <TabsList className="mb-6 hidden md:inline-flex">
+        <TabsTrigger value="personal-information">
+          Personal Information
+        </TabsTrigger>
+        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+        <TabsTrigger value="documents">Documents</TabsTrigger>
+        <TabsTrigger value="credit-report">Credit Report</TabsTrigger>
+        <TabsTrigger value="business">Business</TabsTrigger>
+        <TabsTrigger value="applied-funding">Applied Funding</TabsTrigger>
+      </TabsList>
+
+      {/* Mobile Dropdown */}
+      <div className="w-full mb-6 md:hidden">
         <Select value={activeTab} onValueChange={setActiveTab}>
-          <SelectTrigger className="w-full sm:w-[300px]">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select a section" />
           </SelectTrigger>
           <SelectContent>

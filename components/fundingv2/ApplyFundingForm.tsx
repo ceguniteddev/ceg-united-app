@@ -44,11 +44,7 @@ import { Business } from "@/schema";
 import PlaidLink from "../PlaidLink";
 import { UserWithId } from "@/schema/registration";
 import { toast } from "sonner";
-import { useStateMachine } from "little-state-machine";
-import {
-  updateApplyFundingAction,
-  clearApplyFundingAction,
-} from "@/store/apply-funding";
+import { useApplyFundingStore } from "@/store/apply-funding-store";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
@@ -84,12 +80,8 @@ const ApplyFundingForm = ({
 }: Props) => {
   const { applyFunding, updateApplyFunding, isRecording, isUpdating } =
     useApplyFunding();
-  const { state, actions } = useStateMachine({
-    actions: {
-      updateApplyFundingAction,
-      clearApplyFundingAction,
-    },
-  });
+  const { updateApplication, clearApplication, getApplication } =
+    useApplyFundingStore();
 
   const [showLegalResidentOther, setShowLegalResidentOther] = useState(false);
   // ...
@@ -183,7 +175,7 @@ const ApplyFundingForm = ({
     [businessData]
   );
 
-  const savedDraft = state.applyFunding?.[userData.id];
+  const savedDraft = getApplication(userData.id);
   const defaultValues = useMemo(() => {
     if (data) return data;
     if (isViewing || isEditing) return data;
@@ -249,10 +241,7 @@ const ApplyFundingForm = ({
             (val) => val !== "" && val !== undefined && val !== null
           );
           if (hasValues) {
-            actions.updateApplyFundingAction({
-              userId: userData.id,
-              data: formValues,
-            });
+            updateApplication(userData.id, formValues);
             lastSavedRef.current = formValuesStr;
           }
         }
@@ -267,11 +256,11 @@ const ApplyFundingForm = ({
     isEditing,
     isDirty,
     dirtyFields,
-    actions,
     userData.id,
     isRecording,
     isUpdating,
     form,
+    updateApplication,
   ]);
 
   useEffect(() => {
@@ -348,7 +337,7 @@ const ApplyFundingForm = ({
               setPersonalTaxesSelected(undefined);
               setBusinessTaxesSelected(undefined);
               setBusinessIdSelected(undefined);
-              actions.clearApplyFundingAction({ userId: userData.id });
+              clearApplication(userData.id);
             },
           },
         });
@@ -466,7 +455,7 @@ const ApplyFundingForm = ({
       await applyFunding({ values });
     }
     console.log("Clearing saved draft for user:", userData.id);
-    actions.clearApplyFundingAction({ userId: userData.id });
+    clearApplication(userData.id);
     setOpen(false);
     if (setCongratsOpen) setCongratsOpen(true);
   }, [
@@ -478,7 +467,7 @@ const ApplyFundingForm = ({
     isEditing,
     data,
     userData.id,
-    actions,
+    clearApplication,
   ]);
 
   const handleApproveClickCapture: React.MouseEventHandler<

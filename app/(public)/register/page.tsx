@@ -54,30 +54,33 @@ const RegistrationPage = () => {
   };
 
   return (
-    <div>
-      <div className="flex justify-center items-center">
+    <div className="p-3 sm:p-4 md:p-6">
+      <div className="flex justify-center items-center mb-4 sm:mb-6">
         <Image
           src="/icon.png"
           alt={process.env.NEXT_PUBLIC_APP_NAME as string}
-          width={100}
-          height={100}
+          width={80}
+          height={80}
+          className="sm:w-[100px] sm:h-[100px]"
         />
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <fieldset disabled={isRecording}>
             <div className="flex justify-center">
-              <Card className="max-w-4xl">
+              <Card className="w-full max-w-4xl">
                 <CardHeader>
                   <CardTitle className="text-center flex flex-col">
-                    <span className="text-2xl font-bold">
+                    <span className="text-xl sm:text-2xl font-bold">
                       {"Register your account"}
                     </span>
-                    <span>{"It's quick and easy."}</span>
+                    <span className="text-sm sm:text-base">
+                      {"It's quick and easy."}
+                    </span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <CustomFormField
                       name={"firstName"}
                       placeholder={""}
@@ -94,7 +97,7 @@ const RegistrationPage = () => {
                       label="* Last Name"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <CustomFormField
                       name={"email"}
                       type="email"
@@ -107,7 +110,7 @@ const RegistrationPage = () => {
                       label="* Phone Number"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <CustomFormField
                       name={"birthdate"}
                       type="date-picker"
@@ -155,7 +158,7 @@ const RegistrationPage = () => {
                     <CustomFormField name={"businessNet"} label="Business Net?" type="number" />
                   </div> */}
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <CustomFormField
                       name={"addressStreet"}
                       label={"Street Address"}
@@ -166,7 +169,7 @@ const RegistrationPage = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <CustomFormField name={"addressCity"} label={"City"} />
                     <CustomFormField
                       name={"addressState"}
@@ -180,7 +183,7 @@ const RegistrationPage = () => {
                       label={"Zip Code"}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <CustomFormField
                       name={"employmentPayPerMonth"}
                       type="number"
@@ -197,7 +200,7 @@ const RegistrationPage = () => {
                       label={"Is it rent or mortgage? If else, please specify"}
                     /> */}
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <CustomFormField
                       name={"ssn"}
                       type="ssn"
@@ -219,7 +222,7 @@ const RegistrationPage = () => {
                       size="lg"
                       type="submit"
                       disabled={isRecording}
-                      className="w-full bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer"
+                      className="w-full bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer text-sm sm:text-base"
                     >
                       {isRecording ? (
                         <>

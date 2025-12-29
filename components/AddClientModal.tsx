@@ -16,11 +16,7 @@ import {
   clientApplicationSchema,
 } from "@/schema/client-application";
 import { useAuth } from "@/provider/AuthContext";
-import { useStateMachine } from "little-state-machine";
-import {
-  updateClientApplicationAction,
-  clearClientApplicationAction,
-} from "@/store/client-application";
+import { useClientApplicationStore } from "@/store/client-application-store";
 import { useEffect, useMemo, useRef } from "react";
 
 interface AddClientModalProps {
@@ -37,14 +33,10 @@ export function AddClientModal({
   isSubmitting = false,
 }: AddClientModalProps) {
   const { user } = useAuth();
-  const { state, actions } = useStateMachine({
-    actions: {
-      updateClientApplicationAction,
-      clearClientApplicationAction,
-    },
-  });
+  const { updateApplication, clearApplication, getApplication } =
+    useClientApplicationStore();
 
-  const savedDraft = user ? state.clientApplication?.[user.uid] : undefined;
+  const savedDraft = user ? getApplication(user.uid) : undefined;
 
   const defaultValues = useMemo(() => {
     if (savedDraft && Object.keys(savedDraft).length > 0) {
@@ -108,10 +100,7 @@ export function AddClientModal({
             (val) => val !== "" && val !== undefined && val !== null
           );
           if (hasValues) {
-            actions.updateClientApplicationAction({
-              userId: user.uid,
-              data: formValues,
-            });
+            updateApplication(user.uid, formValues);
             lastSavedRef.current = formValuesStr;
           }
         }
@@ -119,12 +108,20 @@ export function AddClientModal({
 
       return () => clearTimeout(timeoutId);
     }
-  }, [form.formState, user, isDirty, dirtyFields, isSubmitting, actions, form]);
+  }, [
+    form.formState,
+    user,
+    isDirty,
+    dirtyFields,
+    isSubmitting,
+    updateApplication,
+    form,
+  ]);
 
   const handleSubmit = async (data: ClientApplicationForm) => {
     await onSubmit(data);
     if (user) {
-      actions.clearClientApplicationAction({ userId: user.uid });
+      clearApplication(user.uid);
     }
     form.reset();
   };
