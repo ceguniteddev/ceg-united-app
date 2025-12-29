@@ -19,6 +19,14 @@ import { BanknoteIcon, Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { DataTablePagination } from "@/components/funding/pagination";
 import { formatAmount } from "@/lib/utils";
 import CategoryBadge from "@/components/CategoryBadge";
@@ -268,7 +276,7 @@ const ActionCell = ({ row }: { row: any }) => {
         variant="outline"
         size="sm"
         onClick={handleApply}
-        className="bg-green-200 hover:bg-green-400 cursor-pointer"
+        className="bg-green-200 hover:bg-green-400 cursor-pointer w-full md:w-auto"
         disabled={!isDenefitsPaid || isApplying}
       >
         {isApplying ? (
@@ -435,7 +443,8 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as StatusFilter)}
       >
-        <TabsList className="mb-4">
+        {/* Desktop Tabs */}
+        <TabsList className="mb-4 hidden md:inline-flex">
           <TabsTrigger value="Not Applied" className="relative">
             Not Applied
             <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
@@ -468,16 +477,47 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
           </TabsTrigger>
         </TabsList>
 
+        {/* Mobile Dropdown */}
+        <div className="mb-4 md:hidden">
+          <Select
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as StatusFilter)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Not Applied">
+                Not Applied ({statusCounts["Not Applied"]})
+              </SelectItem>
+              <SelectItem value="Sent to Lender">
+                Sent to Lender ({statusCounts["Sent to Lender"]})
+              </SelectItem>
+              <SelectItem value="Declined">
+                Declined ({statusCounts.Declined})
+              </SelectItem>
+              <SelectItem value="Approved">
+                Approved ({statusCounts.Approved})
+              </SelectItem>
+              <SelectItem value="Funded">
+                Funded ({statusCounts.Funded})
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <TabsContent value={activeTab} className="mt-0">
           <div className="flex items-center py-4">
             <Input
               placeholder="Search by client name, bank, or status..."
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              className="max-w-sm"
+              className="w-full"
             />
           </div>
-          <div className="rounded-md border flex">
+
+          {/* Desktop Table View */}
+          <div className="rounded-md border hidden md:flex">
             <ScrollArea type="always" className="w-1 flex-1">
               <Table>
                 <TableHeader>
@@ -536,6 +576,137 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
               <ScrollBar orientation="horizontal" className="w-full" />
             </ScrollArea>
           </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <Card key={row.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-base">
+                          {row.original.clientName}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {row.original.clientEmail}
+                        </p>
+                      </div>
+                      <CategoryBadge
+                        category={row.original.clientApplicationStatus}
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-muted-foreground text-xs">Bank</p>
+                        <p className="font-medium">{row.original.bankName}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">
+                          Personal Amount
+                        </p>
+                        <p className="font-medium">
+                          {formatAmount(
+                            row.original.personalAmountFunding || 0
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">
+                          Business Amount
+                        </p>
+                        <p className="font-medium">
+                          {formatAmount(
+                            row.original.businessAmountFunding || 0
+                          )}
+                        </p>
+                      </div>
+                      {row.original.approvedAmount && (
+                        <div>
+                          <p className="text-muted-foreground text-xs">
+                            Approved Amount
+                          </p>
+                          <p className="font-medium">
+                            {formatAmount(row.original.approvedAmount)}
+                          </p>
+                        </div>
+                      )}
+                      {row.original.fundedAmount && (
+                        <div>
+                          <p className="text-muted-foreground text-xs">
+                            Funded Amount
+                          </p>
+                          <p className="font-semibold text-emerald-600">
+                            {formatAmount(row.original.fundedAmount)}
+                          </p>
+                        </div>
+                      )}
+                      {row.original.commissionRate && (
+                        <div>
+                          <p className="text-muted-foreground text-xs">
+                            Commission %
+                          </p>
+                          <p className="font-medium">
+                            {row.original.commissionRate}%
+                          </p>
+                        </div>
+                      )}
+                      {row.original.commissionAmount && (
+                        <div>
+                          <p className="text-muted-foreground text-xs">
+                            Commission Amount
+                          </p>
+                          <p className="font-semibold text-blue-600">
+                            {formatAmount(row.original.commissionAmount)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    {row.original.productName && (
+                      <div>
+                        <p className="text-muted-foreground text-xs mb-1">
+                          Products
+                        </p>
+                        <div className="flex flex-col gap-1">
+                          {row.original.productName.map(
+                            (name: string, index: number) => (
+                              <span key={index} className="text-sm">
+                                {name}
+                              </span>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {row.original.declineReason && (
+                      <div>
+                        <p className="text-muted-foreground text-xs mb-1">
+                          Decline Reason
+                        </p>
+                        <p className="text-sm text-red-600">
+                          {row.original.declineReason}
+                        </p>
+                      </div>
+                    )}
+                    {row.original.clientApplicationStatus === "Not Applied" && (
+                      <div className="pt-2">
+                        <ActionCell row={row} />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  No results.
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
           <DataTablePagination table={table} />
         </TabsContent>
       </Tabs>
