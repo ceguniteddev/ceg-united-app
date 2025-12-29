@@ -119,7 +119,7 @@ export default function MyClientsPage() {
           </CardHeader>
           <CardContent>
             {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden lg:block overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -175,7 +175,7 @@ export default function MyClientsPage() {
             </div>
 
             {/* Mobile Card View */}
-            <div className="md:hidden space-y-4">
+            <div className="lg:hidden space-y-4">
               {filteredClients.map((client: any) => (
                 <Card key={client.clientId} className="overflow-hidden">
                   <CardContent className="p-4">

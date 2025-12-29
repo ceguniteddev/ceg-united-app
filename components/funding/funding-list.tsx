@@ -265,7 +265,7 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block overflow-x-auto rounded-md border">
+      <div className="hidden lg:block overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -317,7 +317,7 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
       </div>
 
       {/* Mobile Card View */}
-      <div className="md:hidden space-y-4">
+      <div className="lg:hidden space-y-4">
         {table.getRowModel().rows?.length ? (
           table
             .getRowModel()
@@ -461,7 +461,7 @@ const ActionCell = ({ row }: { row: any }) => {
         type="button"
         variant="outline"
         disabled={isApplying || !isDenefitsPaid}
-        className="bg-green-200 hover:bg-green-400 cursor-pointer w-full md:w-auto"
+        className="bg-green-200 hover:bg-green-400 cursor-pointer w-full lg:w-auto"
         onClick={() => handleApproveClickCapture()}
       >
         {isApplying ? (
@@ -592,14 +592,14 @@ const AdminActionCell = ({ row }: { row: any }) => {
   const showFundedButton = row.original.clientApplicationStatus === "Approved";
 
   return (
-    <div className="flex flex-col md:flex-row gap-2 w-full">
+    <div className="flex flex-col lg:flex-row gap-2 w-full">
       {showDeclineButton && (
         <Dialog open={isDeclineDialogOpen} onOpenChange={setDeclineDialogOpen}>
           <DialogTrigger asChild>
             <Button
               type="button"
               variant="outline"
-              className="bg-red-300 hover:bg-red-400 cursor-pointer w-full md:w-auto"
+              className="bg-red-300 hover:bg-red-400 cursor-pointer w-full lg:w-auto"
               disabled={
                 isDeclining ||
                 isApproving ||
@@ -665,7 +665,7 @@ const AdminActionCell = ({ row }: { row: any }) => {
             <Button
               type="button"
               variant="outline"
-              className="bg-green-200 hover:bg-green-400 cursor-pointer w-full md:w-auto"
+              className="bg-green-200 hover:bg-green-400 cursor-pointer w-full lg:w-auto"
               disabled={
                 isApproving ||
                 isDeclining ||
@@ -729,7 +729,7 @@ const AdminActionCell = ({ row }: { row: any }) => {
             <Button
               type="button"
               variant="outline"
-              className="bg-green-200 hover:bg-green-400 cursor-pointer w-full md:w-auto"
+              className="bg-green-200 hover:bg-green-400 cursor-pointer w-full lg:w-auto"
               disabled={isApproving || isDeclining || isFunding}
             >
               <CircleDollarSign className="h-4 w-4" />

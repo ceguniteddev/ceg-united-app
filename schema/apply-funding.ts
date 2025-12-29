@@ -666,6 +666,11 @@ export const FundingProductTypeEnum: FundingProductEnumType[] = [
     type: "Personal And Business",
   },
   {
+    value: "Business Income Based Funding",
+    label: "Business Income Based Funding",
+    type: "Personal",
+  },
+  {
     value: "Personal Funding",
     label: "Personal Funding",
     type: "Personal",
@@ -696,8 +701,8 @@ export const FundingProductTypeEnum: FundingProductEnumType[] = [
   //   type: "Business",
   // },
   {
-    value: "Knowledge Community",
-    label: "Knowledge Community",
+    value: "Credit Analysis",
+    label: "Credit Analysis",
     type: "Community",
   },
   {
