@@ -1,6 +1,7 @@
 import { DataTablePagination } from "@/components/funding/pagination";
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 import {
   ColumnDef,
@@ -134,7 +135,8 @@ const BusinessList = ({ onEdit }: BusinessListProps) => {
 
   return (
     <div className="mx-auto w-full">
-      <div className="overflow-hidden rounded-md border">
+      {/* Desktop Table View */}
+      <div className="overflow-hidden rounded-md border hidden md:block">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -184,6 +186,41 @@ const BusinessList = ({ onEdit }: BusinessListProps) => {
           </TableBody>
         </Table>
       </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => (
+            <Card key={row.id}>
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base">
+                      {row.original.businessName}
+                    </h3>
+                  </div>
+                  <ActionCell row={row} onEdit={onEdit} />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div>
+                  <p className="text-muted-foreground text-xs">EIN</p>
+                  <p className="font-medium">
+                    {row.original.employerIdentificationNumber}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              No results.
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
       <DataTablePagination table={table} />
     </div>
   );

@@ -18,14 +18,16 @@ const MyBusinessPage = () => {
   return (
     <section className="home">
       <div className="home-content">
-        <div className="flex flex-row items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
           <header className="home-header">
             <HeaderBox
               title="My Business"
               subtext="Manage your business information"
             />
           </header>
-          <PlaidLink displayText="Link Business Account" />
+          <div className="w-full sm:w-auto">
+            <PlaidLink displayText="Link Business Account" />
+          </div>
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <ClientBusinessManagement

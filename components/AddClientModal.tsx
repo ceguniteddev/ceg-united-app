@@ -190,7 +190,7 @@ export function AddClientModal({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <CustomFormField
                       name={"addressStreet"}
                       label={"Street Address"}
@@ -201,7 +201,7 @@ export function AddClientModal({
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <CustomFormField name={"addressCity"} label={"City"} />
                     <CustomFormField
                       name={"addressState"}
@@ -216,7 +216,7 @@ export function AddClientModal({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <CustomFormField
                       name={"employmentPayPerMonth"}
                       type="number"

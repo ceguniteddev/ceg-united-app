@@ -1,6 +1,13 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import ClientData from "@/app/(admin)/admin/clients/view";
 import { UserWithId } from "@/schema/registration";
 import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
@@ -14,10 +21,12 @@ import ApplyFunding from "@/components/fundingv2/ApplyFunding";
 import FundingList from "@/components/funding/funding-list";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
 import { ApprovedBankFormData } from "@/schema/bank-products";
+import { useState } from "react";
 
 const ClientProfilePage = () => {
   const params = useParams();
   const userId = params.userId as string;
+  const [activeTab, setActiveTab] = useState("personal-information");
 
   const { userData, isLoading: isUserLoading } = useUserQuery(userId);
 
@@ -48,19 +57,27 @@ const ClientProfilePage = () => {
 
   return (
     <Tabs
-      defaultValue="personal-information"
-      className="w-full flex flex-col items-start justify-start p-4 sm:p-6 lg:p-10"
+      value={activeTab}
+      onValueChange={setActiveTab}
+      className="w-full flex flex-col items-start justify-start p-2 sm:p-4 md:p-6 lg:p-10"
     >
-      <TabsList className="flex-wrap h-auto">
-        <TabsTrigger value="personal-information">
-          Personal Information
-        </TabsTrigger>
-        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-        <TabsTrigger value="documents">Documents</TabsTrigger>
-        <TabsTrigger value="credit-report">Credit Report</TabsTrigger>
-        <TabsTrigger value="business">Business</TabsTrigger>
-        <TabsTrigger value="applied-funding">Applied Funding</TabsTrigger>
-      </TabsList>
+      <div className="w-full mb-6">
+        <Select value={activeTab} onValueChange={setActiveTab}>
+          <SelectTrigger className="w-full sm:w-[300px]">
+            <SelectValue placeholder="Select a section" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="personal-information">
+              Personal Information
+            </SelectItem>
+            <SelectItem value="dashboard">Dashboard</SelectItem>
+            <SelectItem value="documents">Documents</SelectItem>
+            <SelectItem value="credit-report">Credit Report</SelectItem>
+            <SelectItem value="business">Business</SelectItem>
+            <SelectItem value="applied-funding">Applied Funding</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <TabsContent value="personal-information" className="w-full">
         <ClientData user={userData as UserWithId} isBrokerView />
@@ -83,7 +100,7 @@ const ClientProfilePage = () => {
       </TabsContent>
 
       <TabsContent value="applied-funding" className="w-full">
-        <div className="flex flex-row justify-end">
+        <div className="flex flex-col sm:flex-row sm:justify-end mb-4 w-full">
           <ApplyFunding userId={userId} />
         </div>
         {/* <ClientAppliedFunding userId={userId} /> */}
