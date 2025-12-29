@@ -81,7 +81,6 @@
     "google-auth-library": "^10.5.0",
     "html-react-parser": "^5.2.10",
     "isomorphic-dompurify": "^2.26.0",
-    "little-state-machine": "^5.0.1",
     "lucide-react": "^0.541.0",
     "motion": "^12.23.12",
     "next": "16.0.7",
