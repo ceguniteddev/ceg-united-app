@@ -59,7 +59,13 @@ export function FundingApplicationFields({
     FundingProductEnumType | undefined
   >(undefined);
   const [isCommunity, setIsCommunity] = useState<boolean>(false);
+  const [isEquipmentFinancing, setIsEquipmentFinancing] =
+    useState<boolean>(false);
   const [isTradeLines, setIsTradeLines] = useState<boolean>(false);
+  const [isAutoLoan, setIsAutoLoan] = useState<boolean>(false);
+  const [vehicleFinancingType, setVehicleFinancingType] = useState<
+    string | undefined
+  >(undefined);
 
   const [howDoYouGetPaidSelected, setHowDoYouGetPaidSelected] = useState<
     DropdownOption | undefined
@@ -95,10 +101,15 @@ export function FundingApplicationFields({
         setIsBusinessIncomeBased(
           formValues.interestedProduct === "Business Income Based Funding"
         );
+        setIsAutoLoan(formValues.interestedProduct === "Auto Loan");
         if (product.type.includes("Business")) {
           refetchBusinesses();
         }
       }
+    }
+
+    if (formValues.vehicleFinancingType) {
+      setVehicleFinancingType(formValues.vehicleFinancingType);
     }
 
     if (formValues.howDoYouGetPaid) {
@@ -146,6 +157,9 @@ export function FundingApplicationFields({
   useEffect(() => {
     if (interestedProductSelected) {
       setIsCommunity(interestedProductSelected.type.includes("Community"));
+      setIsEquipmentFinancing(
+        interestedProductSelected.type.includes("Equipment Financing")
+      );
       setIsTradeLines(interestedProductSelected.type.includes("Tradelines"));
     }
   }, [interestedProductSelected]);
@@ -172,6 +186,9 @@ export function FundingApplicationFields({
 
         // Check if it's Business Income Based Funding
         setIsBusinessIncomeBased(value === "Business Income Based Funding");
+
+        // Check if it's Auto Loan
+        setIsAutoLoan(value === "Auto Loan");
 
         if (selectedProduct.type.includes("Business")) {
           refetchBusinesses();
@@ -231,6 +248,10 @@ export function FundingApplicationFields({
     [form]
   );
 
+  const handleVehicleFinancingTypeChange = useCallback((value: string) => {
+    setVehicleFinancingType(value);
+  }, []);
+
   const currentYear = new Date().getFullYear();
 
   return (
@@ -260,7 +281,7 @@ export function FundingApplicationFields({
                 type="number"
               />
             )}
-          {isCommunity && (
+          {(isCommunity || isEquipmentFinancing) && (
             <CustomFormField
               name={"personalAmountFunding"}
               label="How much funding are you looking for?"
@@ -284,11 +305,65 @@ export function FundingApplicationFields({
             )}
         </div>
 
+        {/* Auto Loan Specific Fields */}
+        {isAutoLoan && (
+          <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-orange-200">
+            <CardHeader className="px-4 md:px-6">
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <span>🚗</span> Auto Loan Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 px-4 md:px-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CustomFormField
+                  name="vehiclePrice"
+                  label="What's the price of the vehicle you want to purchase?"
+                  type="number"
+                />
+                <CustomFormField
+                  name="vehiclePurchaseSource"
+                  label="Where are you buying the car from?"
+                  type="select"
+                  options={[
+                    {
+                      value: "Independent Dealer",
+                      label: "Independent Dealer",
+                    },
+                    { value: "Franchise Dealer", label: "Franchise Dealer" },
+                    { value: "Private Party", label: "Private Party" },
+                    {
+                      value: "Refinancing Current Auto",
+                      label: "Refinancing Current Auto",
+                    },
+                  ]}
+                />
+              </div>
+
+              <CustomFormField
+                name="vehicleVIN"
+                label="Do you know VIN# of the vehicle you want to finance? (Optional)"
+                placeholder="Enter VIN number"
+              />
+
+              <CustomFormField
+                name="vehicleFinancingType"
+                label="Are you financing the vehicle under your business or personal credit?"
+                type="select"
+                onSelectValue={handleVehicleFinancingTypeChange}
+                options={[
+                  { value: "Personal", label: "Personal" },
+                  { value: "Business", label: "Business" },
+                ]}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         {!isCommunity && !isTradeLines && (
           <Card className="bg-slate-100 border-slate-200">
             <CardHeader className="px-4 md:px-6">
-              <CardTitle className="text-base md:text-lg">
-                Personal Information
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <span>👤</span> Personal Information
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 px-4 md:px-6">
@@ -392,8 +467,8 @@ export function FundingApplicationFields({
         {isCommunity && (
           <Card className="bg-slate-100 border-slate-200">
             <CardHeader className="px-4 md:px-6">
-              <CardTitle className="text-base md:text-lg">
-                Community Information
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <span>🤝</span> Community Information
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 px-4 md:px-6">
@@ -447,8 +522,8 @@ export function FundingApplicationFields({
         {isTradeLines && (
           <Card className="bg-slate-100 border-slate-200">
             <CardHeader className="px-4 md:px-6">
-              <CardTitle className="text-base md:text-lg">
-                Tradelines Information
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <span>💳</span> Tradelines Information
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 px-4 md:px-6">
@@ -499,28 +574,33 @@ export function FundingApplicationFields({
           </Card>
         )}
 
-        {!isTradeLines && interestedProductSelected && (
-          <div>
-            <CustomFormField
-              name={"howDoYouGetPaid"}
-              label={"Do you have a job?"}
-              type="select"
-              options={howDoYouGetPaid}
-              onSelectValue={handleDoYouHaveAJobChange}
-            />
-            {/* {howDoYouGetPaidSelected?.value === "no_assistance" && (
+        {!isTradeLines &&
+          interestedProductSelected &&
+          (!isAutoLoan ||
+            (isAutoLoan && vehicleFinancingType === "Personal")) && (
+            <div>
+              <CustomFormField
+                name={"howDoYouGetPaid"}
+                label={"Do you have a job?"}
+                type="select"
+                options={howDoYouGetPaid}
+                onSelectValue={handleDoYouHaveAJobChange}
+              />
+              {/* {howDoYouGetPaidSelected?.value === "no_assistance" && (
               <div className="mt-6">
                 <PlaidLink displayText="Link Personal Account" />
               </div>
             )} */}
-          </div>
-        )}
+            </div>
+          )}
 
         {howDoYouGetPaidSelected?.type === "yes" && !isTradeLines && (
           <Card className="bg-slate-100 border-slate-200">
             <CardHeader className="px-4 md:px-6">
               <CardTitle className="flex flex-col md:flex-row justify-between gap-2 text-base md:text-lg">
-                <div>Employment Information</div>
+                <div className="flex items-center gap-2">
+                  <span>💼</span> Employment Information
+                </div>
                 {howDoYouGetPaidSelectedBank && (
                   <PlaidLink displayText="Link Personal Account" />
                 )}
@@ -697,12 +777,14 @@ export function FundingApplicationFields({
         )}
 
         {(interestedProductSelected?.type?.includes("Business") ||
-          isCommunity) &&
+          isCommunity ||
+          isEquipmentFinancing ||
+          (isAutoLoan && vehicleFinancingType === "Business")) &&
           !isTradeLines && (
             <Card className="bg-slate-100 border-slate-200">
               <CardHeader className="px-4 md:px-6">
-                <CardTitle className="text-base md:text-lg">
-                  Business Information
+                <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                  <span>🏢</span> Business Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 px-4 md:px-6">
@@ -759,8 +841,8 @@ export function FundingApplicationFields({
                 <CustomFormField name="businessWebsite" label="Website" />
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Social Media Handles
+                  <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+                    <span>📱</span> Social Media Handles
                   </label>
                   <div className="space-y-3">
                     {SOCIAL_MEDIA_PLATFORMS.map((platform, index) => (
@@ -793,7 +875,9 @@ export function FundingApplicationFields({
                 <Separator className="my-4" />
 
                 <div className="space-y-4">
-                  <h4 className="font-medium">Financial Information</h4>
+                  <h4 className="font-medium flex items-center gap-2">
+                    <span>📊</span> Financial Information
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <CustomFormField
                       name="dateOfIncorporation"
@@ -885,6 +969,11 @@ export function FundingApplicationFields({
                   {/* Bridge Loan Application Form (Business Income Based Funding) */}
                   {isBusinessIncomeBased && (
                     <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-indigo-200">
+                      <CardHeader className="px-4 md:px-6">
+                        <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                          <span>🌉</span> Bridge Loan Application Details
+                        </CardTitle>
+                      </CardHeader>
                       <CardContent className="space-y-6 px-4 md:px-6">
                         {/* Use of Funds */}
                         <CustomFormField
@@ -894,8 +983,8 @@ export function FundingApplicationFields({
 
                         {/* Financial Metrics */}
                         <Separator className="my-4" />
-                        <h4 className="font-medium text-indigo-900">
-                          Financial Information
+                        <h4 className="font-medium text-indigo-900 flex items-center gap-2">
+                          <span>💰</span> Financial Information
                         </h4>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -918,8 +1007,8 @@ export function FundingApplicationFields({
 
                         {/* Business Property Information */}
                         <Separator className="my-4" />
-                        <h4 className="font-medium text-indigo-900">
-                          Business Property Information
+                        <h4 className="font-medium text-indigo-900 flex items-center gap-2">
+                          <span>🏠</span> Business Property Information
                         </h4>
 
                         <CustomFormField
@@ -974,8 +1063,8 @@ export function FundingApplicationFields({
 
                         {/* Additional Information */}
                         <Separator className="my-4" />
-                        <h4 className="font-medium text-indigo-900">
-                          Additional Information
+                        <h4 className="font-medium text-indigo-900 flex items-center gap-2">
+                          <span>ℹ️</span> Additional Information
                         </h4>
 
                         {/* Referral */}
