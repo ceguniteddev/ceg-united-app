@@ -24,7 +24,7 @@ type Props = {
 export function RowActions({ data }: Props) {
   const [open, setOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const { userData } = useUserQuery(data.userId);
+  const { userData } = useUserQuery(data.userId!);
 
   const router = useRouter();
   const handleOpen = () => {

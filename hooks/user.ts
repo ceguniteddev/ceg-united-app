@@ -400,7 +400,13 @@ export const useAdminAddClientMutation = () => {
   const { user } = useAuth();
 
   const mutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async ({
+      step1Data,
+      step2Data,
+    }: {
+      step1Data: any;
+      step2Data: any;
+    }) => {
       if (!user) throw new Error("User not authenticated");
 
       const response = await fetch(`/api/admin/clients/add`, {
@@ -408,7 +414,7 @@ export const useAdminAddClientMutation = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ step1Data, step2Data }),
       });
 
       if (!response.ok) {
@@ -419,7 +425,7 @@ export const useAdminAddClientMutation = () => {
       return await response.json();
     },
     onSuccess: () => {
-      toast.success("Client added successfully!");
+      // toast.success("Client added successfully!");
       queryClient.invalidateQueries({ queryKey: [GET_USERS] });
     },
     onError: (error: Error) => {

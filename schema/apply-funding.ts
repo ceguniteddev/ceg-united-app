@@ -17,6 +17,7 @@ export const FundingApplicationType = [
   "Personal",
   "Business",
   "Personal And Business",
+  "Equipment Financing",
   "Income",
   "Community",
   "Tradelines",
@@ -61,7 +62,7 @@ export type Employment = z.infer<typeof employmentSchema>;
 
 export const applyFundingSchema = z
   .object({
-    userId: z.string().min(1, { error: "Required" }),
+    userId: z.string().optional(),
     status: FundingApplicationSatusEnum,
     appliedDate: z.coerce.date<Date>({ error: "Required" }),
     referenceNumber: z.string().optional(),
@@ -99,7 +100,8 @@ export const applyFundingSchema = z
     payPerMonth: z.coerce.number<number>().optional(),
     rentOrMortgage: z.string().optional(),
 
-    howDoYouGetPaid: z.string().optional(),
+    // howDoYouGetPaid: z.string().optional(),
+    howDoYouGetPaid: z.string().min(1, { error: "Required" }),
     employmentStatus: z.string().optional(),
     employmentPayPerMonth: z.coerce.number<number>().optional(),
     employmentEmployerName: z.string().optional(),
@@ -130,12 +132,25 @@ export const applyFundingSchema = z
     businessStreetHouseNumber: z.string().optional(),
     businessCityAddress: z.string().optional(),
     businessStateAddress: z.string().optional(),
-    businessPostalAddress: z.string().optional(),
+    businessPostalAddress: z
+      .string()
+      .trim()
+      // .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" })
+      .optional(),
     employerIdentificationNumber: z.string().optional(),
     businessPhoneNumber: z.string().optional(),
     businessEmail: z.email({ message: "Invalid email" }).optional(),
-    businessWebsite: z.string({ error: "Required" }).optional(),
-    socialMedia: z.string({ error: "Required" }).optional(),
+    businessWebsite: z.string().optional(),
+    socialMedia: z
+      .array(
+        z
+          .object({
+            platform: z.string().optional(),
+            handle: z.string().optional(),
+          })
+          .optional()
+      )
+      .optional(),
     // lastYearTaxes: z.coerce.number<number>().optional(),
     // currentYearTaxes: z.coerce.number<number>().optional(),
 
@@ -153,6 +168,42 @@ export const applyFundingSchema = z
     businessProjectedProfit3: z.coerce.number<number>().optional(),
 
     industryField: z.string().optional(),
+
+    // Bridge Loan Application Fields (Business Income Based Funding)
+    useOfFunds: z.string().optional(),
+    annualBusinessRevenue: z.coerce.number<number>().optional(),
+    avgMonthlyCreditCardSales: z.coerce.number<number>().optional(),
+    avgDailyBankBalance: z.coerce.number<number>().optional(),
+    businessPropertyType: z.enum(["Lease", "Own"]).or(z.literal("")).optional(),
+    landlordName: z.string().optional(),
+    landlordPhone: z.string().optional(),
+    monthlyPayment: z.coerce.number<number>().optional(),
+    isSeasonalBusiness: z.enum(["Yes", "No"]).or(z.literal("")).optional(),
+    hasOutstandingAdvances: z.enum(["Yes", "No"]).or(z.literal("")).optional(),
+    // personalFullName: z.string().optional(),
+    // personalPhoneNumber: z.string().optional(),
+    // personalEmailAddress: z.string().optional(),
+    // dateOfBirth: z.coerce.date<Date>({ error: "Require Date" }).optional(),
+    // socialSecurityNumber: z.string().optional(),
+    // ficoCreditScore: z.coerce.number<number>().optional(),
+    whoReferredYou: z.string().optional(),
+
+    // Auto Loan Fields
+    vehiclePrice: z.coerce.number<number>().optional(),
+    vehiclePurchaseSource: z
+      .enum([
+        "Independent Dealer",
+        "Franchise Dealer",
+        "Private Party",
+        "Refinancing Current Auto",
+      ])
+      .or(z.literal(""))
+      .optional(),
+    vehicleVIN: z.string().optional(),
+    vehicleFinancingType: z
+      .enum(["Personal", "Business"])
+      .or(z.literal(""))
+      .optional(),
 
     businessTaxes: z.string().optional(),
     businessTaxesStatus: z.string().optional(),
@@ -500,18 +551,92 @@ export const applyFundingSchema = z
       }
     }
   })
-  .refine(
-    (data) => {
-      if (data.fundingType?.includes("Business")) {
-        return data.businessName && data.businessName.length > 0;
+  .superRefine((data, ctx) => {
+    // Validate all required business fields when Business funding type is selected
+    if (data.fundingType?.includes("Business")) {
+      if (!data.businessName || data.businessName.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessName"],
+        });
       }
-      return true;
-    },
-    {
-      message: "Required",
-      path: ["businessName"],
+
+      if (
+        !data.employerIdentificationNumber ||
+        data.employerIdentificationNumber.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employerIdentificationNumber"],
+        });
+      }
+
+      if (!data.businessEmail || data.businessEmail.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessEmail"],
+        });
+      }
+
+      if (
+        !data.businessPhoneNumber ||
+        data.businessPhoneNumber.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessPhoneNumber"],
+        });
+      }
+
+      if (
+        !data.businessStreetAddress ||
+        data.businessStreetAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessStreetAddress"],
+        });
+      }
+
+      if (
+        !data.businessCityAddress ||
+        data.businessCityAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessCityAddress"],
+        });
+      }
+
+      if (
+        !data.businessStateAddress ||
+        data.businessStateAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessStateAddress"],
+        });
+      }
+
+      if (
+        !data.businessPostalAddress ||
+        data.businessPostalAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessPostalAddress"],
+        });
+      }
     }
-  )
+  })
   .superRefine((data, ctx) => {
     // If funded by Community, require a non-empty reason
     if (data.fundingType?.includes("Community")) {
@@ -524,6 +649,235 @@ export const applyFundingSchema = z
           message: "Required",
           path: ["reasonForJoiningCommunity"],
         });
+      }
+    }
+
+    // If funded by Equipment Financing, require personal amount and business info
+    if (data.fundingType?.includes("Equipment Financing")) {
+      if (
+        data.personalAmountFunding == null ||
+        data.personalAmountFunding <= 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["personalAmountFunding"],
+        });
+      }
+
+      // Business information requirements
+      if (!data.businessName || data.businessName.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessName"],
+        });
+      }
+
+      if (
+        !data.employerIdentificationNumber ||
+        data.employerIdentificationNumber.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employerIdentificationNumber"],
+        });
+      }
+
+      if (!data.businessEmail || data.businessEmail.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessEmail"],
+        });
+      }
+
+      if (
+        !data.businessPhoneNumber ||
+        data.businessPhoneNumber.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessPhoneNumber"],
+        });
+      }
+
+      if (
+        !data.businessStreetAddress ||
+        data.businessStreetAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessStreetAddress"],
+        });
+      }
+
+      if (
+        !data.businessCityAddress ||
+        data.businessCityAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessCityAddress"],
+        });
+      }
+
+      if (
+        !data.businessStateAddress ||
+        data.businessStateAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessStateAddress"],
+        });
+      }
+
+      if (
+        !data.businessPostalAddress ||
+        data.businessPostalAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessPostalAddress"],
+        });
+      }
+    }
+
+    // Auto Loan validation
+    if (data.interestedProduct === "Auto Loan") {
+      // Vehicle price is required
+      if (data.vehiclePrice == null || data.vehiclePrice <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["vehiclePrice"],
+        });
+      }
+
+      // Purchase source is required
+      if (
+        !data.vehiclePurchaseSource ||
+        data.vehiclePurchaseSource.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["vehiclePurchaseSource"],
+        });
+      }
+
+      // Financing type is required
+      if (
+        !data.vehicleFinancingType ||
+        data.vehicleFinancingType.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["vehicleFinancingType"],
+        });
+      }
+
+      // If business financing, require all business fields
+      if (data.vehicleFinancingType === "Business") {
+        if (!data.businessName || data.businessName.trim().length === 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessName"],
+          });
+        }
+
+        if (
+          !data.employerIdentificationNumber ||
+          data.employerIdentificationNumber.trim().length === 0
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["employerIdentificationNumber"],
+          });
+        }
+
+        if (!data.businessEmail || data.businessEmail.trim().length === 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessEmail"],
+          });
+        }
+
+        if (
+          !data.businessPhoneNumber ||
+          data.businessPhoneNumber.trim().length === 0
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessPhoneNumber"],
+          });
+        }
+
+        if (
+          !data.businessStreetAddress ||
+          data.businessStreetAddress.trim().length === 0
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessStreetAddress"],
+          });
+        }
+
+        if (
+          !data.businessCityAddress ||
+          data.businessCityAddress.trim().length === 0
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessCityAddress"],
+          });
+        }
+
+        if (
+          !data.businessStateAddress ||
+          data.businessStateAddress.trim().length === 0
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessStateAddress"],
+          });
+        }
+
+        if (
+          !data.businessPostalAddress ||
+          data.businessPostalAddress.trim().length === 0
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessPostalAddress"],
+          });
+        }
+      }
+
+      // If personal financing, require employment information
+      if (data.vehicleFinancingType === "Personal") {
+        if (!data.howDoYouGetPaid || data.howDoYouGetPaid.trim().length === 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["howDoYouGetPaid"],
+          });
+        }
       }
     }
 
@@ -541,27 +895,7 @@ export const applyFundingSchema = z
       }
     }
   })
-  // .refine(
-  //   (data) => {
-  //     if (data.fundingType?.includes("Community")) {
-  //       return (
-  //         data.reasonForJoiningCommunity &&
-  //         data.reasonForJoiningCommunity.length > 0
-  //       );
-  //     }
-  //     if (data.fundingType?.includes("Community")) {
-  //       return (
-  //         data.personalAmountFunding !== undefined &&
-  //         data.personalAmountFunding > 0
-  //       );
-  //     }
-  //     return true;
-  //   },
-  //   {
-  //     message: "Required",
-  //     path: ["reasonForJoiningCommunity"],
-  //   }
-  // )
+
   .refine(
     (data) => {
       if (
@@ -604,7 +938,8 @@ export const applyFundingSchema = z
       return ft.includes(needle);
     };
 
-    const triggered = has("Business") || has("Personal");
+    const triggered =
+      has("Business") || has("Personal") || has("Equipment Financing");
     if (!triggered) return;
 
     // --- Put your conditional validations here ---
@@ -668,7 +1003,7 @@ export const FundingProductTypeEnum: FundingProductEnumType[] = [
   {
     value: "Business Income Based Funding",
     label: "Business Income Based Funding",
-    type: "Personal",
+    type: "Business",
   },
   {
     value: "Personal Funding",
@@ -708,12 +1043,12 @@ export const FundingProductTypeEnum: FundingProductEnumType[] = [
   {
     value: "Auto Loan",
     label: "Auto Loan",
-    type: "Personal And Business",
+    type: "Equipment Financing",
   },
   {
     value: "Equipment Financing",
     label: "Equipment Financing",
-    type: "Personal And Business",
+    type: "Equipment Financing",
   },
 ];
 

@@ -13,7 +13,7 @@ import {
 } from "@/lib/fireabase-admin";
 import { logInfo } from "@/lib/logger";
 import { sendMail } from "@/lib/nodemailer";
-import { ChangePassword, CurrentUser, Role } from "@/schema";
+import { ChangePassword, CurrentUser, Role, Business } from "@/schema";
 import { noteSchema, NoteSchema } from "@/schema/notes";
 
 import { User, UserActiveStatus, UserWithId } from "@/schema/registration";
@@ -22,6 +22,7 @@ import { cookies, headers } from "next/headers";
 import { FieldPath } from "firebase-admin/firestore";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { applyFunding } from "./apply-funding";
+import { recordBusiness } from "./business";
 
 export const getUserRecordByEmail = async (email: string) => {
   const authentication = authenticationAdmin();
@@ -116,11 +117,13 @@ export const registerUser = async ({
   isBrokerRegistration,
   brokerName,
   isAdminRegistration,
+  fundingData,
 }: {
   value: User;
   isBrokerRegistration?: boolean;
   brokerName?: string;
   isAdminRegistration?: boolean;
+  fundingData?: ApplyFunding;
 }) => {
   const userRecord = await getUserRecordByEmail(value.email);
 
@@ -138,21 +141,38 @@ export const registerUser = async ({
   const docRef = await collectionRef.add(userData);
   const data = (await docRef.get()).data();
 
-  if (userData.employmentPayPerMonth && userData.employmentPayPerMonth > 0) {
-    const fundApplication: ApplyFunding = {
+  // Create business record first if business data exists
+  let businessId: string | undefined;
+  if (fundingData?.businessName && fundingData.businessName.trim().length > 0) {
+    const businessData: Business = {
       userId: docRef.id,
-      employmentPayPerMonth: userData.employmentPayPerMonth,
-      payPerMonth: userData.payPerMonth,
-      // rentOrMortgage: userData.rentOrMortgage,
-      appliedDate: new Date(),
-      status: "New",
-      addressStreet: userData.addressStreet,
-      addressCity: userData.addressCity,
-      addressState: userData.addressState,
-      addressPostal: userData.addressPostal,
-      houseNumber: userData.houseNumber,
-      interestedProduct: "Knowledge Community",
-      fundingType: "Community",
+      businessName: fundingData.businessName,
+      businessStreetAddress: fundingData.businessStreetAddress ?? "",
+      businessStreetHouseNumber: fundingData.businessStreetHouseNumber,
+      businessCityAddress: fundingData.businessCityAddress ?? "",
+      businessStateAddress: fundingData.businessStateAddress ?? "",
+      businessPostalAddress: fundingData.businessPostalAddress ?? "",
+      employerIdentificationNumber:
+        fundingData.employerIdentificationNumber ?? "",
+      businessPhoneNumber: fundingData.businessPhoneNumber ?? "",
+      businessEmail: fundingData.businessEmail ?? "",
+      businessWebsite: fundingData.businessWebsite,
+      socialMedia: fundingData.socialMedia,
+    };
+
+    // Record business and get the ID
+    const businessDocRef = await recordBusiness(businessData);
+    businessId = businessDocRef;
+  }
+
+  // Create funding application if fundingData is provided
+  if (fundingData) {
+    const fundApplication: ApplyFunding = {
+      ...fundingData,
+      userId: docRef.id,
+      businessId: businessId, // Set the businessId from created business
+      appliedDate: fundingData.appliedDate || new Date(),
+      status: fundingData.status || "New",
     };
 
     await applyFunding({ value: fundApplication });

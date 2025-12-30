@@ -158,7 +158,7 @@ const RegistrationPage = () => {
                     <CustomFormField name={"businessNet"} label="Business Net?" type="number" />
                   </div> */}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <CustomFormField
                       name={"addressStreet"}
                       label={"Street Address"}
@@ -167,9 +167,9 @@ const RegistrationPage = () => {
                       name={"houseNumber"}
                       label={"Apartment/Suite/Unit/House Number"}
                     />
-                  </div>
+                  </div> */}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <CustomFormField name={"addressCity"} label={"City"} />
                     <CustomFormField
                       name={"addressState"}
@@ -182,8 +182,8 @@ const RegistrationPage = () => {
                       name={"addressPostal"}
                       label={"Zip Code"}
                     />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  </div> */}
+                  {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <CustomFormField
                       name={"employmentPayPerMonth"}
                       type="number"
@@ -195,11 +195,7 @@ const RegistrationPage = () => {
                       type="number"
                       label={"Rent/Mortgage payment"}
                     />
-                    {/* <CustomFormField
-                      name={"rentOrMortgage"}
-                      label={"Is it rent or mortgage? If else, please specify"}
-                    /> */}
-                  </div>
+                  </div> */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <CustomFormField
                       name={"ssn"}

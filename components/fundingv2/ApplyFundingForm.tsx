@@ -106,6 +106,7 @@ const ApplyFundingForm = ({
   const [businessTaxesSelected, setBusinessTaxesSelected] = useState<
     DropdownOption | undefined
   >(undefined);
+  const [isBusinessIncomeBased, setIsBusinessIncomeBased] = useState(false);
 
   const [businessIdSelected, setBusinessIdSelected] = useState<
     string | undefined
@@ -125,6 +126,9 @@ const ApplyFundingForm = ({
         );
         if (product) {
           setInterestedProductSelected(product);
+          setIsBusinessIncomeBased(
+            data.interestedProduct === "Business Income Based Funding"
+          );
           if (product.type.includes("Business")) {
             refetchBusinesses();
           }
@@ -196,13 +200,13 @@ const ApplyFundingForm = ({
       personalTaxesStatus: defaultValues?.personalTaxesStatus || "",
       businessTaxesStatus: defaultValues?.businessTaxesStatus || "",
 
-      addressStreet:
-        defaultValues?.addressStreet || userData.addressStreet || "",
-      houseNumber: defaultValues?.houseNumber || userData.houseNumber || "",
-      addressCity: defaultValues?.addressCity || userData.addressCity || "",
-      addressState: defaultValues?.addressState || userData.addressState || "",
-      addressPostal:
-        defaultValues?.addressPostal || userData.addressPostal || "",
+      // addressStreet:
+      //   defaultValues?.addressStreet || userData.addressStreet || "",
+      // houseNumber: defaultValues?.houseNumber || userData.houseNumber || "",
+      // addressCity: defaultValues?.addressCity || userData.addressCity || "",
+      // addressState: defaultValues?.addressState || userData.addressState || "",
+      // addressPostal:
+      //   defaultValues?.addressPostal || userData.addressPostal || "",
     },
   });
 
@@ -277,6 +281,9 @@ const ApplyFundingForm = ({
           );
           if (product) {
             setInterestedProductSelected(product);
+            setIsBusinessIncomeBased(
+              savedDraft.interestedProduct === "Business Income Based Funding"
+            );
           }
         }
 
@@ -325,13 +332,14 @@ const ApplyFundingForm = ({
                 employmentStatus: "",
                 personalTaxesStatus: "",
                 businessTaxesStatus: "",
-                addressStreet: userData.addressStreet || "",
-                houseNumber: userData.houseNumber || "",
-                addressCity: userData.addressCity || "",
-                addressState: userData.addressState || "",
-                addressPostal: userData.addressPostal || "",
+                // addressStreet: userData.addressStreet || "",
+                // houseNumber: userData.houseNumber || "",
+                // addressCity: userData.addressCity || "",
+                // addressState: userData.addressState || "",
+                // addressPostal: userData.addressPostal || "",
               });
               setInterestedProductSelected(undefined);
+              setIsBusinessIncomeBased(false);
               setHowDoYouGetPaidSelected(undefined);
               setHowDoYouGetPaidSelectedBank(false);
               setPersonalTaxesSelected(undefined);
@@ -500,6 +508,10 @@ const ApplyFundingForm = ({
           shouldValidate: true,
           shouldDirty: true,
         });
+
+        // Check if it's Business Income Based Funding
+        setIsBusinessIncomeBased(value === "Business Income Based Funding");
+
         if (selectedProduct.type.includes("Business")) {
           refetchBusinesses();
         }
@@ -1187,6 +1199,111 @@ const ApplyFundingForm = ({
                                 label={`in ${currentYear - 3}?`}
                               />
                             </div>
+                          )}
+
+                          {/* Bridge Loan Application Form (Business Income Based Funding) */}
+                          {isBusinessIncomeBased && (
+                            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-indigo-200">
+                              <CardContent className="space-y-6 px-4 md:px-6">
+                                {/* Use of Funds */}
+                                <CustomFormField
+                                  name="useOfFunds"
+                                  label="Use of Funds"
+                                />
+
+                                {/* Financial Metrics */}
+                                <Separator className="my-4" />
+                                <h4 className="font-medium text-indigo-900">
+                                  Financial Information
+                                </h4>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <CustomFormField
+                                    name="annualBusinessRevenue"
+                                    type="number"
+                                    label="Annual Business Revenue"
+                                  />
+                                  <CustomFormField
+                                    name="avgMonthlyCreditCardSales"
+                                    type="number"
+                                    label="Avg. Monthly Credit Card Sales"
+                                  />
+                                  <CustomFormField
+                                    name="avgDailyBankBalance"
+                                    type="number"
+                                    label="Avg. Daily Bank Balance"
+                                  />
+                                </div>
+
+                                {/* Business Property Information */}
+                                <Separator className="my-4" />
+                                <h4 className="font-medium text-indigo-900">
+                                  Business Property Information
+                                </h4>
+
+                                <CustomFormField
+                                  name="businessPropertyType"
+                                  label="* Business Property Type"
+                                  type="select"
+                                  placeholder="Select type"
+                                  options={[
+                                    { value: "Lease", label: "Lease" },
+                                    { value: "Own", label: "Own" },
+                                  ]}
+                                />
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <CustomFormField
+                                    name="landlordName"
+                                    label="Landlord Name"
+                                  />
+                                  <CustomFormField
+                                    name="landlordPhone"
+                                    label="Landlord Phone"
+                                  />
+                                  <CustomFormField
+                                    name="monthlyPayment"
+                                    type="number"
+                                    label="Monthly Payment"
+                                  />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <CustomFormField
+                                    name="isSeasonalBusiness"
+                                    label="* Is this a seasonal business?"
+                                    type="select"
+                                    placeholder="Select option"
+                                    options={[
+                                      { value: "No", label: "No" },
+                                      { value: "Yes", label: "Yes" },
+                                    ]}
+                                  />
+                                  <CustomFormField
+                                    name="hasOutstandingAdvances"
+                                    label="* Any outstanding advances?"
+                                    type="select"
+                                    placeholder="Select option"
+                                    options={[
+                                      { value: "No", label: "No" },
+                                      { value: "Yes", label: "Yes" },
+                                    ]}
+                                  />
+                                </div>
+
+                                {/* Additional Information */}
+                                <Separator className="my-4" />
+                                <h4 className="font-medium text-indigo-900">
+                                  Additional Information
+                                </h4>
+
+                                {/* Referral */}
+                                <CustomFormField
+                                  name="whoReferredYou"
+                                  label="Who Referred You?"
+                                />
+                              </CardContent>
+                            </Card>
                           )}
                         </CardContent>
                       </Card>

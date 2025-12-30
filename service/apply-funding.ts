@@ -28,7 +28,7 @@ import { getUserById } from "./user";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const applyFunding = async ({ value }: { value: ApplyFunding }) => {
-  const userData = await getUserById(value.userId);
+  const userData = await getUserById(value.userId!);
   if (!userData) {
     throw new AppError("User not found");
   }
@@ -43,11 +43,11 @@ export const applyFunding = async ({ value }: { value: ApplyFunding }) => {
   await docRef.set({ ...value });
 
   // check if user alreay has generated CRS report
-  const data = await getCRSReport(value.userId);
+  const data = await getCRSReport(value.userId!);
 
   if (!data || data.length === 0) {
     await generateCRSReport({
-      userId: value.userId,
+      userId: value.userId!,
       referenceNumber,
       bureaus: { equifax: true, experian: true, transunion: true },
     });
@@ -57,14 +57,14 @@ export const applyFunding = async ({ value }: { value: ApplyFunding }) => {
     const businessData = await getCRSBusinessProfile(value.businessId);
     if (!businessData) {
       await generateCRSReportBusiness(
-        value.userId,
+        value.userId!,
         referenceNumber,
         value.businessId
       );
     }
   }
 
-  await fundAnalysis({ referenceNumber, userId: value.userId });
+  await fundAnalysis({ referenceNumber, userId: value.userId! });
 };
 
 export const getApplyFunding = async (
