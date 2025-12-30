@@ -145,7 +145,7 @@ export const useSubmitClientApplication = () => {
       return await response.json();
     },
     onSuccess: () => {
-      toast.success("Application submitted successfully!");
+      // toast.success("Application submitted successfully!");
       queryClient.invalidateQueries({ queryKey: ["BROKER_CLIENTS"] });
       queryClient.invalidateQueries({ queryKey: ["BROKER_STATISTICS"] });
     },

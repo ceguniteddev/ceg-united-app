@@ -7,7 +7,7 @@ import { genderTypes } from "@/schema";
 
 export function Step1PersonalInfo() {
   return (
-    <Card>
+    <Card className="bg-slate-100 border-slate-200">
       <CardHeader>
         <CardTitle>Step 1: Personal Information</CardTitle>
       </CardHeader>

@@ -188,7 +188,19 @@ export default function FundingApplicationView({ data }: Props) {
                 <Field label="Website" value={data.businessWebsite} />
                 <Field label="Email" value={data.businessEmail} />
                 <Field label="Phone" value={data.businessPhoneNumber} />
-                <Field label="Social Media" value={data.socialMedia} />
+                <Field
+                  label="Social Media"
+                  value={
+                    data.socialMedia
+                      ?.map((sm, idx) =>
+                        sm?.platform && sm?.handle
+                          ? `${sm.platform}: ${sm.handle}`
+                          : null
+                      )
+                      .filter(Boolean)
+                      .join(", ") || "—"
+                  }
+                />
                 <Field label="Street" value={data.businessStreetAddress} />
                 <Field
                   label="Apartment/Suite/Unit/House Number"
@@ -254,6 +266,56 @@ export default function FundingApplicationView({ data }: Props) {
               </div>
             </section>
             <Separator />
+
+            {/* Bridge Loan Application (Business Income Based Funding) */}
+            {data.interestedProduct === "Business Income Based Funding" && (
+              <>
+                <section>
+                  <h3 className="text-sm font-semibold mb-3">
+                    Bridge Loan Application Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="Use of Funds" value={data.useOfFunds} />
+                    <Field
+                      label="Annual Business Revenue"
+                      value={currency(data.annualBusinessRevenue)}
+                    />
+                    <Field
+                      label="Avg. Monthly Credit Card Sales"
+                      value={currency(data.avgMonthlyCreditCardSales)}
+                    />
+                    <Field
+                      label="Avg. Daily Bank Balance"
+                      value={currency(data.avgDailyBankBalance)}
+                    />
+                    <Field
+                      label="Business Property Type"
+                      value={data.businessPropertyType}
+                    />
+                    <Field label="Landlord Name" value={data.landlordName} />
+                    <Field label="Landlord Phone" value={data.landlordPhone} />
+                    <Field
+                      label="Monthly Payment"
+                      value={currency(data.monthlyPayment)}
+                    />
+                    <Field
+                      label="Is this a seasonal business?"
+                      value={data.isSeasonalBusiness}
+                    />
+                    <Field
+                      label="Any outstanding advances?"
+                      value={data.hasOutstandingAdvances}
+                    />
+
+                    <Field
+                      label="Who Referred You?"
+                      value={data.whoReferredYou}
+                    />
+                  </div>
+                </section>
+                <Separator />
+              </>
+            )}
           </>
         )}
 

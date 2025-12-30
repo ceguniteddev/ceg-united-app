@@ -20,8 +20,6 @@ import { Plus, Trash2 } from "lucide-react";
 import IconMenu from "../icon-menu";
 import { Business } from "@/schema";
 import PlaidLink from "../PlaidLink";
-import ClientBusinessManagement from "../ClientBusinessManagement";
-import { ResponsiveDialog } from "../responsive-dialog";
 import { Separator } from "../ui/separator";
 
 const legalResident: DropdownOption[] = [
@@ -57,7 +55,6 @@ export function FundingApplicationFields({
   const form = useFormContext<ApplyFunding>();
 
   const [showLegalResidentOther, setShowLegalResidentOther] = useState(false);
-  const [openBusinessModal, setOpenBusinessModal] = useState(false);
   const [interestedProductSelected, setInterestedProductSelected] = useState<
     FundingProductEnumType | undefined
   >(undefined);
@@ -78,9 +75,7 @@ export function FundingApplicationFields({
     DropdownOption | undefined
   >(undefined);
 
-  const [businessIdSelected, setBusinessIdSelected] = useState<
-    string | undefined
-  >(undefined);
+  const [isBusinessIncomeBased, setIsBusinessIncomeBased] = useState(false);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -97,6 +92,9 @@ export function FundingApplicationFields({
       );
       if (product) {
         setInterestedProductSelected(product);
+        setIsBusinessIncomeBased(
+          formValues.interestedProduct === "Business Income Based Funding"
+        );
         if (product.type.includes("Business")) {
           refetchBusinesses();
         }
@@ -135,92 +133,15 @@ export function FundingApplicationFields({
       );
       if (option) setBusinessTaxesSelected(option);
     }
-
-    if (formValues.businessId) {
-      setBusinessIdSelected(formValues.businessId);
-    }
   }, [form, refetchBusinesses]);
 
-  const businessOptions = useMemo<DropdownOption[]>(
-    () =>
-      (businessData ?? []).map((b: Business) => ({
-        value: b.businessName,
-        label: `${b.businessName} (${b.employerIdentificationNumber})`,
-      })),
-    [businessData]
-  );
-
-  const handleNewBusinessSaved = async (businessName: string) => {
-    refetchBusinesses();
-    setOpenBusinessModal(false);
-  };
-
-  const handleBusinessSelect = useCallback(
-    (value: string) => {
-      if (!value) {
-        return;
-      }
-
-      const b = businessData?.find((x: Business) => x.businessName === value);
-
-      if (b) {
-        form.setValue("businessName", value, {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setBusinessIdSelected(b.id);
-        form.setValue("businessId", b.id ?? "", {
-          shouldValidate: false,
-          shouldDirty: true,
-        });
-        form.setValue("businessStreetAddress", b.businessStreetAddress ?? "", {
-          shouldValidate: false,
-          shouldDirty: true,
-        });
-        form.setValue(
-          "businessStreetHouseNumber",
-          b.businessStreetHouseNumber ?? "",
-          {
-            shouldValidate: false,
-            shouldDirty: true,
-          }
-        );
-        form.setValue("businessCityAddress", b.businessCityAddress ?? "", {
-          shouldValidate: false,
-          shouldDirty: true,
-        });
-        form.setValue("businessStateAddress", b.businessStateAddress ?? "", {
-          shouldValidate: false,
-          shouldDirty: true,
-        });
-        form.setValue("businessPostalAddress", b.businessPostalAddress ?? "", {
-          shouldValidate: false,
-          shouldDirty: true,
-        });
-        form.setValue("businessPhoneNumber", b.businessPhoneNumber ?? "", {
-          shouldValidate: false,
-          shouldDirty: true,
-        });
-        form.setValue("businessEmail", b.businessEmail ?? "", {
-          shouldValidate: false,
-          shouldDirty: true,
-        });
-        form.setValue("businessWebsite", b.businessWebsite ?? "", {
-          shouldValidate: false,
-          shouldDirty: true,
-        });
-        form.setValue(
-          "employerIdentificationNumber",
-          b.employerIdentificationNumber ?? "",
-          {
-            shouldValidate: false,
-            shouldDirty: true,
-          }
-        );
-      }
-    },
-    [form, businessData]
-  );
+  const SOCIAL_MEDIA_PLATFORMS = [
+    { value: "TikTok", label: "TikTok" },
+    { value: "Youtube", label: "Youtube" },
+    { value: "Instagram", label: "Instagram" },
+    { value: "Facebook", label: "Facebook" },
+    { value: "X", label: "X" },
+  ];
 
   useEffect(() => {
     if (interestedProductSelected) {
@@ -248,6 +169,10 @@ export function FundingApplicationFields({
           shouldValidate: true,
           shouldDirty: true,
         });
+
+        // Check if it's Business Income Based Funding
+        setIsBusinessIncomeBased(value === "Business Income Based Funding");
+
         if (selectedProduct.type.includes("Business")) {
           refetchBusinesses();
         }
@@ -310,24 +235,6 @@ export function FundingApplicationFields({
 
   return (
     <>
-      <ResponsiveDialog
-        isOpen={openBusinessModal}
-        setIsOpen={setOpenBusinessModal}
-        title="Manage Business Information"
-        description={""}
-        descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-11/12 md:w-3/4 lg:w-3/6"
-      >
-        <ClientBusinessManagement
-          userId={userId}
-          editingBusiness={null}
-          setEditingBusiness={() => {}}
-          isModal
-          setOpen={setOpenBusinessModal}
-          onSaveSuccess={handleNewBusinessSaved}
-        />
-      </ResponsiveDialog>
-
       <input type="hidden" {...form.register("fundingType")} />
       <input type="hidden" {...form.register("userId")} />
       <input type="hidden" {...form.register("status")} />
@@ -593,7 +500,7 @@ export function FundingApplicationFields({
         )}
 
         {!isTradeLines && interestedProductSelected && (
-          <div className="flex flex-row items-center gap-4 justify-between">
+          <div>
             <CustomFormField
               name={"howDoYouGetPaid"}
               label={"Do you have a job?"}
@@ -601,11 +508,11 @@ export function FundingApplicationFields({
               options={howDoYouGetPaid}
               onSelectValue={handleDoYouHaveAJobChange}
             />
-            {howDoYouGetPaidSelected?.value === "no_assistance" && (
+            {/* {howDoYouGetPaidSelected?.value === "no_assistance" && (
               <div className="mt-6">
                 <PlaidLink displayText="Link Personal Account" />
               </div>
-            )}
+            )} */}
           </div>
         )}
 
@@ -756,7 +663,7 @@ export function FundingApplicationFields({
                   })
                 }
               >
-                <Plus className="mr-2 h-4 w-4" /> Add Another Employment
+                <Plus className="h-4 w-4" /> Add Another Employment
               </Button>
 
               <CustomFormField
@@ -792,115 +699,294 @@ export function FundingApplicationFields({
         {(interestedProductSelected?.type?.includes("Business") ||
           isCommunity) &&
           !isTradeLines && (
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-end gap-4">
-              <CustomFormField
-                name="businessName"
-                label="Select Business"
-                type="select"
-                placeholder="Select your business"
-                options={businessOptions}
-                onSelectValue={handleBusinessSelect}
-              />
-              <Button
-                type="button"
-                size="lg"
-                variant="ghost"
-                className="justify-self-start md:justify-self-end cursor-pointer"
-                onClick={() => setOpenBusinessModal(true)}
-              >
-                <IconMenu text="Add Business" icon={<Plus />} />
-              </Button>
-            </div>
-          )}
-
-        {businessIdSelected &&
-          (interestedProductSelected?.type?.includes("Business") ||
-            isCommunity) &&
-          !isTradeLines && (
             <Card className="bg-slate-100 border-slate-200">
               <CardHeader className="px-4 md:px-6">
-                <CardTitle className="flex flex-col md:flex-row justify-between gap-2 text-base md:text-lg">
-                  <div>Business Information</div>
-                  <PlaidLink displayText="Link Business Acount" />
+                <CardTitle className="text-base md:text-lg">
+                  Business Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 px-4 md:px-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <CustomFormField
-                    name={"dateOfIncorporation"}
-                    type="date-picker"
-                    label={`Date of Incorporation?`}
+                    name="businessName"
+                    label="* Business Name"
                   />
                   <CustomFormField
-                    name={"stateOfIncorporation"}
-                    label={`State of Incorporation?`}
+                    name="employerIdentificationNumber"
+                    label="* Employer Identification Number"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CustomFormField
+                    name="businessEmail"
+                    type="email"
+                    label="* Email Address"
+                  />
+                  <CustomFormField
+                    name="businessPhoneNumber"
+                    label="* Phone Number"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <CustomFormField
+                    className="md:col-span-2"
+                    name="businessStreetAddress"
+                    label="* Street Address"
+                  />
+                  <CustomFormField
+                    name="businessStreetHouseNumber"
+                    label="Apartment/Suite/Unit/House Number"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <CustomFormField name="businessCityAddress" label="* City" />
+                  <CustomFormField
+                    name="businessStateAddress"
+                    label="* State"
                     type="select"
                     placeholder="Select a state"
                     options={US_STATES}
                   />
                   <CustomFormField
-                    name={"businessGrossProjectedRevenue1"}
-                    type="number"
-                    label={`${currentYear} Gross Projected Revenue?`}
-                  />
-                  <CustomFormField
-                    name={"businessProjectedProfit1"}
-                    type="number"
-                    label={`${currentYear} Projected Profit?`}
-                  />
-                  <CustomFormField
-                    name={"businessGrossProjectedRevenue2"}
-                    type="number"
-                    label={`${currentYear - 1} Gross Revenue?`}
-                  />
-                  <CustomFormField
-                    name={"businessProjectedProfit2"}
-                    type="number"
-                    label={`${currentYear - 1} Net Revenue?`}
-                  />
-                  <CustomFormField
-                    name={"businessGrossProjectedRevenue3"}
-                    type="number"
-                    label={`${currentYear - 2} Gross Revenue?`}
-                  />
-                  <CustomFormField
-                    name={"businessProjectedProfit3"}
-                    type="number"
-                    label={`${currentYear - 2} Net Revenue?`}
-                  />
-
-                  <CustomFormField
-                    name={"industryField"}
-                    label={"Industry Field?"}
-                  />
-
-                  <CustomFormField
-                    name={"businessTaxes"}
-                    label={"Did you report on your business taxes?"}
-                    type="select"
-                    options={businessTaxes}
-                    onSelectValue={handleBusinessTaxesChange}
+                    name="businessPostalAddress"
+                    label="* Zip Code"
                   />
                 </div>
-                {businessTaxesSelected?.type === "yes" && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                <CustomFormField name="businessWebsite" label="Website" />
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Social Media Handles
+                  </label>
+                  <div className="space-y-3">
+                    {SOCIAL_MEDIA_PLATFORMS.map((platform, index) => (
+                      <div
+                        key={platform.value}
+                        className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3"
+                      >
+                        <label
+                          htmlFor={`socialMedia.${index}.handle`}
+                          className="text-sm text-muted-foreground md:w-24"
+                        >
+                          {platform.label}
+                        </label>
+                        <div className="flex-1">
+                          <CustomFormField
+                            name={`socialMedia.${index}.handle`}
+                            placeholder={`Enter ${platform.label} handle`}
+                          />
+                        </div>
+                        <input
+                          type="hidden"
+                          {...form.register(`socialMedia.${index}.platform`)}
+                          value={platform.value}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator className="my-4" />
+
+                <div className="space-y-4">
+                  <h4 className="font-medium">Financial Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <CustomFormField
-                      name={"businessTaxes1"}
-                      type="number"
-                      label={`in ${currentYear - 1}?`}
+                      name="dateOfIncorporation"
+                      type="date-picker"
+                      label="Date of Incorporation?"
                     />
                     <CustomFormField
-                      name={"businessTaxes2"}
-                      type="number"
-                      label={`in ${currentYear - 2}?`}
-                    />
-                    <CustomFormField
-                      name={"businessTaxes3"}
-                      type="number"
-                      label={`in ${currentYear - 3}?`}
+                      name="stateOfIncorporation"
+                      label="State of Incorporation?"
+                      type="select"
+                      placeholder="Select a state"
+                      options={US_STATES}
                     />
                   </div>
-                )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <CustomFormField
+                      name="businessGrossProjectedRevenue1"
+                      type="number"
+                      label={`${currentYear} Gross Projected Revenue?`}
+                    />
+                    <CustomFormField
+                      name="businessProjectedProfit1"
+                      type="number"
+                      label={`${currentYear} Projected Profit?`}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <CustomFormField
+                      name="businessGrossProjectedRevenue2"
+                      type="number"
+                      label={`${currentYear - 1} Gross Revenue?`}
+                    />
+                    <CustomFormField
+                      name="businessProjectedProfit2"
+                      type="number"
+                      label={`${currentYear - 1} Net Revenue?`}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <CustomFormField
+                      name="businessGrossProjectedRevenue3"
+                      type="number"
+                      label={`${currentYear - 2} Gross Revenue?`}
+                    />
+                    <CustomFormField
+                      name="businessProjectedProfit3"
+                      type="number"
+                      label={`${currentYear - 2} Net Revenue?`}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <CustomFormField
+                      name="industryField"
+                      label="Industry Field?"
+                    />
+                    <CustomFormField
+                      name="businessTaxes"
+                      label="Did you report on your business taxes?"
+                      type="select"
+                      options={businessTaxes}
+                      onSelectValue={handleBusinessTaxesChange}
+                    />
+                  </div>
+
+                  {businessTaxesSelected?.type === "yes" && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <CustomFormField
+                        name="businessTaxes1"
+                        type="number"
+                        label={`in ${currentYear - 1}?`}
+                      />
+                      <CustomFormField
+                        name="businessTaxes2"
+                        type="number"
+                        label={`in ${currentYear - 2}?`}
+                      />
+                      <CustomFormField
+                        name="businessTaxes3"
+                        type="number"
+                        label={`in ${currentYear - 3}?`}
+                      />
+                    </div>
+                  )}
+
+                  {/* Bridge Loan Application Form (Business Income Based Funding) */}
+                  {isBusinessIncomeBased && (
+                    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-indigo-200">
+                      <CardContent className="space-y-6 px-4 md:px-6">
+                        {/* Use of Funds */}
+                        <CustomFormField
+                          name="useOfFunds"
+                          label="Use of Funds"
+                        />
+
+                        {/* Financial Metrics */}
+                        <Separator className="my-4" />
+                        <h4 className="font-medium text-indigo-900">
+                          Financial Information
+                        </h4>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <CustomFormField
+                            name="annualBusinessRevenue"
+                            type="number"
+                            label="Annual Business Revenue"
+                          />
+                          <CustomFormField
+                            name="avgMonthlyCreditCardSales"
+                            type="number"
+                            label="Avg. Monthly Credit Card Sales"
+                          />
+                          <CustomFormField
+                            name="avgDailyBankBalance"
+                            type="number"
+                            label="Avg. Daily Bank Balance"
+                          />
+                        </div>
+
+                        {/* Business Property Information */}
+                        <Separator className="my-4" />
+                        <h4 className="font-medium text-indigo-900">
+                          Business Property Information
+                        </h4>
+
+                        <CustomFormField
+                          name="businessPropertyType"
+                          label="* Business Property Type"
+                          type="select"
+                          placeholder="Select type"
+                          options={[
+                            { value: "Lease", label: "Lease" },
+                            { value: "Own", label: "Own" },
+                          ]}
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <CustomFormField
+                            name="landlordName"
+                            label="Landlord Name"
+                          />
+                          <CustomFormField
+                            name="landlordPhone"
+                            label="Landlord Phone"
+                          />
+                          <CustomFormField
+                            name="monthlyPayment"
+                            type="number"
+                            label="Monthly Payment"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <CustomFormField
+                            name="isSeasonalBusiness"
+                            label="* Is this a seasonal business?"
+                            type="select"
+                            placeholder="Select option"
+                            options={[
+                              { value: "No", label: "No" },
+                              { value: "Yes", label: "Yes" },
+                            ]}
+                          />
+                          <CustomFormField
+                            name="hasOutstandingAdvances"
+                            label="* Any outstanding advances?"
+                            type="select"
+                            placeholder="Select option"
+                            options={[
+                              { value: "No", label: "No" },
+                              { value: "Yes", label: "Yes" },
+                            ]}
+                          />
+                        </div>
+
+                        {/* Additional Information */}
+                        <Separator className="my-4" />
+                        <h4 className="font-medium text-indigo-900">
+                          Additional Information
+                        </h4>
+
+                        {/* Referral */}
+                        <CustomFormField
+                          name="whoReferredYou"
+                          label="Who Referred You?"
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}

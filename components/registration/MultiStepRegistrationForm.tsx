@@ -264,7 +264,7 @@ export function MultiStepRegistrationForm({
 
     // If validation passes, move to step 2
     const values = form1.getValues();
-    console.log("Step 1 Values:", values);
+    // console.log("Step 1 Values:", values);
     setStep1Data(values);
     setProgress(50);
     setCurrentStep(2);

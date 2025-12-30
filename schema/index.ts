@@ -81,7 +81,7 @@ export type CurrentUser = {
 
 export const businessRecordSchema = z.object({
   id: z.string().optional(),
-  userId: z.string().min(1, { message: "Required" }),
+  userId: z.string().optional(), // Made optional for registration context
   businessName: z.string().min(1, { message: "Required" }),
   businessStreetAddress: z.string().min(1, { message: "Required" }),
   businessStreetHouseNumber: z.string().optional(),
@@ -90,13 +90,12 @@ export const businessRecordSchema = z.object({
   businessPostalAddress: z
     .string()
     .trim()
-    .nonempty({ message: "Required" })
-    .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" }),
+    .nonempty({ message: "Required" }),
+    // .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" }),
   employerIdentificationNumber: z.string().min(1, { message: "Required" }),
   businessPhoneNumber: z.string().min(1, { message: "Required" }),
   businessEmail: z.email({ message: "Invalid email" }),
-  businessWebsite: z.string({ error: "Required" }).optional(),
-  // socialMedia: z.string({ error: "Required" }).optional(),
+  businessWebsite: z.string().optional(),
   socialMedia: z
     .array(
       z
@@ -107,8 +106,6 @@ export const businessRecordSchema = z.object({
         .optional()
     )
     .optional(),
-  // lastYearTaxes: z.coerce.number<number>().optional(),
-  // currentYearTaxes: z.coerce.number<number>().optional(),
 });
 
 // What the DB stores / APIs expect:

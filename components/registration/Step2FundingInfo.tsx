@@ -1,8 +1,7 @@
 "use client";
 
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FundingApplicationFields } from "@/components/fundingv2/FundingApplicationFields";
+import { FundingApplicationFields } from "@/components/registration/FundingApplicationFields";
 import { useBusinessQuery } from "@/hooks/business";
 
 interface Step2FundingInfoProps {
