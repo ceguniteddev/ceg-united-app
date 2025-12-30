@@ -410,14 +410,14 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
     postalCode: "",
   });
 
-  React.useEffect(() => {
-    setAddressInfo({
-      addressLine1: user.addressStreet || "",
-      city: user.addressCity || "",
-      state: user.addressState || "",
-      postalCode: user.addressPostal || "",
-    });
-  }, [user]);
+  // React.useEffect(() => {
+  //   setAddressInfo({
+  //     addressLine1: user.addressStreet || "",
+  //     city: user.addressCity || "",
+  //     state: user.addressState || "",
+  //     postalCode: user.addressPostal || "",
+  //   });
+  // }, [user]);
 
   const handleRefreshCRSData = useCallback(async () => {
     const hasSelectedBureaus =
@@ -855,13 +855,13 @@ const EditClientModal = ({
       phoneNumber: user.phoneNumber || "",
       birthdate: user.birthdate ? new Date(user.birthdate) : undefined,
       gender: user.gender || "",
-      addressStreet: user.addressStreet || "",
-      houseNumber: user.houseNumber || "",
-      addressCity: user.addressCity || "",
-      addressState: user.addressState || "",
-      addressPostal: user.addressPostal || "",
-      employmentPayPerMonth: user.employmentPayPerMonth || 0,
-      payPerMonth: user.payPerMonth || 0,
+      // addressStreet: user.addressStreet || "",
+      // houseNumber: user.houseNumber || "",
+      // addressCity: user.addressCity || "",
+      // addressState: user.addressState || "",
+      // addressPostal: user.addressPostal || "",
+      // employmentPayPerMonth: user.employmentPayPerMonth || 0,
+      // payPerMonth: user.payPerMonth || 0,
     },
   });
 

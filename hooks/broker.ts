@@ -117,7 +117,13 @@ export const useSubmitClientApplication = () => {
   const { user } = useAuth();
 
   const mutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async ({
+      step1Data,
+      step2Data,
+    }: {
+      step1Data: any;
+      step2Data: any;
+    }) => {
       if (!user) throw new Error("User not authenticated");
 
       const response = await fetch(
@@ -127,7 +133,7 @@ export const useSubmitClientApplication = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify({ step1Data, step2Data }),
         }
       );
 
@@ -139,7 +145,7 @@ export const useSubmitClientApplication = () => {
       return await response.json();
     },
     onSuccess: () => {
-      // toast.success("Application submitted successfully!");
+      toast.success("Application submitted successfully!");
       queryClient.invalidateQueries({ queryKey: ["BROKER_CLIENTS"] });
       queryClient.invalidateQueries({ queryKey: ["BROKER_STATISTICS"] });
     },

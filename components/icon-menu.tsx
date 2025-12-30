@@ -6,9 +6,15 @@ interface MenuIconProps {
   readonly icon: ReactNode;
   readonly text: string;
   readonly className?: string;
+  readonly iconLocation?: "left" | "right";
 }
 
-export default function IconMenu({ className, icon, text }: MenuIconProps) {
+export default function IconMenu({
+  className,
+  icon,
+  text,
+  iconLocation = "left",
+}: MenuIconProps) {
   return (
     <div
       className={cn(
@@ -16,8 +22,9 @@ export default function IconMenu({ className, icon, text }: MenuIconProps) {
         className
       )}
     >
-      {icon}
+      {iconLocation === "left" && icon}
       <span className="text-sm">{text}</span>
+      {iconLocation === "right" && icon}
     </div>
   );
 }

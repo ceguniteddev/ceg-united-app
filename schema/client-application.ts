@@ -8,7 +8,14 @@ export const clientApplicationSchema = z.object({
   middleName: z.string().optional(),
   lastName: z.string().min(1, { message: "Required" }),
   email: z.string().min(1, { message: "Required" }),
-  birthdate: dateOfBirthSchema,
+  birthdate: z
+    .date({ message: "Birthdate is required" })
+    .refine((date) => date !== null && date !== undefined, {
+      message: "Birthdate is required",
+    })
+    .refine((date) => date <= new Date(), {
+      message: "Date cannot be in the future",
+    }),
   gender: GenderEnum,
   phoneNumber: z.string().min(1, { message: "Required" }),
   role: ROLESEnum.optional(),
@@ -16,16 +23,16 @@ export const clientApplicationSchema = z.object({
   registrationDate: z.date().optional(),
   ssn: ssnSchema,
 
-  addressStreet: z.string().min(1, { error: "Required" }),
-  houseNumber: z.string().optional(),
-  addressCity: z.string().min(1, { error: "Required" }),
-  addressState: z.string().min(1, { error: "Required" }),
-  addressPostal: z.string().min(1, { error: "Required" }),
+  // addressStreet: z.string().min(1, { error: "Required" }),
+  // houseNumber: z.string().optional(),
+  // addressCity: z.string().min(1, { error: "Required" }),
+  // addressState: z.string().min(1, { error: "Required" }),
+  // addressPostal: z.string().min(1, { error: "Required" }),
 
-  payPerMonth: z.coerce.number<number>().optional(),
-  employmentPayPerMonth: z.coerce
-    .number<number>({ error: "Required" })
-    .min(1, { message: "Required" }),
+  // payPerMonth: z.coerce.number<number>().optional(),
+  // employmentPayPerMonth: z.coerce
+  //   .number<number>({ error: "Required" })
+  //   .min(1, { message: "Required" }),
 });
 
 export type ClientApplicationForm = z.infer<typeof clientApplicationSchema>;

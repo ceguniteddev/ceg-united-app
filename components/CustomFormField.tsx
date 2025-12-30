@@ -30,6 +30,7 @@ import { MultiSelect } from "./multi-select";
 import { SearchableInput } from "./input-search";
 import { NumberInput } from "./input-number";
 import dynamic from "next/dynamic";
+import { Button } from "./ui/button";
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 interface FormFieldProps {
   name: string;
@@ -297,37 +298,58 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
         );
       case "select":
         return (
-          <Select
-            value={field.value || (initialValue as string)}
-            defaultValue={field.value || (initialValue as string)}
-            onValueChange={handleSelectChange}
-            disabled={disabled}
-          >
-            <FormControl>
-              <SelectTrigger
-                className={cn(
-                  `w-full ${inputClassName}`,
-                  fieldState?.error && "border-red-500"
-                )}
-              >
-                <SelectValue placeholder={placeholder || "Select an option"} />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent
-              className="w-full shadow max-h-[300px] overflow-y-auto z-50"
-              position="popper"
+          <div className="relative">
+            <Select
+              value={field.value || (initialValue as string)}
+              defaultValue={field.value || (initialValue as string)}
+              onValueChange={handleSelectChange}
+              disabled={disabled}
             >
-              {options?.map((option) => (
-                <SelectItem
-                  key={option.value}
-                  value={option.value}
-                  className={`cursor-pointer hover:!bg-gray-100 `}
+              <FormControl>
+                <SelectTrigger
+                  value={field.value || (initialValue as string)}
+                  onReset={() => {
+                    handleSelectChange("");
+                  }}
+                  className={cn(
+                    `w-full ${inputClassName}`,
+                    fieldState?.error && "border-red-500"
+                  )}
                 >
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                  <SelectValue
+                    placeholder={placeholder || "Select an option"}
+                  />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent
+                className="w-full shadow max-h-[300px] overflow-y-auto z-50"
+                position="popper"
+              >
+                {false && field.value && !disabled && (
+                  <Button
+                    className="w-full px-2"
+                    variant="secondary"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectChange("");
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
+                {options?.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className={`cursor-pointer hover:!bg-gray-100 `}
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         );
       case "multi-select":
         return (

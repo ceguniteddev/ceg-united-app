@@ -196,13 +196,13 @@ const ApplyFundingForm = ({
       personalTaxesStatus: defaultValues?.personalTaxesStatus || "",
       businessTaxesStatus: defaultValues?.businessTaxesStatus || "",
 
-      addressStreet:
-        defaultValues?.addressStreet || userData.addressStreet || "",
-      houseNumber: defaultValues?.houseNumber || userData.houseNumber || "",
-      addressCity: defaultValues?.addressCity || userData.addressCity || "",
-      addressState: defaultValues?.addressState || userData.addressState || "",
-      addressPostal:
-        defaultValues?.addressPostal || userData.addressPostal || "",
+      // addressStreet:
+      //   defaultValues?.addressStreet || userData.addressStreet || "",
+      // houseNumber: defaultValues?.houseNumber || userData.houseNumber || "",
+      // addressCity: defaultValues?.addressCity || userData.addressCity || "",
+      // addressState: defaultValues?.addressState || userData.addressState || "",
+      // addressPostal:
+      //   defaultValues?.addressPostal || userData.addressPostal || "",
     },
   });
 
@@ -325,11 +325,11 @@ const ApplyFundingForm = ({
                 employmentStatus: "",
                 personalTaxesStatus: "",
                 businessTaxesStatus: "",
-                addressStreet: userData.addressStreet || "",
-                houseNumber: userData.houseNumber || "",
-                addressCity: userData.addressCity || "",
-                addressState: userData.addressState || "",
-                addressPostal: userData.addressPostal || "",
+                // addressStreet: userData.addressStreet || "",
+                // houseNumber: userData.houseNumber || "",
+                // addressCity: userData.addressCity || "",
+                // addressState: userData.addressState || "",
+                // addressPostal: userData.addressPostal || "",
               });
               setInterestedProductSelected(undefined);
               setHowDoYouGetPaidSelected(undefined);

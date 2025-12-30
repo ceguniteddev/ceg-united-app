@@ -78,20 +78,16 @@ export const registrationSchema = z.object({
   collectionAccountRemovalEnabled: z.boolean().default(false).optional(),
   fraudulentAccountRemovalEnabled: z.boolean().default(false).optional(),
 
-  addressStreet: z.string().min(1, { error: "Required" }),
-  houseNumber: z.string().optional(),
-  addressCity: z.string().min(1, { error: "Required" }),
-  addressState: z.string().min(1, { error: "Required" }),
-  addressPostal: z.string().min(1, { error: "Required" }),
+  // addressStreet: z.string().min(1, { error: "Required" }),
+  // houseNumber: z.string().optional(),
+  // addressCity: z.string().min(1, { error: "Required" }),
+  // addressState: z.string().min(1, { error: "Required" }),
+  // addressPostal: z.string().min(1, { error: "Required" }),
 
-  // Community / Housing Info
-  // reasonForJoiningCommunity: z.string().min(1, { error: "Required" }),
-  // moveInCurrentAddress: z.date().optional(),
-  payPerMonth: z.coerce.number<number>().optional(),
-  // rentOrMortgage: z.string().optional(),
-  employmentPayPerMonth: z.coerce
-    .number<number>({ error: "Required" })
-    .min(1, { message: "Required" }),
+  // payPerMonth: z.coerce.number<number>().optional(),
+  // employmentPayPerMonth: z.coerce
+  //   .number<number>({ error: "Required" })
+  //   .min(1, { message: "Required" }),
 });
 
 export const UserFundMapStatus = z.enum(["New", "Processing"]);

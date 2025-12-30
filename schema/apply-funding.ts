@@ -61,7 +61,7 @@ export type Employment = z.infer<typeof employmentSchema>;
 
 export const applyFundingSchema = z
   .object({
-    userId: z.string().min(1, { error: "Required" }),
+    userId: z.string().optional(),
     status: FundingApplicationSatusEnum,
     appliedDate: z.coerce.date<Date>({ error: "Required" }),
     referenceNumber: z.string().optional(),

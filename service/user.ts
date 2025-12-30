@@ -116,11 +116,13 @@ export const registerUser = async ({
   isBrokerRegistration,
   brokerName,
   isAdminRegistration,
+  fundingData,
 }: {
   value: User;
   isBrokerRegistration?: boolean;
   brokerName?: string;
   isAdminRegistration?: boolean;
+  fundingData?: ApplyFunding;
 }) => {
   const userRecord = await getUserRecordByEmail(value.email);
 
@@ -138,21 +140,13 @@ export const registerUser = async ({
   const docRef = await collectionRef.add(userData);
   const data = (await docRef.get()).data();
 
-  if (userData.employmentPayPerMonth && userData.employmentPayPerMonth > 0) {
+  // Create funding application if fundingData is provided
+  if (fundingData) {
     const fundApplication: ApplyFunding = {
+      ...fundingData,
       userId: docRef.id,
-      employmentPayPerMonth: userData.employmentPayPerMonth,
-      payPerMonth: userData.payPerMonth,
-      // rentOrMortgage: userData.rentOrMortgage,
-      appliedDate: new Date(),
-      status: "New",
-      addressStreet: userData.addressStreet,
-      addressCity: userData.addressCity,
-      addressState: userData.addressState,
-      addressPostal: userData.addressPostal,
-      houseNumber: userData.houseNumber,
-      interestedProduct: "Knowledge Community",
-      fundingType: "Community",
+      appliedDate: fundingData.appliedDate || new Date(),
+      status: fundingData.status || "New",
     };
 
     await applyFunding({ value: fundApplication });

@@ -150,7 +150,7 @@ export const refreshAnalysis = async (referenceNumber: string) => {
   // 4. Trigger a new analysis
   // Note: The comment "call n8n webhook" suggests this might be the place
   // to trigger it after the refresh is complete.
-  await fundAnalysis({ referenceNumber, userId: data.userId });
+  await fundAnalysis({ referenceNumber, userId: data.userId! });
 
   console.log("Successfully refreshed analysis.");
 };
@@ -164,7 +164,7 @@ export const sendClientAnalysisData = async (referenceNumber: string) => {
     throw new AppError("Funding application not found.");
   }
 
-  const userData = await getUserById(data.userId);
+  const userData = await getUserById(data.userId!);
   if (!userData) throw new AppError("User not found.");
 
   const n8nWebhookURL = await sendClientAnalysisN8N();
