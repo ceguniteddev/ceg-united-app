@@ -318,6 +318,44 @@ export function MultiStepRegistrationForm({
       return;
     }
 
+    // Check if Business Income Based Funding requires documents
+    const step2Values = form2.getValues();
+    if (step2Values.interestedProduct === "Business Income Based Funding") {
+      const hasBankStatements =
+        step2Values.bankStatements && step2Values.bankStatements.length > 0;
+      const hasDriverLicense =
+        step2Values.driverLicenseDocuments &&
+        step2Values.driverLicenseDocuments.length > 0;
+
+      if (!hasBankStatements && !hasDriverLicense) {
+        toast.warning(
+          "Please upload required documents for Business Income Based Funding",
+          {
+            description:
+              "You need to upload your 4 months bank statements and driver's license documents to proceed.",
+            duration: 5000,
+          }
+        );
+        return;
+      }
+
+      if (!hasBankStatements) {
+        toast.warning("Bank statements are required", {
+          description: "Please upload your last 4 months of bank statements.",
+          duration: 5000,
+        });
+        return;
+      }
+
+      if (!hasDriverLicense) {
+        toast.warning("Driver's license is required", {
+          description: "Please upload front and back of your driver's license.",
+          duration: 5000,
+        });
+        return;
+      }
+    }
+
     // Show confirmation dialog
     setShowConfirmDialog(true);
   };
@@ -452,7 +490,7 @@ export function MultiStepRegistrationForm({
               {isSubmitting ? (
                 <IconMenu
                   text="Submitting..."
-                  icon={<Loader2Icon className="h-4 w-4" />}
+                  icon={<Loader2Icon className="h-4 w-4 animate-spin" />}
                 />
               ) : (
                 <IconMenu

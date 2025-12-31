@@ -16,11 +16,17 @@ import {
   personalTaxes,
   US_STATES,
 } from "@/constant/common";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, CircleX } from "lucide-react";
 import IconMenu from "../icon-menu";
 import { Business } from "@/schema";
 import PlaidLink from "../PlaidLink";
 import { Separator } from "../ui/separator";
+import {
+  Dropzone,
+  DropzoneContent,
+  DropzoneEmptyState,
+} from "@/components/ui/shadcn-io/dropzone";
+import { FileText, Upload } from "lucide-react";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
@@ -66,6 +72,11 @@ export function FundingApplicationFields({
   const [vehicleFinancingType, setVehicleFinancingType] = useState<
     string | undefined
   >(undefined);
+
+  // Document upload states - now using form state
+  const bankStatementsFromForm = form.watch("bankStatements") || [];
+  const driverLicenseDocsFromForm =
+    form.watch("driverLicenseDocuments") || [];
 
   const [howDoYouGetPaidSelected, setHowDoYouGetPaidSelected] = useState<
     DropdownOption | undefined
@@ -252,6 +263,86 @@ export function FundingApplicationFields({
   const handleVehicleFinancingTypeChange = useCallback((value: string) => {
     setVehicleFinancingType(value);
   }, []);
+
+  // Helper function to convert File to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // Handle bank statements upload
+  const handleBankStatementsUpload = useCallback(
+    async (files: File[]) => {
+      try {
+        const currentDocs = form.getValues("bankStatements") || [];
+        const newDocs = await Promise.all(
+          files.map(async (file) => ({
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            base64: await fileToBase64(file),
+          }))
+        );
+        form.setValue("bankStatements", [...currentDocs, ...newDocs], {
+          shouldDirty: true,
+        });
+      } catch (error) {
+        console.error("Error converting files to base64:", error);
+        alert("Failed to process files. Please try again.");
+      }
+    },
+    [form]
+  );
+
+  // Handle driver license upload
+  const handleDriverLicenseUpload = useCallback(
+    async (files: File[]) => {
+      try {
+        const currentDocs = form.getValues("driverLicenseDocuments") || [];
+        const newDocs = await Promise.all(
+          files.map(async (file) => ({
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            base64: await fileToBase64(file),
+          }))
+        );
+        form.setValue("driverLicenseDocuments", [...currentDocs, ...newDocs], {
+          shouldDirty: true,
+        });
+      } catch (error) {
+        console.error("Error converting files to base64:", error);
+        alert("Failed to process files. Please try again.");
+      }
+    },
+    [form]
+  );
+
+  // Remove bank statement
+  const removeBankStatement = useCallback(
+    (index: number) => {
+      const currentDocs = form.getValues("bankStatements") || [];
+      const updatedDocs = currentDocs.filter((_, i) => i !== index);
+      form.setValue("bankStatements", updatedDocs, { shouldDirty: true });
+    },
+    [form]
+  );
+
+  // Remove driver license document
+  const removeDriverLicense = useCallback(
+    (index: number) => {
+      const currentDocs = form.getValues("driverLicenseDocuments") || [];
+      const updatedDocs = currentDocs.filter((_, i) => i !== index);
+      form.setValue("driverLicenseDocuments", updatedDocs, {
+        shouldDirty: true,
+      });
+    },
+    [form]
+  );
 
   const currentYear = new Date().getFullYear();
 
@@ -1080,6 +1171,254 @@ export function FundingApplicationFields({
                           name="whoReferredYou"
                           label="Who Referred You?"
                         />
+
+                        {/* Document Upload Section */}
+                        <Separator className="my-4" />
+                        <h4 className="font-medium text-indigo-900 flex items-center gap-2 mb-4">
+                          <span>📄</span> Required Documents
+                        </h4>
+
+                        {/* No documents uploaded message */}
+                        {bankStatementsFromForm.length === 0 &&
+                          driverLicenseDocsFromForm.length === 0 && (
+                            <div className="mb-4 p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                              <div className="flex items-start gap-2 sm:gap-3">
+                                <svg
+                                  className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600 flex-shrink-0 mt-0.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                  />
+                                </svg>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs sm:text-sm font-medium text-amber-900 mb-1">
+                                    No Documents Uploaded Yet
+                                  </p>
+                                  <p className="text-xs sm:text-sm text-amber-700">
+                                    Please upload the required documents below
+                                    to complete your Business Income Based
+                                    Funding application. You'll need your bank
+                                    statements and driver's license.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                        {/* Bank Statements Upload - PDF Only */}
+                        <div className="border-2 border-dashed border-indigo-300 rounded-lg p-3 sm:p-4 md:p-6 lg:p-8 bg-white mb-3 sm:mb-4">
+                          <div className="flex items-start gap-2 sm:gap-3 mb-3 sm:mb-4">
+                            <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600 flex-shrink-0 mt-0.5 sm:mt-1" />
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm sm:text-base md:text-lg font-semibold text-indigo-900 mb-1">
+                                4 Months Bank Statements
+                              </h3>
+                              <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">
+                                Upload your last 4 months of bank statements
+                                (PDF only, multiple files allowed)
+                              </p>
+                              {bankStatementsFromForm.length > 0 && (
+                                <div className="mb-2 sm:mb-3">
+                                  <p className="text-xs sm:text-sm font-medium text-green-700 mb-1.5 sm:mb-2">
+                                    {bankStatementsFromForm.length} file(s)
+                                    selected:
+                                  </p>
+                                  <ul className="space-y-1.5 sm:space-y-2 max-w-full">
+                                    {bankStatementsFromForm.map((file, idx) => (
+                                      <li
+                                        key={idx}
+                                        className="text-xs sm:text-sm text-gray-700 flex items-center gap-1.5 sm:gap-2 bg-gray-50 p-1.5 sm:p-2 rounded min-h-[36px] sm:min-h-[40px] w-full min-w-0"
+                                      >
+                                        <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full flex-shrink-0" />
+                                        <div className="flex-1 min-w-0 overflow-hidden">
+                                          <span className="block truncate text-ellipsis overflow-hidden whitespace-nowrap">
+                                            {file.name}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                                          <span className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap hidden sm:inline">
+                                            ({(file.size / 1024).toFixed(1)} KB)
+                                          </span>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() =>
+                                              removeBankStatement(idx)
+                                            }
+                                            className="h-7 w-7 min-w-[28px] p-0 hover:bg-red-100 cursor-pointer touch-manipulation"
+                                          >
+                                            <CircleX className="h-4 w-4 text-red-500" />
+                                          </Button>
+                                        </div>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <Dropzone
+                            maxFiles={10}
+                            accept={{
+                              "application/pdf": [".pdf"],
+                            }}
+                            className="cursor-pointer"
+                            onDrop={async (files) => {
+                              const pdfFiles = files.filter(
+                                (f) => f.type === "application/pdf"
+                              );
+                              if (pdfFiles.length !== files.length) {
+                                alert("Only PDF files are allowed!");
+                                return;
+                              }
+                              await handleBankStatementsUpload(pdfFiles);
+                            }}
+                          >
+                            <DropzoneEmptyState>
+                              <div className="flex flex-col items-center gap-2">
+                                <Upload className="h-8 w-8 sm:h-10 sm:w-10 text-indigo-400" />
+                                <p className="text-sm sm:text-base font-medium">
+                                  Drop PDF files here or click to browse
+                                </p>
+                                <p className="text-xs sm:text-sm text-gray-500">
+                                  PDF only, up to 10 files
+                                </p>
+                              </div>
+                            </DropzoneEmptyState>
+                            <DropzoneContent />
+                          </Dropzone>
+                          {bankStatementsFromForm.length > 0 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                form.setValue("bankStatements", [], {
+                                  shouldDirty: true,
+                                })
+                              }
+                              className="mt-2 sm:mt-3 cursor-pointer min-h-[36px] sm:min-h-[40px] touch-manipulation"
+                            >
+                              Clear All
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Driver License Upload - PDF or Images */}
+                        <div className="border-2 border-dashed border-indigo-300 rounded-lg p-3 sm:p-4 md:p-6 lg:p-8 bg-white">
+                          <div className="flex items-start gap-2 sm:gap-3 mb-3 sm:mb-4">
+                            <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600 flex-shrink-0 mt-0.5 sm:mt-1" />
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm sm:text-base md:text-lg font-semibold text-indigo-900 mb-1">
+                                Copy of Driver License
+                              </h3>
+                              <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">
+                                Upload front and back of your driver license
+                                (PDF or Images, multiple files allowed)
+                              </p>
+                              {driverLicenseDocsFromForm.length > 0 && (
+                                <div className="mb-2 sm:mb-3">
+                                  <p className="text-xs sm:text-sm font-medium text-green-700 mb-1.5 sm:mb-2">
+                                    {driverLicenseDocsFromForm.length} file(s)
+                                    selected:
+                                  </p>
+                                  <ul className="space-y-1.5 sm:space-y-2 max-w-full">
+                                    {driverLicenseDocsFromForm.map(
+                                      (file, idx) => (
+                                        <li
+                                          key={idx}
+                                          className="text-xs sm:text-sm text-gray-700 flex items-center gap-1.5 sm:gap-2 bg-gray-50 p-1.5 sm:p-2 rounded min-h-[36px] sm:min-h-[40px] w-full min-w-0"
+                                        >
+                                          <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full flex-shrink-0" />
+                                          <div className="flex-1 min-w-0 overflow-hidden">
+                                            <span className="block truncate text-ellipsis overflow-hidden whitespace-nowrap">
+                                              {file.name}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                                            <span className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap hidden sm:inline">
+                                              ({(file.size / 1024).toFixed(1)} KB)
+                                            </span>
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() =>
+                                                removeDriverLicense(idx)
+                                              }
+                                              className="h-7 w-7 min-w-[28px] p-0 hover:bg-red-100 cursor-pointer touch-manipulation"
+                                            >
+                                              <CircleX className="h-4 w-4 text-red-500" />
+                                            </Button>
+                                          </div>
+                                        </li>
+                                      )
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <Dropzone
+                            maxFiles={10}
+                            accept={{
+                              "application/pdf": [".pdf"],
+                              "image/*": [".png", ".jpg", ".jpeg", ".gif"],
+                            }}
+                            className="cursor-pointer"
+                            onDrop={async (files) => {
+                              const validFiles = files.filter(
+                                (f) =>
+                                  f.type === "application/pdf" ||
+                                  f.type.startsWith("image/")
+                              );
+                              if (validFiles.length !== files.length) {
+                                alert(
+                                  "Only PDF and image files are allowed!"
+                                );
+                                return;
+                              }
+                              await handleDriverLicenseUpload(validFiles);
+                            }}
+                          >
+                            <DropzoneEmptyState>
+                              <div className="flex flex-col items-center gap-2">
+                                <Upload className="h-8 w-8 sm:h-10 sm:w-10 text-indigo-400" />
+                                <p className="text-sm sm:text-base font-medium">
+                                  Drop PDF or image files here or click to
+                                  browse
+                                </p>
+                                <p className="text-xs sm:text-sm text-gray-500">
+                                  PDF or Images (PNG, JPG, JPEG, GIF), up to 10
+                                  files
+                                </p>
+                              </div>
+                            </DropzoneEmptyState>
+                            <DropzoneContent />
+                          </Dropzone>
+                          {driverLicenseDocsFromForm.length > 0 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                form.setValue("driverLicenseDocuments", [], {
+                                  shouldDirty: true,
+                                })
+                              }
+                              className="mt-2 sm:mt-3 cursor-pointer min-h-[36px] sm:min-h-[40px] touch-manipulation"
+                            >
+                              Clear All
+                            </Button>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   )}
