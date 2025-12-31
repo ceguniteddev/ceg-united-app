@@ -54,7 +54,7 @@ const RegistrationPage = () => {
   };
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 max-w-screen-md mx-auto overflow-hidden">
+    <div className="p-3 sm:p-4 md:p-6 max-w-screen-md ">
       <div className="flex justify-center items-center mb-4 sm:mb-6">
         <Image
           src="/icon.png"
