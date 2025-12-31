@@ -349,15 +349,17 @@ export function MultiStepRegistrationForm({
   };
 
   return (
-    <div className="w-full max-w-full mx-auto px-4">
-      <ProgressBar progress={progress} />
+    <div className="w-full max-w-full mx-auto px-2 sm:px-4">
+      <div className="mb-4 sm:mb-6">
+        <ProgressBar progress={progress} />
+      </div>
 
-      <div>
+      <div className="mt-4 sm:mt-6">
         {currentStep === 1 && (
           <Form {...form1}>
             <form onSubmit={(e) => e.preventDefault()}>
               <fieldset disabled={isSubmitting}>
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   <Step1PersonalInfo />
                 </div>
               </fieldset>
@@ -369,7 +371,7 @@ export function MultiStepRegistrationForm({
           <Form {...form2}>
             <form onSubmit={(e) => e.preventDefault()}>
               <fieldset disabled={isSubmitting}>
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   <Step2FundingInfo userId={step1Data?.email || ""} />
                 </div>
               </fieldset>
@@ -378,13 +380,14 @@ export function MultiStepRegistrationForm({
         )}
 
         {/* Navigation Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between mt-6">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between mt-6 sm:mt-8 pb-2">
           <Button
             type="button"
             variant="outline"
             onClick={currentStep === 1 ? onClose : handleBack}
             disabled={isSubmitting}
-            className="w-full sm:w-auto order-2 sm:order-1"
+            size="lg"
+            className="w-full sm:w-auto order-2 sm:order-1 min-h-[44px]"
           >
             {currentStep === 1 ? (
               <IconMenu text="Close" icon={<CircleX className="h-4 w-4" />} />
@@ -401,7 +404,8 @@ export function MultiStepRegistrationForm({
               type="button"
               onClick={handleNext}
               disabled={isSubmitting}
-              className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white order-1 sm:order-2"
+              size="lg"
+              className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white order-1 sm:order-2 min-h-[44px]"
             >
               <IconMenu
                 text="Next"
@@ -414,7 +418,8 @@ export function MultiStepRegistrationForm({
               type="button"
               onClick={handleApplyClick}
               disabled={isSubmitting}
-              className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white order-1 sm:order-2"
+              size="lg"
+              className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white order-1 sm:order-2 min-h-[44px]"
             >
               {isSubmitting ? (
                 <IconMenu
@@ -434,22 +439,27 @@ export function MultiStepRegistrationForm({
 
       {/* Confirmation Dialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[95vw] max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Application Submission</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-lg sm:text-xl">
+              Confirm Application Submission
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm sm:text-base">
               Are you sure you want to submit this funding application? Please
               review all information carefully before proceeding.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <AlertDialogCancel
+              disabled={isSubmitting}
+              className="w-full sm:w-auto min-h-[44px]"
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="bg-green-500 hover:bg-green-600"
+              className="bg-green-500 hover:bg-green-600 w-full sm:w-auto min-h-[44px]"
             >
               {isSubmitting ? (
                 <>

@@ -690,8 +690,8 @@ const ApplyFundingForm = ({
             <input type="hidden" {...form.register("fundingType")} />
             <div>
               <Card>
-                <CardContent className="space-y-4 pt-6 px-4 md:px-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <CardContent className="space-y-6 pt-6 px-4 md:px-6">
+                  <div className="grid grid-cols-1 gap-4 md:gap-6">
                     <CustomFormField
                       name={"interestedProduct"}
                       label="The Product You're Most Interested In"
@@ -738,13 +738,13 @@ const ApplyFundingForm = ({
                   {/* Auto Loan Specific Fields */}
                   {isAutoLoan && (
                     <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-orange-200">
-                      <CardHeader className="px-4 md:px-6">
+                      <CardHeader className="px-4 md:px-6 py-4">
                         <CardTitle className="text-base md:text-lg flex items-center gap-2">
                           <span>🚗</span> Auto Loan Information
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4 px-4 md:px-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <CardContent className="space-y-5 px-4 md:px-6 pb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                           <CustomFormField
                             name="vehiclePrice"
                             label="What's the price of the vehicle you want to purchase?"
@@ -797,13 +797,13 @@ const ApplyFundingForm = ({
 
                   {!isCommunity && !isTradeLines && (
                     <Card className="bg-slate-100 border-slate-200">
-                      <CardHeader className="px-4 md:px-6">
+                      <CardHeader className="px-4 md:px-6 py-4">
                         <CardTitle className="text-base md:text-lg flex items-center gap-2">
                           <span>👤</span> Personal Information
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4 px-4 md:px-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                      <CardContent className="space-y-5 px-4 md:px-6 pb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
                           {!isTradeLines && false && (
                             <CustomFormField
                               name={"isMarried"}
@@ -1474,7 +1474,7 @@ const ApplyFundingForm = ({
                     )}
                 </CardContent>
 
-                <CardFooter className="flex justify-end px-4 md:px-6 py-4">
+                <CardFooter className="flex justify-end px-4 md:px-6 py-4 md:py-6">
                   {!isViewing ? (
                     <>
                       {/* <div>
@@ -1486,14 +1486,14 @@ const ApplyFundingForm = ({
                           </div>
                         )}
                       </div> */}
-                      <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                      <div className="flex flex-col md:flex-row gap-3 md:gap-4 w-full md:w-auto">
                         <Button
                           size="lg"
                           variant={"outline"}
                           type="button"
                           disabled={isRecording}
                           onClick={() => setOpen(false)}
-                          className="w-full md:w-auto bg-red-200 hover:bg-red-300 text-black-100 cursor-pointer"
+                          className="w-full md:w-auto bg-red-200 hover:bg-red-300 text-black-100 cursor-pointer min-h-[44px]"
                         >
                           <CircleXIcon className="mr-2 h-4 w-4" /> Close
                         </Button>
@@ -1519,7 +1519,7 @@ const ApplyFundingForm = ({
                                 size="lg"
                                 type="submit"
                                 disabled={isRecording || isUpdating}
-                                className="w-full md:w-auto bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer"
+                                className="w-full md:w-auto bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer min-h-[44px]"
                               >
                                 {isRecording || isUpdating ? (
                                   <>

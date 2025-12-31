@@ -261,8 +261,8 @@ export function FundingApplicationFields({
       <input type="hidden" {...form.register("userId")} />
       <input type="hidden" {...form.register("status")} />
 
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-4 md:gap-6">
           <CustomFormField
             name={"interestedProduct"}
             label="The Product You're Most Interested In"
@@ -309,13 +309,13 @@ export function FundingApplicationFields({
         {/* Auto Loan Specific Fields */}
         {isAutoLoan && (
           <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-orange-200">
-            <CardHeader className="px-4 md:px-6">
+            <CardHeader className="px-4 md:px-6 py-4">
               <CardTitle className="text-base md:text-lg flex items-center gap-2">
                 <span>🚗</span> Auto Loan Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 px-4 md:px-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-5 px-4 md:px-6 pb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <CustomFormField
                   name="vehiclePrice"
                   label="What's the price of the vehicle you want to purchase?"
@@ -362,13 +362,13 @@ export function FundingApplicationFields({
 
         {!isCommunity && !isTradeLines && (
           <Card className="bg-slate-100 border-slate-200">
-            <CardHeader className="px-4 md:px-6">
+            <CardHeader className="px-4 md:px-6 py-4">
               <CardTitle className="text-base md:text-lg flex items-center gap-2">
                 <span>👤</span> Personal Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 px-4 md:px-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            <CardContent className="space-y-5 px-4 md:px-6 pb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
                 {!isTradeLines && false && (
                   <CustomFormField
                     name={"isMarried"}
@@ -467,12 +467,12 @@ export function FundingApplicationFields({
 
         {isCommunity && (
           <Card className="bg-slate-100 border-slate-200">
-            <CardHeader className="px-4 md:px-6">
+            <CardHeader className="px-4 md:px-6 py-4">
               <CardTitle className="text-base md:text-lg flex items-center gap-2">
                 <span>🤝</span> Community Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 px-4 md:px-6">
+            <CardContent className="space-y-5 px-4 md:px-6 pb-6">
               <CustomFormField
                 name={"reasonForJoiningCommunity"}
                 label={"What's the most important reason for joining?"}
@@ -522,13 +522,13 @@ export function FundingApplicationFields({
 
         {isTradeLines && (
           <Card className="bg-slate-100 border-slate-200">
-            <CardHeader className="px-4 md:px-6">
+            <CardHeader className="px-4 md:px-6 py-4">
               <CardTitle className="text-base md:text-lg flex items-center gap-2">
                 <span>💳</span> Tradelines Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 px-4 md:px-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CardContent className="space-y-5 px-4 md:px-6 pb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 <CustomFormField
                   className="md:col-span-2"
                   name={"addressStreet"}
@@ -600,8 +600,8 @@ export function FundingApplicationFields({
             (isAutoLoan && vehicleFinancingType === "Personal")) &&
           !isTradeLines && (
             <Card className="bg-slate-100 border-slate-200">
-              <CardHeader className="px-4 md:px-6">
-                <CardTitle className="flex flex-col md:flex-row justify-between gap-2 text-base md:text-lg">
+              <CardHeader className="px-4 md:px-6 py-4">
+                <CardTitle className="flex flex-col md:flex-row justify-between gap-3 md:gap-2 text-base md:text-lg">
                   <div className="flex items-center gap-2">
                     <span>💼</span> Employment Information
                   </div>
@@ -610,8 +610,8 @@ export function FundingApplicationFields({
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 px-4 md:px-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <CardContent className="space-y-5 px-4 md:px-6 pb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                   <CustomFormField
                     name={"employmentPayPerMonth"}
                     type="number"
@@ -737,7 +737,7 @@ export function FundingApplicationFields({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="mt-2 w-fit"
+                  className="mt-2 w-full md:w-fit min-h-[44px]"
                   onClick={() =>
                     append({
                       howDoYouGetPaid: "",
@@ -786,13 +786,13 @@ export function FundingApplicationFields({
           (isAutoLoan && vehicleFinancingType === "Business")) &&
           !isTradeLines && (
             <Card className="bg-slate-100 border-slate-200">
-              <CardHeader className="px-4 md:px-6">
+              <CardHeader className="px-4 md:px-6 py-4">
                 <CardTitle className="text-base md:text-lg flex items-center gap-2">
                   <span>🏢</span> Business Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 px-4 md:px-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CardContent className="space-y-5 px-4 md:px-6 pb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <CustomFormField
                     name="businessName"
                     label="* Business Name"

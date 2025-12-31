@@ -271,7 +271,7 @@ export default function MyClientsPage() {
         setIsOpen={setIsModalOpen}
         title="Client Registration"
         description=""
-        className="max-w-[95vw] sm:max-w-[900px] lg:max-w-[1200px]"
+        className="w-[calc(100vw-16px)] h-[calc(100vh-16px)] max-w-full sm:w-[95vw] sm:h-auto sm:max-h-[90vh] sm:max-w-[900px] lg:max-w-[1200px]"
       >
         <MultiStepRegistrationForm
           onSubmit={onSubmit}

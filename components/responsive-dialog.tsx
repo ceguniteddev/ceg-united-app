@@ -34,13 +34,14 @@ export function ResponsiveDialog({
   descriptionClassName,
 }: Props) {
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen} modal={false}>
-      {isOpen && (
-        <div className="animate-in fade-in-0 fixed inset-0 z-50 bg-black/50" />
-      )}
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent
         id={id}
-        className={cn("max-h-screen overflow-y-auto p-4 md:p-6", className)}
+        className={cn(
+          "max-h-[calc(100vh-16px)] max-h-[calc(100dvh-16px)] overflow-hidden flex flex-col",
+          "p-0",
+          className
+        )}
         onInteractOutside={(e) => {
           e.preventDefault();
         }}
@@ -50,13 +51,15 @@ export function ResponsiveDialog({
           onEscapeAttempt?.();
         }}
       >
-        <DialogHeader>
+        <DialogHeader className="flex-shrink-0 px-4 pt-4 pb-3 border-b bg-background md:px-6 md:pt-6">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className={cn(descriptionClassName)}>
             {description}
           </DialogDescription>
         </DialogHeader>
-        {children}
+        <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6">
+          {children}
+        </div>
       </DialogContent>
     </Dialog>
   );
