@@ -297,7 +297,7 @@ export function MultiStepRegistrationForm({
     const isValid = await form2.trigger();
 
     if (!isValid) {
-      // console.error("Step 2 Validation Errors:", form2.formState.errors);
+      console.info("Step 2 Validation Errors:", form2.formState.errors);
       toast.error(
         "Please fill in all required fields correctly in the funding application."
       );
