@@ -296,8 +296,21 @@ export function MultiStepRegistrationForm({
     // Validate Step 2
     const isValid = await form2.trigger();
 
+    // Debug logging
+    console.info("Validation Result:", isValid);
+    console.info("Form State isValid:", form2.formState.isValid);
+    console.info("Form State Errors:", form2.formState.errors);
+    console.info("Form Values:", form2.getValues());
+
     if (!isValid) {
-      console.info("Step 2 Validation Errors:", form2.formState.errors);
+      // Wait a tick for errors to update
+      setTimeout(() => {
+        console.info(
+          "Step 2 Validation Errors (after tick):",
+          form2.formState.errors
+        );
+      }, 0);
+
       toast.error(
         "Please fill in all required fields correctly in the funding application."
       );
