@@ -223,6 +223,28 @@ export const applyFundingSchema = z
     experianPassword: z.string().optional(),
     creditKarmaUsername: z.string().optional(),
     creditKarmaPassword: z.string().optional(),
+
+    // Document uploads (stored as base64 strings for persistence)
+    bankStatements: z
+      .array(
+        z.object({
+          name: z.string(),
+          size: z.number(),
+          type: z.string(),
+          base64: z.string(),
+        })
+      )
+      .optional(),
+    driverLicenseDocuments: z
+      .array(
+        z.object({
+          name: z.string(),
+          size: z.number(),
+          type: z.string(),
+          base64: z.string(),
+        })
+      )
+      .optional(),
   })
   .superRefine((data, ctx) => {
     // Define the exclusion condition for clarity

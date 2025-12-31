@@ -666,14 +666,14 @@ const ApplyFundingForm = ({
   const currentYear = new Date().getFullYear();
 
   return (
-    <div>
+    <div className="w-full">
       <ResponsiveDialog
         isOpen={openBusinessModal}
         setIsOpen={setOpenBusinessModal}
         title="Manage Business Information"
         description={""}
-        descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-11/12 md:w-3/4 lg:w-3/6"
+        descriptionClassName="text-red-500 text-base sm:text-lg font-semibold"
+        className="w-[95vw] sm:w-11/12 md:w-3/4 lg:w-3/4 xl:w-2/3 max-w-4xl max-h-[90vh] overflow-y-auto"
       >
         <ClientBusinessManagement
           userId={userData.id}
@@ -690,8 +690,8 @@ const ApplyFundingForm = ({
             <input type="hidden" {...form.register("fundingType")} />
             <div>
               <Card>
-                <CardContent className="space-y-6 pt-6 px-4 md:px-6">
-                  <div className="grid grid-cols-1 gap-4 md:gap-6">
+                <CardContent className="space-y-4 sm:space-y-6 pt-4 sm:pt-6 px-3 sm:px-4 md:px-6">
+                  <div className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6">
                     <CustomFormField
                       name={"interestedProduct"}
                       label="The Product You're Most Interested In"
@@ -738,13 +738,13 @@ const ApplyFundingForm = ({
                   {/* Auto Loan Specific Fields */}
                   {isAutoLoan && (
                     <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-orange-200">
-                      <CardHeader className="px-4 md:px-6 py-4">
+                      <CardHeader className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                         <CardTitle className="text-base md:text-lg flex items-center gap-2">
                           <span>🚗</span> Auto Loan Information
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-5 px-4 md:px-6 pb-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                      <CardContent className="space-y-3 sm:space-y-4 md:space-y-5 px-3 sm:px-4 md:px-6 pb-4 sm:pb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                           <CustomFormField
                             name="vehiclePrice"
                             label="What's the price of the vehicle you want to purchase?"
@@ -797,13 +797,13 @@ const ApplyFundingForm = ({
 
                   {!isCommunity && !isTradeLines && (
                     <Card className="bg-slate-100 border-slate-200">
-                      <CardHeader className="px-4 md:px-6 py-4">
+                      <CardHeader className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                         <CardTitle className="text-base md:text-lg flex items-center gap-2">
                           <span>👤</span> Personal Information
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-5 px-4 md:px-6 pb-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
+                      <CardContent className="space-y-3 sm:space-y-4 md:space-y-5 px-3 sm:px-4 md:px-6 pb-4 sm:pb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 items-start">
                           {!isTradeLines && false && (
                             <CustomFormField
                               name={"isMarried"}
@@ -857,7 +857,7 @@ const ApplyFundingForm = ({
                           </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
                           <CustomFormField
                             className="md:col-span-2"
                             name={"addressStreet"}
@@ -869,7 +869,7 @@ const ApplyFundingForm = ({
                           />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
                           <CustomFormField
                             name={"addressCity"}
                             label={"City"}
@@ -912,12 +912,12 @@ const ApplyFundingForm = ({
 
                   {isCommunity && (
                     <Card className="bg-slate-100 border-slate-200">
-                      <CardHeader className="px-4 md:px-6">
+                      <CardHeader className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                         <CardTitle className="text-base md:text-lg flex items-center gap-2">
                           <span>🤝</span> Community Information
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4 px-4 md:px-6">
+                      <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-4 md:px-6 pb-4 sm:pb-6">
                         <CustomFormField
                           name={"reasonForJoiningCommunity"}
                           label={
@@ -925,7 +925,7 @@ const ApplyFundingForm = ({
                           }
                         />
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                           <CustomFormField
                             className="md:col-span-2"
                             name={"addressStreet"}
@@ -979,13 +979,13 @@ const ApplyFundingForm = ({
 
                   {isTradeLines && (
                     <Card className="bg-slate-100 border-slate-200">
-                      <CardHeader className="px-4 md:px-6">
+                      <CardHeader className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                         <CardTitle className="text-base md:text-lg flex items-center gap-2">
                           <span>💳</span> Tradelines Information
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4 px-4 md:px-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-4 md:px-6 pb-4 sm:pb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                           <CustomFormField
                             className="md:col-span-2"
                             name={"addressStreet"}
@@ -1014,7 +1014,7 @@ const ApplyFundingForm = ({
                           />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                           <CustomFormField
                             name={"experianUsername"}
                             label={"Experian Username"}
@@ -1024,7 +1024,7 @@ const ApplyFundingForm = ({
                             label={"Experian Password"}
                           />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                           <CustomFormField
                             name={"creditKarmaUsername"}
                             label={"Credit Karma Username"}
@@ -1042,7 +1042,7 @@ const ApplyFundingForm = ({
                     interestedProductSelected &&
                     (!isAutoLoan ||
                       (isAutoLoan && vehicleFinancingType === "Personal")) && (
-                      <div className="flex flex-row items-center gap-4 justify-between">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 justify-between">
                         <CustomFormField
                           name={"howDoYouGetPaid"}
                           label={"Do you have a job?"}
@@ -1051,7 +1051,7 @@ const ApplyFundingForm = ({
                           onSelectValue={handleDoYouHaveAJobChange}
                         />
                         {howDoYouGetPaidSelected?.value === "no_assistance" && (
-                          <div className="mt-6">
+                          <div className="mt-0 sm:mt-6 w-full sm:w-auto">
                             <PlaidLink displayText="Link Personal Account" />
                           </div>
                         )}
@@ -1063,7 +1063,7 @@ const ApplyFundingForm = ({
                       (isAutoLoan && vehicleFinancingType === "Personal")) &&
                     !isTradeLines && (
                       <Card className="bg-slate-100 border-slate-200">
-                        <CardHeader className="px-4 md:px-6">
+                        <CardHeader className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                           <CardTitle className="flex flex-col md:flex-row justify-between gap-2 text-base md:text-lg">
                             <div className="flex items-center gap-2">
                               <span>💼</span> Employment Information
@@ -1073,8 +1073,8 @@ const ApplyFundingForm = ({
                             )}
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4 px-4 md:px-6">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-4 md:px-6 pb-4 sm:pb-6">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                             <CustomFormField
                               name={"employmentPayPerMonth"}
                               type="number"
@@ -1082,7 +1082,7 @@ const ApplyFundingForm = ({
                             />
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                             <CustomFormField
                               name={"employmentEmployerName"}
                               label={"Employer Name?"}
@@ -1109,7 +1109,7 @@ const ApplyFundingForm = ({
                             />
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
                             <CustomFormField
                               name={"employmentEmployerAddressCity"}
                               label={"City"}
@@ -1251,7 +1251,7 @@ const ApplyFundingForm = ({
                     (!isAutoLoan && isEquipmentFinancing) ||
                     (isAutoLoan && vehicleFinancingType === "Business")) &&
                     !isTradeLines && (
-                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-end gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-stretch md:items-end gap-3 sm:gap-4">
                         <CustomFormField
                           name="businessName"
                           label="Select Business"
@@ -1279,7 +1279,7 @@ const ApplyFundingForm = ({
                       (isAutoLoan && vehicleFinancingType === "Business")) &&
                     !isTradeLines && (
                       <Card className="bg-slate-100 border-slate-200">
-                        <CardHeader className="px-4 md:px-6">
+                        <CardHeader className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                           <CardTitle className="flex flex-col md:flex-row justify-between gap-2 text-base md:text-lg">
                             <div className="flex items-center gap-2">
                               <span>🏢</span> Business Information
@@ -1287,7 +1287,7 @@ const ApplyFundingForm = ({
                             <PlaidLink displayText="Link Business Acount" />
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4 px-4 md:px-6">
+                        <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-4 md:px-6 pb-4 sm:pb-6">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <CustomFormField
                               name={"dateOfIncorporation"}
@@ -1474,7 +1474,7 @@ const ApplyFundingForm = ({
                     )}
                 </CardContent>
 
-                <CardFooter className="flex justify-end px-4 md:px-6 py-4 md:py-6">
+                <CardFooter className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-2 px-3 sm:px-4 md:px-6 py-4 md:py-6">
                   {!isViewing ? (
                     <>
                       {/* <div>
@@ -1557,7 +1557,7 @@ const ApplyFundingForm = ({
                       variant={"outline"}
                       type="button"
                       onClick={() => setOpen(false)}
-                      className="w-full bg-red-200 hover:bg-red-300 text-black-100"
+                      className="w-full sm:w-auto bg-red-200 hover:bg-red-300 text-black-100 min-h-[44px]"
                     >
                       <CircleXIcon className="mr-2 h-4 w-4" /> Close
                     </Button>

@@ -77,6 +77,29 @@ export const useRegistrationStore = create<RegistrationState>()(
       storage: createJSONStorage(() =>
         typeof window !== "undefined" ? window.localStorage : ({} as Storage)
       ),
+      partialize: (state) => {
+        // Exclude document fields from persistence to avoid localStorage quota issues
+        const filteredRegistrations = Object.entries(
+          state.registrations
+        ).reduce((acc, [userId, data]) => {
+          acc[userId] = {
+            ...data,
+            step2: data.step2
+              ? {
+                  ...data.step2,
+                  // Exclude large base64 document fields
+                  bankStatements: undefined,
+                  driverLicenseDocuments: undefined,
+                }
+              : data.step2,
+          };
+          return acc;
+        }, {} as RegistrationState["registrations"]);
+
+        return {
+          registrations: filteredRegistrations,
+        } as RegistrationState;
+      },
     }
   )
 );

@@ -39,8 +39,12 @@ export const applyFunding = async ({ value }: { value: ApplyFunding }) => {
 
   const { id: referenceNumber } = await createReferenceId();
 
+  // Exclude document arrays from Firestore save (they should be uploaded to storage separately)
+  const { bankStatements, driverLicenseDocuments, ...fundingDataToSave } =
+    value;
+
   const docRef = collectionRef.doc(referenceNumber);
-  await docRef.set({ ...value });
+  await docRef.set({ ...fundingDataToSave });
 
   // check if user alreay has generated CRS report
   const data = await getCRSReport(value.userId!);
