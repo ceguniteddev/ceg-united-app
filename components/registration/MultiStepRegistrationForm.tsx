@@ -362,6 +362,10 @@ export function MultiStepRegistrationForm({
     }
   };
 
+  const confirmStartOver = () => {
+    setShowConfirmDialog(true); // Show confirmation dialog
+  };
+
   return (
     <div className="w-full max-w-full mx-auto px-2 sm:px-4">
       <div className="mb-4 sm:mb-6 flex justify-between items-center gap-4">
@@ -369,7 +373,7 @@ export function MultiStepRegistrationForm({
         <Button
           type="button"
           title="Reset data"
-          onClick={handleStartOver}
+          onClick={confirmStartOver}
           disabled={isSubmitting}
           size="sm"
           className="bg-red-500 hover:bg-red-600 text-white"
@@ -492,6 +496,46 @@ export function MultiStepRegistrationForm({
                 </>
               ) : (
                 "Confirm & Submit"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset Confirmation Dialog */}
+      <AlertDialog
+        open={showConfirmDialog && currentStep === 1}
+        onOpenChange={setShowConfirmDialog}
+      >
+        <AlertDialogContent className="w-[95vw] max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-lg sm:text-xl">
+              Confirm Reset
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm sm:text-base">
+              Are you sure you want to reset the application? This will clear
+              all data entered in the form.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <AlertDialogCancel
+              disabled={isSubmitting}
+              className="w-full sm:w-auto min-h-[44px]"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleStartOver}
+              disabled={isSubmitting}
+              className="bg-red-500 hover:bg-red-600 w-full sm:w-auto min-h-[44px]"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2Icon className="h-4 w-4 animate-spin mr-2" />
+                  Resetting...
+                </>
+              ) : (
+                "Confirm & Reset"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
