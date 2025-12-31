@@ -100,8 +100,8 @@ export const applyFundingSchema = z
     payPerMonth: z.coerce.number<number>().optional(),
     rentOrMortgage: z.string().optional(),
 
-    // howDoYouGetPaid: z.string().optional(),
-    howDoYouGetPaid: z.string().min(1, { error: "Required" }),
+    howDoYouGetPaid: z.string().optional(),
+    // howDoYouGetPaid: z.string().min(1, { error: "Required" }),
     employmentStatus: z.string().optional(),
     employmentPayPerMonth: z.coerce.number<number>().optional(),
     employmentEmployerName: z.string().optional(),
@@ -441,7 +441,14 @@ export const applyFundingSchema = z
   })
   .superRefine((data, ctx) => {
     // Check if the employment status is 'yes'
-    if (data.employmentStatus === "yes") {
+    // Exclude Auto Loan with Business financing from employment validation
+    if (
+      data.employmentStatus === "yes" &&
+      !(
+        data.interestedProduct === "Auto Loan" &&
+        data.vehicleFinancingType === "Business"
+      )
+    ) {
       // If it is, validate each employment field
       if (
         !data.employmentEmployerName ||
@@ -642,7 +649,7 @@ export const applyFundingSchema = z
     }
   })
   .superRefine((data, ctx) => {
-    // If funded by Community, require a non-empty reason
+    // If funded by Community, require a non-empty reason and funding amount
     if (data.fundingType?.includes("Community")) {
       if (
         !data.reasonForJoiningCommunity ||
@@ -654,10 +661,25 @@ export const applyFundingSchema = z
           path: ["reasonForJoiningCommunity"],
         });
       }
+
+      // Require funding amount for Community products
+      if (
+        data.personalAmountFunding == null ||
+        data.personalAmountFunding <= 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["personalAmountFunding"],
+        });
+      }
     }
 
-    // If funded by Equipment Financing, require personal amount and business info
-    if (data.fundingType?.includes("Equipment Financing")) {
+    // If funded by Equipment Financing (excluding Auto Loan), require personal amount and business info
+    if (
+      data.fundingType?.includes("Equipment Financing") &&
+      data.interestedProduct !== "Auto Loan"
+    ) {
       if (
         data.personalAmountFunding == null ||
         data.personalAmountFunding <= 0
@@ -755,6 +777,18 @@ export const applyFundingSchema = z
 
     // Auto Loan validation
     if (data.interestedProduct === "Auto Loan") {
+      // Funding amount is required
+      if (
+        data.personalAmountFunding == null ||
+        data.personalAmountFunding <= 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["personalAmountFunding"],
+        });
+      }
+
       // Vehicle price is required
       if (data.vehiclePrice == null || data.vehiclePrice <= 0) {
         ctx.addIssue({
@@ -878,7 +912,7 @@ export const applyFundingSchema = z
         if (!data.howDoYouGetPaid || data.howDoYouGetPaid.trim().length === 0) {
           ctx.addIssue({
             code: "custom",
-            message: "Required",
+            message: "Requiredss",
             path: ["howDoYouGetPaid"],
           });
         }

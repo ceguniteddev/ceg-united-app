@@ -3,7 +3,6 @@ import { BanknoteIcon } from "lucide-react";
 import React from "react";
 import ApplyFundingForm from "@/components/fundingv2/ApplyFundingForm";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
-import { useAuth } from "@/provider/AuthContext";
 
 import {
   Dialog,
