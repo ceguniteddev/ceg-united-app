@@ -74,7 +74,7 @@ export const applyFundingSchema = z
     businessAmountFunding: z.coerce.number<number>().optional(),
 
     isMarried: z.string().optional(),
-    legalResident: z.string().optional(), //TODO
+    legalResident: z.string().optional(),
     currentSituation: z.string().optional(),
 
     driverLicenseNumber: z.string().optional(),
@@ -134,12 +134,16 @@ export const applyFundingSchema = z
     businessStateAddress: z.string().optional(),
     businessPostalAddress: z
       .string()
-      .trim()
+      // .trim()
       // .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" })
       .optional(),
     employerIdentificationNumber: z.string().optional(),
     businessPhoneNumber: z.string().optional(),
-    businessEmail: z.email({ message: "Invalid email" }).optional(),
+    businessEmail: z
+      // .string()
+      .email({ message: "Invalid email" })
+      .or(z.literal(""))
+      .optional(),
     businessWebsite: z.string().optional(),
     socialMedia: z
       .array(
