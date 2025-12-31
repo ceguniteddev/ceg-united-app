@@ -54,7 +54,7 @@ const RegistrationPage = () => {
   };
 
   return (
-    <div className="p-3 sm:p-4 md:p-6">
+    <div className="p-3 sm:p-4 md:p-6 max-w-screen-md mx-auto overflow-hidden">
       <div className="flex justify-center items-center mb-4 sm:mb-6">
         <Image
           src="/icon.png"
@@ -126,76 +126,6 @@ const RegistrationPage = () => {
                       options={genderTypes()}
                     />
                   </div>
-
-                  {/* <div className="grid grid-cols-3 gap-4">
-                    <CustomFormField
-                      name={"personalIncome"}
-                      label="Personal Income?"
-                      type="number"
-                    />
-                    <CustomFormField
-                      name={"frequencyOfIncome"}
-                      label="Frequency of Income?"
-                      type="select"
-                      placeholder="Select frequency"
-                      options={frequencyOfIncome}
-                    />
-                    <CustomFormField
-                      name={"paymentType"}
-                      label="Payment Type?"
-                      placeholder="Select payment type"
-                      type="select"
-                      options={[
-                        { value: "Cash", label: "Cash" },
-                        { value: "Check to Cash", label: "Check to Cash" },
-                        { value: "Check to Deposit", label: "Check to Deposit" },
-                        { value: "Direct Deposit", label: "Direct Deposit" },
-                      ]}
-                    />
-                  </div> */}
-                  {/* <div className="grid grid-cols-2 gap-4">
-                    <CustomFormField name={"businessGross"} label="Business Gross?" type="number" />
-                    <CustomFormField name={"businessNet"} label="Business Net?" type="number" />
-                  </div> */}
-
-                  {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <CustomFormField
-                      name={"addressStreet"}
-                      label={"Street Address"}
-                    />
-                    <CustomFormField
-                      name={"houseNumber"}
-                      label={"Apartment/Suite/Unit/House Number"}
-                    />
-                  </div> */}
-
-                  {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    <CustomFormField name={"addressCity"} label={"City"} />
-                    <CustomFormField
-                      name={"addressState"}
-                      label={"State"}
-                      type="select"
-                      placeholder="Select a state"
-                      options={US_STATES}
-                    />
-                    <CustomFormField
-                      name={"addressPostal"}
-                      label={"Zip Code"}
-                    />
-                  </div> */}
-                  {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <CustomFormField
-                      name={"employmentPayPerMonth"}
-                      type="number"
-                      label={"Monthly income"}
-                    />
-
-                    <CustomFormField
-                      name={"payPerMonth"}
-                      type="number"
-                      label={"Rent/Mortgage payment"}
-                    />
-                  </div> */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <CustomFormField
                       name={"ssn"}

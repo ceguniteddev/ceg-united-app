@@ -262,7 +262,7 @@ export function FundingApplicationFields({
       <input type="hidden" {...form.register("status")} />
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <CustomFormField
             name={"interestedProduct"}
             label="The Product You're Most Interested In"
