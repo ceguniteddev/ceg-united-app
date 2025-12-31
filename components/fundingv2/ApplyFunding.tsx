@@ -31,7 +31,7 @@ const ApplyFunding = ({ userId }: { userId: string }) => {
         title="Pre-Qualify"
         description={""}
         descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-11/12 md:w-5/6 lg:w-4/6 xl:w-3/6"
+        className="w-[95vw] sm:w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 max-w-4xl"
       >
         <ApplyFundingForm
           setOpen={setOpen}

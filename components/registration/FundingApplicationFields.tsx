@@ -262,49 +262,66 @@ export function FundingApplicationFields({
       <input type="hidden" {...form.register("status")} />
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <CustomFormField
-            name={"interestedProduct"}
-            label="The Product You're Most Interested In"
-            type="select"
-            placeholder=" "
-            options={FundingProductTypeEnum.map((type) => ({
-              value: type.value,
-              label: type.label,
-            }))}
-            onSelectValue={handleInterestedProductChange}
-          />
-          {interestedProductSelected?.type?.includes("Personal") &&
-            !isTradeLines && (
+        <Card className="bg-slate-100 border-slate-200">
+          <CardHeader className="px-4 md:px-6">
+            <CardTitle className="text-base md:text-lg flex items-center gap-2">
+              <span>💼</span> Product Selection
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5 px-4 md:px-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               <CustomFormField
-                name={"personalAmountFunding"}
-                label="How Much Personal Funding Are You Looking For?"
-                type="number"
+                name={"interestedProduct"}
+                label="The Product You're Most Interested In"
+                type="select"
+                placeholder=" "
+                options={FundingProductTypeEnum.map((type) => ({
+                  value: type.value,
+                  label: type.label,
+                }))}
+                onSelectValue={handleInterestedProductChange}
               />
-            )}
-          {(isCommunity || isEquipmentFinancing) && (
-            <CustomFormField
-              name={"personalAmountFunding"}
-              label="How much funding are you looking for?"
-              type="number"
-            />
-          )}
-          {isTradeLines && (
-            <CustomFormField
-              name={"personalAmountFunding"}
-              label="How much funding are you looking for?"
-              type="number"
-            />
-          )}
-          {interestedProductSelected?.type?.includes("Business") &&
-            !isTradeLines && (
-              <CustomFormField
-                name={"businessAmountFunding"}
-                label="How Much Business Funding Are You Looking For?"
-                type="number"
-              />
-            )}
-        </div>
+              {interestedProductSelected?.type?.includes("Personal") &&
+                !isTradeLines && (
+                  <CustomFormField
+                    name={"personalAmountFunding"}
+                    label="How Much Personal Funding Are You Looking For?"
+                    type="number"
+                  />
+                )}
+              {(isCommunity || isAutoLoan) && (
+                <CustomFormField
+                  name={"personalAmountFunding"}
+                  label="How much funding are you looking for?"
+                  type="number"
+                />
+              )}
+              {isEquipmentFinancing && !isAutoLoan && (
+                <CustomFormField
+                  className="col-span-2"
+                  name={"personalAmountFunding"}
+                  label="How much in equipment financing are you looking for?"
+                  type="number"
+                />
+              )}
+              {isTradeLines && (
+                <CustomFormField
+                  name={"personalAmountFunding"}
+                  label="How much funding are you looking for?"
+                  type="number"
+                />
+              )}
+              {interestedProductSelected?.type?.includes("Business") &&
+                !isTradeLines && (
+                  <CustomFormField
+                    name={"businessAmountFunding"}
+                    label="How Much Business Funding Are You Looking For?"
+                    type="number"
+                  />
+                )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Auto Loan Specific Fields */}
         {isAutoLoan && (
@@ -362,12 +379,12 @@ export function FundingApplicationFields({
 
         {!isCommunity && !isTradeLines && (
           <Card className="bg-slate-100 border-slate-200">
-            <CardHeader className="px-4 md:px-6 py-4">
+            <CardHeader className="px-4 md:px-6">
               <CardTitle className="text-base md:text-lg flex items-center gap-2">
                 <span>👤</span> Personal Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-5 px-4 md:px-6 pb-6">
+            <CardContent className="space-y-5 px-4 md:px-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
                 {!isTradeLines && false && (
                   <CustomFormField
@@ -467,12 +484,12 @@ export function FundingApplicationFields({
 
         {isCommunity && (
           <Card className="bg-slate-100 border-slate-200">
-            <CardHeader className="px-4 md:px-6 py-4">
+            <CardHeader className="px-4 md:px-6">
               <CardTitle className="text-base md:text-lg flex items-center gap-2">
                 <span>🤝</span> Community Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-5 px-4 md:px-6 pb-6">
+            <CardContent className="space-y-5 px-4 md:px-6">
               <CustomFormField
                 name={"reasonForJoiningCommunity"}
                 label={"What's the most important reason for joining?"}
@@ -579,28 +596,8 @@ export function FundingApplicationFields({
           interestedProductSelected &&
           (!isAutoLoan ||
             (isAutoLoan && vehicleFinancingType === "Personal")) && (
-            <div>
-              <CustomFormField
-                name={"howDoYouGetPaid"}
-                label={"Do you have a job?"}
-                type="select"
-                options={howDoYouGetPaid}
-                onSelectValue={handleDoYouHaveAJobChange}
-              />
-              {/* {howDoYouGetPaidSelected?.value === "no_assistance" && (
-              <div className="mt-6">
-                <PlaidLink displayText="Link Personal Account" />
-              </div>
-            )} */}
-            </div>
-          )}
-
-        {howDoYouGetPaidSelected?.type === "yes" &&
-          (!isAutoLoan ||
-            (isAutoLoan && vehicleFinancingType === "Personal")) &&
-          !isTradeLines && (
             <Card className="bg-slate-100 border-slate-200">
-              <CardHeader className="px-4 md:px-6 py-4">
+              <CardHeader className="px-4 md:px-6">
                 <CardTitle className="flex flex-col md:flex-row justify-between gap-3 md:gap-2 text-base md:text-lg">
                   <div className="flex items-center gap-2">
                     <span>💼</span> Employment Information
@@ -610,171 +607,183 @@ export function FundingApplicationFields({
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-5 px-4 md:px-6 pb-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                  <CustomFormField
-                    name={"employmentPayPerMonth"}
-                    type="number"
-                    label={"How much money do you make per month?"}
-                  />
-                </div>
+              <CardContent className="space-y-5 px-4 md:px-6">
+                <CustomFormField
+                  name={"howDoYouGetPaid"}
+                  label={"Do you have a job?"}
+                  type="select"
+                  options={howDoYouGetPaid}
+                  onSelectValue={handleDoYouHaveAJobChange}
+                />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <CustomFormField
-                    name={"employmentEmployerName"}
-                    label={"Employer Name?"}
-                  />
-                  <CustomFormField
-                    name={"employmentEmployerPhoneNumber"}
-                    label={"Employer Phone Number?"}
-                  />
-                </div>
-                {/* <CustomFormField
+                {howDoYouGetPaidSelected?.type === "yes" && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                      <CustomFormField
+                        name={"employmentPayPerMonth"}
+                        type="number"
+                        label={"How much money do you make per month?"}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <CustomFormField
+                        name={"employmentEmployerName"}
+                        label={"Employer Name?"}
+                      />
+                      <CustomFormField
+                        name={"employmentEmployerPhoneNumber"}
+                        label={"Employer Phone Number?"}
+                      />
+                    </div>
+                    {/* <CustomFormField
                             name={"employmentEmployerAddress"}
                             label={"Employer Address?"}
                           /> */}
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <CustomFormField
-                    className="md:col-span-2"
-                    name={"employmentEmployerAddressStreet"}
-                    label={"Street Address"}
-                  />
-                  <CustomFormField
-                    name={"employmentEmployerHouseNumber"}
-                    label={"Apartment/Suite/Unit/House Number"}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <CustomFormField
-                    name={"employmentEmployerAddressCity"}
-                    label={"City"}
-                  />
-                  <CustomFormField
-                    name={"employmentEmployerAddressState"}
-                    label={"State"}
-                    type="select"
-                    placeholder="Select a state"
-                    options={US_STATES}
-                  />
-                  <CustomFormField
-                    name={"employmentEmployerAddressPostal"}
-                    label={"Zip Code"}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <CustomFormField
-                    name={"employmentOccupation"}
-                    label={"Your Occupation?"}
-                  />
-                  <CustomFormField
-                    name={"employmentDateOfHire"}
-                    type="date-picker"
-                    label={"Date of Hire?"}
-                    // dateAfterHidden={new Date()}
-                  />
-                </div>
-
-                {fields.map((field, index) => {
-                  const colors = [
-                    "bg-blue-50 border-blue-200",
-                    "bg-green-50 border-green-200",
-                    "bg-orange-50 border-orange-200",
-                    "bg-purple-50 border-purple-200",
-                  ];
-                  const colorClass = colors[index % colors.length];
-
-                  return (
-                    <div
-                      key={field.id}
-                      className={`space-y-4 border rounded-md p-4 mt-4 ${colorClass}`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-sm font-medium">
-                          Additional Employment {index + 1}
-                        </h4>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => remove(index)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <CustomFormField
-                          name={`employments.${index}.howDoYouGetPaid`}
-                          label={"Do you have a job?"}
-                          type="select"
-                          options={howDoYouGetPaid.filter(
-                            (x) => x.value !== "no_work"
-                          )}
-                        />
-                        <CustomFormField
-                          name={`employments.${index}.employmentPayPerMonth`}
-                          type="number"
-                          label={"How much money do you make per month?"}
-                        />
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <CustomFormField
-                          name={`employments.${index}.employmentEmployerName`}
-                          label={"Employer Name?"}
-                        />
-                        <CustomFormField
-                          name={`employments.${index}.employmentOccupation`}
-                          label={"Your Occupation?"}
-                        />
-                      </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <CustomFormField
+                        className="md:col-span-2"
+                        name={"employmentEmployerAddressStreet"}
+                        label={"Street Address"}
+                      />
+                      <CustomFormField
+                        name={"employmentEmployerHouseNumber"}
+                        label={"Apartment/Suite/Unit/House Number"}
+                      />
                     </div>
-                  );
-                })}
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 w-full md:w-fit min-h-[44px]"
-                  onClick={() =>
-                    append({
-                      howDoYouGetPaid: "",
-                      employmentPayPerMonth: 0,
-                      employmentEmployerName: "",
-                      employmentOccupation: "",
-                    })
-                  }
-                >
-                  <Plus className="h-4 w-4" /> Add Another Employment
-                </Button>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <CustomFormField
+                        name={"employmentEmployerAddressCity"}
+                        label={"City"}
+                      />
+                      <CustomFormField
+                        name={"employmentEmployerAddressState"}
+                        label={"State"}
+                        type="select"
+                        placeholder="Select a state"
+                        options={US_STATES}
+                      />
+                      <CustomFormField
+                        name={"employmentEmployerAddressPostal"}
+                        label={"Zip Code"}
+                      />
+                    </div>
 
-                <CustomFormField
-                  name={"personalTaxes"}
-                  label={"Did you file your personal taxes?"}
-                  type="select"
-                  options={personalTaxes}
-                  onSelectValue={handlePersonalTaxesChange}
-                />
-                {personalTaxesSelected?.type === "yes" && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <CustomFormField
+                        name={"employmentOccupation"}
+                        label={"Your Occupation?"}
+                      />
+                      <CustomFormField
+                        name={"employmentDateOfHire"}
+                        type="date-picker"
+                        label={"Date of Hire?"}
+                        // dateAfterHidden={new Date()}
+                      />
+                    </div>
+
+                    {fields.map((field, index) => {
+                      const colors = [
+                        "bg-blue-50 border-blue-200",
+                        "bg-green-50 border-green-200",
+                        "bg-orange-50 border-orange-200",
+                        "bg-purple-50 border-purple-200",
+                      ];
+                      const colorClass = colors[index % colors.length];
+
+                      return (
+                        <div
+                          key={field.id}
+                          className={`space-y-4 border rounded-md p-4 mt-4 ${colorClass}`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <h4 className="text-sm font-medium">
+                              Additional Employment {index + 1}
+                            </h4>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => remove(index)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <CustomFormField
+                              name={`employments.${index}.howDoYouGetPaid`}
+                              label={"Do you have a job?"}
+                              type="select"
+                              options={howDoYouGetPaid.filter(
+                                (x) => x.value !== "no_work"
+                              )}
+                            />
+                            <CustomFormField
+                              name={`employments.${index}.employmentPayPerMonth`}
+                              type="number"
+                              label={"How much money do you make per month?"}
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <CustomFormField
+                              name={`employments.${index}.employmentEmployerName`}
+                              label={"Employer Name?"}
+                            />
+                            <CustomFormField
+                              name={`employments.${index}.employmentOccupation`}
+                              label={"Your Occupation?"}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 w-full md:w-fit min-h-[44px]"
+                      onClick={() =>
+                        append({
+                          howDoYouGetPaid: "",
+                          employmentPayPerMonth: 0,
+                          employmentEmployerName: "",
+                          employmentOccupation: "",
+                        })
+                      }
+                    >
+                      <Plus className="h-4 w-4" /> Add Another Employment
+                    </Button>
+
                     <CustomFormField
-                      name={"personalTaxes1"}
-                      type="number"
-                      label={`Gross Revenue ${currentYear - 1}?`}
+                      name={"personalTaxes"}
+                      label={"Did you file your personal taxes?"}
+                      type="select"
+                      options={personalTaxes}
+                      onSelectValue={handlePersonalTaxesChange}
                     />
-                    <CustomFormField
-                      name={"personalTaxes2"}
-                      type="number"
-                      label={`Gross Revenue ${currentYear - 2}?`}
-                    />
-                    <CustomFormField
-                      name={"personalTaxes3"}
-                      type="number"
-                      label={`Gross Revenue ${currentYear - 3}?`}
-                    />
-                  </div>
+                    {personalTaxesSelected?.type === "yes" && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <CustomFormField
+                          name={"personalTaxes1"}
+                          type="number"
+                          label={`Gross Revenue ${currentYear - 1}?`}
+                        />
+                        <CustomFormField
+                          name={"personalTaxes2"}
+                          type="number"
+                          label={`Gross Revenue ${currentYear - 2}?`}
+                        />
+                        <CustomFormField
+                          name={"personalTaxes3"}
+                          type="number"
+                          label={`Gross Revenue ${currentYear - 3}?`}
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -786,12 +795,12 @@ export function FundingApplicationFields({
           (isAutoLoan && vehicleFinancingType === "Business")) &&
           !isTradeLines && (
             <Card className="bg-slate-100 border-slate-200">
-              <CardHeader className="px-4 md:px-6 py-4">
+              <CardHeader className="px-4 md:px-6">
                 <CardTitle className="text-base md:text-lg flex items-center gap-2">
                   <span>🏢</span> Business Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-5 px-4 md:px-6 pb-6">
+              <CardContent className="space-y-5 px-4 md:px-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <CustomFormField
                     name="businessName"
