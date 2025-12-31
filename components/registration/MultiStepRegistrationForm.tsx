@@ -296,13 +296,12 @@ export function MultiStepRegistrationForm({
     // Validate Step 2
     const isValid = await form2.trigger();
 
-    // Debug logging
-    console.info("Validation Result:", isValid);
-    console.info("Form State isValid:", form2.formState.isValid);
-    console.info("Form State Errors:", form2.formState.errors);
-    console.info("Form Values:", form2.getValues());
-
     if (!isValid) {
+      // Debug logging
+      console.info("Validation Result:", isValid);
+      console.info("Form State isValid:", form2.formState.isValid);
+      console.info("Form State Errors:", form2.formState.errors);
+      console.info("Form Values:", form2.getValues());
       // Wait a tick for errors to update
       setTimeout(() => {
         console.info(
