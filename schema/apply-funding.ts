@@ -919,6 +919,114 @@ export const applyFundingSchema = z
       }
     }
 
+    // Business Income Based Funding validation
+    if (data.interestedProduct === "Business Income Based Funding") {
+      // Use of Funds is required
+      if (!data.useOfFunds || data.useOfFunds.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["useOfFunds"],
+        });
+      }
+
+      // Financial Information - Annual Business Revenue is required
+      if (
+        data.annualBusinessRevenue == null ||
+        data.annualBusinessRevenue <= 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["annualBusinessRevenue"],
+        });
+      }
+
+      // Average Monthly Credit Card Sales is required
+      if (
+        data.avgMonthlyCreditCardSales == null ||
+        data.avgMonthlyCreditCardSales <= 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["avgMonthlyCreditCardSales"],
+        });
+      }
+
+      // Average Daily Bank Balance is required
+      if (data.avgDailyBankBalance == null || data.avgDailyBankBalance <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["avgDailyBankBalance"],
+        });
+      }
+
+      // Business Property Type is required
+      if (
+        !data.businessPropertyType ||
+        data.businessPropertyType.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessPropertyType"],
+        });
+      }
+
+      // Landlord Name is required
+      if (!data.landlordName || data.landlordName.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["landlordName"],
+        });
+      }
+
+      // Landlord Phone is required
+      if (!data.landlordPhone || data.landlordPhone.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["landlordPhone"],
+        });
+      }
+
+      // Monthly Payment is required
+      if (data.monthlyPayment == null || data.monthlyPayment <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["monthlyPayment"],
+        });
+      }
+
+      // Is Seasonal Business is required
+      if (
+        !data.isSeasonalBusiness ||
+        data.isSeasonalBusiness.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["isSeasonalBusiness"],
+        });
+      }
+
+      // Has Outstanding Advances is required
+      if (
+        !data.hasOutstandingAdvances ||
+        data.hasOutstandingAdvances.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["hasOutstandingAdvances"],
+        });
+      }
+    }
+
     // If funded by Personal, require a positive amount
     if (data.fundingType?.includes("Personal")) {
       if (
