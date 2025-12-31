@@ -21,6 +21,7 @@ import {
   CircleX,
   Loader2Icon,
   SaveIcon,
+  Trash2,
 } from "lucide-react";
 import { Step1PersonalInfo } from "./Step1PersonalInfo";
 import { Step2FundingInfo } from "./Step2FundingInfo";
@@ -348,10 +349,33 @@ export function MultiStepRegistrationForm({
     }
   };
 
+  const handleStartOver = () => {
+    if (user) {
+      clearRegistration(user.uid); // Clear cached data from Zustand persist
+      localStorage.removeItem("registration-storage"); // Explicitly remove the registration-storage key
+      form1.reset({}); // Reset Step 1 form with empty values
+      form2.reset({}); // Reset Step 2 form with empty values
+      setStep1Data(null); // Clear Step 1 data state
+      setCurrentStep(1); // Reset to Step 1
+      setProgress(0); // Reset progress bar
+      toast.success("Application has been reset."); // Notify user
+    }
+  };
+
   return (
     <div className="w-full max-w-full mx-auto px-2 sm:px-4">
-      <div className="mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6 flex justify-between items-center gap-4">
         <ProgressBar progress={progress} />
+        <Button
+          type="button"
+          title="Reset data"
+          onClick={handleStartOver}
+          disabled={isSubmitting}
+          size="sm"
+          className="bg-red-500 hover:bg-red-600 text-white"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="mt-4 sm:mt-6">
@@ -424,7 +448,7 @@ export function MultiStepRegistrationForm({
               {isSubmitting ? (
                 <IconMenu
                   text="Submitting..."
-                  icon={<Loader2Icon className="h-4 w-4 animate-spin" />}
+                  icon={<Loader2Icon className="h-4 w-4" />}
                 />
               ) : (
                 <IconMenu
