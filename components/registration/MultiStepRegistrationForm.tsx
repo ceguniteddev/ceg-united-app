@@ -77,6 +77,7 @@ export function MultiStepRegistrationForm({
       : null
   );
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showResetConfirmDialog, setShowResetConfirmDialog] = useState(false);
 
   const defaultValuesStep1 = useMemo(() => {
     if (savedDraft?.step1 && Object.keys(savedDraft.step1).length > 0) {
@@ -401,7 +402,7 @@ export function MultiStepRegistrationForm({
   };
 
   const confirmStartOver = () => {
-    setShowConfirmDialog(true); // Show confirmation dialog
+    setShowResetConfirmDialog(true); // Show confirmation dialog
   };
 
   return (
@@ -542,8 +543,8 @@ export function MultiStepRegistrationForm({
 
       {/* Reset Confirmation Dialog */}
       <AlertDialog
-        open={showConfirmDialog && currentStep === 1}
-        onOpenChange={setShowConfirmDialog}
+        open={showResetConfirmDialog}
+        onOpenChange={setShowResetConfirmDialog}
       >
         <AlertDialogContent className="w-[95vw] max-w-md">
           <AlertDialogHeader>
