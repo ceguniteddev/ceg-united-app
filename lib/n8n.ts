@@ -20,7 +20,7 @@ export const deleteCRSReportN8N = async () =>
   (await isProd()) ? "delete-crs-qdrant-prod" : "delete-crs-qdrant";
 
 export const sendClientAnalysisN8N = async () =>
-  (await isProd()) ? "send-client-analysis-prod" : "send-client-analysis-prod";
+  (await isProd()) ? "send-client-analysis-prod" : "send-client-analysis";
 
 export const createFundingAnalysisToPDFN8N = async () =>
   (await isProd()) ? "credit-analysis-to-pdf-prod" : "credit-analysis-to-pdf";
@@ -32,3 +32,8 @@ export const generateDisputeLetterFactualErrorN8N = async () =>
   (await isProd())
     ? "generate-dispute-letter-factual-error"
     : "generate-dispute-letter-factual-error";
+
+export const sendClientCongratsMessageN8N = async () =>
+  (await isProd())
+    ? "send-client-congrats-message-prod"
+    : "send-client-congrats-message";
