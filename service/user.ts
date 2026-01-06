@@ -27,6 +27,7 @@ import {
   sendClientFundingApplicationAuditAnalysis,
   sendClientFundingApplicationCongratsMessage,
 } from "./crs";
+import { RegistrationType } from "@/schema/users";
 
 export const getUserRecordByEmail = async (email: string) => {
   const authentication = authenticationAdmin();
@@ -118,15 +119,13 @@ export const getUserById = async (id: string): Promise<UserWithId | null> => {
 
 export const registerUser = async ({
   user,
-  isBrokerRegistration,
+  registrationType,
   brokerName,
-  isAdminRegistration,
   fundingData,
 }: {
   user: User;
-  isBrokerRegistration?: boolean;
+  registrationType: RegistrationType;
   brokerName?: string;
-  isAdminRegistration?: boolean;
   fundingData?: ApplyFunding;
 }) => {
   const userRecord = await getUserRecordByEmail(user.email);
@@ -179,9 +178,16 @@ export const registerUser = async ({
       status: fundingData.status || "New",
     };
 
-    const { referenceNumber } = await applyFunding({ value: fundApplication });
+    const { referenceNumber } = await applyFunding({
+      value: fundApplication,
+      registrationType,
+    });
 
-    if (user.role === "Client") {
+    if (
+      user.role === "Client" &&
+      referenceNumber &&
+      registrationType !== "Self"
+    ) {
       // Send Client Congrats Message
       await sendClientFundingApplicationCongratsMessage({
         userId: docRef.id,
@@ -266,7 +272,7 @@ export const registerUser = async ({
   const link = await authAdmin.generateEmailVerificationLink(user.email);
 
   let requestBody = getVerifyEmailBody(link);
-  if (isBrokerRegistration && brokerName) {
+  if (registrationType === "Broker" && brokerName) {
     requestBody = getBrokerInvitationToClientBody({
       clientName: `${user.firstName} ${user.lastName}`,
       email: user.email,
@@ -275,7 +281,7 @@ export const registerUser = async ({
       brokerName: brokerName,
       verificationLink: link,
     });
-  } else if (isAdminRegistration) {
+  } else if (registrationType === "Admin") {
     requestBody = getAdminInvitationToClientBody({
       clientName: `${user.firstName} ${user.lastName}`,
       email: user.email,

@@ -24,11 +24,14 @@ import {
 } from "./crs";
 import { noteSchema, NoteSchema } from "@/schema/notes";
 import { getUserById } from "./user";
+import { RegistrationType } from "@/schema/users";
 
 export const applyFunding = async ({
   value,
+  registrationType,
 }: {
   value: ApplyFunding;
+  registrationType?: RegistrationType;
 }): Promise<{ referenceNumber: string }> => {
   const userData = await getUserById(value.userId!);
   if (!userData) {
@@ -47,6 +50,12 @@ export const applyFunding = async ({
 
   const docRef = collectionRef.doc(referenceNumber);
   await docRef.set({ ...fundingDataToSave });
+
+  // we do not generate CRS report when client is registering themselves,
+  // only for broker/admin created clients
+  if (registrationType === "Self") {
+    return { referenceNumber };
+  }
 
   // check if user alreay has generated CRS report
   const data = await getCRSReport(value.userId!);
