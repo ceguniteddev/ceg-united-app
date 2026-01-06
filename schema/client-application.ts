@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { dateOfBirthSchema, GenderEnum, ROLESEnum } from ".";
-import { ssnSchema } from "./registration";
+import { ssnSchema, passwordSchema } from "./registration";
 
 export const clientApplicationSchema = z.object({
   // Client Information
   firstName: z.string().min(1, { message: "Required" }),
   middleName: z.string().optional(),
   lastName: z.string().min(1, { message: "Required" }),
-  email: z.string().min(1, { message: "Required" }),
+  email: z.email().min(1, { message: "Required" }),
   birthdate: z
     .date({ message: "Birthdate is required" })
     .refine((date) => date !== null && date !== undefined, {
@@ -22,6 +22,7 @@ export const clientApplicationSchema = z.object({
   isOnboarded: z.boolean().optional(),
   registrationDate: z.date().optional(),
   ssn: ssnSchema,
+  password: passwordSchema,
 
   // addressStreet: z.string().min(1, { error: "Required" }),
   // houseNumber: z.string().optional(),

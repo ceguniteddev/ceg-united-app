@@ -66,7 +66,7 @@ export const POST = withAuth(async (req: NextRequest) => {
     };
 
     await registerUser({
-      value: user,
+      user,
       isBrokerRegistration: false,
       isAdminRegistration: true,
       fundingData,

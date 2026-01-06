@@ -23,6 +23,10 @@ import { FieldPath } from "firebase-admin/firestore";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { applyFunding } from "./apply-funding";
 import { recordBusiness } from "./business";
+import {
+  sendClientFundingApplicationAuditAnalysis,
+  sendClientFundingApplicationCongratsMessage,
+} from "./crs";
 
 export const getUserRecordByEmail = async (email: string) => {
   const authentication = authenticationAdmin();
@@ -113,19 +117,19 @@ export const getUserById = async (id: string): Promise<UserWithId | null> => {
 };
 
 export const registerUser = async ({
-  value,
+  user,
   isBrokerRegistration,
   brokerName,
   isAdminRegistration,
   fundingData,
 }: {
-  value: User;
+  user: User;
   isBrokerRegistration?: boolean;
   brokerName?: string;
   isAdminRegistration?: boolean;
   fundingData?: ApplyFunding;
 }) => {
-  const userRecord = await getUserRecordByEmail(value.email);
+  const userRecord = await getUserRecordByEmail(user.email);
 
   if (userRecord) {
     throw new AppError("Cannot register duplicate email.");
@@ -135,7 +139,7 @@ export const registerUser = async ({
 
   const collectionRef = db.collection(USER_COLLECTION);
 
-  const userData = { ...value };
+  const userData = { ...user };
   delete (userData as { password?: string }).password;
 
   const docRef = await collectionRef.add(userData);
@@ -175,7 +179,21 @@ export const registerUser = async ({
       status: fundingData.status || "New",
     };
 
-    await applyFunding({ value: fundApplication });
+    const { referenceNumber } = await applyFunding({ value: fundApplication });
+
+    if (user.role === "Client") {
+      // Send Client Congrats Message
+      await sendClientFundingApplicationCongratsMessage({
+        userId: docRef.id,
+        referenceNumber,
+      });
+
+      // Send Client Audit Analysis
+      await sendClientFundingApplicationAuditAnalysis({
+        userId: docRef.id,
+        referenceNumber,
+      });
+    }
 
     // Upload documents to Firebase Storage if present
     const bucket = storageAdmin();
@@ -238,45 +256,45 @@ export const registerUser = async ({
 
   await authAdmin.createUser({
     uid: docRef.id,
-    email: value.email,
-    password: value.password,
-    displayName: `${value.firstName} ${value.lastName}`,
+    email: user.email,
+    password: user.password,
+    displayName: `${user.firstName} ${user.lastName}`,
     disabled: false,
     emailVerified: false,
   });
 
-  const link = await authAdmin.generateEmailVerificationLink(value.email);
+  const link = await authAdmin.generateEmailVerificationLink(user.email);
 
   let requestBody = getVerifyEmailBody(link);
   if (isBrokerRegistration && brokerName) {
     requestBody = getBrokerInvitationToClientBody({
-      clientName: `${value.firstName} ${value.lastName}`,
-      email: value.email,
-      temporaryPassword: value.password,
+      clientName: `${user.firstName} ${user.lastName}`,
+      email: user.email,
+      temporaryPassword: user.password,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
       brokerName: brokerName,
       verificationLink: link,
     });
   } else if (isAdminRegistration) {
     requestBody = getAdminInvitationToClientBody({
-      clientName: `${value.firstName} ${value.lastName}`,
-      email: value.email,
-      temporaryPassword: value.password,
+      clientName: `${user.firstName} ${user.lastName}`,
+      email: user.email,
+      temporaryPassword: user.password,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
       verificationLink: link,
     });
   }
   await sendMail({
-    emailTo: value.email,
+    emailTo: user.email,
     subject: "Verify Email",
     bodyHTML: requestBody,
   });
 
-  const registrationBody = getNewRegistrationBody(value);
+  const registrationBody = getNewRegistrationBody(user);
 
   await sendMail({
     emailTo: process.env.NEW_REGISTRATION_EMAIL_NOTIF!,
-    subject: `New Registration - ${value.firstName} ${value.lastName}`,
+    subject: `New Registration - ${user.firstName} ${user.lastName}`,
     bodyHTML: registrationBody,
   });
 

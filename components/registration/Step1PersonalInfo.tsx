@@ -2,10 +2,18 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomFormField } from "@/components/CustomFormField";
-
+import { PasswordStrength } from "@/components/PasswordStrength";
 import { genderTypes } from "@/schema";
+import { useFormContext, useWatch } from "react-hook-form";
 
 export function Step1PersonalInfo() {
+  const { control } = useFormContext();
+  const password = useWatch({
+    control,
+    name: "password",
+    defaultValue: "",
+  });
+
   return (
     <Card className="bg-slate-100 border-slate-200">
       <CardHeader>
@@ -101,7 +109,15 @@ export function Step1PersonalInfo() {
             placeholder="xxx-xx-xxxx"
             label="* Social Security Number"
           />
+          <CustomFormField
+            name={"password"}
+            type="password"
+            label="* Password"
+            placeholder=""
+          />
         </div>
+
+        <PasswordStrength password={password ?? ""} />
       </CardContent>
     </Card>
   );

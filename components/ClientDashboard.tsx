@@ -347,9 +347,9 @@ export const ClientDashboard = ({
 
   const [isOpen, setIsOpen] = useState(false);
 
-  const [isOpenFunding, setIsOpenFunding] = useState(
-    adminView === false || adminView === undefined
-  );
+  // const [isOpenFunding, setIsOpenFunding] = useState(
+  //   adminView === false || adminView === undefined
+  // );
 
   const stats = useMemo(() => {
     if (!clientData) return null;
@@ -514,7 +514,7 @@ export const ClientDashboard = ({
   return (
     <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-4 md:p-6 bg-gray-50/50 dark:bg-background">
       <header className="flex flex-col sm:flex-row items-start gap-3 sm:gap-0 sm:justify-between">
-        <ResponsiveDialog
+        {/* <ResponsiveDialog
           isOpen={isOpenFunding}
           setIsOpen={setIsOpenFunding}
           title="Apply Funding"
@@ -527,7 +527,7 @@ export const ClientDashboard = ({
             // userId={userData?.id || ""}
             userData={userData!}
           />
-        </ResponsiveDialog>
+        </ResponsiveDialog> */}
         <ResponsiveDialog
           isOpen={isOpen}
           setIsOpen={setIsOpen}

@@ -78,7 +78,7 @@ export const POST = withAuth(
       };
 
       const clientData = await registerUser({
-        value: user,
+        user,
         isBrokerRegistration: true,
         brokerName: `${brokerData?.firstName} ${brokerData?.lastName}`,
         fundingData,

@@ -294,6 +294,46 @@ export const fundAnalysis = async ({
   });
 };
 
+export const sendClientFundingApplicationCongratsMessage = async ({
+  referenceNumber,
+  userId,
+}: {
+  referenceNumber: string;
+  userId: string;
+}) => {
+  await fetch(`${process.env.n8n_HOST}/send-client-congrats-message`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      referenceNumber,
+      userId,
+    }),
+  });
+};
+
+export const sendClientFundingApplicationAuditAnalysis = async ({
+  referenceNumber,
+  userId,
+}: {
+  referenceNumber: string;
+  userId: string;
+}) => {
+  await fetch(`${process.env.n8n_HOST}/send-client-analysis-prod`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      referenceNumber,
+      userId,
+    }),
+  });
+};
+
 const renameDocument = async ({
   userId,
   crsType,
