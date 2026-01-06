@@ -22,7 +22,7 @@ const ClientsPage = () => {
     step2Data: ApplyFunding
   ) => {
     setIsSubmitting(true);
-    console.log("Submitting data:", { step1Data, step2Data });
+    // console.log("Submitting data:", { step1Data, step2Data });
     try {
       await mutation.mutateAsync({
         step1Data,

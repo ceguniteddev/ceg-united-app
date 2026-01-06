@@ -57,7 +57,7 @@ export const POST = async (request: NextRequest) => {
       // employmentPayPerMonth: 0,
     };
 
-    await registerUser({ value: user });
+    await registerUser({ user });
 
     // Accept the invitation
     await acceptBrokerInvitation(invitationToken);

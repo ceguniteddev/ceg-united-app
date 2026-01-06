@@ -32,12 +32,9 @@ import {
 } from "@/schema/client-application";
 import { ApplyFunding, applyFundingSchema } from "@/schema/apply-funding";
 import { toast } from "sonner";
-import IconMenu from "../icon-menu";
+import IconMenu from "@/components/icon-menu";
 import { useRegistrationStore } from "@/store/registration-store";
 import { useAuth } from "@/provider/AuthContext";
-
-// Combined type for both steps
-type MultiStepFormData = ClientApplicationForm & Partial<ApplyFunding>;
 
 interface MultiStepRegistrationFormProps {
   onSubmit: (

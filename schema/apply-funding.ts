@@ -1061,6 +1061,21 @@ export const applyFundingSchema = z
           path: ["personalAmountFunding"],
         });
       }
+      console.log(
+        "Validating howDoYouGetPaid for Personal funding",
+        data.howDoYouGetPaid
+      );
+      if (
+        data.howDoYouGetPaid == undefined ||
+        data.howDoYouGetPaid == null ||
+        data.howDoYouGetPaid.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["howDoYouGetPaid"],
+        });
+      }
     }
   })
 

@@ -75,8 +75,7 @@ export function FundingApplicationFields({
 
   // Document upload states - now using form state
   const bankStatementsFromForm = form.watch("bankStatements") || [];
-  const driverLicenseDocsFromForm =
-    form.watch("driverLicenseDocuments") || [];
+  const driverLicenseDocsFromForm = form.watch("driverLicenseDocuments") || [];
 
   const [howDoYouGetPaidSelected, setHowDoYouGetPaidSelected] = useState<
     DropdownOption | undefined
@@ -1344,7 +1343,8 @@ export function FundingApplicationFields({
                                           </div>
                                           <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
                                             <span className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap hidden sm:inline">
-                                              ({(file.size / 1024).toFixed(1)} KB)
+                                              ({(file.size / 1024).toFixed(1)}{" "}
+                                              KB)
                                             </span>
                                             <Button
                                               type="button"
@@ -1380,9 +1380,7 @@ export function FundingApplicationFields({
                                   f.type.startsWith("image/")
                               );
                               if (validFiles.length !== files.length) {
-                                alert(
-                                  "Only PDF and image files are allowed!"
-                                );
+                                alert("Only PDF and image files are allowed!");
                                 return;
                               }
                               await handleDriverLicenseUpload(validFiles);

@@ -25,9 +25,11 @@ import {
 import { noteSchema, NoteSchema } from "@/schema/notes";
 import { getUserById } from "./user";
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export const applyFunding = async ({ value }: { value: ApplyFunding }) => {
+export const applyFunding = async ({
+  value,
+}: {
+  value: ApplyFunding;
+}): Promise<{ referenceNumber: string }> => {
   const userData = await getUserById(value.userId!);
   if (!userData) {
     throw new AppError("User not found");
@@ -69,6 +71,8 @@ export const applyFunding = async ({ value }: { value: ApplyFunding }) => {
   }
 
   await fundAnalysis({ referenceNumber, userId: value.userId! });
+
+  return { referenceNumber };
 };
 
 export const getApplyFunding = async (
