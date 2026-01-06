@@ -6,6 +6,7 @@ import {
 } from "@/constant/collection-name";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
+import { logInfo } from "@/lib/logger";
 import {
   deleteCRSReportN8N,
   generateCRSReportN8N,
@@ -301,6 +302,10 @@ export const sendClientFundingApplicationCongratsMessage = async ({
   referenceNumber: string;
   userId: string;
 }) => {
+  logInfo("Sending client congrats message...", {
+    referenceNumber,
+    userId,
+  });
   await fetch(`${process.env.n8n_HOST}/send-client-congrats-message`, {
     method: "POST",
     headers: {
@@ -321,6 +326,7 @@ export const sendClientFundingApplicationAuditAnalysis = async ({
   referenceNumber: string;
   userId: string;
 }) => {
+  logInfo("Sending client audit analysis...", { referenceNumber, userId });
   await fetch(`${process.env.n8n_HOST}/send-client-analysis-prod`, {
     method: "POST",
     headers: {
