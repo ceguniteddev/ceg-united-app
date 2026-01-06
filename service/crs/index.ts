@@ -11,6 +11,8 @@ import {
   deleteCRSReportN8N,
   generateCRSReportN8N,
   getFundingAnalysis,
+  sendClientAnalysisN8N,
+  sendClientCongratsMessageN8N,
 } from "@/lib/n8n";
 import { Business } from "@/schema";
 import { getBusiness } from "@/service/business";
@@ -306,17 +308,20 @@ export const sendClientFundingApplicationCongratsMessage = async ({
     referenceNumber,
     userId,
   });
-  await fetch(`${process.env.n8n_HOST}/send-client-congrats-message`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-    },
-    body: JSON.stringify({
-      referenceNumber,
-      userId,
-    }),
-  });
+  await fetch(
+    `${process.env.n8n_HOST}/${await sendClientCongratsMessageN8N()}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+      },
+      body: JSON.stringify({
+        referenceNumber,
+        userId,
+      }),
+    }
+  );
 };
 
 export const sendClientFundingApplicationAuditAnalysis = async ({
@@ -327,7 +332,7 @@ export const sendClientFundingApplicationAuditAnalysis = async ({
   userId: string;
 }) => {
   logInfo("Sending client audit analysis...", { referenceNumber, userId });
-  await fetch(`${process.env.n8n_HOST}/send-client-analysis-prod`, {
+  await fetch(`${process.env.n8n_HOST}/${await sendClientAnalysisN8N()}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
