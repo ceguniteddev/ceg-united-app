@@ -38,6 +38,9 @@ export const applyFunding = async ({
     throw new AppError("User not found");
   }
 
+  logInfo("applyFunding::userData", userData);
+  logInfo("applyFunding::registrationType", { registrationType });
+
   const db = firestoreAdmin();
 
   const collectionRef = db.collection(USER_FUNDING_APPLICATION);
@@ -54,6 +57,7 @@ export const applyFunding = async ({
   // we do not generate CRS report when client is registering themselves,
   // only for broker/admin created clients
   if (registrationType === "Self") {
+    logInfo("Skipping CRS report generation for self-registered user.");
     return { referenceNumber };
   }
 

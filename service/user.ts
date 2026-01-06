@@ -28,6 +28,7 @@ import {
   sendClientFundingApplicationCongratsMessage,
 } from "./crs";
 import { RegistrationType } from "@/schema/users";
+import { generateEmailVerificationToken } from "./email-verification";
 
 export const getUserRecordByEmail = async (email: string) => {
   const authentication = authenticationAdmin();
@@ -146,6 +147,7 @@ export const registerUser = async ({
 
   // Create business record first if business data exists
   let businessId: string | undefined;
+  let referenceNumber: string | undefined;
   if (fundingData?.businessName && fundingData.businessName.trim().length > 0) {
     const businessData: Business = {
       userId: docRef.id,
@@ -177,17 +179,30 @@ export const registerUser = async ({
       appliedDate: fundingData.appliedDate || new Date(),
       status: fundingData.status || "New",
     };
-
-    const { referenceNumber } = await applyFunding({
+    const result = await applyFunding({
       value: fundApplication,
       registrationType,
     });
+    referenceNumber = result.referenceNumber;
+    logInfo("Funding application created", { referenceNumber });
+
+    // Store referenceNumber for later use in email verification
+    if (
+      user.role === "Client" &&
+      referenceNumber &&
+      registrationType === "Self"
+    ) {
+      // We'll pass referenceNumber to the verification token
+      // Analysis will be triggered AFTER email verification
+      fundingData.referenceNumber = referenceNumber;
+    }
 
     if (
       user.role === "Client" &&
       referenceNumber &&
       registrationType !== "Self"
     ) {
+      // For non-self registrations (Broker/Admin), trigger analysis immediately
       // Send Client Congrats Message
       await sendClientFundingApplicationCongratsMessage({
         userId: docRef.id,
@@ -269,9 +284,25 @@ export const registerUser = async ({
     emailVerified: false,
   });
 
-  const link = await authAdmin.generateEmailVerificationLink(user.email);
+  logInfo("Generating token...", {
+    userId: docRef.id,
+    email: user.email,
+    referenceNumber: referenceNumber,
+    registrationType,
+  });
 
-  let requestBody = getVerifyEmailBody(link);
+  // Generate custom verification token
+  const verificationToken = await generateEmailVerificationToken({
+    userId: docRef.id,
+    email: user.email,
+    referenceNumber: referenceNumber,
+    registrationType,
+  });
+
+  const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email/${verificationToken}`;
+  logInfo("Generated email verification link:", { verificationLink });
+
+  let requestBody = "";
   if (registrationType === "Broker" && brokerName) {
     requestBody = getBrokerInvitationToClientBody({
       clientName: `${user.firstName} ${user.lastName}`,
@@ -279,7 +310,7 @@ export const registerUser = async ({
       temporaryPassword: user.password,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
       brokerName: brokerName,
-      verificationLink: link,
+      verificationLink: verificationLink,
     });
   } else if (registrationType === "Admin") {
     requestBody = getAdminInvitationToClientBody({
@@ -287,8 +318,10 @@ export const registerUser = async ({
       email: user.email,
       temporaryPassword: user.password,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
-      verificationLink: link,
+      verificationLink: verificationLink,
     });
+  } else {
+    requestBody = getVerifyEmailBody(verificationLink);
   }
   await sendMail({
     emailTo: user.email,

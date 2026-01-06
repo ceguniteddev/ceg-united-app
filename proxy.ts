@@ -9,9 +9,11 @@ import { isPlaidProductionReady } from "./lib/plaid";
 const PUBLIC_ROUTES = new Set<string>([
   "/",
   "/register",
+  "/verify-email",
   "/api/auth/login",
   "/api/register",
   "/api/auth/verify-session",
+  "/api/auth/verify-email",
   "/api/broker/validate-token",
   "/api/broker/register",
 ]);
@@ -22,6 +24,11 @@ const BROKER_HOME = "/broker/home";
 function isPublic(pathname: string) {
   // allow exact public pages and their subpaths (if you add any)
   if (PUBLIC_ROUTES.has(pathname)) return true;
+  // Allow all verify-email paths
+  if (pathname.startsWith("/verify-email")) return true;
+
+  if (pathname.startsWith("/api/auth/verify-email")) return true;
+
   // example: add /register subpaths if you have any
   return false;
 }
@@ -48,6 +55,7 @@ export async function proxy(req: NextRequest) {
     const xIdToken = req.headers.get("x-id-token");
     const adminAccessKey = req.headers.get("ADMIN_ACCESS_KEY");
     const authHeader = req.headers.get("Authorization");
+    console.log("API ", pathname);
     if (xIdToken || adminAccessKey || token || authHeader || isPublic(pathname))
       return NextResponse.next();
 
@@ -157,6 +165,7 @@ export const config = {
   matcher: [
     "/", // root (we fan out to role home)
     "/register", // public page
+    "/verify-email/:path*", // email verification page
     // "/my-funding/:path*",
     // "/my-accounts/:path*",
     // "/my-business/:path*",
