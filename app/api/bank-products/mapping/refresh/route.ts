@@ -2,6 +2,7 @@ import { withAuth } from "@/lib/api-validation";
 import { recordFundMappingAnalysis } from "@/service/bank-products";
 import { badRequest, internalServerError, notFound } from "@/app/api/helpers";
 import { NextResponse } from "next/server";
+import { mapBankProductsN8n } from "@/lib/n8n";
 
 export const POST = withAuth(async (req, context) => {
   try {
@@ -18,7 +19,7 @@ export const POST = withAuth(async (req, context) => {
 
     // Call the AI service to get bank product recommendations
     const aiResponse = await fetch(
-      `${process.env.n8n_HOST}/Bank_Product_Analysis`,
+      `${process.env.n8n_HOST}/${await mapBankProductsN8n()}`,
       {
         method: "POST",
         headers: {

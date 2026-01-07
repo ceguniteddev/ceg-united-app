@@ -27,8 +27,6 @@ import {
   updateApplicationStatus,
 } from "./apply-funding";
 import { createAsanaTaskForLender } from "@/lib/n8n";
-import { sendMail } from "@/lib/nodemailer";
-import { log } from "console";
 
 export const recordBankProduct = async (value: BankFormData) => {
   const db = firestoreAdmin();
