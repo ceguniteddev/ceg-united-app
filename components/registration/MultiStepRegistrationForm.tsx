@@ -296,22 +296,55 @@ export function MultiStepRegistrationForm({
     const isValid = await form2.trigger();
 
     if (!isValid) {
-      // Debug logging
-      console.info("Validation Result:", isValid);
-      console.info("Form State isValid:", form2.formState.isValid);
-      console.info("Form State Errors:", form2.formState.errors);
-      console.info("Form Values:", form2.getValues());
-      // Wait a tick for errors to update
-      setTimeout(() => {
-        console.info(
-          "Step 2 Validation Errors (after tick):",
-          form2.formState.errors
-        );
-      }, 0);
+      const errors = form2.formState.errors;
+      const errorFields = Object.keys(errors);
 
-      toast.error(
-        "Please fill in all required fields correctly in the funding application."
-      );
+      if (errorFields.length > 0) {
+        // Format field names to be human-readable
+        const formatFieldName = (fieldName: string) => {
+          return fieldName
+            .replace(/([A-Z])/g, " $1")
+            .replace(/^./, (str) => str.toUpperCase())
+            .trim();
+        };
+
+        // Create error list with clickable items
+        const errorList = errorFields.map((fieldName) => (
+          <button
+            key={fieldName}
+            onClick={() => {
+              const element = document.querySelector(
+                `[name="${fieldName}"]`
+              ) as HTMLElement;
+              if (element) {
+                element.focus();
+                element.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+              }
+            }}
+            className="text-left hover:underline hover:text-red-700 transition-colors cursor-pointer"
+          >
+            • {formatFieldName(fieldName)}
+          </button>
+        ));
+
+        toast.error(
+          <div className="flex flex-col gap-2">
+            <p className="font-semibold">Please fix the following fields:</p>
+            <div className="flex flex-col gap-1 text-sm">{errorList}</div>
+          </div>,
+          {
+            duration: 8000,
+          }
+        );
+      } else {
+        toast.error(
+          "Please fill in all required fields correctly in the funding application."
+        );
+      }
+
       setProgress(50);
       return;
     }

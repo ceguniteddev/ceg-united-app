@@ -167,6 +167,10 @@ export const applyFundingSchema = z
     businessGrossProjectedRevenue2: z.coerce.number<number>().optional(),
     businessGrossProjectedRevenue3: z.coerce.number<number>().optional(),
 
+    businessFiledWithIRS1: z.coerce.boolean<boolean>().optional(),
+    businessFiledWithIRS2: z.coerce.boolean<boolean>().optional(),
+    businessFiledWithIRS3: z.coerce.boolean<boolean>().optional(),
+
     businessProjectedProfit1: z.coerce.number<number>().optional(),
     businessProjectedProfit2: z.coerce.number<number>().optional(),
     businessProjectedProfit3: z.coerce.number<number>().optional(),
@@ -333,7 +337,11 @@ export const applyFundingSchema = z
   // )
   .superRefine((data, ctx) => {
     // The condition: Only run this validation if a business name has been entered.
-    if (data.businessName && data.businessName.trim().length > 0) {
+    if (
+      data.businessName &&
+      data.businessName.trim().length > 0 &&
+      data.interestedProduct !== "Business Income Based Funding"
+    ) {
       // Validate the three Gross Projected Revenue fields
       const r1 = data.businessGrossProjectedRevenue1 ?? 0;
       const r2 = data.businessGrossProjectedRevenue2 ?? 0;

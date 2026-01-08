@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Edit, X, CalendarIcon } from "lucide-react";
 import { format, isValid, parse } from "date-fns";
 import { cn, formatAmount } from "@/lib/utils";
@@ -44,6 +45,7 @@ interface FormFieldProps {
     | "number"
     | "select"
     | "switch"
+    | "checkbox"
     | "password"
     | "checkbox-group"
     | "multi-select"
@@ -186,6 +188,17 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
               className={`${inputClassName}`}
             />
           </div>
+        );
+
+      case "checkbox":
+        return (
+          <Checkbox
+            checked={field.value}
+            onCheckedChange={field.onChange}
+            id={name}
+            disabled={disabled}
+            className="bg-white border-2 border-gray-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+          />
         );
 
       case "date-picker":
@@ -470,24 +483,30 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
       render={({ field, fieldState }) => (
         <FormItem
           className={`${
-            type !== "switch" && type !== "checkbox-group" && "rounded-md"
+            type !== "switch" &&
+            // type !== "checkbox" &&
+            type !== "checkbox-group" &&
+            "rounded-md"
           } relative ${className}`}
         >
-          {label && type !== "switch" && type !== "checkbox-group" && (
-            <div className="flex justify-between items-center">
-              <FormLabel className={`text-sm ${labelClassName}`}>
-                {label}
-              </FormLabel>
+          {label &&
+            type !== "switch" &&
+            // type !== "checkbox" &&
+            type !== "checkbox-group" && (
+              <div className="flex justify-between items-center">
+                <FormLabel className={`text-sm ${labelClassName}`}>
+                  {label}
+                </FormLabel>
 
-              {!disabled &&
-                isIcon &&
-                type !== "file" &&
-                // type !== "multi-input" &&
-                type !== "date-picker" && (
-                  <Edit className="size-4 text-customgreys-dirtyGrey" />
-                )}
-            </div>
-          )}
+                {!disabled &&
+                  isIcon &&
+                  type !== "file" &&
+                  // type !== "multi-input" &&
+                  type !== "date-picker" && (
+                    <Edit className="size-4 text-customgreys-dirtyGrey" />
+                  )}
+              </div>
+            )}
 
           <FormControl>
             {renderFormControl(

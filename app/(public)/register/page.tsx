@@ -89,7 +89,7 @@ const RegistrationPage = () => {
         </Card>
       </div>
 
-      <div className="text-sm text-gray-600 text-center mt-4 mb-8">
+      <div className="text-sm text-gray-600 text-center mt-4 pb-16">
         Already have an account?{" "}
         <Link
           href="/"
