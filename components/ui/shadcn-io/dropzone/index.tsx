@@ -7,6 +7,7 @@ import type { DropEvent, DropzoneOptions, FileRejection } from "react-dropzone";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type DropzoneContextType = {
   src?: File[];
@@ -66,8 +67,24 @@ export const Dropzone = ({
     disabled,
     onDrop: (acceptedFiles, fileRejections, event) => {
       if (fileRejections.length > 0) {
-        const message = fileRejections.at(0)?.errors.at(0)?.message;
-        onError?.(new Error(message));
+        fileRejections.forEach((file) => {
+          file.errors.forEach((err) => {
+            if (err.code === "file-too-large") {
+              toast.warning(
+                maxSize
+                  ? `File is too large. Maximum size is ${renderBytes(
+                      maxSize
+                    )}.`
+                  : err.message
+              );
+              return;
+            }
+
+            if (err.code === "file-invalid-type") {
+              toast.warning(err.message);
+            }
+          });
+        });
         return;
       }
 

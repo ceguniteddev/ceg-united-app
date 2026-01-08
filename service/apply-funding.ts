@@ -54,6 +54,61 @@ export const applyFunding = async ({
   const docRef = collectionRef.doc(referenceNumber);
   await docRef.set({ ...fundingDataToSave });
 
+  // Upload documents to Firebase Storage
+  if (bankStatements || driverLicenseDocuments) {
+    const bucket = storageAdmin();
+
+    // Upload bank statements
+    if (bankStatements && bankStatements.length > 0) {
+      for (const doc of bankStatements) {
+        try {
+          // Extract base64 data (remove data:application/pdf;base64, prefix)
+          const base64Data = doc.base64.split(",")[1];
+          const buffer = Buffer.from(base64Data, "base64");
+          const fileName = `BANK_STATEMENTS_${doc.name}`;
+          const filePath = `documents/${value.userId}/${fileName}`;
+
+          const file = bucket.file(filePath);
+          await file.save(buffer, {
+            contentType: doc.type,
+            metadata: {
+              uploadedAt: new Date().toISOString(),
+              originalName: doc.name,
+            },
+          });
+        } catch (error) {
+          console.error("Error uploading bank statement:", error);
+          // Continue with other documents even if one fails
+        }
+      }
+    }
+
+    // Upload driver licenses
+    if (driverLicenseDocuments && driverLicenseDocuments.length > 0) {
+      for (const doc of driverLicenseDocuments) {
+        try {
+          // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix)
+          const base64Data = doc.base64.split(",")[1];
+          const buffer = Buffer.from(base64Data, "base64");
+          const fileName = `DRIVERS_LICENSE_${doc.name}`;
+          const filePath = `documents/${value.userId}/${fileName}`;
+
+          const file = bucket.file(filePath);
+          await file.save(buffer, {
+            contentType: doc.type,
+            metadata: {
+              uploadedAt: new Date().toISOString(),
+              originalName: doc.name,
+            },
+          });
+        } catch (error) {
+          console.error("Error uploading driver license:", error);
+          // Continue with other documents even if one fails
+        }
+      }
+    }
+  }
+
   // we do not generate CRS report when client is registering themselves,
   // only for broker/admin created clients
   if (registrationType === "Self") {
@@ -432,5 +487,64 @@ export const updateApplyFunding = async ({
     throw new AppError("Funding application not found.");
   }
 
-  await docRef.set({ ...value }, { merge: true });
+  // Exclude document arrays from Firestore save (they should be uploaded to storage separately)
+  const { bankStatements, driverLicenseDocuments, ...fundingDataToSave } =
+    value;
+
+  await docRef.set({ ...fundingDataToSave }, { merge: true });
+
+  // Upload documents to Firebase Storage
+  if (bankStatements || driverLicenseDocuments) {
+    const bucket = storageAdmin();
+
+    // Upload bank statements
+    if (bankStatements && bankStatements.length > 0) {
+      for (const doc of bankStatements) {
+        try {
+          // Extract base64 data (remove data:application/pdf;base64, prefix)
+          const base64Data = doc.base64.split(",")[1];
+          const buffer = Buffer.from(base64Data, "base64");
+          const fileName = `BANK_STATEMENTS_${doc.name}`;
+          const filePath = `documents/${value.userId}/${fileName}`;
+
+          const file = bucket.file(filePath);
+          await file.save(buffer, {
+            contentType: doc.type,
+            metadata: {
+              uploadedAt: new Date().toISOString(),
+              originalName: doc.name,
+            },
+          });
+        } catch (error) {
+          console.error("Error uploading bank statement:", error);
+          // Continue with other documents even if one fails
+        }
+      }
+    }
+
+    // Upload driver licenses
+    if (driverLicenseDocuments && driverLicenseDocuments.length > 0) {
+      for (const doc of driverLicenseDocuments) {
+        try {
+          // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix)
+          const base64Data = doc.base64.split(",")[1];
+          const buffer = Buffer.from(base64Data, "base64");
+          const fileName = `DRIVERS_LICENSE_${doc.name}`;
+          const filePath = `documents/${value.userId}/${fileName}`;
+
+          const file = bucket.file(filePath);
+          await file.save(buffer, {
+            contentType: doc.type,
+            metadata: {
+              uploadedAt: new Date().toISOString(),
+              originalName: doc.name,
+            },
+          });
+        } catch (error) {
+          console.error("Error uploading driver license:", error);
+          // Continue with other documents even if one fails
+        }
+      }
+    }
+  }
 };

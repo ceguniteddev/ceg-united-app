@@ -379,7 +379,7 @@ const AnalysisDetailsView = ({
 
   const debouncedSave = useDebouncedCallback((next: string) => {
     saveToDb(next);
-  }, 600);
+  }, 200);
 
   const handleSetContent = React.useCallback(
     (next: string) => {

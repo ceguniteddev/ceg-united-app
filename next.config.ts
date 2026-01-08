@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
   poweredByHeader: false,
+  allowedDevOrigins: ["raccoon-robust-likely.ngrok-free.app"],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "2mb",
+    },
+  },
   images: {
     remotePatterns: [
       {

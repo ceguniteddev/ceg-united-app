@@ -40,7 +40,8 @@ export function RowActions({ data }: Props) {
         // title={`View Application`}
         description=""
         descriptionClassName="text-red-500 text-base sm:text-lg font-semibold"
-        className="w-[95vw] sm:w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 max-w-5xl flex flex-col items-start justify-start min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh]"
+        className="w-[95vw] sm:w-11/12 md:w-8/12 lg:w-8/12 xl:w-2/3"
+        // className="w-[95vw] sm:w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 max-w-5xl flex flex-col items-start justify-start min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh]"
       >
         <ViewApplication formData={data} formSetOpen={setOpen} />
       </ResponsiveDialog>
@@ -50,7 +51,8 @@ export function RowActions({ data }: Props) {
         setIsOpen={setIsEditOpen}
         title={`Edit Application - ${data.referenceNumber}`}
         description=""
-        className="w-[95vw] sm:w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 max-w-5xl flex flex-col items-start justify-start min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh]"
+        className="w-[95vw] sm:w-11/12 md:w-8/12 lg:w-8/12 xl:w-2/3"
+        // className="w-[95vw] sm:w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 max-w-5xl flex flex-col items-start justify-start min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh]"
       >
         {userData && (
           <ApplyFundingForm

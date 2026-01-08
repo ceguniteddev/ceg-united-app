@@ -296,6 +296,8 @@ export function MultiStepRegistrationForm({
     const isValid = await form2.trigger();
 
     if (!isValid) {
+      // log the errors
+      console.log("Validation errors:", form2.formState.errors);
       const errors = form2.formState.errors;
       const errorFields = Object.keys(errors);
 

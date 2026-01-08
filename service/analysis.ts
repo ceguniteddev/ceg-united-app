@@ -25,7 +25,6 @@ export const getAnalysis = async (referenceNumber: string) => {
   if (!data) throw new AppError("Funding application not found.");
 
   const db = firestoreAdmin();
-  const appRef = db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber);
 
   const collectionRef = db.collection(
     `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`

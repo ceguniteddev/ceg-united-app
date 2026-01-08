@@ -34,6 +34,7 @@ import { useApplyFunding } from "@/hooks/apply-funding";
 import {
   businessTaxes,
   howDoYouGetPaid,
+  legalResident,
   personalTaxes,
   US_STATES,
 } from "@/constant/common";
@@ -53,16 +54,6 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
-
-const legalResident: DropdownOption[] = [
-  { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
-  { value: "Yes, I have green card", label: "Yes, I have green card" },
-  {
-    value: "No, I don't have legal status",
-    label: "No, I don't have legal status",
-  },
-  { value: "Other", label: "Other" },
-];
 
 const isMarried: DropdownOption[] = [
   { value: "Yes", label: "Yes" },
@@ -180,13 +171,6 @@ const ApplyFundingForm = ({
         if (option) setPersonalTaxesSelected(option);
       }
 
-      if (data.businessTaxes) {
-        const option = businessTaxes.find(
-          (x) => x.value === data.businessTaxes
-        );
-        if (option) setBusinessTaxesSelected(option);
-      }
-
       if (data.businessId) {
         setBusinessIdSelected(data.businessId);
       }
@@ -236,6 +220,17 @@ const ApplyFundingForm = ({
     return undefined;
   }, [data, isViewing, isEditing, savedDraft]);
 
+  // Validate legalResident value against current dropdown options
+  const validatedLegalResident = useMemo(() => {
+    if (!defaultValues?.legalResident) return undefined;
+
+    const isValid = legalResident.some(
+      (option) => option.value === defaultValues.legalResident
+    );
+
+    return isValid ? defaultValues.legalResident : undefined;
+  }, [defaultValues?.legalResident]);
+
   const form = useForm<ApplyFunding>({
     resolver: zodResolver(applyFundingSchema),
     mode: "onChange",
@@ -247,7 +242,13 @@ const ApplyFundingForm = ({
       fundingType: defaultValues?.fundingType || "Personal",
       employmentStatus: defaultValues?.employmentStatus || "",
       personalTaxesStatus: defaultValues?.personalTaxesStatus || "",
-      businessTaxesStatus: defaultValues?.businessTaxesStatus || "",
+
+      // Clear legalResident if value doesn't exist in current dropdown options
+      legalResident: validatedLegalResident,
+
+      // Preserve document uploads when editing
+      bankStatements: defaultValues?.bankStatements || [],
+      driverLicenseDocuments: defaultValues?.driverLicenseDocuments || [],
 
       // addressStreet:
       //   defaultValues?.addressStreet || userData.addressStreet || "",
@@ -366,13 +367,6 @@ const ApplyFundingForm = ({
           if (option) setPersonalTaxesSelected(option);
         }
 
-        if (savedDraft.businessTaxes) {
-          const option = businessTaxes.find(
-            (x) => x.value === savedDraft.businessTaxes
-          );
-          if (option) setBusinessTaxesSelected(option);
-        }
-
         if (savedDraft.businessId) {
           setBusinessIdSelected(savedDraft.businessId);
         }
@@ -392,7 +386,6 @@ const ApplyFundingForm = ({
                 fundingType: "Personal",
                 employmentStatus: "",
                 personalTaxesStatus: "",
-                businessTaxesStatus: "",
                 // addressStreet: userData.addressStreet || "",
                 // houseNumber: userData.houseNumber || "",
                 // addressCity: userData.addressCity || "",
@@ -555,19 +548,108 @@ const ApplyFundingForm = ({
       console.info("Form Errors:", form.formState.errors);
       console.info("Form Values:", form.getValues());
 
-      // Show user-friendly error message
-      const errorCount = Object.keys(form.formState.errors).length;
-      toast.error("Please fix the validation errors", {
-        description: `There ${
-          errorCount === 1 ? "is" : "are"
-        } ${errorCount} error${
-          errorCount === 1 ? "" : "s"
-        } in your application. Please review and correct the highlighted fields.`,
-      });
+      // Get error fields
+      const errors = form.formState.errors;
+      const errorFields = Object.keys(errors);
+
+      if (errorFields.length > 0) {
+        // Format field names to be human-readable
+        const formatFieldName = (fieldName: string) => {
+          return fieldName
+            .replace(/([A-Z])/g, " $1")
+            .replace(/^./, (str) => str.toUpperCase())
+            .trim();
+        };
+
+        // Create error list with clickable items
+        const errorList = errorFields.map((fieldName) => (
+          <button
+            key={fieldName}
+            onClick={() => {
+              const element = document.querySelector(
+                `[name="${fieldName}"]`
+              ) as HTMLElement;
+              if (element) {
+                element.focus();
+                element.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+              }
+            }}
+            className="text-left hover:underline hover:text-red-700 transition-colors cursor-pointer"
+          >
+            • {formatFieldName(fieldName)}
+          </button>
+        ));
+
+        toast.error(
+          <div className="flex flex-col gap-2">
+            <p className="font-semibold">Please fix the following fields:</p>
+            <div className="flex flex-col gap-1 text-sm">{errorList}</div>
+          </div>,
+          {
+            duration: 8000,
+          }
+        );
+      } else {
+        toast.error("Please fix the validation errors", {
+          description:
+            "Please review and correct the highlighted fields in your application.",
+        });
+      }
 
       // Block the ConfirmButton from opening its dialog
       e.preventDefault();
       e.stopPropagation();
+      return;
+    }
+
+    // Check if Business Income Based Funding requires documents (skip validation when editing)
+    if (!isEditing) {
+      const formValues = form.getValues();
+      if (formValues.interestedProduct === "Business Income Based Funding") {
+        const hasBankStatements =
+          formValues.bankStatements && formValues.bankStatements.length > 0;
+        const hasDriverLicense =
+          formValues.driverLicenseDocuments &&
+          formValues.driverLicenseDocuments.length > 0;
+
+        if (!hasBankStatements && !hasDriverLicense) {
+          toast.warning(
+            "Please upload required documents for Business Income Based Funding",
+            {
+              description:
+                "You need to upload your 4 months bank statements and driver's license documents to proceed.",
+              duration: 5000,
+            }
+          );
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+
+        if (!hasBankStatements) {
+          toast.warning("Bank statements are required", {
+            description: "Please upload your last 4 months of bank statements.",
+            duration: 5000,
+          });
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+
+        if (!hasDriverLicense) {
+          toast.warning("Driver's license is required", {
+            description:
+              "Please upload front and back of your driver's license.",
+            duration: 5000,
+          });
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+      }
     }
   };
 
@@ -643,21 +725,6 @@ const ApplyFundingForm = ({
     [form]
   );
 
-  const handleBusinessTaxesChange = useCallback(
-    (value: string) => {
-      const selectedValue = businessTaxes.find((x) => x.value === value);
-      if (selectedValue) {
-        setBusinessTaxesSelected(selectedValue);
-        // Set the 'personalTaxesStatus' field with the type
-        form.setValue("businessTaxesStatus", selectedValue.type!, {
-          shouldValidate: true, // Trigger validation on change
-          shouldDirty: true,
-        });
-      }
-    },
-    [form]
-  );
-
   const handleVehicleFinancingTypeChange = useCallback(
     (value: string) => {
       setVehicleFinancingType(value);
@@ -702,69 +769,6 @@ const ApplyFundingForm = ({
       }
     },
     [form]
-  );
-
-  // Handle social media platform change
-  const handleSocialPlatformChange = useCallback(
-    (platform: string) => {
-      setSelectedSocialPlatform(platform);
-
-      // Get the handle for the newly selected platform, or empty string if none exists
-      const currentHandle = socialMediaHandles[platform] || "";
-      form.setValue("socialMedia.0.handle", currentHandle, {
-        shouldDirty: true,
-      });
-    },
-    [socialMediaHandles, form]
-  );
-
-  // Handle social media handle change
-  const handleSocialHandleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newHandle = e.target.value;
-
-      if (selectedSocialPlatform) {
-        // Update local state
-        setSocialMediaHandles((prev) => ({
-          ...prev,
-          [selectedSocialPlatform]: newHandle,
-        }));
-
-        // Update form with all social media entries
-        // Make sure current platform is always at index 0
-        const updatedHandles = {
-          ...socialMediaHandles,
-          [selectedSocialPlatform]: newHandle,
-        };
-
-        const allEntries = Object.entries(updatedHandles)
-          .filter(([_, handle]) => handle.trim() !== "") // Only include non-empty handles
-          .map(([platform, handle]) => ({
-            platform,
-            handle,
-          }));
-
-        // Sort to put selected platform first
-        const sortedEntries = [
-          ...allEntries.filter(
-            (entry) => entry.platform === selectedSocialPlatform
-          ),
-          ...allEntries.filter(
-            (entry) => entry.platform !== selectedSocialPlatform
-          ),
-        ];
-
-        form.setValue("socialMedia", sortedEntries, {
-          shouldDirty: true,
-        });
-
-        // Explicitly set the platform field to ensure it doesn't change
-        form.setValue("socialMedia.0.platform", selectedSocialPlatform, {
-          shouldDirty: true,
-        });
-      }
-    },
-    [selectedSocialPlatform, socialMediaHandles, form]
   );
 
   // Helper function to convert File to base64
@@ -1070,7 +1074,7 @@ const ApplyFundingForm = ({
                           />
                           <CustomFormField
                             name={"houseNumber"}
-                            label={"Apartment/Suite/Unit/House Number"}
+                            label={"Apartment/Suite/Unit"}
                           />
                         </div>
 
@@ -1091,38 +1095,40 @@ const ApplyFundingForm = ({
                             label={"Zip Code"}
                           />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <CustomFormField
-                            name={"moveInCurrentAddress"}
-                            label={
-                              "When did you move in to your current address?"
-                            }
-                            type="date-picker"
-                          />
-                          <CustomFormField
-                            name={"payPerMonth"}
-                            type="number"
-                            label={"How much do you pay a month?"}
-                          />
-                          <CustomFormField
-                            name={"rentOrMortgage"}
-                            label={
-                              "Is it rent or mortgage? If else, please specify"
-                            }
-                          />
-                        </div>
+                        {!isCommunity && (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <CustomFormField
+                              name={"moveInCurrentAddress"}
+                              label={
+                                "When did you move in to your current address?"
+                              }
+                              type="date-picker"
+                            />
+                            <CustomFormField
+                              name={"payPerMonth"}
+                              type="number"
+                              label={"How much do you pay a month?"}
+                            />
+                            <CustomFormField
+                              name={"rentOrMortgage"}
+                              label={
+                                "Is it rent or mortgage? If else, please specify"
+                              }
+                            />
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   )}
 
                   {isCommunity && (
                     <Card className="bg-slate-100 border-slate-200">
-                      <CardHeader className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                      <CardHeader className="px-3 sm:px-4 md:px-6">
                         <CardTitle className="text-base md:text-lg flex items-center gap-2">
                           <span>🤝</span> Community Information
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-4 md:px-6 pb-4 sm:pb-6">
+                      <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-4 md:px-6">
                         <CustomFormField
                           name={"reasonForJoiningCommunity"}
                           label={
@@ -1138,7 +1144,7 @@ const ApplyFundingForm = ({
                           />
                           <CustomFormField
                             name={"houseNumber"}
-                            label={"Apartment/Suite/Unit/House Number"}
+                            label={"Apartment/Suite/Unit"}
                           />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1156,26 +1162,6 @@ const ApplyFundingForm = ({
                           <CustomFormField
                             name={"addressPostal"}
                             label={"Zip Code"}
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <CustomFormField
-                            name={"moveInCurrentAddress"}
-                            label={
-                              "When did you move in to your current address?"
-                            }
-                            type="date-picker"
-                          />
-                          <CustomFormField
-                            name={"payPerMonth"}
-                            type="number"
-                            label={"How much do you pay a month?"}
-                          />
-                          <CustomFormField
-                            name={"rentOrMortgage"}
-                            label={
-                              "Is it rent or mortgage? If else, please specify"
-                            }
                           />
                         </div>
                       </CardContent>
@@ -1198,7 +1184,7 @@ const ApplyFundingForm = ({
                           />
                           <CustomFormField
                             name={"houseNumber"}
-                            label={"Apartment/Suite/Unit/House Number"}
+                            label={"Apartment/Suite/Unit"}
                           />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1244,6 +1230,7 @@ const ApplyFundingForm = ({
                   )}
 
                   {!isTradeLines &&
+                    !isCommunity &&
                     interestedProductSelected &&
                     interestedProductSelected.value !==
                       "Business Income Based Funding" &&
@@ -1271,7 +1258,7 @@ const ApplyFundingForm = ({
 
                           {howDoYouGetPaidSelected?.type === "yes" && (
                             <>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                 <CustomFormField
                                   name={"employmentPayPerMonth"}
                                   type="number"
@@ -1291,10 +1278,6 @@ const ApplyFundingForm = ({
                                   label={"Employer Phone Number?"}
                                 />
                               </div>
-                              {/* <CustomFormField
-                            name={"employmentEmployerAddress"}
-                            label={"Employer Address?"}
-                          /> */}
 
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <CustomFormField
@@ -1304,7 +1287,7 @@ const ApplyFundingForm = ({
                                 />
                                 <CustomFormField
                                   name={"employmentEmployerHouseNumber"}
-                                  label={"Apartment/Suite/Unit/House Number"}
+                                  label={"Apartment/Suite/Unit"}
                                 />
                               </div>
 
@@ -1448,11 +1431,122 @@ const ApplyFundingForm = ({
                       </Card>
                     )}
 
-                  {businessIdSelected &&
-                    (interestedProductSelected?.type?.includes("Business") ||
-                      isCommunity ||
-                      (!isAutoLoan && isEquipmentFinancing) ||
-                      (isAutoLoan && vehicleFinancingType === "Business")) &&
+                  {isCommunity && (
+                    <Card className="bg-slate-100 border-slate-200">
+                      <CardHeader className="px-4 md:px-6">
+                        <CardTitle className="flex flex-col md:flex-row justify-between gap-3 md:gap-2 text-base md:text-lg">
+                          <div className="flex items-center gap-2">
+                            <span>💼</span> Employment Information
+                          </div>
+                          {howDoYouGetPaidSelectedBank && (
+                            <PlaidLink displayText="Link Personal Account" />
+                          )}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-5 px-4 md:px-6">
+                        <CustomFormField
+                          name={"howDoYouGetPaid"}
+                          label={"Do you have a job?"}
+                          type="select"
+                          options={howDoYouGetPaid}
+                          onSelectValue={handleDoYouHaveAJobChange}
+                        />
+
+                        {howDoYouGetPaidSelected?.type === "yes" && (
+                          <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                              <CustomFormField
+                                name={"employmentPayPerMonth"}
+                                type="number"
+                                label={"How much money do you make per month?"}
+                              />
+                              <CustomFormField
+                                name={"employmentOccupation"}
+                                label={"Your Occupation?"}
+                              />
+                            </div>
+
+                            {fields.map((field, index) => {
+                              const colors = [
+                                "bg-blue-50 border-blue-200",
+                                "bg-green-50 border-green-200",
+                                "bg-orange-50 border-orange-200",
+                                "bg-purple-50 border-purple-200",
+                              ];
+                              const colorClass = colors[index % colors.length];
+
+                              return (
+                                <div
+                                  key={field.id}
+                                  className={`space-y-4 border rounded-md p-4 mt-4 ${colorClass}`}
+                                >
+                                  <div className="flex justify-between items-center">
+                                    <h4 className="text-sm font-medium">
+                                      Additional Employment {index + 1}
+                                    </h4>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => remove(index)}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-500" />
+                                    </Button>
+                                  </div>
+
+                                  <CustomFormField
+                                    name={`employments.${index}.howDoYouGetPaid`}
+                                    label={"Do you have a job?"}
+                                    type="select"
+                                    options={howDoYouGetPaid.filter(
+                                      (x) => x.value !== "no_work"
+                                    )}
+                                  />
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <CustomFormField
+                                      name={`employments.${index}.employmentPayPerMonth`}
+                                      type="number"
+                                      label={
+                                        "How much money do you make per month?"
+                                      }
+                                    />
+                                    <CustomFormField
+                                      name={`employments.${index}.employmentOccupation`}
+                                      label={"Your Occupation?"}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 w-full md:w-fit min-h-[44px]"
+                              onClick={() =>
+                                append({
+                                  howDoYouGetPaid: "",
+                                  employmentPayPerMonth: 0,
+                                  employmentEmployerName: "",
+                                  employmentOccupation: "",
+                                })
+                              }
+                            >
+                              <Plus className="h-4 w-4" /> Add Another
+                              Employment
+                            </Button>
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {(interestedProductSelected?.type?.includes("Business") ||
+                    isCommunity ||
+                    (!isAutoLoan && isEquipmentFinancing) ||
+                    (isAutoLoan && vehicleFinancingType === "Business")) &&
                     !isTradeLines && (
                       <Card className="bg-slate-100 border-slate-200">
                         <CardHeader className="px-3 sm:px-4 md:px-6">
@@ -1460,7 +1554,9 @@ const ApplyFundingForm = ({
                             <div className="flex items-center gap-2">
                               <span>🏢</span> Business Information
                             </div>
-                            <PlaidLink displayText="Link Business Acount" />
+                            {businessIdSelected && (
+                              <PlaidLink displayText="Link Business Acount" />
+                            )}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-4 md:px-6">
@@ -1483,89 +1579,62 @@ const ApplyFundingForm = ({
                               <IconMenu text="Add Business" icon={<Plus />} />
                             </Button>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <CustomFormField
-                              name={"dateOfIncorporation"}
-                              type="date-picker"
-                              label={`Date of Incorporation?`}
-                            />
-                            <CustomFormField
-                              name={"stateOfIncorporation"}
-                              label={`State of Incorporation?`}
-                              type="select"
-                              placeholder="Select a state"
-                              options={US_STATES}
-                            />
 
-                            <CustomFormField
-                              name="businessGrossProjectedRevenue1"
-                              type="number"
-                              placeholder="Enter amount"
-                              label={`${currentYear} Gross Revenue`}
-                            />
-
-                            <CustomFormField
-                              type="checkbox"
-                              label="Filed with IRS?"
-                              name="businessFiledWithIRS1"
-                            />
-                            <CustomFormField
-                              name="businessGrossProjectedRevenue2"
-                              type="number"
-                              placeholder="Enter amount"
-                              label={`${currentYear - 1} Gross Revenue`}
-                            />
-
-                            <CustomFormField
-                              type="checkbox"
-                              name="businessFiledWithIRS2"
-                              label="Filed with IRS?"
-                            />
-                            <CustomFormField
-                              name="businessGrossProjectedRevenue3"
-                              type="number"
-                              placeholder="Enter amount"
-                              label={`${currentYear - 2} Gross Revenue`}
-                            />
-
-                            <CustomFormField
-                              type="checkbox"
-                              label="Filed with IRS?"
-                              name="businessFiledWithIRS3"
-                            />
-
-                            <CustomFormField
-                              name={"industryField"}
-                              label={"Industry Field?"}
-                            />
-
-                            {interestedProductSelected?.value !==
-                              "Business Income Based Funding" && (
+                          {businessIdSelected && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <CustomFormField
-                                name={"businessTaxes"}
-                                label={"Did you report on your business taxes?"}
+                                name={"dateOfIncorporation"}
+                                type="date-picker"
+                                label={`Date of Incorporation?`}
+                              />
+                              <CustomFormField
+                                name={"stateOfIncorporation"}
+                                label={`State of Incorporation?`}
                                 type="select"
-                                options={businessTaxes}
-                                onSelectValue={handleBusinessTaxesChange}
+                                placeholder="Select a state"
+                                options={US_STATES}
                               />
-                            )}
-                          </div>
-                          {businessTaxesSelected?.type === "yes" && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
                               <CustomFormField
-                                name={"businessTaxes1"}
+                                name="businessGrossProjectedRevenue1"
                                 type="number"
-                                label={`in ${currentYear - 1}?`}
+                                placeholder="Enter amount"
+                                label={`${currentYear} Gross Revenue`}
+                              />
+
+                              <CustomFormField
+                                type="checkbox"
+                                label={`Filed with IRS?`}
+                                name="businessFiledWithIRS1"
                               />
                               <CustomFormField
-                                name={"businessTaxes2"}
+                                name="businessGrossProjectedRevenue2"
                                 type="number"
-                                label={`in ${currentYear - 2}?`}
+                                placeholder="Enter amount"
+                                label={`${currentYear - 1} Gross Revenue`}
+                              />
+
+                              <CustomFormField
+                                type="checkbox"
+                                name="businessFiledWithIRS2"
+                                label="Filed with IRS?"
                               />
                               <CustomFormField
-                                name={"businessTaxes3"}
+                                name="businessGrossProjectedRevenue3"
                                 type="number"
-                                label={`in ${currentYear - 3}?`}
+                                placeholder="Enter amount"
+                                label={`${currentYear - 2} Gross Revenue`}
+                              />
+
+                              <CustomFormField
+                                type="checkbox"
+                                label="Filed with IRS?"
+                                name="businessFiledWithIRS3"
+                              />
+
+                              <CustomFormField
+                                name={"industryField"}
+                                label={"Industry Field?"}
                               />
                             </div>
                           )}
@@ -1674,6 +1743,165 @@ const ApplyFundingForm = ({
                           name="whoReferredYou"
                           label="Who Referred You?"
                         />
+
+                        {/* Document Upload Section */}
+                        <Separator className="my-3 sm:my-4" />
+                        <h4 className="font-medium text-indigo-900 flex items-center gap-2 mb-3 text-sm sm:text-base">
+                          <span>📄</span> Required Documents
+                        </h4>
+
+                        {bankStatementsFromForm.length === 0 &&
+                          driverLicenseDocsFromForm.length === 0 && (
+                            <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                              <div className="flex items-start gap-2">
+                                <svg
+                                  className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 flex-shrink-0 mt-0.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                  />
+                                </svg>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[10px] sm:text-xs font-medium text-amber-900 mb-1">
+                                    No Documents Uploaded Yet
+                                  </p>
+                                  <p className="text-[10px] sm:text-xs text-amber-700 leading-tight">
+                                    Upload bank statements and driver's license
+                                    below
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-indigo-600 flex-shrink-0" />
+                            <h3 className="text-xs sm:text-sm font-semibold text-indigo-900">
+                              4 Months Bank Statements (PDF only)
+                            </h3>
+                          </div>
+                          {bankStatementsFromForm.length > 0 && (
+                            <div className="space-y-1.5">
+                              {bankStatementsFromForm.map((file, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-center gap-2 bg-gray-50 p-2 rounded text-xs overflow-hidden"
+                                >
+                                  <span className="flex-1 truncate">
+                                    {file.name}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeBankStatement(idx)}
+                                    className="h-6 w-6 p-0 hover:bg-red-100 flex-shrink-0"
+                                  >
+                                    <CircleX className="h-3 w-3 text-red-500" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <Dropzone
+                            maxFiles={10}
+                            accept={{
+                              "application/pdf": [".pdf"],
+                            }}
+                            maxSize={2 * 1024 * 1024}
+                            className="cursor-pointer w-full"
+                            onDrop={async (files) => {
+                              const pdfFiles = files.filter(
+                                (f) => f.type === "application/pdf"
+                              );
+                              if (pdfFiles.length !== files.length) {
+                                alert("Only PDF files are allowed!");
+                                return;
+                              }
+                              await handleBankStatementsUpload(pdfFiles);
+                            }}
+                          >
+                            <DropzoneEmptyState>
+                              <div className="flex flex-col items-center gap-1.5">
+                                <Upload className="h-6 w-6 text-indigo-400" />
+                                <p className="text-xs font-medium">
+                                  Click to upload
+                                </p>
+                              </div>
+                            </DropzoneEmptyState>
+                            <DropzoneContent />
+                          </Dropzone>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-indigo-600 flex-shrink-0" />
+                            <h3 className="text-xs sm:text-sm font-semibold text-indigo-900">
+                              Driver License (PDF or Images)
+                            </h3>
+                          </div>
+                          {driverLicenseDocsFromForm.length > 0 && (
+                            <div className="space-y-1.5">
+                              {driverLicenseDocsFromForm.map((file, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-center gap-2 bg-gray-50 p-2 rounded text-xs overflow-hidden"
+                                >
+                                  <span className="flex-1 truncate">
+                                    {file.name}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeDriverLicense(idx)}
+                                    className="h-6 w-6 p-0 hover:bg-red-100 flex-shrink-0"
+                                  >
+                                    <CircleX className="h-3 w-3 text-red-500" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <Dropzone
+                            maxFiles={10}
+                            accept={{
+                              "application/pdf": [".pdf"],
+                              "image/*": [".png", ".jpg", ".jpeg", ".gif"],
+                            }}
+                            maxSize={2 * 1024 * 1024}
+                            className="cursor-pointer w-full"
+                            onDrop={async (files) => {
+                              const validFiles = files.filter(
+                                (f) =>
+                                  f.type === "application/pdf" ||
+                                  f.type.startsWith("image/")
+                              );
+                              if (validFiles.length !== files.length) {
+                                alert("Only PDF and image files are allowed!");
+                                return;
+                              }
+                              await handleDriverLicenseUpload(validFiles);
+                            }}
+                          >
+                            <DropzoneEmptyState>
+                              <div className="flex flex-col items-center gap-1.5">
+                                <Upload className="h-6 w-6 text-indigo-400" />
+                                <p className="text-xs font-medium">
+                                  Click to upload
+                                </p>
+                              </div>
+                            </DropzoneEmptyState>
+                            <DropzoneContent />
+                          </Dropzone>
+                        </div>
                       </CardContent>
                     </Card>
                   )}
@@ -1732,8 +1960,6 @@ const ApplyFundingForm = ({
 
                                     {isEditing
                                       ? "Updating..."
-                                      : isCommunity
-                                      ? "Joining..."
                                       : isTradeLines
                                       ? "Boosting..."
                                       : "Applying..."}
@@ -1743,8 +1969,6 @@ const ApplyFundingForm = ({
                                     <BanknoteIcon className="mr-2 h-4 w-4" />{" "}
                                     {isEditing
                                       ? "Update Application"
-                                      : isCommunity
-                                      ? "Join Community"
                                       : isTradeLines
                                       ? "Boost My Score"
                                       : "Apply Funding"}
