@@ -23,7 +23,6 @@ import {
   US_STATES,
 } from "@/constant/common";
 import { Plus, Trash2, CircleX } from "lucide-react";
-import IconMenu from "../icon-menu";
 import { Business } from "@/schema";
 import PlaidLink from "../PlaidLink";
 import { Separator } from "../ui/separator";
@@ -33,8 +32,6 @@ import {
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
 import { FileText, Upload } from "lucide-react";
-import { Label } from "../ui/label";
-import { Checkbox } from "../ui/checkbox";
 
 const legalResident: DropdownOption[] = [
   { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
