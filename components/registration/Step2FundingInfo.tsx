@@ -17,10 +17,12 @@ export function Step2FundingInfo({ userId }: Step2FundingInfoProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Step 2: Funding Application</CardTitle>
+      <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
+        <CardTitle className="text-lg sm:text-xl md:text-2xl">
+          Step 2: Funding Application
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 px-4 sm:px-6 pb-4 sm:pb-6">
         <FundingApplicationFields
           userId={userId}
           businessData={businessData}
