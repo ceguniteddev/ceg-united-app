@@ -226,6 +226,7 @@ Admin-only components should use `withAdminGuard()` HOC from `components/wrapper
 5. **Route protection**: API routes need `withAuth()`, pages use `useAuth()` with redirect logic
 6. **Type safety**: Leverage Zod schemas for both validation and TypeScript types
 7. **Global types**: Use `types/index.d.ts` for global type declarations (e.g., `DropdownOption`, `AdminStatistics`)
+8. **Build**: Use `npm run build` to catch type errors before deployment
 
 ## Documentation
 
