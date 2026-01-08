@@ -614,3 +614,23 @@ export const businessTaxes: DropdownOption[] = [
     type: "no",
   },
 ];
+
+// Us citizen
+// Permanent resident
+// Visa/ other legal status
+// Work permit
+// Undocumented
+export const legalResident: DropdownOption[] = [
+  // { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
+  // { value: "Yes, I have green card", label: "Yes, I have green card" },
+  // {
+  //   value: "No, I don't have legal status",
+  //   label: "No, I don't have legal status",
+  // },
+  // { value: "Other", label: "Other" },
+  { value: "US Citizen", label: "US Citizen" },
+  { value: "Permanent Resident", label: "Permanent Resident" },
+  { value: "Visa/ Other Legal Status", label: "Visa/ Other Legal Status" },
+  { value: "Work Permit", label: "Work Permit" },
+  { value: "Undocumented", label: "Undocumented" },
+];

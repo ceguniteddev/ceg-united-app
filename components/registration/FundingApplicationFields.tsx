@@ -19,6 +19,7 @@ import {
 import {
   businessTaxes,
   howDoYouGetPaid,
+  legalResident,
   personalTaxes,
   US_STATES,
 } from "@/constant/common";
@@ -32,16 +33,6 @@ import {
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
 import { FileText, Upload } from "lucide-react";
-
-const legalResident: DropdownOption[] = [
-  { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
-  { value: "Yes, I have green card", label: "Yes, I have green card" },
-  {
-    value: "No, I don't have legal status",
-    label: "No, I don't have legal status",
-  },
-  { value: "Other", label: "Other" },
-];
 
 const isMarried: DropdownOption[] = [
   { value: "Yes", label: "Yes" },
@@ -161,13 +152,6 @@ export function FundingApplicationFields({
       if (option) setPersonalTaxesSelected(option);
     }
 
-    if (formValues.businessTaxes) {
-      const option = businessTaxes.find(
-        (x) => x.value === formValues.businessTaxes
-      );
-      if (option) setBusinessTaxesSelected(option);
-    }
-
     // Initialize social media handles from form (only once)
     if (
       formValues.socialMedia &&
@@ -270,20 +254,6 @@ export function FundingApplicationFields({
       if (selectedValue) {
         setPersonalTaxesSelected(selectedValue);
         form.setValue("personalTaxesStatus", selectedValue.type!, {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-      }
-    },
-    [form]
-  );
-
-  const handleBusinessTaxesChange = useCallback(
-    (value: string) => {
-      const selectedValue = businessTaxes.find((x) => x.value === value);
-      if (selectedValue) {
-        setBusinessTaxesSelected(selectedValue);
-        form.setValue("businessTaxesStatus", selectedValue.type!, {
           shouldValidate: true,
           shouldDirty: true,
         });
@@ -633,7 +603,7 @@ export function FundingApplicationFields({
                 />
                 <CustomFormField
                   name={"houseNumber"}
-                  label={"Apartment/Suite/Unit/House Number"}
+                  label={"Apartment/Suite/Unit"}
                 />
               </div>
 
@@ -648,22 +618,24 @@ export function FundingApplicationFields({
                 />
                 <CustomFormField name={"addressPostal"} label={"Zip Code"} />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <CustomFormField
-                  name={"moveInCurrentAddress"}
-                  label={"When did you move in to your current address?"}
-                  type="date-picker"
-                />
-                <CustomFormField
-                  name={"payPerMonth"}
-                  type="number"
-                  label={"How much do you pay a month?"}
-                />
-                <CustomFormField
-                  name={"rentOrMortgage"}
-                  label={"Is it rent or mortgage? If else, please specify"}
-                />
-              </div>
+              {!isCommunity && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <CustomFormField
+                    name={"moveInCurrentAddress"}
+                    label={"When did you move in to your current address?"}
+                    type="date-picker"
+                  />
+                  <CustomFormField
+                    name={"payPerMonth"}
+                    type="number"
+                    label={"How much do you pay a month?"}
+                  />
+                  <CustomFormField
+                    name={"rentOrMortgage"}
+                    label={"Is it rent or mortgage? If else, please specify"}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -689,7 +661,7 @@ export function FundingApplicationFields({
                 />
                 <CustomFormField
                   name={"houseNumber"}
-                  label={"Apartment/Suite/Unit/House Number"}
+                  label={"Apartment/Suite/Unit"}
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -702,22 +674,6 @@ export function FundingApplicationFields({
                   options={US_STATES}
                 />
                 <CustomFormField name={"addressPostal"} label={"Zip Code"} />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <CustomFormField
-                  name={"moveInCurrentAddress"}
-                  label={"When did you move in to your current address?"}
-                  type="date-picker"
-                />
-                <CustomFormField
-                  name={"payPerMonth"}
-                  type="number"
-                  label={"How much do you pay a month?"}
-                />
-                <CustomFormField
-                  name={"rentOrMortgage"}
-                  label={"Is it rent or mortgage? If else, please specify"}
-                />
               </div>
             </CardContent>
           </Card>
@@ -739,7 +695,7 @@ export function FundingApplicationFields({
                 />
                 <CustomFormField
                   name={"houseNumber"}
-                  label={"Apartment/Suite/Unit/House Number"}
+                  label={"Apartment/Suite/Unit"}
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -779,6 +735,7 @@ export function FundingApplicationFields({
         )}
 
         {!isTradeLines &&
+          !isCommunity &&
           interestedProductSelected &&
           interestedProductSelected.value !== "Business Income Based Funding" &&
           (!isAutoLoan ||
@@ -805,7 +762,7 @@ export function FundingApplicationFields({
 
                 {howDoYouGetPaidSelected?.type === "yes" && (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                       <CustomFormField
                         name={"employmentPayPerMonth"}
                         type="number"
@@ -823,10 +780,6 @@ export function FundingApplicationFields({
                         label={"Employer Phone Number?"}
                       />
                     </div>
-                    {/* <CustomFormField
-                            name={"employmentEmployerAddress"}
-                            label={"Employer Address?"}
-                          /> */}
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <CustomFormField
@@ -836,7 +789,7 @@ export function FundingApplicationFields({
                       />
                       <CustomFormField
                         name={"employmentEmployerHouseNumber"}
-                        label={"Apartment/Suite/Unit/House Number"}
+                        label={"Apartment/Suite/Unit"}
                       />
                     </div>
 
@@ -976,6 +929,115 @@ export function FundingApplicationFields({
             </Card>
           )}
 
+        {isCommunity && (
+          <Card className="bg-slate-100 border-slate-200">
+            <CardHeader className="px-4 md:px-6">
+              <CardTitle className="flex flex-col md:flex-row justify-between gap-3 md:gap-2 text-base md:text-lg">
+                <div className="flex items-center gap-2">
+                  <span>💼</span> Employment Information
+                </div>
+                {howDoYouGetPaidSelectedBank && (
+                  <PlaidLink displayText="Link Personal Account" />
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5 px-4 md:px-6">
+              <CustomFormField
+                name={"howDoYouGetPaid"}
+                label={"Do you have a job?"}
+                type="select"
+                options={howDoYouGetPaid}
+                onSelectValue={handleDoYouHaveAJobChange}
+              />
+
+              {howDoYouGetPaidSelected?.type === "yes" && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <CustomFormField
+                      name={"employmentPayPerMonth"}
+                      type="number"
+                      label={"How much money do you make per month?"}
+                    />
+                    <CustomFormField
+                      name={"employmentOccupation"}
+                      label={"Your Occupation?"}
+                    />
+                  </div>
+
+                  {fields.map((field, index) => {
+                    const colors = [
+                      "bg-blue-50 border-blue-200",
+                      "bg-green-50 border-green-200",
+                      "bg-orange-50 border-orange-200",
+                      "bg-purple-50 border-purple-200",
+                    ];
+                    const colorClass = colors[index % colors.length];
+
+                    return (
+                      <div
+                        key={field.id}
+                        className={`space-y-4 border rounded-md p-4 mt-4 ${colorClass}`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-sm font-medium">
+                            Additional Employment {index + 1}
+                          </h4>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => remove(index)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+
+                        <CustomFormField
+                          name={`employments.${index}.howDoYouGetPaid`}
+                          label={"Do you have a job?"}
+                          type="select"
+                          options={howDoYouGetPaid.filter(
+                            (x) => x.value !== "no_work"
+                          )}
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <CustomFormField
+                            name={`employments.${index}.employmentPayPerMonth`}
+                            type="number"
+                            label={"How much money do you make per month?"}
+                          />
+                          <CustomFormField
+                            name={`employments.${index}.employmentOccupation`}
+                            label={"Your Occupation?"}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 w-full md:w-fit min-h-[44px]"
+                    onClick={() =>
+                      append({
+                        howDoYouGetPaid: "",
+                        employmentPayPerMonth: 0,
+                        employmentEmployerName: "",
+                        employmentOccupation: "",
+                      })
+                    }
+                  >
+                    <Plus className="h-4 w-4" /> Add Another Employment
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {(interestedProductSelected?.type?.includes("Business") ||
           isCommunity ||
           (!isAutoLoan && isEquipmentFinancing) ||
@@ -1019,7 +1081,7 @@ export function FundingApplicationFields({
                   />
                   <CustomFormField
                     name="businessStreetHouseNumber"
-                    label="Apartment/Suite/Unit/House Number"
+                    label="Apartment/Suite/Unit"
                   />
                 </div>
 
@@ -1139,37 +1201,7 @@ export function FundingApplicationFields({
                       name="industryField"
                       label="Industry Field?"
                     />
-                    {interestedProductSelected?.value !==
-                      "Business Income Based Funding" && (
-                      <CustomFormField
-                        name="businessTaxes"
-                        label="Did you report on your business taxes?"
-                        type="select"
-                        options={businessTaxes}
-                        onSelectValue={handleBusinessTaxesChange}
-                      />
-                    )}
                   </div>
-
-                  {businessTaxesSelected?.type === "yes" && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <CustomFormField
-                        name="businessTaxes1"
-                        type="number"
-                        label={`in ${currentYear - 1}?`}
-                      />
-                      <CustomFormField
-                        name="businessTaxes2"
-                        type="number"
-                        label={`in ${currentYear - 2}?`}
-                      />
-                      <CustomFormField
-                        name="businessTaxes3"
-                        type="number"
-                        label={`in ${currentYear - 3}?`}
-                      />
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>

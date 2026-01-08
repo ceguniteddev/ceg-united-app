@@ -54,7 +54,7 @@ export const employmentSchema = z.object({
   employmentPayPerMonth: z.coerce
     .number<number>({ error: "Required" })
     .min(1, { message: "Required" }),
-  employmentEmployerName: z.string().min(1, { message: "Required" }),
+  employmentEmployerName: z.string().optional(),
   employmentOccupation: z.string().min(1, { message: "Required" }),
 });
 
@@ -213,11 +213,11 @@ export const applyFundingSchema = z
       .or(z.literal(""))
       .optional(),
 
-    businessTaxes: z.string().optional(),
-    businessTaxesStatus: z.string().optional(),
-    businessTaxes1: z.coerce.number<number>().optional(),
-    businessTaxes2: z.coerce.number<number>().optional(),
-    businessTaxes3: z.coerce.number<number>().optional(),
+    // businessTaxes: z.string().optional(),
+    // businessTaxesStatus: z.string().optional(),
+    // businessTaxes1: z.coerce.number<number>().optional(),
+    // businessTaxes2: z.coerce.number<number>().optional(),
+    // businessTaxes3: z.coerce.number<number>().optional(),
 
     approveOrDecline: fundingApplicationApproveDeclineSchema.optional(),
 
@@ -335,113 +335,63 @@ export const applyFundingSchema = z
   //     path: ["isMarried"],
   //   }
   // )
-  .superRefine((data, ctx) => {
-    // The condition: Only run this validation if a business name has been entered.
-    if (
-      data.businessName &&
-      data.businessName.trim().length > 0 &&
-      data.interestedProduct !== "Business Income Based Funding"
-    ) {
-      // Validate the three Gross Projected Revenue fields
-      const r1 = data.businessGrossProjectedRevenue1 ?? 0;
-      const r2 = data.businessGrossProjectedRevenue2 ?? 0;
-      const r3 = data.businessGrossProjectedRevenue3 ?? 0;
+  // .superRefine((data, ctx) => {
+  //   // The condition: Only run this validation if a business name has been entered.
+  //   if (
+  //     data.businessName &&
+  //     data.businessName.trim().length > 0 &&
+  //     data.interestedProduct !== "Business Income Based Funding"
+  //   ) {
+  //     // Validate the three Gross Projected Revenue fields
+  //     const r1 = data.businessGrossProjectedRevenue1 ?? 0;
+  //     const r2 = data.businessGrossProjectedRevenue2 ?? 0;
+  //     const r3 = data.businessGrossProjectedRevenue3 ?? 0;
 
-      if (r1 <= 0 && r2 <= 0 && r3 <= 0) {
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one revenue year is required",
-          path: ["businessGrossProjectedRevenue1"],
-        });
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one revenue year is required",
-          path: ["businessGrossProjectedRevenue2"],
-        });
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one revenue year is required",
-          path: ["businessGrossProjectedRevenue3"],
-        });
-      }
-
-      // Validate the three Projected Profit fields
-      const p1 = data.businessProjectedProfit1 ?? 0;
-      const p2 = data.businessProjectedProfit2 ?? 0;
-      const p3 = data.businessProjectedProfit3 ?? 0;
-
-      if (p1 <= 0 && p2 <= 0 && p3 <= 0) {
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one profit year is required",
-          path: ["businessProjectedProfit1"],
-        });
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one profit year is required",
-          path: ["businessProjectedProfit2"],
-        });
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one profit year is required",
-          path: ["businessProjectedProfit3"],
-        });
-      }
-    }
-  })
-  .superRefine((data, ctx) => {
-    // Check if the business taxes status is 'yes'.
-    // This value would be set by your handleBusinessTaxesChange callback.
-    if (data.businessTaxesStatus === "yes") {
-      const t1 = data.businessTaxes1 ?? 0;
-      const t2 = data.businessTaxes2 ?? 0;
-      const t3 = data.businessTaxes3 ?? 0;
-
-      if (t1 <= 0 && t2 <= 0 && t3 <= 0) {
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one tax year is required",
-          path: ["businessTaxes1"],
-        });
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one tax year is required",
-          path: ["businessTaxes2"],
-        });
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one tax year is required",
-          path: ["businessTaxes3"],
-        });
-      }
-
-      // If the status is 'yes', then all three tax year fields are required.
-      // We check if the coerced number is 0 or less, which covers empty inputs.
-      // if ((data.businessTaxes1 ?? 0) <= 0) {
-      //   ctx.addIssue({
-      //     code: "custom",
-      //     message: "Required",
-      //     path: ["businessTaxes1"], // Links the error to the correct input field.
-      //   });
-      // }
-
-      // if ((data.businessTaxes2 ?? 0) <= 0) {
-      //   ctx.addIssue({
-      //     code: "custom",
-      //     message: "Required",
-      //     path: ["businessTaxes2"],
-      //   });
-      // }
-
-      // if ((data.businessTaxes3 ?? 0) <= 0) {
-      //   ctx.addIssue({
-      //     code: "custom",
-      //     message: "Required",
-      //     path: ["businessTaxes3"],
-      //   });
-      // }
-    }
-  })
+  //     if (r1 <= 0 && r2 <= 0 && r3 <= 0) {
+  //       ctx.addIssue({
+  //         code: "custom",
+  //         message: "At least one revenue year is required",
+  //         path: ["businessGrossProjectedRevenue1"],
+  //       });
+  //       ctx.addIssue({
+  //         code: "custom",
+  //         message: "At least one revenue year is required",
+  //         path: ["businessGrossProjectedRevenue2"],
+  //       });
+  //       ctx.addIssue({
+  //         code: "custom",
+  //         message: "At least one revenue year is required",
+  //         path: ["businessGrossProjectedRevenue3"],
+  //       });
+  //     }
+  //   }
+  // })
+  // .superRefine((data, ctx) => {
+  // Check if the business taxes status is 'yes'.
+  // This value would be set by your handleBusinessTaxesChange callback.
+  // if (data.businessTaxesStatus === "yes") {
+  //   const t1 = data.businessTaxes1 ?? 0;
+  //   const t2 = data.businessTaxes2 ?? 0;
+  //   const t3 = data.businessTaxes3 ?? 0;
+  //   if (t1 <= 0 && t2 <= 0 && t3 <= 0) {
+  //     ctx.addIssue({
+  //       code: "custom",
+  //       message: "At least one tax year is required",
+  //       path: ["businessTaxes1"],
+  //     });
+  //     ctx.addIssue({
+  //       code: "custom",
+  //       message: "At least one tax year is required",
+  //       path: ["businessTaxes2"],
+  //     });
+  //     ctx.addIssue({
+  //       code: "custom",
+  //       message: "At least one tax year is required",
+  //       path: ["businessTaxes3"],
+  //     });
+  //   }
+  // }
+  // })
   .superRefine((data, ctx) => {
     // Check if the user has filed taxes before
     if (data.personalTaxesStatus === "yes") {
@@ -470,13 +420,16 @@ export const applyFundingSchema = z
     }
   })
   .superRefine((data, ctx) => {
+    console.log("Employment superRefine called with data:", data);
     // Check if the employment status is 'yes'
-    // Exclude Auto Loan with Business financing from employment validation
+    // Exclude Auto Loan with Business financing and Community funding from employment validation
     if (
       data.employmentStatus === "yes" &&
       !(
-        data.interestedProduct === "Auto Loan" &&
-        data.vehicleFinancingType === "Business"
+        (data.interestedProduct === "Auto Loan" &&
+          data.vehicleFinancingType === "Business") ||
+        data.fundingType === "Community" ||
+        data.interestedProduct === "Business Income Based Funding"
       )
     ) {
       // If it is, validate each employment field
@@ -588,6 +541,28 @@ export const applyFundingSchema = z
           code: "custom",
           message: "Required",
           path: ["employmentDateOfHire"],
+        });
+      }
+    }
+  })
+  .superRefine((data, ctx) => {
+    // Validate minimal employment fields for Community funding
+    if (data.fundingType === "Community" && data.employmentStatus === "yes") {
+      if ((data.employmentPayPerMonth ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentPayPerMonth"],
+        });
+      }
+      if (
+        !data.employmentOccupation ||
+        data.employmentOccupation.length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentOccupation"],
         });
       }
     }
@@ -1069,10 +1044,10 @@ export const applyFundingSchema = z
           path: ["personalAmountFunding"],
         });
       }
-      console.log(
-        "Validating howDoYouGetPaid for Personal funding",
-        data.howDoYouGetPaid
-      );
+      // console.log(
+      //   "Validating howDoYouGetPaid for Personal funding",
+      //   data.howDoYouGetPaid
+      // );
       if (
         data.howDoYouGetPaid == undefined ||
         data.howDoYouGetPaid == null ||

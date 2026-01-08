@@ -255,11 +255,11 @@ export function MultiStepRegistrationForm({
     // Validate Step 1
     const isValid = await form1.trigger();
 
-    if (!isValid) {
-      toast.error("Please fill in all required fields correctly.");
-      setProgress(0);
-      return;
-    }
+    // if (!isValid) {
+    //   toast.error("Please fill in all required fields correctly.");
+    //   setProgress(0);
+    //   return;
+    // }
 
     // If validation passes, move to step 2
     const values = form1.getValues();
@@ -296,6 +296,8 @@ export function MultiStepRegistrationForm({
     const isValid = await form2.trigger();
 
     if (!isValid) {
+      // log the errors
+      console.log("Validation errors:", form2.formState.errors);
       const errors = form2.formState.errors;
       const errorFields = Object.keys(errors);
 
