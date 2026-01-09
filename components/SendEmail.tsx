@@ -1,7 +1,6 @@
 import dynamic from "next/dynamic";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -13,8 +12,6 @@ import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -23,7 +20,6 @@ const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 import React, { use, useCallback, useState } from "react";
 import { Button } from "./ui/button";
 import { Loader2Icon, MailIcon } from "lucide-react";
-import { ApplyFunding } from "@/schema/apply-funding";
 import { useUserQuery } from "@/hooks/user";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -45,6 +41,18 @@ const SendEmail = ({ referenceNumber, userId }: Props) => {
 
   const handleOpenDeleteDialog = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // Validate subject and content
+    if (!subject.trim()) {
+      toast.error("Please enter a subject");
+      return;
+    }
+
+    if (!content.trim()) {
+      toast.error("Please enter email content");
+      return;
+    }
+
     setIsDeleteDialogOpen(true);
   };
   const sendEmailClick = useCallback(async () => {
@@ -70,39 +78,26 @@ const SendEmail = ({ referenceNumber, userId }: Props) => {
   return (
     <Card>
       <CardHeader className="p-4 sm:p-6">
-        <CardTitle className="space-y-3 sm:space-y-2">
-          <div className="flex flex-col sm:grid sm:grid-cols-7 gap-1.5 sm:gap-2">
-            <Label
-              htmlFor="subject"
-              className="text-sm font-medium sm:col-span-1 sm:pt-2"
-            >
+        <CardTitle className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="subject" className="text-sm font-medium">
               Subject
             </Label>
             <Input
               placeholder="subject"
               defaultValue={referenceNumber ?? ""}
-              className="sm:col-span-6"
               onChange={(e) => setSubject(e.target.value)}
             />
           </div>
-          <div className="flex flex-col sm:grid sm:grid-cols-7 gap-1.5 sm:gap-2">
-            <Label
-              htmlFor="cc"
-              className="text-sm font-medium sm:col-span-1 sm:pt-2"
-            >
+          <div className="space-y-1.5">
+            <Label htmlFor="cc" className="text-sm font-medium">
               CC{" "}
               <span className="text-xs text-muted-foreground">
                 (comma separated)
               </span>
             </Label>
-            <Input
-              placeholder="cc"
-              className="sm:col-span-6"
-              onChange={(e) => setCc(e.target.value)}
-            />
+            <Input placeholder="cc" onChange={(e) => setCc(e.target.value)} />
           </div>
-        </CardTitle>
-        <CardAction className="pt-3">
           <Button
             variant="outline"
             type="button"
@@ -111,7 +106,7 @@ const SendEmail = ({ referenceNumber, userId }: Props) => {
           >
             <MailIcon className="mr-2 h-4 w-4" color="red" /> Send Email
           </Button>
-        </CardAction>
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 p-4 sm:p-6">
         <Editor content={content} onContentChange={setContent} />
