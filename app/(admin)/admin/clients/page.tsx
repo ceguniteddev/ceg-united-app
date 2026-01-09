@@ -45,15 +45,15 @@ const ClientsPage = () => {
     <section className="home">
       <div className="home-content">
         <header className="home-header">
-          <div className="flex flex-row justify-between items-center w-full">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 w-full">
             <HeaderBox title="Clients" />
             <Button
               variant={"outline"}
-              className="bg-blue-200 hover:bg-blue-300 cursor-pointer"
+              className="bg-blue-200 hover:bg-blue-300 cursor-pointer w-full sm:w-auto"
               onClick={() => setIsModalOpen(true)}
             >
               <Plus className="h-4 w-4" />
-              Add New Client
+              <span className="ml-2">Add New Client</span>
             </Button>
           </div>
         </header>

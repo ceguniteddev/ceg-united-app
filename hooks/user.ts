@@ -27,7 +27,6 @@ export const useUsersQuery = (role?: Role) => {
         return null;
       }
       const data = await response.json();
-
       return data;
     },
     enabled: !!user,

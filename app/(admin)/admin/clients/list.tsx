@@ -48,6 +48,7 @@ import { useRouter } from "next/navigation";
 import { useGetDenefitsContracts } from "@/hooks/denefits";
 import { DenefitsRequest, DenefitsStatusEnum } from "@/schema/denefits";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 const statusFilterFn: FilterFn<UserWithId> = (row, columnId, filterValue) => {
   const raw = row.getValue<string | undefined>(columnId);
@@ -62,10 +63,9 @@ const denefitsStatusFilterFn: FilterFn<UserWithId> = (
   columnId,
   filterValue
 ) => {
-  // The accessorFn provides the value, which will be "Active" or "Inactive"
+  // The accessorFn provides the value, which will be "Active" or "InActive"
   const value = row.getValue<string>(columnId);
   const selectedFilter = String(filterValue);
-
   // If no filter is selected, show all rows
   if (!selectedFilter) return true;
 
@@ -132,11 +132,11 @@ const ClientsList = () => {
       ),
       accessorFn: (row) => {
         const contract = denefitsContractsMap.get(row.id);
-        return contract ? "Active" : "Inactive";
+        return contract ? "Active" : "InActive";
       },
       cell: ({ row }) => {
         const contract = denefitsContractsMap.get(row.original.id);
-        const status = contract ? "Active" : "Inactive";
+        const status = contract ? "Active" : "InActive";
         return (
           <div>
             <CategoryBadge category={status} />
@@ -293,92 +293,181 @@ const ClientsList = () => {
 
   return (
     <div className="mx-auto w-full">
-      <div className="flex items-center py-4 gap-2">
+      <div className="py-4 space-y-3">
         <Input
           placeholder="Filter"
           // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
           value={globalFilter}
           // onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
+          className="w-full"
         />
-        <span className="ml-5">Status :</span>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <span className="mr-2">
-                {roleFilter === "all" ? "All Status" : roleFilter}
-              </span>
-              <ChevronDownIcon className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuRadioGroup
-              value={roleFilter}
-              onValueChange={setRoleFilter}
-            >
-              <DropdownMenuRadioItem value="all">
-                All Status
-              </DropdownMenuRadioItem>
-              {UserActiveStatusEnum.options.map((status) => (
-                <DropdownMenuRadioItem key={status} value={status}>
-                  {status}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <span className="ml-5">Denefits :</span>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <span className="mr-2">
-                {denefitsStatusFilter === "all"
-                  ? "All Status"
-                  : denefitsStatusFilter}
-              </span>
-              <ChevronDownIcon className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuRadioGroup
-              value={denefitsStatusFilter}
-              onValueChange={setDenefitsStatusFilter}
-            >
-              <DropdownMenuRadioItem value="all">
-                All Status
-              </DropdownMenuRadioItem>
-              {DenefitsStatusEnum.options.map((status) => (
-                <DropdownMenuRadioItem key={status} value={status}>
-                  {status}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <span className="ml-5">Premium :</span>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <span className="mr-2">
-                {premiumFilter === "all" ? "All" : premiumFilter}
-              </span>
-              <ChevronDownIcon className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuRadioGroup
-              value={premiumFilter}
-              onValueChange={setPremiumFilter}
-            >
-              <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="Yes">Yes</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="No">No</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Status Filter */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-muted-foreground">
+              Status
+            </label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-9 w-full justify-between"
+                >
+                  <span>
+                    {roleFilter === "all" ? "All Status" : roleFilter}
+                  </span>
+                  <ChevronDownIcon className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[200px]">
+                <DropdownMenuRadioGroup
+                  value={roleFilter}
+                  onValueChange={setRoleFilter}
+                >
+                  <DropdownMenuRadioItem value="all">
+                    All Status
+                  </DropdownMenuRadioItem>
+                  {UserActiveStatusEnum.options.map((status) => (
+                    <DropdownMenuRadioItem key={status} value={status}>
+                      {status}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Denefits Filter */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-muted-foreground">
+              Denefits
+            </label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-9 w-full justify-between"
+                >
+                  <span>
+                    {denefitsStatusFilter === "all"
+                      ? "All Status"
+                      : denefitsStatusFilter}
+                  </span>
+                  <ChevronDownIcon className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[200px]">
+                <DropdownMenuRadioGroup
+                  value={denefitsStatusFilter}
+                  onValueChange={setDenefitsStatusFilter}
+                >
+                  <DropdownMenuRadioItem value="all">
+                    All Status
+                  </DropdownMenuRadioItem>
+                  {DenefitsStatusEnum.options.map((status) => (
+                    <DropdownMenuRadioItem key={status} value={status}>
+                      {status}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Premium Filter */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-muted-foreground">
+              Premium
+            </label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-9 w-full justify-between"
+                >
+                  <span>{premiumFilter === "all" ? "All" : premiumFilter}</span>
+                  <ChevronDownIcon className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[200px]">
+                <DropdownMenuRadioGroup
+                  value={premiumFilter}
+                  onValueChange={setPremiumFilter}
+                >
+                  <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="Yes">Yes</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="No">No</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
       </div>
-      <div className="rounded-md border flex">
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const client = row.original;
+            const contract = denefitsContractsMap.get(client.id);
+            const denefitsStatus = contract ? "Active" : "Inactive";
+
+            return (
+              <Card key={row.id} className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-base truncate">
+                        {client.firstName} {client.middleName} {client.lastName}
+                      </h3>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {client.email}
+                      </p>
+                    </div>
+                    <ActionCell row={row} status={undefined} />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Status:</span>
+                    <CategoryBadge category={client.activeStatus ?? "Active"} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Denefits:</span>
+                    <CategoryBadge category={denefitsStatus} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Premium:</span>
+                    <CategoryBadge
+                      category={client.isPremiumClient ? "Yes" : "No"}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Phone:</span>
+                    <span className="font-medium">{client.phoneNumber}</span>
+                  </div>
+                  {client.brokerName && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Broker:</span>
+                      <span className="font-medium">{client.brokerName}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })
+        ) : (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              No results.
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:flex rounded-md border">
         <ScrollArea type="always" className="w-1 flex-1">
           <Table>
             <TableHeader>
@@ -453,17 +542,6 @@ const ActionCell = ({
 
   return (
     <>
-      {/* <ResponsiveDialog
-        isOpen={open}
-        setIsOpen={setOpen}
-        title={`Client Details`}
-        description=""
-        descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-10/12 flex flex-col items-start justify-start min-h-[80vh] "
-      >
-        <TabView formSetOpen={setOpen} data={row.original} status={status} />
-      </ResponsiveDialog> */}
-
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">

@@ -52,7 +52,12 @@ const SendEmail = ({ referenceNumber, userId }: Props) => {
     setIsSending(true);
 
     try {
-      await sendMail({ emailTo: userData.email, subject, bodyHTML: content, cc: cc.split(",") });
+      await sendMail({
+        emailTo: userData.email,
+        subject,
+        bodyHTML: content,
+        cc: cc.split(","),
+      });
       toast.success("Email sent successfully");
       setIsDeleteDialogOpen(false);
     } catch (error) {
@@ -64,62 +69,85 @@ const SendEmail = ({ referenceNumber, userId }: Props) => {
   }, [subject, userData, content, cc]);
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="space-y-2">
-          <div className="grid grid-cols-7 gap-2">
-            <Label htmlFor="subject">Subject</Label>
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="space-y-3 sm:space-y-2">
+          <div className="flex flex-col sm:grid sm:grid-cols-7 gap-1.5 sm:gap-2">
+            <Label
+              htmlFor="subject"
+              className="text-sm font-medium sm:col-span-1 sm:pt-2"
+            >
+              Subject
+            </Label>
             <Input
               placeholder="subject"
               defaultValue={referenceNumber ?? ""}
-              className="col-span-6"
+              className="sm:col-span-6"
               onChange={(e) => setSubject(e.target.value)}
             />
           </div>
-          <div className="grid grid-cols-7 gap-2">
-            <Label htmlFor="cc">
-              CC <span className="text-xs text-muted-foreground">(comma separated)</span>
+          <div className="flex flex-col sm:grid sm:grid-cols-7 gap-1.5 sm:gap-2">
+            <Label
+              htmlFor="cc"
+              className="text-sm font-medium sm:col-span-1 sm:pt-2"
+            >
+              CC{" "}
+              <span className="text-xs text-muted-foreground">
+                (comma separated)
+              </span>
             </Label>
             <Input
               placeholder="cc"
-              className="col-span-6"
+              className="sm:col-span-6"
               onChange={(e) => setCc(e.target.value)}
             />
           </div>
         </CardTitle>
-        <CardAction>
+        <CardAction className="pt-3">
           <Button
             variant="outline"
             type="button"
-            className="cursor-pointer bg-slate-100 hover:bg-slate-200"
+            className="cursor-pointer bg-slate-100 hover:bg-slate-200 w-full sm:w-auto"
             onClick={(e) => handleOpenDeleteDialog(e)}
           >
             <MailIcon className="mr-2 h-4 w-4" color="red" /> Send Email
           </Button>
         </CardAction>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2 p-4 sm:p-6">
         <Editor content={content} onContentChange={setContent} />
 
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent>
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
+          <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle>Confirmation?</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="text-base sm:text-lg">
+                Confirmation?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-sm">
                 This action will send an email to the recipient
-                <span className="font-bold block mt-2 break-all">{userData?.email}</span>
+                <span className="font-bold block mt-2 break-all text-xs sm:text-sm">
+                  {userData?.email}
+                </span>
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isSending} className="cursor-pointer">
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+              <AlertDialogCancel
+                disabled={isSending}
+                className="cursor-pointer w-full sm:w-auto"
+              >
                 Cancel
               </AlertDialogCancel>
               <Button
                 variant="destructive"
                 onClick={sendEmailClick}
                 disabled={isSending}
-                className="cursor-pointer"
+                className="cursor-pointer w-full sm:w-auto"
               >
-                {isSending && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
+                {isSending && (
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 {isSending ? "Sending..." : "Send Email"}
               </Button>
             </AlertDialogFooter>

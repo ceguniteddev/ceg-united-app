@@ -136,7 +136,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="p-4 sm:p-6 grid gap-6">
+    <div className="grid gap-4 md:gap-6">
       <ResponsiveDialog
         isOpen={isTotalApprovedApplicationsOpen}
         setIsOpen={setIsTotalApprovedApplicationsOpen}
@@ -170,12 +170,9 @@ export default function AdminDashboard() {
           isAdminView={true}
         />
       </ResponsiveDialog>
-      <Card>
-        <CardHeader>
-          <CardTitle>Admin Overview</CardTitle>
-        </CardHeader>
+      <Card className="w-full">
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Total Clients"
               value={adminStatistics?.totalClients || 0}
@@ -210,7 +207,7 @@ export default function AdminDashboard() {
               onClick={() => setIsTotalFundedApplicationsOpen(true)}
             />
           </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <StatCard
               title="Total Approved Amount"
               value={formatAmount(adminStatistics?.totalApprovedAmount || 0)}
@@ -228,14 +225,14 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <StatesTable
           countsByState={adminStatistics?.countsByState || {}}
           selectedState={selectedState}
           onStateClick={handleStateClick}
         />
 
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>Applications by Status</CardTitle>
           </CardHeader>
@@ -263,13 +260,13 @@ const StatCard = ({
   className?: string;
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
 }) => (
-  <Card className={className} onClick={onClick}>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0">
+  <Card className={`w-full ${className}`} onClick={onClick}>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium">{title}</CardTitle>
       <Icon className="h-4 w-4 text-muted-foreground" />
     </CardHeader>
     <CardContent>
-      <div className="text-center text-5xl font-bold text-blue-500">
+      <div className="text-center text-3xl sm:text-4xl md:text-5xl font-bold text-blue-500">
         {value}
       </div>
       <p className="text-xs text-muted-foreground pt-1 text-center">

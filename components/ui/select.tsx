@@ -30,7 +30,8 @@ const SelectTrigger = React.forwardRef<
 
     <SelectPrimitive.Icon
       className={cn(
-        `absolute right-2 cursor-pointer`,
+        // `absolute right-2 cursor-pointer`,
+        `cursor-pointer`,
         !props.value && "pointer-events-none"
       )}
     >
