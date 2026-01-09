@@ -34,7 +34,7 @@ const ClientAppliedFundingList = ({
   return (
     <div className="space-y-4">
       {isAdminView && userId && (
-        <div className="flex justify-between">
+        <div className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-3">
           <ApplyFunding userId={userId} />
           <ManualFundedDialog userId={userId} />
         </div>

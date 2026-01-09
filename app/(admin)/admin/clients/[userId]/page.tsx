@@ -20,11 +20,19 @@ import { useUserQuery } from "@/hooks/user";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import Spinner from "@/components/Spinner";
 import { useMemo, useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ClientProfilePage = () => {
   const params = useParams();
   const userId = params.userId as string;
   const [isLetterFormOpen, setIsLetterFormOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("personal-information");
 
   const { userData, isLoading: isUserLoading } = useUserQuery(userId);
   // const { denefitsContract, isLoading: isDenefitsLoading } =
@@ -39,6 +47,37 @@ const ClientProfilePage = () => {
   const hasLetterFeatureEnabled = useMemo(() => {
     return !!userData?.letterFeatureEnabled;
   }, [userData]);
+
+  const tabOptions = useMemo(() => {
+    const options = [
+      { value: "personal-information", label: "Personal Information" },
+      { value: "dashboard", label: "Dashboard" },
+      { value: "documents", label: "Documents" },
+      { value: "credit-report", label: "Credit Report" },
+      { value: "business", label: "Business" },
+      { value: "applied-funding", label: "Applied Funding" },
+    ];
+
+    if (hasLearningMaterialsAccess) {
+      options.push({
+        value: "learning-materials",
+        label: "Learning Materials",
+      });
+    }
+
+    options.push({ value: "letters", label: "Letters" });
+
+    if (hasLetterFeatureEnabled) {
+      options.push({ value: "dispute-letters", label: "Dispute Letters" });
+    }
+
+    options.push(
+      { value: "note", label: "Note" },
+      { value: "email", label: "Email" }
+    );
+
+    return options;
+  }, [hasLearningMaterialsAccess, hasLetterFeatureEnabled]);
 
   // Show loading state while fetching data
   if (isUserLoading) {
@@ -63,10 +102,28 @@ const ClientProfilePage = () => {
 
   return (
     <Tabs
-      defaultValue="personal-information"
-      className="w-full flex flex-col items-start justify-start p-10"
+      value={activeTab}
+      onValueChange={setActiveTab}
+      className="w-full flex flex-col items-start justify-start p-4 md:p-10"
     >
-      <TabsList>
+      {/* Mobile Dropdown */}
+      <div className="md:hidden w-full mb-4">
+        <Select value={activeTab} onValueChange={setActiveTab}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a tab" />
+          </SelectTrigger>
+          <SelectContent>
+            {tabOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Desktop Tabs */}
+      <TabsList className="hidden md:flex">
         <TabsTrigger value="personal-information">
           Personal Information
         </TabsTrigger>
