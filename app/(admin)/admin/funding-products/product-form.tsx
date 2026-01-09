@@ -1,6 +1,9 @@
 "use client";
 import { Form } from "@/components/ui/form";
-import { FundingProduct, fundingProductSchema } from "@/schema/funding-products";
+import {
+  FundingProduct,
+  fundingProductSchema,
+} from "@/schema/funding-products";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useCallback, useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -22,7 +25,9 @@ const FundingProductsPage = () => {
   const { createFundingProduct, isCreating, updateFundingProduct, isUpdating } =
     useFundingProductMutation();
 
-  const [editingProduct, setEditingProduct] = useState<FundingProduct | null>(null);
+  const [editingProduct, setEditingProduct] = useState<FundingProduct | null>(
+    null
+  );
 
   const form = useForm<FundingProduct>({
     resolver: zodResolver(fundingProductSchema),
@@ -60,15 +65,15 @@ const FundingProductsPage = () => {
   const isEditing = !!editingProduct;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} aria-busy={isSubmitting}>
           {/* Disable during create or update */}
           <fieldset disabled={isSubmitting}>
-            <div className="grid grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
               <CustomFormField
                 name="productName"
-                className="col-span-2"
+                className="sm:col-span-1 lg:col-span-2"
                 placeholder=""
                 label="* Product Name"
               />
@@ -77,21 +82,24 @@ const FundingProductsPage = () => {
                 name="fundingType"
                 type="select"
                 placeholder=" "
-                className="col-span-2"
+                className="sm:col-span-1 lg:col-span-2"
                 label="* Funding Type"
                 options={getFundingApplicationType()}
               />
 
-              <div className="col-span-2 flex flex-wrap items-center justify-start gap-2 self-end">
+              <div className="sm:col-span-2 lg:col-span-2 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-start gap-2 sm:self-end">
                 {isEditing && (
                   <Button
                     type="button"
                     variant="outline"
                     disabled={isSubmitting}
-                    className="disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto h-11 disabled:cursor-not-allowed"
                     onClick={handleCancelEdit}
                   >
-                    <IconMenu icon={<XIcon className="mr-2 h-4 w-4" />} text="Cancel" />
+                    <IconMenu
+                      icon={<XIcon className="mr-2 h-4 w-4" />}
+                      text="Cancel"
+                    />
                   </Button>
                 )}
 
@@ -99,17 +107,25 @@ const FundingProductsPage = () => {
                   type="submit"
                   variant="outline"
                   disabled={isSubmitting}
-                  className="bg-emerald-200 hover:bg-emerald-300 disabled:cursor-not-allowed cursor-pointer"
+                  className="w-full sm:w-auto h-11 bg-emerald-200 hover:bg-emerald-300 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isSubmitting ? (
                     <IconMenu
-                      icon={<Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
+                      icon={
+                        <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                      }
                       text={isEditing ? "Updating..." : "Saving..."}
                     />
                   ) : isEditing ? (
-                    <IconMenu icon={<CheckIcon className="mr-2 h-4 w-4" />} text="Update" />
+                    <IconMenu
+                      icon={<CheckIcon className="mr-2 h-4 w-4" />}
+                      text="Update"
+                    />
                   ) : (
-                    <IconMenu icon={<SaveIcon className="mr-2 h-4 w-4" />} text="Save" />
+                    <IconMenu
+                      icon={<SaveIcon className="mr-2 h-4 w-4" />}
+                      text="Save"
+                    />
                   )}
                 </Button>
               </div>

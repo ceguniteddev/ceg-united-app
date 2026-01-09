@@ -66,8 +66,12 @@ const columns: ColumnDef<BankFormData>[] = [
     header: ({ column }) => (
       <SortableHeader column={column} title="Bank Name" />
     ),
-
-    cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
+    cell: ({ row }) => (
+      <div className="max-w-[200px] break-words whitespace-normal">
+        {row.getValue("bankName")}
+      </div>
+    ),
+    size: 200,
   },
   {
     accessorKey: "productName",
@@ -286,25 +290,72 @@ const BankProductsList = () => {
 
   return (
     <div className="mx-auto w-full">
-      <div className="flex items-center py-4 gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center py-4 gap-3 px-4 sm:px-0">
         <Input
           placeholder="Filter"
-          // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
           value={globalFilter}
-          // onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm h-10 sm:h-11"
         />
         <Button
           variant="outline"
-          className="ml-auto cursor-pointer"
+          className="w-full sm:w-auto sm:ml-auto h-11 cursor-pointer"
           onClick={handleExportCSV}
         >
           <DownloadIcon className="mr-2 h-4 w-4" />
           Export CSV
         </Button>
       </div>
-      <div className="overflow-hidden rounded-md border">
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3 px-4 sm:px-0">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => (
+            <div
+              key={row.id}
+              className="bg-white border rounded-lg p-4 shadow-sm space-y-2 w-full"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-base break-words">
+                    {row.getValue("bankName")}
+                  </h3>
+
+                  <div className="flex flex-wrap gap-1">
+                    {(row.getValue("productName") as string[]).map(
+                      (name, index) => (
+                        <span
+                          key={index}
+                          className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
+                        >
+                          {name}
+                        </span>
+                      )
+                    )}
+                  </div>
+
+                  <p className="text-sm text-gray-600 mt-2">
+                    <span className="font-medium">Term:</span>{" "}
+                    {row.getValue("financingTerm")}
+                  </p>
+                  {row.getValue("priorityLevel") ? (
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">Priority:</span>{" "}
+                      {row.getValue("priorityLevel")}
+                    </p>
+                  ) : null}
+                </div>
+                <ActionCell row={row} />
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-8 text-gray-500">No results.</div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -354,6 +405,7 @@ const BankProductsList = () => {
           </TableBody>
         </Table>
       </div>
+
       <DataTablePagination table={table} />
     </div>
   );
@@ -385,7 +437,7 @@ const ActionCell = ({ row }: { row: any }) => {
         title={`Bank Product Form`}
         description=""
         descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-8/12 flex flex-col items-start justify-start min-h-screen "
+        className="w-full max-w-full sm:w-11/12 sm:max-w-5xl lg:w-8/12 max-h-[90vh] overflow-y-auto"
       >
         <BankProductsForm setOpen={setOpen} data={row.original} />
       </ResponsiveDialog>
