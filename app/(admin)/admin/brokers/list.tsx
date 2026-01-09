@@ -181,41 +181,84 @@ const BrokersList = () => {
 
   return (
     <div className="mx-auto w-full">
-      <div className="flex items-center py-4 gap-2">
+      <div className="flex flex-col gap-3 py-4">
         <Input
-          placeholder="Filter"
+          placeholder="Filter brokers..."
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
+          className="w-full"
         />
-        <span className="ml-5">Status :</span>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <span className="mr-2">
-                {roleFilter === "all" ? "All Status" : roleFilter}
-              </span>
-              <ChevronDownIcon className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuRadioGroup
-              value={roleFilter}
-              onValueChange={setRoleFilter}
-            >
-              <DropdownMenuRadioItem value="all">
-                All Status
-              </DropdownMenuRadioItem>
-              {["Active", "InActive", "Paused"].map((status) => (
-                <DropdownMenuRadioItem key={status} value={status}>
-                  {status}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <label className="text-sm font-medium">Status:</label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto justify-between"
+              >
+                <span>{roleFilter === "all" ? "All Status" : roleFilter}</span>
+                <ChevronDownIcon className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuRadioGroup
+                value={roleFilter}
+                onValueChange={setRoleFilter}
+              >
+                <DropdownMenuRadioItem value="all">
+                  All Status
                 </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+                {["Active", "InActive", "Paused"].map((status) => (
+                  <DropdownMenuRadioItem key={status} value={status}>
+                    {status}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-      <div className="rounded-md border flex">
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const broker = row.original;
+            return (
+              <div
+                key={row.id}
+                className="border rounded-lg p-4 shadow-sm bg-white space-y-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-base truncate">
+                      {broker.firstName} {broker.lastName}
+                    </h3>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {broker.email}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {broker.phoneNumber}
+                    </p>
+                  </div>
+                  <CategoryBadge category={broker.activeStatus ?? "Active"} />
+                </div>
+
+                <StatusPicker broker={broker} />
+
+                <ViewButton brokerId={broker.id} />
+              </div>
+            );
+          })
+        ) : (
+          <div className="border rounded-lg p-8 text-center text-muted-foreground">
+            No brokers found.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="rounded-md border hidden md:flex">
         <ScrollArea type="always" className="w-1 flex-1">
           <Table>
             <TableHeader>
@@ -283,7 +326,7 @@ const ViewButton = ({ brokerId }: { brokerId: string }) => {
       variant="ghost"
       size="sm"
       onClick={() => router.push(`/admin/brokers/${brokerId}`)}
-      className="cursor-pointer bg-blue-200 hover:bg-blue-300"
+      className="cursor-pointer bg-blue-200 hover:bg-blue-300 w-full md:w-auto"
     >
       <ViewIcon className="h-4 w-4 mr-2" />
       View
@@ -348,12 +391,17 @@ const StatusPicker = ({
   return (
     <div
       className={[
-        "flex items-center gap-3 rounded-md p-3 border",
+        "flex items-center gap-2 sm:gap-3 rounded-md p-2 sm:p-3 border",
         styles.border,
         styles.chipBg,
       ].join(" ")}
     >
-      <span className={["text-sm font-medium", styles.text].join(" ")}>
+      <span
+        className={[
+          "text-xs sm:text-sm font-medium hidden sm:inline",
+          styles.text,
+        ].join(" ")}
+      >
         Status
       </span>
 
@@ -364,7 +412,7 @@ const StatusPicker = ({
       >
         <SelectTrigger
           className={[
-            "w-[180px] h-9",
+            "w-full sm:w-[180px] h-9",
             "border-2",
             styles.border,
             "bg-white",
