@@ -132,14 +132,42 @@ const FundingProductsList = ({ onEdit }: FundingProductsListProps) => {
       <div className="flex items-center py-4">
         <Input
           placeholder="Filter"
-          // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
           value={globalFilter}
-          // onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm h-10 sm:h-11"
         />
       </div>
-      <div className="overflow-hidden rounded-md border">
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => (
+            <div
+              key={row.id}
+              className="bg-white border rounded-lg p-4 shadow-sm space-y-3"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-base break-words">
+                    {row.getValue("productName")}
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-2">
+                    <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                      {row.getValue("fundingType")}
+                    </span>
+                  </p>
+                </div>
+                <ActionCell row={row} onEdit={onEdit} />
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-8 text-gray-500">No results.</div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -189,6 +217,7 @@ const FundingProductsList = ({ onEdit }: FundingProductsListProps) => {
           </TableBody>
         </Table>
       </div>
+
       <DataTablePagination table={table} />
     </div>
   );

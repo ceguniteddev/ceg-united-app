@@ -7,7 +7,7 @@ import FundingProductsPage from "./product-form";
 const FundingProductPage = () => {
   return (
     <section className="transactions">
-      <div className="transactions-header flex flex-row justify-between">
+      <div className="transactions-header flex flex-col sm:flex-row gap-3 sm:justify-between">
         <HeaderBox title="Funding Product Management" />
       </div>
 

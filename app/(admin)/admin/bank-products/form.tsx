@@ -107,8 +107,8 @@ const BankProductsForm = ({
         <form onSubmit={form.handleSubmit(onSubmit)} aria-busy={isSubmitting}>
           <fieldset disabled={isSubmitting}>
             <Card>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-4 gap-4">
+              <CardContent className="space-y-4 sm:space-y-3 p-4 sm:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <CustomFormField
                     name="bankName"
                     placeholder="Chase"
@@ -149,7 +149,7 @@ const BankProductsForm = ({
                   type="textarea"
                   label="Underwriting Notes"
                 />
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <CustomFormField
                     name="maximumFundingAmount"
                     placeholder="250,000.00"
@@ -295,7 +295,7 @@ const BankProductsForm = ({
                     options={yesNo}
                   />
 
-                  <div className="col-span-3 grid grid-cols-4 gap-4">
+                  <div className="sm:col-span-2 lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <CustomFormField
                       name="membershipRequiredBeforeApplicationRequired"
                       placeholder=""
@@ -433,16 +433,16 @@ const BankProductsForm = ({
                   <CustomFormField
                     name="webUrl"
                     placeholder=""
-                    className="col-span-2"
+                    className="sm:col-span-2"
                     label="* Web URL"
                   />
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-between">
+              <CardFooter className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between p-4 sm:p-6">
                 <Button
                   type="button"
                   variant="outline"
-                  className="cursor-pointer"
+                  className="w-full sm:w-auto h-11 cursor-pointer"
                   onClick={() => setOpen(false)}
                 >
                   <XCircleIcon className="h-4 w-4" color="red" />
@@ -452,7 +452,7 @@ const BankProductsForm = ({
                   <Button
                     type="submit"
                     variant="outline"
-                    className="cursor-pointer bg-green-200 hover:bg-green-300"
+                    className="w-full sm:w-auto h-11 cursor-pointer bg-green-200 hover:bg-green-300"
                   >
                     {isSubmitting ? (
                       <>
@@ -471,7 +471,7 @@ const BankProductsForm = ({
                     type="button"
                     variant="outline"
                     onClick={handleOnApprove}
-                    className="cursor-pointer bg-green-200 hover:bg-green-300"
+                    className="w-full sm:w-auto h-11 cursor-pointer bg-green-200 hover:bg-green-300"
                   >
                     {isSubmitting ? (
                       <>
