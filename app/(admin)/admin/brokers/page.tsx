@@ -26,20 +26,21 @@ const BrokersPage = () => {
         }
         description="Send an invitation email to a new broker with their registration link"
         descriptionClassName="text-muted-foreground text-sm"
-        className="w-4/12 flex flex-col items-start justify-start"
+        className="w-[95vw] max-w-[95vw] sm:w-11/12 md:w-8/12 lg:w-6/12 xl:w-4/12"
       >
         <InviteBrokerForm setOpen={setOpen} />
       </ResponsiveDialog>
+
       <div className="home-content">
         <header className="home-header">
-          <div className="flex flex-row justify-between">
+          <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
             <HeaderBox
               title="Broker Management"
               subtext="Invite brokers to join your referral program"
             />
             <Button
               variant={"outline"}
-              className="bg-blue-200 hover:bg-blue-300 cursor-pointer"
+              className="bg-blue-200 hover:bg-blue-300 cursor-pointer w-full sm:w-auto"
               onClick={() => setOpen(true)}
             >
               <PlusIcon className="h-4 w-4" />
