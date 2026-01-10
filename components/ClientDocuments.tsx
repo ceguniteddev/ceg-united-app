@@ -59,73 +59,75 @@ const DocumentPreviewer = ({
     );
   }
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-3">
       {docs.map((doc) => {
         const isReadOnly = doc.path.toLowerCase().includes("asset-report");
         return (
           <div
             key={doc.path}
-            className="border rounded-lg p-3 sm:p-4 shadow-sm"
+            className="border rounded-lg p-3 shadow-sm bg-white hover:shadow-md transition-shadow overflow-hidden"
           >
-            <div className="flex justify-between items-start mb-3 sm:mb-4 gap-2">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold break-words text-sm sm:text-base">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
+              <div className="flex-1 min-w-0 max-w-full">
+                <h3 className="font-semibold text-sm leading-tight truncate overflow-hidden text-ellipsis w-full">
                   {doc.name.split("/").pop()}
                 </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                   {doc.contentType ?? "unknown"} •{" "}
                   {(doc.size / 1024).toFixed(1)} KB
                 </p>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 sm:gap-0.5">
                 <Button
                   variant="ghost"
-                  className="cursor-pointer touch-manipulation flex-shrink-0"
-                  size="icon"
+                  className="cursor-pointer touch-manipulation flex-shrink-0 h-8 w-8 p-0"
                   asChild
                 >
                   <a
                     href={doc.downloadUrl || doc.signedUrl}
                     download={doc.name.split("/").pop()}
                   >
-                    <Download className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <Download className="h-4 w-4" />
                   </a>
                 </Button>
                 {!isReadOnly && (
                   <Button
                     variant="ghost"
-                    className="cursor-pointer touch-manipulation flex-shrink-0"
-                    size="icon"
+                    className="cursor-pointer touch-manipulation flex-shrink-0 h-8 w-8 p-0"
                     onClick={() => onDelete(doc)}
                     disabled={isDeleting}
                   >
-                    <Trash2Icon className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
+                    <Trash2Icon className="h-4 w-4 text-red-500" />
                   </Button>
                 )}
               </div>
             </div>
 
             {doc.contentType?.startsWith("image/") ? (
-              <ImageZoom>
-                <Image
-                  src={doc.signedUrl}
-                  alt={doc.name}
-                  className="w-full h-64 sm:h-80 md:h-96 object-contain rounded-md border"
-                  width={500}
-                  height={500}
-                  unoptimized
-                />
-              </ImageZoom>
+              <div className="overflow-hidden rounded-md">
+                <ImageZoom>
+                  <Image
+                    src={doc.signedUrl}
+                    alt={doc.name}
+                    className="w-full h-48 sm:h-64 lg:h-80 object-contain rounded-md border bg-gray-50"
+                    width={500}
+                    height={500}
+                    unoptimized
+                  />
+                </ImageZoom>
+              </div>
             ) : doc.contentType === "application/pdf" ? (
-              <iframe
-                src={`${doc.signedUrl}#toolbar=1&view=FitH`}
-                title={doc.name}
-                className="w-full h-64 sm:h-80 md:h-96 rounded-md border"
-                loading="lazy"
-              />
+              <div className="overflow-hidden rounded-md">
+                <iframe
+                  src={`${doc.signedUrl}#toolbar=1&view=FitH`}
+                  title={doc.name}
+                  className="w-full h-48 sm:h-64 lg:h-80 rounded-md border bg-white"
+                  loading="lazy"
+                />
+              </div>
             ) : (
-              <div className="flex items-center justify-center h-64 sm:h-80 md:h-96 bg-muted rounded-md">
-                <p className="text-xs sm:text-sm text-muted-foreground">
+              <div className="flex items-center justify-center h-48 sm:h-64 lg:h-80 bg-muted rounded-md overflow-hidden">
+                <p className="text-xs text-muted-foreground">
                   Preview unavailable
                 </p>
               </div>
@@ -210,10 +212,10 @@ export default function ClientDocuments({ userId }: { userId: string }) {
         "Select Document Type";
 
   return (
-    <main className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-4">
+    <main className="flex flex-col gap-4 sm:gap-5 p-3 sm:p-5 max-w-full overflow-hidden">
       {/* Document Type Dropdown */}
       <div className="w-full">
-        <h2 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">
+        <h2 className="text-base sm:text-lg font-semibold mb-3">
           Select Document Type
         </h2>
         <Select
@@ -227,35 +229,37 @@ export default function ClientDocuments({ userId }: { userId: string }) {
             }
           }}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full h-10 sm:h-11">
             <SelectValue placeholder="Select a document type">
               <div className="flex items-center gap-2">
                 {selectedDocType !== "OTHER" ? (
                   <>
-                    <selectedDocType.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span className="flex-grow text-left">
+                    <selectedDocType.icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-grow text-left text-sm">
                       {selectedDocTypeLabel}
                     </span>
                     {(() => {
                       const uploadedDocs =
                         requiredDocsMap.get(selectedDocType.id) || [];
                       return uploadedDocs.length > 0 ? (
-                        <div className="flex items-center gap-1 sm:gap-2">
-                          <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-muted-foreground text-background">
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium">
                             {uploadedDocs.length}
                           </span>
-                          <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
                         </div>
                       ) : (
-                        <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                        <XCircle className="h-4 w-4 text-gray-400 flex-shrink-0" />
                       );
                     })()}
                   </>
                 ) : (
                   <>
-                    <FolderArchive className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span className="flex-grow text-left">Other Documents</span>
-                    <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-muted-foreground text-background">
+                    <FolderArchive className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-grow text-left text-sm">
+                      Other Documents
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium flex-shrink-0">
                       {otherDocs.length}
                     </span>
                   </>
@@ -263,35 +267,39 @@ export default function ClientDocuments({ userId }: { userId: string }) {
               </div>
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="max-h-[50vh] overflow-y-auto">
+          <SelectContent className="max-h-[60vh] overflow-y-auto">
             {DOCUMENT_TYPES.map((docType) => {
               const uploadedDocs = requiredDocsMap.get(docType.id) || [];
               const isUploaded = uploadedDocs.length > 0;
 
               return (
-                <SelectItem key={docType.id} value={docType.id}>
+                <SelectItem
+                  key={docType.id}
+                  value={docType.id}
+                  className="py-3"
+                >
                   <div className="flex items-center gap-2 w-full">
-                    <docType.icon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                    <span className="flex-grow">{docType.title}</span>
+                    <docType.icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-grow text-sm">{docType.title}</span>
                     {isUploaded ? (
-                      <div className="flex items-center gap-1 sm:gap-2">
-                        <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-muted-foreground text-background">
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium">
                           {uploadedDocs.length}
                         </span>
-                        <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
                       </div>
                     ) : (
-                      <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                      <XCircle className="h-4 w-4 text-gray-400 flex-shrink-0" />
                     )}
                   </div>
                 </SelectItem>
               );
             })}
-            <SelectItem value="OTHER">
+            <SelectItem value="OTHER" className="py-3">
               <div className="flex items-center gap-2 w-full">
-                <FolderArchive className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span className="flex-grow">Other Documents</span>
-                <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-muted-foreground text-background">
+                <FolderArchive className="h-4 w-4 flex-shrink-0" />
+                <span className="flex-grow text-sm">Other Documents</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium flex-shrink-0">
                   {otherDocs.length}
                 </span>
               </div>
@@ -301,7 +309,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
       </div>
 
       {/* Document Display or Upload Section */}
-      <section className="w-full">
+      <section className="w-full max-w-full overflow-hidden">
         {selectedDocType === "OTHER" ? (
           // --- View for "Other Documents" ---
           <div>
@@ -333,21 +341,23 @@ export default function ClientDocuments({ userId }: { userId: string }) {
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-base sm:text-lg">
+              Are you absolutely sure?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
               This action cannot be undone. This will permanently delete the
               file
-              <span className="font-bold block mt-2 break-all">
+              <span className="font-bold block mt-2 break-all text-xs sm:text-sm">
                 {docToDelete?.name.split("/").pop()}
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
-              className="cursor-pointer"
+              className="cursor-pointer w-full sm:w-auto"
               onClick={() => setIsDeleteDialogOpen(false)}
               disabled={isDeleting}
             >
@@ -355,7 +365,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
             </Button>
             <Button
               variant="destructive"
-              className="cursor-pointer"
+              className="cursor-pointer w-full sm:w-auto"
               onClick={handleConfirmDelete}
               disabled={isDeleting}
             >

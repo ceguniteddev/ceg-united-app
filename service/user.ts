@@ -13,7 +13,7 @@ import {
 } from "@/lib/fireabase-admin";
 import { logInfo } from "@/lib/logger";
 import { sendMail } from "@/lib/nodemailer";
-import { ChangePassword, CurrentUser, Role } from "@/schema";
+import { ChangePassword, CurrentUser, Role, Business } from "@/schema";
 import { noteSchema, NoteSchema } from "@/schema/notes";
 
 import { User, UserActiveStatus, UserWithId } from "@/schema/registration";
@@ -22,6 +22,13 @@ import { cookies, headers } from "next/headers";
 import { FieldPath } from "firebase-admin/firestore";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { applyFunding } from "./apply-funding";
+import { recordBusiness } from "./business";
+import {
+  sendClientFundingApplicationAuditAnalysis,
+  sendClientFundingApplicationCongratsMessage,
+} from "./crs";
+import { RegistrationType } from "@/schema/users";
+import { generateEmailVerificationToken } from "./email-verification";
 
 export const getUserRecordByEmail = async (email: string) => {
   const authentication = authenticationAdmin();
@@ -112,17 +119,17 @@ export const getUserById = async (id: string): Promise<UserWithId | null> => {
 };
 
 export const registerUser = async ({
-  value,
-  isBrokerRegistration,
+  user,
+  registrationType,
   brokerName,
-  isAdminRegistration,
+  fundingData,
 }: {
-  value: User;
-  isBrokerRegistration?: boolean;
+  user: User;
+  registrationType: RegistrationType;
   brokerName?: string;
-  isAdminRegistration?: boolean;
+  fundingData?: ApplyFunding;
 }) => {
-  const userRecord = await getUserRecordByEmail(value.email);
+  const userRecord = await getUserRecordByEmail(user.email);
 
   if (userRecord) {
     throw new AppError("Cannot register duplicate email.");
@@ -132,75 +139,201 @@ export const registerUser = async ({
 
   const collectionRef = db.collection(USER_COLLECTION);
 
-  const userData = { ...value };
+  const userData = { ...user };
   delete (userData as { password?: string }).password;
 
   const docRef = await collectionRef.add(userData);
   const data = (await docRef.get()).data();
 
-  if (userData.employmentPayPerMonth && userData.employmentPayPerMonth > 0) {
-    const fundApplication: ApplyFunding = {
+  // Create business record first if business data exists
+  let businessId: string | undefined;
+  let referenceNumber: string | undefined;
+  if (fundingData?.businessName && fundingData.businessName.trim().length > 0) {
+    const businessData: Business = {
       userId: docRef.id,
-      employmentPayPerMonth: userData.employmentPayPerMonth,
-      payPerMonth: userData.payPerMonth,
-      // rentOrMortgage: userData.rentOrMortgage,
-      appliedDate: new Date(),
-      status: "New",
-      addressStreet: userData.addressStreet,
-      addressCity: userData.addressCity,
-      addressState: userData.addressState,
-      addressPostal: userData.addressPostal,
-      houseNumber: userData.houseNumber,
-      interestedProduct: "Knowledge Community",
-      fundingType: "Community",
+      businessName: fundingData.businessName,
+      businessStreetAddress: fundingData.businessStreetAddress ?? "",
+      businessStreetHouseNumber: fundingData.businessStreetHouseNumber,
+      businessCityAddress: fundingData.businessCityAddress ?? "",
+      businessStateAddress: fundingData.businessStateAddress ?? "",
+      businessPostalAddress: fundingData.businessPostalAddress ?? "",
+      employerIdentificationNumber:
+        fundingData.employerIdentificationNumber ?? "",
+      businessPhoneNumber: fundingData.businessPhoneNumber ?? "",
+      businessEmail: fundingData.businessEmail ?? "",
+      businessWebsite: fundingData.businessWebsite,
+      socialMedia: fundingData.socialMedia,
     };
 
-    await applyFunding({ value: fundApplication });
+    // Record business and get the ID
+    const businessDocRef = await recordBusiness(businessData);
+    businessId = businessDocRef;
+  }
+
+  // Create funding application if fundingData is provided
+  if (fundingData) {
+    const fundApplication: ApplyFunding = {
+      ...fundingData,
+      userId: docRef.id,
+      businessId: businessId, // Set the businessId from created business
+      appliedDate: fundingData.appliedDate || new Date(),
+      status: fundingData.status || "New",
+    };
+    const result = await applyFunding({
+      value: fundApplication,
+      registrationType,
+    });
+    referenceNumber = result.referenceNumber;
+    logInfo("Funding application created", { referenceNumber });
+
+    // Store referenceNumber for later use in email verification
+    if (
+      user.role === "Client" &&
+      referenceNumber &&
+      registrationType === "Self"
+    ) {
+      // We'll pass referenceNumber to the verification token
+      // Analysis will be triggered AFTER email verification
+      fundingData.referenceNumber = referenceNumber;
+    }
+
+    if (
+      user.role === "Client" &&
+      referenceNumber &&
+      registrationType !== "Self"
+    ) {
+      // For non-self registrations (Broker/Admin), trigger analysis immediately
+      // Send Client Congrats Message
+      await sendClientFundingApplicationCongratsMessage({
+        userId: docRef.id,
+        referenceNumber,
+      });
+
+      // Send Client Audit Analysis
+      await sendClientFundingApplicationAuditAnalysis({
+        userId: docRef.id,
+        referenceNumber,
+      });
+    }
+
+    // Upload documents to Firebase Storage if present
+    const bucket = storageAdmin();
+
+    // Upload bank statements
+    if (fundingData.bankStatements && fundingData.bankStatements.length > 0) {
+      for (const doc of fundingData.bankStatements) {
+        try {
+          // Extract base64 data (remove data:application/pdf;base64, prefix)
+          const base64Data = doc.base64.split(",")[1];
+          const buffer = Buffer.from(base64Data, "base64");
+          const fileName = `BANK_STATEMENTS_${doc.name}`;
+          const filePath = `documents/${docRef.id}/${fileName}`;
+
+          const file = bucket.file(filePath);
+          await file.save(buffer, {
+            contentType: doc.type,
+            metadata: {
+              uploadedAt: new Date().toISOString(),
+              originalName: doc.name,
+            },
+          });
+        } catch (error) {
+          console.error("Error uploading bank statement:", error);
+          // Continue with other documents even if one fails
+        }
+      }
+    }
+
+    // Upload driver licenses
+    if (
+      fundingData.driverLicenseDocuments &&
+      fundingData.driverLicenseDocuments.length > 0
+    ) {
+      for (const doc of fundingData.driverLicenseDocuments) {
+        try {
+          // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix)
+          const base64Data = doc.base64.split(",")[1];
+          const buffer = Buffer.from(base64Data, "base64");
+          const fileName = `DRIVERS_LICENSE_${doc.name}`;
+          const filePath = `documents/${docRef.id}/${fileName}`;
+
+          const file = bucket.file(filePath);
+          await file.save(buffer, {
+            contentType: doc.type,
+            metadata: {
+              uploadedAt: new Date().toISOString(),
+              originalName: doc.name,
+            },
+          });
+        } catch (error) {
+          console.error("Error uploading driver license:", error);
+          // Continue with other documents even if one fails
+        }
+      }
+    }
   }
 
   const authAdmin = authenticationAdmin();
 
   await authAdmin.createUser({
     uid: docRef.id,
-    email: value.email,
-    password: value.password,
-    displayName: `${value.firstName} ${value.lastName}`,
+    email: user.email,
+    password: user.password,
+    displayName: `${user.firstName} ${user.lastName}`,
     disabled: false,
     emailVerified: false,
   });
 
-  const link = await authAdmin.generateEmailVerificationLink(value.email);
+  logInfo("Generating token...", {
+    userId: docRef.id,
+    email: user.email,
+    referenceNumber: referenceNumber,
+    registrationType,
+  });
 
-  let requestBody = getVerifyEmailBody(link);
-  if (isBrokerRegistration && brokerName) {
+  // Generate custom verification token
+  const verificationToken = await generateEmailVerificationToken({
+    userId: docRef.id,
+    email: user.email,
+    referenceNumber: referenceNumber,
+    registrationType,
+  });
+
+  const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email/${verificationToken}`;
+  logInfo("Generated email verification link:", { verificationLink });
+
+  let requestBody = "";
+  if (registrationType === "Broker" && brokerName) {
     requestBody = getBrokerInvitationToClientBody({
-      clientName: `${value.firstName} ${value.lastName}`,
-      email: value.email,
-      temporaryPassword: value.password,
+      clientName: `${user.firstName} ${user.lastName}`,
+      email: user.email,
+      temporaryPassword: user.password,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
       brokerName: brokerName,
-      verificationLink: link,
+      verificationLink: verificationLink,
     });
-  } else if (isAdminRegistration) {
+  } else if (registrationType === "Admin") {
     requestBody = getAdminInvitationToClientBody({
-      clientName: `${value.firstName} ${value.lastName}`,
-      email: value.email,
-      temporaryPassword: value.password,
+      clientName: `${user.firstName} ${user.lastName}`,
+      email: user.email,
+      temporaryPassword: user.password,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
-      verificationLink: link,
+      verificationLink: verificationLink,
     });
+  } else {
+    requestBody = getVerifyEmailBody(verificationLink);
   }
   await sendMail({
-    emailTo: value.email,
+    emailTo: user.email,
     subject: "Verify Email",
     bodyHTML: requestBody,
   });
 
-  const registrationBody = getNewRegistrationBody(value);
+  const registrationBody = getNewRegistrationBody(user);
 
   await sendMail({
     emailTo: process.env.NEW_REGISTRATION_EMAIL_NOTIF!,
-    subject: `New Registration - ${value.firstName} ${value.lastName}`,
+    subject: `New Registration - ${user.firstName} ${user.lastName}`,
     bodyHTML: registrationBody,
   });
 

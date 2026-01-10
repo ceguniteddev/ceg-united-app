@@ -18,10 +18,13 @@ export default function AdminLayout({
 }) {
   return (
     <div className="flex h-dvh w-full overflow-hidden font-inter">
-      <Sidebar />
+      {/* Hide sidebar on mobile, show on md and up */}
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
       <div className="flex flex-1 min-h-0 flex-col">
         <MobileNavAdmin />
-        <div className="flex-1 min-h-0 overflow-y-auto md:pt-0 pt-[60px]">
+        <div className="flex-1 min-h-0 overflow-y-auto md:pt-0 pt-[60px] px-4 md:px-6 py-4 md:py-6 pb-20">
           {children}
         </div>
       </div>

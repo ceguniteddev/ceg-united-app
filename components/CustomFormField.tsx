@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Edit, X, CalendarIcon } from "lucide-react";
 import { format, isValid, parse } from "date-fns";
 import { cn, formatAmount } from "@/lib/utils";
@@ -30,6 +31,7 @@ import { MultiSelect } from "./multi-select";
 import { SearchableInput } from "./input-search";
 import { NumberInput } from "./input-number";
 import dynamic from "next/dynamic";
+import { Button } from "./ui/button";
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 interface FormFieldProps {
   name: string;
@@ -43,6 +45,7 @@ interface FormFieldProps {
     | "number"
     | "select"
     | "switch"
+    | "checkbox"
     | "password"
     | "checkbox-group"
     | "multi-select"
@@ -187,6 +190,17 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
           </div>
         );
 
+      case "checkbox":
+        return (
+          <Checkbox
+            checked={field.value}
+            onCheckedChange={field.onChange}
+            id={name}
+            disabled={disabled}
+            className="bg-white border-2 border-gray-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+          />
+        );
+
       case "date-picker":
         fieldValue = field.value;
         if (!field.value) {
@@ -297,37 +311,58 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
         );
       case "select":
         return (
-          <Select
-            value={field.value || (initialValue as string)}
-            defaultValue={field.value || (initialValue as string)}
-            onValueChange={handleSelectChange}
-            disabled={disabled}
-          >
-            <FormControl>
-              <SelectTrigger
-                className={cn(
-                  `w-full ${inputClassName}`,
-                  fieldState?.error && "border-red-500"
-                )}
-              >
-                <SelectValue placeholder={placeholder || "Select an option"} />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent
-              className="w-full shadow max-h-[300px] overflow-y-auto z-50"
-              position="popper"
+          <div className="relative">
+            <Select
+              value={field.value || (initialValue as string)}
+              defaultValue={field.value || (initialValue as string)}
+              onValueChange={handleSelectChange}
+              disabled={disabled}
             >
-              {options?.map((option) => (
-                <SelectItem
-                  key={option.value}
-                  value={option.value}
-                  className={`cursor-pointer hover:!bg-gray-100 `}
+              <FormControl>
+                <SelectTrigger
+                  value={field.value || (initialValue as string)}
+                  onReset={() => {
+                    handleSelectChange("");
+                  }}
+                  className={cn(
+                    `w-full ${inputClassName}`,
+                    fieldState?.error && "border-red-500"
+                  )}
                 >
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                  <SelectValue
+                    placeholder={placeholder || "Select an option"}
+                  />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent
+                className="w-full shadow max-h-[300px] overflow-y-auto z-50"
+                position="popper"
+              >
+                {false && field.value && !disabled && (
+                  <Button
+                    className="w-full px-2"
+                    variant="secondary"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectChange("");
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
+                {options?.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className={`cursor-pointer hover:!bg-gray-100 `}
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         );
       case "multi-select":
         return (
@@ -448,24 +483,30 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
       render={({ field, fieldState }) => (
         <FormItem
           className={`${
-            type !== "switch" && type !== "checkbox-group" && "rounded-md"
+            type !== "switch" &&
+            // type !== "checkbox" &&
+            type !== "checkbox-group" &&
+            "rounded-md"
           } relative ${className}`}
         >
-          {label && type !== "switch" && type !== "checkbox-group" && (
-            <div className="flex justify-between items-center">
-              <FormLabel className={`text-sm ${labelClassName}`}>
-                {label}
-              </FormLabel>
+          {label &&
+            type !== "switch" &&
+            // type !== "checkbox" &&
+            type !== "checkbox-group" && (
+              <div className="flex justify-between items-center">
+                <FormLabel className={`text-sm ${labelClassName}`}>
+                  {label}
+                </FormLabel>
 
-              {!disabled &&
-                isIcon &&
-                type !== "file" &&
-                // type !== "multi-input" &&
-                type !== "date-picker" && (
-                  <Edit className="size-4 text-customgreys-dirtyGrey" />
-                )}
-            </div>
-          )}
+                {!disabled &&
+                  isIcon &&
+                  type !== "file" &&
+                  // type !== "multi-input" &&
+                  type !== "date-picker" && (
+                    <Edit className="size-4 text-customgreys-dirtyGrey" />
+                  )}
+              </div>
+            )}
 
           <FormControl>
             {renderFormControl(

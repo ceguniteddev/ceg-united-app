@@ -48,16 +48,16 @@ export const POST = async (request: NextRequest) => {
       denefitsSignedUp: false,
       commissionRate: 10,
 
-      addressStreet: "",
-      houseNumber: "",
-      addressCity: "",
-      addressState: "",
-      addressPostal: "",
+      // addressStreet: "",
+      // houseNumber: "",
+      // addressCity: "",
+      // addressState: "",
+      // addressPostal: "",
 
-      employmentPayPerMonth: 0,
+      // employmentPayPerMonth: 0,
     };
 
-    await registerUser({ value: user });
+    await registerUser({ user, registrationType: "Broker" });
 
     // Accept the invitation
     await acceptBrokerInvitation(invitationToken);

@@ -22,6 +22,7 @@ import {
   BanknoteArrowUp,
   AlertTriangle,
   ArrowRight,
+  PartyPopper,
 } from "lucide-react";
 import Link from "next/link";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
@@ -39,6 +40,16 @@ import { ResponsiveDialog } from "./responsive-dialog";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import CalendlyScheduler from "@/components/support-service/CalendlyScheduler";
 import ApplyFundingForm from "@/components/fundingv2/ApplyFundingForm";
+import { useGetCongrats, useMarkCongratsAsRead } from "@/hooks/congrats";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -346,10 +357,23 @@ export const ClientDashboard = ({
   );
 
   const [isOpen, setIsOpen] = useState(false);
+  const [congratsModalOpen, setCongratsModalOpen] = useState(false);
+  const [currentCongratsMessage, setCurrentCongratsMessage] = useState<{
+    id: string;
+    message: string;
+    referenceNumber: string;
+  } | null>(null);
 
-  const [isOpenFunding, setIsOpenFunding] = useState(
-    adminView === false || adminView === undefined
+  // Fetch congrats messages for the first funding application
+  const firstFundingApp = clientData?.fundingApplications?.[0];
+  const { congratsMessages } = useGetCongrats(
+    firstFundingApp?.referenceNumber || ""
   );
+  const markAsReadMutation = useMarkCongratsAsRead();
+
+  // const [isOpenFunding, setIsOpenFunding] = useState(
+  //   adminView === false || adminView === undefined
+  // );
 
   const stats = useMemo(() => {
     if (!clientData) return null;
@@ -482,6 +506,32 @@ export const ClientDashboard = ({
     }
   }, [stats, adminView]);
 
+  // Check for unread congrats messages
+  useEffect(() => {
+    if (congratsMessages && !adminView) {
+      const unreadMessages = congratsMessages.filter((msg) => !msg.isRead);
+      if (unreadMessages.length > 0 && firstFundingApp?.referenceNumber) {
+        setCurrentCongratsMessage({
+          id: unreadMessages[0].id,
+          message: unreadMessages[0].message,
+          referenceNumber: firstFundingApp.referenceNumber,
+        });
+        setCongratsModalOpen(true);
+      }
+    }
+  }, [congratsMessages, adminView, firstFundingApp?.referenceNumber]);
+
+  const handleCongratsClose = useCallback(() => {
+    if (currentCongratsMessage) {
+      markAsReadMutation.mutate({
+        referenceNumber: currentCongratsMessage.referenceNumber,
+        docId: currentCongratsMessage.id,
+      });
+    }
+    setCongratsModalOpen(false);
+    setCurrentCongratsMessage(null);
+  }, [currentCongratsMessage, markAsReadMutation]);
+
   // useEffect(() => {
   //   if (denefitsContract && denefitsContract.length > 0) {
   //     setIsOpenFunding(true);
@@ -514,7 +564,7 @@ export const ClientDashboard = ({
   return (
     <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-4 md:p-6 bg-gray-50/50 dark:bg-background">
       <header className="flex flex-col sm:flex-row items-start gap-3 sm:gap-0 sm:justify-between">
-        <ResponsiveDialog
+        {/* <ResponsiveDialog
           isOpen={isOpenFunding}
           setIsOpen={setIsOpenFunding}
           title="Apply Funding"
@@ -527,7 +577,7 @@ export const ClientDashboard = ({
             // userId={userData?.id || ""}
             userData={userData!}
           />
-        </ResponsiveDialog>
+        </ResponsiveDialog> */}
         <ResponsiveDialog
           isOpen={isOpen}
           setIsOpen={setIsOpen}
@@ -762,6 +812,38 @@ export const ClientDashboard = ({
           derogatory={stats.reportDerogatory}
         />
       </main>
+
+      {/* Congratulations Message Modal */}
+      <AlertDialog open={congratsModalOpen} onOpenChange={setCongratsModalOpen}>
+        <AlertDialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-green-100 rounded-full">
+                <PartyPopper className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+              </div>
+              <AlertDialogTitle className="text-xl sm:text-2xl">
+                Congratulations!
+              </AlertDialogTitle>
+            </div>
+            <div className="text-xs sm:text-sm text-muted-foreground">
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: currentCongratsMessage?.message || "",
+                }}
+                className="[&_p]:mb-2 sm:[&_p]:mb-3 [&_ul]:mb-2 sm:[&_ul]:mb-3 [&_ul]:ml-4 sm:[&_ul]:ml-5 [&_ul]:list-disc [&_li]:mb-1 [&_strong]:font-semibold [&_br]:block"
+              />
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <AlertDialogAction
+              onClick={handleCongratsClose}
+              className="bg-green-500 hover:bg-green-600 w-full sm:w-auto"
+            >
+              Got it, thanks!
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

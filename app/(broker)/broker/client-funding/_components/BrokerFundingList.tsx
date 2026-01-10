@@ -478,7 +478,7 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
         </TabsList>
 
         {/* Mobile Dropdown */}
-        <div className="mb-4 md:hidden">
+        <div className="md:hidden px-4 sm:px-0 mb-4">
           <Select
             value={activeTab}
             onValueChange={(value) => setActiveTab(value as StatusFilter)}
@@ -507,7 +507,7 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
         </div>
 
         <TabsContent value={activeTab} className="mt-0">
-          <div className="flex items-center py-4">
+          <div className="flex items-center py-4 px-4 sm:px-0">
             <Input
               placeholder="Search by client name, bank, or status..."
               value={globalFilter}
@@ -578,7 +578,7 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
           </div>
 
           {/* Mobile Card View */}
-          <div className="md:hidden space-y-4">
+          <div className="md:hidden space-y-4 px-4 sm:px-0">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <Card key={row.id}>

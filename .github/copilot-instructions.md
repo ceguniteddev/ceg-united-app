@@ -11,6 +11,7 @@ CEG United LLC is a Next.js 16 (App Router) financial services platform for fund
 The app uses Next.js route groups to define role-based layouts:
 
 - `app/(admin)/` - Admin dashboard with `SidebarAdmin` (see `app/(admin)/layout.tsx`)
+- `app/(broker)/` - Broker portal with `SidebarBroker` and `MobileNavBroker` (see `app/(broker)/layout.tsx`)
 - `app/(client)/` - Client portal with `Sidebar` and `UserBanners` (see `app/(client)/layout.tsx`)
 - `app/(public)/` - Public-facing pages (login, registration)
 - `app/(settings)/` - Settings pages with `SidebarSettings`
@@ -45,7 +46,30 @@ The app maintains **two separate Firebase SDK instances**:
 - **Hooks** (`hooks/`): React Query wrappers with cache keys from `constant/react-query-keys.ts`
 - **Components**: Use hooks for data fetching, never call services directly
 
-Example: `hooks/user.ts` → `useGetUser()` → queries `GET_USER` key → calls `service/user.ts::getUser()`
+Example flow from `hooks/user.ts`:
+
+```typescript
+export const useUserQuery = (id: string) => {
+  const { data: userData, isLoading } = useQuery({
+    queryKey: [GET_USER, id], // From constant/react-query-keys.ts
+    queryFn: async () => {
+      const response = await fetch(`/api/user/${id}`);
+      return await response.json();
+    },
+  });
+};
+```
+
+**Cache invalidation**: Always use `queryClient.invalidateQueries([GET_USER])` with constants from `react-query-keys.ts`.
+
+**Complete Data Flow**:
+
+1. User action in component triggers mutation
+2. Mutation calls API route (`/api/user/${id}`)
+3. API route (wrapped in `withAuth()`) validates request via `authenticateRequest()`
+4. Service function interacts with Firestore using `firestoreAdmin()` or `db`
+5. Response returns to hook, which invalidates cache
+6. Component re-renders with fresh data from React Query cache
 
 ### Collection Naming Convention
 
@@ -63,6 +87,16 @@ Examples:
 - Export named functions: `GET`, `POST`, `PUT`, `DELETE`
 - Protect with `withAuth()` wrapper: `export const GET = withAuth(async (req, context) => {...})`
 - Use helper functions from `app/api/helpers.ts`: `badRequest()`, `unauthorized()`, `internalServerError()`
+
+**API Route Example** (see `app/api/user/[userId]/route.ts`):
+
+```typescript
+export const GET = withAuth(async (request: NextRequest, { params }) => {
+  const { userId } = params;
+  const user = await getUserById(userId);
+  return NextResponse.json(user);
+});
+```
 
 ### Schema & Validation
 
@@ -90,6 +124,13 @@ npm run postinstall  # Auto-runs after npm install
 ```
 
 **Note**: The project uses `--turbopack` flag for both dev and build. Postinstall script copies TinyMCE from node_modules to public folder (see `postinstall.mjs`).
+
+**Next.js Configuration** (see `next.config.ts`):
+
+- `output: "standalone"` for containerized deployments (Docker)
+- External packages: `@sparticuz/chromium`, `puppeteer-core` for PDF generation
+- Image optimization for `storage.googleapis.com`
+- Powered-by header disabled for security
 
 ## Key Integrations
 
@@ -185,6 +226,7 @@ Admin-only components should use `withAdminGuard()` HOC from `components/wrapper
 5. **Route protection**: API routes need `withAuth()`, pages use `useAuth()` with redirect logic
 6. **Type safety**: Leverage Zod schemas for both validation and TypeScript types
 7. **Global types**: Use `types/index.d.ts` for global type declarations (e.g., `DropdownOption`, `AdminStatistics`)
+8. **Build**: Use `npm run build` to catch type errors before deployment
 
 ## Documentation
 

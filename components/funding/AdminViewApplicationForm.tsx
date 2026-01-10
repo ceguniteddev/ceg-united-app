@@ -90,10 +90,6 @@ export default function FundingApplicationView({ data }: Props) {
     (x) => x.value === data.personalTaxes
   );
 
-  const businessTaxesOption = businessTaxes.find(
-    (x) => x.value === data.businessTaxes
-  );
-
   return (
     <Card>
       <CardHeader>
@@ -153,6 +149,77 @@ export default function FundingApplicationView({ data }: Props) {
 
         <Separator />
 
+        {/* Auto Loan Specific Fields */}
+        {data.interestedProduct === "Auto Loan" && (
+          <>
+            <section>
+              <h3 className="text-sm font-semibold mb-3">Auto Loan Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field
+                  label="Vehicle Price"
+                  value={currency(data.vehiclePrice)}
+                />
+                <Field
+                  label="Purchase Source"
+                  value={data.vehiclePurchaseSource}
+                />
+                <Field label="VIN Number" value={data.vehicleVIN} />
+                <Field
+                  label="Financing Type"
+                  value={data.vehicleFinancingType}
+                />
+              </div>
+            </section>
+            <Separator />
+          </>
+        )}
+
+        {/* Community Specific Fields */}
+        {data.fundingType?.includes("Community") && (
+          <>
+            <section>
+              <h3 className="text-sm font-semibold mb-3">Community</h3>
+              <div className="grid grid-cols-1 gap-4">
+                <Field
+                  label="Reason for Joining Community"
+                  value={data.reasonForJoiningCommunity}
+                />
+              </div>
+            </section>
+            <Separator />
+          </>
+        )}
+
+        {/* Tradelines Specific Fields */}
+        {data.interestedProduct?.includes("Tradelines") && (
+          <>
+            <section>
+              <h3 className="text-sm font-semibold mb-3">
+                Tradelines Credentials
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field
+                  label="Experian Username"
+                  value={data.experianUsername}
+                />
+                <Field
+                  label="Experian Password"
+                  value={data.experianPassword ? "••••••••" : "—"}
+                />
+                <Field
+                  label="Credit Karma Username"
+                  value={data.creditKarmaUsername}
+                />
+                <Field
+                  label="Credit Karma Password"
+                  value={data.creditKarmaPassword ? "••••••••" : "—"}
+                />
+              </div>
+            </section>
+            <Separator />
+          </>
+        )}
+
         {(isBusinessFunding || data.businessName) && (
           <>
             <section>
@@ -188,7 +255,19 @@ export default function FundingApplicationView({ data }: Props) {
                 <Field label="Website" value={data.businessWebsite} />
                 <Field label="Email" value={data.businessEmail} />
                 <Field label="Phone" value={data.businessPhoneNumber} />
-                <Field label="Social Media" value={data.socialMedia} />
+                <Field
+                  label="Social Media"
+                  value={
+                    data.socialMedia
+                      ?.map((sm, idx) =>
+                        sm?.platform && sm?.handle
+                          ? `${sm.platform}: ${sm.handle}`
+                          : null
+                      )
+                      .filter(Boolean)
+                      .join(", ") || "—"
+                  }
+                />
                 <Field label="Street" value={data.businessStreetAddress} />
                 <Field
                   label="Apartment/Suite/Unit/House Number"
@@ -210,13 +289,28 @@ export default function FundingApplicationView({ data }: Props) {
                   value={currency(data.businessGrossProjectedRevenue1)}
                 />
                 <Field
+                  label="Filed with IRS (Year 1)"
+                  value={data.businessFiledWithIRS1 ? "Yes" : "No"}
+                />
+                <div />
+                <Field
                   label="Gross Projected Revenue (Year 2)"
                   value={currency(data.businessGrossProjectedRevenue2)}
                 />
                 <Field
+                  label="Filed with IRS (Year 2)"
+                  value={data.businessFiledWithIRS2 ? "Yes" : "No"}
+                />
+                <div />
+                <Field
                   label="Gross Projected Revenue (Year 3)"
                   value={currency(data.businessGrossProjectedRevenue3)}
                 />
+                <Field
+                  label="Filed with IRS (Year 3)"
+                  value={data.businessFiledWithIRS3 ? "Yes" : "No"}
+                />
+                <div />
                 <Field
                   label="Projected Profit (Year 1)"
                   value={currency(data.businessProjectedProfit1)}
@@ -231,29 +325,58 @@ export default function FundingApplicationView({ data }: Props) {
                 />
               </div>
             </section>
+
             <Separator />
-            <section>
-              <h3 className="text-sm font-semibold mb-3">Business Taxes</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field
-                  label="Filed Business Taxes"
-                  value={businessTaxesOption?.label}
-                />
-                <Field
-                  label="Taxes Year 1"
-                  value={currency(data.businessTaxes1)}
-                />
-                <Field
-                  label="Taxes Year 2"
-                  value={currency(data.businessTaxes2)}
-                />
-                <Field
-                  label="Taxes Year 3"
-                  value={currency(data.businessTaxes3)}
-                />
-              </div>
-            </section>
-            <Separator />
+
+            {/* Bridge Loan Application (Business Income Based Funding) */}
+            {data.interestedProduct === "Business Income Based Funding" && (
+              <>
+                <section>
+                  <h3 className="text-sm font-semibold mb-3">
+                    Bridge Loan Application Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="Use of Funds" value={data.useOfFunds} />
+                    <Field
+                      label="Annual Business Revenue"
+                      value={currency(data.annualBusinessRevenue)}
+                    />
+                    <Field
+                      label="Avg. Monthly Credit Card Sales"
+                      value={currency(data.avgMonthlyCreditCardSales)}
+                    />
+                    <Field
+                      label="Avg. Daily Bank Balance"
+                      value={currency(data.avgDailyBankBalance)}
+                    />
+                    <Field
+                      label="Business Property Type"
+                      value={data.businessPropertyType}
+                    />
+                    <Field label="Landlord Name" value={data.landlordName} />
+                    <Field label="Landlord Phone" value={data.landlordPhone} />
+                    <Field
+                      label="Monthly Payment"
+                      value={currency(data.monthlyPayment)}
+                    />
+                    <Field
+                      label="Is this a seasonal business?"
+                      value={data.isSeasonalBusiness}
+                    />
+                    <Field
+                      label="Any outstanding advances?"
+                      value={data.hasOutstandingAdvances}
+                    />
+
+                    <Field
+                      label="Who Referred You?"
+                      value={data.whoReferredYou}
+                    />
+                  </div>
+                </section>
+                <Separator />
+              </>
+            )}
           </>
         )}
 

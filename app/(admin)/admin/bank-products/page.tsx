@@ -20,15 +20,15 @@ const BankProductsPage = () => {
         title={`Bank Product Form`}
         description=""
         descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-8/12 flex flex-col items-start justify-start min-h-screen "
+        className="w-full max-w-full sm:w-11/12 sm:max-w-5xl lg:w-8/12 max-h-[90vh] overflow-y-auto"
       >
         <BankProductsForm setOpen={setOpen} />
       </ResponsiveDialog>
-      <div className="transactions-header flex flex-row justify-between">
+      <div className="transactions-header flex flex-col sm:flex-row gap-3 sm:justify-between">
         <HeaderBox title="Bank Product Management" />
         <Button
           variant={"outline"}
-          className="bg-blue-200 hover:bg-blue-300 cursor-pointer"
+          className="w-full sm:w-auto h-11 bg-blue-200 hover:bg-blue-300 cursor-pointer"
           onClick={() => setOpen(true)}
         >
           <PlusIcon className="h-4 w-4" />

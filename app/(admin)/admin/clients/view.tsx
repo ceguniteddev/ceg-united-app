@@ -54,6 +54,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { genderTypes } from "@/schema";
 import { registrationSchema } from "@/schema/registration";
+import { cn } from "@/lib/utils";
 
 function toDate(d?: string | Date) {
   if (!d) return undefined;
@@ -92,40 +93,42 @@ const ClientData = ({
     .join(" ");
 
   return (
-    <main className="mx-auto w-full">
-      <Card className="max-w-full overflow-hidden">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <CardTitle className="text-xl sm:text-2xl gap-2 flex items-center">
-              <span>Personal Information</span>
+    <main className="mx-auto w-full px-2 sm:px-0">
+      <Card className="max-w-full overflow-hidden border-none shadow-sm">
+        <CardHeader className="pb-3 px-4 sm:px-5">
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900">
+                Personal Information
+              </CardTitle>
               {!isBrokerView && (
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => setEditModalOpen(true)}
-                  className="cursor-pointer"
+                  className="cursor-pointer h-8 px-3 hover:bg-blue-300 bg-blue-200"
                 >
-                  <Edit2Icon className="h-4 w-4" />
-                  Edit
+                  <Edit2Icon className="h-3.5 w-3.5 mr-1.5" />
+                  <span className="text-xs font-medium">Edit</span>
                 </Button>
               )}
-            </CardTitle>
-            <div className="flex flex-col sm:flex-row gap-2">
-              {!isBrokerView && <DenefitsContract user={user} />}
             </div>
-          </div>
-          {!isBrokerView && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
-              <RefreshCRSData user={user} />
-              <div className="flex flex-col sm:flex-row gap-3">
-                <PremiumStatusPicker user={user} />
-                <StatusPicker user={user} />
+            {!isBrokerView && (
+              <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                  <RefreshCRSData user={user} />
+                  <DenefitsContract user={user} />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                  <PremiumStatusPicker user={user} />
+                  <StatusPicker user={user} />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="px-4 sm:px-5 py-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Info label="Name" value={name} />
             <Info label="SSN" value={user.ssn} />
@@ -164,16 +167,14 @@ export default ClientData;
 
 function Info({ label, value }: { label: string; value?: string }) {
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-3 sm:p-4">
-        <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-          {label}
-        </div>
-        <div className="mt-1 text-sm break-words text-gray-900">
-          {value || "—"}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="group hover:bg-slate-50 rounded-lg p-3.5 transition-all duration-200 border border-gray-200 bg-white shadow-sm hover:shadow">
+      <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600 mb-2">
+        {label}
+      </div>
+      <div className="text-base font-semibold break-words text-gray-900">
+        {value || <span className="text-gray-400">—</span>}
+      </div>
+    </div>
   );
 }
 
@@ -249,16 +250,16 @@ const PremiumStatusPicker = ({ user }: { user: UserWithId }) => {
   return (
     <div
       className={[
-        "flex flex-row items-center gap-3 rounded-md p-3 border w-full sm:w-auto",
+        "flex flex-row items-center justify-between rounded-lg px-3 py-2 border w-full sm:flex-1 transition-all duration-200",
         isPremium
-          ? "border-purple-300 bg-purple-50"
-          : "border-blue-300 bg-blue-50",
+          ? "border-purple-200 bg-purple-50/50 shadow-sm"
+          : "border-gray-200 bg-white",
       ].join(" ")}
     >
       <span
         className={[
-          "text-sm font-medium",
-          isPremium ? "text-purple-700" : "text-gray-700",
+          "text-xs font-semibold",
+          isPremium ? "text-purple-700" : "text-gray-600",
         ].join(" ")}
       >
         Premium Client
@@ -267,7 +268,7 @@ const PremiumStatusPicker = ({ user }: { user: UserWithId }) => {
         checked={isPremium}
         onCheckedChange={handleToggle}
         disabled={isUpdating}
-        className="data-[state=checked]:bg-purple-600"
+        className="data-[state=checked]:bg-purple-600 scale-90 cursor-pointer"
       />
     </div>
   );
@@ -295,28 +296,38 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
   return (
     <div
       className={[
-        "flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 rounded-md p-3 border w-full sm:w-auto",
-        styles.border, // border color
-        styles.chipBg, // container background
+        "flex flex-col sm:flex-row items-start sm:items-center gap-2 rounded-lg px-3 py-2 border w-full transition-all duration-200 shadow-sm",
+        styles.border,
+        styles.chipBg,
       ].join(" ")}
     >
-      <span className={["text-sm font-medium", styles.text].join(" ")}>
+      <span
+        className={[
+          "text-xs font-semibold whitespace-nowrap",
+          styles.text,
+        ].join(" ")}
+      >
         Status
       </span>
 
       <Select
         disabled={!!isUpdating}
         defaultValue={user.activeStatus ?? "Active"}
+        value={user.activeStatus ?? "Active"}
         onValueChange={handleStatusChange}
       >
         <SelectTrigger
-          className={[
-            "w-full sm:w-[180px] h-9",
-            "border-2", // make color more visible
-            styles.border, // trigger border color
-            "bg-white", // readable input background
-            "focus:ring-0 focus:outline-none",
-          ].join(" ")}
+          value={user.activeStatus ?? "Active"}
+          onReset={() => {
+            handleStatusChange("Active");
+          }}
+          className={cn(
+            "w-full sm:flex-1 sm:min-w-[140px] h-8 text-xs",
+            "border",
+            styles.border,
+            "bg-white",
+            "focus:ring-0 focus:outline-none"
+          )}
         >
           <SelectValue placeholder="Status" />
         </SelectTrigger>
@@ -326,10 +337,10 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
               <div className="flex items-center gap-2">
                 {/* a little color chip */}
                 <span
-                  className={[
+                  className={cn(
                     "inline-block h-2.5 w-2.5 rounded-full",
-                    STATUS_STYLES[opt].bg, // solid dot using your bg color
-                  ].join(" ")}
+                    STATUS_STYLES[opt].bg
+                  )}
                 />
                 {opt}
               </div>
@@ -354,24 +365,25 @@ const DenefitsContract = ({ user }: { user: UserWithId }) => {
   return (
     <div
       className={[
-        "flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 rounded-md p-3 border w-full sm:w-auto",
+        "flex items-center justify-between rounded-lg px-3 py-2 border transition-all duration-200 shadow-sm",
         styles.border,
         styles.chipBg,
       ].join(" ")}
     >
-      <span className={["text-sm font-medium", styles.text].join(" ")}>
-        Denefits Contract Created?
+      <span className={["text-xs font-semibold", styles.text].join(" ")}>
+        Denefits Contract
       </span>
 
-      <div className="flex items-center gap-2">
-        {/* a little color chip */}
+      <div className="flex items-center gap-1.5">
         <span
           className={[
-            "inline-block h-2.5 w-2.5 rounded-full",
+            "inline-block h-2 w-2 rounded-full",
             DENEFITS_CONTRACT_STYLES[result || "No"].bg,
           ].join(" ")}
         />
-        {result}
+        <span className={["text-xs font-medium", styles.text].join(" ")}>
+          {result}
+        </span>
       </div>
     </div>
   );
@@ -409,15 +421,6 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
     state: "",
     postalCode: "",
   });
-
-  React.useEffect(() => {
-    setAddressInfo({
-      addressLine1: user.addressStreet || "",
-      city: user.addressCity || "",
-      state: user.addressState || "",
-      postalCode: user.addressPostal || "",
-    });
-  }, [user]);
 
   const handleRefreshCRSData = useCallback(async () => {
     const hasSelectedBureaus =
@@ -466,14 +469,12 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
   return (
     <>
       <Button
-        variant={"ghost"}
-        className="w-full sm:w-auto cursor-pointer bg-blue-200 hover:bg-blue-300"
+        variant="outline"
+        className="w-full sm:w-auto cursor-pointer bg-blue-50/50 hover:bg-blue-100 border-blue-200 text-blue-700 font-medium shadow-sm"
         onClick={() => setRefreshConfirmationOpen(true)}
       >
-        <IconMenu
-          icon={<RefreshCcw className="h-4 w-4" />}
-          text="Refresh CRS Data"
-        />
+        <RefreshCcw className="h-4 w-4" />
+        Refresh CRS Data
       </Button>
 
       {refreshConfirmationOpen && (
@@ -855,13 +856,6 @@ const EditClientModal = ({
       phoneNumber: user.phoneNumber || "",
       birthdate: user.birthdate ? new Date(user.birthdate) : undefined,
       gender: user.gender || "",
-      addressStreet: user.addressStreet || "",
-      houseNumber: user.houseNumber || "",
-      addressCity: user.addressCity || "",
-      addressState: user.addressState || "",
-      addressPostal: user.addressPostal || "",
-      employmentPayPerMonth: user.employmentPayPerMonth || 0,
-      payPerMonth: user.payPerMonth || 0,
     },
   });
 
@@ -884,8 +878,8 @@ const EditClientModal = ({
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)}>
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto px-1">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto px-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <CustomFormField
                 name="firstName"
                 label="* First Name"
@@ -903,7 +897,7 @@ const EditClientModal = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <CustomFormField
                 name="phoneNumber"
                 label="* Phone Number"
@@ -922,47 +916,6 @@ const EditClientModal = ({
                 label="* Gender"
                 placeholder=" "
                 options={genderTypes()}
-              />
-            </div>
-
-            <Separator className="my-4" />
-
-            <div className="grid grid-cols-2 gap-4">
-              <CustomFormField
-                name="addressStreet"
-                label="Street Address"
-                className="col-span-2 sm:col-span-1"
-              />
-              <CustomFormField
-                name="houseNumber"
-                label="Apartment/Suite/Unit/House Number"
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <CustomFormField name="addressCity" label="City" />
-              <CustomFormField
-                name="addressState"
-                label="State"
-                type="select"
-                placeholder="Select a state"
-                options={US_STATES}
-              />
-              <CustomFormField name="addressPostal" label="Zip Code" />
-            </div>
-
-            <Separator className="my-4" />
-
-            <div className="grid grid-cols-2 gap-4">
-              <CustomFormField
-                name="employmentPayPerMonth"
-                type="number"
-                label="Monthly Income"
-              />
-              <CustomFormField
-                name="payPerMonth"
-                type="number"
-                label="Rent/Mortgage Payment"
               />
             </div>
           </div>

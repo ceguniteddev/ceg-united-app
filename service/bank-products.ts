@@ -27,8 +27,6 @@ import {
   updateApplicationStatus,
 } from "./apply-funding";
 import { createAsanaTaskForLender } from "@/lib/n8n";
-import { sendMail } from "@/lib/nodemailer";
-import { log } from "console";
 
 export const recordBankProduct = async (value: BankFormData) => {
   const db = firestoreAdmin();
@@ -852,7 +850,7 @@ export const getApprovedMappedFunds = async (
           referenceNumber: info.referenceNumber,
           approvedAmount: info.approvedAmount,
           approvedRemarks: info.approvedRemarks,
-          userId: referenceData.userId,
+          userId: referenceData.userId!,
         };
       }
       return null; // Return null if a specific bank product isn't found

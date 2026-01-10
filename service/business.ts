@@ -7,7 +7,7 @@ import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { Business, businessRecordSchema } from "@/schema";
 import { Timestamp } from "firebase-admin/firestore";
 
-export const recordBusiness = async (values: Business) => {
+export const recordBusiness = async (values: Business): Promise<string> => {
   const result = businessRecordSchema.safeParse(values);
 
   if (!result.success) {
@@ -16,7 +16,13 @@ export const recordBusiness = async (values: Business) => {
 
   const db = firestoreAdmin();
   const collectionRef = db.collection(BUSINESS_DETAIL_COLLECTION);
-  await collectionRef.add({ ...result.data, createdAt: Timestamp.now() });
+  const docRef = await collectionRef.add({
+    ...result.data,
+    createdAt: Timestamp.now(),
+  });
+
+  // Return the document ID
+  return docRef.id;
 };
 
 export const updateBusiness = async (id: string, values: Business) => {

@@ -106,9 +106,9 @@ export default function BrokerDashboard({ brokerId }: BrokerDashboardProps) {
   const currentCommissionRate = brokerData?.commissionRate || 10;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
@@ -152,7 +152,7 @@ export default function BrokerDashboard({ brokerId }: BrokerDashboardProps) {
               {formatAmount(statistics?.totalCommissionEarned || 0)}
             </div>
             <div className="mt-4 space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <span className="text-xs text-muted-foreground">
                   Commission Rate
                 </span>
@@ -164,13 +164,13 @@ export default function BrokerDashboard({ brokerId }: BrokerDashboardProps) {
                       setIsEditing(true);
                       setCommissionRate(currentCommissionRate.toString());
                     }}
-                    className="h-auto p-0 text-blue-600 hover:text-blue-700"
+                    className="h-auto p-1 sm:p-0 text-blue-600 hover:text-blue-700 justify-start sm:justify-end"
                   >
                     <Percent className="h-3 w-3 mr-1" />
                     {currentCommissionRate}% (Edit)
                   </Button>
                 ) : (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                     <Input
                       type="number"
                       min="0"
@@ -178,14 +178,14 @@ export default function BrokerDashboard({ brokerId }: BrokerDashboardProps) {
                       step="0.1"
                       value={commissionRate}
                       onChange={(e) => setCommissionRate(e.target.value)}
-                      className="h-7 w-20 text-xs"
+                      className="h-8 sm:h-7 w-20 text-xs"
                       placeholder="%"
                     />
                     <Button
                       size="sm"
                       onClick={handleUpdateCommission}
                       disabled={updateCommissionMutation.isPending}
-                      className="h-7 px-2"
+                      className="h-8 sm:h-7 px-3 sm:px-2 text-xs"
                     >
                       {updateCommissionMutation.isPending ? (
                         <Loader2Icon className="h-3 w-3 animate-spin" />
@@ -197,7 +197,7 @@ export default function BrokerDashboard({ brokerId }: BrokerDashboardProps) {
                       size="sm"
                       variant="ghost"
                       onClick={() => setIsEditing(false)}
-                      className="h-7 px-2"
+                      className="h-8 sm:h-7 px-3 sm:px-2 text-xs"
                     >
                       Cancel
                     </Button>
@@ -212,79 +212,91 @@ export default function BrokerDashboard({ brokerId }: BrokerDashboardProps) {
       {/* Application Status Overview */}
       <Card>
         <CardHeader>
-          <CardTitle>Application Status</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg sm:text-xl">
+            Application Status
+          </CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
             Overview of broker's submitted applications
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             <div className="flex items-center justify-between p-3 rounded-lg border">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-gray-600" />
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
                 </div>
-                <div>
-                  <p className="font-medium text-sm">Not Applied</p>
+                <div className="min-w-0">
+                  <p className="font-medium text-xs sm:text-sm truncate">
+                    Not Applied
+                  </p>
                 </div>
               </div>
-              <div className="text-xl font-bold">
+              <div className="text-lg sm:text-xl font-bold flex-shrink-0">
                 {statistics?.notAppliedCount || 0}
               </div>
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-lg border">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-blue-600" />
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                 </div>
-                <div>
-                  <p className="font-medium text-sm">Sent to Lender</p>
+                <div className="min-w-0">
+                  <p className="font-medium text-xs sm:text-sm truncate">
+                    Sent to Lender
+                  </p>
                 </div>
               </div>
-              <div className="text-xl font-bold">
+              <div className="text-lg sm:text-xl font-bold flex-shrink-0">
                 {statistics?.sentToLenderCount || 0}
               </div>
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-lg border">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-                  <XCircle className="h-5 w-5 text-red-600" />
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                 </div>
-                <div>
-                  <p className="font-medium text-sm">Declined</p>
+                <div className="min-w-0">
+                  <p className="font-medium text-xs sm:text-sm truncate">
+                    Declined
+                  </p>
                 </div>
               </div>
-              <div className="text-xl font-bold">
+              <div className="text-lg sm:text-xl font-bold flex-shrink-0">
                 {statistics?.declinedCount || 0}
               </div>
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-lg border">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                 </div>
-                <div>
-                  <p className="font-medium text-sm">Approved</p>
+                <div className="min-w-0">
+                  <p className="font-medium text-xs sm:text-sm truncate">
+                    Approved
+                  </p>
                 </div>
               </div>
-              <div className="text-xl font-bold">
+              <div className="text-lg sm:text-xl font-bold flex-shrink-0">
                 {statistics?.approvedCount || 0}
               </div>
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-lg border">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-emerald-600" />
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
                 </div>
-                <div>
-                  <p className="font-medium text-sm">Funded</p>
+                <div className="min-w-0">
+                  <p className="font-medium text-xs sm:text-sm truncate">
+                    Funded
+                  </p>
                 </div>
               </div>
-              <div className="text-xl font-bold">
+              <div className="text-lg sm:text-xl font-bold flex-shrink-0">
                 {statistics?.fundedCount || 0}
               </div>
             </div>

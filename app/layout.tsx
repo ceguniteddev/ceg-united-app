@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter, IBM_Plex_Serif } from "next/font/google";
 import "./globals.css";
 import Providers from "@/provider/Providers";
@@ -30,6 +30,12 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -38,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${ibmPlexSerif.variable} antialiased h-full overflow-hidden`}
+        className={`${inter.variable} ${ibmPlexSerif.variable} antialiased h-full overflow-hidden pb-[env(safe-area-inset-bottom)]`}
       >
         <Providers>
           <div className="h-full w-full">{children}</div>

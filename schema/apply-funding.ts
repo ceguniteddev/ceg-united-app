@@ -17,6 +17,7 @@ export const FundingApplicationType = [
   "Personal",
   "Business",
   "Personal And Business",
+  "Equipment Financing",
   "Income",
   "Community",
   "Tradelines",
@@ -53,7 +54,7 @@ export const employmentSchema = z.object({
   employmentPayPerMonth: z.coerce
     .number<number>({ error: "Required" })
     .min(1, { message: "Required" }),
-  employmentEmployerName: z.string().min(1, { message: "Required" }),
+  employmentEmployerName: z.string().optional(),
   employmentOccupation: z.string().min(1, { message: "Required" }),
 });
 
@@ -61,7 +62,7 @@ export type Employment = z.infer<typeof employmentSchema>;
 
 export const applyFundingSchema = z
   .object({
-    userId: z.string().min(1, { error: "Required" }),
+    userId: z.string().optional(),
     status: FundingApplicationSatusEnum,
     appliedDate: z.coerce.date<Date>({ error: "Required" }),
     referenceNumber: z.string().optional(),
@@ -73,7 +74,7 @@ export const applyFundingSchema = z
     businessAmountFunding: z.coerce.number<number>().optional(),
 
     isMarried: z.string().optional(),
-    legalResident: z.string().optional(), //TODO
+    legalResident: z.string().optional(),
     currentSituation: z.string().optional(),
 
     driverLicenseNumber: z.string().optional(),
@@ -100,6 +101,7 @@ export const applyFundingSchema = z
     rentOrMortgage: z.string().optional(),
 
     howDoYouGetPaid: z.string().optional(),
+    // howDoYouGetPaid: z.string().min(1, { error: "Required" }),
     employmentStatus: z.string().optional(),
     employmentPayPerMonth: z.coerce.number<number>().optional(),
     employmentEmployerName: z.string().optional(),
@@ -130,12 +132,29 @@ export const applyFundingSchema = z
     businessStreetHouseNumber: z.string().optional(),
     businessCityAddress: z.string().optional(),
     businessStateAddress: z.string().optional(),
-    businessPostalAddress: z.string().optional(),
+    businessPostalAddress: z
+      .string()
+      // .trim()
+      // .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" })
+      .optional(),
     employerIdentificationNumber: z.string().optional(),
     businessPhoneNumber: z.string().optional(),
-    businessEmail: z.email({ message: "Invalid email" }).optional(),
-    businessWebsite: z.string({ error: "Required" }).optional(),
-    socialMedia: z.string({ error: "Required" }).optional(),
+    businessEmail: z
+      // .string()
+      .email({ message: "Invalid email" })
+      .or(z.literal(""))
+      .optional(),
+    businessWebsite: z.string().optional(),
+    socialMedia: z
+      .array(
+        z
+          .object({
+            platform: z.string().optional(),
+            handle: z.string().optional(),
+          })
+          .optional()
+      )
+      .optional(),
     // lastYearTaxes: z.coerce.number<number>().optional(),
     // currentYearTaxes: z.coerce.number<number>().optional(),
 
@@ -148,17 +167,57 @@ export const applyFundingSchema = z
     businessGrossProjectedRevenue2: z.coerce.number<number>().optional(),
     businessGrossProjectedRevenue3: z.coerce.number<number>().optional(),
 
+    businessFiledWithIRS1: z.coerce.boolean<boolean>().optional(),
+    businessFiledWithIRS2: z.coerce.boolean<boolean>().optional(),
+    businessFiledWithIRS3: z.coerce.boolean<boolean>().optional(),
+
     businessProjectedProfit1: z.coerce.number<number>().optional(),
     businessProjectedProfit2: z.coerce.number<number>().optional(),
     businessProjectedProfit3: z.coerce.number<number>().optional(),
 
     industryField: z.string().optional(),
 
-    businessTaxes: z.string().optional(),
-    businessTaxesStatus: z.string().optional(),
-    businessTaxes1: z.coerce.number<number>().optional(),
-    businessTaxes2: z.coerce.number<number>().optional(),
-    businessTaxes3: z.coerce.number<number>().optional(),
+    // Bridge Loan Application Fields (Business Income Based Funding)
+    useOfFunds: z.string().optional(),
+    annualBusinessRevenue: z.coerce.number<number>().optional(),
+    avgMonthlyCreditCardSales: z.coerce.number<number>().optional(),
+    avgDailyBankBalance: z.coerce.number<number>().optional(),
+    businessPropertyType: z.enum(["Lease", "Own"]).or(z.literal("")).optional(),
+    landlordName: z.string().optional(),
+    landlordPhone: z.string().optional(),
+    monthlyPayment: z.coerce.number<number>().optional(),
+    isSeasonalBusiness: z.enum(["Yes", "No"]).or(z.literal("")).optional(),
+    hasOutstandingAdvances: z.enum(["Yes", "No"]).or(z.literal("")).optional(),
+    // personalFullName: z.string().optional(),
+    // personalPhoneNumber: z.string().optional(),
+    // personalEmailAddress: z.string().optional(),
+    // dateOfBirth: z.coerce.date<Date>({ error: "Require Date" }).optional(),
+    // socialSecurityNumber: z.string().optional(),
+    // ficoCreditScore: z.coerce.number<number>().optional(),
+    whoReferredYou: z.string().optional(),
+
+    // Auto Loan Fields
+    vehiclePrice: z.coerce.number<number>().optional(),
+    vehiclePurchaseSource: z
+      .enum([
+        "Independent Dealer",
+        "Franchise Dealer",
+        "Private Party",
+        "Refinancing Current Auto",
+      ])
+      .or(z.literal(""))
+      .optional(),
+    vehicleVIN: z.string().optional(),
+    vehicleFinancingType: z
+      .enum(["Personal", "Business"])
+      .or(z.literal(""))
+      .optional(),
+
+    // businessTaxes: z.string().optional(),
+    // businessTaxesStatus: z.string().optional(),
+    // businessTaxes1: z.coerce.number<number>().optional(),
+    // businessTaxes2: z.coerce.number<number>().optional(),
+    // businessTaxes3: z.coerce.number<number>().optional(),
 
     approveOrDecline: fundingApplicationApproveDeclineSchema.optional(),
 
@@ -168,6 +227,28 @@ export const applyFundingSchema = z
     experianPassword: z.string().optional(),
     creditKarmaUsername: z.string().optional(),
     creditKarmaPassword: z.string().optional(),
+
+    // Document uploads (stored as base64 strings for persistence)
+    bankStatements: z
+      .array(
+        z.object({
+          name: z.string(),
+          size: z.number(),
+          type: z.string(),
+          base64: z.string(),
+        })
+      )
+      .optional(),
+    driverLicenseDocuments: z
+      .array(
+        z.object({
+          name: z.string(),
+          size: z.number(),
+          type: z.string(),
+          base64: z.string(),
+        })
+      )
+      .optional(),
   })
   .superRefine((data, ctx) => {
     // Define the exclusion condition for clarity
@@ -254,109 +335,63 @@ export const applyFundingSchema = z
   //     path: ["isMarried"],
   //   }
   // )
-  .superRefine((data, ctx) => {
-    // The condition: Only run this validation if a business name has been entered.
-    if (data.businessName && data.businessName.trim().length > 0) {
-      // Validate the three Gross Projected Revenue fields
-      const r1 = data.businessGrossProjectedRevenue1 ?? 0;
-      const r2 = data.businessGrossProjectedRevenue2 ?? 0;
-      const r3 = data.businessGrossProjectedRevenue3 ?? 0;
+  // .superRefine((data, ctx) => {
+  //   // The condition: Only run this validation if a business name has been entered.
+  //   if (
+  //     data.businessName &&
+  //     data.businessName.trim().length > 0 &&
+  //     data.interestedProduct !== "Business Income Based Funding"
+  //   ) {
+  //     // Validate the three Gross Projected Revenue fields
+  //     const r1 = data.businessGrossProjectedRevenue1 ?? 0;
+  //     const r2 = data.businessGrossProjectedRevenue2 ?? 0;
+  //     const r3 = data.businessGrossProjectedRevenue3 ?? 0;
 
-      if (r1 <= 0 && r2 <= 0 && r3 <= 0) {
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one revenue year is required",
-          path: ["businessGrossProjectedRevenue1"],
-        });
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one revenue year is required",
-          path: ["businessGrossProjectedRevenue2"],
-        });
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one revenue year is required",
-          path: ["businessGrossProjectedRevenue3"],
-        });
-      }
-
-      // Validate the three Projected Profit fields
-      const p1 = data.businessProjectedProfit1 ?? 0;
-      const p2 = data.businessProjectedProfit2 ?? 0;
-      const p3 = data.businessProjectedProfit3 ?? 0;
-
-      if (p1 <= 0 && p2 <= 0 && p3 <= 0) {
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one profit year is required",
-          path: ["businessProjectedProfit1"],
-        });
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one profit year is required",
-          path: ["businessProjectedProfit2"],
-        });
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one profit year is required",
-          path: ["businessProjectedProfit3"],
-        });
-      }
-    }
-  })
-  .superRefine((data, ctx) => {
-    // Check if the business taxes status is 'yes'.
-    // This value would be set by your handleBusinessTaxesChange callback.
-    if (data.businessTaxesStatus === "yes") {
-      const t1 = data.businessTaxes1 ?? 0;
-      const t2 = data.businessTaxes2 ?? 0;
-      const t3 = data.businessTaxes3 ?? 0;
-
-      if (t1 <= 0 && t2 <= 0 && t3 <= 0) {
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one tax year is required",
-          path: ["businessTaxes1"],
-        });
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one tax year is required",
-          path: ["businessTaxes2"],
-        });
-        ctx.addIssue({
-          code: "custom",
-          message: "At least one tax year is required",
-          path: ["businessTaxes3"],
-        });
-      }
-
-      // If the status is 'yes', then all three tax year fields are required.
-      // We check if the coerced number is 0 or less, which covers empty inputs.
-      // if ((data.businessTaxes1 ?? 0) <= 0) {
-      //   ctx.addIssue({
-      //     code: "custom",
-      //     message: "Required",
-      //     path: ["businessTaxes1"], // Links the error to the correct input field.
-      //   });
-      // }
-
-      // if ((data.businessTaxes2 ?? 0) <= 0) {
-      //   ctx.addIssue({
-      //     code: "custom",
-      //     message: "Required",
-      //     path: ["businessTaxes2"],
-      //   });
-      // }
-
-      // if ((data.businessTaxes3 ?? 0) <= 0) {
-      //   ctx.addIssue({
-      //     code: "custom",
-      //     message: "Required",
-      //     path: ["businessTaxes3"],
-      //   });
-      // }
-    }
-  })
+  //     if (r1 <= 0 && r2 <= 0 && r3 <= 0) {
+  //       ctx.addIssue({
+  //         code: "custom",
+  //         message: "At least one revenue year is required",
+  //         path: ["businessGrossProjectedRevenue1"],
+  //       });
+  //       ctx.addIssue({
+  //         code: "custom",
+  //         message: "At least one revenue year is required",
+  //         path: ["businessGrossProjectedRevenue2"],
+  //       });
+  //       ctx.addIssue({
+  //         code: "custom",
+  //         message: "At least one revenue year is required",
+  //         path: ["businessGrossProjectedRevenue3"],
+  //       });
+  //     }
+  //   }
+  // })
+  // .superRefine((data, ctx) => {
+  // Check if the business taxes status is 'yes'.
+  // This value would be set by your handleBusinessTaxesChange callback.
+  // if (data.businessTaxesStatus === "yes") {
+  //   const t1 = data.businessTaxes1 ?? 0;
+  //   const t2 = data.businessTaxes2 ?? 0;
+  //   const t3 = data.businessTaxes3 ?? 0;
+  //   if (t1 <= 0 && t2 <= 0 && t3 <= 0) {
+  //     ctx.addIssue({
+  //       code: "custom",
+  //       message: "At least one tax year is required",
+  //       path: ["businessTaxes1"],
+  //     });
+  //     ctx.addIssue({
+  //       code: "custom",
+  //       message: "At least one tax year is required",
+  //       path: ["businessTaxes2"],
+  //     });
+  //     ctx.addIssue({
+  //       code: "custom",
+  //       message: "At least one tax year is required",
+  //       path: ["businessTaxes3"],
+  //     });
+  //   }
+  // }
+  // })
   .superRefine((data, ctx) => {
     // Check if the user has filed taxes before
     if (data.personalTaxesStatus === "yes") {
@@ -385,8 +420,18 @@ export const applyFundingSchema = z
     }
   })
   .superRefine((data, ctx) => {
+    console.log("Employment superRefine called with data:", data);
     // Check if the employment status is 'yes'
-    if (data.employmentStatus === "yes") {
+    // Exclude Auto Loan with Business financing and Community funding from employment validation
+    if (
+      data.employmentStatus === "yes" &&
+      !(
+        (data.interestedProduct === "Auto Loan" &&
+          data.vehicleFinancingType === "Business") ||
+        data.fundingType === "Community" ||
+        data.interestedProduct === "Business Income Based Funding"
+      )
+    ) {
       // If it is, validate each employment field
       if (
         !data.employmentEmployerName ||
@@ -500,20 +545,116 @@ export const applyFundingSchema = z
       }
     }
   })
-  .refine(
-    (data) => {
-      if (data.fundingType?.includes("Business")) {
-        return data.businessName && data.businessName.length > 0;
-      }
-      return true;
-    },
-    {
-      message: "Required",
-      path: ["businessName"],
-    }
-  )
   .superRefine((data, ctx) => {
-    // If funded by Community, require a non-empty reason
+    // Validate minimal employment fields for Community funding
+    if (data.fundingType === "Community" && data.employmentStatus === "yes") {
+      if ((data.employmentPayPerMonth ?? 0) <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentPayPerMonth"],
+        });
+      }
+      if (
+        !data.employmentOccupation ||
+        data.employmentOccupation.length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employmentOccupation"],
+        });
+      }
+    }
+  })
+  .superRefine((data, ctx) => {
+    // Validate all required business fields when Business funding type is selected
+    if (data.fundingType?.includes("Business")) {
+      if (!data.businessName || data.businessName.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessName"],
+        });
+      }
+
+      if (
+        !data.employerIdentificationNumber ||
+        data.employerIdentificationNumber.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employerIdentificationNumber"],
+        });
+      }
+
+      if (!data.businessEmail || data.businessEmail.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessEmail"],
+        });
+      }
+
+      if (
+        !data.businessPhoneNumber ||
+        data.businessPhoneNumber.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessPhoneNumber"],
+        });
+      }
+
+      if (
+        !data.businessStreetAddress ||
+        data.businessStreetAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessStreetAddress"],
+        });
+      }
+
+      if (
+        !data.businessCityAddress ||
+        data.businessCityAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessCityAddress"],
+        });
+      }
+
+      if (
+        !data.businessStateAddress ||
+        data.businessStateAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessStateAddress"],
+        });
+      }
+
+      if (
+        !data.businessPostalAddress ||
+        data.businessPostalAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessPostalAddress"],
+        });
+      }
+    }
+  })
+  .superRefine((data, ctx) => {
+    // If funded by Community, require a non-empty reason and funding amount
     if (data.fundingType?.includes("Community")) {
       if (
         !data.reasonForJoiningCommunity ||
@@ -523,6 +664,370 @@ export const applyFundingSchema = z
           code: "custom",
           message: "Required",
           path: ["reasonForJoiningCommunity"],
+        });
+      }
+
+      // Require funding amount for Community products
+      if (
+        data.personalAmountFunding == null ||
+        data.personalAmountFunding <= 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["personalAmountFunding"],
+        });
+      }
+    }
+
+    // If funded by Equipment Financing (excluding Auto Loan), require personal amount and business info
+    if (
+      data.fundingType?.includes("Equipment Financing") &&
+      data.interestedProduct !== "Auto Loan"
+    ) {
+      if (
+        data.personalAmountFunding == null ||
+        data.personalAmountFunding <= 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["personalAmountFunding"],
+        });
+      }
+
+      // Business information requirements
+      if (!data.businessName || data.businessName.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessName"],
+        });
+      }
+
+      if (
+        !data.employerIdentificationNumber ||
+        data.employerIdentificationNumber.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["employerIdentificationNumber"],
+        });
+      }
+
+      if (!data.businessEmail || data.businessEmail.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessEmail"],
+        });
+      }
+
+      if (
+        !data.businessPhoneNumber ||
+        data.businessPhoneNumber.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessPhoneNumber"],
+        });
+      }
+
+      if (
+        !data.businessStreetAddress ||
+        data.businessStreetAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessStreetAddress"],
+        });
+      }
+
+      if (
+        !data.businessCityAddress ||
+        data.businessCityAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessCityAddress"],
+        });
+      }
+
+      if (
+        !data.businessStateAddress ||
+        data.businessStateAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessStateAddress"],
+        });
+      }
+
+      if (
+        !data.businessPostalAddress ||
+        data.businessPostalAddress.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessPostalAddress"],
+        });
+      }
+    }
+
+    // Auto Loan validation
+    if (data.interestedProduct === "Auto Loan") {
+      // Funding amount is required
+      if (
+        data.personalAmountFunding == null ||
+        data.personalAmountFunding <= 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["personalAmountFunding"],
+        });
+      }
+
+      // Vehicle price is required
+      if (data.vehiclePrice == null || data.vehiclePrice <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["vehiclePrice"],
+        });
+      }
+
+      // Purchase source is required
+      if (
+        !data.vehiclePurchaseSource ||
+        data.vehiclePurchaseSource.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["vehiclePurchaseSource"],
+        });
+      }
+
+      // Financing type is required
+      if (
+        !data.vehicleFinancingType ||
+        data.vehicleFinancingType.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["vehicleFinancingType"],
+        });
+      }
+
+      // If business financing, require all business fields
+      if (data.vehicleFinancingType === "Business") {
+        if (!data.businessName || data.businessName.trim().length === 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessName"],
+          });
+        }
+
+        if (
+          !data.employerIdentificationNumber ||
+          data.employerIdentificationNumber.trim().length === 0
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["employerIdentificationNumber"],
+          });
+        }
+
+        if (!data.businessEmail || data.businessEmail.trim().length === 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessEmail"],
+          });
+        }
+
+        if (
+          !data.businessPhoneNumber ||
+          data.businessPhoneNumber.trim().length === 0
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessPhoneNumber"],
+          });
+        }
+
+        if (
+          !data.businessStreetAddress ||
+          data.businessStreetAddress.trim().length === 0
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessStreetAddress"],
+          });
+        }
+
+        if (
+          !data.businessCityAddress ||
+          data.businessCityAddress.trim().length === 0
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessCityAddress"],
+          });
+        }
+
+        if (
+          !data.businessStateAddress ||
+          data.businessStateAddress.trim().length === 0
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessStateAddress"],
+          });
+        }
+
+        if (
+          !data.businessPostalAddress ||
+          data.businessPostalAddress.trim().length === 0
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Required",
+            path: ["businessPostalAddress"],
+          });
+        }
+      }
+
+      // If personal financing, require employment information
+      if (data.vehicleFinancingType === "Personal") {
+        if (!data.howDoYouGetPaid || data.howDoYouGetPaid.trim().length === 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Requiredss",
+            path: ["howDoYouGetPaid"],
+          });
+        }
+      }
+    }
+
+    // Business Income Based Funding validation
+    if (data.interestedProduct === "Business Income Based Funding") {
+      // Use of Funds is required
+      if (!data.useOfFunds || data.useOfFunds.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["useOfFunds"],
+        });
+      }
+
+      // Financial Information - Annual Business Revenue is required
+      if (
+        data.annualBusinessRevenue == null ||
+        data.annualBusinessRevenue <= 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["annualBusinessRevenue"],
+        });
+      }
+
+      // Average Monthly Credit Card Sales is required
+      if (
+        data.avgMonthlyCreditCardSales == null ||
+        data.avgMonthlyCreditCardSales <= 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["avgMonthlyCreditCardSales"],
+        });
+      }
+
+      // Average Daily Bank Balance is required
+      if (data.avgDailyBankBalance == null || data.avgDailyBankBalance <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["avgDailyBankBalance"],
+        });
+      }
+
+      // Business Property Type is required
+      if (
+        !data.businessPropertyType ||
+        data.businessPropertyType.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["businessPropertyType"],
+        });
+      }
+
+      // Landlord Name is required
+      if (!data.landlordName || data.landlordName.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["landlordName"],
+        });
+      }
+
+      // Landlord Phone is required
+      if (!data.landlordPhone || data.landlordPhone.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["landlordPhone"],
+        });
+      }
+
+      // Monthly Payment is required
+      if (data.monthlyPayment == null || data.monthlyPayment <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["monthlyPayment"],
+        });
+      }
+
+      // Is Seasonal Business is required
+      if (
+        !data.isSeasonalBusiness ||
+        data.isSeasonalBusiness.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["isSeasonalBusiness"],
+        });
+      }
+
+      // Has Outstanding Advances is required
+      if (
+        !data.hasOutstandingAdvances ||
+        data.hasOutstandingAdvances.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["hasOutstandingAdvances"],
         });
       }
     }
@@ -539,29 +1044,24 @@ export const applyFundingSchema = z
           path: ["personalAmountFunding"],
         });
       }
+      // console.log(
+      //   "Validating howDoYouGetPaid for Personal funding",
+      //   data.howDoYouGetPaid
+      // );
+      if (
+        data.howDoYouGetPaid == undefined ||
+        data.howDoYouGetPaid == null ||
+        data.howDoYouGetPaid.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["howDoYouGetPaid"],
+        });
+      }
     }
   })
-  // .refine(
-  //   (data) => {
-  //     if (data.fundingType?.includes("Community")) {
-  //       return (
-  //         data.reasonForJoiningCommunity &&
-  //         data.reasonForJoiningCommunity.length > 0
-  //       );
-  //     }
-  //     if (data.fundingType?.includes("Community")) {
-  //       return (
-  //         data.personalAmountFunding !== undefined &&
-  //         data.personalAmountFunding > 0
-  //       );
-  //     }
-  //     return true;
-  //   },
-  //   {
-  //     message: "Required",
-  //     path: ["reasonForJoiningCommunity"],
-  //   }
-  // )
+
   .refine(
     (data) => {
       if (
@@ -604,7 +1104,8 @@ export const applyFundingSchema = z
       return ft.includes(needle);
     };
 
-    const triggered = has("Business") || has("Personal");
+    const triggered =
+      has("Business") || has("Personal") || has("Equipment Financing");
     if (!triggered) return;
 
     // --- Put your conditional validations here ---
@@ -668,7 +1169,7 @@ export const FundingProductTypeEnum: FundingProductEnumType[] = [
   {
     value: "Business Income Based Funding",
     label: "Business Income Based Funding",
-    type: "Personal",
+    type: "Business",
   },
   {
     value: "Personal Funding",
@@ -708,12 +1209,12 @@ export const FundingProductTypeEnum: FundingProductEnumType[] = [
   {
     value: "Auto Loan",
     label: "Auto Loan",
-    type: "Personal And Business",
+    type: "Equipment Financing",
   },
   {
     value: "Equipment Financing",
     label: "Equipment Financing",
-    type: "Personal And Business",
+    type: "Equipment Financing",
   },
 ];
 

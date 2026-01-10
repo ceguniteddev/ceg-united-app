@@ -6,10 +6,13 @@ import {
 } from "@/constant/collection-name";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
+import { logInfo } from "@/lib/logger";
 import {
   deleteCRSReportN8N,
   generateCRSReportN8N,
   getFundingAnalysis,
+  sendClientAnalysisN8N,
+  sendClientCongratsMessageN8N,
 } from "@/lib/n8n";
 import { Business } from "@/schema";
 import { getBusiness } from "@/service/business";
@@ -282,6 +285,54 @@ export const fundAnalysis = async ({
   userId: string;
 }) => {
   await fetch(`${process.env.n8n_HOST}/${await getFundingAnalysis()}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      referenceNumber,
+      userId,
+    }),
+  });
+};
+
+export const sendClientFundingApplicationCongratsMessage = async ({
+  referenceNumber,
+  userId,
+}: {
+  referenceNumber: string;
+  userId: string;
+}) => {
+  logInfo("Sending client congrats message...", {
+    referenceNumber,
+    userId,
+  });
+  await fetch(
+    `${process.env.n8n_HOST}/${await sendClientCongratsMessageN8N()}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+      },
+      body: JSON.stringify({
+        referenceNumber,
+        userId,
+      }),
+    }
+  );
+};
+
+export const sendClientFundingApplicationAuditAnalysis = async ({
+  referenceNumber,
+  userId,
+}: {
+  referenceNumber: string;
+  userId: string;
+}) => {
+  logInfo("Sending client audit analysis...", { referenceNumber, userId });
+  await fetch(`${process.env.n8n_HOST}/${await sendClientAnalysisN8N()}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

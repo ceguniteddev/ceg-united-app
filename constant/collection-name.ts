@@ -1,6 +1,7 @@
 export const USER_COLLECTION = "user";
 export const USER_FUNDING_APPLICATION = "user-funding-application";
 export const USER_FUNDING_APPLICATION_ANALYSIS = "analysis";
+export const USER_FUNDING_APPLICATION_CONGRATS = "congrats";
 export const USER_FUNDING_APPLICATION_FUND_MAPPING = "user-fund-mapping";
 export const USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS =
   "fund_mapping_bank_products";
@@ -48,4 +49,5 @@ export const BROKER_COMMISSION = "broker-commission";
 export const DISPUTE_LETTER = "dispute-letter";
 export const LETTER_TEMPLATE = "letter-template";
 export const DISPUTE_TRACKING = "dispute-tracking";
+export const EMAIL_VERIFICATION_TOKENS = "email-verification-tokens";
 export const LETTER_RECIPIENT = "letter-recipient";

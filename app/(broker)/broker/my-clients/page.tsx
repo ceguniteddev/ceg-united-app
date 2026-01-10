@@ -28,8 +28,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { AddClientModal } from "@/components/AddClientModal";
+import { MultiStepRegistrationForm } from "@/components/registration";
 import { ClientApplicationForm } from "@/schema/client-application";
+import { ApplyFunding } from "@/schema/apply-funding";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
 
 export default function MyClientsPage() {
   const { clients, isLoading } = useGetBrokerClients();
@@ -38,11 +40,17 @@ export default function MyClientsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = async (data: ClientApplicationForm) => {
+  const onSubmit = async (
+    step1Data: ClientApplicationForm,
+    step2Data: ApplyFunding
+  ) => {
     setIsSubmitting(true);
 
     try {
-      await mutation.mutateAsync({ ...data, password: data.email });
+      await mutation.mutateAsync({
+        step1Data,
+        step2Data,
+      });
       toast.success("Client registered successfully!", {
         description:
           "Your client will receive an invitation email to create their account.",
@@ -257,13 +265,20 @@ export default function MyClientsPage() {
         </Card>
       )}
 
-      {/* Add Client Modal */}
-      <AddClientModal
+      {/* Multi-Step Registration Form */}
+      <ResponsiveDialog
         isOpen={isModalOpen}
         setIsOpen={setIsModalOpen}
-        onSubmit={onSubmit}
-        isSubmitting={isSubmitting}
-      />
+        title="Client Registration"
+        description=""
+        className="w-[calc(100vw-16px)] h-[calc(100vh-16px)] max-w-full sm:w-[95vw] sm:h-auto sm:max-h-[90vh] sm:max-w-[900px] lg:max-w-[1200px]"
+      >
+        <MultiStepRegistrationForm
+          onSubmit={onSubmit}
+          isSubmitting={isSubmitting}
+          onClose={() => setIsModalOpen(false)}
+        />
+      </ResponsiveDialog>
     </div>
   );
 }

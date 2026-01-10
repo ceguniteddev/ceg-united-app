@@ -6,6 +6,7 @@ import { firestoreAdmin } from "@/lib/fireabase-admin";
 import {
   USER_FUNDING_APPLICATION,
   USER_FUNDING_APPLICATION_ANALYSIS,
+  USER_FUNDING_APPLICATION_CONGRATS,
 } from "@/constant/collection-name";
 import { getUserById } from "./user";
 import { Timestamp } from "firebase-admin/firestore";
@@ -24,7 +25,6 @@ export const getAnalysis = async (referenceNumber: string) => {
   if (!data) throw new AppError("Funding application not found.");
 
   const db = firestoreAdmin();
-  const appRef = db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber);
 
   const collectionRef = db.collection(
     `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`
@@ -150,9 +150,102 @@ export const refreshAnalysis = async (referenceNumber: string) => {
   // 4. Trigger a new analysis
   // Note: The comment "call n8n webhook" suggests this might be the place
   // to trigger it after the refresh is complete.
-  await fundAnalysis({ referenceNumber, userId: data.userId });
+  await fundAnalysis({ referenceNumber, userId: data.userId! });
 
   console.log("Successfully refreshed analysis.");
+};
+
+export const getCongrats = async (referenceNumber: string) => {
+  logInfo("getCongrats", { referenceNumber });
+
+  const data = await getApplyFundingByReferenceNumber({ referenceNumber });
+  if (!data) throw new AppError("Funding application not found.");
+
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`
+  );
+  const snapshot = await collectionRef.orderBy("createdAt", "desc").get();
+  if (snapshot.empty) {
+    console.log("No matching documents.");
+    return null;
+  }
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...normalizeAllDates(doc.data()),
+  }));
+};
+
+export const recordCongrats = async (
+  userId: string,
+  referenceNumber: string,
+  message: string
+) => {
+  if (!userId) throw new AppError("User ID is required.");
+  if (!referenceNumber) throw new AppError("Reference number is required.");
+  if (!message) throw new AppError("Congratulations message is required.");
+
+  logInfo("recordCongrats", { userId, referenceNumber });
+
+  const fundingApplication = await getApplyFundingByReferenceNumber({
+    referenceNumber,
+  });
+  if (!fundingApplication)
+    throw new AppError("Funding application reference number not found.");
+
+  const userData = await getUserById(userId);
+  if (!userData) throw new AppError("User not found.");
+
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`
+  );
+  await collectionRef.add({
+    message,
+    userId,
+    createdAt: Timestamp.now(),
+    isRead: false,
+  });
+};
+
+export const updateCongrats = async (
+  referenceNumber: string,
+  docId: string,
+  message: string
+) => {
+  console.log("updateCongrats", { referenceNumber, docId });
+  if (!docId) throw new AppError("Document ID is required.");
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`
+  );
+  await collectionRef.doc(docId).update({ message });
+};
+
+export const deleteCongrats = async (
+  referenceNumber: string,
+  docId: string
+) => {
+  console.log("deleteCongrats", { referenceNumber, docId });
+  if (!docId) throw new AppError("Document ID is required.");
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`
+  );
+  await collectionRef.doc(docId).delete();
+};
+
+export const markCongratsAsRead = async (
+  referenceNumber: string,
+  docId: string
+) => {
+  console.log("markCongratsAsRead", { referenceNumber, docId });
+  if (!docId) throw new AppError("Document ID is required.");
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`
+  );
+  await collectionRef.doc(docId).update({ isRead: true });
 };
 
 export const sendClientAnalysisData = async (referenceNumber: string) => {
@@ -164,7 +257,7 @@ export const sendClientAnalysisData = async (referenceNumber: string) => {
     throw new AppError("Funding application not found.");
   }
 
-  const userData = await getUserById(data.userId);
+  const userData = await getUserById(data.userId!);
   if (!userData) throw new AppError("User not found.");
 
   const n8nWebhookURL = await sendClientAnalysisN8N();

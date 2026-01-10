@@ -3,7 +3,6 @@ import { BanknoteIcon } from "lucide-react";
 import React from "react";
 import ApplyFundingForm from "@/components/fundingv2/ApplyFundingForm";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
-import { useAuth } from "@/provider/AuthContext";
 
 import {
   Dialog,
@@ -32,7 +31,7 @@ const ApplyFunding = ({ userId }: { userId: string }) => {
         title="Pre-Qualify"
         description={""}
         descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-11/12 md:w-5/6 lg:w-4/6 xl:w-3/6"
+        className="w-[95vw] max-w-[95vw] sm:w-11/12 md:w-8/12 lg:w-8/12 xl:w-2/3 max-h-[90vh] sm:max-h-[85vh]"
       >
         <ApplyFundingForm
           setOpen={setOpen}
