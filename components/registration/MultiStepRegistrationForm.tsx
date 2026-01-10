@@ -438,7 +438,7 @@ export function MultiStepRegistrationForm({
   };
 
   return (
-    <div className="w-full max-w-full mx-auto px-2 sm:px-4">
+    <div className="w-full max-w-full mx-auto px-2 sm:px-4 pb-36 lg:pb-0">
       <div className="mb-4 sm:mb-6 flex justify-between items-center gap-4">
         <ProgressBar progress={progress} />
         <Button

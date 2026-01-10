@@ -17,14 +17,14 @@ export default function ClientFundingPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full items-center justify-center">
+      <div className="flex w-full items-center justify-center py-16">
         <Spinner />
       </div>
     );
   }
 
   return (
-    <div className="flex h-full w-full flex-col p-3 sm:p-4 md:p-6 lg:p-8">
+    <div className="flex w-full flex-col">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="flex items-center gap-3">
@@ -44,36 +44,30 @@ export default function ClientFundingPage() {
 
       {/* Content */}
       {!mappedFunding || mappedFunding.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="rounded-full bg-muted p-6 mb-4">
-              <HandCoins className="h-12 w-12 text-muted-foreground" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">
-              No funding products yet
-            </h3>
-            <p className="text-muted-foreground text-center max-w-md">
-              Your clients don't have any approved funding products yet. Once
-              the admin approves funding products for your clients, they will
-              appear here.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="rounded-full bg-muted p-6 mb-4">
+            <HandCoins className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2">
+            No funding products yet
+          </h3>
+          <p className="text-muted-foreground text-center max-w-md">
+            Your clients don't have any approved funding products yet. Once the
+            admin approves funding products for your clients, they will appear
+            here.
+          </p>
+        </div>
       ) : (
         <div className="w-full">
-          <Card className="w-full">
-            <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">
-                All Client Funding Products ({mappedFunding.length})
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Track the status of funding applications for all your clients
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-3 sm:p-6">
-              <BrokerFundingList appliedFunding={mappedFunding} />
-            </CardContent>
-          </Card>
+          <div className="mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold">
+              All Client Funding Products ({mappedFunding.length})
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Track the status of funding applications for all your clients
+            </p>
+          </div>
+          <BrokerFundingList appliedFunding={mappedFunding} />
         </div>
       )}
     </div>

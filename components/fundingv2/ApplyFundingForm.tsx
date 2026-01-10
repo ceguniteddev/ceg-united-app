@@ -854,7 +854,7 @@ const ApplyFundingForm = ({
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="w-full">
+    <div className="w-full  pb-36 lg:pb-0">
       <ResponsiveDialog
         isOpen={openBusinessModal}
         setIsOpen={setOpenBusinessModal}

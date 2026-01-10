@@ -24,7 +24,7 @@ export default function AdminLayout({
       </div>
       <div className="flex flex-1 min-h-0 flex-col">
         <MobileNavAdmin />
-        <div className="flex-1 min-h-0 overflow-y-auto md:pt-0 pt-[60px] px-4 md:px-6 py-4 md:py-6 pb-20">
+        <div className="flex-1 min-h-0 overflow-y-auto pt-[60px] md:pt-0 px-4 md:px-6 pb-24 md:pb-0">
           {children}
         </div>
       </div>
