@@ -5,7 +5,7 @@ export default function PublicLayout({
 }) {
   return (
     <main className="flex min-h-screen w-full max-w-screen overflow-x-hidden font-inter">
-      <div className="flex size-full flex-col pb-20">{children}</div>
+      <div className="flex size-full flex-col pb-24 md:pb-0">{children}</div>
     </main>
   );
 }

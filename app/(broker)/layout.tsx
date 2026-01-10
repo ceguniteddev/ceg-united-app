@@ -20,7 +20,7 @@ export default function BrokerLayout({
       <SidebarBroker />
       <div className="flex flex-1 min-h-0 flex-col">
         <MobileNavBroker />
-        <div className="flex-1 min-h-0 overflow-y-auto lg:pt-0 pt-[60px] pb-20">
+        <div className="flex-1 min-h-0 overflow-y-auto pt-[60px] lg:pt-0 px-4 lg:px-6 pb-36 lg:pb-0">
           {children}
         </div>
       </div>

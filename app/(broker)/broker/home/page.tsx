@@ -27,7 +27,7 @@ export default function BrokerHomePage() {
 
   if (statsLoading) {
     return (
-      <div className="flex h-full w-full flex-col p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6">
+      <div className="flex w-full flex-col space-y-4 sm:space-y-6">
         <Skeleton className="h-10 sm:h-12 w-48 sm:w-64" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
@@ -41,7 +41,7 @@ export default function BrokerHomePage() {
   const recentClients = clients?.slice(0, 5) || [];
 
   return (
-    <div className="flex h-full w-full flex-col p-3 sm:p-4 md:p-6 lg:p-8">
+    <div className="flex w-full flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
         <div>
