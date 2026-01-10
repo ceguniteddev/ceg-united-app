@@ -72,7 +72,7 @@ export default function MyClientsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full flex-col p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="flex w-full flex-col space-y-6">
         <Skeleton className="h-12 w-48 sm:w-64" />
         <Skeleton className="h-64 sm:h-96" />
       </div>
@@ -80,7 +80,7 @@ export default function MyClientsPage() {
   }
 
   return (
-    <div className="flex h-full w-full flex-col p-4 sm:p-6 lg:p-8">
+    <div className="flex w-full flex-col">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-4">
         <div>
