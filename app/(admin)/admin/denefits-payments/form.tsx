@@ -3,11 +3,12 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, UserCheck } from "lucide-react";
+import { Loader2, Search, UserCheck, X, Save } from "lucide-react";
 import { useMapDenefitsContractToUser } from "@/hooks/denefits";
 import { useUsersQuery } from "@/hooks/user";
 import { UserWithId } from "@/schema/registration";
 import { DenefitsPayment } from "./list";
+import IconMenu from "@/components/icon-menu";
 
 const DisplayField = ({
   label,
@@ -59,11 +60,11 @@ const MapDenefitsContractForm = ({ contract, setOpen }: Props) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="space-y-4 sm:space-y-6 pb-24">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* Left Side: Contract Details */}
-        <div className="rounded-2xl border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="rounded-lg sm:rounded-2xl border bg-white p-4 sm:p-6 shadow-sm">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
             Contract Details
           </h3>
           <DisplayField label="Contract Code" value={contract.contract_code} />
@@ -79,14 +80,14 @@ const MapDenefitsContractForm = ({ contract, setOpen }: Props) => {
         </div>
 
         {/* Right Side: User Search and Mapping */}
-        <div className="rounded-2xl border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="rounded-lg sm:rounded-2xl border bg-white p-4 sm:p-6 shadow-sm">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
             Map to Client
           </h3>
 
           {/* Search Input */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="mb-3 sm:mb-4">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               Search Clients
             </label>
             <div className="relative">
@@ -96,13 +97,13 @@ const MapDenefitsContractForm = ({ contract, setOpen }: Props) => {
                 placeholder="Search by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-10 sm:h-9"
               />
             </div>
           </div>
 
           {/* User List */}
-          <div className="mb-4 max-h-64 overflow-y-auto border rounded-md">
+          <div className="mb-3 sm:mb-4 max-h-48 sm:max-h-64 overflow-y-auto border rounded-md">
             {isLoadingUsers ? (
               <div className="flex items-center justify-center p-4">
                 <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -117,12 +118,14 @@ const MapDenefitsContractForm = ({ contract, setOpen }: Props) => {
                     }`}
                     onClick={() => setSelectedUser(user)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-medium text-gray-900 break-words">
                           {user.firstName} {user.lastName}
                         </p>
-                        <p className="text-xs text-gray-500">{user.email}</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500 break-words">
+                          {user.email}
+                        </p>
                       </div>
                       {selectedUser?.id === user.id && (
                         <UserCheck className="h-5 w-5 text-blue-600" />
@@ -140,14 +143,16 @@ const MapDenefitsContractForm = ({ contract, setOpen }: Props) => {
 
           {/* Selected User Display */}
           {selectedUser && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <div className="flex items-center">
-                <UserCheck className="mr-2 h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
+            <div className="mt-3 sm:mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-start gap-2">
+                <UserCheck className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-gray-900 break-words">
                     Selected: {selectedUser.firstName} {selectedUser.lastName}
                   </p>
-                  <p className="text-xs text-gray-500">{selectedUser.email}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 break-words">
+                    {selectedUser.email}
+                  </p>
                 </div>
               </div>
             </div>
@@ -156,14 +161,28 @@ const MapDenefitsContractForm = ({ contract, setOpen }: Props) => {
       </div>
 
       {/* Save Button */}
-      <div className="flex justify-end">
+      <div className="flex flex-col sm:flex-row justify-end gap-2">
+        <Button
+          variant="outline"
+          onClick={() => setOpen(false)}
+          disabled={isMapping}
+          className="w-full sm:w-auto h-10 sm:h-9 cursor-pointer"
+        >
+          <IconMenu icon={<X className="h-4 w-4" />} text="Close" />
+        </Button>
         <Button
           onClick={handleSave}
           disabled={!selectedUser || isMapping}
-          className="w-full md:w-auto"
+          className="w-full sm:w-auto h-10 sm:h-9 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
         >
-          {isMapping && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isMapping ? "Saving..." : "Save Mapping"}
+          {isMapping ? (
+            <IconMenu
+              icon={<Loader2 className="h-4 w-4 animate-spin" />}
+              text="Saving..."
+            />
+          ) : (
+            <IconMenu icon={<Save className="h-4 w-4" />} text="Save Mapping" />
+          )}
         </Button>
       </div>
     </div>
