@@ -147,8 +147,8 @@ export default function ClientDocuments({ userId }: { userId: string }) {
   const { deleteDocument, isDeleting } = useUserDocumentMutation();
 
   const [selectedDocType, setSelectedDocType] = useState<
-    DocumentType | "OTHER"
-  >(DOCUMENT_TYPES[0]);
+    DocumentType | "OTHER" | "ALL"
+  >("ALL");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [docToDelete, setDocToDelete] = useState<UserDoc | null>(null);
 
@@ -189,6 +189,16 @@ export default function ClientDocuments({ userId }: { userId: string }) {
     return requiredDocsMap.get(selectedDocType.id) || [];
   }, [requiredDocsMap, selectedDocType]);
 
+  // Get all documents combined for "ALL" view
+  const allDocuments = useMemo(() => {
+    const allDocs: UserDoc[] = [];
+    requiredDocsMap.forEach((docs) => {
+      allDocs.push(...docs);
+    });
+    allDocs.push(...otherDocs);
+    return allDocs;
+  }, [requiredDocsMap, otherDocs]);
+
   const handleOpenDeleteDialog = (doc: UserDoc) => {
     setDocToDelete(doc);
     setIsDeleteDialogOpen(true);
@@ -206,22 +216,32 @@ export default function ClientDocuments({ userId }: { userId: string }) {
 
   // Get the current selected document type label for display
   const selectedDocTypeLabel =
-    selectedDocType === "OTHER"
+    selectedDocType === "ALL"
+      ? "All Documents"
+      : selectedDocType === "OTHER"
       ? "Other Documents"
       : DOCUMENT_TYPES.find((dt) => dt.id === selectedDocType.id)?.title ||
         "Select Document Type";
 
   return (
-    <main className="flex flex-col gap-4 sm:gap-5 p-3 sm:p-5 max-w-full overflow-hidden">
+    <main className="flex flex-col gap-4 sm:gap-5 p-3 sm:p-5 w-full">
       {/* Document Type Dropdown */}
       <div className="w-full">
         <h2 className="text-base sm:text-lg font-semibold mb-3">
           Select Document Type
         </h2>
         <Select
-          value={selectedDocType === "OTHER" ? "OTHER" : selectedDocType.id}
+          value={
+            selectedDocType === "ALL"
+              ? "ALL"
+              : selectedDocType === "OTHER"
+              ? "OTHER"
+              : selectedDocType.id
+          }
           onValueChange={(value) => {
-            if (value === "OTHER") {
+            if (value === "ALL") {
+              setSelectedDocType("ALL");
+            } else if (value === "OTHER") {
               setSelectedDocType("OTHER");
             } else {
               const docType = DOCUMENT_TYPES.find((dt) => dt.id === value);
@@ -232,7 +252,27 @@ export default function ClientDocuments({ userId }: { userId: string }) {
           <SelectTrigger className="w-full h-10 sm:h-11">
             <SelectValue placeholder="Select a document type">
               <div className="flex items-center gap-2">
-                {selectedDocType !== "OTHER" ? (
+                {selectedDocType === "ALL" ? (
+                  <>
+                    <FolderArchive className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-grow text-left text-sm">
+                      {selectedDocTypeLabel}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium flex-shrink-0">
+                      {allDocuments.length}
+                    </span>
+                  </>
+                ) : selectedDocType === "OTHER" ? (
+                  <>
+                    <FolderArchive className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-grow text-left text-sm">
+                      Other Documents
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium flex-shrink-0">
+                      {otherDocs.length}
+                    </span>
+                  </>
+                ) : (
                   <>
                     <selectedDocType.icon className="h-4 w-4 flex-shrink-0" />
                     <span className="flex-grow text-left text-sm">
@@ -253,21 +293,20 @@ export default function ClientDocuments({ userId }: { userId: string }) {
                       );
                     })()}
                   </>
-                ) : (
-                  <>
-                    <FolderArchive className="h-4 w-4 flex-shrink-0" />
-                    <span className="flex-grow text-left text-sm">
-                      Other Documents
-                    </span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium flex-shrink-0">
-                      {otherDocs.length}
-                    </span>
-                  </>
                 )}
               </div>
             </SelectValue>
           </SelectTrigger>
           <SelectContent className="max-h-[60vh] overflow-y-auto">
+            <SelectItem value="ALL" className="py-3">
+              <div className="flex items-center gap-2 w-full">
+                <FolderArchive className="h-4 w-4 flex-shrink-0" />
+                <span className="flex-grow text-sm">All Documents</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium flex-shrink-0">
+                  {allDocuments.length}
+                </span>
+              </div>
+            </SelectItem>
             {DOCUMENT_TYPES.map((docType) => {
               const uploadedDocs = requiredDocsMap.get(docType.id) || [];
               const isUploaded = uploadedDocs.length > 0;
@@ -309,8 +348,18 @@ export default function ClientDocuments({ userId }: { userId: string }) {
       </div>
 
       {/* Document Display or Upload Section */}
-      <section className="w-full max-w-full overflow-hidden">
-        {selectedDocType === "OTHER" ? (
+      <section className="w-full">
+        {selectedDocType === "ALL" ? (
+          // --- View for "All Documents" ---
+          <div>
+            <DocumentPreviewer
+              docs={allDocuments}
+              onDelete={handleOpenDeleteDialog}
+              isDeleting={isDeleting}
+              isAdmin={isAdmin || isBroker}
+            />
+          </div>
+        ) : selectedDocType === "OTHER" ? (
           // --- View for "Other Documents" ---
           <div>
             {<UploadFile userId={userId} />}
