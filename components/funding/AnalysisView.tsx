@@ -40,17 +40,17 @@ const AnalysisView = ({ referenceNumber }: Props) => {
 
   if (!analysisData || analysisData?.length === 0) {
     return (
-      <div className="flex flex-row justify-between">
-        <div className="p-4">No analysis found.</div>
+      <div className="flex flex-col sm:flex-row justify-between gap-3 p-4">
+        <div className="text-sm sm:text-base">No analysis found.</div>
         <RefreshAnalysisData referenceNumber={referenceNumber} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-row justify-between">
-        <div className="flex flex-row gap-2">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between gap-3">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <SendClientAnalysisData referenceNumber={referenceNumber} />
           <SaveToDocumentsButton referenceNumber={referenceNumber} />
         </div>
@@ -94,11 +94,11 @@ const SendClientAnalysisData = ({
     <>
       <Button
         variant={"ghost"}
-        className="cursor-pointer bg-blue-200 hover:bg-blue-300"
+        className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white w-full sm:w-auto h-10 sm:h-9"
         onClick={() => setRefreshConfirmationOpen(true)}
       >
         <IconMenu
-          icon={<Mail className="h-4 w-4" color="red" />}
+          icon={<Mail className="h-4 w-4" />}
           text="Email Client Analysis Data"
         />
       </Button>
@@ -111,22 +111,24 @@ const SendClientAnalysisData = ({
           }}
         >
           <AlertDialogTrigger asChild></AlertDialogTrigger>
-          <AlertDialogContent>
+          <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle>Confirmation</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="text-base sm:text-lg">
+                Confirmation
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-sm">
                 {`Are you sure you want to send the analysis data to the client?`}
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
               <AlertDialogCancel
-                className="cursor-pointer"
+                className="cursor-pointer w-full sm:w-auto"
                 disabled={isSending}
               >
                 <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
               </AlertDialogCancel>
               <AlertDialogAction
-                className="bg-red-600 hover:bg-red-700 cursor-pointer"
+                className="bg-red-600 hover:bg-red-700 cursor-pointer w-full sm:w-auto"
                 onClick={async (e) => {
                   e.preventDefault();
                   await handleRefreshAnalysisData();
@@ -135,14 +137,11 @@ const SendClientAnalysisData = ({
               >
                 {isSending ? (
                   <IconMenu
-                    text="Refreshing..."
+                    text="Sending..."
                     icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
                   />
                 ) : (
-                  <IconMenu
-                    text="Refresh"
-                    icon={<RefreshCcw className="h-4 w-4" />}
-                  />
+                  <IconMenu text="Send" icon={<Mail className="h-4 w-4" />} />
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -175,11 +174,11 @@ const SaveToDocumentsButton = ({
     <>
       <Button
         variant={"ghost"}
-        className="cursor-pointer bg-green-200 hover:bg-green-300"
+        className="cursor-pointer bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto h-10 sm:h-9"
         onClick={() => setConfirmationOpen(true)}
       >
         <IconMenu
-          icon={<FileDown className="h-4 w-4" color="green" />}
+          icon={<FileDown className="h-4 w-4" />}
           text="Save to My Documents"
         />
       </Button>
@@ -192,19 +191,24 @@ const SaveToDocumentsButton = ({
           }}
         >
           <AlertDialogTrigger asChild></AlertDialogTrigger>
-          <AlertDialogContent>
+          <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle>Save to My Documents</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="text-base sm:text-lg">
+                Save to My Documents
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-sm">
                 {`This will convert the funding analysis to a PDF and save it to the client's My Documents section. Do you want to continue?`}
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="cursor-pointer" disabled={isSaving}>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+              <AlertDialogCancel
+                className="cursor-pointer w-full sm:w-auto"
+                disabled={isSaving}
+              >
                 <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
               </AlertDialogCancel>
               <AlertDialogAction
-                className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                className="bg-green-600 hover:bg-green-700 cursor-pointer w-full sm:w-auto"
                 onClick={async (e) => {
                   e.preventDefault();
                   await handleSaveToDocuments();
@@ -254,7 +258,7 @@ const RefreshAnalysisData = ({
     <>
       <Button
         variant={"ghost"}
-        className="cursor-pointer bg-blue-200 hover:bg-blue-300"
+        className="cursor-pointer bg-orange-500 hover:bg-orange-600 text-white w-full sm:w-auto h-10 sm:h-9"
         onClick={() => setRefreshConfirmationOpen(true)}
       >
         <IconMenu
@@ -271,23 +275,25 @@ const RefreshAnalysisData = ({
           }}
         >
           <AlertDialogTrigger asChild></AlertDialogTrigger>
-          <AlertDialogContent>
+          <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle>Confirmation</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="text-base sm:text-lg">
+                Confirmation
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-sm">
                 {`Please confirm that you want to refresh the fund application analysis data. 
                 This action will delete the mapped bank products and analysis. This action cannot be undone.`}
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
               <AlertDialogCancel
-                className="cursor-pointer"
+                className="cursor-pointer w-full sm:w-auto"
                 disabled={isUpdating}
               >
                 <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
               </AlertDialogCancel>
               <AlertDialogAction
-                className="bg-red-600 hover:bg-red-700 cursor-pointer"
+                className="bg-red-600 hover:bg-red-700 cursor-pointer w-full sm:w-auto"
                 onClick={async (e) => {
                   e.preventDefault();
                   await handleRefreshAnalysisData();
