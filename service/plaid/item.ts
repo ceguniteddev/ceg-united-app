@@ -43,7 +43,7 @@ export const recordWebhookData = async (webhookData: PlaidItemWebhookData) => {
 };
 
 export const getItemLinkUpdateModeData = async (userId: string) => {
-  logInfo("getLinkUpdateModeData", { userId });
+  logInfo("getItemLinkUpdateModeData", { userId });
   const db = firestoreAdmin();
 
   // Get all Plaid tokens for this user
@@ -90,7 +90,7 @@ export const getItemLinkUpdateModeData = async (userId: string) => {
 };
 
 export const getItemLinkUpdateModeNewAccount = async (userId: string) => {
-  logInfo("getLinkUpdateModeData", { userId });
+  logInfo("getItemLinkUpdateModeNewAccount", { userId });
   const db = firestoreAdmin();
 
   // Get all Plaid tokens for this user
@@ -141,7 +141,10 @@ export const removeItemLinkUpdateModeData = async (itemId: string) => {
   if (!itemId) throw new Error("Item id is required");
 
   const db = firestoreAdmin();
-  const snapshot = await db.collection(USER_LINK_UPDATE_MODE).where("item_id", "==", itemId).get();
+  const snapshot = await db
+    .collection(USER_LINK_UPDATE_MODE)
+    .where("item_id", "==", itemId)
+    .get();
 
   if (snapshot.empty) return null;
 
@@ -158,7 +161,10 @@ export const removeItemLinkUpdateModeNewAccount = async (itemId: string) => {
   if (!itemId) throw new Error("Item id is required");
 
   const db = firestoreAdmin();
-  const snapshot = await db.collection(NEW_ACCOUNTS_AVAILABLE).where("item_id", "==", itemId).get();
+  const snapshot = await db
+    .collection(NEW_ACCOUNTS_AVAILABLE)
+    .where("item_id", "==", itemId)
+    .get();
 
   if (snapshot.empty) return null;
 

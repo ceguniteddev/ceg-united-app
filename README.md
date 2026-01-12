@@ -60,25 +60,6 @@ NEXT_PUBLIC_DEFENITS_URL=<denefits_checkout_url>
 NEXT_PUBLIC_FANBASIS_URL=<fanbasis_checkout_url>
 n8n_HOST=https://n8n.srv967756.hstgr.cloud/webhook
 
-# Optional - AI Integration
-OPENROUTER_API_KEY=<openrouter_api_key>
-```
-
-### Production Environment
-
-For production, uncomment and update these variables in your `.env.local`:
-
-```bash
-# FIREBASE_DB_NAME=ceg-united-db-production
-# FIREBASE_STORAGE_NAME=gs://ceg-united-llc-prod.firebasestorage.app
-# ENVIRONMENT=production
-# NEXT_PUBLIC_ENVIRONMENT=production
-# FIREBASE_PROJECT_ID=ceg-united-llc-prod
-# FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@ceg-united-llc-prod.iam.gserviceaccount.com
-# FIREBASE_PRIVATE_KEY_BASE64=<prod_base64_encoded_service_account_json>
-# NEXT_PUBLIC_RECAPTCHA_SITE_KEY=<prod_recaptcha_site_key>
-# MUX_TOKEN_ID=<prod_mux_token_id>
-# MUX_TOKEN_SECRET=<prod_mux_token_secret>
 ```
 
 ---

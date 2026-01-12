@@ -74,6 +74,24 @@ const MobileNavClient = () => {
                   ) {
                     return false;
                   }
+
+                  // Filter out "Letter Stream" if user has no letter features enabled
+                  if (item.route === "/client/letter-stream") {
+                    const hasAnyLetterFeature =
+                      userData?.letterFeatureEnabled ||
+                      userData?.latePaymentRemovalEnabled ||
+                      userData?.unauthorizedInquiryRemovalEnabled ||
+                      userData?.verifiedAccountDisputeEnabled ||
+                      userData?.noResponseFollowUpEnabled ||
+                      userData?.accountErrorCorrectionEnabled ||
+                      userData?.collectionAccountRemovalEnabled ||
+                      userData?.fraudulentAccountRemovalEnabled;
+
+                    if (!hasAnyLetterFeature) {
+                      return false;
+                    }
+                  }
+
                   return true;
                 })
                 .map((item) => {
