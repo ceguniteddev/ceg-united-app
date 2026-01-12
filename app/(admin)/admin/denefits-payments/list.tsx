@@ -236,15 +236,105 @@ const DenefitsPaymentsList = ({ denefitsPayments }: Props) => {
 
   return (
     <div className="mx-auto w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-3 sm:py-4">
         <Input
-          placeholder="Filter"
+          placeholder="Filter contracts..."
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm h-10 sm:h-9"
         />
       </div>
-      <div className="rounded-md border flex">
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3 mb-4">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const data = row.original;
+            const hasUserId = !!(data.userId && data.userId !== null);
+            const fullName =
+              data.mappedFirstName && data.mappedLastName
+                ? `${data.mappedFirstName} ${data.mappedLastName}`
+                : null;
+
+            return (
+              <div
+                key={row.id}
+                className="border rounded-lg p-4 bg-white shadow-sm space-y-3"
+              >
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-xs text-muted-foreground">
+                      Contract Code
+                    </span>
+                    <p className="font-semibold text-sm break-words">
+                      {data.contract_code}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t">
+                    <span className="text-xs text-muted-foreground">
+                      Customer
+                    </span>
+                    <p className="text-sm">
+                      {data.customer_first_name} {data.customer_last_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground break-words">
+                      {data.customer_email}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t">
+                    <span className="text-xs text-muted-foreground">
+                      Mapped Client
+                    </span>
+                    {fullName ? (
+                      <>
+                        <p className="text-sm">{fullName}</p>
+                        <p className="text-xs text-muted-foreground break-words">
+                          {data.mappedEmail}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-gray-400">Not Mapped</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 pt-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full h-10"
+                    onClick={() => handleMapClick(data)}
+                    disabled={hasUserId}
+                  >
+                    <Link2 className="mr-2 h-4 w-4" />
+                    {hasUserId ? "Already Mapped" : "Map User"}
+                  </Button>
+                  {hasUserId && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="w-full h-10"
+                      onClick={() => handleUnmapClick(data)}
+                    >
+                      <Unlink className="mr-2 h-4 w-4" />
+                      Unmap
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            No results.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:flex rounded-md border">
         <ScrollArea type="always" className="w-1 flex-1">
           <Table>
             <TableHeader>
@@ -306,12 +396,14 @@ const DenefitsPaymentsList = ({ denefitsPayments }: Props) => {
           setIsOpen={setIsDialogOpen}
           title="Map Contract to Client"
           description="Select a client to map this denefits contract to."
-          className="w-11/12 max-w-4xl"
+          className="w-full sm:w-11/12 max-w-4xl max-h-[90vh]"
         >
-          <MapDenefitsContractForm
-            contract={selectedContract}
-            setOpen={setIsDialogOpen}
-          />
+          <div className="max-h-[70vh] overflow-y-auto">
+            <MapDenefitsContractForm
+              contract={selectedContract}
+              setOpen={setIsDialogOpen}
+            />
+          </div>
         </ResponsiveDialog>
       )}
     </div>
