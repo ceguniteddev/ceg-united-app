@@ -9,7 +9,7 @@ export default function DashboardPage() {
   if (isLoading) return <Spinner displayText="Loading dashboard..." />;
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="w-full">
       <ClientDashboard clientData={clientStatistics} />
     </div>
   );
