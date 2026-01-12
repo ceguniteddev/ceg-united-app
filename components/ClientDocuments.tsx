@@ -39,6 +39,17 @@ import Image from "next/image";
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
 import { DOCUMENT_TYPES, DocumentType } from "@/lib/document-types";
 
+const cleanFileName = (fileName: string) => {
+  const matchingDocType = DOCUMENT_TYPES.find((dt) =>
+    fileName.startsWith(dt.id + "_")
+  );
+  if (matchingDocType) {
+    return fileName.substring((matchingDocType.id + "_").length);
+  }
+
+  return fileName;
+};
+
 // A new, reusable component to display a list of documents
 const DocumentPreviewer = ({
   docs,
@@ -69,8 +80,8 @@ const DocumentPreviewer = ({
           >
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
               <div className="flex-1 min-w-0 max-w-full">
-                <h3 className="font-semibold text-sm leading-tight truncate overflow-hidden text-ellipsis w-full">
-                  {doc.name.split("/").pop()}
+                <h3 className="font-semibold text-sm leading-tight break-words w-full">
+                  {cleanFileName(doc.name.split("/").pop() || "")}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1">
                   {doc.contentType ?? "unknown"} •{" "}
@@ -224,7 +235,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
         "Select Document Type";
 
   return (
-    <main className="flex flex-col gap-4 sm:gap-5 p-3 sm:p-5 w-full">
+    <main className="flex flex-col gap-4 sm:gap-5 p-3 sm:p-5 w-full max-w-full overflow-x-hidden">
       {/* Document Type Dropdown */}
       <div className="w-full">
         <h2 className="text-base sm:text-lg font-semibold mb-3">
@@ -399,7 +410,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
               This action cannot be undone. This will permanently delete the
               file
               <span className="font-bold block mt-2 break-all text-xs sm:text-sm">
-                {docToDelete?.name.split("/").pop()}
+                {cleanFileName(docToDelete?.name.split("/").pop() || "")}
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>

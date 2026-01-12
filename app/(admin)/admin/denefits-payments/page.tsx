@@ -17,7 +17,7 @@ const DenefitsPaymentsPage = () => {
     <section className="home">
       <div className="home-content">
         <header className="home-header">
-          <div className="flex flex-row justify-between">
+          <div className="flex flex-col sm:flex-row justify-between gap-3">
             <HeaderBox
               title="Denefits Payments"
               subtext="Manage denefits payments."
@@ -25,7 +25,9 @@ const DenefitsPaymentsPage = () => {
           </div>
         </header>
         {(!denefitsPayments || denefitsPayments.length === 0) && (
-          <p className="text-center">No denefits payments</p>
+          <p className="text-center text-sm sm:text-base">
+            No denefits payments
+          </p>
         )}
 
         {denefitsPayments && denefitsPayments.length > 0 && (
