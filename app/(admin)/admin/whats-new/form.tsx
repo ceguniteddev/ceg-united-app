@@ -60,12 +60,12 @@ const AdminWhatsNew = () => {
   const isEditing = !!editingData;
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+    <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-12">
       <div className="lg:col-span-7">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} aria-busy={isRecording}>
             <fieldset disabled={isRecording}>
-              <main className="max-w-3xl mx-auto space-y-4">
+              <main className="max-w-3xl mx-auto space-y-3 sm:space-y-4 p-3 sm:p-0">
                 <CustomFormField name="title" placeholder="" label="* Title" />
 
                 <CustomFormField
@@ -76,18 +76,26 @@ const AdminWhatsNew = () => {
                   label="* Content"
                 />
 
-                <CustomFormField name="status" placeholder="" type="switch" label="Activate" />
+                <CustomFormField
+                  name="status"
+                  placeholder=""
+                  type="switch"
+                  label="Activate"
+                />
 
-                <div className="col-span-2 flex flex-wrap items-center justify-start gap-2 self-end">
+                <div className="col-span-2 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-start gap-2 self-end">
                   {isEditing && (
                     <Button
                       type="button"
                       variant="outline"
                       disabled={isSubmitting}
-                      className="disabled:cursor-not-allowed"
+                      className="disabled:cursor-not-allowed w-full sm:w-auto h-10 sm:h-9"
                       onClick={handleCancelEdit}
                     >
-                      <IconMenu icon={<XIcon className="mr-2 h-4 w-4" />} text="Cancel" />
+                      <IconMenu
+                        icon={<XIcon className="mr-2 h-4 w-4" />}
+                        text="Cancel"
+                      />
                     </Button>
                   )}
 
@@ -95,17 +103,25 @@ const AdminWhatsNew = () => {
                     type="submit"
                     variant="outline"
                     disabled={isSubmitting}
-                    className="bg-emerald-200 hover:bg-emerald-300 disabled:cursor-not-allowed"
+                    className="bg-emerald-200 hover:bg-emerald-300 disabled:cursor-not-allowed w-full sm:w-auto h-10 sm:h-9"
                   >
                     {isSubmitting ? (
                       <IconMenu
-                        icon={<Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
+                        icon={
+                          <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                        }
                         text={isEditing ? "Updating..." : "Saving..."}
                       />
                     ) : isEditing ? (
-                      <IconMenu icon={<CheckIcon className="mr-2 h-4 w-4" />} text="Update" />
+                      <IconMenu
+                        icon={<CheckIcon className="mr-2 h-4 w-4" />}
+                        text="Update"
+                      />
                     ) : (
-                      <IconMenu icon={<SaveIcon className="mr-2 h-4 w-4" />} text="Save" />
+                      <IconMenu
+                        icon={<SaveIcon className="mr-2 h-4 w-4" />}
+                        text="Save"
+                      />
                     )}
                   </Button>
                 </div>
@@ -114,7 +130,7 @@ const AdminWhatsNew = () => {
           </form>
         </Form>
       </div>
-      <aside className="lg:col-span-5 lg:pl-2 lg:sticky lg:top-24">
+      <aside className="lg:col-span-5 lg:pl-2 lg:sticky lg:top-24 mt-6 lg:mt-0">
         <WhatsNewList
           onEdit={(data) => {
             setEditingData(data);

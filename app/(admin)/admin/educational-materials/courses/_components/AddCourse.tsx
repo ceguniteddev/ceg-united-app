@@ -14,14 +14,16 @@ const AddCourse = () => {
         setIsOpen={setOpen}
         title={``}
         description=""
-        className="w-3/12 "
+        className="w-full sm:w-11/12 max-w-4xl max-h-[90vh]"
       >
-        <CourseCreatePage setOpen={setOpen} />
+        <div className="max-h-[70vh] overflow-y-auto">
+          <CourseCreatePage setOpen={setOpen} />
+        </div>
       </ResponsiveDialog>
 
       <Button
         variant={"outline"}
-        className="bg-blue-200 hover:bg-blue-300 cursor-pointer"
+        className="bg-blue-200 hover:bg-blue-300 cursor-pointer w-full sm:w-auto h-10 sm:h-9"
         onClick={() => setOpen(true)}
       >
         <PlusIcon className="h-4 w-4" />

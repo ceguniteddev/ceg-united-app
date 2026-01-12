@@ -29,9 +29,11 @@ export function RowActions({ data }: Props) {
         title={`View Call Request`}
         description=""
         descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-3/6 flex flex-col  "
+        className="w-full sm:w-11/12 max-w-4xl max-h-[90vh]"
       >
-        <ViewCallRequest data={data} setOpen={setOpen} />
+        <div className="max-h-[70vh] overflow-y-auto">
+          <ViewCallRequest data={data} setOpen={setOpen} />
+        </div>
       </ResponsiveDialog>
 
       <DropdownMenu modal={true}>

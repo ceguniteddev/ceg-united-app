@@ -35,7 +35,10 @@ export const columns: ColumnDef<RequestCall>[] = [
     accessorKey: "fullName",
     id: "fullName",
     header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
         Full Name <ArrowUpDown />
       </Button>
     ),
@@ -47,7 +50,10 @@ export const columns: ColumnDef<RequestCall>[] = [
     accessorKey: "email",
     id: "email",
     header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
         Email
         <ArrowUpDown />
       </Button>
@@ -112,8 +118,11 @@ type Props = {
 
 const CallRequestList = ({ callRequests, rowActions }: Props) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
 
@@ -146,17 +155,65 @@ const CallRequestList = ({ callRequests, rowActions }: Props) => {
 
   return (
     <div className="mx-auto w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-3 sm:py-4">
         <Input
-          placeholder="Filter"
-          // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+          placeholder="Filter call requests..."
           value={globalFilter}
-          // onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm h-10 sm:h-9"
         />
       </div>
-      <div className="overflow-hidden rounded-md border">
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3 mb-4">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const data = row.original;
+
+            return (
+              <div
+                key={row.id}
+                className="border rounded-lg p-4 bg-white shadow-sm space-y-3"
+              >
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm break-words">
+                      {data.fullName}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1 break-words">
+                      {data.email}
+                    </p>
+                    <p className="text-xs text-muted-foreground break-words">
+                      {data.phoneNumber}
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <CategoryBadge category={data.status} />
+                  </div>
+                </div>
+
+                {data.message && (
+                  <div className="pt-2 border-t">
+                    <span className="text-xs text-muted-foreground block mb-1">
+                      Message:
+                    </span>
+                    <p className="text-xs break-words">{data.message}</p>
+                  </div>
+                )}
+
+                <div className="pt-2 border-t">{rowActions(data)}</div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            No results.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -166,7 +223,10 @@ const CallRequestList = ({ callRequests, rowActions }: Props) => {
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   );
                 })}
@@ -176,17 +236,26 @@ const CallRequestList = ({ callRequests, rowActions }: Props) => {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>

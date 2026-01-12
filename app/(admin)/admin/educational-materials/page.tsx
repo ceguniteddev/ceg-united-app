@@ -14,17 +14,19 @@ const Page = () => {
 
   return (
     <section className="transactions">
-      <div className="transactions-header flex flex-row justify-between">
+      <div className="transactions-header flex flex-col sm:flex-row justify-between gap-3">
         <HeaderBox title="Educational Materials" />
         <AddCourse />
       </div>
 
-      <div className="space-y-6">
-        <section className="flex w-full flex-col gap-6">
+      <div className="space-y-4 sm:space-y-6">
+        <section className="flex w-full flex-col gap-4 sm:gap-6">
           {courses && courses.length > 0 ? (
             <CoursesList courses={courses} />
           ) : (
-            <p>No educational materials found.</p>
+            <p className="text-center text-sm sm:text-base">
+              No educational materials found.
+            </p>
           )}
         </section>
       </div>
