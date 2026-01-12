@@ -17,12 +17,12 @@ const CallRequestPage = () => {
     <section className="home">
       <div className="home-content">
         <header className="home-header">
-          <div className="flex flex-row justify-between">
+          <div className="flex flex-col sm:flex-row justify-between gap-3">
             <HeaderBox title="Call Requests" subtext="Manage call requests." />
           </div>
         </header>
         {(!requestCalls || requestCalls.length === 0) && (
-          <p className="text-center">No call requests</p>
+          <p className="text-center text-sm sm:text-base">No call requests</p>
         )}
 
         {requestCalls && requestCalls.length > 0 && (

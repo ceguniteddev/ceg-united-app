@@ -7,7 +7,7 @@ import AdminWhatsNew from "./form";
 const Page = () => {
   return (
     <section className="transactions">
-      <div className="transactions-header flex flex-row justify-between">
+      <div className="transactions-header flex flex-col sm:flex-row justify-between gap-3">
         <HeaderBox title="New Features Management" />
       </div>
 

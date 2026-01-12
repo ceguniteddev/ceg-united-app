@@ -24,13 +24,13 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import IconMenu from "@/components/icon-menu";
-import { BankFormData } from "@/schema/bank-products";
 import SortableHeader from "@/components/SortableHeader";
 import CategoryBadge from "@/components/CategoryBadge";
 import { useRouter } from "next/navigation";
 import React from "react";
+import { Course } from "@/schema/educational-materials/course";
 
-const columns: ColumnDef<BankFormData>[] = [
+const columns: ColumnDef<Course>[] = [
   {
     accessorKey: "title",
     id: "title",
@@ -101,17 +101,55 @@ const CoursesList = ({ courses }: { courses?: any }) => {
 
   return (
     <div className="mx-auto w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-3 sm:py-4">
         <Input
-          placeholder="Filter"
-          // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+          placeholder="Filter courses..."
           value={globalFilter}
-          // onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm h-10 sm:h-9"
         />
       </div>
-      <div className="overflow-hidden rounded-md border">
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3 mb-4">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const data = row.original;
+            const isPublished = data.isPublished;
+            const status = isPublished ? "Published" : "Unpublished";
+
+            return (
+              <div
+                key={row.id}
+                className="border rounded-lg p-4 bg-white shadow-sm space-y-3"
+              >
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm break-words">
+                      {data.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {data.category}
+                    </p>
+                  </div>
+                  <CategoryBadge category={status} />
+                </div>
+
+                <div className="pt-2 border-t">
+                  <ActionCell row={row} />
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            No results.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -175,7 +213,7 @@ const ActionCell = ({ row }: { row: any }) => {
     <Button
       variant="ghost"
       size={"sm"}
-      className="cursor-pointer bg-blue-200 hover:bg-blue-300"
+      className="cursor-pointer bg-blue-200 hover:bg-blue-300 w-full sm:w-auto h-10 sm:h-9"
       onClick={() =>
         router.push(`/admin/educational-materials/courses/${row.original.id}`)
       }

@@ -60,8 +60,11 @@ const WhatsNewList = ({ onEdit }: FundingProductsListProps) => {
   const { data, isLoading } = useWhatsNewQuery();
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [globalFilter, setGlobalFilter] = React.useState("");
 
@@ -93,7 +96,8 @@ const WhatsNewList = ({ onEdit }: FundingProductsListProps) => {
         ),
         cell: ({ row }) => {
           const { status } = row.original;
-          if (status === true) return <div className="text-green-600">Active</div>;
+          if (status === true)
+            return <div className="text-green-600">Active</div>;
           return <div className="text-red-600">Inactive</div>;
         },
       },
@@ -129,21 +133,62 @@ const WhatsNewList = ({ onEdit }: FundingProductsListProps) => {
 
   if (isLoading) return <Spinner displayText="Loading data..." />;
 
-  if (!data || data.length === 0) return <p className="text-center">No data found</p>;
+  if (!data || data.length === 0)
+    return <p className="text-center text-sm sm:text-base">No data found</p>;
 
   return (
     <div className="mx-auto w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-3 sm:py-4">
         <Input
-          placeholder="Filter"
-          // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+          placeholder="Filter features..."
           value={globalFilter}
-          // onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm h-10 sm:h-9"
         />
       </div>
-      <div className="overflow-hidden rounded-md border">
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3 mb-4">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const data = row.original;
+
+            return (
+              <div
+                key={row.id}
+                className="border rounded-lg p-4 bg-white shadow-sm space-y-3"
+              >
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm break-words">
+                      {data.title}
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {data.status ? (
+                      <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-medium">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 font-medium">
+                        Inactive
+                      </span>
+                    )}
+                    <ActionCell row={row} onEdit={onEdit} />
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            No results.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -153,7 +198,10 @@ const WhatsNewList = ({ onEdit }: FundingProductsListProps) => {
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   );
                 })}
@@ -163,17 +211,26 @@ const WhatsNewList = ({ onEdit }: FundingProductsListProps) => {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -189,9 +246,19 @@ const WhatsNewList = ({ onEdit }: FundingProductsListProps) => {
 
 export default WhatsNewList;
 
-const ActionCell = ({ row, onEdit }: { row: any; onEdit: (product: WhatsNew) => void }) => {
+const ActionCell = ({
+  row,
+  onEdit,
+}: {
+  row: any;
+  onEdit: (product: WhatsNew) => void;
+}) => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const { delete: deleteData, isDeleting, isDeleteSuccess } = useWhatsNewMutation();
+  const {
+    delete: deleteData,
+    isDeleting,
+    isDeleteSuccess,
+  } = useWhatsNewMutation();
 
   const handleDelete = async () => {
     await deleteData(row.original.id);
@@ -231,7 +298,10 @@ const ActionCell = ({ row, onEdit }: { row: any; onEdit: (product: WhatsNew) => 
               className="cursor-pointer w-full justify-start rounded-md p-2 text-red-500 hover:bg-neutral-100"
               onClick={() => setIsDeleteOpen(true)}
             >
-              <IconMenu text="Delete" icon={<Trash2Icon className="h-4 w-4" />} />
+              <IconMenu
+                text="Delete"
+                icon={<Trash2Icon className="h-4 w-4" />}
+              />
             </Button>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -244,20 +314,25 @@ const ActionCell = ({ row, onEdit }: { row: any; onEdit: (product: WhatsNew) => 
             if (!isDeleting) setIsDeleteOpen(open);
           }}
         >
-          <AlertDialogContent>
+          <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle>Confirmation</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="text-base sm:text-lg">
+                Confirmation
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-sm">
                 This will permanently delete{" "}
                 <span className="font-semibold">{row.original.title}</span>.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+              <AlertDialogCancel
+                disabled={isDeleting}
+                className="w-full sm:w-auto"
+              >
                 <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
               </AlertDialogCancel>
               <AlertDialogAction
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
                 onClick={async (e) => {
                   e.preventDefault();
                   await handleDelete();
@@ -270,7 +345,10 @@ const ActionCell = ({ row, onEdit }: { row: any; onEdit: (product: WhatsNew) => 
                     icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
                   />
                 ) : (
-                  <IconMenu text="Delete" icon={<Trash2Icon className="h-4 w-4 mr-2" />} />
+                  <IconMenu
+                    text="Delete"
+                    icon={<Trash2Icon className="h-4 w-4 mr-2" />}
+                  />
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
