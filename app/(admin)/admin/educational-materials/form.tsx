@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CustomFormField } from "@/components/CustomFormField";
 import { useCourseMutation } from "@/hooks/educational-materials/course";
+import IconMenu from "@/components/icon-menu";
+import { X, ArrowRight, Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   title: z.string().min(1, {
@@ -49,35 +51,50 @@ const CourseCreatePage = ({
   };
 
   return (
-    <div className="max-w-5xl mx-auto flex md:items-center md:justify-center h-full">
-      <div>
-        <h1 className="text-2xl">Name your course</h1>
-        <p className="text-sm text-slate-600">
-          What would you like to name your course? Don&apos;t worry, you can
-          change this later.
-        </p>
+    <div className="w-full p-4 sm:p-6">
+      <div className="space-y-4 sm:space-y-6">
+        <div>
+          <h1 className="text-lg sm:text-xl md:text-2xl font-semibold">
+            Name your course
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-600 mt-2">
+            What would you like to name your course? Don&apos;t worry, you can
+            change this later.
+          </p>
+        </div>
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-8 mt-8"
+            className="space-y-4 sm:space-y-6"
           >
             <CustomFormField name={"title"} label={"* Course title"} />
 
-            <div className="flex items-center gap-x-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setOpen(false)}
+                className="w-full sm:w-auto h-10 sm:h-9 order-2 sm:order-1 cursor-pointer"
               >
-                Cancel
+                <IconMenu icon={<X className="h-4 w-4" />} text="Cancel" />
               </Button>
 
               <Button
                 type="submit"
                 disabled={!isValid || isSubmitting || isCreating}
-                className="cursor-pointer"
+                className="cursor-pointer w-full sm:w-auto h-10 sm:h-9 bg-green-600 hover:bg-green-700 text-white order-1 sm:order-2"
               >
-                Continue
+                {isCreating ? (
+                  <IconMenu
+                    icon={<Loader2 className="h-4 w-4 animate-spin" />}
+                    text="Creating..."
+                  />
+                ) : (
+                  <IconMenu
+                    icon={<ArrowRight className="h-4 w-4" />}
+                    text="Continue"
+                  />
+                )}
               </Button>
             </div>
           </form>

@@ -20,9 +20,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getRequestCallStatus, RequestCall, RequestCallStatusEnum } from "@/schema";
-import { Loader2 } from "lucide-react"; // <-- 1. Import the loader icon
+import {
+  getRequestCallStatus,
+  RequestCall,
+  RequestCallStatusEnum,
+} from "@/schema";
+import { Loader2, X, CheckCircle, AlertCircle } from "lucide-react";
 import { useContactUsMutation } from "@/hooks/contact-us";
+import IconMenu from "@/components/icon-menu";
 
 // (Your schemas and DisplayField component remain the same)
 const updateRequestCallSchema = z.object({
@@ -31,10 +36,18 @@ const updateRequestCallSchema = z.object({
   status: RequestCallStatusEnum,
 });
 type UpdateRequestCall = z.infer<typeof updateRequestCallSchema>;
-const DisplayField = ({ label, value }: { label: string; value: string | undefined }) => (
-  <div className="mb-4">
-    <label className="block text-sm font-medium text-gray-500">{label}</label>
-    <div className="mt-1 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800">
+const DisplayField = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | undefined;
+}) => (
+  <div className="mb-3 sm:mb-4">
+    <label className="block text-xs sm:text-sm font-medium text-gray-500">
+      {label}
+    </label>
+    <div className="mt-1 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs sm:text-sm text-gray-800 break-words">
       {value || "-"}
     </div>
   </div>
@@ -74,20 +87,27 @@ const ViewCallRequestAdmin = ({ data, setOpen }: Props) => {
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
-        <div className="rounded-2xl border bg-white p-6 shadow-sm w-full">
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="space-y-4 sm:space-y-6 pb-4"
+      >
+        <div className="rounded-lg sm:rounded-2xl border bg-white p-4 sm:p-6 shadow-sm w-full">
           {/* Section 1: Read-only Client Data (Unchanged) */}
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Client Request Details</h3>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+            Client Request Details
+          </h3>
           <DisplayField label="Full Name" value={data.fullName} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <DisplayField label="Email Address" value={data.email} />
             <DisplayField label="Phone Number" value={data.phoneNumber} />
           </div>
           <DisplayField label="Message" value={data.message} />
-          <Separator className="my-6" />
+          <Separator className="my-4 sm:my-6" />
 
           {/* Section 2: Writable Admin Fields (Unchanged) */}
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Admin Actions</h3>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+            Admin Actions
+          </h3>
           <fieldset disabled={isSubmitting} className="space-y-4">
             <CustomFormField
               name={"remarks"}
@@ -105,36 +125,77 @@ const ViewCallRequestAdmin = ({ data, setOpen }: Props) => {
             />
 
             {/* Section 3: The AlertDialog with the fix */}
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button disabled={isSubmitting} className="w-full">
-                  Update Status
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action will save your changes and update the request status.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  {/* Disable Cancel while submitting */}
-                  <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto h-10 sm:h-9 cursor-pointer"
+              >
+                <IconMenu icon={<X className="h-4 w-4" />} text="Close" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto h-10 sm:h-9 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+                  >
+                    <IconMenu
+                      icon={<CheckCircle className="h-4 w-4" />}
+                      text="Update Status"
+                    />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-base sm:text-lg">
+                      Are you sure?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-sm">
+                      This action will save your changes and update the request
+                      status.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                    {/* Disable Cancel while submitting */}
+                    <AlertDialogCancel
+                      disabled={isSubmitting}
+                      className="w-full sm:w-auto cursor-pointer"
+                    >
+                      <IconMenu
+                        icon={<X className="h-4 w-4" />}
+                        text="Cancel"
+                      />
+                    </AlertDialogCancel>
 
-                  {/* 
+                    {/* 
                     --- THE FIX ---
                     Replace AlertDialogAction with a regular Button.
                     This gives us full control over the onClick event and prevents the dialog
                     from closing automatically before our async function is done.
                   */}
-                  <Button onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isSubmitting ? "Updating..." : "Confirm & Update"}
-                  </Button>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    <Button
+                      onClick={form.handleSubmit(onSubmit)}
+                      disabled={isSubmitting}
+                      className="w-full sm:w-auto h-10 sm:h-9 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+                    >
+                      {isSubmitting ? (
+                        <IconMenu
+                          icon={<Loader2 className="h-4 w-4 animate-spin" />}
+                          text="Updating..."
+                        />
+                      ) : (
+                        <IconMenu
+                          icon={<CheckCircle className="h-4 w-4" />}
+                          text="Confirm & Update"
+                        />
+                      )}
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </fieldset>
         </div>
       </form>
