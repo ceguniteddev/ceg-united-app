@@ -1,7 +1,7 @@
 import Sidebar from "@/components/Sidebar";
 import MobileNavClient from "@/components/MobileNavClient";
 import "driver.js/dist/driver.css";
-import UserBanners from "@/components/UserBanners";
+// import UserBanners from "@/components/UserBanners";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -19,7 +19,7 @@ export default function ClientLayout({
 }>) {
   return (
     <div>
-      <UserBanners />
+      {/* <UserBanners /> */}
 
       <main className="flex h-screen w-full font-inter">
         <Sidebar />
