@@ -308,13 +308,13 @@ const BankProductsList = ({
 
   if (!mappedFund || mappedFund.length === 0)
     return (
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <p>No mapped funds found.</p>
-          <div className="flex gap-2">
+      <div className="p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <p className="text-sm sm:text-base">No mapped funds found.</p>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Button
               variant={"outline"}
-              className="bg-green-200 hover:bg-green-300"
+              className="bg-green-200 hover:bg-green-300 w-full sm:w-auto h-10 sm:h-9"
               onClick={() => setIsRefreshAlertOpen(true)}
               disabled={isRefreshing}
             >
@@ -325,7 +325,7 @@ const BankProductsList = ({
             </Button>
             <Button
               variant={"outline"}
-              className="bg-blue-200 hover:bg-blue-300"
+              className="bg-blue-200 hover:bg-blue-300 w-full sm:w-auto h-10 sm:h-9"
               onClick={() => setIsAddDialogOpen(true)}
             >
               <PlusCircleIcon className="h-4 w-4" />
@@ -340,18 +340,20 @@ const BankProductsList = ({
             if (!isRefreshing) setIsRefreshAlertOpen(open);
           }}
         >
-          <AlertDialogContent>
+          <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle>Refresh Bank Products?</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="text-base sm:text-lg">
+                Refresh Bank Products?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-sm">
                 This will re-analyze the funding application and update the
                 mapped bank products. Existing approved products will not be
                 affected.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
               <AlertDialogCancel
-                className="cursor-pointer"
+                className="cursor-pointer w-full sm:w-auto"
                 disabled={isRefreshing}
               >
                 <IconMenu text="Cancel" icon={<XIcon className="h-4 w-4" />} />
@@ -362,7 +364,7 @@ const BankProductsList = ({
                   await handleRefresh();
                 }}
                 disabled={isRefreshing}
-                className="bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+                className="bg-green-600 hover:bg-green-700 text-white cursor-pointer w-full sm:w-auto"
               >
                 {isRefreshing ? (
                   <IconMenu
@@ -383,9 +385,9 @@ const BankProductsList = ({
         <ResponsiveDialog
           isOpen={isAddDialogOpen}
           setIsOpen={setIsAddDialogOpen}
-          title="Add Bank Products to Fund Mapping"
+          title="Add Bank Products"
           description="Select bank products to manually add to this funding application."
-          className="w-11/12 max-w-5xl"
+          className="w-full sm:w-11/12 max-w-5xl"
         >
           <ManualAddBankProduct
             referenceNumber={referenceNumber}
@@ -400,12 +402,14 @@ const BankProductsList = ({
 
   return (
     <div className="mx-auto w-full">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Mapped Bank Products</h3>
-        <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h3 className="text-base sm:text-lg font-semibold">
+          Mapped Bank Products
+        </h3>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button
             variant={"outline"}
-            className="bg-green-200 hover:bg-green-300"
+            className="bg-green-200 hover:bg-green-300 w-full sm:w-auto h-10 sm:h-9"
             onClick={() => setIsRefreshAlertOpen(true)}
             disabled={isRefreshing}
           >
@@ -416,7 +420,7 @@ const BankProductsList = ({
           </Button>
           <Button
             variant={"outline"}
-            className="bg-blue-200 hover:bg-blue-300"
+            className="bg-blue-200 hover:bg-blue-300 w-full sm:w-auto h-10 sm:h-9"
             onClick={() => setIsAddDialogOpen(true)}
           >
             <PlusCircleIcon className="h-4 w-4" />
@@ -475,7 +479,7 @@ const BankProductsList = ({
         setIsOpen={setIsAddDialogOpen}
         title="Add Bank Products to Fund Mapping"
         description="Select bank products to manually add to this funding application."
-        className="w-11/12 max-w-5xl"
+        className="w-full sm:w-11/12 max-w-5xl"
       >
         <ManualAddBankProduct
           referenceNumber={referenceNumber}
@@ -485,7 +489,112 @@ const BankProductsList = ({
           excludeIds={mappedProductIds}
         />
       </ResponsiveDialog>
-      <div className="overflow-hidden rounded-md border">
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3 mb-4">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const data = row.original;
+            const approvedFund = approvedMappedFunds?.find(
+              (fund) => String(fund.id) === String(data.id)
+            );
+            const isApproved = !!approvedFund;
+            const status =
+              approvedFund?.clientApplicationStatus || "Not Applied";
+            const approvedAmount = approvedFund?.approvedAmount;
+            const approvedRemarks = approvedFund?.approvedRemarks;
+            const showActions = status !== "Approved" && status !== "Funded";
+
+            return (
+              <div
+                key={row.id}
+                className="border rounded-lg p-4 bg-white shadow-sm space-y-3"
+              >
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm break-words">
+                      {data.bankName}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {data.financingTerm}
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 flex items-center gap-2">
+                    {isApproved ? (
+                      <div className="flex items-center text-green-500 text-xs">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Approved
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        Pending
+                      </span>
+                    )}
+                    {showActions && (
+                      <ActionCell
+                        row={row}
+                        referenceNumber={referenceNumber}
+                        isAdminApproved={isApproved}
+                        clientApplicationStatus={status}
+                        approvedMappedFund={approvedFund}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground text-xs">
+                      Product Names:
+                    </span>
+                    <div className="flex flex-col gap-0.5 mt-1">
+                      {(data.productName as string[])?.map((name, index) => (
+                        <span key={index} className="text-xs">
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between gap-2 pt-2 border-t">
+                    <span className="text-muted-foreground text-xs">
+                      Client Status:
+                    </span>
+                    <CategoryBadge category={status} />
+                  </div>
+
+                  {approvedAmount && (
+                    <div className="flex justify-between gap-2">
+                      <span className="text-muted-foreground text-xs">
+                        Approved Amount:
+                      </span>
+                      <span className="font-medium text-xs">
+                        {formatAmount(approvedAmount)}
+                      </span>
+                    </div>
+                  )}
+
+                  {approvedRemarks && (
+                    <div className="pt-2 border-t">
+                      <span className="text-muted-foreground text-xs block mb-1">
+                        Remarks:
+                      </span>
+                      <p className="text-xs break-words">{approvedRemarks}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            No results.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -595,32 +704,36 @@ const ActionCell = ({
         title={`View Bank Product - ${row.original.bankName}`}
         description=""
         descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-8/12 flex flex-col items-start justify-start min-h-screen "
+        className="w-full sm:w-11/12 md:w-10/12 lg:w-8/12 max-w-4xl max-h-[90vh]"
       >
-        <BankProductsForm
-          setOpen={setOpen}
-          data={row.original}
-          isAdminViewing={true}
-          referenceNumber={referenceNumber}
-        />
+        <div className="max-h-[70vh] overflow-y-auto">
+          <BankProductsForm
+            setOpen={setOpen}
+            data={row.original}
+            isAdminViewing={true}
+            referenceNumber={referenceNumber}
+          />
+        </div>
       </ResponsiveDialog>
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmation?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-base sm:text-lg">
+              Confirmation?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
               This will cancel the approved bank product mapping.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="cursor-pointer w-full sm:w-auto">
               Go Back
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelClick}
               disabled={isCancelling}
-              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer w-full sm:w-auto"
             >
               {isCancelling ? "Cancelling..." : "Yes, Cancel It"}
             </AlertDialogAction>
@@ -629,23 +742,28 @@ const ActionCell = ({
       </AlertDialog>
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Bank Product?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-base sm:text-lg">
+              Delete Bank Product?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
               This will permanently remove{" "}
               <span className="font-semibold">{row.original.bankName}</span>{" "}
               from the fund mapping. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer" disabled={isRemoving}>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel
+              className="cursor-pointer w-full sm:w-auto"
+              disabled={isRemoving}
+            >
               Go Back
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteClick}
               disabled={isRemoving}
-              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer w-full sm:w-auto"
             >
               {isRemoving ? "Deleting..." : "Yes, Delete It"}
             </AlertDialogAction>

@@ -113,13 +113,15 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
 
   // No changes to JSX below this line
   return (
-    <Card className="w-full ">
-      <CardContent className="space-y-6 pt-6">
+    <Card className="w-full">
+      <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
         {" "}
         {/* Added pt-6 for padding */}
         {/* --- DESCRIPTION SECTION --- */}
         <div>
-          <h3 className="font-semibold mb-2">Description</h3>
+          <h3 className="font-semibold text-sm sm:text-base mb-2">
+            Description
+          </h3>
           {isEditingDescription ? (
             <Form {...form}>
               <form
@@ -142,11 +144,11 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
                     </FormItem>
                   )}
                 />
-                <div className="flex justify-end space-x-2">
+                <div className="flex flex-col sm:flex-row justify-end gap-2">
                   <Button
                     type="button"
                     variant="ghost"
-                    className="cursor-pointer"
+                    className="cursor-pointer w-full sm:w-auto h-10 sm:h-9"
                     onClick={() => {
                       // Reset to the original data from the server
                       form.reset(noteData);
@@ -158,7 +160,7 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
                   <Button
                     type="submit"
                     disabled={isSaving}
-                    className="cursor-pointer"
+                    className="cursor-pointer w-full sm:w-auto h-10 sm:h-9"
                   >
                     <Save className="h-4 w-4" />
                     {isSaving ? "Saving..." : "Save"}
@@ -185,18 +187,23 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
           )}
         </div>
         {/* --- COMMENTS SECTION --- */}
-        <div className="space-y-4">
-          <h3 className="font-semibold flex items-center">
-            <MessageCircle className="h-5 w-5 mr-2" /> Comments ({fields.length}
-            )
+        <div className="space-y-3 sm:space-y-4">
+          <h3 className="font-semibold text-sm sm:text-base flex items-center">
+            <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" /> Comments (
+            {fields.length})
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {fields.map((comment, index) =>
               editingCommentId === comment.id ? (
-                <div key={comment.id} className="flex items-start space-x-3">
-                  <Avatar>
+                <div
+                  key={comment.id}
+                  className="flex items-start gap-2 sm:gap-3"
+                >
+                  <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                     {/* <AvatarImage src={comment.avatar} /> */}
-                    <AvatarFallback>{comment.author.charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="text-xs sm:text-sm">
+                      {comment.author.charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="w-full">
                     <Form {...form}>
@@ -213,12 +220,12 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
                             </FormItem>
                           )}
                         />
-                        <div className="flex items-center justify-end space-x-2 mt-2">
+                        <div className="flex items-center justify-end gap-2 mt-2">
                           <Button
                             type="button"
                             size="sm"
                             variant="ghost"
-                            className="cursor-pointer"
+                            className="cursor-pointer h-9"
                             onClick={() => setEditingCommentId(null)}
                           >
                             <X className="h-4 w-4" />
@@ -227,7 +234,7 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
                             type="submit"
                             size="sm"
                             disabled={isSaving}
-                            className="cursor-pointer"
+                            className="cursor-pointer h-9"
                           >
                             <Save className="h-4 w-4" />
                           </Button>
@@ -237,16 +244,23 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
                   </div>
                 </div>
               ) : (
-                <div key={comment.id} className="flex items-start space-x-3">
-                  <Avatar>
+                <div
+                  key={comment.id}
+                  className="flex items-start gap-2 sm:gap-3"
+                >
+                  <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                     {/* <AvatarImage src={comment.avatar} /> */}
-                    <AvatarFallback>{comment.author.charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="text-xs sm:text-sm">
+                      {comment.author.charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <span className="font-semibold">{comment.author}</span>
-                        <span className="text-xs text-muted-foreground ml-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <span className="font-semibold text-xs sm:text-sm break-words">
+                          {comment.author}
+                        </span>
+                        <span className="text-[10px] sm:text-xs text-muted-foreground ml-1 sm:ml-2 block sm:inline">
                           {format(
                             new Date(comment.createdAt),
                             "MMM d, yyyy 'at' h:mm a"
@@ -282,7 +296,7 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
                       </DropdownMenu>
                     </div>
                     <p
-                      className="text-sm mt-1"
+                      className="text-xs sm:text-sm mt-1 break-words"
                       style={{ whiteSpace: "pre-wrap" }}
                     >
                       {comment.text}
@@ -293,10 +307,12 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
             )}
           </div>
           {/* Add New Comment Form */}
-          <div className="flex items-start space-x-3 pt-4 border-t">
-            <Avatar>
+          <div className="flex items-start gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
+            <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
               {/* <AvatarImage src="https://github.com/shadcn.png" /> */}
-              <AvatarFallback>{user?.displayName?.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-xs sm:text-sm">
+                {user?.displayName?.charAt(0)}
+              </AvatarFallback>
             </Avatar>
             <div className="w-full">
               <Form {...newCommentForm}>
@@ -318,7 +334,7 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
                   />
                   <div className="flex justify-end mt-2">
                     <Button
-                      className="cursor-pointer"
+                      className="cursor-pointer w-full sm:w-auto h-10 sm:h-9"
                       type="submit"
                       disabled={!newCommentForm.formState.isValid || isSaving}
                     >

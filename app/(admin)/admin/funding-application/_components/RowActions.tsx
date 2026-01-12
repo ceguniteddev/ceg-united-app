@@ -49,19 +49,20 @@ export function RowActions({ data }: Props) {
       <ResponsiveDialog
         isOpen={isEditOpen}
         setIsOpen={setIsEditOpen}
-        title={`Edit Application - ${data.referenceNumber}`}
+        title={data.referenceNumber}
         description=""
-        className="w-[95vw] sm:w-11/12 md:w-8/12 lg:w-8/12 xl:w-2/3"
-        // className="w-[95vw] sm:w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 max-w-5xl flex flex-col items-start justify-start min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh]"
+        className="w-[95vw] sm:w-11/12 md:w-10/12 lg:w-9/12 xl:w-4/5 max-w-6xl max-h-[90vh] flex flex-col"
       >
-        {userData && (
-          <ApplyFundingForm
-            setOpen={setIsEditOpen}
-            data={data}
-            isEditing={true}
-            userData={userData}
-          />
-        )}
+        <div className="overflow-y-auto flex-1 px-1">
+          {userData && (
+            <ApplyFundingForm
+              setOpen={setIsEditOpen}
+              data={data}
+              isEditing={true}
+              userData={userData}
+            />
+          )}
+        </div>
       </ResponsiveDialog>
 
       <DropdownMenu modal={true}>

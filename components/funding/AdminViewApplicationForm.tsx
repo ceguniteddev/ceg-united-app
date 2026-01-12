@@ -130,24 +130,35 @@ export default function FundingApplicationView({ data }: Props) {
 
         <Separator />
 
-        {/* Driver's License */}
-        {/* <section>
-          <h3 className="text-sm font-semibold mb-3">{"Driver's License"}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="License Number" value={data.driverLicenseNumber} />
-            <Field label="State" value={data.driverLicenseState} />
-            <Field
-              label="Issue Date"
-              value={fmtDate(data.driverLicenseIssueDate)}
-            />
-            <Field
-              label="Expiry Date"
-              value={fmtDate(data.driverLicenseIssueExpiryDate)}
-            />
-          </div>
-        </section> */}
-
-        <Separator />
+        {/* Driver's License - only show if has values */}
+        {(data.driverLicenseNumber ||
+          data.driverLicenseState ||
+          data.driverLicenseIssueDate ||
+          data.driverLicenseIssueExpiryDate) && (
+          <>
+            <section>
+              <h3 className="text-sm font-semibold mb-3">
+                {"Driver's License"}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field
+                  label="License Number"
+                  value={data.driverLicenseNumber}
+                />
+                <Field label="State" value={data.driverLicenseState} />
+                <Field
+                  label="Issue Date"
+                  value={fmtDate(data.driverLicenseIssueDate)}
+                />
+                <Field
+                  label="Expiry Date"
+                  value={fmtDate(data.driverLicenseIssueExpiryDate)}
+                />
+              </div>
+            </section>
+            <Separator />
+          </>
+        )}
 
         {/* Auto Loan Specific Fields */}
         {data.interestedProduct === "Auto Loan" && (
@@ -427,60 +438,77 @@ export default function FundingApplicationView({ data }: Props) {
             />
             <Field label="Rent/Mortgage/Other" value={data.rentOrMortgage} />
             <Field label="Married" value={data.isMarried} />
-            {/* <Field label="Mother's Maiden Name" value={data.motherMaidenName} /> */}
           </div>
         </section>
 
         <Separator />
 
-        {/* Employment */}
-        <section>
-          <h3 className="text-sm font-semibold mb-3">Employment</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field
-              label="How are you paid?"
-              value={howDoYouGetPaidOption?.label}
-            />
-            <Field
-              label="Pay Per Month"
-              value={currency(data.employmentPayPerMonth)}
-            />
-            <Field label="Employer Name" value={data.employmentEmployerName} />
-            <Field
-              label="Employer Phone"
-              value={data.employmentEmployerPhoneNumber}
-            />
-            {/* <Field
-              label="Employer Address"
-              value={data.employmentEmployerAddress}
-            /> */}
-            <Field label="Occupation" value={data.employmentOccupation} />
-            <Field
-              label="Date of Hire"
-              value={fmtDate(data.employmentDateOfHire)}
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field
-              label="Street"
-              value={data.employmentEmployerAddressStreet}
-            />
-            <Field
-              label="Apartment/Suite/Unit/House Number"
-              value={data.employmentEmployerHouseNumber}
-            />
-            <Field label="City" value={data.employmentEmployerAddressCity} />
-            <Field label="State" value={data.employmentEmployerAddressState} />
-            <Field
-              label="Zip Code"
-              value={data.employmentEmployerAddressPostal}
-            />
-          </div>
-        </section>
+        {/* Employment - only show if employment status indicates employed */}
+        {howDoYouGetPaidOption &&
+          howDoYouGetPaidOption.type === "yes" &&
+          (data.employmentEmployerName ||
+            data.employmentPayPerMonth ||
+            data.employmentOccupation) && (
+            <>
+              <section>
+                <h3 className="text-sm font-semibold mb-3">Employment</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field
+                    label="How are you paid?"
+                    value={howDoYouGetPaidOption?.label}
+                  />
+                  <Field
+                    label="Pay Per Month"
+                    value={currency(data.employmentPayPerMonth)}
+                  />
+                  <Field
+                    label="Employer Name"
+                    value={data.employmentEmployerName}
+                  />
+                  <Field
+                    label="Employer Phone"
+                    value={data.employmentEmployerPhoneNumber}
+                  />
+                  <Field label="Occupation" value={data.employmentOccupation} />
+                  <Field
+                    label="Date of Hire"
+                    value={fmtDate(data.employmentDateOfHire)}
+                  />
+                </div>
+                {(data.employmentEmployerAddressStreet ||
+                  data.employmentEmployerAddressCity ||
+                  data.employmentEmployerAddressState) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <Field
+                      label="Street"
+                      value={data.employmentEmployerAddressStreet}
+                    />
+                    <Field
+                      label="Apartment/Suite/Unit/House Number"
+                      value={data.employmentEmployerHouseNumber}
+                    />
+                    <Field
+                      label="City"
+                      value={data.employmentEmployerAddressCity}
+                    />
+                    <Field
+                      label="State"
+                      value={data.employmentEmployerAddressState}
+                    />
+                    <Field
+                      label="Zip Code"
+                      value={data.employmentEmployerAddressPostal}
+                    />
+                  </div>
+                )}
+              </section>
+              <Separator />
+            </>
+          )}
 
+        {/* Additional Employments */}
         {data.employments && data.employments.length > 0 && (
           <>
-            <Separator />
             <section>
               <h3 className="text-sm font-semibold mb-3">
                 Additional Employments
@@ -519,24 +547,39 @@ export default function FundingApplicationView({ data }: Props) {
                 );
               })}
             </section>
+            <Separator />
           </>
         )}
 
-        <Separator />
-
-        {/* Personal Taxes */}
-        <section>
-          <h3 className="text-sm font-semibold mb-3">Personal Taxes</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field
-              label="Filed Personal Taxes"
-              value={personalTaxesOption?.label}
-            />
-            <Field label="Taxes Year 1" value={currency(data.personalTaxes1)} />
-            <Field label="Taxes Year 2" value={currency(data.personalTaxes2)} />
-            <Field label="Taxes Year 3" value={currency(data.personalTaxes3)} />
-          </div>
-        </section>
+        {/* Personal Taxes - only show if filed */}
+        {personalTaxesOption &&
+          (data.personalTaxes1 ||
+            data.personalTaxes2 ||
+            data.personalTaxes3) && (
+            <>
+              <section>
+                <h3 className="text-sm font-semibold mb-3">Personal Taxes</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field
+                    label="Filed Personal Taxes"
+                    value={personalTaxesOption?.label}
+                  />
+                  <Field
+                    label="Taxes Year 1"
+                    value={currency(data.personalTaxes1)}
+                  />
+                  <Field
+                    label="Taxes Year 2"
+                    value={currency(data.personalTaxes2)}
+                  />
+                  <Field
+                    label="Taxes Year 3"
+                    value={currency(data.personalTaxes3)}
+                  />
+                </div>
+              </section>
+            </>
+          )}
       </CardContent>
 
       {/* <CardFooter>

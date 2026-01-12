@@ -178,20 +178,72 @@ const ManualAddBankProduct = ({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sticky top-0 bg-white z-10 pb-3">
         <Input
           placeholder="Filter bank products..."
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm h-10 sm:h-9"
         />
-        <div className="text-sm text-muted-foreground">
+        <div className="text-xs sm:text-sm text-muted-foreground">
           {selectedIds.length} of {availableProducts.length} selected
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-md border">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const data = row.original;
+            const isSelected = selectedIds.includes(data.id || "");
+
+            return (
+              <div
+                key={row.id}
+                className="border rounded-lg p-4 bg-white shadow-sm space-y-3"
+              >
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => handleToggleSelect(data.id || "")}
+                    aria-label="Select product"
+                    className="mt-1"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm break-words">
+                      {data.bankName}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {data.financingTerm}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pl-8 space-y-1">
+                  <span className="text-muted-foreground text-xs block mb-1">
+                    Product Names:
+                  </span>
+                  <div className="flex flex-col gap-0.5">
+                    {(data.productName as string[])?.map((name, index) => (
+                      <span key={index} className="text-xs">
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            No results.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -246,6 +298,7 @@ const ManualAddBankProduct = ({
         <Button
           onClick={handleAdd}
           disabled={isAdding || selectedIds.length === 0}
+          className="w-full sm:w-auto h-10 sm:h-9"
         >
           {isAdding ? "Adding..." : `Add Selected (${selectedIds.length})`}
         </Button>

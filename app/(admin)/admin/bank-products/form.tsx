@@ -102,7 +102,7 @@ const BankProductsForm = ({
 
   const isSubmitting = isCreating || isUpdating || isApproving;
   return (
-    <div className="w-full">
+    <div className="w-full max-w-full mx-auto px-2 sm:px-4 pb-36 lg:pb-0">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} aria-busy={isSubmitting}>
           <fieldset disabled={isSubmitting}>

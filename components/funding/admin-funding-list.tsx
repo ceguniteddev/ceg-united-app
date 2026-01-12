@@ -201,15 +201,90 @@ const AdminFundingList = ({ appliedFunding, rowActions }: Props) => {
       <div className="flex items-center py-4">
         <Input
           placeholder="Filter"
-          // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
           value={globalFilter}
-          // onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm h-11"
         />
       </div>
-      <div className="rounded-md border flex">
-        <ScrollArea type="always" className="w-1 flex-1">
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3 mb-4">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const data = row.original;
+            const user = data.user;
+            const userName = user
+              ? [user.firstName, user.lastName].filter(Boolean).join(" ")
+              : "Unknown";
+
+            return (
+              <div
+                key={row.id}
+                className="border rounded-lg p-4 bg-white shadow-sm space-y-3"
+              >
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm break-words">
+                      {data.referenceNumber}
+                    </h3>
+                    <p className="text-sm text-muted-foreground break-words">
+                      {userName}
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <CategoryBadge category={data.status} />
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted-foreground flex-shrink-0">
+                      Product:
+                    </span>
+                    <span className="font-medium text-right break-words">
+                      {data.interestedProduct}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted-foreground flex-shrink-0">
+                      Personal:
+                    </span>
+                    <span className="font-medium text-right">
+                      {formatAmount(data.personalAmountFunding ?? 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted-foreground flex-shrink-0">
+                      Business:
+                    </span>
+                    <span className="font-medium text-right">
+                      {formatAmount(data.businessAmountFunding ?? 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted-foreground flex-shrink-0">
+                      Applied:
+                    </span>
+                    <span className="font-medium text-right">
+                      {formatDateTime(new Date(data.appliedDate)).dateTime}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t">{rowActions(data)}</div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            No results.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-md border">
+        <ScrollArea type="always" className="w-full">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
