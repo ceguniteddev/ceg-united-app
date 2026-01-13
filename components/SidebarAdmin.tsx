@@ -32,6 +32,7 @@ const Sidebar = () => {
             width={64}
             height={64}
             alt={process.env.NEXT_PUBLIC_APP_NAME as string}
+            className="w-12 h-12 md:w-14 md:h-14 xl:w-16 xl:h-16"
           />
         </Link>
         {adminSidebarLinks.map((item) => {
@@ -43,7 +44,7 @@ const Sidebar = () => {
               key={item.label}
               className={cn("sidebar-link", { "bg-bank-gradient": isActive })}
             >
-              <div className="relative size-6">
+              <div className="relative size-5 md:size-6">
                 <Image
                   src={item.imgURL}
                   alt={item.label}

@@ -58,11 +58,11 @@ const AdminViewApplication = () => {
   ];
 
   return (
-    <div className="w-full p-3 sm:p-4 md:p-6 lg:p-10">
-      {/* Mobile Dropdown */}
-      <div className="md:hidden mb-4">
+    <div className="w-full p-2 sm:p-3 md:p-4 lg:p-6">
+      {/* Section Dropdown */}
+      <div className="mb-4">
         <Select value={activeTab} onValueChange={setActiveTab}>
-          <SelectTrigger className="w-full h-11">
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-[250px] h-10 sm:h-9">
             <SelectValue placeholder="Select section" />
           </SelectTrigger>
           <SelectContent>
@@ -75,21 +75,12 @@ const AdminViewApplication = () => {
         </Select>
       </div>
 
-      {/* Desktop Tabs */}
+      {/* Content Sections */}
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
         className="w-full flex flex-col"
       >
-        <TabsList className="hidden md:flex">
-          <TabsTrigger value="application">Application</TabsTrigger>
-          <TabsTrigger value="user-profile">User Profile</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="analysis">Analysis</TabsTrigger>
-          <TabsTrigger value="fund-mapping">Fund Mapping</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
-          <TabsTrigger value="email">Email</TabsTrigger>
-        </TabsList>
         <TabsContent value="fund-mapping" className="w-full">
           <AdminMappedFunds
             referenceNumber={formData?.referenceNumber ?? ""}
