@@ -18,18 +18,29 @@ export default function ClientLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div>
-      {/* <UserBanners /> */}
-
-      <main className="flex h-screen w-full font-inter">
-        <Sidebar />
-        <div className="flex size-full flex-col overflow-y-auto">
-          <MobileNavClient />
-          <div className="pt-[60px] md:pt-0 px-4 md:px-0 pb-24 md:pb-0">
-            {children}
-          </div>
+    <div className="flex h-screen w-full overflow-hidden font-inter">
+      <Sidebar />
+      <div className="flex flex-1 min-h-0 flex-col">
+        <MobileNavClient />
+        <div className="flex-1 min-h-0 overflow-y-auto pt-[60px] lg:pt-0 px-4 lg:px-6 pb-36 lg:pb-0">
+          {children}
         </div>
-      </main>
+      </div>
     </div>
   );
+  // return (
+  //   <div>
+  //     {/* <UserBanners /> */}
+
+  //     <main className="flex h-screen w-full font-inter">
+  //       <Sidebar />
+  //       <div className="flex size-full flex-col overflow-y-auto">
+  //         <MobileNavClient />
+  //         <div className="pt-[60px] md:pt-0 px-4 md:px-0 pb-24 md:pb-0">
+  //           {children}
+  //         </div>
+  //       </div>
+  //     </main>
+  //   </div>
+  // );
 }
