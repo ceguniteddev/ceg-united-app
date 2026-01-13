@@ -32,6 +32,7 @@ import { MultiStepRegistrationForm } from "@/components/registration";
 import { ClientApplicationForm } from "@/schema/client-application";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 export default function MyClientsPage() {
   const { clients, isLoading } = useGetBrokerClients();
@@ -127,59 +128,64 @@ export default function MyClientsPage() {
           </CardHeader>
           <CardContent>
             {/* Desktop Table View */}
-            <div className="hidden lg:block overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Client Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Added Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredClients.map((client: any) => (
-                    <TableRow key={client.clientId}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Users className="h-4 w-4 text-primary" />
-                          <p className="font-medium">{client.clientName}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{client.clientEmail}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            {client.createdAt
-                              ? format(
-                                  new Date(client.createdAt),
-                                  "MMM dd, yyyy"
-                                )
-                              : "N/A"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <CategoryBadge category={client.clientActiveStatus} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Link href={`/broker/my-clients/${client.clientId}`}>
-                          <Button variant="outline" size="sm">
-                            View Dashboard
-                          </Button>
-                        </Link>
-                      </TableCell>
+            <div className="hidden md:flex rounded-md border">
+              <ScrollArea type="always" className="w-1 flex-1">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Added Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredClients.map((client: any) => (
+                      <TableRow key={client.clientId}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Users className="h-4 w-4 text-primary" />
+                            <p className="font-medium">{client.clientName}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">
+                              {client.clientEmail}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">
+                              {client.createdAt
+                                ? format(
+                                    new Date(client.createdAt),
+                                    "MMM dd, yyyy"
+                                  )
+                                : "N/A"}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <CategoryBadge category={client.clientActiveStatus} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link href={`/broker/my-clients/${client.clientId}`}>
+                            <Button variant="outline" size="sm">
+                              View Dashboard
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <ScrollBar orientation="horizontal" className="w-full" />
+              </ScrollArea>
             </div>
 
             {/* Mobile Card View */}

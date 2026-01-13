@@ -52,9 +52,9 @@ const Sidebar = () => {
   //     ],
   //   });
 
-  const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
-    user?.uid || ""
-  );
+  // const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
+  //   user?.uid || ""
+  // );
 
   //   if (user && !isOnboarded) driverObj.drive();
   // }, [user, isOnboarded, updateOnboarding]);
@@ -62,18 +62,22 @@ const Sidebar = () => {
   if (!user) return null;
 
   return (
-    <section className="sidebar max-md:hidden">
+    <aside className="sidebar max-md:hidden">
       <nav className="flex flex-col">
         <Link
-          href="/client/home"
-          className="mb-3 cursor-pointer flex items-center justify-center"
+          href="/broker/home"
+          className="mb-6 cursor-pointer flex items-center gap-2 xl:justify-center"
         >
           <Image
             src="/icons/logo.svg"
             width={64}
             height={64}
             alt={process.env.NEXT_PUBLIC_APP_NAME as string}
+            className="w-12 h-12 md:w-14 md:h-14 xl:w-16 xl:h-16"
           />
+          <h1 className="sidebar-logo xl:hidden">
+            {process.env.NEXT_PUBLIC_APP_NAME as string}
+          </h1>
         </Link>
         {sidebarLinks
           .filter((item) => {
@@ -118,9 +122,12 @@ const Sidebar = () => {
               <Link
                 href={item.route}
                 key={item.label}
-                className={cn("sidebar-link", { "bg-bank-gradient": isActive })}
+                className={cn(
+                  "flex gap-2 md:gap-3 items-center py-1 md:p-2 2xl:p-1 rounded-lg justify-start",
+                  { "bg-bank-gradient": isActive }
+                )}
               >
-                <div className="relative size-6">
+                <div className="relative size-5 md:size-6">
                   <Image
                     src={item.imgURL}
                     alt={item.label}
@@ -130,7 +137,11 @@ const Sidebar = () => {
                     })}
                   />
                 </div>
-                <p className={cn("sidebar-label", { "!text-white": isActive })}>
+                <p
+                  className={cn("text-16 font-semibold text-black-2", {
+                    "!text-white": isActive,
+                  })}
+                >
                   {item.label}
                 </p>
               </Link>
@@ -141,7 +152,7 @@ const Sidebar = () => {
         <WhatsNewAccordion />
         <Footer />
       </div>
-    </section>
+    </aside>
   );
 };
 

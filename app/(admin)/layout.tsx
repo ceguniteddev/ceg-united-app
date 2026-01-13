@@ -17,17 +17,28 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-dvh w-full overflow-hidden font-inter">
-      {/* Hide sidebar on mobile, show on md and up */}
-      <div className="hidden md:block">
-        <Sidebar />
-      </div>
+    <div className="flex h-screen w-full overflow-hidden font-inter">
+      <Sidebar />
       <div className="flex flex-1 min-h-0 flex-col">
         <MobileNavAdmin />
-        <div className="flex-1 min-h-0 overflow-y-auto pt-[60px] md:pt-0 px-2 md:px-4 lg:px-6 pb-24 md:pb-0">
+        <div className="flex-1 min-h-0 overflow-y-auto pt-[60px] lg:pt-0 px-4 lg:px-6 pb-36 lg:pb-0">
           {children}
         </div>
       </div>
     </div>
   );
+  // return (
+  //   <div className="flex h-dvh w-full overflow-hidden font-inter">
+  //     {/* Hide sidebar on mobile, show on md and up */}
+  //     <div className="hidden md:block">
+  //       <Sidebar />
+  //     </div>
+  //     <div className="flex flex-1 min-h-0 flex-col">
+  //       <MobileNavAdmin />
+  //       <div className="flex-1 min-h-0 overflow-y-auto pt-[60px] md:pt-0 px-2 md:px-4 lg:px-6 pb-24 md:pb-0">
+  //         {children}
+  //       </div>
+  //     </div>
+  //   </div>
+  // );
 }
