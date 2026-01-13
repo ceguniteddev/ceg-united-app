@@ -61,22 +61,10 @@ const ClientProfilePage = () => {
       onValueChange={setActiveTab}
       className="w-full flex flex-col items-start justify-start p-2 sm:p-4 md:p-6 lg:p-10"
     >
-      {/* Desktop Tabs */}
-      <TabsList className="mb-6 hidden md:inline-flex">
-        <TabsTrigger value="personal-information">
-          Personal Information
-        </TabsTrigger>
-        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-        <TabsTrigger value="documents">Documents</TabsTrigger>
-        <TabsTrigger value="credit-report">Credit Report</TabsTrigger>
-        <TabsTrigger value="business">Business</TabsTrigger>
-        <TabsTrigger value="applied-funding">Applied Funding</TabsTrigger>
-      </TabsList>
-
-      {/* Mobile Dropdown */}
-      <div className="w-full mb-6 md:hidden">
+      {/* Section Dropdown */}
+      <div className="w-full mb-6">
         <Select value={activeTab} onValueChange={setActiveTab}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-[250px] h-10 sm:h-9">
             <SelectValue placeholder="Select a section" />
           </SelectTrigger>
           <SelectContent>
