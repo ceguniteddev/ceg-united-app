@@ -106,11 +106,11 @@ const ClientProfilePage = () => {
       onValueChange={setActiveTab}
       className="w-full flex flex-col items-start justify-start p-4 md:p-10"
     >
-      {/* Mobile Dropdown */}
-      <div className="md:hidden w-full mb-4">
+      {/* Section Dropdown */}
+      <div className="w-full mb-4">
         <Select value={activeTab} onValueChange={setActiveTab}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a tab" />
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-[250px] h-10 sm:h-9">
+            <SelectValue placeholder="Select a section" />
           </SelectTrigger>
           <SelectContent>
             {tabOptions.map((option) => (
@@ -121,29 +121,6 @@ const ClientProfilePage = () => {
           </SelectContent>
         </Select>
       </div>
-
-      {/* Desktop Tabs */}
-      <TabsList className="hidden md:flex">
-        <TabsTrigger value="personal-information">
-          Personal Information
-        </TabsTrigger>
-        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-        <TabsTrigger value="documents">Documents</TabsTrigger>
-        <TabsTrigger value="credit-report">Credit Report</TabsTrigger>
-        <TabsTrigger value="business">Business</TabsTrigger>
-        <TabsTrigger value="applied-funding">Applied Funding</TabsTrigger>
-        {hasLearningMaterialsAccess && (
-          <TabsTrigger value="learning-materials">
-            Learning Materials
-          </TabsTrigger>
-        )}
-        <TabsTrigger value="letters">Letters</TabsTrigger>
-        {hasLetterFeatureEnabled && (
-          <TabsTrigger value="dispute-letters">Dispute Letters</TabsTrigger>
-        )}
-        <TabsTrigger value="note">Note</TabsTrigger>
-        <TabsTrigger value="email">Email</TabsTrigger>
-      </TabsList>
 
       <TabsContent value="personal-information" className="w-full">
         <ClientData user={userData as UserWithId} />
