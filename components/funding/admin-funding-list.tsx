@@ -283,8 +283,8 @@ const AdminFundingList = ({ appliedFunding, rowActions }: Props) => {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block rounded-md border">
-        <ScrollArea type="always" className="w-full">
+      <div className="hidden md:flex rounded-md border">
+        <ScrollArea type="always" className="w-1 flex-1">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
