@@ -58,14 +58,17 @@ export const POST = withAuth(
         }
       }
 
-      const appliedFundings = await getApplyFunding(userId);
       let referenceNumber = "";
-      if (appliedFundings && appliedFundings.length > 0) {
-        referenceNumber = appliedFundings[0].referenceNumber!;
-      }
 
-      if (!referenceNumber) {
-        return badRequest({ errors: "Missing reference number" });
+      if (!addressInfo) {
+        const appliedFundings = await getApplyFunding(userId);
+        if (appliedFundings && appliedFundings.length > 0) {
+          referenceNumber = appliedFundings[0].referenceNumber!;
+        }
+
+        if (!referenceNumber) {
+          return badRequest({ errors: "Missing reference number" });
+        }
       }
 
       await refreshCRSData({
