@@ -7,7 +7,7 @@ import { genderTypes } from "@/schema";
 import { useFormContext, useWatch } from "react-hook-form";
 
 export function Step1PersonalInfo() {
-  const { control } = useFormContext();
+  const { control, register } = useFormContext();
   const password = useWatch({
     control,
     name: "password",
@@ -20,6 +20,12 @@ export function Step1PersonalInfo() {
         <CardTitle>Step 1: Personal Information</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <input
+          type="hidden"
+          {...register("role")}
+          defaultValue="Client"
+          value={"Client"}
+        />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <CustomFormField
             name={"firstName"}
