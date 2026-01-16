@@ -52,6 +52,11 @@ Access educational courses, track learning progress, and earn certificates.
 
 > **Note:** Available only with premium client status.
 
+### 9. [Contact Us](CONTACT_US.md)
+
+**Route:** `/client/support-service`  
+Get support, schedule consultations, submit inquiries, and access help resources.
+
 ## Feature Availability
 
 Some features may not be visible based on your account status:
@@ -70,7 +75,8 @@ Login → Home Dashboard
   ├── My Credit
   ├── My Documents
   ├── Letter Stream
-  └── My Learning
+  ├── My Learning
+  └── Contact Us
 ```
 
 ## Authentication
