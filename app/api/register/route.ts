@@ -27,7 +27,7 @@ export const POST = async (req: NextRequest) => {
     // If step1Data and step2Data are provided, use the multi-step registration
     if (step1Data && step2Data) {
       await registerUser({
-        user: step1Data,
+        user: { ...step1Data, role: "Client" },
         fundingData: step2Data,
         registrationType: "Self",
       });
