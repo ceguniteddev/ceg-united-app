@@ -20,12 +20,7 @@ export function Step1PersonalInfo() {
         <CardTitle>Step 1: Personal Information</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <input
-          type="hidden"
-          {...register("role")}
-          defaultValue="Client"
-          value={"Client"}
-        />
+        <input type="hidden" {...register("role")} defaultValue="Client" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <CustomFormField
             name={"firstName"}
