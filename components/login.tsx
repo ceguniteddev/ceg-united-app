@@ -7,7 +7,7 @@ import { Label } from "./ui/label";
 import Link from "next/link";
 import Image from "next/image";
 import { getCaptchaTokenRegistration } from "@/lib/captcha";
-import { LoaderIcon, LogInIcon } from "lucide-react";
+import { LoaderIcon, LogInIcon, Eye, EyeOff } from "lucide-react";
 import { ResponsiveDialog } from "./responsive-dialog";
 import ForgotPassword from "./ForgotPassword";
 
@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [openForgotPassword, setOpenForgotPassword] = useState(false);
 
   const handleLogin = useCallback(
@@ -34,7 +35,7 @@ export default function LoginPage() {
 
       setLoading(false);
     },
-    [email, password, signIn]
+    [email, password, signIn],
   );
 
   return (
@@ -86,14 +87,28 @@ export default function LoginPage() {
               <Label className="block text-gray-600 font-medium mb-1 text-sm sm:text-base">
                 Password
               </Label>
-              <Input
-                type="password"
-                className="w-full px-3 py-2 text-sm sm:text-base border rounded-md focus:outline-none focus:ring focus:ring-blue-300"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  className="w-full px-3 py-2 pr-10 text-sm sm:text-base border rounded-md focus:outline-none focus:ring focus:ring-blue-300"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Forgot Password button-link */}

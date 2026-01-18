@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit, X, CalendarIcon } from "lucide-react";
+import { Edit, X, CalendarIcon, Eye, EyeOff } from "lucide-react";
 import { format, isValid, parse } from "date-fns";
 import { cn, formatAmount } from "@/lib/utils";
 import DatePicker from "./date-picker";
@@ -125,14 +125,15 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
   const { control } = useFormContext();
 
   const [isDOBCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const renderFormControl = (
     field: ControllerRenderProps<FieldValues, string>,
-    fieldState: ControllerFieldState
+    fieldState: ControllerFieldState,
   ) => {
     const handleChange = (
       // e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
-      e: any
+      e: any,
     ) => {
       field.onChange(e);
       if (onChange) {
@@ -141,7 +142,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
     };
 
     const handleSelectChange: (value: string | string[]) => void = (
-      value: string | string[]
+      value: string | string[],
     ) => {
       field.onChange(value);
       if (onSelectValue) {
@@ -326,7 +327,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
                   }}
                   className={cn(
                     `w-full ${inputClassName}`,
-                    fieldState?.error && "border-red-500"
+                    fieldState?.error && "border-red-500",
                   )}
                 >
                   <SelectValue
@@ -404,7 +405,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
             onValueChange={handleChangeNumber}
             className={cn(
               disabled || readonly ? "border-none shadow-none" : "",
-              className
+              className,
             )}
           />
         );
@@ -453,6 +454,37 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
         );
 
       default:
+        if (type === "password") {
+          return (
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder={placeholder}
+                {...field}
+                className={cn("pr-10", inputClassName)}
+                disabled={disabled}
+                autoComplete={autocomplete}
+                onChange={handleChange}
+                value={fieldValue}
+                readOnly={readonly}
+                ref={reference}
+                hidden={hidden}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          );
+        }
         return (
           <Input
             type={type}
@@ -517,7 +549,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
                     ? field.value
                     : initialValue,
               },
-              fieldState
+              fieldState,
             )}
           </FormControl>
 

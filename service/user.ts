@@ -139,7 +139,13 @@ export const registerUser = async ({
 
   const collectionRef = db.collection(USER_COLLECTION);
 
-  const userData = { ...user };
+  const userData: User = {
+    ...user,
+    registrationDate: new Date(),
+    activeStatus: "Active",
+    isOnboarded: false,
+    denefitsSignedUp: false,
+  };
   delete (userData as { password?: string }).password;
 
   const docRef = await collectionRef.add(userData);
@@ -769,7 +775,7 @@ export const toggleLetterFeature = async (
     | "reinsertedAccountDisputeEnabled"
     | "accountErrorCorrectionEnabled"
     | "collectionAccountRemovalEnabled"
-    | "fraudulentAccountRemovalEnabled" = "letterFeatureEnabled"
+    | "fraudulentAccountRemovalEnabled" = "letterFeatureEnabled",
 ): Promise<void> => {
   logInfo(`Toggling letter feature for user`, { userId, enabled, featureKey });
   if (!userId) throw new AppError("User ID is required.");
@@ -818,7 +824,7 @@ export const getUserNotes = async (userId: string): Promise<string[]> => {
 
 export const updateUserOnboardingStatus = async (
   id: string,
-  status: boolean
+  status: boolean,
 ) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(USER_COLLECTION);
@@ -866,11 +872,11 @@ export const getUserDocuments = async ({
           signedUrl,
           downloadUrl,
         };
-      })
+      }),
   );
 
   return docs.sort(
-    (a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime()
+    (a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime(),
   );
 };
 
@@ -895,7 +901,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     try {
       const decoded = await authenticationAdmin().verifySessionCookie(
         sessionCookie,
-        true
+        true,
       );
 
       const userData = await getUserById(decoded.uid);
@@ -965,7 +971,7 @@ export const changePassword = async (data: ChangePassword) => {
   // 2. Input Validation: Ensure required data is present.
   if (!newPassword || !confirmPassword) {
     throw new AppError(
-      "Missing required fields: newPassword and confirmPassword."
+      "Missing required fields: newPassword and confirmPassword.",
     );
   }
 
@@ -994,7 +1000,7 @@ export const changePassword = async (data: ChangePassword) => {
 
     // Don't leak detailed implementation errors to the client.
     throw new AppError(
-      "An unexpected error occurred while changing the password. Please try again later."
+      "An unexpected error occurred while changing the password. Please try again later.",
     );
   }
 };
