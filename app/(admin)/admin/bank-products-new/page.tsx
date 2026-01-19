@@ -38,7 +38,7 @@ const BankProductsNew = () => {
               <SelectContent>
                 <SelectItem value="banks">Banks</SelectItem>
                 <SelectItem value="products">Products</SelectItem>
-                <SelectItem value="bank-products">Bank-Products</SelectItem>
+                <SelectItem value="bank-products">Bank Products</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -56,7 +56,7 @@ const BankProductsNew = () => {
                 Products
               </TabsTrigger>
               <TabsTrigger value="bank-products" className="w-[150px]">
-                Bank-Products
+                Bank Products
               </TabsTrigger>
             </TabsList>
             <TabsContent value="banks" className="space-y-4">
