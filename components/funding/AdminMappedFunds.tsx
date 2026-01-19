@@ -97,7 +97,7 @@ const BankProductsList = ({
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -148,7 +148,7 @@ const BankProductsList = ({
         cell: ({ row }) => {
           const isApproved =
             approvedMappedFunds?.some(
-              (fund) => String(fund.id) === String(row.original.id)
+              (fund) => String(fund.id) === String(row.original.id),
             ) || false;
 
           return isApproved ? (
@@ -172,20 +172,17 @@ const BankProductsList = ({
         cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
       },
       {
-        accessorKey: "productName",
-        id: "productName",
+        accessorKey: "products",
+        id: "products",
         header: ({ column }) => (
           <SortableHeader column={column} title="Product Name" />
         ),
         cell: ({ row }) => {
-          const productNames = row.getValue("productName") as string[];
-
+          const products = row.original.products;
           return (
             <div className="flex flex-col gap-1">
-              {" "}
-              {/* gap-1 adds a small space between items */}
-              {productNames?.map((name, index) => (
-                <span key={index}>{name}</span>
+              {products?.map((product, index) => (
+                <span key={index}>{product.productName}</span>
               ))}
             </div>
           );
@@ -205,7 +202,7 @@ const BankProductsList = ({
         header: "Client Application Status",
         cell: ({ row }) => {
           const funds = approvedMappedFunds?.find(
-            (fund) => String(fund.id) === String(row.original.id)
+            (fund) => String(fund.id) === String(row.original.id),
           );
 
           const status = funds?.clientApplicationStatus;
@@ -223,7 +220,7 @@ const BankProductsList = ({
         header: "Approved Amount",
         cell: ({ row }) => {
           const funds = approvedMappedFunds?.find(
-            (fund) => String(fund.id) === String(row.original.id)
+            (fund) => String(fund.id) === String(row.original.id),
           );
 
           const approvedAmount = funds?.approvedAmount;
@@ -237,7 +234,7 @@ const BankProductsList = ({
         header: "Approved Remarks",
         cell: ({ row }) => {
           const funds = approvedMappedFunds?.find(
-            (fund) => String(fund.id) === String(row.original.id)
+            (fund) => String(fund.id) === String(row.original.id),
           );
 
           const approvedRemarks = funds?.approvedRemarks;
@@ -250,12 +247,12 @@ const BankProductsList = ({
         id: "actions",
         cell: ({ row }) => {
           const approvedMappedFund = approvedMappedFunds?.find(
-            (fund) => String(fund.id) === String(row.original.id)
+            (fund) => String(fund.id) === String(row.original.id),
           );
           const isApproved = !!approvedMappedFund || false;
 
           const funds = approvedMappedFunds?.find(
-            (fund) => String(fund.id) === String(row.original.id)
+            (fund) => String(fund.id) === String(row.original.id),
           );
 
           const status = funds?.clientApplicationStatus;
@@ -278,7 +275,7 @@ const BankProductsList = ({
         size: 80,
       },
     ],
-    [referenceNumber, approvedMappedFunds]
+    [referenceNumber, approvedMappedFunds],
   );
 
   const table = useReactTable({
@@ -497,7 +494,7 @@ const BankProductsList = ({
           table.getRowModel().rows.map((row) => {
             const data = row.original;
             const approvedFund = approvedMappedFunds?.find(
-              (fund) => String(fund.id) === String(data.id)
+              (fund) => String(fund.id) === String(data.id),
             );
             const isApproved = !!approvedFund;
             const status =
@@ -516,9 +513,9 @@ const BankProductsList = ({
                     <h3 className="font-semibold text-sm break-words">
                       {data.bankName}
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    {/* <p className="text-xs text-muted-foreground mt-1">
                       {data.financingTerm}
-                    </p>
+                    </p> */}
                   </div>
                   <div className="flex-shrink-0 flex items-center gap-2">
                     {isApproved ? (
@@ -549,9 +546,9 @@ const BankProductsList = ({
                       Product Names:
                     </span>
                     <div className="flex flex-col gap-0.5 mt-1">
-                      {(data.productName as string[])?.map((name, index) => (
+                      {data.products?.map((product, index) => (
                         <span key={index} className="text-xs">
-                          {name}
+                          {product.productName}
                         </span>
                       ))}
                     </div>
@@ -609,7 +606,7 @@ const BankProductsList = ({
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                       </TableHead>
                     );
@@ -628,7 +625,7 @@ const BankProductsList = ({
                       <TableCell key={cell.id}>
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}
@@ -679,7 +676,7 @@ const ActionCell = ({
 
   const showCancelButton = useMemo(
     () => isAdminApproved && clientApplicationStatus !== "Approved",
-    [clientApplicationStatus, isAdminApproved]
+    [clientApplicationStatus, isAdminApproved],
   );
 
   // Show delete button only if not approved

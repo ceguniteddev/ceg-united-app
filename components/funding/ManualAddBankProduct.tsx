@@ -61,7 +61,7 @@ const ManualAddBankProduct = ({
 
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
@@ -115,17 +115,17 @@ const ManualAddBankProduct = ({
         cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
       },
       {
-        accessorKey: "productName",
-        id: "productName",
+        accessorKey: "products",
+        id: "products",
         header: ({ column }) => (
           <SortableHeader column={column} title="Product Name" />
         ),
         cell: ({ row }) => {
-          const productNames = row.getValue("productName") as string[];
+          const products = row.original.products;
           return (
             <div className="flex flex-col gap-1">
-              {productNames?.map((name, index) => (
-                <span key={index}>{name}</span>
+              {products?.map((product, index) => (
+                <span key={index}>{product.productName}</span>
               ))}
             </div>
           );
@@ -140,7 +140,7 @@ const ManualAddBankProduct = ({
         cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
       },
     ],
-    [availableProducts, selectedIds]
+    [availableProducts, selectedIds],
   );
 
   const table = useReactTable({
@@ -214,9 +214,9 @@ const ManualAddBankProduct = ({
                     <h3 className="font-semibold text-sm break-words">
                       {data.bankName}
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    {/* <p className="text-xs text-muted-foreground mt-1">
                       {data.financingTerm}
-                    </p>
+                    </p> */}
                   </div>
                 </div>
 
@@ -225,9 +225,9 @@ const ManualAddBankProduct = ({
                     Product Names:
                   </span>
                   <div className="flex flex-col gap-0.5">
-                    {(data.productName as string[])?.map((name, index) => (
+                    {data.products?.map((product, index) => (
                       <span key={index} className="text-xs">
-                        {name}
+                        {product.productName}
                       </span>
                     ))}
                   </div>
@@ -254,7 +254,7 @@ const ManualAddBankProduct = ({
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                   </TableHead>
                 ))}
@@ -272,7 +272,7 @@ const ManualAddBankProduct = ({
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}

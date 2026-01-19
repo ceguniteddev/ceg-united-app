@@ -91,26 +91,26 @@ const columns: ColumnDef<BrokerFundingData>[] = [
     ),
     size: 180,
   },
-  {
-    accessorKey: "productName",
-    id: "productName",
-    header: ({ column }) => (
-      <SortableHeader column={column} title="Product Name" />
-    ),
-    cell: ({ row }) => {
-      const productNames = row.getValue("productName") as string[];
-      return (
-        <div className="flex flex-col gap-1">
-          {productNames?.map((name, index) => (
-            <span key={index} className="whitespace-nowrap">
-              {name}
-            </span>
-          ))}
-        </div>
-      );
-    },
-    size: 200,
-  },
+  // {
+  //   accessorKey: "products",
+  //   id: "products",
+  //   header: ({ column }) => (
+  //     <SortableHeader column={column} title="Product Name" />
+  //   ),
+  //   cell: ({ row }) => {
+  //     const products = row.original.products;
+  //     return (
+  //       <div className="flex flex-col gap-1">
+  //         {products?.map((product, index) => (
+  //           <span key={index} className="whitespace-nowrap">
+  //             {product.productName}
+  //           </span>
+  //         ))}
+  //       </div>
+  //     );
+  //   },
+  //   size: 200,
+  // },
   {
     accessorKey: "personalAmountFunding",
     id: "personalAmountFunding",
@@ -246,7 +246,7 @@ const ActionCell = ({ row }: { row: any }) => {
     useApprovedMappedFundsMutation();
   const [isDenefitsPaid, setIsDenefitsPaid] = React.useState(false);
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
-    row.original.userId
+    row.original.userId,
   );
 
   React.useEffect(() => {
@@ -308,7 +308,7 @@ type StatusFilter =
 const BrokerFundingList = ({ appliedFunding }: Props) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -321,11 +321,11 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
     return {
       "Not Applied":
         appliedFunding?.filter(
-          (f) => f.clientApplicationStatus === "Not Applied"
+          (f) => f.clientApplicationStatus === "Not Applied",
         ).length || 0,
       "Sent to Lender":
         appliedFunding?.filter(
-          (f) => f.clientApplicationStatus === "Sent to Lender"
+          (f) => f.clientApplicationStatus === "Sent to Lender",
         ).length || 0,
       Declined:
         appliedFunding?.filter((f) => f.clientApplicationStatus === "Declined")
@@ -343,7 +343,7 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
   const filteredData = React.useMemo(() => {
     return (
       appliedFunding?.filter(
-        (fund) => fund.clientApplicationStatus === activeTab
+        (fund) => fund.clientApplicationStatus === activeTab,
       ) || []
     );
   }, [appliedFunding, activeTab]);
@@ -533,7 +533,7 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
                               ? null
                               : flexRender(
                                   header.column.columnDef.header,
-                                  header.getContext()
+                                  header.getContext(),
                                 )}
                           </TableHead>
                         );
@@ -555,7 +555,7 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
                           >
                             {flexRender(
                               cell.column.columnDef.cell,
-                              cell.getContext()
+                              cell.getContext(),
                             )}
                           </TableCell>
                         ))}
@@ -609,7 +609,7 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
                         </p>
                         <p className="font-medium">
                           {formatAmount(
-                            row.original.personalAmountFunding || 0
+                            row.original.personalAmountFunding || 0,
                           )}
                         </p>
                       </div>
@@ -619,7 +619,7 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
                         </p>
                         <p className="font-medium">
                           {formatAmount(
-                            row.original.businessAmountFunding || 0
+                            row.original.businessAmountFunding || 0,
                           )}
                         </p>
                       </div>
@@ -664,22 +664,25 @@ const BrokerFundingList = ({ appliedFunding }: Props) => {
                         </div>
                       )}
                     </div>
-                    {row.original.productName && (
+                    {/* {row.original.products && (
                       <div>
                         <p className="text-muted-foreground text-xs mb-1">
                           Products
                         </p>
                         <div className="flex flex-col gap-1">
-                          {row.original.productName.map(
-                            (name: string, index: number) => (
+                          {row.original.products.map(
+                            (
+                              product: { productName: string },
+                              index: number,
+                            ) => (
                               <span key={index} className="text-sm">
-                                {name}
+                                {product.productName}
                               </span>
-                            )
+                            ),
                           )}
                         </div>
                       </div>
-                    )}
+                    )} */}
                     {row.original.declineReason && (
                       <div>
                         <p className="text-muted-foreground text-xs mb-1">

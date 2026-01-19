@@ -27,11 +27,11 @@ import { Edit, X, CalendarIcon, Eye, EyeOff } from "lucide-react";
 import { format, isValid, parse } from "date-fns";
 import { cn, formatAmount } from "@/lib/utils";
 import DatePicker from "./date-picker";
-import { MultiSelect } from "./multi-select";
 import { SearchableInput } from "./input-search";
 import { NumberInput } from "./input-number";
 import dynamic from "next/dynamic";
 import { Button } from "./ui/button";
+import { MultiSelect } from "./multi-select";
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 interface FormFieldProps {
   name: string;
