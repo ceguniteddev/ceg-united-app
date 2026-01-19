@@ -48,7 +48,7 @@ export const getBankProducts = async (): Promise<GetBankFormDataResponse> => {
     }
 
     const result = snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() } as BankFormData)
+      (doc) => ({ id: doc.id, ...doc.data() }) as BankFormData,
     );
 
     // console.log("getBankProducts", result.length);
@@ -99,7 +99,7 @@ export const recordFundMappingAnalysis = async (
   userId: string,
   referenceNumber: string,
   ids: { id: string }[],
-  append: boolean = false
+  append: boolean = false,
 ) => {
   if (!userId) throw new AppError("User ID is required.");
   if (!referenceNumber) throw new AppError("Reference number is required.");
@@ -124,7 +124,7 @@ export const recordFundMappingAnalysis = async (
 
   // Create a Set of valid bank product IDs
   const validBankProductIds = new Set(
-    bankProductsResponse.data.map((product) => product.id)
+    bankProductsResponse.data.map((product) => product.id),
   );
 
   // Filter ids to only include those that exist in BANK_PRODUCTS_COLLECTION
@@ -152,7 +152,7 @@ export const recordFundMappingAnalysis = async (
   const db = firestoreAdmin();
   const collectionRef = db
     .collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`,
     )
     .doc(referenceNumber);
 
@@ -225,7 +225,7 @@ export const recordFundMappingAnalysis = async (
 export const recordFundMappingAnalysisOld = async (
   userId: string,
   // referenceNumber: string,
-  ids: { id: string }[]
+  ids: { id: string }[],
 ) => {
   if (!userId) throw new AppError("User ID is required.");
   if (!ids || ids.length === 0)
@@ -246,11 +246,11 @@ export const recordFundMappingAnalysisOld = async (
       status: "New",
       createdAt: Timestamp.now(),
     },
-    { merge: true }
+    { merge: true },
   );
 
   const subCol = parentRef.collection(
-    USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS
+    USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS,
   );
 
   const CHUNK = 500;
@@ -267,7 +267,7 @@ export const recordFundMappingAnalysisOld = async (
           adminApprovedStatus: "Pending",
           clientApplicationStatus: "Not Applied",
         },
-        { merge: true }
+        { merge: true },
       );
     }
 
@@ -286,7 +286,7 @@ export const updateClientApplicationStatus = async ({
 }) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION_FUND_MAPPING}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS}`
+    `${USER_FUNDING_APPLICATION_FUND_MAPPING}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS}`,
   );
 
   const docRef = collectionRef.doc(bankProductId);
@@ -311,7 +311,7 @@ export const updateClientApplicationStatus = async ({
 export const getFundMappingAnalysis = async (referenceNumber: string) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`,
   );
   // console.log(referenceNumber);
   const doc = await collectionRef.get();
@@ -335,18 +335,18 @@ export const getFundMappingAnalysis = async (referenceNumber: string) => {
 
 export const deleteFundMappingAnalysis = async (
   referenceNumber: string,
-  docId: string
+  docId: string,
 ) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`,
   );
   await collectionRef.doc(docId).delete();
 };
 
 export const removeBankProductFromMapping = async (
   referenceNumber: string,
-  bankProductId: string
+  bankProductId: string,
 ) => {
   if (!referenceNumber) throw new AppError("Reference number is required.");
   if (!bankProductId) throw new AppError("Bank product ID is required.");
@@ -354,7 +354,7 @@ export const removeBankProductFromMapping = async (
   const db = firestoreAdmin();
   const docRef = db
     .collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`,
     )
     .doc(referenceNumber);
 
@@ -368,7 +368,7 @@ export const removeBankProductFromMapping = async (
 
   // Filter out the bank product to remove
   const updatedBankProducts = bankProducts.filter(
-    (product) => product.id !== bankProductId
+    (product) => product.id !== bankProductId,
   );
 
   // Update the document with the filtered array
@@ -403,7 +403,7 @@ export const getFundMappingAnalysisDetails = async ({
     collectionGroupRef = collectionGroupRef.where(
       "clientApplicationStatus",
       "in",
-      clientApplicationStatus
+      clientApplicationStatus,
     );
   }
 
@@ -411,7 +411,7 @@ export const getFundMappingAnalysisDetails = async ({
     collectionGroupRef = collectionGroupRef.where(
       "referenceNumber",
       "==",
-      referenceNumber
+      referenceNumber,
     );
   }
 
@@ -419,7 +419,7 @@ export const getFundMappingAnalysisDetails = async ({
     collectionGroupRef = collectionGroupRef.where(
       "bankProductId",
       "==",
-      bankProductId
+      bankProductId,
     );
   }
 
@@ -438,13 +438,10 @@ export const getFundMappingAnalysisDetails = async ({
   for (const bankProductId of bankProductIds) {
     // Check if this is a manual entry or has a valid bankProductId
     if (bankProductId.isManualEntry || !bankProductId.bankProductId) {
-      // For manual entries, use the manually entered bank name and product name
+      // For manual entries, construct a valid ApprovedBankFormData object
       result.push({
         id: bankProductId.id,
         bankName: bankProductId.manualBankName || "",
-        productName: bankProductId.manualProductName
-          ? [bankProductId.manualProductName]
-          : [],
         fundMappingApprovedId: bankProductId.id,
         clientApplicationStatus: bankProductId.clientApplicationStatus,
         adminApprovedStatus: bankProductId.adminApprovedStatus,
@@ -454,88 +451,41 @@ export const getFundMappingAnalysisDetails = async ({
         fundedAmount: bankProductId.fundedAmount || 0,
         fundedRemarks: bankProductId.fundedRemarks || "",
         userId: bankProductId.userId,
-        // Add required BankFormData fields with default values for manual entries
-        financingTerm: "",
-        doubleDipAllowed: "No",
-        creditBureauPulled: [],
-        personalGuaranteeRequired: "No",
-        collateralRequired: "No",
-        minimumCreditScore: 0,
-        minimumTimeInBusiness: 0,
-        minimumAnnualRevenue: 0,
-        maximumFundingAmount: 0,
-        fundingSpeed: "",
-        industryRestriction: [],
-        minimumCreditAgeRequired: "",
-        personalVerifiableIncomeRequired: "No",
-        noDocumentationRequired: "No",
-        businessBankStatementsRequired: "No",
-        businessTaxReturnsRequired: "No",
-        personalTaxReturnsRequired: "No",
-        profitAndLossStatementsRequired: "No",
-        balanceSheetRequired: "No",
-        businessPlanRequired: "No",
-        useOfFundsLetterRequired: "No",
-        accountsReceivableRequired: "No",
-        accountsPayableRequired: "No",
-        assetBasedLending: "No",
-        revenueBasedLending: "No",
-        equipmentFinancingAvailable: "No",
-        realEstateFinancingAvailable: "No",
-        inventoryFinancingAvailable: "No",
-        invoiceFactoringAvailable: "No",
-        lineOfCreditAvailable: "No",
-        termLoanAvailable: "No",
-        merchantCashAdvanceAvailable: "No",
-        sbaLoansAvailable: "No",
-        profitAndLossStatementRequired: "No",
-        membershipRequiredBeforeApplicationRequired: "No",
-        membershipRequiredUponApprovalRequired: "No",
-        accountOpeningBeforeApplicationRequired: "No",
-        accountOpeningUponApprovalRequired: "No",
-        businessCreditCardRequired: "No",
-        personalCreditCardRequired: "No",
-        ownershipPercentageRequired: 0,
-        minimumMonthlyRevenue: 0,
-        minimumCashFlow: 0,
-        debtToIncomeRatioMax: 0,
-        loanToValueRatioMax: 0,
-        maximumNumberOfNSFsAllowed: 0,
-        maximumNumberOfOverdraftsAllowed: 0,
-        bankruptcyRestrictions: "No",
-        taxLienRestrictions: "No",
-        judgmentRestrictions: "No",
-        defaultRestrictions: "No",
-        accountOpeningAfterApprovalRequired: "No",
-        oneYearBusinessTaxes: "No",
-        twoYearBusinessTaxes: "No",
-        threeYearBusinessTaxes: "No",
-        oneYearPersonalTaxes: "No",
-        twoYearPersonalTaxes: "No",
-        threeYearPersonalTaxes: "No",
-        threeMonthsBusinessBankStatements: "No",
-        sixMonthsBusinessBankStatements: "No",
-        twelveMonthsBusinessBankStatements: "No",
-        threeMonthsPersonalBankStatements: "No",
-        sixMonthsPersonalBankStatements: "No",
-        twelveMonthsPersonalBankStatements: "No",
-        articlesOfIncorporation: "No",
-        dbaFiling: "No",
-        voided_check: "No",
-        immigrationStatusRequirement: "",
-        stateAvailability: [],
-        applicationMethod: [],
-        allowsForwardingViaEmail: "No",
-        applicationLink: "",
-        contactInformation: "",
-        additionalNotes: "",
-        canBeFinalizedOnline: "No",
-        clientNeedsToGoToBranch: "No",
-        contactName: "",
-        contactPhoneNumber: "",
-        contactEmail: "",
-        website: "",
-        webUrl: "",
+        underwritingNotes: bankProductId.approvedRemarks || "",
+        products: [
+          {
+            productName: bankProductId.manualProductName || "Manual Entry",
+            category: "Manual",
+            financingTerm: "",
+            doubleDipAllowed: "No",
+            creditBureauPulled: [],
+            minimumFicoScore: 0,
+            maximumFundingAmount: bankProductId.approvedAmount || 0,
+            averageApprovalAmount: 0,
+            grossFundingPercentage: 0,
+            maximumInquiriesAllowed: 0,
+            minimumNumberOfAccountsOnCredit: 0,
+            minimumCreditAgeRequired: "",
+            personalVerifiableIncomeRequired: "No",
+            noDocumentationRequired: "No",
+            businessBankStatementsRequired: "No",
+            profitAndLossStatementRequired: "No",
+            balanceSheetRequired: "No",
+            businessPlanRequired: "No",
+            membershipRequiredBeforeApplicationRequired: "No",
+            membershipRequiredUponApprovalRequired: "No",
+            accountOpeningBeforeApplicationRequired: "No",
+            accountOpeningAfterApprovalRequired: "No",
+            businessTaxesRequired: "None",
+            personalTaxesRequired: "None",
+            immigrationStatusRequirement: "",
+            stateAvailability: [],
+            applicationMethod: [],
+            allowsForwardingViaEmail: "No",
+            canBeFinalizedOnline: "No",
+            clientNeedsToGoToBranch: "No",
+          },
+        ],
       } as ApprovedBankFormData);
     } else {
       // For regular entries, fetch from bank products collection
@@ -572,21 +522,21 @@ export const getFundMappingAnalysisDetailsOld = async ({
   const db = firestoreAdmin();
   let collectionRef = db
     .collection(
-      `${USER_FUNDING_APPLICATION_FUND_MAPPING}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS}`
+      `${USER_FUNDING_APPLICATION_FUND_MAPPING}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS}`,
     )
     .orderBy("createdAt", "desc");
   if (adminApprovedStatus) {
     collectionRef = collectionRef.where(
       "adminApprovedStatus",
       "==",
-      adminApprovedStatus
+      adminApprovedStatus,
     );
   }
   if (clientApplicationStatus) {
     collectionRef = collectionRef.where(
       "clientApplicationStatus",
       "in",
-      clientApplicationStatus
+      clientApplicationStatus,
     );
   }
 
@@ -672,7 +622,7 @@ export const approveMappedFund = async ({
 
     const db = firestoreAdmin();
     const collectionRef = db.collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
     );
     await collectionRef.add({
       bankProductId,
@@ -740,7 +690,7 @@ export const cancelMappedFund = async ({
 
     const db = firestoreAdmin();
     const collectionRef = db.collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
     );
     const docRef = collectionRef.doc(fundMappingApprovedId);
     const snapshot = await docRef.get();
@@ -762,7 +712,7 @@ export const cancelMappedFund = async ({
 
 export const approveMappedFundOld = async (
   referenceNumber: string,
-  bankProductId: string
+  bankProductId: string,
 ) => {
   if (!referenceNumber) throw new AppError("Reference number is required.");
 
@@ -782,7 +732,7 @@ export const approveMappedFundOld = async (
 
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
   );
   await collectionRef.add({
     bankProductId,
@@ -794,7 +744,7 @@ export const approveMappedFundOld = async (
 };
 
 export const getApprovedMappedFunds = async (
-  referenceNumber: string
+  referenceNumber: string,
 ): Promise<GetBankFormDataResponse> => {
   try {
     // 1. Return an error object for invalid input instead of throwing
@@ -818,7 +768,7 @@ export const getApprovedMappedFunds = async (
 
     const db = firestoreAdmin();
     const collectionRef = db.collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
     );
     const snapshot = await collectionRef.get();
 
@@ -860,7 +810,7 @@ export const getApprovedMappedFunds = async (
 
     // Filter out any nulls from products that might not have been found
     const result: ApprovedBankFormData[] = resolvedBankProducts.filter(
-      (product) => product !== null
+      (product) => product !== null,
     );
 
     // 3. Return a successful response object with the data
@@ -879,12 +829,12 @@ export const getApprovedMappedFunds = async (
 export const getApprovedMappedFundsOld = async (referenceNumber: string) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
   );
   const snapshot = await collectionRef.get();
   return snapshot.docs.map(
     (doc) =>
-      ({ id: doc.id, ...normalizeAllDates(doc.data()) } as ApprovedMappedFund)
+      ({ id: doc.id, ...normalizeAllDates(doc.data()) }) as ApprovedMappedFund,
   );
 };
 
@@ -947,7 +897,7 @@ export const applyBankProduct = async ({
 
     const db = firestoreAdmin();
     const fundMappingBankProductsRef = db.collection(
-      `${USER_FUNDING_APPLICATION_FUND_MAPPING}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS}`
+      `${USER_FUNDING_APPLICATION_FUND_MAPPING}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS}`,
     );
 
     const docRef = fundMappingBankProductsRef.doc(bankProductId);
@@ -1037,7 +987,7 @@ export const applyApprovedMappedFund = async ({
 
     const db = firestoreAdmin();
     const collectionRef = db.collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
     );
 
     const docRef = collectionRef.doc(fundMappingApprovedId);
@@ -1123,7 +1073,7 @@ export const approveAppliedBankProduct = async ({
 
     const db = firestoreAdmin();
     const collectionRef = db.collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
     );
 
     await collectionRef.doc(fundMappingApprovedId).set(
@@ -1132,7 +1082,7 @@ export const approveAppliedBankProduct = async ({
         approvedAmount,
         approvedRemarks,
       },
-      { merge: true }
+      { merge: true },
     );
 
     // 4. Return a successful response
@@ -1184,7 +1134,7 @@ export const fundedAppliedBankProduct = async ({
 
     const db = firestoreAdmin();
     const collectionRef = db.collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
     );
 
     // Update funding status
@@ -1194,7 +1144,7 @@ export const fundedAppliedBankProduct = async ({
         fundedAmount,
         fundedRemarks,
       },
-      { merge: true }
+      { merge: true },
     );
 
     // Calculate and create commission record for broker
@@ -1250,7 +1200,7 @@ export const fundedAppliedBankProduct = async ({
           });
 
           console.log(
-            `Commission created: ${commissionAmount} (${commissionRate}% of ${fundedAmount}) for broker ${brokerId}`
+            `Commission created: ${commissionAmount} (${commissionRate}% of ${fundedAmount}) for broker ${brokerId}`,
           );
         }
       }
@@ -1314,7 +1264,7 @@ export const declineAppliedBankProduct = async ({
 
     const db = firestoreAdmin();
     const collectionRef = db.collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
     );
 
     await collectionRef.doc(fundMappingApprovedId).set(
@@ -1324,7 +1274,7 @@ export const declineAppliedBankProduct = async ({
         approvedRemarks: "",
         declineReason,
       },
-      { merge: true }
+      { merge: true },
     );
 
     // 4. Return a successful response
@@ -1407,7 +1357,7 @@ export const manuallyAddFundedBankProduct = async ({
 
     // Create a manual funded entry in a dedicated collection
     const manualFundedRef = db.collection(
-      `${USER_FUNDING_APPLICATION}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`
+      `${USER_FUNDING_APPLICATION}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
     );
 
     await manualFundedRef.add({

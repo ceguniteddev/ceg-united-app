@@ -11,7 +11,7 @@ export const CreditBureauEnum = z.enum(
   ["Experian", "TransUnion", "Equifax", "Dun & Bradstreet or SBFE", "TRW"],
   {
     error: "Required",
-  }
+  },
 );
 export type CreditBureau = z.infer<typeof CreditBureauEnum>;
 
@@ -26,29 +26,27 @@ export const ClientApplicationStatusEnum = z.enum(
   ],
   {
     error: "Required",
-  }
+  },
 );
 
 export type ClientApplicationStatus = z.infer<
   typeof ClientApplicationStatusEnum
 >;
 
-// Main Zod Schema
-export const bankDataSchema = z.object({
-  id: z.string().optional(),
-  isApproved: z.boolean().optional(),
-  bankName: z.string().min(1, "Required"),
-  productName: z.array(z.string().min(1, "Required"), { error: "Required" }),
+export const TaxYearsEnum = z.enum(["None", "1 Year", "2 Years", "3 Years"], {
+  error: "Required",
+});
+
+// Schema for individual product criteria
+export const bankProductCriteriaSchema = z.object({
+  productName: z.string().min(1, "Required"),
+  category: z.string().optional(), // e.g. "Personal", "Business" - useful for logic
   financingTerm: z.string().min(1, "Required"),
-  underwritingNotes: z.string().optional(),
   maximumFundingAmount: z.coerce.number<number>().optional(),
   averageApprovalAmount: z.coerce.number<number>().optional(),
   grossFundingPercentage: z.coerce.number<number>().optional(),
   doubleDipAllowed: YesNoEnum,
   minimumFicoScore: z.coerce.number<number>().optional(),
-  // .min(300, "Invalid FICO score")
-  // .max(850, "Invalid FICO score"),
-  // creditBureauPulled: CreditBureauEnum.array(),
 
   creditBureauPulled: z.array(CreditBureauEnum, { error: "Required" }),
   maximumInquiriesAllowed: z.coerce.number<number>().optional(),
@@ -59,24 +57,23 @@ export const bankDataSchema = z.object({
   maximumDebtServiceRatio: z.coerce.number<number>().optional(),
   personalVerifiableIncomeRequired: YesNoEnum,
   noDocumentationRequired: YesNoEnum,
-  businessBankStatementsRequired: YesNoEnum,
-  profitAndLossStatementRequired: YesNoEnum,
-  balanceSheetRequired: YesNoEnum,
-  businessPlanRequired: YesNoEnum,
+
+  // Business Specific Fields
+  businessBankStatementsRequired: YesNoEnum.optional(),
+  profitAndLossStatementRequired: YesNoEnum.optional(),
+  balanceSheetRequired: YesNoEnum.optional(),
+  businessPlanRequired: YesNoEnum.optional(),
 
   membershipRequiredBeforeApplicationRequired: YesNoEnum,
   membershipRequiredUponApprovalRequired: YesNoEnum,
   accountOpeningBeforeApplicationRequired: YesNoEnum,
   accountOpeningAfterApprovalRequired: YesNoEnum,
 
-  oneYearBusinessTaxes: YesNoEnum,
-  twoYearBusinessTaxes: YesNoEnum,
-  threeYearBusinessTaxes: YesNoEnum,
-  oneYearPersonalTaxes: YesNoEnum,
-  twoYearPersonalTaxes: YesNoEnum,
-  threeYearPersonalTaxes: YesNoEnum,
+  // Consolidated Tax Fields
+  businessTaxesRequired: TaxYearsEnum.optional(),
+  personalTaxesRequired: TaxYearsEnum,
+
   immigrationStatusRequirement: z.string().min(1, "Required"),
-  // stateAvailability: z.string().min(1, "Required").array(),
   stateAvailability: z.array(z.string().min(1, "Required"), {
     error: "Required",
   }),
@@ -84,11 +81,29 @@ export const bankDataSchema = z.object({
   allowsForwardingViaEmail: YesNoEnum,
   canBeFinalizedOnline: YesNoEnum,
   clientNeedsToGoToBranch: YesNoEnum,
-  contactName: z.string().min(1, "Required"),
-  contactPhoneNumber: z.string().min(1, "Required"),
-  contactEmail: z.email({ error: "Invalid email address" }),
-  webUrl: z.string().min(1, "Required"),
-  priorityLevel: z.coerce.number<number>().min(1).max(5).optional(),
+
+  // webUrl: z.string().min(1, "Required"),
+  priorityLevel: z.coerce
+    .number<number>({ error: "Required" })
+    .min(1)
+    .max(5)
+    .optional()
+    .or(z.literal("")),
+});
+
+export type BankProductCriteria = z.infer<typeof bankProductCriteriaSchema>;
+
+// Main Zod Schema (Bank Level)
+export const bankDataSchema = z.object({
+  id: z.string().optional(),
+  isApproved: z.boolean().optional(),
+  bankName: z.string().min(1, "Required"),
+  underwritingNotes: z.string().optional(),
+
+  // Array of products
+  products: z
+    .array(bankProductCriteriaSchema)
+    .min(1, "At least one product is required"),
 });
 export type BankFormData = z.infer<typeof bankDataSchema>;
 

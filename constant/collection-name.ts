@@ -27,6 +27,7 @@ export const NEW_ACCOUNTS_AVAILABLE = "user-link-new-accounts-available";
 
 export const FUNDING_PRODUCTS_COLLECTION = "funding-products";
 export const BANK_PRODUCTS_COLLECTION = "bank-products";
+export const BANK_MANAGEMENT_COLLECTION = "bank-management";
 export const CRS_REPORT_DATA = "crs-report-data";
 export const CRS_REPORT_BUSINESS_PROFILE = "crs-report-business-profile";
 export const CRS_REPORT_BUSINESS_SCORE = "crs-report-business-score";

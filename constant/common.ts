@@ -156,6 +156,11 @@ export const adminSidebarLinks = [
     label: "Bank Products",
   },
   {
+    imgURL: "/icons/landmark.svg",
+    route: "/admin/bank-products-new",
+    label: "Bank Products New",
+  },
+  {
     imgURL: "/icons/money-send.svg",
     route: "/admin/funding-application",
     label: "Funding Applications",
