@@ -39,16 +39,18 @@ import { useAuth } from "@/provider/AuthContext";
 interface MultiStepRegistrationFormProps {
   onSubmit: (
     step1Data: ClientApplicationForm,
-    step2Data: ApplyFunding
+    step2Data: ApplyFunding,
   ) => Promise<void>;
   isSubmitting?: boolean;
   onClose?: () => void;
+  registrationType: "client" | "broker" | "admin";
 }
 
 export function MultiStepRegistrationForm({
   onSubmit,
   isSubmitting = false,
   onClose,
+  registrationType = "client",
 }: MultiStepRegistrationFormProps) {
   const { user } = useAuth();
   const {
@@ -71,7 +73,7 @@ export function MultiStepRegistrationForm({
   const [step1Data, setStep1Data] = useState<ClientApplicationForm | null>(
     savedDraft?.step1 && Object.keys(savedDraft.step1).length > 0
       ? (savedDraft.step1 as ClientApplicationForm)
-      : null
+      : null,
   );
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showResetConfirmDialog, setShowResetConfirmDialog] = useState(false);
@@ -186,7 +188,7 @@ export function MultiStepRegistrationForm({
 
         if (formValuesStr !== lastSavedStep1Ref.current) {
           const hasValues = Object.values(formValues).some(
-            (val) => val !== "" && val !== undefined && val !== null
+            (val) => val !== "" && val !== undefined && val !== null,
           );
           if (hasValues) {
             updateStep1(user.uid, formValues);
@@ -223,7 +225,7 @@ export function MultiStepRegistrationForm({
 
         if (formValuesStr !== lastSavedStep2Ref.current) {
           const hasValues = Object.values(formValues).some(
-            (val) => val !== "" && val !== undefined && val !== null
+            (val) => val !== "" && val !== undefined && val !== null,
           );
           if (hasValues) {
             updateStep2(user.uid, formValues);
@@ -316,7 +318,7 @@ export function MultiStepRegistrationForm({
             key={fieldName}
             onClick={() => {
               const element = document.querySelector(
-                `[name="${fieldName}"]`
+                `[name="${fieldName}"]`,
               ) as HTMLElement;
               if (element) {
                 element.focus();
@@ -339,11 +341,11 @@ export function MultiStepRegistrationForm({
           </div>,
           {
             duration: 8000,
-          }
+          },
         );
       } else {
         toast.error(
-          "Please fill in all required fields correctly in the funding application."
+          "Please fill in all required fields correctly in the funding application.",
         );
       }
 
@@ -367,7 +369,7 @@ export function MultiStepRegistrationForm({
             description:
               "You need to upload your 4 months bank statements and driver's license documents to proceed.",
             duration: 5000,
-          }
+          },
         );
         return;
       }
@@ -459,7 +461,7 @@ export function MultiStepRegistrationForm({
             <form onSubmit={(e) => e.preventDefault()}>
               <fieldset disabled={isSubmitting}>
                 <div className="space-y-4 sm:space-y-6">
-                  <Step1PersonalInfo />
+                  <Step1PersonalInfo registrationType={registrationType} />
                 </div>
               </fieldset>
             </form>

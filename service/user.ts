@@ -313,7 +313,7 @@ export const registerUser = async ({
     requestBody = getBrokerInvitationToClientBody({
       clientName: `${user.firstName} ${user.lastName}`,
       email: user.email,
-      temporaryPassword: user.password,
+      temporaryPassword: user.password!,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
       brokerName: brokerName,
       verificationLink: verificationLink,
@@ -322,7 +322,7 @@ export const registerUser = async ({
     requestBody = getAdminInvitationToClientBody({
       clientName: `${user.firstName} ${user.lastName}`,
       email: user.email,
-      temporaryPassword: user.password,
+      temporaryPassword: user.password!,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
       verificationLink: verificationLink,
     });
