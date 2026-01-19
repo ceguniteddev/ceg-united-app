@@ -49,7 +49,7 @@ export const registrationSchema = z.object({
   middleName: z.string().optional(),
   lastName: z.string().min(1, { error: "Required" }),
   email: z.email().min(1, { error: "Required" }),
-  password: passwordSchema,
+  password: passwordSchema.optional().or(z.literal("")),
   birthdate: dateOfBirthSchema,
   gender: GenderEnum,
   phoneNumber: z.string().min(1, { error: "Required" }),

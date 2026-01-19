@@ -16,7 +16,7 @@ const RegistrationPage = () => {
 
   const onSubmit = async (
     step1Data: ClientApplicationForm,
-    step2Data: ApplyFunding
+    step2Data: ApplyFunding,
   ) => {
     setIsSubmitting(true);
     try {
@@ -84,6 +84,7 @@ const RegistrationPage = () => {
               onSubmit={onSubmit}
               isSubmitting={isSubmitting}
               onClose={() => router.push("/")}
+              registrationType="client"
             />
           </CardContent>
         </Card>
