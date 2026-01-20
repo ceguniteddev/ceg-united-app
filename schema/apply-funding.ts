@@ -249,7 +249,8 @@ export const applyFundingSchema = z
         }),
       )
       .optional(),
-    consentConfirm: z.boolean(),
+    consentConfirmTerms: z.boolean(),
+    consentConfirmPrivacy: z.boolean(),
   })
   .superRefine((data, ctx) => {
     // Define the exclusion condition for clarity
