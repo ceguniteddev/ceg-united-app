@@ -6,6 +6,7 @@ import { registrationSchema, User } from "@/schema/registration";
 import { registerUser } from "@/service/user";
 import AppError from "@/error/AppError";
 import { applyFundingSchema, ApplyFunding } from "@/schema/apply-funding";
+import { da } from "date-fns/locale";
 
 export const POST = withAuth(async (req: NextRequest) => {
   try {
@@ -54,7 +55,7 @@ export const POST = withAuth(async (req: NextRequest) => {
       activeStatus: "Active",
       denefitsSignedUp: false,
       isBrokerInvite: false,
-
+      consentConfirm: data.consentConfirm,
       // addressStreet: data.addressStreet,
       // houseNumber: data.houseNumber,
       // addressCity: data.addressCity,

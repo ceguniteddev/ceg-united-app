@@ -77,6 +77,7 @@ export const registrationSchema = z.object({
   accountErrorCorrectionEnabled: z.boolean().default(false).optional(),
   collectionAccountRemovalEnabled: z.boolean().default(false).optional(),
   fraudulentAccountRemovalEnabled: z.boolean().default(false).optional(),
+  consentConfirm: z.boolean(),
 
   // addressStreet: z.string().min(1, { error: "Required" }),
   // houseNumber: z.string().optional(),

@@ -25,16 +25,7 @@ export const clientApplicationSchema = z
     ssn: ssnSchema,
     password: passwordSchema.optional().or(z.literal("")),
     registrationType: z.enum(["client", "broker", "admin"]),
-    // addressStreet: z.string().min(1, { error: "Required" }),
-    // houseNumber: z.string().optional(),
-    // addressCity: z.string().min(1, { error: "Required" }),
-    // addressState: z.string().min(1, { error: "Required" }),
-    // addressPostal: z.string().min(1, { error: "Required" }),
-
-    // payPerMonth: z.coerce.number<number>().optional(),
-    // employmentPayPerMonth: z.coerce
-    //   .number<number>({ error: "Required" })
-    //   .min(1, { message: "Required" }),
+    consentConfirm: z.boolean(),
   })
   .refine(
     (data) => {
