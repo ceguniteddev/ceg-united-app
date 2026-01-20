@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -134,6 +134,11 @@ export function MultiStepRegistrationForm({
 
   const { isDirty: isDirty1, dirtyFields: dirtyFields1 } = form1.formState;
   const { isDirty: isDirty2, dirtyFields: dirtyFields2 } = form2.formState;
+
+  const consentIsChecked = useWatch({
+    control: form1.control,
+    name: "consentConfirm",
+  });
 
   // Reset forms when defaultValues change
   useEffect(() => {
@@ -500,11 +505,11 @@ export function MultiStepRegistrationForm({
             )}
           </Button>
 
-          {currentStep < 2 ? (
+          {currentStep === 1 ? (
             <Button
               type="button"
               onClick={handleNext}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !consentIsChecked}
               size="lg"
               className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white order-1 sm:order-2 min-h-[44px]"
             >
