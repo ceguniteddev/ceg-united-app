@@ -5,28 +5,8 @@ import { CustomFormField } from "@/components/CustomFormField";
 import { PasswordStrength } from "@/components/PasswordStrength";
 import { genderTypes } from "@/schema";
 import { useFormContext, useWatch } from "react-hook-form";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
-import { Checkbox } from "@/components/ui/checkbox";
-import Link from "next/link";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+
 import { useState } from "react";
-import { Button } from "../ui/button";
-import { Check, FileText, ShieldCheck, X } from "lucide-react";
-import { Label } from "../ui/label";
 
 interface Step1PersonalInfoProps {
   registrationType: "client" | "broker" | "admin";
@@ -36,7 +16,6 @@ export function Step1PersonalInfo({
   registrationType = "client",
 }: Step1PersonalInfoProps) {
   const { control, register, setValue } = useFormContext();
-  const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
   const password = useWatch({
     control,
     name: "password",

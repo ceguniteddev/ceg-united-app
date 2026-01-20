@@ -1,6 +1,7 @@
 import { badRequest, internalServerError, notAllowed } from "@/app/api/helpers";
 import AppError from "@/error/AppError";
 import { createEnterpriseAssessment } from "@/lib/captcha/captcha";
+import { User } from "@/schema/registration";
 import { registerUser } from "@/service/user";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -30,8 +31,9 @@ export const POST = async (req: NextRequest) => {
         user: {
           ...step1Data,
           role: "Client",
-          consentConfirm: step2Data.consentConfirm,
-        },
+          consentConfirmTerms: step2Data.consentConfirmTerms,
+          consentConfirmPrivacy: step2Data.consentConfirmPrivacy,
+        } as User,
         fundingData: step2Data,
         registrationType: "Self",
       });

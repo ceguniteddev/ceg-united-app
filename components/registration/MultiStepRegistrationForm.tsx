@@ -135,9 +135,14 @@ export function MultiStepRegistrationForm({
   const { isDirty: isDirty1, dirtyFields: dirtyFields1 } = form1.formState;
   const { isDirty: isDirty2, dirtyFields: dirtyFields2 } = form2.formState;
 
-  const consentIsChecked = useWatch({
+  const consentTermsChecked = useWatch({
     control: form2.control,
-    name: "consentConfirm",
+    name: "consentConfirmTerms",
+  });
+
+  const consentPrivacyChecked = useWatch({
+    control: form2.control,
+    name: "consentConfirmPrivacy",
   });
 
   // Reset forms when defaultValues change
@@ -508,7 +513,6 @@ export function MultiStepRegistrationForm({
             <Button
               type="button"
               onClick={handleNext}
-              // disabled={isSubmitting || !consentIsChecked}
               disabled={isSubmitting}
               size="lg"
               className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white order-1 sm:order-2 min-h-[44px]"
@@ -523,7 +527,9 @@ export function MultiStepRegistrationForm({
             <Button
               type="button"
               onClick={handleApplyClick}
-              disabled={isSubmitting || !consentIsChecked}
+              disabled={
+                isSubmitting || !consentTermsChecked || !consentPrivacyChecked
+              }
               size="lg"
               className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white order-1 sm:order-2 min-h-[44px]"
             >

@@ -25,7 +25,8 @@ export const clientApplicationSchema = z
     ssn: ssnSchema,
     password: passwordSchema.optional().or(z.literal("")),
     registrationType: z.enum(["client", "broker", "admin"]),
-    consentConfirm: z.boolean().optional(),
+    consentConfirmTerms: z.boolean().optional(),
+    consentConfirmPrivacy: z.boolean().optional(),
   })
   .refine(
     (data) => {
