@@ -136,7 +136,7 @@ export function MultiStepRegistrationForm({
   const { isDirty: isDirty2, dirtyFields: dirtyFields2 } = form2.formState;
 
   const consentIsChecked = useWatch({
-    control: form1.control,
+    control: form2.control,
     name: "consentConfirm",
   });
 
@@ -261,7 +261,6 @@ export function MultiStepRegistrationForm({
   const handleNext = async () => {
     // Validate Step 1
     const isValid = await form1.trigger();
-
     if (!isValid) {
       toast.error("Please fill in all required fields correctly.");
       setProgress(0);
@@ -509,7 +508,8 @@ export function MultiStepRegistrationForm({
             <Button
               type="button"
               onClick={handleNext}
-              disabled={isSubmitting || !consentIsChecked}
+              // disabled={isSubmitting || !consentIsChecked}
+              disabled={isSubmitting}
               size="lg"
               className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white order-1 sm:order-2 min-h-[44px]"
             >
@@ -523,7 +523,7 @@ export function MultiStepRegistrationForm({
             <Button
               type="button"
               onClick={handleApplyClick}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !consentIsChecked}
               size="lg"
               className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white order-1 sm:order-2 min-h-[44px]"
             >

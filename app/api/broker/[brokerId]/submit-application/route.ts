@@ -66,7 +66,7 @@ export const POST = withAuth(
         activeStatus: "Active",
         denefitsSignedUp: false,
         isBrokerInvite: true,
-        consentConfirm: data.consentConfirm,
+        consentConfirm: fundingData.consentConfirm,
         // addressStreet: data.addressStreet,
         // houseNumber: data.houseNumber,
         // addressCity: data.addressCity,
