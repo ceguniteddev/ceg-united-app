@@ -185,10 +185,12 @@ export const registerUser = async ({
       appliedDate: fundingData.appliedDate || new Date(),
       status: fundingData.status || "New",
     };
+
     const result = await applyFunding({
       value: fundApplication,
       registrationType,
     });
+
     referenceNumber = result.referenceNumber;
     logInfo("Funding application created", { referenceNumber });
 
@@ -220,62 +222,6 @@ export const registerUser = async ({
         userId: docRef.id,
         referenceNumber,
       });
-    }
-
-    // Upload documents to Firebase Storage if present
-    const bucket = storageAdmin();
-
-    // Upload bank statements
-    if (fundingData.bankStatements && fundingData.bankStatements.length > 0) {
-      for (const doc of fundingData.bankStatements) {
-        try {
-          // Extract base64 data (remove data:application/pdf;base64, prefix)
-          const base64Data = doc.base64.split(",")[1];
-          const buffer = Buffer.from(base64Data, "base64");
-          const fileName = `BANK_STATEMENTS_${doc.name}`;
-          const filePath = `documents/${docRef.id}/${fileName}`;
-
-          const file = bucket.file(filePath);
-          await file.save(buffer, {
-            contentType: doc.type,
-            metadata: {
-              uploadedAt: new Date().toISOString(),
-              originalName: doc.name,
-            },
-          });
-        } catch (error) {
-          console.error("Error uploading bank statement:", error);
-          // Continue with other documents even if one fails
-        }
-      }
-    }
-
-    // Upload driver licenses
-    if (
-      fundingData.driverLicenseDocuments &&
-      fundingData.driverLicenseDocuments.length > 0
-    ) {
-      for (const doc of fundingData.driverLicenseDocuments) {
-        try {
-          // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix)
-          const base64Data = doc.base64.split(",")[1];
-          const buffer = Buffer.from(base64Data, "base64");
-          const fileName = `DRIVERS_LICENSE_${doc.name}`;
-          const filePath = `documents/${docRef.id}/${fileName}`;
-
-          const file = bucket.file(filePath);
-          await file.save(buffer, {
-            contentType: doc.type,
-            metadata: {
-              uploadedAt: new Date().toISOString(),
-              originalName: doc.name,
-            },
-          });
-        } catch (error) {
-          console.error("Error uploading driver license:", error);
-          // Continue with other documents even if one fails
-        }
-      }
     }
   }
 
