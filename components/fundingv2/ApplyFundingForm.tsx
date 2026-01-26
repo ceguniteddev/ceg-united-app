@@ -1,7 +1,7 @@
 "use client";
 import { CustomFormField } from "@/components/CustomFormField";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import {
   ApplyFunding,
   applyFundingSchema,
@@ -54,6 +54,8 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
+import { Checkbox } from "../ui/checkbox";
+import { Label } from "../ui/label";
 
 const isMarried: DropdownOption[] = [
   { value: "Yes", label: "Yes" },
@@ -134,12 +136,12 @@ const ApplyFundingForm = ({
     if (data) {
       if (data.interestedProduct) {
         const product = FundingProductTypeEnum.find(
-          (p) => p.value === data.interestedProduct
+          (p) => p.value === data.interestedProduct,
         );
         if (product) {
           setInterestedProductSelected(product);
           setIsBusinessIncomeBased(
-            data.interestedProduct === "Business Income Based Funding"
+            data.interestedProduct === "Business Income Based Funding",
           );
           setIsAutoLoan(data.interestedProduct === "Auto Loan");
           setIsEquipmentFinancing(product.type.includes("Equipment Financing"));
@@ -151,7 +153,7 @@ const ApplyFundingForm = ({
 
       if (data.howDoYouGetPaid) {
         const option = howDoYouGetPaid.find(
-          (x) => x.value === data.howDoYouGetPaid
+          (x) => x.value === data.howDoYouGetPaid,
         );
         if (option) {
           setHowDoYouGetPaidSelected(option);
@@ -166,7 +168,7 @@ const ApplyFundingForm = ({
 
       if (data.personalTaxes) {
         const option = personalTaxes.find(
-          (x) => x.value === data.personalTaxes
+          (x) => x.value === data.personalTaxes,
         );
         if (option) setPersonalTaxesSelected(option);
       }
@@ -209,7 +211,7 @@ const ApplyFundingForm = ({
         value: b.businessName,
         label: `${b.businessName} (${b.employerIdentificationNumber})`,
       })),
-    [businessData]
+    [businessData],
   );
 
   const savedDraft = getApplication(userData.id);
@@ -225,7 +227,7 @@ const ApplyFundingForm = ({
     if (!defaultValues?.legalResident) return undefined;
 
     const isValid = legalResident.some(
-      (option) => option.value === defaultValues.legalResident
+      (option) => option.value === defaultValues.legalResident,
     );
 
     return isValid ? defaultValues.legalResident : undefined;
@@ -296,7 +298,7 @@ const ApplyFundingForm = ({
         // Only save if values have changed since last save
         if (formValuesStr !== lastSavedRef.current) {
           const hasValues = Object.values(formValues).some(
-            (val) => val !== "" && val !== undefined && val !== null
+            (val) => val !== "" && val !== undefined && val !== null,
           );
           if (hasValues) {
             updateApplication(userData.id, formValues);
@@ -331,23 +333,23 @@ const ApplyFundingForm = ({
       ) {
         if (savedDraft.interestedProduct) {
           const product = FundingProductTypeEnum.find(
-            (p) => p.value === savedDraft.interestedProduct
+            (p) => p.value === savedDraft.interestedProduct,
           );
           if (product) {
             setInterestedProductSelected(product);
             setIsBusinessIncomeBased(
-              savedDraft.interestedProduct === "Business Income Based Funding"
+              savedDraft.interestedProduct === "Business Income Based Funding",
             );
             setIsAutoLoan(savedDraft.interestedProduct === "Auto Loan");
             setIsEquipmentFinancing(
-              product.type.includes("Equipment Financing")
+              product.type.includes("Equipment Financing"),
             );
           }
         }
 
         if (savedDraft.howDoYouGetPaid) {
           const option = howDoYouGetPaid.find(
-            (x) => x.value === savedDraft.howDoYouGetPaid
+            (x) => x.value === savedDraft.howDoYouGetPaid,
           );
           if (option) {
             setHowDoYouGetPaidSelected(option);
@@ -362,7 +364,7 @@ const ApplyFundingForm = ({
 
         if (savedDraft.personalTaxes) {
           const option = personalTaxes.find(
-            (x) => x.value === savedDraft.personalTaxes
+            (x) => x.value === savedDraft.personalTaxes,
           );
           if (option) setPersonalTaxesSelected(option);
         }
@@ -375,37 +377,37 @@ const ApplyFundingForm = ({
           setVehicleFinancingType(savedDraft.vehicleFinancingType);
         }
 
-        toast("We restored your previous application draft.", {
-          action: {
-            label: "Start Over",
-            onClick: () => {
-              form.reset({
-                appliedDate: new Date(),
-                userId: userData.id,
-                status: "New",
-                fundingType: "Personal",
-                employmentStatus: "",
-                personalTaxesStatus: "",
-                // addressStreet: userData.addressStreet || "",
-                // houseNumber: userData.houseNumber || "",
-                // addressCity: userData.addressCity || "",
-                // addressState: userData.addressState || "",
-                // addressPostal: userData.addressPostal || "",
-              });
-              setInterestedProductSelected(undefined);
-              setIsBusinessIncomeBased(false);
-              setIsAutoLoan(false);
-              setIsEquipmentFinancing(false);
-              setVehicleFinancingType(undefined);
-              setHowDoYouGetPaidSelected(undefined);
-              setHowDoYouGetPaidSelectedBank(false);
-              setPersonalTaxesSelected(undefined);
-              setBusinessTaxesSelected(undefined);
-              setBusinessIdSelected(undefined);
-              clearApplication(userData.id);
-            },
-          },
-        });
+        // toast("We restored your previous application draft.", {
+        //   action: {
+        //     label: "Start Over",
+        //     onClick: () => {
+        //       form.reset({
+        //         appliedDate: new Date(),
+        //         userId: userData.id,
+        //         status: "New",
+        //         fundingType: "Personal",
+        //         employmentStatus: "",
+        //         personalTaxesStatus: "",
+        //         // addressStreet: userData.addressStreet || "",
+        //         // houseNumber: userData.houseNumber || "",
+        //         // addressCity: userData.addressCity || "",
+        //         // addressState: userData.addressState || "",
+        //         // addressPostal: userData.addressPostal || "",
+        //       });
+        //       setInterestedProductSelected(undefined);
+        //       setIsBusinessIncomeBased(false);
+        //       setIsAutoLoan(false);
+        //       setIsEquipmentFinancing(false);
+        //       setVehicleFinancingType(undefined);
+        //       setHowDoYouGetPaidSelected(undefined);
+        //       setHowDoYouGetPaidSelectedBank(false);
+        //       setPersonalTaxesSelected(undefined);
+        //       setBusinessTaxesSelected(undefined);
+        //       setBusinessIdSelected(undefined);
+        //       clearApplication(userData.id);
+        //     },
+        //   },
+        // });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -450,7 +452,7 @@ const ApplyFundingForm = ({
           {
             shouldValidate: false,
             shouldDirty: true,
-          }
+          },
         );
         form.setValue("businessCityAddress", b.businessCityAddress ?? "", {
           shouldValidate: false,
@@ -485,7 +487,7 @@ const ApplyFundingForm = ({
           {
             shouldValidate: false,
             shouldDirty: true,
-          }
+          },
         );
         // form.setValue("lastYearTaxes", b.lastYearTaxes ?? 0, {
         //   shouldValidate: false,
@@ -495,7 +497,7 @@ const ApplyFundingForm = ({
         // });
       }
     },
-    [form, businessData]
+    [form, businessData],
   );
 
   useEffect(() => {
@@ -507,7 +509,7 @@ const ApplyFundingForm = ({
 
       setIsCommunity(interestedProductSelected.type.includes("Community"));
       setIsEquipmentFinancing(
-        interestedProductSelected.type.includes("Equipment Financing")
+        interestedProductSelected.type.includes("Equipment Financing"),
       );
       setIsTradeLines(interestedProductSelected.type.includes("Tradelines"));
     }
@@ -567,7 +569,7 @@ const ApplyFundingForm = ({
             key={fieldName}
             onClick={() => {
               const element = document.querySelector(
-                `[name="${fieldName}"]`
+                `[name="${fieldName}"]`,
               ) as HTMLElement;
               if (element) {
                 element.focus();
@@ -590,7 +592,7 @@ const ApplyFundingForm = ({
           </div>,
           {
             duration: 8000,
-          }
+          },
         );
       } else {
         toast.error("Please fix the validation errors", {
@@ -622,7 +624,7 @@ const ApplyFundingForm = ({
               description:
                 "You need to upload your 4 months bank statements and driver's license documents to proceed.",
               duration: 5000,
-            }
+            },
           );
           e.preventDefault();
           e.stopPropagation();
@@ -664,7 +666,7 @@ const ApplyFundingForm = ({
   const handleInterestedProductChange = useCallback(
     (value: string) => {
       const selectedProduct = FundingProductTypeEnum.find(
-        (product) => product.value === value
+        (product) => product.value === value,
       );
       if (selectedProduct) {
         setInterestedProductSelected(selectedProduct);
@@ -684,7 +686,7 @@ const ApplyFundingForm = ({
         }
       }
     },
-    [form, refetchBusinesses]
+    [form, refetchBusinesses],
   );
 
   const handleDoYouHaveAJobChange = useCallback(
@@ -707,7 +709,7 @@ const ApplyFundingForm = ({
         }
       }
     },
-    [form]
+    [form],
   );
 
   const handlePersonalTaxesChange = useCallback(
@@ -722,7 +724,7 @@ const ApplyFundingForm = ({
         });
       }
     },
-    [form]
+    [form],
   );
 
   const handleVehicleFinancingTypeChange = useCallback(
@@ -768,7 +770,7 @@ const ApplyFundingForm = ({
         setPersonalTaxesSelected(undefined);
       }
     },
-    [form]
+    [form],
   );
 
   // Helper function to convert File to base64
@@ -792,7 +794,7 @@ const ApplyFundingForm = ({
             size: file.size,
             type: file.type,
             base64: await fileToBase64(file),
-          }))
+          })),
         );
         form.setValue("bankStatements", [...currentDocs, ...newDocs], {
           shouldDirty: true,
@@ -802,7 +804,7 @@ const ApplyFundingForm = ({
         alert("Failed to process files. Please try again.");
       }
     },
-    [form]
+    [form],
   );
 
   // Handle driver license upload
@@ -816,7 +818,7 @@ const ApplyFundingForm = ({
             size: file.size,
             type: file.type,
             base64: await fileToBase64(file),
-          }))
+          })),
         );
         form.setValue("driverLicenseDocuments", [...currentDocs, ...newDocs], {
           shouldDirty: true,
@@ -826,7 +828,7 @@ const ApplyFundingForm = ({
         alert("Failed to process files. Please try again.");
       }
     },
-    [form]
+    [form],
   );
 
   // Remove bank statement
@@ -836,7 +838,7 @@ const ApplyFundingForm = ({
       const updatedDocs = currentDocs.filter((_, i) => i !== index);
       form.setValue("bankStatements", updatedDocs, { shouldDirty: true });
     },
-    [form]
+    [form],
   );
 
   // Remove driver license document
@@ -848,7 +850,7 @@ const ApplyFundingForm = ({
         shouldDirty: true,
       });
     },
-    [form]
+    [form],
   );
 
   const currentYear = new Date().getFullYear();
@@ -899,7 +901,7 @@ const ApplyFundingForm = ({
                           onSelectValue={handleInterestedProductChange}
                         />
                         {interestedProductSelected?.type?.includes(
-                          "Personal"
+                          "Personal",
                         ) &&
                           !isTradeLines && (
                             <CustomFormField
@@ -931,7 +933,7 @@ const ApplyFundingForm = ({
                           />
                         )}
                         {interestedProductSelected?.type?.includes(
-                          "Business"
+                          "Business",
                         ) &&
                           !isTradeLines && (
                             <CustomFormField
@@ -1356,7 +1358,7 @@ const ApplyFundingForm = ({
                                         label={"Do you have a job?"}
                                         type="select"
                                         options={howDoYouGetPaid.filter(
-                                          (x) => x.value !== "no_work"
+                                          (x) => x.value !== "no_work",
                                         )}
                                       />
                                       <CustomFormField
@@ -1499,7 +1501,7 @@ const ApplyFundingForm = ({
                                     label={"Do you have a job?"}
                                     type="select"
                                     options={howDoYouGetPaid.filter(
-                                      (x) => x.value !== "no_work"
+                                      (x) => x.value !== "no_work",
                                     )}
                                   />
 
@@ -1819,7 +1821,7 @@ const ApplyFundingForm = ({
                             className="cursor-pointer w-full"
                             onDrop={async (files) => {
                               const pdfFiles = files.filter(
-                                (f) => f.type === "application/pdf"
+                                (f) => f.type === "application/pdf",
                               );
                               if (pdfFiles.length !== files.length) {
                                 alert("Only PDF files are allowed!");
@@ -1882,7 +1884,7 @@ const ApplyFundingForm = ({
                               const validFiles = files.filter(
                                 (f) =>
                                   f.type === "application/pdf" ||
-                                  f.type.startsWith("image/")
+                                  f.type.startsWith("image/"),
                               );
                               if (validFiles.length !== files.length) {
                                 alert("Only PDF and image files are allowed!");
@@ -1907,31 +1909,103 @@ const ApplyFundingForm = ({
                   )}
                 </CardContent>
 
-                <CardFooter className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-2 px-3 sm:px-4 md:px-6 py-4 md:py-6">
+                <CardFooter className="flex flex-col gap-4 px-3 sm:px-4 md:px-6 py-4 md:py-6">
                   {!isViewing ? (
-                    <>
-                      {/* <div>
-                        {!community && (
-                          <div className="space-x-4">
-                            <PlaidLink />
-                            {!incomeBankItem && <PlaidIncomeLinkBank />}
-                            {!incomePayrollItem && <PlaidIncomeLinkPayroll />}
-                          </div>
-                        )}
-                      </div> */}
-                      <div className="flex flex-col md:flex-row gap-3 md:gap-4 w-full md:w-auto">
+                    <div className="w-full space-y-4">
+                      {/* Consent Checkboxes */}
+                      <div className="space-y-3 sm:space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="consentConfirmPrivacy"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 sm:space-x-4 space-y-0 rounded-lg border border-slate-200/80 p-3 sm:p-4 bg-slate-50 shadow-sm">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  // disabled={!field.value}
+                                  className="mt-1 h-5 w-5 border-blue-500 rounded-md focus:ring-2 focus:ring-offset-0 focus:ring-blue-500 hover:cursor-pointer hover:border-blue-900 flex-shrink-0"
+                                />
+                              </FormControl>
+
+                              <div className="grid gap-1.5 sm:gap-2 flex-1 min-w-0">
+                                <Label
+                                  htmlFor="terms-2"
+                                  className="cursor-pointer text-sm sm:text-base"
+                                  // onClick={() => setIsConsentPrivacyModalOpen(true)}
+                                  onClick={() =>
+                                    window.open(
+                                      "https://www.cegunited.com/privacy",
+                                      "_blank",
+                                    )
+                                  }
+                                >
+                                  Accept Privacy Policy
+                                </Label>
+                                <div className="text-muted-foreground text-xs sm:text-sm">
+                                  By clicking this checkbox, you agree to the
+                                  Privacy Policy.
+                                </div>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="consentConfirmTerms"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 sm:space-x-4 space-y-0 rounded-lg border border-slate-200/80 p-3 sm:p-4 bg-slate-50 shadow-sm">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  // disabled={!field.value}
+                                  className="mt-1 h-5 w-5 border-blue-500 rounded-md focus:ring-2 focus:ring-offset-0 focus:ring-blue-500 hover:cursor-pointer hover:border-blue-900 flex-shrink-0"
+                                />
+                              </FormControl>
+
+                              <div className="grid gap-1.5 sm:gap-2 flex-1 min-w-0">
+                                <Label
+                                  htmlFor="terms-2"
+                                  className="cursor-pointer text-sm sm:text-base"
+                                  // onClick={() => setIsConsentModalOpen(true)}
+                                  onClick={() =>
+                                    window.open(
+                                      "https://www.cegunited.com/terms",
+                                      "_blank",
+                                    )
+                                  }
+                                >
+                                  Accept Authorization & Disclosure Agreement
+                                </Label>
+                                <div className="text-muted-foreground text-xs sm:text-sm">
+                                  By clicking this checkbox, you agree to the
+                                  Authorization & Disclosure Agreement.
+                                </div>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full pt-2 justify-end">
                         <Button
                           size="lg"
                           variant={"outline"}
                           type="button"
                           disabled={isRecording}
                           onClick={() => setOpen(false)}
-                          className="w-full md:w-auto bg-red-200 hover:bg-red-300 text-black-100 cursor-pointer min-h-[44px]"
+                          className="w-full sm:w-auto bg-red-200 hover:bg-red-300 text-black-100 cursor-pointer min-h-[44px] order-2 sm:order-1"
                         >
                           <CircleXIcon className="mr-2 h-4 w-4" /> Close
                         </Button>
 
-                        <span onClickCapture={handleApproveClickCapture}>
+                        <span
+                          onClickCapture={handleApproveClickCapture}
+                          className="w-full sm:w-auto order-1 sm:order-2"
+                        >
                           <ConfirmButton
                             label={isEditing ? "Update" : "Apply"}
                             confirmLabel={isEditing ? "Update" : "Apply"}
@@ -1944,7 +2018,7 @@ const ApplyFundingForm = ({
                             size="sm"
                             icon={<CheckIcon className="h-4 w-4" />}
                             onConfirm={() => onSubmit()}
-                            className="bg-green-600 hover:bg-green-700"
+                            className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                             classNameAction="bg-green-600 hover:bg-green-700"
                             isLoading={form.formState.isSubmitting}
                             trigger={
@@ -1952,7 +2026,7 @@ const ApplyFundingForm = ({
                                 size="lg"
                                 type="submit"
                                 disabled={isRecording || isUpdating}
-                                className="w-full md:w-auto bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer min-h-[44px]"
+                                className="w-full sm:w-auto bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer min-h-[44px]"
                               >
                                 {isRecording || isUpdating ? (
                                   <>
@@ -1961,8 +2035,8 @@ const ApplyFundingForm = ({
                                     {isEditing
                                       ? "Updating..."
                                       : isTradeLines
-                                      ? "Boosting..."
-                                      : "Applying..."}
+                                        ? "Boosting..."
+                                        : "Applying..."}
                                   </>
                                 ) : (
                                   <>
@@ -1970,8 +2044,8 @@ const ApplyFundingForm = ({
                                     {isEditing
                                       ? "Update Application"
                                       : isTradeLines
-                                      ? "Boost My Score"
-                                      : "Apply Funding"}
+                                        ? "Boost My Score"
+                                        : "Apply Funding"}
                                   </>
                                 )}
                               </Button>
@@ -1979,7 +2053,7 @@ const ApplyFundingForm = ({
                           />
                         </span>
                       </div>
-                    </>
+                    </div>
                   ) : (
                     <Button
                       size="lg"
