@@ -401,7 +401,7 @@ const AnalysisDetailsView = ({
 
   React.useEffect(() => () => debouncedSave.flush(), [debouncedSave]);
 
-  return <Editor content={content} onContentChange={handleSetContent} />;
+  return <Editor content={content} onContentChange={() => {}} />;
 };
 
 export default AnalysisView;
