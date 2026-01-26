@@ -5,7 +5,7 @@ import {
   useRefreshAnalysisData,
   useSaveToDocuments,
 } from "@/hooks/admin/funding-application/analysis";
-import dynamic from "next/dynamic";
+// import dynamic from "next/dynamic";
 import React, { useCallback } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import Spinner from "../Spinner";
@@ -25,8 +25,9 @@ import { toast } from "sonner";
 import IconMenu from "../icon-menu";
 import { FileDown, Loader2Icon, Mail, RefreshCcw, XIcon } from "lucide-react";
 import { useAuth } from "@/provider/AuthContext";
+import DOMPurify from "isomorphic-dompurify";
 
-const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
+// const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
 type Props = {
   referenceNumber: string;
@@ -36,7 +37,7 @@ type Item = { id: string; analysis?: string };
 const AnalysisView = ({ referenceNumber }: Props) => {
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
   const { updateAnalysis } = useAnalysisMutation();
-  const { isAdmin } = useAuth();
+  const { isAdmin, role } = useAuth();
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
 
@@ -59,6 +60,9 @@ const AnalysisView = ({ referenceNumber }: Props) => {
           </div>
           <RefreshAnalysisData referenceNumber={referenceNumber} />
         </div>
+      )}
+      {role === "Client" && (
+        <SaveToDocumentsButton referenceNumber={referenceNumber} />
       )}
       {(analysisData as Item[])?.map((item) => (
         <AnalysisDetailsView
@@ -325,20 +329,21 @@ const RefreshAnalysisData = ({
 };
 
 export function extractHtmlFromFence(input: string): string {
-  if (!input) return "";
+  return DOMPurify.sanitize(input);
+  // if (!input) return "";
 
-  // Prefer an explicit ```html fence anywhere in the string
-  const htmlFence = /```(?:\s*html)?\s*[\r\n]+([\s\S]*?)\s*```/i;
-  const m1 = input.match(htmlFence);
-  if (m1) return m1[1].trim();
+  // // Prefer an explicit ```html fence anywhere in the string
+  // const htmlFence = /```(?:\s*html)?\s*[\r\n]+([\s\S]*?)\s*```/i;
+  // const m1 = input.match(htmlFence);
+  // if (m1) return m1[1].trim();
 
-  // If the entire string is *just* one fenced block (any language), unwrap it
-  const wholeFence = /^\s*```[^\n]*\n([\s\S]*?)\n?```\s*$/;
-  const m2 = input.match(wholeFence);
-  if (m2) return m2[1].trim();
+  // // If the entire string is *just* one fenced block (any language), unwrap it
+  // const wholeFence = /^\s*```[^\n]*\n([\s\S]*?)\n?```\s*$/;
+  // const m2 = input.match(wholeFence);
+  // if (m2) return m2[1].trim();
 
-  // Otherwise, return as-is
-  return input.trim();
+  // // Otherwise, return as-is
+  // return input.trim();
 }
 
 type PropsView = {
@@ -362,6 +367,7 @@ const AnalysisDetailsView = ({
   id,
   updateAnalysis,
 }: PropsView) => {
+  const { role } = useAuth();
   const initial = React.useMemo(
     () => extractHtmlFromFence(analysis),
     [analysis],
@@ -401,7 +407,40 @@ const AnalysisDetailsView = ({
 
   React.useEffect(() => () => debouncedSave.flush(), [debouncedSave]);
 
-  return <Editor content={content} onContentChange={() => {}} />;
+  // If user is a Client, display read-only HTML content
+  // if (role === "Client") {
+  return (
+    <div
+      className="prose prose-sm sm:prose lg:prose-lg max-w-none dark:prose-invert bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 sm:p-6
+        [&_h1]:text-2xl [&_h1]:sm:text-3xl [&_h1]:font-bold [&_h1]:mb-4
+        [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-semibold [&_h2]:mb-3
+        [&_h3]:text-lg [&_h3]:sm:text-xl [&_h3]:font-semibold [&_h3]:mb-2
+        [&_h4]:text-base [&_h4]:sm:text-lg [&_h4]:font-medium [&_h4]:mb-2
+        [&_p]:mb-2 [&_p]:text-sm [&_p]:sm:text-base
+        [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-3
+        [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-3
+        [&_li]:mb-1
+        [&_table]:w-full [&_table]:border-collapse [&_table]:mb-4
+        [&_th]:border [&_th]:border-gray-300 [&_th]:p-2 [&_th]:bg-gray-100 [&_th]:font-semibold [&_th]:text-left
+        [&_td]:border [&_td]:border-gray-300 [&_td]:p-2
+        [&_.container]:w-full
+        [&_.section-box]:border [&_.section-box]:border-gray-300 [&_.section-box]:rounded [&_.section-box]:p-4 [&_.section-box]:mb-4 [&_.section-box]:bg-gray-50 dark:[&_.section-box]:bg-gray-800
+        [&_.bureau-box]:border [&_.bureau-box]:border-blue-300 [&_.bureau-box]:rounded [&_.bureau-box]:p-4 [&_.bureau-box]:mb-4 [&_.bureau-box]:bg-blue-50 dark:[&_.bureau-box]:bg-blue-900/20
+        [&_.summary-box]:border [&_.summary-box]:border-purple-300 [&_.summary-box]:rounded [&_.summary-box]:p-4 [&_.summary-box]:mb-4 [&_.summary-box]:bg-purple-50 dark:[&_.summary-box]:bg-purple-900/20
+        [&_.final-summary]:border [&_.final-summary]:border-green-300 [&_.final-summary]:rounded [&_.final-summary]:p-4 [&_.final-summary]:mb-4 [&_.final-summary]:bg-green-50 dark:[&_.final-summary]:bg-green-900/20
+        [&_.grid]:grid [&_.grid]:grid-cols-1 [&_.grid]:sm:grid-cols-2 [&_.grid]:md:grid-cols-3 [&_.grid]:gap-3 [&_.grid]:mb-3
+        [&_.grid-item]:text-sm
+        [&_.label]:font-semibold
+        [&_.value]:text-gray-700 dark:[&_.value]:text-gray-300
+        [&_.negative]:text-red-600 dark:[&_.negative]:text-red-400 [&_.negative]:font-semibold
+        [&_.positive]:text-green-600 dark:[&_.positive]:text-green-400 [&_.positive]:font-semibold"
+      dangerouslySetInnerHTML={{ __html: content }}
+    />
+  );
+  // }
+
+  // For Admin/Broker, show editable Editor
+  // return <Editor content={content} onContentChange={handleSetContent} />;
 };
 
 export default AnalysisView;
