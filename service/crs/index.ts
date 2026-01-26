@@ -22,7 +22,7 @@ import { CRSAddressInfo, CRSPersonalInfo, CRSReportType } from "@/types/crs";
 export const recordCRSReport = async (
   userId: string,
   crsType: CRSReportType,
-  report: any
+  report: any,
 ) => {
   if (!userId) throw new Error("User ID is required.");
 
@@ -36,7 +36,7 @@ export const recordCRSReport = async (
 
   await docRef.set(
     { userId, createdAt: new Date(), updatedAt: new Date() },
-    { merge: true }
+    { merge: true },
   );
 
   const timestamp = Date.now();
@@ -49,19 +49,19 @@ export const recordCRSReport = async (
   });
 
   const subCollectionRef = db.collection(
-    `${CRS_REPORT_DATA}/${userId}/${crsType}`
+    `${CRS_REPORT_DATA}/${userId}/${crsType}`,
   );
   const subDocRef = subCollectionRef.doc(crsType);
   await subDocRef.set(
     { userId, report, createdAt: new Date() },
-    { merge: true }
+    { merge: true },
   );
 };
 
 export const recordCRSBusinessProfile = async (
   userId: string,
   businessId: string,
-  report: any
+  report: any,
 ) => {
   const db = firestoreAdmin();
 
@@ -69,14 +69,14 @@ export const recordCRSBusinessProfile = async (
   const docRef = collectionRef.doc(businessId);
   await docRef.set(
     { userId, businessId, report, createdAt: new Date() },
-    { merge: true }
+    { merge: true },
   );
 };
 
 export const recordCRSBusinessScore = async (
   userId: string,
   businessId: string,
-  report: any
+  report: any,
 ) => {
   const db = firestoreAdmin();
 
@@ -84,7 +84,7 @@ export const recordCRSBusinessScore = async (
   const docRef = collectionRef.doc(businessId);
   await docRef.set(
     { userId, businessId, report, createdAt: new Date() },
-    { merge: true }
+    { merge: true },
   );
 };
 
@@ -114,7 +114,7 @@ export const getCRSReport = async (userId: string, isLatest?: boolean) => {
           id: doc.id,
           ...normalizeAllDates(doc.data() || {}),
         }));
-      })
+      }),
   );
 
   return nested.flat();
@@ -183,12 +183,16 @@ export const generateCRSReport = async ({
       addressInfo,
     }),
   });
+
+  // Add delay before returning to allow N8N workflow to process
+  console.log("Waiting 5 seconds for CRS report generation to complete...");
+  await new Promise((resolve) => setTimeout(resolve, 5000));
 };
 
 export const generateCRSReportBusiness = async (
   userId: string,
   referenceNumber: string,
-  businessId: string
+  businessId: string,
 ) => {
   await fetch(`${process.env.n8n_HOST}/${await generateCRSReportN8N()}`, {
     method: "POST",
@@ -263,7 +267,7 @@ export const refreshCRSData = async ({
 
     if (businessIds && businessIds.length > 0) {
       businessesToRefresh = allBusinesses.filter((b) =>
-        businessIds.includes(b.id!)
+        businessIds.includes(b.id!),
       );
     } else {
       businessesToRefresh = allBusinesses;
@@ -272,7 +276,7 @@ export const refreshCRSData = async ({
     await Promise.all(
       businessesToRefresh.map(async (business) => {
         await generateCRSReportBusiness(userId, referenceNumber, business.id!);
-      })
+      }),
     );
   }
 };
@@ -295,6 +299,10 @@ export const fundAnalysis = async ({
       userId,
     }),
   });
+
+  // Add delay before returning to allow N8N workflow to process
+  console.log("Waiting 2 minutes for funding analysis to complete...");
+  await new Promise((resolve) => setTimeout(resolve, 120000));
 };
 
 export const sendClientFundingApplicationCongratsMessage = async ({
@@ -320,7 +328,7 @@ export const sendClientFundingApplicationCongratsMessage = async ({
         referenceNumber,
         userId,
       }),
-    }
+    },
   );
 };
 
