@@ -432,6 +432,8 @@ export const getFundMappingAnalysisDetails = async ({
     };
   });
 
+  console.log("getFundMappingAnalysisDetails - bankProductIds", bankProductIds);
+
   if (!bankProductIds) return null;
 
   const result: ApprovedBankFormData[] = [];

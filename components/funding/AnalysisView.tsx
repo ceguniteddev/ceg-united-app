@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import IconMenu from "../icon-menu";
 import { FileDown, Loader2Icon, Mail, RefreshCcw, XIcon } from "lucide-react";
+import { useAuth } from "@/provider/AuthContext";
 
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -35,6 +36,7 @@ type Item = { id: string; analysis?: string };
 const AnalysisView = ({ referenceNumber }: Props) => {
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
   const { updateAnalysis } = useAnalysisMutation();
+  const { isAdmin } = useAuth();
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
 
@@ -49,13 +51,15 @@ const AnalysisView = ({ referenceNumber }: Props) => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between gap-3">
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <SendClientAnalysisData referenceNumber={referenceNumber} />
-          <SaveToDocumentsButton referenceNumber={referenceNumber} />
+      {isAdmin && (
+        <div className="flex flex-col sm:flex-row justify-between gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <SendClientAnalysisData referenceNumber={referenceNumber} />
+            <SaveToDocumentsButton referenceNumber={referenceNumber} />
+          </div>
+          <RefreshAnalysisData referenceNumber={referenceNumber} />
         </div>
-        <RefreshAnalysisData referenceNumber={referenceNumber} />
-      </div>
+      )}
       {(analysisData as Item[])?.map((item) => (
         <AnalysisDetailsView
           updateAnalysis={({ referenceNumber, id, analysis }) =>
@@ -360,7 +364,7 @@ const AnalysisDetailsView = ({
 }: PropsView) => {
   const initial = React.useMemo(
     () => extractHtmlFromFence(analysis),
-    [analysis]
+    [analysis],
   );
   const [content, setContent] = React.useState(initial);
 
@@ -380,7 +384,7 @@ const AnalysisDetailsView = ({
         console.error("Failed to save analysis", e);
       }
     },
-    [id, updateAnalysis, referenceNumber]
+    [id, updateAnalysis, referenceNumber],
   );
 
   const debouncedSave = useDebouncedCallback((next: string) => {
@@ -392,7 +396,7 @@ const AnalysisDetailsView = ({
       setContent(next);
       debouncedSave(next);
     },
-    [debouncedSave]
+    [debouncedSave],
   );
 
   React.useEffect(() => () => debouncedSave.flush(), [debouncedSave]);
