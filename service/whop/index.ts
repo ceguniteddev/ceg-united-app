@@ -31,7 +31,7 @@ export const createWhopCheckoutConfig = async ({
   userId,
   referenceNumber,
 }: CreateCheckoutConfigParams): Promise<string> => {
-  logInfo("createWhopCheckoutConfig (SDK) start", { userId, referenceNumber });
+  // logInfo("createWhopCheckoutConfig (SDK) start", { userId, referenceNumber });
 
   if (!whopSdk) {
     logError(new Error("Whop SDK is not initialized. Check API Key."));
@@ -124,7 +124,7 @@ export const createWhopCheckoutConfig = async ({
       checkoutDoc,
     );
 
-    logInfo("createWhopCheckoutConfig (SDK) success", { checkoutId });
+    // logInfo("createWhopCheckoutConfig (SDK) success", { checkoutId });
     return checkoutId;
   } catch (error: any) {
     logError(

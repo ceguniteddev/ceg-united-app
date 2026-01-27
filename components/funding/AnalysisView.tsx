@@ -65,11 +65,11 @@ const AnalysisView = ({ referenceNumber }: Props) => {
       <div className="flex flex-col items-start gap-3 border-b pb-4 mb-4 sm:flex-row sm:justify-between">
         {isAdmin && (
           <>
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <div className="flex flex-col gap-2 sm:w-auto sm:flex-row">
               <SendClientAnalysisData referenceNumber={referenceNumber} />
               <SaveToDocumentsButton referenceNumber={referenceNumber} />
             </div>
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <div className="flex flex-col gap-2 sm:w-auto sm:flex-row">
               <RefreshAnalysisData referenceNumber={referenceNumber} />
             </div>
           </>
@@ -425,18 +425,16 @@ const WhopCheckoutButton = ({
         description="Please complete the payment form below to join."
         className="max-w-[90vw] sm:max-w-lg p-0"
       >
-        <div className="mt-4">
-          {checkoutId && (
-            <WhopCheckoutEmbed
-              sessionId={checkoutId}
-              onComplete={(paymentId) => {
-                console.log("Payment complete:", paymentId);
-                toast.success("Payment successful!");
-                setCheckoutId(null);
-              }}
-            />
-          )}
-        </div>
+        {checkoutId && (
+          <WhopCheckoutEmbed
+            sessionId={checkoutId}
+            onComplete={(paymentId) => {
+              console.log("Payment complete:", paymentId);
+              toast.success("Payment successful!");
+              setCheckoutId(null);
+            }}
+          />
+        )}
       </ResponsiveDialog>
     </>
   );
