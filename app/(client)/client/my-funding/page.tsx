@@ -61,22 +61,24 @@ const ApplyFundingPage = () => {
   if (isLoadingFunding) return <Spinner />;
 
   return (
-    <section className="home-content">
-      <div className="home-header flex flex-col md:flex-row md:justify-between gap-4">
+    <section className="space-y-6 p-4 sm:p-6 md:p-8">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <HeaderBox
           title="Apply Funding"
           subtext="Manage your funding applications."
         />
-        <ApplyFunding userId={user.uid} />
+        <div className="w-full md:w-auto">
+          <ApplyFunding userId={user.uid} />
+        </div>
       </div>
 
       <div className="space-y-6">
         {/* Reference Number Filter */}
         {referenceOptions.length > 0 && (
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <label
               htmlFor="reference-filter"
-              className="text-sm font-medium text-gray-700"
+              className="text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               Filter by Application:
             </label>
@@ -86,7 +88,7 @@ const ApplyFundingPage = () => {
               defaultValue={referenceOptions[0]?.value}
             >
               <SelectTrigger
-                className="w-full sm:w-[280px]"
+                className="w-full sm:max-w-xs"
                 id="reference-filter"
               >
                 <SelectValue placeholder="Select application date" />

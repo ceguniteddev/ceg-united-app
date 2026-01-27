@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-validation";
-import { createWhopCheckoutLink } from "@/service/whop";
+import { createWhopCheckoutConfig } from "@/service/whop";
 import { badRequest, internalServerError } from "@/app/api/helpers";
-
-const PRODUCT_ID = "pass_2Jv9h283j29D2"; // Business Consulting Fee Access Pass ID
 
 export const POST = withAuth(
   async (
@@ -11,20 +9,29 @@ export const POST = withAuth(
     { params }: { params?: Promise<{ userId: string }> },
   ) => {
     const { userId } = (await params) ?? {};
+    const { referenceNumber } = await request.json();
 
     if (!userId) {
       return badRequest({
-        message: "Missing userId parameter",
-        errors: "Missing userId parameter",
+        errors: "User ID is required.",
+        message: "User ID is required.",
+      });
+    }
+
+    if (!referenceNumber) {
+      return badRequest({
+        errors: "Reference number is required.",
+        message: "Reference number is required.",
       });
     }
 
     try {
-      const checkoutUrl = await createWhopCheckoutLink({
+      const checkoutId = await createWhopCheckoutConfig({
         userId,
+        referenceNumber,
       });
 
-      return NextResponse.json({ url: checkoutUrl });
+      return NextResponse.json({ checkoutId });
     } catch (error) {
       return internalServerError(
         "An error occurred while creating the checkout link.",

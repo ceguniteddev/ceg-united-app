@@ -33,6 +33,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/provider/AuthContext";
 import DOMPurify from "isomorphic-dompurify";
+import { WhopCheckoutEmbed } from "@whop/checkout/react";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { Card, CardContent } from "@/components/ui/card";
 
 // const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -59,34 +62,41 @@ const AnalysisView = ({ referenceNumber }: Props) => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-3 border-b pb-4 mb-4">
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          {isAdmin && (
-            <>
+      <div className="flex flex-col items-start gap-3 border-b pb-4 mb-4 sm:flex-row sm:justify-between">
+        {isAdmin && (
+          <>
+            <div className="flex flex-col gap-2 sm:w-auto sm:flex-row">
               <SendClientAnalysisData referenceNumber={referenceNumber} />
               <SaveToDocumentsButton referenceNumber={referenceNumber} />
-            </>
-          )}
-          {role === "Client" && (
+            </div>
+            <div className="flex flex-col gap-2 sm:w-auto sm:flex-row">
+              <RefreshAnalysisData referenceNumber={referenceNumber} />
+            </div>
+          </>
+        )}
+        {role === "Client" && (
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <SaveToDocumentsButton referenceNumber={referenceNumber} />
-          )}
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:justify-end">
-          <WhopCheckoutButton />
-          {isAdmin && <RefreshAnalysisData referenceNumber={referenceNumber} />}
-        </div>
+            <WhopCheckoutButton referenceNumber={referenceNumber} />
+          </div>
+        )}
       </div>
-      {(analysisData as Item[])?.map((item) => (
-        <AnalysisDetailsView
-          updateAnalysis={({ referenceNumber, id, analysis }) =>
-            updateAnalysis({ referenceNumber, id, analysis })
-          }
-          referenceNumber={referenceNumber}
-          key={item.id}
-          id={item.id}
-          analysis={item.analysis ?? ""}
-        />
-      ))}
+      <Card>
+        <CardContent className="space-y-4 pt-6 sm:space-y-6">
+          {(analysisData as Item[])?.map((item) => (
+            <div className="w-full" key={item.id}>
+              <AnalysisDetailsView
+                updateAnalysis={({ referenceNumber, id, analysis }) =>
+                  updateAnalysis({ referenceNumber, id, analysis })
+                }
+                referenceNumber={referenceNumber}
+                id={item.id}
+                analysis={item.analysis ?? ""}
+              />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 };
@@ -340,64 +350,93 @@ const RefreshAnalysisData = ({
   );
 };
 
-const WhopCheckoutButton = () => {
+const WhopCheckoutButton = ({
+  referenceNumber,
+}: {
+  referenceNumber: string;
+}) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [checkoutId, setCheckoutId] = React.useState<string | null>(null);
 
   const handleCheckout = async () => {
-    window.open("https://whop.com/checkout/plan_AJy2EeSKuMSGM", "_blank");
-    // if (!user?.uid) {
-    //   toast.error("You must be logged in to proceed.");
-    //   return;
-    // }
-    // setIsLoading(true);
-    // try {
-    //   const response = await fetch(`/api/user/${user.uid}/whop`, {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //   });
+    if (!user?.uid) {
+      toast.error("You must be logged in to proceed.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/user/${user.uid}/whop`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ referenceNumber }),
+      });
 
-    //   if (!response.ok) {
-    //     const errorData = await response.json();
-    //     throw new Error(
-    //       errorData.message || "Failed to create checkout session.",
-    //     );
-    //   }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || "Failed to create checkout session.",
+        );
+      }
 
-    //   const { url } = await response.json();
-    //   if (url) {
-    //     window.open(url, "_blank");
-    //   } else {
-    //     toast.error("Could not retrieve the checkout link.");
-    //   }
-    // } catch (error) {
-    //   console.error(error);
-    //   toast.error(
-    //     error instanceof Error ? error.message : "An unknown error occurred.",
-    //   );
-    // } finally {
-    //   setIsLoading(false);
-    // }
+      const { checkoutId } = await response.json();
+      if (checkoutId) {
+        setCheckoutId(checkoutId);
+      } else {
+        toast.error("Could not retrieve the checkout session.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error instanceof Error ? error.message : "An unknown error occurred.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <Button
-      variant={"ghost"}
-      className="cursor-pointer bg-purple-500 hover:bg-purple-600 text-white w-full sm:w-auto h-10 sm:h-9"
-      onClick={handleCheckout}
-      disabled={isLoading}
-    >
-      {isLoading ? (
-        <IconMenu
-          text="Processing..."
-          icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
-        />
-      ) : (
-        <IconMenu icon={<ShoppingCart className="h-4 w-4" />} text="Join Now" />
-      )}
-    </Button>
+    <>
+      <Button
+        variant={"ghost"}
+        className="cursor-pointer bg-purple-500 hover:bg-purple-600 text-white w-full sm:w-auto h-10 sm:h-9"
+        onClick={handleCheckout}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <IconMenu
+            text="Processing..."
+            icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
+          />
+        ) : (
+          <IconMenu
+            icon={<ShoppingCart className="h-4 w-4" />}
+            text="Join Now"
+          />
+        )}
+      </Button>
+
+      <ResponsiveDialog
+        isOpen={!!checkoutId}
+        setIsOpen={(isOpen) => !isOpen && setCheckoutId(null)}
+        title="Complete Your Purchase"
+        description="Please complete the payment form below to join."
+        className="max-w-[90vw] sm:max-w-lg p-0"
+      >
+        {checkoutId && (
+          <WhopCheckoutEmbed
+            sessionId={checkoutId}
+            onComplete={(paymentId) => {
+              console.log("Payment complete:", paymentId);
+              toast.success("Payment successful!");
+              setCheckoutId(null);
+            }}
+          />
+        )}
+      </ResponsiveDialog>
+    </>
   );
 };
 
@@ -440,51 +479,51 @@ const AnalysisDetailsView = ({
   id,
   updateAnalysis,
 }: PropsView) => {
-  const { role } = useAuth();
+  // const { role } = useAuth();
   const initial = React.useMemo(
     () => extractHtmlFromFence(analysis),
     [analysis],
   );
-  const [content, setContent] = React.useState(initial);
+  // const [content, setContent] = React.useState(initial);
 
-  React.useEffect(() => {
-    setContent((prev) => (prev === initial ? prev : initial));
-  }, [initial]);
+  // React.useEffect(() => {
+  //   setContent((prev) => (prev === initial ? prev : initial));
+  // }, [initial]);
 
-  const saveToDb = React.useCallback(
-    async (html: string) => {
-      try {
-        await updateAnalysis({
-          referenceNumber,
-          id,
-          analysis: extractHtmlFromFence(html),
-        });
-      } catch (e) {
-        console.error("Failed to save analysis", e);
-      }
-    },
-    [id, updateAnalysis, referenceNumber],
-  );
+  // const saveToDb = React.useCallback(
+  //   async (html: string) => {
+  //     try {
+  //       await updateAnalysis({
+  //         referenceNumber,
+  //         id,
+  //         analysis: extractHtmlFromFence(html),
+  //       });
+  //     } catch (e) {
+  //       console.error("Failed to save analysis", e);
+  //     }
+  //   },
+  //   [id, updateAnalysis, referenceNumber],
+  // );
 
-  const debouncedSave = useDebouncedCallback((next: string) => {
-    saveToDb(next);
-  }, 200);
+  // const debouncedSave = useDebouncedCallback((next: string) => {
+  //   saveToDb(next);
+  // }, 200);
 
-  const handleSetContent = React.useCallback(
-    (next: string) => {
-      setContent(next);
-      debouncedSave(next);
-    },
-    [debouncedSave],
-  );
+  // const handleSetContent = React.useCallback(
+  //   (next: string) => {
+  //     setContent(next);
+  //     debouncedSave(next);
+  //   },
+  //   [debouncedSave],
+  // );
 
-  React.useEffect(() => () => debouncedSave.flush(), [debouncedSave]);
+  // React.useEffect(() => () => debouncedSave.flush(), [debouncedSave]);
 
   // If user is a Client, display read-only HTML content
   // if (role === "Client") {
   return (
     <div
-      className="prose prose-sm sm:prose lg:prose-lg max-w-none dark:prose-invert bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 sm:p-6
+      className="prose prose-sm sm:prose lg:prose-lg max-w-none dark:prose-invert bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 sm:p-6 overflow-x-auto
         [&_h1]:text-2xl [&_h1]:sm:text-3xl [&_h1]:font-bold [&_h1]:mb-4
         [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-semibold [&_h2]:mb-3
         [&_h3]:text-lg [&_h3]:sm:text-xl [&_h3]:font-semibold [&_h3]:mb-2
@@ -507,7 +546,7 @@ const AnalysisDetailsView = ({
         [&_.value]:text-gray-700 dark:[&_.value]:text-gray-300
         [&_.negative]:text-red-600 dark:[&_.negative]:text-red-400 [&_.negative]:font-semibold
         [&_.positive]:text-green-600 dark:[&_.positive]:text-green-400 [&_.positive]:font-semibold"
-      dangerouslySetInnerHTML={{ __html: content }}
+      dangerouslySetInnerHTML={{ __html: initial }}
     />
   );
   // }
