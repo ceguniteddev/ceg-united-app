@@ -3,25 +3,32 @@ import { withAuth } from "@/lib/api-validation";
 import { createWhopCheckoutLink } from "@/service/whop";
 import { badRequest, internalServerError } from "@/app/api/helpers";
 
-const PRODUCT_ID = "pass_2Jv9h283j29D2"; // Business Consulting Fee Access Pass ID
-
 export const POST = withAuth(
   async (
     request: NextRequest,
     { params }: { params?: Promise<{ userId: string }> },
   ) => {
     const { userId } = (await params) ?? {};
+    const { referenceNumber } = await request.json();
 
     if (!userId) {
       return badRequest({
-        message: "Missing userId parameter",
-        errors: "Missing userId parameter",
+        errors: "User ID is required.",
+        message: "User ID is required.",
+      });
+    }
+
+    if (!referenceNumber) {
+      return badRequest({
+        errors: "Reference Number is required.",
+        message: "Reference Number is required.",
       });
     }
 
     try {
       const checkoutUrl = await createWhopCheckoutLink({
         userId,
+        referenceNumber,
       });
 
       return NextResponse.json({ url: checkoutUrl });

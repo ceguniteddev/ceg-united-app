@@ -3,6 +3,8 @@
 import { logError, logInfo } from "@/lib/logger";
 import Whop from "@whop/sdk";
 import { getUserById } from "../user";
+import { firestoreAdmin } from "@/lib/fireabase-admin";
+import { WHOP_CHECKOUTS_COLLECTION } from "@/constant/collection-name";
 
 const WHOP_API_KEY = process.env.WHOP_API_KEY;
 const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID;
@@ -16,6 +18,7 @@ const whopSdk =
 
 type CreateCheckoutParams = {
   userId: string;
+  referenceNumber: string;
 };
 
 /**
@@ -26,8 +29,9 @@ type CreateCheckoutParams = {
  */
 export const createWhopCheckoutLink = async ({
   userId,
+  referenceNumber,
 }: CreateCheckoutParams): Promise<string> => {
-  logInfo("createWhopCheckoutLink (SDK) start", { userId });
+  logInfo("createWhopCheckoutLink (SDK) start", { userId, referenceNumber });
 
   if (!whopSdk) {
     logError(new Error("Whop SDK is not initialized. Check API Key."));
@@ -44,50 +48,46 @@ export const createWhopCheckoutLink = async ({
     throw new Error("Server configuration error.");
   }
 
-  console.log("Creating Whop checkout link for user:", userId);
-  console.log("Using product ID:", productId);
-  console.log("Using company ID:", WHOP_COMPANY_ID);
-
   try {
+    // Check if a checkout link already exists for this referenceNumber
+    const existingCheckoutQuery = await firestoreAdmin()
+      .collection(WHOP_CHECKOUTS_COLLECTION)
+      .where("referenceNumber", "==", referenceNumber)
+      .limit(1)
+      .get();
+
+    if (!existingCheckoutQuery.empty) {
+      const existingCheckout = existingCheckoutQuery.docs[0].data();
+      if (existingCheckout.url) {
+        logInfo("Found existing checkout link for referenceNumber", {
+          referenceNumber,
+          url: existingCheckout.url,
+        });
+        return existingCheckout.url;
+      }
+    }
+
     const user = await getUserById(userId);
     if (!user) {
       throw new Error("User not found");
     }
 
-    // const checkoutConfig = await whopSdk.checkoutConfigurations.create({
-    //   company_id: WHOP_COMPANY_ID,
-    //   plan: {
-    //     // We link the plan to a specific product (Access Pass)
-    //     // product_id: productId,
-    //     company_id: WHOP_COMPANY_ID,
-    //     plan_type: "one_time",
-    //     currency: "usd",
-    //     initial_price: 4999,
-    //     // The price is configured on the Product/Plan in the Whop Dashboard
-    //   },
-    //   metadata: {
-    //     userId: user.id,
-    //     email: user.email,
-    //     name: `${user.firstName} ${user.lastName}`,
-    //   },
-    //   //   customer_email: user.email,
-    // });
-
-    //https://whop.com/checkout/plan_4kghdIojBH1wq
-    //https://whop.com/checkout/plan_AJy2EeSKuMSGM
+    const planDetails = {
+      company_id: WHOP_COMPANY_ID,
+      currency: "usd" as const,
+      initial_price: 4999,
+      plan_type: "one_time" as const,
+      product_id: productId!,
+      visibility: "hidden" as const,
+    };
 
     const checkoutConfig = await whopSdk.checkoutConfigurations.create({
-      plan: {
-        company_id: WHOP_COMPANY_ID,
-        currency: "usd",
-        initial_price: 4999,
-        plan_type: "one_time",
-        product_id: productId!,
-      },
+      plan: planDetails,
       metadata: {
-        userId: user.id,
+        userId: userId,
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
+        referenceNumber: referenceNumber,
       },
     });
 
@@ -100,6 +100,26 @@ export const createWhopCheckoutLink = async ({
     }
 
     const url = checkoutConfig.purchase_url;
+
+    // Save checkout details to Firestore
+
+    const checkoutDoc = {
+      userId,
+      referenceNumber,
+      checkoutId: checkoutConfig.id,
+      url,
+      createdAt: new Date(),
+      initialPrice: planDetails.initial_price,
+      currency: planDetails.currency,
+      planType: planDetails.plan_type,
+      productId: planDetails.product_id,
+      status: "created", // Initial status
+    };
+
+    await firestoreAdmin()
+      .collection(WHOP_CHECKOUTS_COLLECTION)
+      .add(checkoutDoc);
+
     logInfo("createWhopCheckoutLink (SDK) success", { url });
     return url;
   } catch (error: any) {

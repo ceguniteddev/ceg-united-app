@@ -72,7 +72,7 @@ const AnalysisView = ({ referenceNumber }: Props) => {
           )}
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:justify-end">
-          <WhopCheckoutButton />
+          <WhopCheckoutButton referenceNumber={referenceNumber} />
           {isAdmin && <RefreshAnalysisData referenceNumber={referenceNumber} />}
         </div>
       </div>
@@ -340,46 +340,50 @@ const RefreshAnalysisData = ({
   );
 };
 
-const WhopCheckoutButton = () => {
+const WhopCheckoutButton = ({
+  referenceNumber,
+}: {
+  referenceNumber: string;
+}) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
 
   const handleCheckout = async () => {
-    window.open("https://whop.com/checkout/plan_AJy2EeSKuMSGM", "_blank");
-    // if (!user?.uid) {
-    //   toast.error("You must be logged in to proceed.");
-    //   return;
-    // }
-    // setIsLoading(true);
-    // try {
-    //   const response = await fetch(`/api/user/${user.uid}/whop`, {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //   });
+    if (!user?.uid) {
+      toast.error("You must be logged in to proceed.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/user/${user.uid}/whop`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ referenceNumber }),
+      });
 
-    //   if (!response.ok) {
-    //     const errorData = await response.json();
-    //     throw new Error(
-    //       errorData.message || "Failed to create checkout session.",
-    //     );
-    //   }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || "Failed to create checkout session.",
+        );
+      }
 
-    //   const { url } = await response.json();
-    //   if (url) {
-    //     window.open(url, "_blank");
-    //   } else {
-    //     toast.error("Could not retrieve the checkout link.");
-    //   }
-    // } catch (error) {
-    //   console.error(error);
-    //   toast.error(
-    //     error instanceof Error ? error.message : "An unknown error occurred.",
-    //   );
-    // } finally {
-    //   setIsLoading(false);
-    // }
+      const { url } = await response.json();
+      if (url) {
+        window.open(url, "_blank");
+      } else {
+        toast.error("Could not retrieve the checkout link.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error instanceof Error ? error.message : "An unknown error occurred.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
