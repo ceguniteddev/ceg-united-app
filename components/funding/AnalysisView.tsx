@@ -35,6 +35,7 @@ import { useAuth } from "@/provider/AuthContext";
 import DOMPurify from "isomorphic-dompurify";
 import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { Card, CardContent } from "@/components/ui/card";
 
 // const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -61,36 +62,41 @@ const AnalysisView = ({ referenceNumber }: Props) => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-3 border-b pb-4 mb-4">
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          {isAdmin && (
-            <>
+      <div className="flex flex-col items-start gap-3 border-b pb-4 mb-4 sm:flex-row sm:justify-between">
+        {isAdmin && (
+          <>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
               <SendClientAnalysisData referenceNumber={referenceNumber} />
               <SaveToDocumentsButton referenceNumber={referenceNumber} />
-            </>
-          )}
-          {role === "Client" && (
+            </div>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <RefreshAnalysisData referenceNumber={referenceNumber} />
+            </div>
+          </>
+        )}
+        {role === "Client" && (
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <SaveToDocumentsButton referenceNumber={referenceNumber} />
-          )}
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:justify-end">
-          {role === "Client" && (
             <WhopCheckoutButton referenceNumber={referenceNumber} />
-          )}
-          {isAdmin && <RefreshAnalysisData referenceNumber={referenceNumber} />}
-        </div>
+          </div>
+        )}
       </div>
-      {(analysisData as Item[])?.map((item) => (
-        <AnalysisDetailsView
-          updateAnalysis={({ referenceNumber, id, analysis }) =>
-            updateAnalysis({ referenceNumber, id, analysis })
-          }
-          referenceNumber={referenceNumber}
-          key={item.id}
-          id={item.id}
-          analysis={item.analysis ?? ""}
-        />
-      ))}
+      <Card>
+        <CardContent className="space-y-4 pt-6 sm:space-y-6">
+          {(analysisData as Item[])?.map((item) => (
+            <div className="w-full" key={item.id}>
+              <AnalysisDetailsView
+                updateAnalysis={({ referenceNumber, id, analysis }) =>
+                  updateAnalysis({ referenceNumber, id, analysis })
+                }
+                referenceNumber={referenceNumber}
+                id={item.id}
+                analysis={item.analysis ?? ""}
+              />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 };
@@ -475,51 +481,51 @@ const AnalysisDetailsView = ({
   id,
   updateAnalysis,
 }: PropsView) => {
-  const { role } = useAuth();
+  // const { role } = useAuth();
   const initial = React.useMemo(
     () => extractHtmlFromFence(analysis),
     [analysis],
   );
-  const [content, setContent] = React.useState(initial);
+  // const [content, setContent] = React.useState(initial);
 
-  React.useEffect(() => {
-    setContent((prev) => (prev === initial ? prev : initial));
-  }, [initial]);
+  // React.useEffect(() => {
+  //   setContent((prev) => (prev === initial ? prev : initial));
+  // }, [initial]);
 
-  const saveToDb = React.useCallback(
-    async (html: string) => {
-      try {
-        await updateAnalysis({
-          referenceNumber,
-          id,
-          analysis: extractHtmlFromFence(html),
-        });
-      } catch (e) {
-        console.error("Failed to save analysis", e);
-      }
-    },
-    [id, updateAnalysis, referenceNumber],
-  );
+  // const saveToDb = React.useCallback(
+  //   async (html: string) => {
+  //     try {
+  //       await updateAnalysis({
+  //         referenceNumber,
+  //         id,
+  //         analysis: extractHtmlFromFence(html),
+  //       });
+  //     } catch (e) {
+  //       console.error("Failed to save analysis", e);
+  //     }
+  //   },
+  //   [id, updateAnalysis, referenceNumber],
+  // );
 
-  const debouncedSave = useDebouncedCallback((next: string) => {
-    saveToDb(next);
-  }, 200);
+  // const debouncedSave = useDebouncedCallback((next: string) => {
+  //   saveToDb(next);
+  // }, 200);
 
-  const handleSetContent = React.useCallback(
-    (next: string) => {
-      setContent(next);
-      debouncedSave(next);
-    },
-    [debouncedSave],
-  );
+  // const handleSetContent = React.useCallback(
+  //   (next: string) => {
+  //     setContent(next);
+  //     debouncedSave(next);
+  //   },
+  //   [debouncedSave],
+  // );
 
-  React.useEffect(() => () => debouncedSave.flush(), [debouncedSave]);
+  // React.useEffect(() => () => debouncedSave.flush(), [debouncedSave]);
 
   // If user is a Client, display read-only HTML content
   // if (role === "Client") {
   return (
     <div
-      className="prose prose-sm sm:prose lg:prose-lg max-w-none dark:prose-invert bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 sm:p-6
+      className="prose prose-sm sm:prose lg:prose-lg max-w-none dark:prose-invert bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 sm:p-6 overflow-x-auto
         [&_h1]:text-2xl [&_h1]:sm:text-3xl [&_h1]:font-bold [&_h1]:mb-4
         [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-semibold [&_h2]:mb-3
         [&_h3]:text-lg [&_h3]:sm:text-xl [&_h3]:font-semibold [&_h3]:mb-2
@@ -542,7 +548,7 @@ const AnalysisDetailsView = ({
         [&_.value]:text-gray-700 dark:[&_.value]:text-gray-300
         [&_.negative]:text-red-600 dark:[&_.negative]:text-red-400 [&_.negative]:font-semibold
         [&_.positive]:text-green-600 dark:[&_.positive]:text-green-400 [&_.positive]:font-semibold"
-      dangerouslySetInnerHTML={{ __html: content }}
+      dangerouslySetInnerHTML={{ __html: initial }}
     />
   );
   // }

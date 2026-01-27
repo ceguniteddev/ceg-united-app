@@ -50,36 +50,36 @@ const ApplyFundingList = ({ selectedReference }: Props) => {
     );
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <Tabs defaultValue="analysis" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="analysis" className="text-sm sm:text-base">
-              Analysis
-            </TabsTrigger>
-            <TabsTrigger value="bank-products" className="text-sm sm:text-base">
-              Bank Products
-            </TabsTrigger>
-          </TabsList>
+    <Tabs defaultValue="analysis">
+      <TabsList className="mb-6">
+        <TabsTrigger value="analysis" className="text-sm sm:text-base">
+          Analysis
+        </TabsTrigger>
+        <TabsTrigger value="bank-products" className="text-sm sm:text-base">
+          Bank Products
+        </TabsTrigger>
+      </TabsList>
 
-          <TabsContent value="bank-products" className="mt-0">
+      <TabsContent value="bank-products" className="mt-0">
+        <Card>
+          <CardContent className="pt-6">
             <FundingList
               appliedFunding={filteredMappedFund as ApprovedBankFormData[]}
             />
-          </TabsContent>
+          </CardContent>
+        </Card>
+      </TabsContent>
 
-          <TabsContent value="analysis" className="mt-0">
-            {selectedReference ? (
-              <AnalysisView referenceNumber={selectedReference} />
-            ) : (
-              <p className="text-center text-gray-600 py-8">
-                Please select an application to view analysis.
-              </p>
-            )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+      <TabsContent value="analysis" className="mt-0">
+        {selectedReference ? (
+          <AnalysisView referenceNumber={selectedReference} />
+        ) : (
+          <p className="text-center text-gray-600 py-8">
+            Please select an application to view analysis.
+          </p>
+        )}
+      </TabsContent>
+    </Tabs>
   );
 };
 
