@@ -23,7 +23,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import IconMenu from "../icon-menu";
-import { FileDown, Loader2Icon, Mail, RefreshCcw, XIcon } from "lucide-react";
+import {
+  FileDown,
+  Loader2Icon,
+  Mail,
+  RefreshCcw,
+  ShoppingCart,
+  XIcon,
+} from "lucide-react";
 import { useAuth } from "@/provider/AuthContext";
 import DOMPurify from "isomorphic-dompurify";
 
@@ -52,18 +59,23 @@ const AnalysisView = ({ referenceNumber }: Props) => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {isAdmin && (
-        <div className="flex flex-col sm:flex-row justify-between gap-3">
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <SendClientAnalysisData referenceNumber={referenceNumber} />
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-3 border-b pb-4 mb-4">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {isAdmin && (
+            <>
+              <SendClientAnalysisData referenceNumber={referenceNumber} />
+              <SaveToDocumentsButton referenceNumber={referenceNumber} />
+            </>
+          )}
+          {role === "Client" && (
             <SaveToDocumentsButton referenceNumber={referenceNumber} />
-          </div>
-          <RefreshAnalysisData referenceNumber={referenceNumber} />
+          )}
         </div>
-      )}
-      {role === "Client" && (
-        <SaveToDocumentsButton referenceNumber={referenceNumber} />
-      )}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:justify-end">
+          <WhopCheckoutButton />
+          {isAdmin && <RefreshAnalysisData referenceNumber={referenceNumber} />}
+        </div>
+      </div>
       {(analysisData as Item[])?.map((item) => (
         <AnalysisDetailsView
           updateAnalysis={({ referenceNumber, id, analysis }) =>
@@ -325,6 +337,67 @@ const RefreshAnalysisData = ({
         </AlertDialog>
       )}
     </>
+  );
+};
+
+const WhopCheckoutButton = () => {
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const handleCheckout = async () => {
+    window.open("https://whop.com/checkout/plan_AJy2EeSKuMSGM", "_blank");
+    // if (!user?.uid) {
+    //   toast.error("You must be logged in to proceed.");
+    //   return;
+    // }
+    // setIsLoading(true);
+    // try {
+    //   const response = await fetch(`/api/user/${user.uid}/whop`, {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+    //   });
+
+    //   if (!response.ok) {
+    //     const errorData = await response.json();
+    //     throw new Error(
+    //       errorData.message || "Failed to create checkout session.",
+    //     );
+    //   }
+
+    //   const { url } = await response.json();
+    //   if (url) {
+    //     window.open(url, "_blank");
+    //   } else {
+    //     toast.error("Could not retrieve the checkout link.");
+    //   }
+    // } catch (error) {
+    //   console.error(error);
+    //   toast.error(
+    //     error instanceof Error ? error.message : "An unknown error occurred.",
+    //   );
+    // } finally {
+    //   setIsLoading(false);
+    // }
+  };
+
+  return (
+    <Button
+      variant={"ghost"}
+      className="cursor-pointer bg-purple-500 hover:bg-purple-600 text-white w-full sm:w-auto h-10 sm:h-9"
+      onClick={handleCheckout}
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <IconMenu
+          text="Processing..."
+          icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
+        />
+      ) : (
+        <IconMenu icon={<ShoppingCart className="h-4 w-4" />} text="Join Now" />
+      )}
+    </Button>
   );
 };
 
