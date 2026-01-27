@@ -68,6 +68,7 @@
     "@tiptap/react": "^3.4.1",
     "@tiptap/starter-kit": "^3.4.1",
     "@types/grecaptcha": "^3.0.9",
+    "@whop/checkout": "^0.0.50",
     "@whop/sdk": "^0.0.23",
     "chart.js": "^4.5.0",
     "class-variance-authority": "^0.7.1",

@@ -33,6 +33,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/provider/AuthContext";
 import DOMPurify from "isomorphic-dompurify";
+import { WhopCheckoutEmbed } from "@whop/checkout/react";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
 
 // const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -72,7 +74,9 @@ const AnalysisView = ({ referenceNumber }: Props) => {
           )}
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:justify-end">
-          <WhopCheckoutButton referenceNumber={referenceNumber} />
+          {role === "Client" && (
+            <WhopCheckoutButton referenceNumber={referenceNumber} />
+          )}
           {isAdmin && <RefreshAnalysisData referenceNumber={referenceNumber} />}
         </div>
       </div>
@@ -347,6 +351,7 @@ const WhopCheckoutButton = ({
 }) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [checkoutId, setCheckoutId] = React.useState<string | null>(null);
 
   const handleCheckout = async () => {
     if (!user?.uid) {
@@ -370,11 +375,11 @@ const WhopCheckoutButton = ({
         );
       }
 
-      const { url } = await response.json();
-      if (url) {
-        window.open(url, "_blank");
+      const { checkoutId } = await response.json();
+      if (checkoutId) {
+        setCheckoutId(checkoutId);
       } else {
-        toast.error("Could not retrieve the checkout link.");
+        toast.error("Could not retrieve the checkout session.");
       }
     } catch (error) {
       console.error(error);
@@ -387,21 +392,47 @@ const WhopCheckoutButton = ({
   };
 
   return (
-    <Button
-      variant={"ghost"}
-      className="cursor-pointer bg-purple-500 hover:bg-purple-600 text-white w-full sm:w-auto h-10 sm:h-9"
-      onClick={handleCheckout}
-      disabled={isLoading}
-    >
-      {isLoading ? (
-        <IconMenu
-          text="Processing..."
-          icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
-        />
-      ) : (
-        <IconMenu icon={<ShoppingCart className="h-4 w-4" />} text="Join Now" />
-      )}
-    </Button>
+    <>
+      <Button
+        variant={"ghost"}
+        className="cursor-pointer bg-purple-500 hover:bg-purple-600 text-white w-full sm:w-auto h-10 sm:h-9"
+        onClick={handleCheckout}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <IconMenu
+            text="Processing..."
+            icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
+          />
+        ) : (
+          <IconMenu
+            icon={<ShoppingCart className="h-4 w-4" />}
+            text="Join Now"
+          />
+        )}
+      </Button>
+
+      <ResponsiveDialog
+        isOpen={!!checkoutId}
+        setIsOpen={(isOpen) => !isOpen && setCheckoutId(null)}
+        title="Complete Your Purchase"
+        description="Please complete the payment form below to join."
+        className="max-w-[90vw] sm:max-w-lg p-0"
+      >
+        <div className="mt-4">
+          {checkoutId && (
+            <WhopCheckoutEmbed
+              sessionId={checkoutId}
+              onComplete={(paymentId) => {
+                console.log("Payment complete:", paymentId);
+                toast.success("Payment successful!");
+                setCheckoutId(null);
+              }}
+            />
+          )}
+        </div>
+      </ResponsiveDialog>
+    </>
   );
 };
 

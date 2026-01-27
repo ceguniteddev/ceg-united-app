@@ -16,22 +16,22 @@ const whopSdk =
     apiKey: WHOP_API_KEY,
   });
 
-type CreateCheckoutParams = {
+type CreateCheckoutConfigParams = {
   userId: string;
   referenceNumber: string;
 };
 
 /**
- * Creates a checkout link on Whop for a specific product using the SDK.
+ * Creates a checkout configuration on Whop for a specific product using the SDK.
  *
- * @param {CreateCheckoutParams} params - The parameters for creating the checkout link.
- * @returns {Promise<string>} The direct checkout URL.
+ * @param {CreateCheckoutConfigParams} params - The parameters for creating the checkout link.
+ * @returns {Promise<string>} The checkout configuration ID.
  */
-export const createWhopCheckoutLink = async ({
+export const createWhopCheckoutConfig = async ({
   userId,
   referenceNumber,
-}: CreateCheckoutParams): Promise<string> => {
-  logInfo("createWhopCheckoutLink (SDK) start", { userId, referenceNumber });
+}: CreateCheckoutConfigParams): Promise<string> => {
+  logInfo("createWhopCheckoutConfig (SDK) start", { userId, referenceNumber });
 
   if (!whopSdk) {
     logError(new Error("Whop SDK is not initialized. Check API Key."));
@@ -58,12 +58,12 @@ export const createWhopCheckoutLink = async ({
 
     if (!existingCheckoutQuery.empty) {
       const existingCheckout = existingCheckoutQuery.docs[0].data();
-      if (existingCheckout.url) {
-        logInfo("Found existing checkout link for referenceNumber", {
+      if (existingCheckout.checkoutId) {
+        logInfo("Found existing checkout config for referenceNumber", {
           referenceNumber,
-          url: existingCheckout.url,
+          checkoutId: existingCheckout.checkoutId,
         });
-        return existingCheckout.url;
+        return existingCheckout.checkoutId;
       }
     }
 
@@ -91,23 +91,23 @@ export const createWhopCheckoutLink = async ({
       },
     });
 
-    if (!checkoutConfig.purchase_url) {
+    if (!checkoutConfig.id) {
       logError(
-        new Error("Whop SDK did not return a purchase_url"),
+        new Error("Whop SDK did not return a checkout config ID"),
         checkoutConfig,
       );
       throw new Error("Failed to create checkout link.");
     }
 
-    const url = checkoutConfig.purchase_url;
+    const checkoutId = checkoutConfig.id;
 
     // Save checkout details to Firestore
 
     const checkoutDoc = {
       userId,
       referenceNumber,
-      checkoutId: checkoutConfig.id,
-      url,
+      checkoutId,
+      url: checkoutConfig.purchase_url,
       createdAt: new Date(),
       initialPrice: planDetails.initial_price,
       currency: planDetails.currency,
@@ -119,13 +119,17 @@ export const createWhopCheckoutLink = async ({
     await firestoreAdmin()
       .collection(WHOP_CHECKOUTS_COLLECTION)
       .add(checkoutDoc);
+    logInfo(
+      "Successfully saved whop checkout config to firestore",
+      checkoutDoc,
+    );
 
-    logInfo("createWhopCheckoutLink (SDK) success", { url });
-    return url;
+    logInfo("createWhopCheckoutConfig (SDK) success", { checkoutId });
+    return checkoutId;
   } catch (error: any) {
     logError(
       new Error(
-        `createWhopCheckoutLink (SDK) error: ${
+        `createWhopCheckoutConfig (SDK) error: ${
           error.message || "Unknown error"
         }`,
       ),

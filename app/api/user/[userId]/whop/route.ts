@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-validation";
-import { createWhopCheckoutLink } from "@/service/whop";
+import { createWhopCheckoutConfig } from "@/service/whop";
 import { badRequest, internalServerError } from "@/app/api/helpers";
 
 export const POST = withAuth(
@@ -20,18 +20,18 @@ export const POST = withAuth(
 
     if (!referenceNumber) {
       return badRequest({
-        errors: "Reference Number is required.",
-        message: "Reference Number is required.",
+        errors: "Reference number is required.",
+        message: "Reference number is required.",
       });
     }
 
     try {
-      const checkoutUrl = await createWhopCheckoutLink({
+      const checkoutId = await createWhopCheckoutConfig({
         userId,
         referenceNumber,
       });
 
-      return NextResponse.json({ url: checkoutUrl });
+      return NextResponse.json({ checkoutId });
     } catch (error) {
       return internalServerError(
         "An error occurred while creating the checkout link.",
