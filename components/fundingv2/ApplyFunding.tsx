@@ -43,7 +43,7 @@ const ApplyFunding = ({ userId }: { userId: string }) => {
       <Dialog open={congratsOpen} onOpenChange={setCongratsOpen}>
         <DialogContent
           className={cn(
-            "min-h-[30vh] overflow-y-auto w-11/12 md:w-3/5 lg:w-2/5"
+            "min-h-[30vh] overflow-y-auto w-11/12 md:w-3/5 lg:w-2/5",
           )}
           onInteractOutside={(e) => {
             e.preventDefault();
@@ -64,7 +64,8 @@ const ApplyFunding = ({ userId }: { userId: string }) => {
         type="button"
         size="lg"
         variant="outline"
-        className="w-full md:w-auto bg-green-200 hover:bg-green-400 cursor-pointer"
+        // className="w-full md:w-auto bg-green-200 hover:bg-green-400 cursor-pointer"
+        className="cursor-pointer bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto h-10 sm:h-9"
         onClick={() => setOpen(true)}
       >
         <BanknoteIcon className="h-4 w-4" />

@@ -427,7 +427,12 @@ const WhopCheckoutButton = ({
       >
         {checkoutId && (
           <WhopCheckoutEmbed
-            
+            prefill={{
+              email: user?.email || "",
+              address: {
+                country: "US",
+              },
+            }}
             sessionId={checkoutId}
             onComplete={(planId, receiptId) => {
               // console.log("Plan ID:", planId);
@@ -450,21 +455,39 @@ const WhopCheckoutButton = ({
 };
 
 export function extractHtmlFromFence(input: string): string {
-  return DOMPurify.sanitize(input);
-  // if (!input) return "";
+  if (!input) return "";
 
-  // // Prefer an explicit ```html fence anywhere in the string
-  // const htmlFence = /```(?:\s*html)?\s*[\r\n]+([\s\S]*?)\s*```/i;
-  // const m1 = input.match(htmlFence);
-  // if (m1) return m1[1].trim();
+  // Prefer an explicit ```html fence anywhere in the string
+  const htmlFence = /```(?:\s*html)?\s*[\r\n]+([\s\S]*?)\s*```/i;
+  const m1 = input.match(htmlFence);
+  if (m1) {
+    const html = m1[1].trim();
+    return extractBodyContent(html);
+  }
 
-  // // If the entire string is *just* one fenced block (any language), unwrap it
-  // const wholeFence = /^\s*```[^\n]*\n([\s\S]*?)\n?```\s*$/;
-  // const m2 = input.match(wholeFence);
-  // if (m2) return m2[1].trim();
+  // If the entire string is *just* one fenced block (any language), unwrap it
+  const wholeFence = /^\s*```[^\n]*\n([\s\S]*?)\n?```\s*$/;
+  const m2 = input.match(wholeFence);
+  if (m2) {
+    const html = m2[1].trim();
+    return extractBodyContent(html);
+  }
 
-  // // Otherwise, return as-is
-  // return input.trim();
+  // Otherwise, sanitize and extract body content
+  return extractBodyContent(DOMPurify.sanitize(input.trim()));
+}
+
+function extractBodyContent(html: string): string {
+  if (!html) return "";
+
+  // If it's a full HTML document, extract only the body content
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  if (bodyMatch) {
+    return DOMPurify.sanitize(bodyMatch[1].trim());
+  }
+
+  // If no body tag found, return sanitized HTML as-is
+  return DOMPurify.sanitize(html);
 }
 
 type PropsView = {
@@ -532,19 +555,20 @@ const AnalysisDetailsView = ({
   // if (role === "Client") {
   return (
     <div
-      className="prose prose-sm sm:prose lg:prose-lg max-w-none dark:prose-invert bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 sm:p-6 overflow-x-auto
-        [&_h1]:text-2xl [&_h1]:sm:text-3xl [&_h1]:font-bold [&_h1]:mb-4
-        [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-semibold [&_h2]:mb-3
-        [&_h3]:text-lg [&_h3]:sm:text-xl [&_h3]:font-semibold [&_h3]:mb-2
-        [&_h4]:text-base [&_h4]:sm:text-lg [&_h4]:font-medium [&_h4]:mb-2
-        [&_p]:mb-2 [&_p]:text-sm [&_p]:sm:text-base
-        [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-3
-        [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-3
-        [&_li]:mb-1
-        [&_table]:w-full [&_table]:border-collapse [&_table]:mb-4
+      className="prose prose-sm sm:prose lg:prose-lg max-w-none dark:prose-invert bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 sm:p-6 overflow-x-auto not-prose
+        [&_*]:m-0 [&_*]:p-0 [&_*]:box-border
+        [&_h1]:text-2xl [&_h1]:sm:text-3xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:!p-0
+        [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-semibold [&_h2]:mb-3 [&_h2]:!p-0
+        [&_h3]:text-lg [&_h3]:sm:text-xl [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:!p-0
+        [&_h4]:text-base [&_h4]:sm:text-lg [&_h4]:font-medium [&_h4]:mb-2 [&_h4]:!p-0
+        [&_p]:mb-2 [&_p]:text-sm [&_p]:sm:text-base [&_p]:!p-0
+        [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-3 [&_ul]:!p-0
+        [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-3 [&_ol]:!p-0
+        [&_li]:mb-1 [&_li]:!p-0
+        [&_table]:w-full [&_table]:border-collapse [&_table]:mb-4 [&_table]:!p-0
         [&_th]:border [&_th]:border-gray-300 [&_th]:p-2 [&_th]:bg-gray-100 [&_th]:font-semibold [&_th]:text-left
         [&_td]:border [&_td]:border-gray-300 [&_td]:p-2
-        [&_.container]:w-full
+        [&_.container]:w-full [&_.container]:!m-0 [&_.container]:!p-0
         [&_.section-box]:border [&_.section-box]:border-gray-300 [&_.section-box]:rounded [&_.section-box]:p-4 [&_.section-box]:mb-4 [&_.section-box]:bg-gray-50 dark:[&_.section-box]:bg-gray-800
         [&_.bureau-box]:border [&_.bureau-box]:border-blue-300 [&_.bureau-box]:rounded [&_.bureau-box]:p-4 [&_.bureau-box]:mb-4 [&_.bureau-box]:bg-blue-50 dark:[&_.bureau-box]:bg-blue-900/20
         [&_.summary-box]:border [&_.summary-box]:border-purple-300 [&_.summary-box]:rounded [&_.summary-box]:p-4 [&_.summary-box]:mb-4 [&_.summary-box]:bg-purple-50 dark:[&_.summary-box]:bg-purple-900/20

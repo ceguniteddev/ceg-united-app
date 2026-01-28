@@ -32,23 +32,6 @@ const ApplyFundingList = ({ selectedReference }: Props) => {
     );
   }, [mappedFund, selectedReference]);
 
-  if (isLoading) return <Spinner />;
-
-  if (!mappedFund || mappedFund.length === 0)
-    return (
-      <p className="text-center text-xl font-medium text-gray-600">
-        The {process.env.NEXT_PUBLIC_APP_NAME} team is currently processing your
-        pre-approve funding products.
-      </p>
-    );
-
-  if (selectedReference && filteredMappedFund.length === 0)
-    return (
-      <p className="text-center text-xl font-medium text-gray-600">
-        No funding products found for the selected application.
-      </p>
-    );
-
   return (
     <Tabs defaultValue="analysis">
       <TabsList className="mb-6">
@@ -61,13 +44,26 @@ const ApplyFundingList = ({ selectedReference }: Props) => {
       </TabsList>
 
       <TabsContent value="bank-products" className="mt-0">
-        <Card>
-          <CardContent className="pt-6">
-            <FundingList
-              appliedFunding={filteredMappedFund as ApprovedBankFormData[]}
-            />
-          </CardContent>
-        </Card>
+        {isLoading ? (
+          <Spinner />
+        ) : !mappedFund || mappedFund.length === 0 ? (
+          <p className="text-center text-xl font-medium text-gray-600">
+            The {process.env.NEXT_PUBLIC_APP_NAME} team is currently processing
+            your pre-approve funding products.
+          </p>
+        ) : selectedReference && filteredMappedFund.length === 0 ? (
+          <p className="text-center text-xl font-medium text-gray-600">
+            No funding products found for the selected application.
+          </p>
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
+              <FundingList
+                appliedFunding={filteredMappedFund as ApprovedBankFormData[]}
+              />
+            </CardContent>
+          </Card>
+        )}
       </TabsContent>
 
       <TabsContent value="analysis" className="mt-0">
