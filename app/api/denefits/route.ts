@@ -1,6 +1,6 @@
 import { badRequest, getMessage, internalServerError } from "@/app/api/helpers";
 import { withAuth } from "@/lib/api-validation";
-import { DenefitsRequestSchema } from "@/schema/denefits";
+import { DenefitsRequestSchema } from "@/schema/payments";
 import { recordContractCreated } from "@/service/denefits";
 import { NextRequest, NextResponse } from "next/server";
 

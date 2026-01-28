@@ -167,8 +167,8 @@ export const adminSidebarLinks = [
   },
   {
     imgURL: "/icons/dollar-circle.svg",
-    route: "/admin/denefits-payments",
-    label: "Denefits Payments",
+    route: "/admin/payments",
+    label: "Payments",
   },
   {
     imgURL: "/icons/phone-call.svg",
@@ -639,3 +639,4 @@ export const legalResident: DropdownOption[] = [
   { value: "Work Permit", label: "Work Permit" },
   { value: "Undocumented", label: "Undocumented" },
 ];
+

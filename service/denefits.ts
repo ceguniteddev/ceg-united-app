@@ -1,6 +1,6 @@
 import AppError from "@/error/AppError";
 import { authenticationAdmin, firestoreAdmin } from "@/lib/fireabase-admin";
-import { DenefitsRequest, DenefitsRequestSchema } from "@/schema/denefits";
+import { DenefitsRequest, DenefitsRequestSchema } from "@/schema/payments";
 import { getUserById } from "./user";
 import { USER_DENEFITS_CONTRACT } from "@/constant/collection-name";
 
@@ -87,7 +87,7 @@ export const getDenefitsPayments = async () => {
         mappedFirstName: mappedUser?.firstName || null,
         mappedLastName: mappedUser?.lastName || null,
       };
-    })
+    }),
   );
 
   return payments;
