@@ -161,3 +161,5 @@ env:
     secret: PDF_API_KEY_PRODUCTION
   - variable: WHOP_API_KEY
     secret: WHOP_API_KEY_PRODUCTION
+  - variable: WHOP_WEBHOOK_SECRET
+    secret: WHOP_WEBHOOK_SECRET_PRODUCTION
