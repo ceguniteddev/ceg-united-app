@@ -11,6 +11,7 @@ import {
 } from "@/constant/collection-name";
 import { whopSdk } from "@/lib/whop-sdk";
 import { Payment } from "@whop/sdk/resources.js";
+import { map } from "zod";
 
 const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID;
 const productId = process.env.WHOP_PRODUCT_ID;
@@ -185,8 +186,70 @@ export const getWhopPayments = async () => {
     return [];
   }
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  const payments = await Promise.all(
+    snapshot.docs.map(async (doc) => {
+      const paymentData = doc.data();
+      let mappedUser = null;
+      if (paymentData.userId) {
+        try {
+          mappedUser = await getUserById(paymentData.userId);
+        } catch (error: any) {
+          logError(
+            new Error(
+              `Failed to fetch user ${paymentData.userId} for whop payment ${doc.id}`,
+            ),
+            error.message,
+          );
+        }
+      }
+
+      return {
+        docId: doc.id,
+        ...paymentData,
+        mappedEmail: mappedUser?.email || null,
+        mappedFirstName: mappedUser?.firstName || null,
+        mappedLastName: mappedUser?.lastName || null,
+      };
+    }),
+  );
+
+  return payments;
+};
+
+export const mapWhopPaymentToUser = async ({
+  docId,
+  userId,
+}: {
+  docId: string;
+  userId: string;
+}) => {
+  const db = firestoreAdmin();
+
+  const userData = await getUserById(userId);
+  if (!userData) {
+    throw new Error("User not found");
+  }
+
+  const paymentRef = db.collection(USER_WHOP_PAYMENTS).doc(docId);
+  await paymentRef.update({
+    userId,
+    mappedEmail: userData.email,
+    mappedFirstName: userData.firstName,
+    mappedLastName: userData.lastName,
+  });
+  logInfo("Mapped Whop payment to user", { docId, userId });
+  return { success: true };
+};
+
+export const unmapWhopPayment = async ({ docId }: { docId: string }) => {
+  const db = firestoreAdmin();
+  const paymentRef = db.collection(USER_WHOP_PAYMENTS).doc(docId);
+  await paymentRef.update({
+    userId: null,
+    mappedEmail: null,
+    mappedFirstName: null,
+    mappedLastName: null,
+  });
+  logInfo("Unmapped Whop payment", { docId });
+  return { success: true };
 };

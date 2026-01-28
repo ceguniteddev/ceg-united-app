@@ -639,3 +639,4 @@ export const legalResident: DropdownOption[] = [
   { value: "Work Permit", label: "Work Permit" },
   { value: "Undocumented", label: "Undocumented" },
 ];
+
