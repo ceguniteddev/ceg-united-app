@@ -167,8 +167,8 @@ export const adminSidebarLinks = [
   },
   {
     imgURL: "/icons/dollar-circle.svg",
-    route: "/admin/denefits-payments",
-    label: "Denefits Payments",
+    route: "/admin/payments",
+    label: "Payments",
   },
   {
     imgURL: "/icons/phone-call.svg",

@@ -1,20 +1,19 @@
 "use server";
 
 import { logError, logInfo } from "@/lib/logger";
-import Whop from "@whop/sdk";
-import { getUserById } from "../user";
-import { firestoreAdmin } from "@/lib/fireabase-admin";
-import { WHOP_CHECKOUTS_COLLECTION } from "@/constant/collection-name";
 
-const WHOP_API_KEY = process.env.WHOP_API_KEY;
+import { getUserById } from "../user";
+import { authenticationAdmin, firestoreAdmin } from "@/lib/fireabase-admin";
+import {
+  USER_DENEFITS_CONTRACT,
+  USER_WHOP_PAYMENTS,
+  WHOP_CHECKOUTS_COLLECTION,
+} from "@/constant/collection-name";
+import { whopSdk } from "@/lib/whop-sdk";
+import { Payment } from "@whop/sdk/resources.js";
+
 const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID;
 const productId = process.env.WHOP_PRODUCT_ID;
-
-const whopSdk =
-  WHOP_API_KEY &&
-  new Whop({
-    apiKey: WHOP_API_KEY,
-  });
 
 type CreateCheckoutConfigParams = {
   userId: string;
@@ -75,7 +74,7 @@ export const createWhopCheckoutConfig = async ({
     const planDetails = {
       company_id: WHOP_COMPANY_ID,
       currency: "usd" as const,
-      initial_price: 4999,
+      initial_price: 400,
       plan_type: "one_time" as const,
       product_id: productId!,
       visibility: "hidden" as const,
@@ -90,6 +89,8 @@ export const createWhopCheckoutConfig = async ({
         referenceNumber: referenceNumber,
       },
     });
+
+    // console.log("Whop checkoutConfig:", checkoutConfig);
 
     if (!checkoutConfig.id) {
       logError(
@@ -110,10 +111,11 @@ export const createWhopCheckoutConfig = async ({
       url: checkoutConfig.purchase_url,
       createdAt: new Date(),
       initialPrice: planDetails.initial_price,
-      currency: planDetails.currency,
+      // currency: planDetails.currency,
       planType: planDetails.plan_type,
       productId: planDetails.product_id,
       status: "created", // Initial status
+      ...checkoutConfig,
     };
 
     await firestoreAdmin()
@@ -136,4 +138,55 @@ export const createWhopCheckoutConfig = async ({
     );
     throw error;
   }
+};
+
+export const recordPaymentSucceeded = async ({
+  payment,
+}: {
+  payment: Payment;
+}) => {
+  const db = firestoreAdmin();
+
+  const auth = authenticationAdmin();
+  let authUser = null;
+
+  try {
+    authUser = await auth.getUserByEmail(payment.user?.email!);
+  } catch (error: any) {
+    console.log("User not found.");
+
+    const collectionRef = db.collection(USER_WHOP_PAYMENTS);
+    await collectionRef.add({ ...payment, userId: null });
+
+    return null;
+  }
+
+  if (!authUser) {
+    console.log("User not found.");
+    return null;
+  }
+
+  const userData = await getUserById(authUser.uid);
+  if (!userData) {
+    console.log("User not found.");
+    return null;
+  }
+
+  const collectionRef = db.collection(USER_WHOP_PAYMENTS);
+  await collectionRef.add({ ...payment, userId: authUser.uid });
+};
+
+export const getWhopPayments = async () => {
+  const db = firestoreAdmin();
+  const paymentsRef = db.collection(USER_WHOP_PAYMENTS);
+  const snapshot = await paymentsRef.orderBy("created_at", "desc").get();
+
+  if (snapshot.empty) {
+    return [];
+  }
+
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
 };

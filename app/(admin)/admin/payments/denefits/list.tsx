@@ -29,7 +29,6 @@ import { DataTablePagination } from "@/components/funding/pagination";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import MapDenefitsContractForm from "./form";
 import { useUnmapDenefitsContract } from "@/hooks/denefits";
-import { toast } from "sonner";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 export type DenefitsPayment = {
@@ -46,7 +45,7 @@ export type DenefitsPayment = {
 
 const createColumns = (
   onMapClick: (contract: DenefitsPayment) => void,
-  onUnmapClick: (contract: DenefitsPayment) => void
+  onUnmapClick: (contract: DenefitsPayment) => void,
 ): ColumnDef<DenefitsPayment>[] => [
   {
     accessorKey: "contract_code",
@@ -181,7 +180,7 @@ type Props = {
 const DenefitsPaymentsList = ({ denefitsPayments }: Props) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -210,7 +209,7 @@ const DenefitsPaymentsList = ({ denefitsPayments }: Props) => {
 
   const columns = React.useMemo(
     () => createColumns(handleMapClick, handleUnmapClick),
-    []
+    [],
   );
 
   const table = useReactTable({
@@ -347,7 +346,7 @@ const DenefitsPaymentsList = ({ denefitsPayments }: Props) => {
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                       </TableHead>
                     );
@@ -366,7 +365,7 @@ const DenefitsPaymentsList = ({ denefitsPayments }: Props) => {
                       <TableCell key={cell.id}>
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}

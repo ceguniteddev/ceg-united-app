@@ -121,12 +121,17 @@ env:
       - BUILD
       - RUNTIME
   - variable: WHOP_COMPANY_ID
-    value: biz_CEGVfTydxqFwgI
+    value: biz_x5m0LdbuN9YPJm
     availability:
       - BUILD
       - RUNTIME
   - variable: WHOP_PRODUCT_ID
-    value: prod_Nx8k4DHCfXq8g
+    value: prod_1PZ2aXMZQH1Dc
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_BASE_URL
+    value: https://sandbox-api.whop.com/api/v1
     availability:
       - BUILD
       - RUNTIME

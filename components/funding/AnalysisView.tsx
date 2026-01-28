@@ -427,12 +427,21 @@ const WhopCheckoutButton = ({
       >
         {checkoutId && (
           <WhopCheckoutEmbed
+            
             sessionId={checkoutId}
-            onComplete={(paymentId) => {
-              console.log("Payment complete:", paymentId);
+            onComplete={(planId, receiptId) => {
+              // console.log("Plan ID:", planId);
+              // console.log("Receipt ID:", receiptId);
               toast.success("Payment successful!");
               setCheckoutId(null);
             }}
+            fallback={
+              <div className="flex items-center justify-center h-96">
+                <p className="text-gray-600 dark:text-gray-400">
+                  Loading checkout...
+                </p>
+              </div>
+            }
           />
         )}
       </ResponsiveDialog>
