@@ -2,6 +2,7 @@
 import {
   BROKER_CLIENT_MAPPING,
   USER_COLLECTION,
+  USER_FUNDING_APPLICATION_CONGRATS,
 } from "@/constant/collection-name";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import AppError from "@/error/AppError";
@@ -1019,4 +1020,69 @@ export const updateUserNote = async ({
   await docRef.set(validatedNote);
 
   console.log(`Note updated for user: ${userId}`);
+};
+
+export const getCongratsMessages = async ({ userId }: { userId: string }) => {
+  logInfo("user::getCongrats", { userId });
+
+  const data = await getUserById(userId);
+  if (!data) throw new AppError("Funding application not found.");
+
+  const db = firestoreAdmin();
+  const collectionRef = db.collectionGroup(USER_FUNDING_APPLICATION_CONGRATS);
+
+  const snapshot = await collectionRef
+    .where("userId", "==", userId)
+    .orderBy("createdAt", "desc")
+    .get();
+  if (snapshot.empty) {
+    console.log("No matching documents.");
+    return null;
+  }
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...normalizeAllDates(doc.data()),
+  }));
+};
+
+export const markCongratsAsRead = async ({
+  userId,
+  docId,
+}: {
+  userId: string;
+  docId: string;
+}) => {
+  logInfo("Marking congrats message as read", { userId, docId });
+
+  if (!userId) throw new AppError("User ID is required.");
+  if (!docId) throw new AppError("Document ID is required.");
+
+  const db = firestoreAdmin();
+  const congratsCollection = db.collectionGroup(
+    USER_FUNDING_APPLICATION_CONGRATS,
+  );
+
+  const snapshot = await congratsCollection
+    .where("userId", "==", userId)
+    .orderBy("createdAt", "desc")
+    .get();
+  if (snapshot.empty) {
+    console.log("No matching documents.");
+    return null;
+  }
+
+  logInfo("Found congrats messages", {
+    userId,
+    totalMessages: snapshot.size,
+  });
+
+  const docToUpdate = snapshot.docs.find((doc) => doc.id === docId);
+
+  if (!docToUpdate) {
+    throw new AppError("Congrats message not found.");
+  }
+
+  await docToUpdate.ref.update({ isRead: true });
+
+  logInfo("Successfully marked congrats message as read", { userId, docId });
 };

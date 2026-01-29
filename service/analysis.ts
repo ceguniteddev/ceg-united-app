@@ -27,7 +27,7 @@ export const getAnalysis = async (referenceNumber: string) => {
   const db = firestoreAdmin();
 
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`,
   );
   const snapshot = await collectionRef.orderBy("createdAt", "desc").get();
   if (snapshot.empty) {
@@ -43,7 +43,7 @@ export const getAnalysis = async (referenceNumber: string) => {
 export const recordAnalysis = async (
   userId: string,
   referenceNumber: string,
-  analysis: string
+  analysis: string,
 ) => {
   if (!userId) throw new AppError("User ID is required.");
   if (!referenceNumber) throw new AppError("Reference number is required.");
@@ -62,7 +62,7 @@ export const recordAnalysis = async (
 
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`,
   );
   await collectionRef.add({ analysis, userId, createdAt: Timestamp.now() });
 };
@@ -70,26 +70,26 @@ export const recordAnalysis = async (
 export const updateAnalysis = async (
   referenceNumber: string,
   docId: string,
-  analysis: string
+  analysis: string,
 ) => {
   console.log("updateAnalysis", { referenceNumber, docId });
   if (!docId) throw new AppError("Document ID is required.");
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`,
   );
   await collectionRef.doc(docId).update({ analysis });
 };
 
 export const deleteAnalysis = async (
   referenceNumber: string,
-  docId: string
+  docId: string,
 ) => {
   console.log("deleteAnalysis", { referenceNumber, docId });
   if (!docId) throw new AppError("Document ID is required.");
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_ANALYSIS}`,
   );
   await collectionRef.doc(docId).delete();
 };
@@ -124,7 +124,7 @@ export const refreshAnalysis = async (referenceNumber: string) => {
     // approved products before deleting them.
     mappedProducts.forEach((item) => {
       deletionPromises.push(
-        deleteFundMappingAnalysis(referenceNumber, item.id!)
+        deleteFundMappingAnalysis(referenceNumber, item.id!),
       );
     });
   }
@@ -163,8 +163,9 @@ export const getCongrats = async (referenceNumber: string) => {
 
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`,
   );
+
   const snapshot = await collectionRef.orderBy("createdAt", "desc").get();
   if (snapshot.empty) {
     console.log("No matching documents.");
@@ -179,7 +180,7 @@ export const getCongrats = async (referenceNumber: string) => {
 export const recordCongrats = async (
   userId: string,
   referenceNumber: string,
-  message: string
+  message: string,
 ) => {
   if (!userId) throw new AppError("User ID is required.");
   if (!referenceNumber) throw new AppError("Reference number is required.");
@@ -198,7 +199,7 @@ export const recordCongrats = async (
 
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`,
   );
   await collectionRef.add({
     message,
@@ -211,39 +212,39 @@ export const recordCongrats = async (
 export const updateCongrats = async (
   referenceNumber: string,
   docId: string,
-  message: string
+  message: string,
 ) => {
   console.log("updateCongrats", { referenceNumber, docId });
   if (!docId) throw new AppError("Document ID is required.");
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`,
   );
   await collectionRef.doc(docId).update({ message });
 };
 
 export const deleteCongrats = async (
   referenceNumber: string,
-  docId: string
+  docId: string,
 ) => {
   console.log("deleteCongrats", { referenceNumber, docId });
   if (!docId) throw new AppError("Document ID is required.");
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`,
   );
   await collectionRef.doc(docId).delete();
 };
 
 export const markCongratsAsRead = async (
   referenceNumber: string,
-  docId: string
+  docId: string,
 ) => {
   console.log("markCongratsAsRead", { referenceNumber, docId });
   if (!docId) throw new AppError("Document ID is required.");
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_CONGRATS}`,
   );
   await collectionRef.doc(docId).update({ isRead: true });
 };

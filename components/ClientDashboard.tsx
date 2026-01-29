@@ -51,6 +51,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/provider/AuthContext";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -356,6 +357,7 @@ export const ClientDashboard = ({
   clientData: ClientData | null | undefined;
   adminView?: boolean;
 }) => {
+  const { user } = useAuth();
   const router = useRouter();
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
     clientData?.userData?.id || "",
@@ -366,14 +368,12 @@ export const ClientDashboard = ({
   const [currentCongratsMessage, setCurrentCongratsMessage] = useState<{
     id: string;
     message: string;
-    referenceNumber: string;
+    userId: string;
   } | null>(null);
 
   // Fetch congrats messages for the first funding application
   const firstFundingApp = clientData?.fundingApplications?.[0];
-  const { congratsMessages } = useGetCongrats(
-    firstFundingApp?.referenceNumber || "",
-  );
+  const { congratsMessages } = useGetCongrats(user?.uid || "");
   const markAsReadMutation = useMarkCongratsAsRead();
 
   // const [isOpenFunding, setIsOpenFunding] = useState(
@@ -519,7 +519,7 @@ export const ClientDashboard = ({
         setCurrentCongratsMessage({
           id: unreadMessages[0].id,
           message: unreadMessages[0].message,
-          referenceNumber: firstFundingApp.referenceNumber,
+          userId: user?.uid || "",
         });
         setCongratsModalOpen(true);
       }
@@ -529,7 +529,7 @@ export const ClientDashboard = ({
   const handleCongratsClose = useCallback(() => {
     if (currentCongratsMessage) {
       markAsReadMutation.mutate({
-        referenceNumber: currentCongratsMessage.referenceNumber,
+        userId: currentCongratsMessage.userId,
         docId: currentCongratsMessage.id,
       });
     }
