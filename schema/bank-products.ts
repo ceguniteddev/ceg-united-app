@@ -1,7 +1,8 @@
-import { error } from "node:console";
 import { z } from "zod";
 
-export const YesNoEnum = z.enum(["Yes", "No"], { error: "Required" });
+export const YesNoEnum = z
+  .enum(["Yes", "No"], { error: "Required" })
+  .optional();
 
 export const ApplicationMethodEnum = z.enum(["Online", "Branch", "Referral"], {
   error: "Required",
@@ -41,46 +42,46 @@ export const TaxYearsEnum = z.enum(["None", "1 Year", "2 Years", "3 Years"], {
 export const bankProductCriteriaSchema = z.object({
   productName: z.string().min(1, "Required"),
   category: z.string().optional(), // e.g. "Personal", "Business" - useful for logic
-  financingTerm: z.string().min(1, "Required"),
+  financingTerm: z.string().optional(),
   maximumFundingAmount: z.coerce.number<number>().optional(),
-  averageApprovalAmount: z.coerce.number<number>().optional(),
+  // averageApprovalAmount: z.coerce.number<number>().optional(),
   grossFundingPercentage: z.coerce.number<number>().optional(),
-  doubleDipAllowed: YesNoEnum,
+  doubleDipAllowed: YesNoEnum.optional().or(z.literal("")),
   minimumFicoScore: z.coerce.number<number>().optional(),
 
   creditBureauPulled: z.array(CreditBureauEnum, { error: "Required" }),
   maximumInquiriesAllowed: z.coerce.number<number>().optional(),
   minimumNumberOfAccountsOnCredit: z.coerce.number<number>().optional(),
-  minimumCreditAgeRequired: z.string(),
-  minimumIncomeRequired: z.coerce.number<number>().optional(),
+  // minimumCreditAgeRequired: z.string(),
+  // minimumIncomeRequired: z.coerce.number<number>().optional(),
   maximumDebtToIncomeRatio: z.coerce.number<number>().optional(),
   maximumDebtServiceRatio: z.coerce.number<number>().optional(),
-  personalVerifiableIncomeRequired: YesNoEnum,
-  noDocumentationRequired: YesNoEnum,
+  personalVerifiableIncomeRequired: YesNoEnum.optional().or(z.literal("")),
+  // noDocumentationRequired: YesNoEnum,
 
   // Business Specific Fields
-  businessBankStatementsRequired: YesNoEnum.optional(),
-  profitAndLossStatementRequired: YesNoEnum.optional(),
-  balanceSheetRequired: YesNoEnum.optional(),
-  businessPlanRequired: YesNoEnum.optional(),
+  businessBankStatementsRequired: YesNoEnum.optional().or(z.literal("")),
+  profitAndLossStatementRequired: YesNoEnum.optional().or(z.literal("")),
+  balanceSheetRequired: YesNoEnum.optional().or(z.literal("")),
+  businessPlanRequired: YesNoEnum.optional().or(z.literal("")),
 
-  membershipRequiredBeforeApplicationRequired: YesNoEnum,
-  membershipRequiredUponApprovalRequired: YesNoEnum,
-  accountOpeningBeforeApplicationRequired: YesNoEnum,
-  accountOpeningAfterApprovalRequired: YesNoEnum,
+  membershipRequiredBeforeApplicationRequired: YesNoEnum.optional().or(z.literal("")),
+  membershipRequiredUponApprovalRequired: YesNoEnum.optional().or(z.literal("")),
+  accountOpeningBeforeApplicationRequired: YesNoEnum.optional().or(z.literal("")),
+  accountOpeningAfterApprovalRequired: YesNoEnum.optional().or(z.literal("")),
 
   // Consolidated Tax Fields
-  businessTaxesRequired: TaxYearsEnum.optional(),
-  personalTaxesRequired: TaxYearsEnum,
+  businessTaxesRequired: TaxYearsEnum.optional().or(z.literal("")),
+  personalTaxesRequired: TaxYearsEnum.optional().or(z.literal("")),
 
-  immigrationStatusRequirement: z.string().min(1, "Required"),
+  immigrationStatusRequirement: z.string().optional(),
   stateAvailability: z.array(z.string().min(1, "Required"), {
     error: "Required",
   }),
   applicationMethod: z.array(ApplicationMethodEnum, { error: "Required" }),
-  allowsForwardingViaEmail: YesNoEnum,
-  canBeFinalizedOnline: YesNoEnum,
-  clientNeedsToGoToBranch: YesNoEnum,
+  allowsForwardingViaEmail: YesNoEnum.optional().or(z.literal("")),
+  canBeFinalizedOnline: YesNoEnum.optional().or(z.literal("")),
+  clientNeedsToGoToBranch: YesNoEnum.optional().or(z.literal("")),
 
   // webUrl: z.string().min(1, "Required"),
   priorityLevel: z.coerce
