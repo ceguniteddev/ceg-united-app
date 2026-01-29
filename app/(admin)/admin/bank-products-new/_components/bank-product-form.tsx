@@ -80,20 +80,20 @@ const BankProductsForm = ({
       // Map shared fields from old schema to new product schema
       financingTerm: data.financingTerm || "",
       maximumFundingAmount: data.maximumFundingAmount,
-      averageApprovalAmount: data.averageApprovalAmount,
+      // averageApprovalAmount: data.averageApprovalAmount,
       grossFundingPercentage: data.grossFundingPercentage,
       doubleDipAllowed: data.doubleDipAllowed || "No",
       minimumFicoScore: data.minimumFicoScore,
       creditBureauPulled: data.creditBureauPulled || [],
       maximumInquiriesAllowed: data.maximumInquiriesAllowed,
       minimumNumberOfAccountsOnCredit: data.minimumNumberOfAccountsOnCredit,
-      minimumCreditAgeRequired: data.minimumCreditAgeRequired || "",
+      // minimumCreditAgeRequired: data.minimumCreditAgeRequired || "",
       minimumIncomeRequired: data.minimumIncomeRequired,
       maximumDebtToIncomeRatio: data.maximumDebtToIncomeRatio,
       maximumDebtServiceRatio: data.maximumDebtServiceRatio,
       personalVerifiableIncomeRequired:
         data.personalVerifiableIncomeRequired || "No",
-      noDocumentationRequired: data.noDocumentationRequired || "No",
+      // noDocumentationRequired: data.noDocumentationRequired || "No",
 
       // Business fields
       businessBankStatementsRequired: data.businessBankStatementsRequired,
@@ -176,20 +176,20 @@ const BankProductsForm = ({
         stateAvailability: [],
         applicationMethod: [],
         immigrationStatusRequirement: "",
-        minimumCreditAgeRequired: "",
+        // minimumCreditAgeRequired: "",
         minimumFicoScore: undefined,
         maximumFundingAmount: undefined,
-        averageApprovalAmount: undefined,
+        // averageApprovalAmount: undefined,
         grossFundingPercentage: undefined,
         maximumInquiriesAllowed: undefined,
         minimumNumberOfAccountsOnCredit: undefined,
-        minimumIncomeRequired: undefined,
+        // minimumIncomeRequired: undefined,
         maximumDebtToIncomeRatio: undefined,
         maximumDebtServiceRatio: undefined,
         priorityLevel: undefined,
         doubleDipAllowed: "No",
         personalVerifiableIncomeRequired: "No",
-        noDocumentationRequired: "No",
+        // noDocumentationRequired: "No",
         businessTaxesRequired: undefined,
         personalTaxesRequired: "None",
         allowsForwardingViaEmail: "No",
@@ -261,7 +261,7 @@ const BankProductsForm = ({
           onSubmit={form.handleSubmit(onSubmit)}
           className="h-full flex flex-col"
         >
-          <Card className="mb-3 sm:mb-4 flex-shrink-0">
+          <Card className="mb-3 sm:mb-4 flex-shrink-0 gap-1">
             <CardHeader className="px-3 sm:px-6">
               <CardTitle className="text-base sm:text-lg">
                 Bank Details
@@ -293,7 +293,7 @@ const BankProductsForm = ({
 
           <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:gap-2 md:gap-4 min-h-0 overflow-hidden">
             {/* Sidebar: Product List */}
-            <Card className="w-full sm:w-1/3 md:w-1/4 lg:w-1/3 flex flex-col overflow-hidden max-h-[380px] sm:max-h-full">
+            <Card className="w-full sm:w-1/3 md:w-1/4 lg:w-1/3 flex flex-col overflow-hidden max-h-[380px] sm:max-h-full gap-1">
               <CardHeader className="px-3 sm:px-4 border-b">
                 <CardTitle className="text-sm sm:text-base">Products</CardTitle>
               </CardHeader>
@@ -420,13 +420,13 @@ const BankProductsForm = ({
                         type="number"
                         allowNegative={false}
                       />
-                      <CustomFormField
+                      {/* <CustomFormField
                         name={`products.${selectedProductIndex}.averageApprovalAmount`}
                         placeholder="100,000.00"
                         label="Avg Approval Amount"
                         type="number"
                         allowNegative={false}
-                      />
+                      /> */}
                       <CustomFormField
                         name={`products.${selectedProductIndex}.grossFundingPercentage`}
                         placeholder="100"
@@ -510,12 +510,12 @@ const BankProductsForm = ({
                           type="select"
                           options={yesNo}
                         />
-                        <CustomFormField
+                        {/* <CustomFormField
                           name={`products.${selectedProductIndex}.noDocumentationRequired`}
                           label="No Doc Required"
                           type="select"
                           options={yesNo}
-                        />
+                        /> */}
                       </div>
                     </div>
 
