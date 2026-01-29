@@ -9,13 +9,11 @@ interface CongratsMessage {
   createdAt: string;
 }
 
-export const useGetCongrats = (referenceNumber: string) => {
+export const useGetCongrats = (userId: string) => {
   const { data: congratsMessages, isLoading } = useQuery({
-    queryKey: ["GET_CONGRATS", referenceNumber],
+    queryKey: ["GET_CONGRATS", userId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/funding-application/${referenceNumber}/congrats`
-      );
+      const response = await fetch(`/api/user/${userId}/congrats`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch congrats messages");
@@ -24,7 +22,7 @@ export const useGetCongrats = (referenceNumber: string) => {
       const data = await response.json();
       return data as CongratsMessage[] | null;
     },
-    enabled: !!referenceNumber,
+    enabled: !!userId,
   });
 
   return {
@@ -38,22 +36,18 @@ export const useMarkCongratsAsRead = () => {
 
   return useMutation({
     mutationFn: async ({
-      referenceNumber,
+      userId,
       docId,
     }: {
-      referenceNumber: string;
+      userId: string;
       docId: string;
     }) => {
-      const response = await fetch(
-        `/api/funding-application/${referenceNumber}/congrats`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ docId }),
-        }
-      );
+      const response = await fetch(`/api/user/${userId}/congrats/${docId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -64,7 +58,7 @@ export const useMarkCongratsAsRead = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["GET_CONGRATS", variables.referenceNumber],
+        queryKey: ["GET_CONGRATS", variables.userId],
       });
     },
     onError: (error: Error) => {
