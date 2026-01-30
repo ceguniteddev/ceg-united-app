@@ -32,12 +32,16 @@ export const recordContractCreated = async ({
 
   if (!authUser) {
     console.log("User not found");
+    const collectionRef = db.collection(USER_DENEFITS_CONTRACT);
+    await collectionRef.add({ ...query.data, userId: null });
     return null;
   }
 
   const userData = await getUserById(authUser.uid);
   if (!userData) {
     console.log("User not found");
+    const collectionRef = db.collection(USER_DENEFITS_CONTRACT);
+    await collectionRef.add({ ...query.data, userId: null });
     return null;
   }
 
