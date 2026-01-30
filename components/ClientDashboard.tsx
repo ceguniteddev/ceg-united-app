@@ -52,6 +52,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/provider/AuthContext";
+import { useConfettiStore } from "@/hooks/use-confetti-store";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -359,6 +360,7 @@ export const ClientDashboard = ({
 }) => {
   const { user } = useAuth();
   const router = useRouter();
+  const onOpenConfetti = useConfettiStore((state) => state.onOpen);
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
     clientData?.userData?.id || "",
   );
@@ -522,9 +524,16 @@ export const ClientDashboard = ({
           userId: user?.uid || "",
         });
         setCongratsModalOpen(true);
+        onOpenConfetti();
       }
     }
-  }, [congratsMessages, adminView, firstFundingApp?.referenceNumber]);
+  }, [
+    congratsMessages,
+    adminView,
+    firstFundingApp?.referenceNumber,
+    onOpenConfetti,
+    user?.uid,
+  ]);
 
   const handleCongratsClose = useCallback(() => {
     if (currentCongratsMessage) {
@@ -825,7 +834,7 @@ export const ClientDashboard = ({
       {/* Congratulations Message Modal */}
       <AlertDialog open={congratsModalOpen} onOpenChange={setCongratsModalOpen}>
         <AlertDialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
-          <AlertDialogHeader>
+          <AlertDialogHeader className="text-left">
             <div className="flex items-center gap-2 mb-2">
               <div className="p-2 bg-green-100 rounded-full">
                 <PartyPopper className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />

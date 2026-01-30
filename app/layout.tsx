@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "@/provider/Providers";
 import Script from "next/script";
 import RecaptchaGate from "@/components/RecaptchaGate";
+import { ConfettiProvider } from "@/provider/confetti-provider";
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -47,6 +48,7 @@ export default function RootLayout({
         className={`${inter.variable} ${ibmPlexSerif.variable} antialiased h-full overflow-hidden pb-[env(safe-area-inset-bottom)]`}
       >
         <Providers>
+          <ConfettiProvider />
           <div className="h-full w-full">{children}</div>
           {/* <Script
             strategy="afterInteractive"

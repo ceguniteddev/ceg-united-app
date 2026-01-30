@@ -164,12 +164,16 @@ export const recordPaymentSucceeded = async ({
 
   if (!authUser) {
     console.log("User not found.");
+    const collectionRef = db.collection(USER_WHOP_PAYMENTS);
+    await collectionRef.add({ ...payment, userId: null });
     return null;
   }
 
   const userData = await getUserById(authUser.uid);
   if (!userData) {
     console.log("User not found.");
+    const collectionRef = db.collection(USER_WHOP_PAYMENTS);
+    await collectionRef.add({ ...payment, userId: null });
     return null;
   }
 
