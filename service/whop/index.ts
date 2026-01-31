@@ -34,6 +34,10 @@ export const createWhopCheckoutConfig = async ({
   // logInfo("createWhopCheckoutConfig (SDK) start", { userId, referenceNumber });
 
   if (!whopSdk) {
+    return "";
+  }
+
+  if (!whopSdk) {
     logError(new Error("Whop SDK is not initialized. Check API Key."));
     throw new Error("Server configuration error.");
   }
@@ -75,7 +79,7 @@ export const createWhopCheckoutConfig = async ({
     const planDetails = {
       company_id: WHOP_COMPANY_ID,
       currency: "usd" as const,
-      initial_price: 400,
+      initial_price: 400, //TODO: Replace with dynamic price
       plan_type: "one_time" as const,
       product_id: productId!,
       visibility: "hidden" as const,

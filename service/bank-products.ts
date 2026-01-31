@@ -637,8 +637,6 @@ export const approveMappedFund = async ({
 
     await updateApplicationStatus(referenceNumber, "Pre-Approved");
 
-    // TODO send email to Client
-
     return { success: true };
   } catch (error: any) {
     console.error("Error in approveMappedFund:", error);
@@ -741,8 +739,6 @@ export const approveMappedFundOld = async (
     createdAt: Timestamp.now(),
     approvedById: currentUser.uid,
   });
-
-  // TODO send notification email
 };
 
 export const getApprovedMappedFunds = async (
