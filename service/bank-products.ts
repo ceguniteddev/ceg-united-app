@@ -27,6 +27,7 @@ import {
   updateApplicationStatus,
 } from "./apply-funding";
 import { createAsanaTaskForLender } from "@/lib/n8n";
+import NotFoundError from "@/error/NotFoundError";
 
 export const recordBankProduct = async (value: BankFormData) => {
   const db = firestoreAdmin();
@@ -68,15 +69,17 @@ export const getBankProduct = async (id: string) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(BANK_PRODUCTS_COLLECTION).doc(id);
   const doc = await collectionRef.get();
+  if (!doc.exists) return null;
   return { id: doc.id, ...doc.data() } as BankFormData;
 };
 
 export const deleteBankProduct = async (id: string) => {
   console.log("deleteBankProduct", id);
 
-  const data = getBankProduct(id);
+  const data = await getBankProduct(id);
+  console.log("deleteBankProduct - data fetched", data);
   if (!data) {
-    throw new Error("Bank product not found.");
+    throw new NotFoundError("Bank product not found.");
   }
 
   const db = firestoreAdmin();
@@ -85,9 +88,9 @@ export const deleteBankProduct = async (id: string) => {
 };
 
 export const updateBankProduct = async (id: string, values: BankFormData) => {
-  const data = getBankProduct(id);
+  const data = await getBankProduct(id);
   if (!data) {
-    throw new Error("Bank product not found.");
+    throw new NotFoundError("Bank product not found.");
   }
 
   const db = firestoreAdmin();
@@ -101,9 +104,11 @@ export const recordFundMappingAnalysis = async (
   ids: { id: string }[],
   append: boolean = false,
 ) => {
-  if (!userId) throw new AppError("User ID is required.");
-  if (!referenceNumber) throw new AppError("Reference number is required.");
-  if (!ids || ids.length === 0) throw new AppError("Analysis is required.");
+  if (!userId) throw new NotFoundError("User ID is required.");
+  if (!referenceNumber)
+    throw new NotFoundError("Reference number is required.");
+  if (!ids || ids.length === 0)
+    throw new NotFoundError("Analysis is required.");
 
   logInfo("recordFundMappingAnalysis", { userId, referenceNumber, append });
 

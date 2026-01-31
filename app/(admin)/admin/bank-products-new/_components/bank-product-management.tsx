@@ -77,6 +77,8 @@ const columns: ColumnDef<BankFormData>[] = [
   },
   {
     id: "products",
+    accessorFn: (row) =>
+      (row.products || []).map((p) => p.productName).join(", "),
     header: ({ column }) => (
       <SortableHeader column={column} title="Products & Terms" />
     ),
@@ -105,6 +107,13 @@ const columns: ColumnDef<BankFormData>[] = [
   },
   {
     id: "priorityLevel",
+    accessorFn: (row) => {
+      // Sort by the highest priority (lowest number)
+      const priorities = (row.products || [])
+        .map((p) => Number(p.priorityLevel))
+        .filter((n) => !isNaN(n) && n > 0);
+      return priorities.length > 0 ? Math.min(...priorities) : 999;
+    },
     header: ({ column }) => <SortableHeader column={column} title="Priority" />,
     cell: ({ row }) => {
       const products = row.original.products || [];

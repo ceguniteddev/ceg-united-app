@@ -35,9 +35,10 @@ export const useBankProductsQueryById = (id: string) => {
   const { data, isLoading, error } = useQuery({
     queryKey: [GET_BANK_PRODUCTS, id],
     enabled: !!user,
-    queryFn: async (): Promise<BankFormData> => {
+    queryFn: async (): Promise<BankFormData | null> => {
       if (!user) throw new Error("User not authenticated");
       const data = await getBankProduct(id);
+      // if (!data) throw new Error("Bank product not found");
       return data;
     },
   });
@@ -71,7 +72,13 @@ export const useBankProductsMutation = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, values }: { values: BankFormData; id: string }) => {
+    mutationFn: async ({
+      id,
+      values,
+    }: {
+      values: BankFormData;
+      id: string;
+    }) => {
       if (!user) throw new Error("User not authenticated");
 
       await updateBankProduct(id, values);
