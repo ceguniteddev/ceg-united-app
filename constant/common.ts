@@ -145,20 +145,20 @@ export const adminSidebarLinks = [
     route: "/admin/brokers",
     label: "Brokers",
   },
-  {
-    imgURL: "/icons/credit-card.svg",
-    route: "/admin/funding-products",
-    label: "Products",
-  },
-  {
-    imgURL: "/icons/landmark.svg",
-    route: "/admin/bank-products",
-    label: "Bank Products",
-  },
+  // {
+  //   imgURL: "/icons/credit-card.svg",
+  //   route: "/admin/funding-products",
+  //   label: "Products",
+  // },
+  // {
+  //   imgURL: "/icons/landmark.svg",
+  //   route: "/admin/bank-products",
+  //   label: "Bank Products",
+  // },
   {
     imgURL: "/icons/landmark.svg",
     route: "/admin/bank-products-new",
-    label: "Bank Products New",
+    label: "Bank Products",
   },
   {
     imgURL: "/icons/money-send.svg",
@@ -639,4 +639,3 @@ export const legalResident: DropdownOption[] = [
   { value: "Work Permit", label: "Work Permit" },
   { value: "Undocumented", label: "Undocumented" },
 ];
-
