@@ -13,6 +13,7 @@ import HeaderBox from "@/components/HeaderBox";
 import BankManagement from "./_components/bank-mananagement";
 import ProductManagement from "./_components/product-management";
 import BankProductManagement from "./_components/bank-product-management";
+import { withAdminGuard } from "@/components/wrapper";
 
 const BankProductsNew = () => {
   const [activeTab, setActiveTab] = useState("banks");
@@ -75,4 +76,4 @@ const BankProductsNew = () => {
   );
 };
 
-export default BankProductsNew;
+export default withAdminGuard(BankProductsNew);
