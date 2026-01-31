@@ -2,6 +2,7 @@ import { withAuth } from "@/lib/api-validation";
 import { NextRequest, NextResponse } from "next/server";
 import { internalServerError } from "@/app/api/helpers";
 import { deleteBankProduct, getBankProduct } from "@/service/bank-products";
+import AppError from "@/error/AppError";
 
 export const GET = withAuth(
   async (
@@ -44,6 +45,12 @@ export const DELETE = withAuth(
         { status: 200 },
       );
     } catch (error: any) {
+      if (error instanceof AppError) {
+        return NextResponse.json(
+          { errors: error.message },
+          { status: error.statusCode },
+        );
+      }
       console.error("Unexpected error:", error);
       return internalServerError();
     }
