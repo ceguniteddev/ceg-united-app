@@ -11,7 +11,7 @@ import { applyFundingSchema, ApplyFunding } from "@/schema/apply-funding";
 export const POST = withAuth(
   async (
     req: NextRequest,
-    { params }: { params?: Promise<{ brokerId: string }> }
+    { params }: { params?: Promise<{ brokerId: string }> },
   ) => {
     try {
       const brokerId = (await params)?.brokerId;
@@ -66,7 +66,8 @@ export const POST = withAuth(
         activeStatus: "Active",
         denefitsSignedUp: false,
         isBrokerInvite: true,
-
+        consentConfirmTerms: fundingData.consentConfirmTerms,
+        consentConfirmPrivacy: fundingData.consentConfirmPrivacy,
         // addressStreet: data.addressStreet,
         // houseNumber: data.houseNumber,
         // addressCity: data.addressCity,
@@ -102,5 +103,5 @@ export const POST = withAuth(
       console.error("Error submitting broker application:", error);
       return internalServerError("Failed to submit application");
     }
-  }
+  },
 );

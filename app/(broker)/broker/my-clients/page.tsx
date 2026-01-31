@@ -43,7 +43,7 @@ export default function MyClientsPage() {
 
   const onSubmit = async (
     step1Data: ClientApplicationForm,
-    step2Data: ApplyFunding
+    step2Data: ApplyFunding,
   ) => {
     setIsSubmitting(true);
 
@@ -68,7 +68,7 @@ export default function MyClientsPage() {
     clients?.filter(
       (client: any) =>
         client.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.clientEmail.toLowerCase().includes(searchTerm.toLowerCase())
+        client.clientEmail.toLowerCase().includes(searchTerm.toLowerCase()),
     ) || [];
 
   if (isLoading) {
@@ -164,7 +164,7 @@ export default function MyClientsPage() {
                               {client.createdAt
                                 ? format(
                                     new Date(client.createdAt),
-                                    "MMM dd, yyyy"
+                                    "MMM dd, yyyy",
                                   )
                                 : "N/A"}
                             </span>
@@ -221,7 +221,7 @@ export default function MyClientsPage() {
                             {client.createdAt
                               ? format(
                                   new Date(client.createdAt),
-                                  "MMM dd, yyyy"
+                                  "MMM dd, yyyy",
                                 )
                               : "N/A"}
                           </span>
@@ -283,6 +283,7 @@ export default function MyClientsPage() {
           onSubmit={onSubmit}
           isSubmitting={isSubmitting}
           onClose={() => setIsModalOpen(false)}
+          registrationType="broker"
         />
       </ResponsiveDialog>
     </div>

@@ -57,11 +57,14 @@ const ManualFundedDialog = ({ userId }: Props) => {
   React.useEffect(() => {
     if (useExistingProduct && selectedBankProductId && products) {
       const selectedProduct = products.find(
-        (p) => p.id === selectedBankProductId
+        (p) => p.id === selectedBankProductId,
       );
       if (selectedProduct) {
         form.setValue("bankName", selectedProduct.bankName);
-        form.setValue("productName", selectedProduct.productName.join(", "));
+        form.setValue(
+          "productName",
+          selectedProduct.products.map((p) => p.productName).join(", "),
+        );
       }
     }
   }, [selectedBankProductId, products, useExistingProduct, form]);
@@ -87,7 +90,9 @@ const ManualFundedDialog = ({ userId }: Props) => {
     return products
       .filter((product) => product.id)
       .map((product) => ({
-        label: `${product.bankName} - ${product.productName.join(", ")}`,
+        label: `${product.bankName} - ${product.products
+          .map((p) => p.productName)
+          .join(", ")}`,
         value: product.id!,
       }));
   }, [products]);

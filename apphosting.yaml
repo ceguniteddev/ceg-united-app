@@ -120,6 +120,21 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: WHOP_COMPANY_ID
+    value: biz_CEGVfTydxqFwgI
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_PRODUCT_ID
+    value: prod_Nx8k4DHCfXq8g
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_BASE_URL
+    value: https://api.whop.com/api/v1
+    availability:
+      - BUILD
+      - RUNTIME
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   - variable: FIREBASE_CLIENT_EMAIL
@@ -144,3 +159,7 @@ env:
     secret: MUX_TOKEN_SECRET
   - variable: PDF_API_KEY
     secret: PDF_API_KEY_PRODUCTION
+  - variable: WHOP_API_KEY
+    secret: WHOP_API_KEY_PRODUCTION
+  - variable: WHOP_WEBHOOK_SECRET
+    secret: WHOP_WEBHOOK_SECRET_PRODUCTION

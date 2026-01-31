@@ -2,6 +2,7 @@
 import {
   BROKER_CLIENT_MAPPING,
   USER_COLLECTION,
+  USER_FUNDING_APPLICATION_CONGRATS,
 } from "@/constant/collection-name";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import AppError from "@/error/AppError";
@@ -185,10 +186,12 @@ export const registerUser = async ({
       appliedDate: fundingData.appliedDate || new Date(),
       status: fundingData.status || "New",
     };
+
     const result = await applyFunding({
       value: fundApplication,
       registrationType,
     });
+
     referenceNumber = result.referenceNumber;
     logInfo("Funding application created", { referenceNumber });
 
@@ -220,62 +223,6 @@ export const registerUser = async ({
         userId: docRef.id,
         referenceNumber,
       });
-    }
-
-    // Upload documents to Firebase Storage if present
-    const bucket = storageAdmin();
-
-    // Upload bank statements
-    if (fundingData.bankStatements && fundingData.bankStatements.length > 0) {
-      for (const doc of fundingData.bankStatements) {
-        try {
-          // Extract base64 data (remove data:application/pdf;base64, prefix)
-          const base64Data = doc.base64.split(",")[1];
-          const buffer = Buffer.from(base64Data, "base64");
-          const fileName = `BANK_STATEMENTS_${doc.name}`;
-          const filePath = `documents/${docRef.id}/${fileName}`;
-
-          const file = bucket.file(filePath);
-          await file.save(buffer, {
-            contentType: doc.type,
-            metadata: {
-              uploadedAt: new Date().toISOString(),
-              originalName: doc.name,
-            },
-          });
-        } catch (error) {
-          console.error("Error uploading bank statement:", error);
-          // Continue with other documents even if one fails
-        }
-      }
-    }
-
-    // Upload driver licenses
-    if (
-      fundingData.driverLicenseDocuments &&
-      fundingData.driverLicenseDocuments.length > 0
-    ) {
-      for (const doc of fundingData.driverLicenseDocuments) {
-        try {
-          // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix)
-          const base64Data = doc.base64.split(",")[1];
-          const buffer = Buffer.from(base64Data, "base64");
-          const fileName = `DRIVERS_LICENSE_${doc.name}`;
-          const filePath = `documents/${docRef.id}/${fileName}`;
-
-          const file = bucket.file(filePath);
-          await file.save(buffer, {
-            contentType: doc.type,
-            metadata: {
-              uploadedAt: new Date().toISOString(),
-              originalName: doc.name,
-            },
-          });
-        } catch (error) {
-          console.error("Error uploading driver license:", error);
-          // Continue with other documents even if one fails
-        }
-      }
     }
   }
 
@@ -313,7 +260,7 @@ export const registerUser = async ({
     requestBody = getBrokerInvitationToClientBody({
       clientName: `${user.firstName} ${user.lastName}`,
       email: user.email,
-      temporaryPassword: user.password,
+      temporaryPassword: user.password!,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
       brokerName: brokerName,
       verificationLink: verificationLink,
@@ -322,7 +269,7 @@ export const registerUser = async ({
     requestBody = getAdminInvitationToClientBody({
       clientName: `${user.firstName} ${user.lastName}`,
       email: user.email,
-      temporaryPassword: user.password,
+      temporaryPassword: user.password!,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
       verificationLink: verificationLink,
     });
@@ -1073,4 +1020,69 @@ export const updateUserNote = async ({
   await docRef.set(validatedNote);
 
   console.log(`Note updated for user: ${userId}`);
+};
+
+export const getCongratsMessages = async ({ userId }: { userId: string }) => {
+  logInfo("user::getCongrats", { userId });
+
+  const data = await getUserById(userId);
+  if (!data) throw new AppError("Funding application not found.");
+
+  const db = firestoreAdmin();
+  const collectionRef = db.collectionGroup(USER_FUNDING_APPLICATION_CONGRATS);
+
+  const snapshot = await collectionRef
+    .where("userId", "==", userId)
+    .orderBy("createdAt", "desc")
+    .get();
+  if (snapshot.empty) {
+    console.log("No matching documents.");
+    return null;
+  }
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...normalizeAllDates(doc.data()),
+  }));
+};
+
+export const markCongratsAsRead = async ({
+  userId,
+  docId,
+}: {
+  userId: string;
+  docId: string;
+}) => {
+  logInfo("Marking congrats message as read", { userId, docId });
+
+  if (!userId) throw new AppError("User ID is required.");
+  if (!docId) throw new AppError("Document ID is required.");
+
+  const db = firestoreAdmin();
+  const congratsCollection = db.collectionGroup(
+    USER_FUNDING_APPLICATION_CONGRATS,
+  );
+
+  const snapshot = await congratsCollection
+    .where("userId", "==", userId)
+    .orderBy("createdAt", "desc")
+    .get();
+  if (snapshot.empty) {
+    console.log("No matching documents.");
+    return null;
+  }
+
+  logInfo("Found congrats messages", {
+    userId,
+    totalMessages: snapshot.size,
+  });
+
+  const docToUpdate = snapshot.docs.find((doc) => doc.id === docId);
+
+  if (!docToUpdate) {
+    throw new AppError("Congrats message not found.");
+  }
+
+  await docToUpdate.ref.update({ isRead: true });
+
+  logInfo("Successfully marked congrats message as read", { userId, docId });
 };

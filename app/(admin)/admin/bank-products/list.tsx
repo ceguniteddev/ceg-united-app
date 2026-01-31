@@ -67,47 +67,49 @@ const columns: ColumnDef<BankFormData>[] = [
       <SortableHeader column={column} title="Bank Name" />
     ),
     cell: ({ row }) => (
-      <div className="max-w-[200px] break-words whitespace-normal">
+      <div className="max-w-[200px] break-words whitespace-normal font-medium">
         {row.getValue("bankName")}
       </div>
     ),
     size: 200,
   },
   {
-    accessorKey: "productName",
-    id: "productName",
+    id: "products",
     header: ({ column }) => (
-      <SortableHeader column={column} title="Product Name" />
+      <SortableHeader column={column} title="Products & Terms" />
     ),
-
     cell: ({ row }) => {
-      const productNames = row.getValue("productName") as string[];
+      const products = row.original.products || [];
+      const displayProducts = Array.isArray(products) ? products : [];
 
       return (
-        <div className="flex flex-col gap-1">
-          {" "}
-          {/* gap-1 adds a small space between items */}
-          {productNames.map((name, index) => (
-            <span key={index}>{name}</span>
+        <div className="flex flex-col gap-1 max-w-[300px]">
+          {displayProducts.map((p, index) => (
+            <div
+              key={index}
+              className="flex justify-between text-xs border-b border-dashed last:border-0 pb-1 last:pb-0"
+            >
+              <span className="font-semibold">{p.productName}</span>
+              <span className="text-muted-foreground">{p.financingTerm}</span>
+            </div>
           ))}
+          {displayProducts.length === 0 && (
+            <span className="text-muted-foreground italic">No products</span>
+          )}
         </div>
       );
     },
   },
   {
-    accessorKey: "financingTerm",
-    id: "financingTerm",
-    header: ({ column }) => (
-      <SortableHeader column={column} title="Product Type" />
-    ),
-
-    cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
-  },
-  {
-    accessorKey: "priorityLevel",
     id: "priorityLevel",
     header: ({ column }) => <SortableHeader column={column} title="Priority" />,
-    cell: ({ row }) => <div>{row.getValue("priorityLevel") || "-"}</div>,
+    cell: ({ row }) => {
+      const products = row.original.products || [];
+      const priorities = Array.from(
+        new Set(products.map((p) => p.priorityLevel).filter(Boolean)),
+      ).sort();
+      return <div>{priorities.length > 0 ? priorities.join(", ") : "-"}</div>;
+    },
   },
   {
     id: "actions",
@@ -121,7 +123,7 @@ const BankProductsList = () => {
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -159,10 +161,11 @@ const BankProductsList = () => {
       "ID",
       "Is Approved",
       "Bank Name",
-      "Product Name",
-      "Product Type",
-      "Priority Level",
       "Underwriting Notes",
+      "Product Name",
+      "Category",
+      "Financing Term",
+      "Priority Level",
       "Maximum Funding Amount",
       "Average Approval Amount",
       "Gross Funding Percentage",
@@ -185,91 +188,88 @@ const BankProductsList = () => {
       "Membership Required Upon Approval Required",
       "Account Opening Before Application Required",
       "Account Opening After Approval Required",
-      "One Year Business Taxes",
-      "Two Year Business Taxes",
-      "Three Year Business Taxes",
-      "One Year Personal Taxes",
-      "Two Year Personal Taxes",
-      "Three Year Personal Taxes",
+      "Business Taxes Required",
+      "Personal Taxes Required",
       "Immigration Status Requirement",
       "State Availability",
       "Application Method",
       "Allows Forwarding Via Email",
       "Can Be Finalized Online",
       "Client Needs To Go To Branch",
-      "Contact Name",
-      "Contact Phone Number",
-      "Contact Email",
       "Web Url",
     ];
 
     const csvRows = [headers.join(",")];
 
-    for (const row of products) {
-      const productNames = Array.isArray(row.productName)
-        ? row.productName.join("; ")
-        : row.productName;
+    for (const bank of products) {
+      const bankProducts = bank.products || [];
 
-      const creditBureauPulled = Array.isArray(row.creditBureauPulled)
-        ? row.creditBureauPulled.join("; ")
-        : row.creditBureauPulled;
+      if (bankProducts.length === 0) {
+        const values = [
+          `"${bank.id || ""}"`,
+          `"${bank.isApproved ? "Yes" : "No"}"`,
+          `"${bank.bankName || ""}"`,
+          `"${bank.underwritingNotes || ""}"`,
+          ...Array(headers.length - 4).fill('""'),
+        ];
+        csvRows.push(values.join(","));
+      } else {
+        for (const prod of bankProducts) {
+          const creditBureauPulled = Array.isArray(prod.creditBureauPulled)
+            ? prod.creditBureauPulled.join("; ")
+            : prod.creditBureauPulled;
 
-      const stateAvailability = Array.isArray(row.stateAvailability)
-        ? row.stateAvailability.join("; ")
-        : row.stateAvailability;
+          const stateAvailability = Array.isArray(prod.stateAvailability)
+            ? prod.stateAvailability.join("; ")
+            : prod.stateAvailability;
 
-      const applicationMethod = Array.isArray(row.applicationMethod)
-        ? row.applicationMethod.join("; ")
-        : row.applicationMethod;
+          const applicationMethod = Array.isArray(prod.applicationMethod)
+            ? prod.applicationMethod.join("; ")
+            : prod.applicationMethod;
 
-      const values = [
-        `"${row.id || ""}"`,
-        `"${row.isApproved ? "Yes" : "No"}"`,
-        `"${row.bankName || ""}"`,
-        `"${productNames || ""}"`,
-        `"${row.financingTerm || ""}"`,
-        `"${row.priorityLevel || ""}"`,
-        `"${row.underwritingNotes || ""}"`,
-        `"${row.maximumFundingAmount || ""}"`,
-        `"${row.averageApprovalAmount || ""}"`,
-        `"${row.grossFundingPercentage || ""}"`,
-        `"${row.doubleDipAllowed || ""}"`,
-        `"${row.minimumFicoScore || ""}"`,
-        `"${creditBureauPulled || ""}"`,
-        `"${row.maximumInquiriesAllowed || ""}"`,
-        `"${row.minimumNumberOfAccountsOnCredit || ""}"`,
-        `"${row.minimumCreditAgeRequired || ""}"`,
-        `"${row.minimumIncomeRequired || ""}"`,
-        `"${row.maximumDebtToIncomeRatio || ""}"`,
-        `"${row.maximumDebtServiceRatio || ""}"`,
-        `"${row.personalVerifiableIncomeRequired || ""}"`,
-        `"${row.noDocumentationRequired || ""}"`,
-        `"${row.businessBankStatementsRequired || ""}"`,
-        `"${row.profitAndLossStatementRequired || ""}"`,
-        `"${row.balanceSheetRequired || ""}"`,
-        `"${row.businessPlanRequired || ""}"`,
-        `"${row.membershipRequiredBeforeApplicationRequired || ""}"`,
-        `"${row.membershipRequiredUponApprovalRequired || ""}"`,
-        `"${row.accountOpeningBeforeApplicationRequired || ""}"`,
-        `"${row.accountOpeningAfterApprovalRequired || ""}"`,
-        `"${row.oneYearBusinessTaxes || ""}"`,
-        `"${row.twoYearBusinessTaxes || ""}"`,
-        `"${row.threeYearBusinessTaxes || ""}"`,
-        `"${row.oneYearPersonalTaxes || ""}"`,
-        `"${row.twoYearPersonalTaxes || ""}"`,
-        `"${row.threeYearPersonalTaxes || ""}"`,
-        `"${row.immigrationStatusRequirement || ""}"`,
-        `"${stateAvailability || ""}"`,
-        `"${applicationMethod || ""}"`,
-        `"${row.allowsForwardingViaEmail || ""}"`,
-        `"${row.canBeFinalizedOnline || ""}"`,
-        `"${row.clientNeedsToGoToBranch || ""}"`,
-        `"${row.contactName || ""}"`,
-        `"${row.contactPhoneNumber || ""}"`,
-        `"${row.contactEmail || ""}"`,
-        `"${row.webUrl || ""}"`,
-      ];
-      csvRows.push(values.join(","));
+          const values = [
+            `"${bank.id || ""}"`,
+            `"${bank.isApproved ? "Yes" : "No"}"`,
+            `"${bank.bankName || ""}"`,
+            `"${bank.underwritingNotes || ""}"`,
+            `"${prod.productName || ""}"`,
+            `"${prod.category || ""}"`,
+            `"${prod.financingTerm || ""}"`,
+            `"${prod.priorityLevel || ""}"`,
+            `"${prod.maximumFundingAmount || ""}"`,
+            // `"${prod.averageApprovalAmount || ""}"`,
+            `"${prod.grossFundingPercentage || ""}"`,
+            `"${prod.minimumFicoScore || ""}"`,
+            `"${prod.doubleDipAllowed || ""}"`,
+            `"${creditBureauPulled || ""}"`,
+            `"${prod.maximumInquiriesAllowed || ""}"`,
+            `"${prod.minimumNumberOfAccountsOnCredit || ""}"`,
+            // `"${prod.minimumCreditAgeRequired || ""}"`,
+            // `"${prod.minimumIncomeRequired || ""}"`,
+            `"${prod.maximumDebtToIncomeRatio || ""}"`,
+            `"${prod.maximumDebtServiceRatio || ""}"`,
+            `"${prod.personalVerifiableIncomeRequired || ""}"`,
+            // `"${prod.noDocumentationRequired || ""}"`,
+            `"${prod.businessBankStatementsRequired || ""}"`,
+            `"${prod.profitAndLossStatementRequired || ""}"`,
+            `"${prod.balanceSheetRequired || ""}"`,
+            `"${prod.businessPlanRequired || ""}"`,
+            `"${prod.membershipRequiredBeforeApplicationRequired || ""}"`,
+            `"${prod.membershipRequiredUponApprovalRequired || ""}"`,
+            `"${prod.accountOpeningBeforeApplicationRequired || ""}"`,
+            `"${prod.accountOpeningAfterApprovalRequired || ""}"`,
+            `"${prod.businessTaxesRequired || ""}"`,
+            `"${prod.personalTaxesRequired || ""}"`,
+            `"${prod.immigrationStatusRequirement || ""}"`,
+            `"${stateAvailability || ""}"`,
+            `"${applicationMethod || ""}"`,
+            `"${prod.allowsForwardingViaEmail || ""}"`,
+            `"${prod.canBeFinalizedOnline || ""}"`,
+            `"${prod.clientNeedsToGoToBranch || ""}"`,
+          ];
+          csvRows.push(values.join(","));
+        }
+      }
     }
 
     const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
@@ -321,29 +321,24 @@ const BankProductsList = () => {
                     {row.getValue("bankName")}
                   </h3>
 
-                  <div className="flex flex-wrap gap-1">
-                    {(row.getValue("productName") as string[]).map(
-                      (name, index) => (
-                        <span
-                          key={index}
-                          className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
-                        >
-                          {name}
-                        </span>
-                      )
-                    )}
+                  <div className="flex flex-col gap-2 mt-2">
+                    {(row.original.products || []).map((prod, index) => (
+                      <div
+                        key={index}
+                        className="bg-slate-50 p-2 rounded text-xs border"
+                      >
+                        <div className="font-semibold text-blue-700">
+                          {prod.productName}
+                        </div>
+                        <div className="flex gap-2 text-gray-500 mt-1">
+                          <span>{prod.financingTerm}</span>
+                          {prod.priorityLevel && (
+                            <span>• P{prod.priorityLevel}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-
-                  <p className="text-sm text-gray-600 mt-2">
-                    <span className="font-medium">Term:</span>{" "}
-                    {row.getValue("financingTerm")}
-                  </p>
-                  {row.getValue("priorityLevel") ? (
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Priority:</span>{" "}
-                      {row.getValue("priorityLevel")}
-                    </p>
-                  ) : null}
                 </div>
                 <ActionCell row={row} />
               </div>
@@ -367,7 +362,7 @@ const BankProductsList = () => {
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -386,7 +381,7 @@ const BankProductsList = () => {
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}

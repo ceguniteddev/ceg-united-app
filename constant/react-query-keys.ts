@@ -11,6 +11,7 @@ export const GET_FUNDING_PRODUCTS = "get-funding-products";
 export const GET_FUNDING_PRODUCT = "get-funding-product";
 
 export const GET_BANK_PRODUCTS = "get-bank-products";
+export const GET_BANK_MANAGEMENT = "get-bank-management";
 
 export const GET_USER_CRS_REPORT = "get-user-crs-report";
 
@@ -23,3 +24,7 @@ export const COURSES_KEY = "COURSES";
 export const CHAPTERS_KEY = "CHAPTERS";
 
 export const GET_ALL_BROKERS = "get-all-brokers";
+
+export const GET_USER_NOTIFICATIONS_COUNT = "get-user-notifications-count";
+
+export const GET_WHOP_PAYMENTS = "get-whop-payments";

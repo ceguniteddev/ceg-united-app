@@ -1,6 +1,7 @@
 import { badRequest, internalServerError, notAllowed } from "@/app/api/helpers";
 import AppError from "@/error/AppError";
 import { createEnterpriseAssessment } from "@/lib/captcha/captcha";
+import { User } from "@/schema/registration";
 import { registerUser } from "@/service/user";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -27,7 +28,12 @@ export const POST = async (req: NextRequest) => {
     // If step1Data and step2Data are provided, use the multi-step registration
     if (step1Data && step2Data) {
       await registerUser({
-        user: { ...step1Data, role: "Client" },
+        user: {
+          ...step1Data,
+          role: "Client",
+          consentConfirmTerms: step2Data.consentConfirmTerms,
+          consentConfirmPrivacy: step2Data.consentConfirmPrivacy,
+        } as User,
         fundingData: step2Data,
         registrationType: "Self",
       });

@@ -42,3 +42,4 @@ next-env.d.ts
 /public/tinymce/
 
 /functions/node_modules/
+.vscode/

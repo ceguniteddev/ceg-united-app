@@ -5,7 +5,7 @@ import {
   useRefreshAnalysisData,
   useSaveToDocuments,
 } from "@/hooks/admin/funding-application/analysis";
-import dynamic from "next/dynamic";
+// import dynamic from "next/dynamic";
 import React, { useCallback } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import Spinner from "../Spinner";
@@ -23,9 +23,21 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import IconMenu from "../icon-menu";
-import { FileDown, Loader2Icon, Mail, RefreshCcw, XIcon } from "lucide-react";
+import {
+  FileDown,
+  Loader2Icon,
+  Mail,
+  RefreshCcw,
+  ShoppingCart,
+  XIcon,
+} from "lucide-react";
+import { useAuth } from "@/provider/AuthContext";
+import DOMPurify from "isomorphic-dompurify";
+import { WhopCheckoutEmbed } from "@whop/checkout/react";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { Card, CardContent } from "@/components/ui/card";
 
-const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
+// const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
 type Props = {
   referenceNumber: string;
@@ -35,6 +47,7 @@ type Item = { id: string; analysis?: string };
 const AnalysisView = ({ referenceNumber }: Props) => {
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
   const { updateAnalysis } = useAnalysisMutation();
+  const { isAdmin, role } = useAuth();
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
 
@@ -49,24 +62,41 @@ const AnalysisView = ({ referenceNumber }: Props) => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between gap-3">
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <SendClientAnalysisData referenceNumber={referenceNumber} />
-          <SaveToDocumentsButton referenceNumber={referenceNumber} />
-        </div>
-        <RefreshAnalysisData referenceNumber={referenceNumber} />
+      <div className="flex flex-col items-start gap-3 border-b pb-4 mb-4 sm:flex-row sm:justify-between">
+        {isAdmin && (
+          <>
+            <div className="flex flex-col gap-2 sm:w-auto sm:flex-row">
+              <SendClientAnalysisData referenceNumber={referenceNumber} />
+              <SaveToDocumentsButton referenceNumber={referenceNumber} />
+            </div>
+            <div className="flex flex-col gap-2 sm:w-auto sm:flex-row">
+              <RefreshAnalysisData referenceNumber={referenceNumber} />
+            </div>
+          </>
+        )}
+        {role === "Client" && (
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <SaveToDocumentsButton referenceNumber={referenceNumber} />
+            {/* <WhopCheckoutButton referenceNumber={referenceNumber} /> */}
+          </div>
+        )}
       </div>
-      {(analysisData as Item[])?.map((item) => (
-        <AnalysisDetailsView
-          updateAnalysis={({ referenceNumber, id, analysis }) =>
-            updateAnalysis({ referenceNumber, id, analysis })
-          }
-          referenceNumber={referenceNumber}
-          key={item.id}
-          id={item.id}
-          analysis={item.analysis ?? ""}
-        />
-      ))}
+      <Card>
+        <CardContent className="space-y-4 pt-6 sm:space-y-6">
+          {(analysisData as Item[])?.map((item) => (
+            <div className="w-full" key={item.id}>
+              <AnalysisDetailsView
+                updateAnalysis={({ referenceNumber, id, analysis }) =>
+                  updateAnalysis({ referenceNumber, id, analysis })
+                }
+                referenceNumber={referenceNumber}
+                id={item.id}
+                analysis={item.analysis ?? ""}
+              />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 };
@@ -320,21 +350,144 @@ const RefreshAnalysisData = ({
   );
 };
 
+const WhopCheckoutButton = ({
+  referenceNumber,
+}: {
+  referenceNumber: string;
+}) => {
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [checkoutId, setCheckoutId] = React.useState<string | null>(null);
+
+  const handleCheckout = async () => {
+    if (!user?.uid) {
+      toast.error("You must be logged in to proceed.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/user/${user.uid}/whop`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ referenceNumber }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || "Failed to create checkout session.",
+        );
+      }
+
+      const { checkoutId } = await response.json();
+      if (checkoutId) {
+        setCheckoutId(checkoutId);
+      } else {
+        toast.error("Could not retrieve the checkout session.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error instanceof Error ? error.message : "An unknown error occurred.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        variant={"ghost"}
+        className="cursor-pointer bg-purple-500 hover:bg-purple-600 text-white w-full sm:w-auto h-10 sm:h-9"
+        onClick={handleCheckout}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <IconMenu
+            text="Processing..."
+            icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
+          />
+        ) : (
+          <IconMenu
+            icon={<ShoppingCart className="h-4 w-4" />}
+            text="Join Now"
+          />
+        )}
+      </Button>
+
+      <ResponsiveDialog
+        isOpen={!!checkoutId}
+        setIsOpen={(isOpen) => !isOpen && setCheckoutId(null)}
+        title="Complete Your Purchase"
+        description="Please complete the payment form below to join."
+        className="max-w-[90vw] sm:max-w-lg p-0"
+      >
+        {checkoutId && (
+          <WhopCheckoutEmbed
+            prefill={{
+              email: user?.email || "",
+              address: {
+                country: "US",
+              },
+            }}
+            sessionId={checkoutId}
+            onComplete={(planId, receiptId) => {
+              // console.log("Plan ID:", planId);
+              // console.log("Receipt ID:", receiptId);
+              toast.success("Payment successful!");
+              setCheckoutId(null);
+            }}
+            fallback={
+              <div className="flex items-center justify-center h-96">
+                <p className="text-gray-600 dark:text-gray-400">
+                  Loading checkout...
+                </p>
+              </div>
+            }
+          />
+        )}
+      </ResponsiveDialog>
+    </>
+  );
+};
+
 export function extractHtmlFromFence(input: string): string {
   if (!input) return "";
 
   // Prefer an explicit ```html fence anywhere in the string
   const htmlFence = /```(?:\s*html)?\s*[\r\n]+([\s\S]*?)\s*```/i;
   const m1 = input.match(htmlFence);
-  if (m1) return m1[1].trim();
+  if (m1) {
+    const html = m1[1].trim();
+    return extractBodyContent(html);
+  }
 
   // If the entire string is *just* one fenced block (any language), unwrap it
   const wholeFence = /^\s*```[^\n]*\n([\s\S]*?)\n?```\s*$/;
   const m2 = input.match(wholeFence);
-  if (m2) return m2[1].trim();
+  if (m2) {
+    const html = m2[1].trim();
+    return extractBodyContent(html);
+  }
 
-  // Otherwise, return as-is
-  return input.trim();
+  // Otherwise, sanitize and extract body content
+  return extractBodyContent(DOMPurify.sanitize(input.trim()));
+}
+
+function extractBodyContent(html: string): string {
+  if (!html) return "";
+
+  // If it's a full HTML document, extract only the body content
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  if (bodyMatch) {
+    return DOMPurify.sanitize(bodyMatch[1].trim());
+  }
+
+  // If no body tag found, return sanitized HTML as-is
+  return DOMPurify.sanitize(html);
 }
 
 type PropsView = {
@@ -358,46 +511,81 @@ const AnalysisDetailsView = ({
   id,
   updateAnalysis,
 }: PropsView) => {
+  // const { role } = useAuth();
   const initial = React.useMemo(
     () => extractHtmlFromFence(analysis),
-    [analysis]
+    [analysis],
   );
-  const [content, setContent] = React.useState(initial);
+  // const [content, setContent] = React.useState(initial);
 
-  React.useEffect(() => {
-    setContent((prev) => (prev === initial ? prev : initial));
-  }, [initial]);
+  // React.useEffect(() => {
+  //   setContent((prev) => (prev === initial ? prev : initial));
+  // }, [initial]);
 
-  const saveToDb = React.useCallback(
-    async (html: string) => {
-      try {
-        await updateAnalysis({
-          referenceNumber,
-          id,
-          analysis: extractHtmlFromFence(html),
-        });
-      } catch (e) {
-        console.error("Failed to save analysis", e);
-      }
-    },
-    [id, updateAnalysis, referenceNumber]
+  // const saveToDb = React.useCallback(
+  //   async (html: string) => {
+  //     try {
+  //       await updateAnalysis({
+  //         referenceNumber,
+  //         id,
+  //         analysis: extractHtmlFromFence(html),
+  //       });
+  //     } catch (e) {
+  //       console.error("Failed to save analysis", e);
+  //     }
+  //   },
+  //   [id, updateAnalysis, referenceNumber],
+  // );
+
+  // const debouncedSave = useDebouncedCallback((next: string) => {
+  //   saveToDb(next);
+  // }, 200);
+
+  // const handleSetContent = React.useCallback(
+  //   (next: string) => {
+  //     setContent(next);
+  //     debouncedSave(next);
+  //   },
+  //   [debouncedSave],
+  // );
+
+  // React.useEffect(() => () => debouncedSave.flush(), [debouncedSave]);
+
+  // If user is a Client, display read-only HTML content
+  // if (role === "Client") {
+  return (
+    <div
+      className="prose prose-sm sm:prose lg:prose-lg max-w-none dark:prose-invert bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 sm:p-6 overflow-x-auto not-prose
+        [&_*]:m-0 [&_*]:p-0 [&_*]:box-border
+        [&_h1]:text-2xl [&_h1]:sm:text-3xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:!p-0
+        [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-semibold [&_h2]:mb-3 [&_h2]:!p-0
+        [&_h3]:text-lg [&_h3]:sm:text-xl [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:!p-0
+        [&_h4]:text-base [&_h4]:sm:text-lg [&_h4]:font-medium [&_h4]:mb-2 [&_h4]:!p-0
+        [&_p]:mb-2 [&_p]:text-sm [&_p]:sm:text-base [&_p]:!p-0
+        [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-3 [&_ul]:!p-0
+        [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-3 [&_ol]:!p-0
+        [&_li]:mb-1 [&_li]:!p-0
+        [&_table]:w-full [&_table]:border-collapse [&_table]:mb-4 [&_table]:!p-0
+        [&_th]:border [&_th]:border-gray-300 [&_th]:p-2 [&_th]:bg-gray-100 [&_th]:font-semibold [&_th]:text-left
+        [&_td]:border [&_td]:border-gray-300 [&_td]:p-2
+        [&_.container]:w-full [&_.container]:!m-0 [&_.container]:!p-0
+        [&_.section-box]:border [&_.section-box]:border-gray-300 [&_.section-box]:rounded [&_.section-box]:p-4 [&_.section-box]:mb-4 [&_.section-box]:bg-gray-50 dark:[&_.section-box]:bg-gray-800
+        [&_.bureau-box]:border [&_.bureau-box]:border-blue-300 [&_.bureau-box]:rounded [&_.bureau-box]:p-4 [&_.bureau-box]:mb-4 [&_.bureau-box]:bg-blue-50 dark:[&_.bureau-box]:bg-blue-900/20
+        [&_.summary-box]:border [&_.summary-box]:border-purple-300 [&_.summary-box]:rounded [&_.summary-box]:p-4 [&_.summary-box]:mb-4 [&_.summary-box]:bg-purple-50 dark:[&_.summary-box]:bg-purple-900/20
+        [&_.final-summary]:border [&_.final-summary]:border-green-300 [&_.final-summary]:rounded [&_.final-summary]:p-4 [&_.final-summary]:mb-4 [&_.final-summary]:bg-green-50 dark:[&_.final-summary]:bg-green-900/20
+        [&_.grid]:grid [&_.grid]:grid-cols-1 [&_.grid]:sm:grid-cols-2 [&_.grid]:md:grid-cols-3 [&_.grid]:gap-3 [&_.grid]:mb-3
+        [&_.grid-item]:text-sm
+        [&_.label]:font-semibold
+        [&_.value]:text-gray-700 dark:[&_.value]:text-gray-300
+        [&_.negative]:text-red-600 dark:[&_.negative]:text-red-400 [&_.negative]:font-semibold
+        [&_.positive]:text-green-600 dark:[&_.positive]:text-green-400 [&_.positive]:font-semibold"
+      dangerouslySetInnerHTML={{ __html: initial }}
+    />
   );
+  // }
 
-  const debouncedSave = useDebouncedCallback((next: string) => {
-    saveToDb(next);
-  }, 200);
-
-  const handleSetContent = React.useCallback(
-    (next: string) => {
-      setContent(next);
-      debouncedSave(next);
-    },
-    [debouncedSave]
-  );
-
-  React.useEffect(() => () => debouncedSave.flush(), [debouncedSave]);
-
-  return <Editor content={content} onContentChange={handleSetContent} />;
+  // For Admin/Broker, show editable Editor
+  // return <Editor content={content} onContentChange={handleSetContent} />;
 };
 
 export default AnalysisView;

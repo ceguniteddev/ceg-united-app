@@ -10,6 +10,7 @@ export const USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED =
 export const LINK_TOKEN_COLLECTION = "plaid-link-token";
 export const USER_TOKEN_COLLECTION = "plaid-user-token";
 export const USER_DENEFITS_CONTRACT = "user-denefits-contract";
+export const USER_WHOP_PAYMENTS = "user-whop-payments";
 
 export const PLAID_ITEM_WEBHOOK_COLLECTION = "plaid-item-webhook-data";
 export const PLAID_ASSET_WEBHOOK_COLLECTION = "plaid-asset-webhook-data";
@@ -27,6 +28,7 @@ export const NEW_ACCOUNTS_AVAILABLE = "user-link-new-accounts-available";
 
 export const FUNDING_PRODUCTS_COLLECTION = "funding-products";
 export const BANK_PRODUCTS_COLLECTION = "bank-products";
+export const BANK_MANAGEMENT_COLLECTION = "bank-management";
 export const CRS_REPORT_DATA = "crs-report-data";
 export const CRS_REPORT_BUSINESS_PROFILE = "crs-report-business-profile";
 export const CRS_REPORT_BUSINESS_SCORE = "crs-report-business-score";
@@ -39,6 +41,9 @@ export const COURSE = "course";
 export const CHAPTER = "chapter";
 export const ATTACHMENT = "attachment";
 export const MUX_DATA = "mux-data";
+
+export const WHOP_CHECKOUTS_COLLECTION = "whop-checkouts";
+
 export const USER_COURSE_PROGRESS = "user-course-progress";
 export const USER_COURSE_ENROLLMENT = "user-course-enrollment";
 

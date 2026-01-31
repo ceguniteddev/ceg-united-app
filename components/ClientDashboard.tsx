@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -50,6 +51,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/provider/AuthContext";
+import { useConfettiStore } from "@/hooks/use-confetti-store";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -129,7 +132,7 @@ function bureauLabel(sourceType?: string): string {
 }
 
 function detectBureau(
-  report: CreditReport
+  report: CreditReport,
 ): "Experian" | "TransUnion" | "Equifax" | null {
   const fromScore = report.scores?.[0]?.sourceType;
   if (fromScore) return bureauLabel(fromScore) as any;
@@ -150,7 +153,7 @@ function detectBureau(
 }
 
 function groupByBureau(
-  docs?: (CreditReportWithId | IssuesReportData | DTIReportData)[] | null
+  docs?: (CreditReportWithId | IssuesReportData | DTIReportData)[] | null,
 ) {
   const out: Record<
     "Experian" | "TransUnion" | "Equifax",
@@ -164,7 +167,7 @@ function groupByBureau(
 
   // Filter for actual credit reports before grouping to avoid processing the 'issues' object
   const creditDocs = docs.filter(
-    (d): d is CreditReportWithId => d.id !== "issues" && d.id !== "dti"
+    (d): d is CreditReportWithId => d.id !== "issues" && d.id !== "dti",
   );
 
   for (const d of creditDocs) {
@@ -212,11 +215,14 @@ const StatCard = ({
 const FundingStatusChart = ({ data }: { data: ApplyFunding[] | null }) => {
   const chartData = useMemo(() => {
     if (!data) return { labels: [], datasets: [] };
-    const statusCounts = data.reduce((acc, app) => {
-      const status = app.status || "Unknown";
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const statusCounts = data.reduce(
+      (acc, app) => {
+        const status = app.status || "Unknown";
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
     return {
       labels: Object.keys(statusCounts),
       datasets: [
@@ -352,8 +358,11 @@ export const ClientDashboard = ({
   clientData: ClientData | null | undefined;
   adminView?: boolean;
 }) => {
+  const { user } = useAuth();
+  const router = useRouter();
+  const onOpenConfetti = useConfettiStore((state) => state.onOpen);
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
-    clientData?.userData?.id || ""
+    clientData?.userData?.id || "",
   );
 
   const [isOpen, setIsOpen] = useState(false);
@@ -361,14 +370,12 @@ export const ClientDashboard = ({
   const [currentCongratsMessage, setCurrentCongratsMessage] = useState<{
     id: string;
     message: string;
-    referenceNumber: string;
+    userId: string;
   } | null>(null);
 
   // Fetch congrats messages for the first funding application
   const firstFundingApp = clientData?.fundingApplications?.[0];
-  const { congratsMessages } = useGetCongrats(
-    firstFundingApp?.referenceNumber || ""
-  );
+  const { congratsMessages } = useGetCongrats(user?.uid || "");
   const markAsReadMutation = useMarkCongratsAsRead();
 
   // const [isOpenFunding, setIsOpenFunding] = useState(
@@ -407,7 +414,7 @@ export const ClientDashboard = ({
     const allBalances = allPlaidData.flatMap((d) => d.balance || []);
     const allBankIncome = allPlaidData.flatMap((d) => d.bank_income || []);
     const personalAccountsBalances = allBalances.filter(
-      (b) => b.type === "depository"
+      (b) => b.type === "depository",
     );
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
@@ -416,7 +423,7 @@ export const ClientDashboard = ({
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
     const totalCurrentBalance = personalAccountsBalances.reduce(
       (sum, b) => sum + (b.balances.current || 0),
-      0
+      0,
     );
     const averageMonthlyBalance =
       personalAccountsBalances.length > 0
@@ -443,7 +450,7 @@ export const ClientDashboard = ({
     };
 
     const issuesData = clientData.crsReportData?.find(
-      (d) => d.id === "issues"
+      (d) => d.id === "issues",
     ) as IssuesReportData | undefined;
 
     const dtiData = clientData.crsReportData?.find((d) => d.id === "dti") as
@@ -514,23 +521,34 @@ export const ClientDashboard = ({
         setCurrentCongratsMessage({
           id: unreadMessages[0].id,
           message: unreadMessages[0].message,
-          referenceNumber: firstFundingApp.referenceNumber,
+          userId: user?.uid || "",
         });
         setCongratsModalOpen(true);
+        onOpenConfetti();
       }
     }
-  }, [congratsMessages, adminView, firstFundingApp?.referenceNumber]);
+  }, [
+    congratsMessages,
+    adminView,
+    firstFundingApp?.referenceNumber,
+    onOpenConfetti,
+    user?.uid,
+  ]);
 
   const handleCongratsClose = useCallback(() => {
     if (currentCongratsMessage) {
       markAsReadMutation.mutate({
-        referenceNumber: currentCongratsMessage.referenceNumber,
+        userId: currentCongratsMessage.userId,
         docId: currentCongratsMessage.id,
       });
     }
     setCongratsModalOpen(false);
     setCurrentCongratsMessage(null);
   }, [currentCongratsMessage, markAsReadMutation]);
+
+  const viewAuditReport = useCallback(() => {
+    router.push("/client/my-funding");
+  }, [router]);
 
   // useEffect(() => {
   //   if (denefitsContract && denefitsContract.length > 0) {
@@ -816,7 +834,7 @@ export const ClientDashboard = ({
       {/* Congratulations Message Modal */}
       <AlertDialog open={congratsModalOpen} onOpenChange={setCongratsModalOpen}>
         <AlertDialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
-          <AlertDialogHeader>
+          <AlertDialogHeader className="text-left">
             <div className="flex items-center gap-2 mb-2">
               <div className="p-2 bg-green-100 rounded-full">
                 <PartyPopper className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
@@ -834,7 +852,13 @@ export const ClientDashboard = ({
               />
             </div>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2 justify-between">
+            <AlertDialogAction
+              onClick={viewAuditReport}
+              className="bg-blue-500 hover:bg-blue-600 w-full sm:w-auto"
+            >
+              View Audit Report
+            </AlertDialogAction>
             <AlertDialogAction
               onClick={handleCongratsClose}
               className="bg-green-500 hover:bg-green-600 w-full sm:w-auto"

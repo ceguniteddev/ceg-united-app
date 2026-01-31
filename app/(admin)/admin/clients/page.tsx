@@ -72,6 +72,7 @@ const ClientsPage = () => {
             onSubmit={onSubmit}
             isSubmitting={isSubmitting}
             onClose={() => setIsModalOpen(false)}
+            registrationType="admin"
           />
         </ResponsiveDialog>
       </div>

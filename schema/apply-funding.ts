@@ -152,7 +152,7 @@ export const applyFundingSchema = z
             platform: z.string().optional(),
             handle: z.string().optional(),
           })
-          .optional()
+          .optional(),
       )
       .optional(),
     // lastYearTaxes: z.coerce.number<number>().optional(),
@@ -236,7 +236,7 @@ export const applyFundingSchema = z
           size: z.number(),
           type: z.string(),
           base64: z.string(),
-        })
+        }),
       )
       .optional(),
     driverLicenseDocuments: z
@@ -246,9 +246,11 @@ export const applyFundingSchema = z
           size: z.number(),
           type: z.string(),
           base64: z.string(),
-        })
+        }),
       )
       .optional(),
+    consentConfirmTerms: z.boolean(),
+    consentConfirmPrivacy: z.boolean(),
   })
   .superRefine((data, ctx) => {
     // Define the exclusion condition for clarity
@@ -1079,7 +1081,7 @@ export const applyFundingSchema = z
     {
       message: "Required",
       path: ["personalAmountFunding"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -1094,7 +1096,7 @@ export const applyFundingSchema = z
     {
       message: "Required",
       path: ["businessAmountFunding"],
-    }
+    },
   )
   .superRefine((data, ctx) => {
     // Helper that checks membership whether fundingType is string or string[]

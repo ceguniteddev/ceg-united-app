@@ -46,7 +46,7 @@ import CategoryBadge from "@/components/CategoryBadge";
 import SortableHeader from "@/components/SortableHeader";
 import { useRouter } from "next/navigation";
 import { useGetDenefitsContracts } from "@/hooks/denefits";
-import { DenefitsRequest, DenefitsStatusEnum } from "@/schema/denefits";
+import { DenefitsRequest, DenefitsStatusEnum } from "@/schema/payments";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
@@ -61,7 +61,7 @@ const statusFilterFn: FilterFn<UserWithId> = (row, columnId, filterValue) => {
 const denefitsStatusFilterFn: FilterFn<UserWithId> = (
   row,
   columnId,
-  filterValue
+  filterValue,
 ) => {
   // The accessorFn provides the value, which will be "Active" or "InActive"
   const value = row.getValue<string>(columnId);
@@ -90,7 +90,7 @@ const ClientsList = () => {
   const { users, isLoading } = useUsersQuery("Client");
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const { denefitsContracts, isLoading: denefitsContractsLoading } =
     useGetDenefitsContracts();
@@ -101,7 +101,7 @@ const ClientsList = () => {
       denefitsContracts.map((contract: DenefitsRequest) => [
         contract.userId,
         contract,
-      ])
+      ]),
     );
   }, [denefitsContracts]);
 
@@ -480,7 +480,7 @@ const ClientsList = () => {
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                       </TableHead>
                     );
@@ -499,7 +499,7 @@ const ClientsList = () => {
                       <TableCell key={cell.id} className="whitespace-nowrap">
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}

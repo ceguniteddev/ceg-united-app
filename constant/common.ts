@@ -145,14 +145,19 @@ export const adminSidebarLinks = [
     route: "/admin/brokers",
     label: "Brokers",
   },
-  {
-    imgURL: "/icons/credit-card.svg",
-    route: "/admin/funding-products",
-    label: "Products",
-  },
+  // {
+  //   imgURL: "/icons/credit-card.svg",
+  //   route: "/admin/funding-products",
+  //   label: "Products",
+  // },
+  // {
+  //   imgURL: "/icons/landmark.svg",
+  //   route: "/admin/bank-products",
+  //   label: "Bank Products",
+  // },
   {
     imgURL: "/icons/landmark.svg",
-    route: "/admin/bank-products",
+    route: "/admin/bank-products-new",
     label: "Bank Products",
   },
   {
@@ -162,8 +167,8 @@ export const adminSidebarLinks = [
   },
   {
     imgURL: "/icons/dollar-circle.svg",
-    route: "/admin/denefits-payments",
-    label: "Denefits Payments",
+    route: "/admin/payments",
+    label: "Payments",
   },
   {
     imgURL: "/icons/phone-call.svg",

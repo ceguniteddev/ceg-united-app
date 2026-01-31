@@ -3,6 +3,7 @@ import { badRequest, internalServerError } from "@/app/api/helpers";
 import { acceptBrokerInvitation } from "@/service/broker";
 import { registerUser } from "@/service/user";
 import { User } from "@/schema/registration";
+import { da } from "date-fns/locale";
 
 export const POST = async (request: NextRequest) => {
   try {
@@ -47,7 +48,8 @@ export const POST = async (request: NextRequest) => {
       activeStatus: "Active",
       denefitsSignedUp: false,
       commissionRate: 10,
-
+      consentConfirmTerms: true,
+      consentConfirmPrivacy: true,
       // addressStreet: "",
       // houseNumber: "",
       // addressCity: "",
@@ -67,7 +69,7 @@ export const POST = async (request: NextRequest) => {
         success: true,
         message: "Broker registered successfully",
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Error registering broker:", error);

@@ -6,8 +6,16 @@ import { PasswordStrength } from "@/components/PasswordStrength";
 import { genderTypes } from "@/schema";
 import { useFormContext, useWatch } from "react-hook-form";
 
-export function Step1PersonalInfo() {
-  const { control, register } = useFormContext();
+import { useState } from "react";
+
+interface Step1PersonalInfoProps {
+  registrationType: "client" | "broker" | "admin";
+}
+
+export function Step1PersonalInfo({
+  registrationType = "client",
+}: Step1PersonalInfoProps) {
+  const { control, register, setValue } = useFormContext();
   const password = useWatch({
     control,
     name: "password",
@@ -21,6 +29,11 @@ export function Step1PersonalInfo() {
       </CardHeader>
       <CardContent className="space-y-4">
         <input type="hidden" {...register("role")} defaultValue="Client" />
+        <input
+          type="hidde"
+          {...register("registrationType")}
+          defaultValue={registrationType}
+        />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <CustomFormField
             name={"firstName"}
@@ -70,39 +83,6 @@ export function Step1PersonalInfo() {
           />
         </div>
 
-        {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <CustomFormField name={"addressStreet"} label={"Street Address"} />
-          <CustomFormField
-            name={"houseNumber"}
-            label={"Apartment/Suite/Unit/House Number"}
-          />
-        </div> */}
-
-        {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <CustomFormField name={"addressCity"} label={"City"} />
-          <CustomFormField
-            name={"addressState"}
-            label={"State"}
-            type="select"
-            placeholder="Select a state"
-            options={US_STATES}
-          />
-          <CustomFormField name={"addressPostal"} label={"Zip Code"} />
-        </div> */}
-
-        {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <CustomFormField
-            name={"employmentPayPerMonth"}
-            type="number"
-            label={"Monthly income"}
-          />
-          <CustomFormField
-            name={"payPerMonth"}
-            type="number"
-            label={"Rent/Mortgage payment"}
-          />
-        </div> */}
-
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <CustomFormField
             name={"ssn"}
@@ -110,15 +90,18 @@ export function Step1PersonalInfo() {
             placeholder="xxx-xx-xxxx"
             label="* Social Security Number"
           />
-          <CustomFormField
-            name={"password"}
-            type="password"
-            label="* Password"
-            placeholder=""
-          />
+          {registrationType === "client" && (
+            <CustomFormField
+              name={"password"}
+              type="password"
+              label="* Password"
+              placeholder=""
+            />
+          )}
         </div>
-
-        <PasswordStrength password={password ?? ""} />
+        {registrationType === "client" && (
+          <PasswordStrength password={password ?? ""} />
+        )}
       </CardContent>
     </Card>
   );

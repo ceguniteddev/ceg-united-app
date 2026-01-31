@@ -54,7 +54,8 @@ export const POST = withAuth(async (req: NextRequest) => {
       activeStatus: "Active",
       denefitsSignedUp: false,
       isBrokerInvite: false,
-
+      consentConfirmTerms: fundingData.consentConfirmTerms,
+      consentConfirmPrivacy: fundingData.consentConfirmPrivacy,
       // addressStreet: data.addressStreet,
       // houseNumber: data.houseNumber,
       // addressCity: data.addressCity,
