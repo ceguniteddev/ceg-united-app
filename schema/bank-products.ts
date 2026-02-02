@@ -4,7 +4,7 @@ export const YesNoEnum = z
   .enum(["Yes", "No"], { error: "Required" })
   .optional();
 
-export const ApplicationMethodEnum = z.enum(["Online", "Branch", "Referral"], {
+export const ApplicationMethodEnum = z.enum(["Online", "Branch", "Referral","Phone"], {
   error: "Required",
 });
 
