@@ -21,7 +21,6 @@ export const FundingApplicationType = [
   "Income",
   "Community",
   "Tradelines",
-  "All",
 ] as const;
 export const FundingApplicationTypeEnum = z.enum(FundingApplicationType, {
   error: "Required",

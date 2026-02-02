@@ -250,9 +250,9 @@ const BankProductsForm = ({
     selectedProductIndex !== null
       ? watchedProducts?.[selectedProductIndex]
       : null;
-  const isPersonalProduct = activeProduct?.category
-    ?.toLowerCase()
-    .includes("personal");
+  const activeCategory = activeProduct?.category?.toLowerCase() || "";
+  const isPersonalProduct = activeCategory.includes("personal");
+  const isBusinessProduct = activeCategory.includes("business");
 
   return (
     <div className="w-full max-w-full mx-auto px-2 sm:px-4 pb-4 h-full flex flex-col">
@@ -519,11 +519,11 @@ const BankProductsForm = ({
                       </div>
                     </div>
 
-                    {/* Conditional Fields for Business Products */}
-                    {!isPersonalProduct && (
-                      <div className="border-t pt-3 sm:pt-4 bg-yellow-50/50 p-2 sm:p-3 rounded-md">
-                        <h4 className="text-sm font-semibold mb-2 sm:mb-3 text-yellow-800 flex items-center gap-2">
-                          Business Requirements
+                    {/* Conditional Fields for Personal/Business Products */}
+                    {(isPersonalProduct || isBusinessProduct) && (
+                      <div className="border-t pt-3 sm:pt-4 bg-blue-50/50 p-2 sm:p-3 rounded-md">
+                        <h4 className="text-sm font-semibold mb-2 sm:mb-3 text-blue-800 flex items-center gap-2">
+                          General Requirements
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                           <CustomFormField
@@ -532,6 +532,40 @@ const BankProductsForm = ({
                             type="select"
                             options={yesNo}
                           />
+                          <CustomFormField
+                            name={`products.${selectedProductIndex}.membershipRequiredBeforeApplicationRequired`}
+                            label="Membership Required Before Application"
+                            type="select"
+                            options={yesNo}
+                          />
+                          <CustomFormField
+                            name={`products.${selectedProductIndex}.membershipRequiredUponApprovalRequired`}
+                            label="Membership Required Upon Application"
+                            type="select"
+                            options={yesNo}
+                          />
+                          <CustomFormField
+                            name={`products.${selectedProductIndex}.accountOpeningBeforeApplicationRequired`}
+                            label="Account Opening Before Application"
+                            type="select"
+                            options={yesNo}
+                          />
+                          <CustomFormField
+                            name={`products.${selectedProductIndex}.accountOpeningAfterApprovalRequired`}
+                            label="Account Opening After Application"
+                            type="select"
+                            options={yesNo}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {isBusinessProduct && (
+                      <div className="border-t pt-3 sm:pt-4 bg-yellow-50/50 p-2 sm:p-3 rounded-md">
+                        <h4 className="text-sm font-semibold mb-2 sm:mb-3 text-yellow-800 flex items-center gap-2">
+                          Business-Specific Requirements
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                           <CustomFormField
                             name={`products.${selectedProductIndex}.profitAndLossStatementRequired`}
                             label="Profit & Loss Statement"
@@ -547,34 +581,6 @@ const BankProductsForm = ({
                           <CustomFormField
                             name={`products.${selectedProductIndex}.businessPlanRequired`}
                             label="Business Plan"
-                            type="select"
-                            options={yesNo}
-                          />
-
-                          <CustomFormField
-                            name={`products.${selectedProductIndex}.membershipRequiredBeforeApplicationRequired`}
-                            label="Membership Required Before Application"
-                            type="select"
-                            options={yesNo}
-                          />
-
-                          <CustomFormField
-                            name={`products.${selectedProductIndex}.membershipRequiredUponApprovalRequired`}
-                            label="Membership Required Upon Application"
-                            type="select"
-                            options={yesNo}
-                          />
-
-                          <CustomFormField
-                            name={`products.${selectedProductIndex}.accountOpeningBeforeApplicationRequired`}
-                            label="Account Opening Before Application"
-                            type="select"
-                            options={yesNo}
-                          />
-
-                          <CustomFormField
-                            name={`products.${selectedProductIndex}.accountOpeningAfterApprovalRequired`}
-                            label="Account Opening After Application"
                             type="select"
                             options={yesNo}
                           />
@@ -596,7 +602,7 @@ const BankProductsForm = ({
                             label: o,
                           }))}
                         />
-                        {!isPersonalProduct && (
+                        {isBusinessProduct && (
                           <CustomFormField
                             name={`products.${selectedProductIndex}.businessTaxesRequired`}
                             label="Business Taxes Required"
