@@ -12,7 +12,17 @@ export const ApplicationMethodEnum = z.enum(
 );
 
 export const CreditBureauEnum = z.enum(
-  ["Experian", "TransUnion", "Equifax", "Dun & Bradstreet or SBFE", "TRW"],
+  [
+    "Experian",
+    "TransUnion",
+    "Equifax",
+    "Dun & Bradstreet or SBFE",
+    "TRW",
+    "LexisNexis",
+    "Clarity",
+    "Experian Business",
+    "Equifax Business",
+  ],
   {
     error: "Required",
   },
