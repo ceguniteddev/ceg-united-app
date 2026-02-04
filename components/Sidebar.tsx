@@ -16,8 +16,8 @@ import { useAuth } from "@/provider/AuthContext";
 // import { useUpdateUserOnboardingMutation } from "@/hooks/user";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
 import { isPlaidProductionReady } from "@/lib/plaid";
-import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
-import { useEffect, useState } from "react";
+// import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+// import { useEffect, useState } from "react";
 
 const Sidebar = () => {
   const { user, isOnboarded, userData } = useAuth();
