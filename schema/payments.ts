@@ -1,5 +1,9 @@
 import z from "zod";
 
+export const PaymentPlanEnum = z.enum(["FullPayment", "FinancingPlan"]);
+
+export type PaymentPlan = z.infer<typeof PaymentPlanEnum>;
+
 export const DenefitsRequestSchema = z.object({
   contract_id: z.coerce.number<number>({ error: "Required" }),
   contract_code: z.string().min(1, { error: "Required" }),
