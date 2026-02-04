@@ -82,26 +82,26 @@ const baseColumns: ColumnDef<BankFormData>[] = [
     ),
     cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
   },
-  {
-    accessorKey: "productName",
-    id: "productName",
-    header: ({ column }) => (
-      <SortableHeader column={column} title="Product Name" />
-    ),
-    cell: ({ row }) => {
-      const productNames = row.getValue("productName") as string[];
+  // {
+  //   accessorKey: "productName",
+  //   id: "productName",
+  //   header: ({ column }) => (
+  //     <SortableHeader column={column} title="Product Name" />
+  //   ),
+  //   cell: ({ row }) => {
+  //     const productNames = row.getValue("productName") as string[];
 
-      return (
-        <div className="flex flex-col gap-1">
-          {" "}
-          {/* gap-1 adds a small space between items */}
-          {productNames?.map((name, index) => (
-            <span key={index}>{name}</span>
-          ))}
-        </div>
-      );
-    },
-  },
+  //     return (
+  //       <div className="flex flex-col gap-1">
+  //         {" "}
+  //         {/* gap-1 adds a small space between items */}
+  //         {productNames?.map((name, index) => (
+  //           <span key={index}>{name}</span>
+  //         ))}
+  //       </div>
+  //     );
+  //   },
+  // },
   // {
   //   accessorKey: "financingTerm",
   //   id: "financingTerm",
@@ -124,7 +124,7 @@ const baseColumns: ColumnDef<BankFormData>[] = [
     accessorKey: "clientApplicationStatus",
     id: "clientApplicationStatus",
     header: ({ column }) => (
-      <SortableHeader column={column} title="Client Application Status" />
+      <SortableHeader column={column} title="Application Status" />
     ),
     cell: ({ row }) => {
       const status = row.getValue("clientApplicationStatus") as string;
@@ -177,7 +177,7 @@ type Props = {
 const FundingList = ({ appliedFunding, isAdminView }: Props) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -191,12 +191,12 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
       appliedFunding?.some(
         (fund) =>
           fund.clientApplicationStatus === "Approved" ||
-          fund.clientApplicationStatus === "Funded"
+          fund.clientApplicationStatus === "Funded",
       ) || false;
 
     const showFundedColumns =
       appliedFunding?.some(
-        (fund) => fund.clientApplicationStatus === "Funded"
+        (fund) => fund.clientApplicationStatus === "Funded",
       ) || false;
 
     // 2. Filter the base columns based on all conditions.
@@ -277,7 +277,7 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -296,7 +296,7 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -355,7 +355,7 @@ const FundingCard = ({
     appliedFunding?.some(
       (fund) =>
         fund.clientApplicationStatus === "Approved" ||
-        fund.clientApplicationStatus === "Funded"
+        fund.clientApplicationStatus === "Funded",
     ) || false;
 
   const showFundedFields =
@@ -376,7 +376,7 @@ const FundingCard = ({
         <p className="font-semibold">{data.bankName}</p>
       </div>
 
-      <div>
+      {/* <div>
         <p className="text-xs text-gray-500">Product Name</p>
         <div className="flex flex-col gap-1">
           {data.productName?.map((name: string, index: number) => (
@@ -385,10 +385,10 @@ const FundingCard = ({
             </span>
           ))}
         </div>
-      </div>
+      </div> */}
 
       <div>
-        <p className="text-xs text-gray-500">Status</p>
+        <p className="text-xs text-gray-500">Application Status</p>
         <div className="mt-1">
           <CategoryBadge category={data.clientApplicationStatus} />
         </div>
@@ -437,7 +437,7 @@ const ActionCell = ({ row }: { row: any }) => {
   const [isDenefitsPaid, setIsDenefitsPaid] = React.useState(false);
 
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
-    row.original.userId
+    row.original.userId,
   );
 
   React.useEffect(() => {
