@@ -58,6 +58,22 @@ const BankProductsForm = ({
     number | null
   >(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [productsToApprove, setProductsToApprove] = useState<
+    BankProductCriteria[]
+  >([]);
+
+  const handleToggleApproveProduct = (product: BankProductCriteria) => {
+    setProductsToApprove((prev) => {
+      const isAlreadySelected = prev.some(
+        (p) => p.productName === product.productName,
+      );
+      if (isAlreadySelected) {
+        return prev.filter((p) => p.productName !== product.productName);
+      } else {
+        return [...prev, product];
+      }
+    });
+  };
 
   const { createBankProduct, updateBankProduct, isCreating, isUpdating } =
     useBankProductsMutation();
@@ -213,9 +229,14 @@ const BankProductsForm = ({
 
   const handleOnApprove = async () => {
     if (data && isAdminViewing && referenceNumber) {
+      if (productsToApprove.length === 0) {
+        toast.error("Please select at least one product to approve.");
+        return;
+      }
       await approveMappedFund({
         bankProductId: data.id!,
         referenceNumber: referenceNumber,
+        products: productsToApprove,
       });
 
       setOpen(false);
@@ -330,13 +351,29 @@ const BankProductsForm = ({
                           }}
                         >
                           <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() =>
-                              handleToggleProduct(
-                                fp.productName,
-                                fp.fundingType,
-                              )
+                            checked={
+                              isAdminViewing
+                                ? productsToApprove.some(
+                                    (p) => p.productName === fp.productName,
+                                  )
+                                : isSelected
                             }
+                            onCheckedChange={() => {
+                              if (isAdminViewing) {
+                                if (isSelected) {
+                                  const product = fields[
+                                    fieldIndex
+                                  ] as unknown as BankProductCriteria;
+                                  handleToggleApproveProduct(product);
+                                }
+                              } else {
+                                handleToggleProduct(
+                                  fp.productName,
+                                  fp.fundingType,
+                                );
+                              }
+                            }}
+                            disabled={isAdminViewing && !isSelected}
                             className="translate-y-[2px]"
                           />
                           <div className="flex-1">

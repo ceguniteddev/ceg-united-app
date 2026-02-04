@@ -16,6 +16,7 @@ import { logInfo } from "@/lib/logger";
 import {
   ApprovedBankFormData,
   BankFormData,
+  BankProductCriteria,
   ClientApplicationStatus,
 } from "@/schema/bank-products";
 import { getCurrentUser, getUserById } from "./user";
@@ -517,70 +518,14 @@ export const getFundMappingAnalysisDetails = async ({
   return result;
 };
 
-export const getFundMappingAnalysisDetailsOld = async ({
-  userId,
-  adminApprovedStatus,
-  clientApplicationStatus,
-}: {
-  userId: string;
-  adminApprovedStatus?: AdminApprovedStatus;
-  clientApplicationStatus?: ClientApplicationStatus[];
-}) => {
-  const db = firestoreAdmin();
-  let collectionRef = db
-    .collection(
-      `${USER_FUNDING_APPLICATION_FUND_MAPPING}/${userId}/${USER_FUNDING_APPLICATION_FUND_MAPPING_BANK_PRODUCTS}`,
-    )
-    .orderBy("createdAt", "desc");
-  if (adminApprovedStatus) {
-    collectionRef = collectionRef.where(
-      "adminApprovedStatus",
-      "==",
-      adminApprovedStatus,
-    );
-  }
-  if (clientApplicationStatus) {
-    collectionRef = collectionRef.where(
-      "clientApplicationStatus",
-      "in",
-      clientApplicationStatus,
-    );
-  }
-
-  const doc = await collectionRef.get();
-
-  const bankProductIds = doc.docs.map((d) => {
-    return {
-      id: d.id,
-      ...normalizeAllDates(d.data()),
-    };
-  });
-  if (!bankProductIds) return null;
-
-  const result: ApprovedBankFormData[] = [];
-  for (const bankProductId of bankProductIds) {
-    const bankProduct = await getBankProduct(bankProductId.id);
-    if (bankProduct) {
-      result.push({
-        ...bankProduct,
-        fundMappingApprovedId: bankProductId.id,
-        clientApplicationStatus: bankProductId.clientApplicationStatus,
-        adminApprovedStatus: bankProductId.adminApprovedStatus,
-        referenceNumber: bankProductId.referenceNumber,
-        userId: bankProductId.userId,
-      });
-    }
-  }
-
-  return result;
-};
-
 export const approveMappedFund = async ({
   referenceNumber,
   bankProductId,
+  products,
 }: {
   referenceNumber: string;
   bankProductId: string;
+  products: BankProductCriteria[];
 }): Promise<CommonResponse> => {
   try {
     if (!referenceNumber) {
@@ -590,7 +535,14 @@ export const approveMappedFund = async ({
         message: "Reference number is required.",
       };
     }
-    logInfo("approveMappedFund", { referenceNumber });
+    if (!products || products.length === 0) {
+      return {
+        success: false,
+        error: "warning",
+        message: "At least one product must be selected for approval.",
+      };
+    }
+    logInfo("approveMappedFund", { referenceNumber, bankProductId, products });
 
     const fundingApplication = await getApplyFundingByReferenceNumber({
       referenceNumber,
@@ -617,28 +569,34 @@ export const approveMappedFund = async ({
       return { success: false, error: "warning", message: "User not found." };
     }
 
-    // check if already approved
-    const approvedFunds = await getApprovedMappedFunds(referenceNumber);
-    if (approvedFunds?.data?.find((f) => f.id === bankProductId)) {
-      return {
-        success: false,
-        error: "warning",
-        message: "This bank product is already approved.",
-      };
-    }
-
     const db = firestoreAdmin();
     const collectionRef = db.collection(
       `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
     );
-    await collectionRef.add({
-      bankProductId,
-      createdAt: Timestamp.now(),
-      approvedById: currentUser.uid,
-      clientApplicationStatus: "Not Applied",
-      userId: fundingApplication.userId,
-      referenceNumber,
-    });
+
+    const q = collectionRef.where("bankProductId", "==", bankProductId);
+    const querySnapshot = await q.get();
+
+    if (querySnapshot.empty) {
+      // Create a new approval document
+      await collectionRef.add({
+        bankProductId,
+        products, // Save the selected products
+        createdAt: Timestamp.now(),
+        approvedById: currentUser.uid,
+        clientApplicationStatus: "Not Applied",
+        userId: fundingApplication.userId,
+        referenceNumber,
+      });
+    } else {
+      // Update existing approval document to overwrite products
+      const docRef = querySnapshot.docs[0].ref;
+      await docRef.update({
+        products: products, // Overwrite with new products
+        updatedAt: Timestamp.now(),
+        approvedById: currentUser.uid,
+      });
+    }
 
     await updateApplicationStatus(referenceNumber, "Pre-Approved");
 
@@ -789,6 +747,7 @@ export const getApprovedMappedFunds = async (
         referenceNumber: data.referenceNumber as string,
         approvedAmount: data.approvedAmount as number,
         approvedRemarks: data.approvedRemarks as string,
+        products: data.products as BankProductCriteria[],
       };
     });
 
@@ -804,6 +763,7 @@ export const getApprovedMappedFunds = async (
           approvedAmount: info.approvedAmount,
           approvedRemarks: info.approvedRemarks,
           userId: referenceData.userId!,
+          products: info.products, // Use approved products over all products
         };
       }
       return null; // Return null if a specific bank product isn't found
@@ -813,7 +773,7 @@ export const getApprovedMappedFunds = async (
 
     // Filter out any nulls from products that might not have been found
     const result: ApprovedBankFormData[] = resolvedBankProducts.filter(
-      (product) => product !== null,
+      (product): product is ApprovedBankFormData => product !== null,
     );
 
     // 3. Return a successful response object with the data

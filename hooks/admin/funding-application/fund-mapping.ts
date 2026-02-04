@@ -2,6 +2,7 @@ import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
 import {
   ApprovedBankFormData,
+  BankProductCriteria,
   ClientApplicationStatus,
 } from "@/schema/bank-products";
 import {
@@ -19,7 +20,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export const useFundingApplicationsMappedFundsQuery = (
-  referenceNumber: string
+  referenceNumber: string,
 ) => {
   const { user } = useAuth();
 
@@ -165,15 +166,18 @@ export const useFundingApplicationsMappedFundsMutation = () => {
     mutationFn: async ({
       bankProductId,
       referenceNumber,
+      products,
     }: {
       bankProductId: string;
       referenceNumber: string;
+      products: BankProductCriteria[];
     }) => {
       if (!user) throw new Error("User not authenticated");
 
       const result = await approveMappedFund({
         referenceNumber,
         bankProductId: bankProductId,
+        products,
       });
 
       if (!result.success && result.message) {
@@ -371,13 +375,15 @@ export const useFundingApplicationsMappedFundsMutationOld = () => {
     mutationFn: async ({
       bankProductId,
       referenceNumber,
+      products,
     }: {
       bankProductId: string;
       referenceNumber: string;
+      products: BankProductCriteria[];
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      await approveMappedFund({ referenceNumber, bankProductId });
+      await approveMappedFund({ referenceNumber, bankProductId, products });
     },
     onSuccess: (_data, variable) => {
       queryClient.invalidateQueries({
@@ -635,7 +641,7 @@ export const useManualFundedMutation = () => {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.message || "Failed to add funded bank product"
+          errorData.message || "Failed to add funded bank product",
         );
       }
 
