@@ -64,6 +64,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CustomFormField } from "../CustomFormField";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+import { useAuth } from "@/provider/AuthContext";
 
 const baseColumns: ColumnDef<BankFormData>[] = [
   {
@@ -435,6 +436,7 @@ const ActionCell = ({ row }: { row: any }) => {
   const { applyApprovedMappedFund, isApplying } =
     useApprovedMappedFundsMutation();
   const [isDenefitsPaid, setIsDenefitsPaid] = React.useState(false);
+  const { userData } = useAuth();
 
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
     row.original.userId,
@@ -460,7 +462,7 @@ const ActionCell = ({ row }: { row: any }) => {
       <Button
         type="button"
         variant="outline"
-        disabled={isApplying || !isDenefitsPaid}
+        disabled={isApplying || (!isDenefitsPaid && !userData?.isPremiumClient)}
         className="bg-green-200 hover:bg-green-400 cursor-pointer w-full lg:w-auto"
         onClick={() => handleApproveClickCapture()}
       >

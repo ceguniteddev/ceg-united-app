@@ -17,12 +17,12 @@ import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
 import { isPlaidProductionReady } from "@/lib/plaid";
-import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+// import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 
 const MobileNavClient = () => {
   const { user, userData } = useAuth();
   const pathname = usePathname();
-  const { denefitsContract } = useGetDenefitsContractsByUserId(user?.uid || "");
+  // const { denefitsContract } = useGetDenefitsContractsByUserId(user?.uid || "");
   const isPlaidProdReady = isPlaidProductionReady();
 
   if (!user) return null;
