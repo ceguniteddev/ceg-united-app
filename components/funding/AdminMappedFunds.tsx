@@ -559,11 +559,13 @@ const BankProductsList = ({
                       Product Names:
                     </span>
                     <div className="flex flex-col gap-0.5 mt-1">
-                      {data.products?.map((product, index) => (
-                        <span key={index} className="text-xs">
-                          {product.productName}
-                        </span>
-                      ))}
+                      {(approvedFund ? approvedFund.products : data.products)?.map(
+                        (product, index) => (
+                          <span key={index} className="text-xs">
+                            {product.productName}
+                          </span>
+                        ),
+                      )}
                     </div>
                   </div>
 
