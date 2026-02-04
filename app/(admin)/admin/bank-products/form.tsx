@@ -11,11 +11,13 @@ import {
   ApplicationMethodEnum,
   bankDataSchema,
   BankFormData,
+  BankProductCriteria,
   CreditBureauEnum,
 } from "@/schema/bank-products";
 import { Loader2Icon, SaveIcon, XCircleIcon } from "lucide-react";
 import { useBankProductsMutation } from "@/hooks/admin/bank-products";
 import { useFundingApplicationsMappedFundsMutation } from "@/hooks/admin/funding-application/fund-mapping";
+import { toast } from "sonner";
 
 type Props = {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -33,6 +35,9 @@ const BankProductsForm = ({
   const { products, isLoading } = useFundingProducts();
   const [interestedProducts, setInterestedProducts] = useState<
     DropdownOption[]
+  >([]);
+  const [productsToApprove, setProductsToApprove] = useState<
+    BankProductCriteria[]
   >([]);
 
   const { createBankProduct, updateBankProduct, isCreating, isUpdating } =
@@ -69,9 +74,14 @@ const BankProductsForm = ({
 
   const handleOnApprove = async () => {
     if (data && isAdminViewing && referenceNumber) {
+      if (productsToApprove.length === 0) {
+        toast.error("Please select at least one product to approve.");
+        return;
+      }
       await approveMappedFund({
         bankProductId: data.id!,
         referenceNumber: referenceNumber,
+        products: productsToApprove,
       });
 
       setOpen(false);
@@ -90,7 +100,7 @@ const BankProductsForm = ({
       }
       setOpen(false);
     },
-    [createBankProduct, updateBankProduct, form, setOpen, data]
+    [createBankProduct, updateBankProduct, form, setOpen, data],
   );
 
   // const handleSelectFundingProduct = (value: string) => {

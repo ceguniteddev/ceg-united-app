@@ -178,10 +178,23 @@ const BankProductsList = ({
           <SortableHeader column={column} title="Product Name" />
         ),
         cell: ({ row }) => {
-          const products = row.original.products;
+          // console.log("ROW ORIGINAL:", row.original);
+          // console.log("APPROVED MAPPED FUNDS:", approvedMappedFunds);
+          const approvedFund = approvedMappedFunds?.find(
+            (fund) => String(fund.id) === String(row.original.id),
+          );
+
+          // console.log("APPROVED FUND:", approvedFund);
+
+          // If the fund is approved, show the specific products that were approved.
+          // Otherwise, show all products from the bank's profile.
+          const productsToDisplay = approvedFund
+            ? approvedFund.products
+            : row.original.products;
+
           return (
             <div className="flex flex-col gap-1">
-              {products?.map((product, index) => (
+              {productsToDisplay?.map((product, index) => (
                 <span key={index}>{product.productName}</span>
               ))}
             </div>

@@ -4,9 +4,12 @@ export const YesNoEnum = z
   .enum(["Yes", "No"], { error: "Required" })
   .optional();
 
-export const ApplicationMethodEnum = z.enum(["Online", "Branch", "Referral","Phone"], {
-  error: "Required",
-});
+export const ApplicationMethodEnum = z.enum(
+  ["Online", "Branch", "Referral", "Phone"],
+  {
+    error: "Required",
+  },
+);
 
 export const CreditBureauEnum = z.enum(
   ["Experian", "TransUnion", "Equifax", "Dun & Bradstreet or SBFE", "TRW"],
@@ -65,9 +68,15 @@ export const bankProductCriteriaSchema = z.object({
   balanceSheetRequired: YesNoEnum.optional().or(z.literal("")),
   businessPlanRequired: YesNoEnum.optional().or(z.literal("")),
 
-  membershipRequiredBeforeApplicationRequired: YesNoEnum.optional().or(z.literal("")),
-  membershipRequiredUponApprovalRequired: YesNoEnum.optional().or(z.literal("")),
-  accountOpeningBeforeApplicationRequired: YesNoEnum.optional().or(z.literal("")),
+  membershipRequiredBeforeApplicationRequired: YesNoEnum.optional().or(
+    z.literal(""),
+  ),
+  membershipRequiredUponApprovalRequired: YesNoEnum.optional().or(
+    z.literal(""),
+  ),
+  accountOpeningBeforeApplicationRequired: YesNoEnum.optional().or(
+    z.literal(""),
+  ),
   accountOpeningAfterApprovalRequired: YesNoEnum.optional().or(z.literal("")),
 
   // Consolidated Tax Fields
@@ -113,8 +122,8 @@ export type ApprovedBankFormData = BankFormData & {
   clientApplicationStatus: ClientApplicationStatus;
   adminApprovedStatus?: ClientApplicationStatus;
   referenceNumber: string;
-  approvedAmount?: number;
-  approvedRemarks?: string;
+  approvedAmount: number;
+  approvedRemarks: string;
   declineReason?: string;
   fundedAmount?: number;
   fundedRemarks?: string;
