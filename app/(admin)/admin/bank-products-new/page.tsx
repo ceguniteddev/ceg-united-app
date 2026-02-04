@@ -10,9 +10,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import HeaderBox from "@/components/HeaderBox";
-import BankManagement from "./_components/bank-mananagement";
-import ProductManagement from "./_components/product-management";
-import BankProductManagement from "./_components/bank-product-management";
+import BankManagement from "@/components/bank-products/bank-mananagement";
+import ProductManagement from "@/components/bank-products/product-management";
+import BankProductManagement from "@/components/bank-products/bank-product-management";
 import { withAdminGuard } from "@/components/wrapper";
 
 const BankProductsNew = () => {

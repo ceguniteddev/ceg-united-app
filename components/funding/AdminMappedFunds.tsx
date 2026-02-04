@@ -63,12 +63,12 @@ import {
   ClientApplicationStatus,
 } from "@/schema/bank-products";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
-import BankProductsForm from "@/app/(admin)/admin/bank-products/form";
 import ManualAddBankProduct from "./ManualAddBankProduct";
 import SortableHeader from "../SortableHeader";
 import CategoryBadge from "../CategoryBadge";
 import { formatAmount } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
+import BankProductsForm from "@/components/bank-products/bank-product-form";
 
 type Props = {
   referenceNumber: string;
@@ -706,16 +706,15 @@ const ActionCell = ({
         title={`View Bank Product - ${row.original.bankName}`}
         description=""
         descriptionClassName="text-red-500 text-lg font-semibold"
-        className="w-full sm:w-11/12 md:w-10/12 lg:w-8/12 max-w-4xl max-h-[90vh]"
+        // className="w-full sm:w-11/12 md:w-10/12 lg:w-8/12 max-w-4xl max-h-[90vh]"
+        className="w-[95vw] sm:w-11/12 md:w-10/12 lg:w-9/12 xl:w-4/5 max-w-6xl max-h-[90vh] flex flex-col"
       >
-        <div className="max-h-[70vh] overflow-y-auto">
-          <BankProductsForm
-            setOpen={setOpen}
-            data={row.original}
-            isAdminViewing={true}
-            referenceNumber={referenceNumber}
-          />
-        </div>
+        <BankProductsForm
+          setOpen={setOpen}
+          data={row.original}
+          isAdminViewing={true}
+          referenceNumber={referenceNumber}
+        />
       </ResponsiveDialog>
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>

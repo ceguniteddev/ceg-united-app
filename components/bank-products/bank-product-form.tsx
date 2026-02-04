@@ -646,85 +646,87 @@ const BankProductsForm = ({
                 <span>Cancel</span>
               </span>
             </Button>
-            <Button
-              type="button"
-              onClick={async (e) => {
-                e.preventDefault();
-                // Trigger validation
-                const isValid = await form.trigger();
-                if (!isValid) {
-                  const errors = form.formState.errors;
-                  const errorMessages: string[] = [];
+            {!isAdminViewing && (
+              <Button
+                type="button"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  // Trigger validation
+                  const isValid = await form.trigger();
+                  if (!isValid) {
+                    const errors = form.formState.errors;
+                    const errorMessages: string[] = [];
 
-                  // Collect all error messages
-                  if (errors.bankName) {
-                    errorMessages.push("• Bank Name is required");
-                  }
-                  if (errors.underwritingNotes) {
-                    errorMessages.push("• Underwriting Notes error");
-                  }
-                  if (errors.products) {
-                    if (Array.isArray(errors.products)) {
-                      errors.products.forEach((productError, idx) => {
-                        if (productError) {
-                          const productName =
-                            watchedProducts?.[idx]?.productName ||
-                            `Product ${idx + 1}`;
-                          Object.keys(productError).forEach((field) => {
-                            const fieldName = field
-                              .replace(/([A-Z])/g, " $1")
-                              .replace(/^./, (str) => str.toUpperCase());
-                            errorMessages.push(
-                              `• ${productName}: ${fieldName}`,
-                            );
-                          });
-                        }
-                      });
-                    } else if (errors.products.message) {
-                      errorMessages.push(`• ${errors.products.message}`);
+                    // Collect all error messages
+                    if (errors.bankName) {
+                      errorMessages.push("• Bank Name is required");
                     }
-                  }
+                    if (errors.underwritingNotes) {
+                      errorMessages.push("• Underwriting Notes error");
+                    }
+                    if (errors.products) {
+                      if (Array.isArray(errors.products)) {
+                        errors.products.forEach((productError, idx) => {
+                          if (productError) {
+                            const productName =
+                              watchedProducts?.[idx]?.productName ||
+                              `Product ${idx + 1}`;
+                            Object.keys(productError).forEach((field) => {
+                              const fieldName = field
+                                .replace(/([A-Z])/g, " $1")
+                                .replace(/^./, (str) => str.toUpperCase());
+                              errorMessages.push(
+                                `• ${productName}: ${fieldName}`,
+                              );
+                            });
+                          }
+                        });
+                      } else if (errors.products.message) {
+                        errorMessages.push(`• ${errors.products.message}`);
+                      }
+                    }
 
-                  // Display all errors
-                  if (errorMessages.length > 0) {
-                    toast.error(
-                      <div>
-                        <div className="font-semibold mb-1">
-                          Validation Errors:
-                        </div>
-                        <div className="text-sm space-y-0.5">
-                          {errorMessages.map((msg, i) => (
-                            <div key={i}>{msg}</div>
-                          ))}
-                        </div>
-                      </div>,
-                      { duration: 5000 },
-                    );
-                  } else {
-                    toast.error(
-                      "Please fix all validation errors before saving",
-                    );
+                    // Display all errors
+                    if (errorMessages.length > 0) {
+                      toast.error(
+                        <div>
+                          <div className="font-semibold mb-1">
+                            Validation Errors:
+                          </div>
+                          <div className="text-sm space-y-0.5">
+                            {errorMessages.map((msg, i) => (
+                              <div key={i}>{msg}</div>
+                            ))}
+                          </div>
+                        </div>,
+                        { duration: 5000 },
+                      );
+                    } else {
+                      toast.error(
+                        "Please fix all validation errors before saving",
+                      );
+                    }
+                    return;
                   }
-                  return;
-                }
-                setShowConfirmation(true);
-              }}
-              disabled={isSubmitting}
-              //   className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200 font-semibold min-h-[40px]"
-              className="w-full md:w-auto bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer"
-            >
-              {isSubmitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2Icon className="h-4 w-4 animate-spin" />
-                  <span>Saving...</span>
-                </span>
-              ) : (
-                <span className="flex items-center justify-center gap-2">
-                  <SaveIcon className="h-4 w-4" />
-                  <span>Save Bank Profile</span>
-                </span>
-              )}
-            </Button>
+                  setShowConfirmation(true);
+                }}
+                disabled={isSubmitting}
+                //   className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200 font-semibold min-h-[40px]"
+                className="w-full md:w-auto bg-green-400 hover:bg-green-500 text-black-100 cursor-pointer"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2Icon className="h-4 w-4 animate-spin" />
+                    <span>Saving...</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <SaveIcon className="h-4 w-4" />
+                    <span>Save Bank Profile</span>
+                  </span>
+                )}
+              </Button>
+            )}
             {isAdminViewing && referenceNumber && (
               <Button
                 type="button"
@@ -732,7 +734,17 @@ const BankProductsForm = ({
                 onClick={handleOnApprove}
                 disabled={isApproving}
               >
-                {isApproving ? "Approving..." : "Approve & Map"}
+                {isApproving ? (
+                  <>
+                    <Loader2Icon className="h-4 w-4 animate-spin" />
+                    Approving...
+                  </>
+                ) : (
+                  <>
+                    <SaveIcon className="h-4 w-4" />
+                    Approve
+                  </>
+                )}
               </Button>
             )}
           </div>
