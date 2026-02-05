@@ -267,3 +267,38 @@ export const unmapWhopPayment = async ({ docId }: { docId: string }) => {
   logInfo("Unmapped Whop payment", { docId });
   return { success: true };
 };
+
+export const getWhopCheckoutDetailByCheckoutId = async (checkoutId: string) => {
+  try {
+    const querySnapshot = await firestoreAdmin()
+      .collection(WHOP_CHECKOUTS_COLLECTION)
+      .where("checkoutId", "==", checkoutId)
+      .limit(1)
+      .get();
+
+    if (querySnapshot.empty) {
+      logInfo("No Whop checkout details found for checkoutId", { checkoutId });
+      return null;
+    }
+
+    const checkoutDoc = querySnapshot.docs[0];
+    const checkoutData = checkoutDoc.data();
+
+    logInfo("Successfully retrieved Whop checkout details", {
+      checkoutId,
+      docId: checkoutDoc.id,
+    });
+
+    return { id: checkoutDoc.id, ...checkoutData };
+  } catch (error: any) {
+    logError(
+      new Error(
+        `getWhopCheckoutDetailByCheckoutId error: ${
+          error.message || "Unknown error"
+        }`,
+      ),
+      { checkoutId },
+    );
+    throw error;
+  }
+};

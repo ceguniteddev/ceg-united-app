@@ -378,7 +378,7 @@ const PricingDetailsButton = ({
       ],
       recommended: true,
       badge: "Best Value",
-      returnURL: "",
+      // returnURL: "/client/dashboard",
     },
     {
       key: "FinancingPlan",
@@ -397,7 +397,7 @@ const PricingDetailsButton = ({
       ],
       recommended: false,
       badge: null,
-      returnURL: process.env.NEXT_PUBLIC_DEFENITS_URL || "",
+      // returnURL: process.env.NEXT_PUBLIC_DEFENITS_URL || "",
     },
   ];
 
@@ -486,7 +486,7 @@ const PricingDetailsButton = ({
                 ))}
               </ul>
               <WhopCheckoutButton
-                returnURL={option.returnURL}
+                // returnURL={option.returnURL}
                 paymentKey={option.key as PaymentPlan}
                 referenceNumber={referenceNumber}
                 buttonName={`Select ${option.name}`}
@@ -514,17 +514,16 @@ const WhopCheckoutButton = ({
   buttonName,
   className,
   paymentKey,
-  returnURL,
+  // returnURL,
 }: {
   referenceNumber: string;
   buttonName: string;
   className: string;
   paymentKey: PaymentPlan;
-  returnURL: string;
+  // returnURL: string;
 }) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [checkoutId, setCheckoutId] = React.useState<string | null>(null);
 
   const handleCheckout = async () => {
     if (!user?.uid) {
@@ -550,7 +549,11 @@ const WhopCheckoutButton = ({
 
       const { checkoutId } = await response.json();
       if (checkoutId) {
-        setCheckoutId(checkoutId);
+        let url = `/client/payments/whop/${checkoutId}`;
+        // if (returnURL) {
+        //   url += `?returnUrl=${encodeURIComponent(returnURL)}`;
+        // }
+        window.open(url, "_blank");
       } else {
         toast.error("Could not retrieve the checkout session.");
       }
@@ -565,62 +568,24 @@ const WhopCheckoutButton = ({
   };
 
   return (
-    <>
-      <Button
-        variant={"ghost"}
-        // className="cursor-pointer bg-purple-500 hover:bg-purple-600 text-white w-full sm:w-auto h-10 sm:h-9"
-        className={className}
-        onClick={handleCheckout}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <IconMenu
-            text="Processing..."
-            icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
-          />
-        ) : (
-          <IconMenu
-            icon={<ShoppingCart className="h-4 w-4" />}
-            text={buttonName}
-          />
-        )}
-      </Button>
-
-      <ResponsiveDialog
-        isOpen={!!checkoutId}
-        setIsOpen={(isOpen) => !isOpen && setCheckoutId(null)}
-        title="Complete Your Purchase"
-        description="Please complete the payment form below to join."
-        className="max-w-[90vw] sm:max-w-lg p-0"
-      >
-        {checkoutId && (
-          <WhopCheckoutEmbed
-            prefill={{
-              email: user?.email || "",
-              address: {
-                country: "US",
-              },
-            }}
-            returnUrl={returnURL}
-            // setupFutureUsage="off_session"
-            sessionId={checkoutId}
-            onComplete={(planId, receiptId) => {
-              // console.log("Plan ID:", planId);
-              // console.log("Receipt ID:", receiptId);
-              // toast.success("Payment successful!");
-              setCheckoutId(null);
-            }}
-            fallback={
-              <div className="flex items-center justify-center h-96">
-                <p className="text-gray-600 dark:text-gray-400">
-                  Loading checkout...
-                </p>
-              </div>
-            }
-          />
-        )}
-      </ResponsiveDialog>
-    </>
+    <Button
+      variant={"ghost"}
+      className={className}
+      onClick={handleCheckout}
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <IconMenu
+          text="Processing..."
+          icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
+        />
+      ) : (
+        <IconMenu
+          icon={<ShoppingCart className="h-4 w-4" />}
+          text={buttonName}
+        />
+      )}
+    </Button>
   );
 };
 
