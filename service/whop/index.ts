@@ -12,6 +12,7 @@ import {
 import { whopSdk } from "@/lib/whop-sdk";
 import { Payment } from "@whop/sdk/resources.js";
 import { map } from "zod";
+import { PaymentPlan } from "@/schema/payments";
 
 const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID;
 const productId = process.env.WHOP_PRODUCT_ID;
@@ -19,6 +20,7 @@ const productId = process.env.WHOP_PRODUCT_ID;
 type CreateCheckoutConfigParams = {
   userId: string;
   referenceNumber: string;
+  paymentKey: PaymentPlan;
 };
 
 /**
@@ -30,12 +32,13 @@ type CreateCheckoutConfigParams = {
 export const createWhopCheckoutConfig = async ({
   userId,
   referenceNumber,
+  paymentKey,
 }: CreateCheckoutConfigParams): Promise<string> => {
-  // logInfo("createWhopCheckoutConfig (SDK) start", { userId, referenceNumber });
-
-  if (!whopSdk) {
-    return "";
-  }
+  // console.log("createWhopCheckoutConfig called with:", {
+  //   userId,
+  //   referenceNumber,
+  //   paymentKey,
+  // });
 
   if (!whopSdk) {
     logError(new Error("Whop SDK is not initialized. Check API Key."));
@@ -57,6 +60,7 @@ export const createWhopCheckoutConfig = async ({
     const existingCheckoutQuery = await firestoreAdmin()
       .collection(WHOP_CHECKOUTS_COLLECTION)
       .where("referenceNumber", "==", referenceNumber)
+      .where("paymentKey", "==", paymentKey)
       .limit(1)
       .get();
 
@@ -66,6 +70,7 @@ export const createWhopCheckoutConfig = async ({
         logInfo("Found existing checkout config for referenceNumber", {
           referenceNumber,
           checkoutId: existingCheckout.checkoutId,
+          paymentKey,
         });
         return existingCheckout.checkoutId;
       }
@@ -79,7 +84,7 @@ export const createWhopCheckoutConfig = async ({
     const planDetails = {
       company_id: WHOP_COMPANY_ID,
       currency: "usd" as const,
-      initial_price: 400, //TODO: Replace with dynamic price
+      initial_price: paymentKey === "FullPayment" ? 15000 : 2500,
       plan_type: "one_time" as const,
       product_id: productId!,
       visibility: "hidden" as const,
@@ -120,16 +125,17 @@ export const createWhopCheckoutConfig = async ({
       planType: planDetails.plan_type,
       productId: planDetails.product_id,
       status: "created", // Initial status
+      paymentKey,
       ...checkoutConfig,
     };
 
     await firestoreAdmin()
       .collection(WHOP_CHECKOUTS_COLLECTION)
       .add(checkoutDoc);
-    logInfo(
-      "Successfully saved whop checkout config to firestore",
-      checkoutDoc,
-    );
+    // logInfo(
+    //   "Successfully saved whop checkout config to firestore",
+    //   checkoutDoc,
+    // );
 
     // logInfo("createWhopCheckoutConfig (SDK) success", { checkoutId });
     return checkoutId;

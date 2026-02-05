@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-validation";
 import { createWhopCheckoutConfig } from "@/service/whop";
-import { badRequest, internalServerError } from "@/app/api/helpers";
+import { badRequest, getMessage, internalServerError } from "@/app/api/helpers";
+import z from "zod";
+import { PaymentPlanEnum } from "@/schema/payments";
+
+const requestBodySchema = z.object({
+  referenceNumber: z.string().min(1, { error: "Required" }),
+  paymentKey: PaymentPlanEnum,
+});
 
 export const POST = withAuth(
   async (
@@ -9,7 +16,7 @@ export const POST = withAuth(
     { params }: { params?: Promise<{ userId: string }> },
   ) => {
     const { userId } = (await params) ?? {};
-    const { referenceNumber } = await request.json();
+    const requestBody = await request.json();
 
     if (!userId) {
       return badRequest({
@@ -18,17 +25,19 @@ export const POST = withAuth(
       });
     }
 
-    if (!referenceNumber) {
-      return badRequest({
-        errors: "Reference number is required.",
-        message: "Reference number is required.",
-      });
+    const parseResult = requestBodySchema.safeParse(requestBody);
+
+    if (!parseResult.success) {
+      const message = getMessage(parseResult.error);
+
+      return badRequest({ errors: message });
     }
 
     try {
       const checkoutId = await createWhopCheckoutConfig({
         userId,
-        referenceNumber,
+        referenceNumber: parseResult.data.referenceNumber,
+        paymentKey: parseResult.data.paymentKey,
       });
 
       return NextResponse.json({ checkoutId });
