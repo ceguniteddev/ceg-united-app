@@ -28,3 +28,4 @@ export const GET_ALL_BROKERS = "get-all-brokers";
 export const GET_USER_NOTIFICATIONS_COUNT = "get-user-notifications-count";
 
 export const GET_WHOP_PAYMENTS = "get-whop-payments";
+export const GET_WHOP_CHECKOUT_DETAILS = "get-whop-checkout-details";
