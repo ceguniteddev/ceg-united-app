@@ -76,6 +76,60 @@ const columns: ColumnDef<BankFormData>[] = [
     size: 200,
   },
   {
+    id: "bureau",
+    accessorFn: (row) => {
+      const products = row.products || [];
+      const bureaus = products
+        .map((p) => {
+          if (Array.isArray(p.creditBureauPulled)) {
+            return p.creditBureauPulled.join(", ");
+          }
+          return p.creditBureauPulled || "";
+        })
+        .filter(Boolean);
+
+      // Get unique bureaus
+      const uniqueBureaus = Array.from(
+        new Set(bureaus.join(", ").split(", ")),
+      ).filter(Boolean);
+      return uniqueBureaus.join(", ");
+    },
+    header: ({ column }) => <SortableHeader column={column} title="Bureau" />,
+    cell: ({ row }) => {
+      const products = row.original.products || [];
+      const bureaus = products
+        .map((p) => {
+          if (Array.isArray(p.creditBureauPulled)) {
+            return p.creditBureauPulled.join(", ");
+          }
+          return p.creditBureauPulled || "";
+        })
+        .filter(Boolean);
+
+      const uniqueBureaus = Array.from(
+        new Set(bureaus.join(", ").split(", ")),
+      ).filter(Boolean);
+
+      return (
+        <div className="flex flex-wrap gap-1 max-w-[180px]">
+          {uniqueBureaus.length > 0 ? (
+            uniqueBureaus.map((bureau, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+              >
+                {bureau}
+              </span>
+            ))
+          ) : (
+            <span className="text-muted-foreground text-sm">-</span>
+          )}
+        </div>
+      );
+    },
+    size: 180,
+  },
+  {
     id: "products",
     accessorFn: (row) =>
       (row.products || []).map((p) => p.productName).join(", "),
