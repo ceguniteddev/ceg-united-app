@@ -413,6 +413,38 @@ const BankProductManagement = () => {
                     {row.getValue("bankName")}
                   </h3>
 
+                  {/* Bureau badges */}
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {(() => {
+                      const products = row.original.products || [];
+                      const bureaus = products
+                        .map((p) => {
+                          if (Array.isArray(p.creditBureauPulled)) {
+                            return p.creditBureauPulled.join(", ");
+                          }
+                          return p.creditBureauPulled || "";
+                        })
+                        .filter(Boolean);
+                      const uniqueBureaus = Array.from(
+                        new Set(bureaus.join(", ").split(", ")),
+                      ).filter(Boolean);
+                      return uniqueBureaus.length > 0 ? (
+                        uniqueBureaus.map((bureau, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                          >
+                            {bureau}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-muted-foreground text-xs">
+                          No bureau info
+                        </span>
+                      );
+                    })()}
+                  </div>
+
                   <div className="flex flex-col gap-2 mt-2">
                     {(row.original.products || []).map((prod, index) => (
                       <div
