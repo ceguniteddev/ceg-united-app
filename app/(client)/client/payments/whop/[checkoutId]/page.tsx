@@ -45,8 +45,6 @@ const WhopCheckoutPage = () => {
       ? process.env.NEXT_PUBLIC_DEFENITS_URL
       : "";
 
-  console.log("returnUrl", returnUrl);
-
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-4xl">
@@ -75,6 +73,17 @@ const WhopCheckoutPage = () => {
               </span>
               <span>{currency(planPrice)}</span>
             </div>
+            {checkoutDetails.paymentKey === "FinancingPlan" && (
+              <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="p-3 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+                  <p className="text-xs text-center text-yellow-800 dark:text-yellow-200">
+                    <strong>Please Note:</strong> After completing this payment,
+                    you will be automatically redirected to the Denefits
+                    checkout platform to finalize your enrollment.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
