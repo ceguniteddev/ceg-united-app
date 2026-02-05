@@ -56,6 +56,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  flexRender,
+  createColumnHelper,
+  type ColumnDef,
+  type SortingState,
+  type ColumnFiltersState,
+} from "@tanstack/react-table";
+import { Input } from "@/components/ui/input";
+import { ArrowUpDown } from "lucide-react";
+import SortableHeader from "../SortableHeader";
+import { DataTablePagination } from "../funding/pagination";
+
+const columnHelper = createColumnHelper<BankManagementType>();
 
 const BankManagement = () => {
   const { banks, isLoading } = useBankManagementQuery();
@@ -64,6 +81,9 @@ const BankManagement = () => {
     null,
   );
   const [deletingBankId, setDeletingBankId] = useState<string | null>(null);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
 
   const { deleteBank, isDeleting } = useBankManagementMutation();
 
@@ -79,87 +99,175 @@ const BankManagement = () => {
     }
   };
 
+  const columns = React.useMemo<ColumnDef<BankManagementType, any>[]>(
+    () => [
+      columnHelper.accessor("bankName", {
+        header: ({ column }) => (
+          <SortableHeader column={column} title="Bank Name" />
+        ),
+        cell: (info) => <div className="font-medium">{info.getValue()}</div>,
+      }),
+      columnHelper.accessor("website", {
+        header: ({ column }) => (
+          <SortableHeader column={column} title="Website" />
+        ),
+        cell: (info) => {
+          const website = info.getValue();
+          return website ? (
+            <a
+              href={website}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center text-blue-600 hover:underline"
+            >
+              <Globe className="mr-1 h-3 w-3" />
+              {website}
+            </a>
+          ) : null;
+        },
+      }),
+      columnHelper.accessor("contacts", {
+        header: ({ column }) => (
+          <SortableHeader column={column} title="Contacts" />
+        ),
+        cell: (info) => {
+          const contacts = info.getValue();
+          return (
+            <div className="flex flex-col gap-3">
+              {contacts?.map(
+                (
+                  contact: { name: string; email: string; phone: string },
+                  i: number,
+                ) => (
+                  <div key={i} className="text-sm">
+                    <div className="font-semibold flex items-center gap-1">
+                      <User className="h-3 w-3" /> {contact.name}
+                    </div>
+                    <div className="text-muted-foreground text-xs pl-4 space-y-0.5">
+                      <div className="flex items-center gap-1">
+                        <Mail className="h-3 w-3" /> {contact.email}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Phone className="h-3 w-3" /> {contact.phone}
+                      </div>
+                    </div>
+                  </div>
+                ),
+              )}
+            </div>
+          );
+        },
+        sortingFn: (rowA, rowB) => {
+          const contactsA = rowA.getValue("contacts") as Array<{
+            name: string;
+          }>;
+          const contactsB = rowB.getValue("contacts") as Array<{
+            name: string;
+          }>;
+
+          const nameA = contactsA?.[0]?.name?.toLowerCase() || "";
+          const nameB = contactsB?.[0]?.name?.toLowerCase() || "";
+
+          return nameA.localeCompare(nameB);
+        },
+      }),
+      columnHelper.display({
+        id: "actions",
+        header: () => <div className="text-right">Actions</div>,
+        cell: (info) => (
+          <div className="text-right">
+            <ActionMenu
+              bank={info.row.original}
+              onEdit={handleEdit}
+              onDelete={(id) => setDeletingBankId(id)}
+            />
+          </div>
+        ),
+      }),
+    ],
+    [handleEdit],
+  );
+
+  const table = useReactTable({
+    data: banks || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    state: {
+      sorting,
+      columnFilters,
+      globalFilter,
+    },
+  });
+
   if (isLoading) return <Spinner />;
 
   return (
-    <div className="space-y-6 px-2 sm:px-0">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
-          Bank Management
-        </h2>
+    <div className="space-y-2 px-2 sm:px-0">
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
+        Bank Management
+      </h2>
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center justify-between">
+        <Input
+          placeholder="Filter"
+          value={globalFilter}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          className="w-full sm:max-w-sm h-10 sm:h-11"
+        />
         <Button
           onClick={() => {
             setEditingBank(null);
             setIsAddOpen(true);
           }}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm h-9 sm:h-10"
+          className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm h-9 sm:h-10 whitespace-nowrap"
         >
           <IconMenu text="Add Bank" icon={<Plus className="h-4 w-4" />} />
         </Button>
       </div>
 
-      <div className="hidden sm:block rounded-md border">
+      <div className="hidden md:block overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Bank Name</TableHead>
-              <TableHead>Website</TableHead>
-              <TableHead>Contacts</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
           </TableHeader>
           <TableBody>
-            {banks?.length === 0 ? (
+            {table.getRowModel().rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No banks found.
                 </TableCell>
               </TableRow>
             ) : (
-              banks?.map((bank) => (
-                <TableRow key={bank.id}>
-                  <TableCell className="font-medium align-top pt-4">
-                    {bank.bankName}
-                  </TableCell>
-                  <TableCell className="align-top pt-4">
-                    {bank.website && (
-                      <a
-                        href={bank.website}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center text-blue-600 hover:underline"
-                      >
-                        <Globe className="mr-1 h-3 w-3" />
-                        {bank.website}
-                      </a>
-                    )}
-                  </TableCell>
-                  <TableCell className="align-top pt-4">
-                    <div className="flex flex-col gap-3">
-                      {bank.contacts?.map((contact, i) => (
-                        <div key={i} className="text-sm">
-                          <div className="font-semibold flex items-center gap-1">
-                            <User className="h-3 w-3" /> {contact.name}
-                          </div>
-                          <div className="text-muted-foreground text-xs pl-4 space-y-0.5">
-                            <div className="flex items-center gap-1">
-                              <Mail className="h-3 w-3" /> {contact.email}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" /> {contact.phone}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right align-top pt-3">
-                    <ActionMenu
-                      bank={bank}
-                      onEdit={handleEdit}
-                      onDelete={(id) => setDeletingBankId(id)}
-                    />
-                  </TableCell>
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="align-top pt-4">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
                 </TableRow>
               ))
             )}
@@ -167,7 +275,7 @@ const BankManagement = () => {
         </Table>
       </div>
 
-      <div className="sm:hidden space-y-4">
+      <div className="md:hidden space-y-3 px-4 sm:px-0">
         {banks?.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground border border-dashed rounded-md">
             No banks found.
@@ -238,6 +346,8 @@ const BankManagement = () => {
           ))
         )}
       </div>
+
+      <DataTablePagination table={table} />
 
       <ResponsiveDialog
         isOpen={isAddOpen}
