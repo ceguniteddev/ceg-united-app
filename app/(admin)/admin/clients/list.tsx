@@ -49,6 +49,7 @@ import { useGetDenefitsContracts } from "@/hooks/denefits";
 import { DenefitsRequest, DenefitsStatusEnum } from "@/schema/payments";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useGetWhopPayments } from "@/hooks/admin/payments/whop";
 
 const statusFilterFn: FilterFn<UserWithId> = (row, columnId, filterValue) => {
   const raw = row.getValue<string | undefined>(columnId);
@@ -85,6 +86,7 @@ const premiumFilterFn: FilterFn<UserWithId> = (row, columnId, filterValue) => {
 const ClientsList = () => {
   const [roleFilter, setRoleFilter] = useState("all");
   const [denefitsStatusFilter, setDenefitsStatusFilter] = useState("all");
+  const [whopPaymentFilter, setWhopPaymentFilter] = useState("all");
   const [premiumFilter, setPremiumFilter] = useState("all");
 
   const { users, isLoading } = useUsersQuery("Client");
@@ -94,6 +96,7 @@ const ClientsList = () => {
   );
   const { denefitsContracts, isLoading: denefitsContractsLoading } =
     useGetDenefitsContracts();
+  const { whopPayments, isLoading: whopPaymentsLoading } = useGetWhopPayments();
 
   const denefitsContractsMap = useMemo(() => {
     if (!denefitsContracts) return new Map();
@@ -104,6 +107,13 @@ const ClientsList = () => {
       ]),
     );
   }, [denefitsContracts]);
+
+  const whopPaymentsMap = useMemo(() => {
+    if (!whopPayments) return new Map();
+    return new Map(
+      whopPayments.map((payment: any) => [payment.userId, payment]),
+    );
+  }, [whopPayments]);
 
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -146,6 +156,26 @@ const ClientsList = () => {
       filterFn: denefitsStatusFilterFn,
     },
     {
+      id: "whopPayment",
+      header: ({ column }) => (
+        <SortableHeader column={column} title="Whop Payment" />
+      ),
+      accessorFn: (row) => {
+        const payment = whopPaymentsMap.get(row.id);
+        return payment ? "Active" : "InActive";
+      },
+      cell: ({ row }) => {
+        const payment = whopPaymentsMap.get(row.original.id);
+        const status = payment ? "Active" : "InActive";
+        return (
+          <div>
+            <CategoryBadge category={status} />
+          </div>
+        );
+      },
+      filterFn: denefitsStatusFilterFn,
+    },
+    {
       accessorKey: "isPremiumClient",
       id: "isPremiumClient",
       header: ({ column }) => (
@@ -162,34 +192,13 @@ const ClientsList = () => {
       filterFn: premiumFilterFn,
     },
     {
-      accessorKey: "firstName",
-      id: "firstName",
+      id: "clientName",
       header: ({ column }) => (
-        <SortableHeader column={column} title="First Name" />
+        <SortableHeader column={column} title="Client Name" />
       ),
-      cell: ({ row }) => {
-        return <div>{row.getValue("firstName")}</div>;
-      },
-    },
-    {
-      accessorKey: "middleName",
-      id: "middleName",
-      header: ({ column }) => (
-        <SortableHeader column={column} title="Middle Name" />
-      ),
-      cell: ({ row }) => {
-        return <div>{row.getValue("middleName")}</div>;
-      },
-    },
-    {
-      accessorKey: "lastName",
-      id: "lastName",
-      header: ({ column }) => (
-        <SortableHeader column={column} title="Last Name" />
-      ),
-      cell: ({ row }) => {
-        return <div>{row.getValue("lastName")}</div>;
-      },
+      accessorFn: (row) =>
+        [row.firstName, row.middleName, row.lastName].filter(Boolean).join(" "),
+      cell: ({ row }) => <div>{row.getValue("clientName")}</div>,
     },
     {
       accessorKey: "email",
@@ -277,6 +286,17 @@ const ClientsList = () => {
   }, [denefitsStatusFilter, table]);
 
   useEffect(() => {
+    const col = table.getColumn("whopPayment");
+    if (!col) return;
+
+    if (whopPaymentFilter === "all") {
+      col.setFilterValue(undefined);
+    } else {
+      col.setFilterValue(whopPaymentFilter);
+    }
+  }, [whopPaymentFilter, table]);
+
+  useEffect(() => {
     const col = table.getColumn("isPremiumClient");
     if (!col) return;
 
@@ -287,7 +307,7 @@ const ClientsList = () => {
     }
   }, [premiumFilter, table]);
 
-  if (isLoading) {
+  if (isLoading || denefitsContractsLoading || whopPaymentsLoading) {
     return <Spinner displayText="Loading clients..." />;
   }
 
@@ -296,13 +316,11 @@ const ClientsList = () => {
       <div className="py-4 space-y-3">
         <Input
           placeholder="Filter"
-          // value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
           value={globalFilter}
-          // onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="w-full"
         />
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Status Filter */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-muted-foreground">
@@ -374,7 +392,42 @@ const ClientsList = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-
+          {/* Whop Payment Filter */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-muted-foreground">
+              Whop Payment
+            </label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-9 w-full justify-between"
+                >
+                  <span>
+                    {whopPaymentFilter === "all"
+                      ? "All Status"
+                      : whopPaymentFilter}
+                  </span>
+                  <ChevronDownIcon className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[200px]">
+                <DropdownMenuRadioGroup
+                  value={whopPaymentFilter}
+                  onValueChange={setWhopPaymentFilter}
+                >
+                  <DropdownMenuRadioItem value="all">
+                    All Status
+                  </DropdownMenuRadioItem>
+                  {DenefitsStatusEnum.options.map((status) => (
+                    <DropdownMenuRadioItem key={status} value={status}>
+                      {status}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           {/* Premium Filter */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-muted-foreground">
@@ -412,6 +465,8 @@ const ClientsList = () => {
             const client = row.original;
             const contract = denefitsContractsMap.get(client.id);
             const denefitsStatus = contract ? "Active" : "Inactive";
+            const whopPayment = whopPaymentsMap.get(client.id);
+            const whopPaymentStatus = whopPayment ? "Active" : "Inactive";
 
             return (
               <Card key={row.id} className="overflow-hidden">
@@ -419,7 +474,7 @@ const ClientsList = () => {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-base truncate">
-                        {client.firstName} {client.middleName} {client.lastName}
+                        {row.getValue("clientName")}
                       </h3>
                       <p className="text-sm text-muted-foreground truncate">
                         {client.email}
@@ -436,6 +491,10 @@ const ClientsList = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Denefits:</span>
                     <CategoryBadge category={denefitsStatus} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Whop Payment:</span>
+                    <CategoryBadge category={whopPaymentStatus} />
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Premium:</span>

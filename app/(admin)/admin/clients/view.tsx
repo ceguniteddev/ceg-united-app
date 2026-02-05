@@ -96,60 +96,51 @@ const ClientData = ({
     <main className="mx-auto w-full px-2 sm:px-0">
       <Card className="max-w-full overflow-hidden border-none shadow-sm">
         <CardHeader className="pb-3 px-4 sm:px-5">
-          <div className="flex flex-col gap-2.5">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900">
-                Personal Information
-              </CardTitle>
-              {!isBrokerView && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setEditModalOpen(true)}
-                  className="cursor-pointer h-8 px-3 hover:bg-blue-300 bg-blue-200"
-                >
-                  <Edit2Icon className="h-3.5 w-3.5 mr-1.5" />
-                  <span className="text-xs font-medium">Edit</span>
-                </Button>
-              )}
-            </div>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900">
+              Personal Information
+            </CardTitle>
             {!isBrokerView && (
-              <div className="flex flex-col gap-2">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                  <RefreshCRSData user={user} />
-                  <DenefitsContract user={user} />
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                  <PremiumStatusPicker user={user} />
-                  <StatusPicker user={user} />
-                </div>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditModalOpen(true)}
+                className="cursor-pointer h-8 px-3 hover:bg-blue-300 bg-blue-200"
+              >
+                <Edit2Icon className="h-3.5 w-3.5 mr-1.5" />
+                <span className="text-xs font-medium">Edit</span>
+              </Button>
             )}
           </div>
         </CardHeader>
 
         <CardContent className="px-4 sm:px-5 py-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <Info label="Name" value={name} />
-            <Info label="SSN" value={user.ssn} />
-            <Info label="Email" value={user.email} />
-            <Info label="Phone" value={user.phoneNumber} />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <Info label="Name" value={name} />
+              <Info label="SSN" value={user.ssn} />
+              <Info label="Email" value={user.email} />
+              <Info label="Phone" value={user.phoneNumber} />
 
-            <Info
-              label="Birthdate"
-              value={format(user.birthdate, "MMM d, yyyy")}
-            />
-            <Info label="Gender" value={user.gender || "—"} />
+              <Info
+                label="Birthdate"
+                value={format(user.birthdate, "MMM d, yyyy")}
+              />
+              <Info label="Gender" value={user.gender || "—"} />
+              {!isBrokerView && (
+                <Info label="Broker" value={user.brokerName || ""} />
+              )}
+
+              <Info label="Registered" value={fmtDate(registered)} />
+            </div>
+
             {!isBrokerView && (
-              <Info label="Broker" value={user.brokerName || ""} />
+              <div className="lg:col-span-1 space-y-4">
+                <StatusPicker user={user} />
+                <PremiumStatusPicker user={user} />
+                <RefreshCRSData user={user} />
+              </div>
             )}
-
-            <Info label="Registered" value={fmtDate(registered)} />
-
-            {/* <Info label="Street" value={user.addressStreet} />
-          <Info label="City" value={user.addressCity} />
-          <Info label="State" value={user.addressState} />
-          <Info label="Zip Code" value={user.addressPostal} /> */}
           </div>
         </CardContent>
       </Card>
@@ -209,30 +200,6 @@ const STATUS_STYLES: Record<
   },
 };
 
-type ContractStatusKey = "Yes" | "No";
-const DENEFITS_CONTRACT_STYLES: Record<
-  ContractStatusKey,
-  {
-    border: string;
-    bg: string;
-    text: string;
-    chipBg: string;
-  }
-> = {
-  No: {
-    border: "border-red-700",
-    bg: "bg-red-700",
-    text: "text-red-700",
-    chipBg: "bg-inherit",
-  },
-  Yes: {
-    border: "border-emerald-300",
-    bg: "bg-emerald-600",
-    text: "text-emerald-700",
-    chipBg: "bg-emerald-50",
-  },
-};
-
 const PremiumStatusPicker = ({ user }: { user: UserWithId }) => {
   const isPremium = user.isPremiumClient || false;
   const { updatePremiumStatus, isUpdating } =
@@ -244,7 +211,7 @@ const PremiumStatusPicker = ({ user }: { user: UserWithId }) => {
     async (checked: boolean) => {
       await updatePremiumStatus({ isPremium: checked });
     },
-    [updatePremiumStatus]
+    [updatePremiumStatus],
   );
 
   return (
@@ -290,7 +257,7 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
         });
       }
     },
-    [updateUserStatus]
+    [updateUserStatus],
   );
 
   return (
@@ -326,7 +293,7 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
             "border",
             styles.border,
             "bg-white",
-            "focus:ring-0 focus:outline-none"
+            "focus:ring-0 focus:outline-none",
           )}
         >
           <SelectValue placeholder="Status" />
@@ -339,7 +306,7 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
                 <span
                   className={cn(
                     "inline-block h-2.5 w-2.5 rounded-full",
-                    STATUS_STYLES[opt].bg
+                    STATUS_STYLES[opt].bg,
                   )}
                 />
                 {opt}
@@ -348,43 +315,6 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
           ))}
         </SelectContent>
       </Select>
-    </div>
-  );
-};
-
-const DenefitsContract = ({ user }: { user: UserWithId }) => {
-  const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
-    user?.id
-  );
-
-  const result = denefitsContract && denefitsContract.length > 0 ? "Yes" : "No";
-
-  const styles =
-    DENEFITS_CONTRACT_STYLES[result || "No"] ?? DENEFITS_CONTRACT_STYLES.No;
-
-  return (
-    <div
-      className={[
-        "flex items-center justify-between rounded-lg px-3 py-2 border transition-all duration-200 shadow-sm",
-        styles.border,
-        styles.chipBg,
-      ].join(" ")}
-    >
-      <span className={["text-xs font-semibold", styles.text].join(" ")}>
-        Denefits Contract
-      </span>
-
-      <div className="flex items-center gap-1.5">
-        <span
-          className={[
-            "inline-block h-2 w-2 rounded-full",
-            DENEFITS_CONTRACT_STYLES[result || "No"].bg,
-          ].join(" ")}
-        />
-        <span className={["text-xs font-medium", styles.text].join(" ")}>
-          {result}
-        </span>
-      </div>
     </div>
   );
 };
@@ -470,7 +400,7 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
     <>
       <Button
         variant="outline"
-        className="w-full sm:w-auto cursor-pointer bg-blue-50/50 hover:bg-blue-100 border-blue-200 text-blue-700 font-medium shadow-sm"
+        className="w-full cursor-pointer bg-blue-50/50 hover:bg-blue-100 border-blue-200 text-blue-700 font-medium shadow-sm"
         onClick={() => setRefreshConfirmationOpen(true)}
       >
         <RefreshCcw className="h-4 w-4" />
@@ -576,7 +506,7 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
                                 ]);
                               } else {
                                 setSelectedBusinessIds((prev) =>
-                                  prev.filter((id) => id !== business.id)
+                                  prev.filter((id) => id !== business.id),
                                 );
                               }
                             }}
