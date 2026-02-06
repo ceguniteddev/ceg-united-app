@@ -12,6 +12,42 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+export const useSendClientServiceAgreementMutation = ({
+  userId,
+  onSuccess,
+}: {
+  userId: string;
+  onSuccess?: () => void;
+}) => {
+  const {
+    mutate: sendClientServiceAgreement,
+    isPending: isSending,
+    isError,
+    error,
+  } = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/user/${userId}/send-agreement`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to send client service agreement");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success("Client service agreement sent successfully");
+      if (onSuccess) {
+        onSuccess();
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  return { sendClientServiceAgreement, isSending, isError, error };
+};
+
 export const useUsersQuery = (role?: Role) => {
   const { user } = useAuth();
 
@@ -279,7 +315,7 @@ export const useToggleLetterFeatureMutation = ({
       toast.success(
         `Letter feature ${
           variables.enabled ? "enabled" : "disabled"
-        } successfully`
+        } successfully`,
       );
       queryClient.invalidateQueries({ queryKey: [GET_USER, userId] });
       queryClient.invalidateQueries({ queryKey: [GET_USERS] });
