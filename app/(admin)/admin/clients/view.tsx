@@ -7,7 +7,7 @@ import {
   UserWithId,
 } from "@/schema/registration";
 import { format } from "date-fns";
-import { Loader2Icon, RefreshCcw, XIcon, Edit2Icon } from "lucide-react";
+import { Loader2Icon, RefreshCcw, XIcon, Edit2Icon, Send } from "lucide-react";
 import type { Metadata } from "next";
 import React, { useCallback, useState } from "react";
 import {
@@ -32,6 +32,7 @@ import {
   useUpdateUserStatusMutation,
   useUpdateUserPremiumStatusMutation,
   useUpdateUserProfileMutation,
+  useSendClientServiceAgreementMutation,
 } from "@/hooks/user";
 import { useRefreshCRSData } from "@/hooks/crs";
 import { toast } from "sonner";
@@ -82,6 +83,10 @@ const ClientData = ({
   isBrokerView?: boolean;
 }) => {
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const { sendClientServiceAgreement, isSending } =
+    useSendClientServiceAgreementMutation({
+      userId: user.id,
+    });
 
   if (!user) {
     return <EmptyState title="User not found" description="" />;
@@ -139,6 +144,24 @@ const ClientData = ({
                 <StatusPicker user={user} />
                 <PremiumStatusPicker user={user} />
                 <RefreshCRSData user={user} />
+                <Button
+                  variant="outline"
+                  className="w-full cursor-pointer bg-green-50/50 hover:bg-green-100 border-green-200 text-green-700 font-medium shadow-sm"
+                  onClick={() => sendClientServiceAgreement()}
+                  disabled={isSending}
+                >
+                  {isSending ? (
+                    <>
+                      <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Send Client Agreement
+                    </>
+                  )}
+                </Button>
               </div>
             )}
           </div>

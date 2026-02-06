@@ -38,3 +38,8 @@ export const sendClientCongratsMessageN8N = async () =>
 
 export const mapBankProductsN8n = async () =>
   isProd() ? "bank-product-mapping-prod" : "bank-product-mapping";
+
+export const sendClientServiceAgreementN8N = async () =>
+  isProd()
+    ? "sign-client-service-agreement-prod"
+    : "sign-client-service-agreement";
