@@ -79,7 +79,7 @@ const AnalysisView = ({ referenceNumber }: Props) => {
         )}
         {role === "Client" && (
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <SaveToDocumentsButton referenceNumber={referenceNumber} />
+            {/* <SaveToDocumentsButton referenceNumber={referenceNumber} /> */}
             <PricingDetailsButton referenceNumber={referenceNumber} />
           </div>
         )}
