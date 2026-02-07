@@ -12,7 +12,7 @@ import {
   firestoreAdmin,
   storageAdmin,
 } from "@/lib/fireabase-admin";
-import { logInfo } from "@/lib/logger";
+import { logError, logInfo } from "@/lib/logger";
 import { sendMail } from "@/lib/nodemailer";
 import { ChangePassword, CurrentUser, Role, Business } from "@/schema";
 import { noteSchema, NoteSchema } from "@/schema/notes";
@@ -1085,4 +1085,25 @@ export const markCongratsAsRead = async ({
   await docToUpdate.ref.update({ isRead: true });
 
   logInfo("Successfully marked congrats message as read", { userId, docId });
+};
+
+export const deleteUser = async (userId: string) => {
+  logInfo(`Deleting user with id: ${userId}`);
+  try {
+    const userDocRef = firestoreAdmin().collection(USER_COLLECTION).doc(userId);
+    await userDocRef.delete();
+    logInfo("User deleted from Firestore");
+    try {
+      await authenticationAdmin().deleteUser(userId);
+      logInfo("User deleted from Firebase Auth");
+    } catch (authError: any) {
+      logError(new Error("Error deleting user from Firebase Auth"), authError);
+    }
+    return {
+      message: "User and all associated data deleted successfully.",
+    };
+  } catch (error: any) {
+    logError(new Error(`Error deleting user with id: ${userId}`), error);
+    throw new AppError("Failed to delete user.");
+  }
 };
