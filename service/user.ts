@@ -2,6 +2,7 @@
 import {
   BROKER_CLIENT_MAPPING,
   USER_COLLECTION,
+  USER_FUNDING_APPLICATION,
   USER_FUNDING_APPLICATION_CONGRATS,
 } from "@/constant/collection-name";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
@@ -1089,10 +1090,37 @@ export const markCongratsAsRead = async ({
 
 export const deleteUser = async (userId: string) => {
   logInfo(`Deleting user with id: ${userId}`);
+  const db = firestoreAdmin();
+  const bucket = storageAdmin();
   try {
-    const userDocRef = firestoreAdmin().collection(USER_COLLECTION).doc(userId);
+    // Delete funding applications associated with the user
+    logInfo(`Deleting funding applications for user: ${userId}`);
+    const fundingApplicationsQuery = db
+      .collection(USER_FUNDING_APPLICATION)
+      .where("userId", "==", userId);
+    const fundingApplicationsSnapshot = await fundingApplicationsQuery.get();
+
+    if (!fundingApplicationsSnapshot.empty) {
+      const batch = db.batch();
+      fundingApplicationsSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      logInfo(
+        `Deleted ${fundingApplicationsSnapshot.size} funding applications.`,
+      );
+    } else {
+      logInfo(`No funding applications found for user: ${userId}`);
+    }
+    // Delete user's files from storage
+    const prefix = `documents/${userId}/`;
+    await bucket.deleteFiles({ prefix });
+    logInfo(`Deleted files from storage for user: ${userId}`);
+
+    const userDocRef = db.collection(USER_COLLECTION).doc(userId);
     await userDocRef.delete();
     logInfo("User deleted from Firestore");
+
     try {
       await authenticationAdmin().deleteUser(userId);
       logInfo("User deleted from Firebase Auth");
