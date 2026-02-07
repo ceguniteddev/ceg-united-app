@@ -48,6 +48,45 @@ export const useSendClientServiceAgreementMutation = ({
   return { sendClientServiceAgreement, isSending, isError, error };
 };
 
+export const useDeleteUserMutation = ({
+  userId,
+  onSuccess,
+}: {
+  userId: string;
+  onSuccess?: () => void;
+}) => {
+  const queryClient = useQueryClient();
+
+  const {
+    mutate: deleteUser,
+    isPending: isDeleting,
+    isError,
+    error,
+  } = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/user/${userId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to delete user");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success("User deleted successfully");
+      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
+      if (onSuccess) {
+        onSuccess();
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  return { deleteUser, isDeleting, isError, error };
+};
+
 export const useUsersQuery = (role?: Role) => {
   const { user } = useAuth();
 

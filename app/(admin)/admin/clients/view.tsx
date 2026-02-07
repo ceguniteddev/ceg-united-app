@@ -33,6 +33,7 @@ import {
   useUpdateUserPremiumStatusMutation,
   useUpdateUserProfileMutation,
   useSendClientServiceAgreementMutation,
+  useDeleteUserMutation,
 } from "@/hooks/user";
 import { useRefreshCRSData } from "@/hooks/crs";
 import { toast } from "sonner";
@@ -173,6 +174,7 @@ const ClientData = ({
         setIsOpen={setEditModalOpen}
         user={user}
       />
+      <DangerZone user={user} />
     </main>
   );
 };
@@ -896,5 +898,102 @@ const EditClientModal = ({
         </form>
       </Form>
     </ResponsiveDialog>
+  );
+};
+
+const DangerZone = ({ user }: { user: UserWithId }) => {
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  return (
+    <>
+      <Card className="mt-6 border-destructive/50 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-destructive">
+            Danger Zone
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Delete this client</p>
+              <p className="text-sm text-muted-foreground">
+                Once you delete a client, there is no going back. Please be
+                certain.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              onClick={() => setDeleteModalOpen(true)}
+            >
+              Delete Client
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      <DeleteClientModal
+        isOpen={deleteModalOpen}
+        setIsOpen={setDeleteModalOpen}
+        user={user}
+      />
+    </>
+  );
+};
+
+const DeleteClientModal = ({
+  isOpen,
+  setIsOpen,
+  user,
+}: {
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  user: UserWithId;
+}) => {
+  const { deleteUser, isDeleting } = useDeleteUserMutation({
+    userId: user.id,
+    onSuccess: () => {
+      setIsOpen(false);
+      window.location.href = "/admin/clients";
+    },
+  });
+
+  return (
+    <AlertDialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!isDeleting) {
+          setIsOpen(open);
+        }
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete the
+            client&apos;s account and remove all their data from our servers.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={isDeleting}
+            onClick={async (e) => {
+              e.preventDefault();
+              deleteUser();
+            }}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            {isDeleting ? (
+              <>
+                <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                Deleting...
+              </>
+            ) : (
+              "Delete"
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
