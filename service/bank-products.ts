@@ -27,7 +27,7 @@ import {
   getApplyFundingByReferenceNumber,
   updateApplicationStatus,
 } from "./apply-funding";
-import { createAsanaTaskForLender } from "@/lib/n8n";
+// import { createAsanaTaskForLender } from "@/lib/n8n";
 import NotFoundError from "@/error/NotFoundError";
 
 export const recordBankProduct = async (value: BankFormData) => {
@@ -789,18 +789,6 @@ export const getApprovedMappedFunds = async (
   }
 };
 
-export const getApprovedMappedFundsOld = async (referenceNumber: string) => {
-  const db = firestoreAdmin();
-  const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
-  );
-  const snapshot = await collectionRef.get();
-  return snapshot.docs.map(
-    (doc) =>
-      ({ id: doc.id, ...normalizeAllDates(doc.data()) }) as ApprovedMappedFund,
-  );
-};
-
 export const applyBankProduct = async ({
   userId,
   bankProductId,
@@ -897,17 +885,17 @@ export const applyBankProduct = async ({
 
     await docRef.set({ clientApplicationStatus: "Pending" }, { merge: true });
 
-    await fetch(`${process.env.n8n_HOST}/${await createAsanaTaskForLender()}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-      },
-      body: JSON.stringify({
-        userId: userId,
-        bankProductId: bankProductId,
-      }),
-    });
+    // await fetch(`${process.env.n8n_HOST}/${await createAsanaTaskForLender()}`, {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    //   },
+    //   body: JSON.stringify({
+    //     userId: userId,
+    //     bankProductId: bankProductId,
+    //   }),
+    // });
 
     // 4. Return a successful response
     return { success: true };
@@ -978,18 +966,18 @@ export const applyApprovedMappedFund = async ({
       .doc(fundMappingApprovedId)
       .set({ clientApplicationStatus: "Sent to Lender" }, { merge: true });
 
-    await fetch(`${process.env.n8n_HOST}/${await createAsanaTaskForLender()}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-      },
-      body: JSON.stringify({
-        userId: docData?.userId,
-        bankProductId: docData?.bankProductId,
-        referenceNumber: referenceNumber,
-      }),
-    });
+    // await fetch(`${process.env.n8n_HOST}/${await createAsanaTaskForLender()}`, {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    //   },
+    //   body: JSON.stringify({
+    //     userId: docData?.userId,
+    //     bankProductId: docData?.bankProductId,
+    //     referenceNumber: referenceNumber,
+    //   }),
+    // });
 
     // 4. Return a successful response
     return { success: true };
