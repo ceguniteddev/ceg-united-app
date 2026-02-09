@@ -27,6 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import AdminFundingList from "@/components/funding/admin-funding-list";
+import { useGetClientApplyFunding } from "@/hooks/apply-funding";
+import { RowActions } from "@/app/(admin)/admin/funding-application/_components/RowActions";
+import { ApplyFundingWithUser } from "@/schema/apply-funding";
 
 const ClientProfilePage = () => {
   const params = useParams();
@@ -35,6 +39,17 @@ const ClientProfilePage = () => {
   const [activeTab, setActiveTab] = useState("personal-information");
 
   const { userData, isLoading: isUserLoading } = useUserQuery(userId);
+  const { appliedFunding, isLoading: isFundingLoading } =
+    useGetClientApplyFunding(userId);
+
+  const appliedFundingWithUser: ApplyFundingWithUser[] | undefined =
+    useMemo(() => {
+      return appliedFunding?.map((item) => ({
+        ...item,
+        user: userData,
+      }));
+    }, [appliedFunding, userData]);
+
   // const { denefitsContract, isLoading: isDenefitsLoading } =
   //   useGetDenefitsContractsByUserId(userId);
 
@@ -55,6 +70,7 @@ const ClientProfilePage = () => {
       { value: "documents", label: "Documents" },
       { value: "credit-report", label: "Credit Report" },
       { value: "business", label: "Business" },
+      { value: "fund-application", label: "Funding Application" },
       { value: "applied-funding", label: "Applied Funding" },
     ];
 
@@ -73,7 +89,7 @@ const ClientProfilePage = () => {
 
     options.push(
       { value: "note", label: "Note" },
-      { value: "email", label: "Email" }
+      { value: "email", label: "Email" },
     );
 
     return options;
@@ -144,6 +160,21 @@ const ClientProfilePage = () => {
 
       <TabsContent value="applied-funding" className="w-full">
         <ClientAppliedFunding userId={userId} isAdminView={true} />
+      </TabsContent>
+
+      <TabsContent value="fund-application" className="w-full">
+        {isFundingLoading ? (
+          <Spinner displayText="Loading funding applications..." />
+        ) : !appliedFundingWithUser || appliedFundingWithUser.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No funding applications found for this client.
+          </div>
+        ) : (
+          <AdminFundingList
+            appliedFunding={appliedFundingWithUser}
+            rowActions={(data) => <RowActions data={data} />}
+          />
+        )}
       </TabsContent>
 
       {hasLearningMaterialsAccess && (
