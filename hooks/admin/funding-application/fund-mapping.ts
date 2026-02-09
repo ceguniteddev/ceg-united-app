@@ -439,6 +439,19 @@ export const useApprovedMappedFundsMutation = () => {
         queryKey: ["BROKER_CLIENTS_MAPPED_FUNDING", user?.uid],
       });
 
+      queryClient.invalidateQueries({
+        queryKey: [
+          "GET_FUNDING_APPLICATION_MAPPED_FUNDS",
+          variable.referenceNumber,
+        ],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.referenceNumber],
+      });
+
+      // queryKey: (["GET_FUNDING_APPLICATION_MAPPED_FUNDS", referenceNumber],
+
       toast.success("Fund successfully applied.");
     },
     onError: (error: any) => {
