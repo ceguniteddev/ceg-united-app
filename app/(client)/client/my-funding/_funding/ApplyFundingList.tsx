@@ -6,7 +6,7 @@ import { useAuth } from "@/provider/AuthContext";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { ApprovedBankFormData } from "@/schema/bank-products";
 import { useMemo } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AnalysisView from "@/components/funding/AnalysisView";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -14,7 +14,7 @@ type Props = {
   selectedReference: string;
 };
 
-const ApplyFundingList = ({ selectedReference }: Props) => {
+export const FundingBankProducts = ({ selectedReference }: Props) => {
   const { user } = useAuth();
 
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
@@ -32,51 +32,41 @@ const ApplyFundingList = ({ selectedReference }: Props) => {
     );
   }, [mappedFund, selectedReference]);
 
+  if (isLoading) return <Spinner />;
+
+  if (!mappedFund || mappedFund.length === 0)
+    return (
+      <p className="text-center text-xl font-medium text-gray-600">
+        The {process.env.NEXT_PUBLIC_APP_NAME} team is currently processing your
+        pre-approve funding products.
+      </p>
+    );
+
+  if (selectedReference && filteredMappedFund.length === 0)
+    return (
+      <p className="text-center text-xl font-medium text-gray-600">
+        No funding products found for the selected application.
+      </p>
+    );
+
   return (
-    <Tabs defaultValue="analysis">
-      <TabsList className="mb-6">
-        <TabsTrigger value="analysis" className="text-sm sm:text-base">
-          Analysis
-        </TabsTrigger>
-        <TabsTrigger value="bank-products" className="text-sm sm:text-base">
-          Bank Products
-        </TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="bank-products" className="mt-0">
-        {isLoading ? (
-          <Spinner />
-        ) : !mappedFund || mappedFund.length === 0 ? (
-          <p className="text-center text-xl font-medium text-gray-600">
-            The {process.env.NEXT_PUBLIC_APP_NAME} team is currently processing
-            your pre-approve funding products.
-          </p>
-        ) : selectedReference && filteredMappedFund.length === 0 ? (
-          <p className="text-center text-xl font-medium text-gray-600">
-            No funding products found for the selected application.
-          </p>
-        ) : (
-          <Card>
-            <CardContent className="pt-6">
-              <FundingList
-                appliedFunding={filteredMappedFund as ApprovedBankFormData[]}
-              />
-            </CardContent>
-          </Card>
-        )}
-      </TabsContent>
-
-      <TabsContent value="analysis" className="mt-0">
-        {selectedReference ? (
-          <AnalysisView referenceNumber={selectedReference} />
-        ) : (
-          <p className="text-center text-gray-600 py-8">
-            Please select an application to view analysis.
-          </p>
-        )}
-      </TabsContent>
-    </Tabs>
+    <Card>
+      <CardContent className="pt-6">
+        <FundingList
+          appliedFunding={filteredMappedFund as ApprovedBankFormData[]}
+        />
+      </CardContent>
+    </Card>
   );
 };
 
-export default ApplyFundingList;
+export const FundingAnalysis = ({ selectedReference }: Props) => {
+  if (!selectedReference)
+    return (
+      <p className="text-center text-gray-600 py-8">
+        Please select an application to view analysis.
+      </p>
+    );
+
+  return <AnalysisView referenceNumber={selectedReference} />;
+};

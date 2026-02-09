@@ -404,12 +404,12 @@ const PricingDetailsButton = ({
   return (
     <>
       <Button
-        variant={"ghost"}
-        className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white w-full sm:w-auto h-10 sm:h-9"
+        size={"lg"}
+        className="cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white w-full sm:w-auto h-10 sm:h-9 shadow-lg shadow-blue-500/50 animate-pulse hover:animate-none hover:scale-105 transition-all duration-300 font-bold border-0"
         onClick={() => setIsOpen(true)}
       >
         <IconMenu
-          icon={<HandshakeIcon className="h-4 w-4" />}
+          icon={<HandshakeIcon className="h-5 w-5" />}
           text="Join Now"
         />
       </Button>
