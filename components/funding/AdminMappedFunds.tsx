@@ -2,7 +2,10 @@ import {
   useApproveMappedFundsQuery,
   useFundingApplicationsMappedFundsMutation,
   useFundingApplicationsMappedFundsQuery,
+  useApprovedMappedFundsMutation,
 } from "@/hooks/admin/funding-application/fund-mapping";
+import { useAuth } from "@/provider/AuthContext";
+import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
@@ -39,6 +42,7 @@ import {
   RefreshCwIcon,
   XIcon,
   Loader2Icon,
+  BanknoteIcon,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import {
@@ -69,6 +73,7 @@ import CategoryBadge from "../CategoryBadge";
 import { formatAmount } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import BankProductsForm from "@/components/bank-products/bank-product-form";
+import { useUserQuery } from "@/hooks/user";
 
 type Props = {
   referenceNumber: string;
@@ -282,6 +287,7 @@ const BankProductsList = ({
               isAdminApproved={isApproved}
               clientApplicationStatus={status || "Not Applied"}
               approvedMappedFund={approvedMappedFund}
+              userId={userId}
             />
           );
         },
@@ -526,11 +532,6 @@ const BankProductsList = ({
                     <h3 className="font-semibold text-sm break-words">
                       {data.bankName}
                     </h3>
-                    {/* <p className="text-xs text-muted-foreground mt-1">
-                      {data.financingTerm}
-                    </p> */}
-                  </div>
-                  <div className="flex-shrink-0 flex items-center gap-2">
                     {isApproved ? (
                       <div className="flex items-center text-green-500 text-xs">
                         <CheckCircle className="h-3 w-3 mr-1" />
@@ -541,6 +542,8 @@ const BankProductsList = ({
                         Pending
                       </span>
                     )}
+                  </div>
+                  <div className="flex-shrink-0 flex items-center gap-2">
                     {showActions && (
                       <ActionCell
                         row={row}
@@ -548,6 +551,7 @@ const BankProductsList = ({
                         isAdminApproved={isApproved}
                         clientApplicationStatus={status}
                         approvedMappedFund={approvedFund}
+                        userId={userId}
                       />
                     )}
                   </div>
@@ -672,12 +676,14 @@ const ActionCell = ({
   isAdminApproved,
   clientApplicationStatus,
   approvedMappedFund,
+  userId,
 }: {
   row: any;
   referenceNumber: string;
   isAdminApproved: boolean;
   clientApplicationStatus: ClientApplicationStatus;
   approvedMappedFund?: ApprovedBankFormData;
+  userId: string;
 }) => {
   const [open, setOpen] = useState(false);
   const {
@@ -686,6 +692,19 @@ const ActionCell = ({
     removeMappedBankProduct,
     isRemoving,
   } = useFundingApplicationsMappedFundsMutation();
+
+  const { applyApprovedMappedFund, isApplying } =
+    useApprovedMappedFundsMutation();
+  const [isDenefitsPaid, setIsDenefitsPaid] = useState(false);
+  const { userData } = useUserQuery(userId);
+
+  const { denefitsContract } = useGetDenefitsContractsByUserId(userId);
+
+  React.useEffect(() => {
+    if (denefitsContract && denefitsContract.length > 0) {
+      setIsDenefitsPaid(true);
+    }
+  }, [denefitsContract]);
 
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -697,6 +716,11 @@ const ActionCell = ({
 
   // Show delete button only if not approved
   const showDeleteButton = useMemo(() => !isAdminApproved, [isAdminApproved]);
+
+  const showApplyButton = useMemo(
+    () => isAdminApproved && clientApplicationStatus === "Not Applied",
+    [isAdminApproved, clientApplicationStatus],
+  );
 
   const handleCancelClick = async () => {
     await cancelMappedFund({
@@ -714,8 +738,18 @@ const ActionCell = ({
     setIsDeleteAlertOpen(false);
   };
 
+  const handleApplyClick = async () => {
+    if (!approvedMappedFund?.fundMappingApprovedId) {
+      return;
+    }
+    await applyApprovedMappedFund({
+      fundMappingApprovedId: approvedMappedFund.fundMappingApprovedId,
+      referenceNumber: referenceNumber,
+    });
+  };
+
   return (
-    <>
+    <div className="flex items-center justify-end gap-2">
       <ResponsiveDialog
         isOpen={open}
         setIsOpen={setOpen}
@@ -788,6 +822,29 @@ const ActionCell = ({
         </AlertDialogContent>
       </AlertDialog>
 
+      {showApplyButton && (
+        <Button
+          type="button"
+          variant="outline"
+          disabled={
+            isApplying || (!isDenefitsPaid && !userData?.isPremiumClient)
+          }
+          className="bg-green-200 hover:bg-green-400 cursor-pointer h-8 px-3"
+          onClick={handleApplyClick}
+        >
+          {isApplying ? (
+            <IconMenu
+              text="Applying..."
+              icon={<Loader2Icon className="h-4 w-4 animate-spin" />}
+            />
+          ) : (
+            <IconMenu
+              text="Apply"
+              icon={<BanknoteIcon className="h-4 w-4" />}
+            />
+          )}
+        </Button>
+      )}
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
@@ -836,6 +893,6 @@ const ActionCell = ({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-    </>
+    </div>
   );
 };

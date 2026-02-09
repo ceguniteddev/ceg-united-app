@@ -1,7 +1,7 @@
 "use client";
 
 import HeaderBox from "@/components/HeaderBox";
-import ApplyFundingList from "./_funding/ApplyFundingList";
+import { FundingBankProducts } from "./_funding/ApplyFundingList";
 import { useAuth } from "@/provider/AuthContext";
 import ApplyFunding from "@/components/fundingv2/ApplyFunding";
 import { useGetClientApplyFunding } from "@/hooks/apply-funding";
@@ -105,7 +105,7 @@ const ApplyFundingPage = () => {
         )}
 
         <section className="flex w-full flex-col gap-6">
-          <ApplyFundingList selectedReference={selectedReference} />
+          <FundingBankProducts selectedReference={selectedReference} />
         </section>
       </div>
     </section>
