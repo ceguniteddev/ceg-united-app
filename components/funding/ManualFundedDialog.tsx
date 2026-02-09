@@ -90,9 +90,7 @@ const ManualFundedDialog = ({ userId }: Props) => {
     return products
       .filter((product) => product.id)
       .map((product) => ({
-        label: `${product.bankName} - ${product.products
-          .map((p) => p.productName)
-          .join(", ")}`,
+        label: `${product.bankName}`,
         value: product.id!,
       }));
   }, [products]);
