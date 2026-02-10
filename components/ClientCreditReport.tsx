@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 // --- Utilities ---
 const toNum = (v?: NumericString) => {
@@ -52,15 +53,15 @@ function computeUtilization(tradelines: Tradeline[]) {
   const revolvingOpen = tradelines.filter(
     (t) =>
       t.accountType?.toLowerCase() === "revolving" &&
-      t.accountStatusType?.toLowerCase() === "open"
+      t.accountStatusType?.toLowerCase() === "open",
   );
   const totalLimit = revolvingOpen.reduce(
     (s, t) => s + toNum(t.creditLimitAmount),
-    0
+    0,
   );
   const totalBal = revolvingOpen.reduce(
     (s, t) => s + toNum(t.currentBalanceAmount),
-    0
+    0,
   );
   const pct = totalLimit > 0 ? (totalBal / totalLimit) * 100 : 0;
   return { totalLimit, totalBal, pct };
@@ -77,26 +78,26 @@ function getNegativeItems(tradelines: Tradeline[]) {
 
 function getPositiveFactors(tradelines: Tradeline[], scores: CreditScore[]) {
   const open = tradelines.filter(
-    (t) => t.accountStatusType?.toLowerCase() === "open"
+    (t) => t.accountStatusType?.toLowerCase() === "open",
   );
   const paidClosed = tradelines.filter((t) =>
     ["paid", "closed", "transferred"].includes(
-      t.accountStatusType?.toLowerCase() || ""
-    )
+      t.accountStatusType?.toLowerCase() || "",
+    ),
   );
   const onTime = tradelines.filter(
     (t) =>
-      toNum(t._30DayLates) + toNum(t._60DayLates) + toNum(t._90DayLates) === 0
+      toNum(t._30DayLates) + toNum(t._60DayLates) + toNum(t._90DayLates) === 0,
   );
   const mixHasInstallment = tradelines.some(
     (t) =>
       t.accountType?.toLowerCase() === "installment" ||
-      t.accountType?.toLowerCase() === "mortgage"
+      t.accountType?.toLowerCase() === "mortgage",
   );
   const mixHasRevolving = tradelines.some(
     (t) =>
       t.accountType?.toLowerCase() === "revolving" ||
-      t.accountType?.toLowerCase() === "chargeaccount"
+      t.accountType?.toLowerCase() === "chargeaccount",
   );
   const oldestOpenDate = tradelines.reduce<ISODate | undefined>((min, t) => {
     if (!t.accountOpenedDate) return min;
@@ -111,13 +112,13 @@ function getPositiveFactors(tradelines: Tradeline[], scores: CreditScore[]) {
     positives.push(
       `${open.length} open account${
         open.length > 1 ? "s" : ""
-      } reporting as agreed`
+      } reporting as agreed`,
     );
   if (paidClosed.length > 0)
     positives.push(
       `${paidClosed.length} account${
         paidClosed.length > 1 ? "s" : ""
-      } paid/closed in good standing`
+      } paid/closed in good standing`,
     );
   if (onTime.length >= Math.ceil(tradelines.length * 0.75))
     positives.push("Strong on‑time payment history on most accounts");
@@ -129,11 +130,11 @@ function getPositiveFactors(tradelines: Tradeline[], scores: CreditScore[]) {
     const years = Math.floor(daysOld / 365);
     if (years >= 5)
       positives.push(
-        `Established credit history (~${years} years since oldest account)`
+        `Established credit history (~${years} years since oldest account)`,
       );
   }
   const sfTexts = (scores?.[0]?.scoreFactors || []).map((f) =>
-    f.scoreFactorText.toLowerCase()
+    f.scoreFactorText.toLowerCase(),
   );
   if (
     !sfTexts.some((t: string) => t.includes("lack of recent installment")) &&
@@ -154,7 +155,7 @@ function bureauLabel(sourceType?: string) {
 
 // Determine bureau for a given report
 function detectBureau(
-  report: CreditReport
+  report: CreditReport,
 ): "Experian" | "TransUnion" | "Equifax" | null {
   const fromScore = report.scores?.[0]?.sourceType;
   if (fromScore) return bureauLabel(fromScore) as any;
@@ -302,9 +303,9 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
   const timestamps = useMemo(
     () =>
       Array.from(new Set(Object.keys(reportsByTimestamp))).sort(
-        (a, b) => new Date(b).getTime() - new Date(a).getTime()
+        (a, b) => new Date(b).getTime() - new Date(a).getTime(),
       ),
-    [reportsByTimestamp]
+    [reportsByTimestamp],
   );
 
   // State for selected timestamp (default to most recent)
@@ -321,12 +322,12 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
   const selectedReports = useMemo(
     () =>
       selectedTimestamp ? reportsByTimestamp[selectedTimestamp] || [] : [],
-    [selectedTimestamp, reportsByTimestamp]
+    [selectedTimestamp, reportsByTimestamp],
   );
 
   const bureauMap = useMemo(
     () => groupByBureau(selectedReports),
-    [selectedReports]
+    [selectedReports],
   );
 
   // Scores per bureau
@@ -366,7 +367,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
       ...(bureauMap.TransUnion?.report.responseAlertMessages ?? []),
       ...(bureauMap.Equifax?.report.responseAlertMessages ?? []),
     ],
-    [bureauMap]
+    [bureauMap],
   );
 
   // Aggregate tradelines across all bureaus
@@ -376,12 +377,12 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
       ...(bureauMap.TransUnion?.report.tradelines ?? []),
       ...(bureauMap.Equifax?.report.tradelines ?? []),
     ],
-    [bureauMap]
+    [bureauMap],
   );
 
   const negItems = useMemo(
     () => getNegativeItems(allTradelines),
-    [allTradelines]
+    [allTradelines],
   );
   const positives = useMemo(
     () =>
@@ -390,11 +391,11 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         ...(bureauMap.TransUnion?.report.scores ?? []),
         ...(bureauMap.Equifax?.report.scores ?? []),
       ]),
-    [allTradelines, bureauMap]
+    [allTradelines, bureauMap],
   );
   const util = useMemo(
     () => computeUtilization(allTradelines),
-    [allTradelines]
+    [allTradelines],
   );
 
   // Pull a friendly timestamp: max of responseDetail.dateRequested across bureaus, else latest createdAt.
@@ -405,7 +406,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         const dr = doc?.report.responseDetail?.dateRequested;
         if (dr) dates.push(new Date(dr).getTime());
         if (doc?.createdAt) dates.push(new Date(doc.createdAt).getTime());
-      }
+      },
     );
     if (dates.length === 0) return undefined;
     return new Date(Math.max(...dates)).toLocaleString();
@@ -416,7 +417,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
   }
 
   const hasAnyReport = Boolean(
-    bureauMap.Experian || bureauMap.TransUnion || bureauMap.Equifax
+    bureauMap.Experian || bureauMap.TransUnion || bureauMap.Equifax,
   );
   if (!hasAnyReport) {
     return (
@@ -499,7 +500,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
           <div className="mt-1 text-xl sm:text-2xl font-semibold">
             {
               allTradelines.filter(
-                (t) => t.accountStatusType?.toLowerCase() === "open"
+                (t) => t.accountStatusType?.toLowerCase() === "open",
               ).length
             }
           </div>
@@ -700,7 +701,14 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
                             "-";
                           return (
                             <React.Fragment key={`${t.accountIdentifier}-${i}`}>
-                              <tr className="border-b hover:bg-neutral-50">
+                              <tr
+                                className={cn(
+                                  "border-b hover:bg-neutral-50",
+                                  t.accountStatusType?.toLowerCase() === "open"
+                                    ? "bg-blue-100"
+                                    : "",
+                                )}
+                              >
                                 {/* ECOA Column */}
                                 <td className="px-2 py-2 text-center align-top font-medium">
                                   {acctOwnershipCode}
@@ -721,7 +729,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
                                   <div>
                                     {t.accountReportedDate
                                       ? new Date(
-                                          t.accountReportedDate
+                                          t.accountReportedDate,
                                         ).toLocaleDateString("en-US", {
                                           month: "2-digit",
                                           year: "2-digit",
@@ -735,7 +743,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
                                   <div>
                                     {t.accountOpenedDate
                                       ? new Date(
-                                          t.accountOpenedDate
+                                          t.accountOpenedDate,
                                         ).toLocaleDateString("en-US", {
                                           month: "2-digit",
                                           year: "2-digit",
@@ -745,7 +753,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
                                   <div className="text-[9px] text-neutral-500 mt-1">
                                     {t.lastActivityDate
                                       ? new Date(
-                                          t.lastActivityDate
+                                          t.lastActivityDate,
                                         ).toLocaleDateString("en-US", {
                                           month: "2-digit",
                                           year: "2-digit",
@@ -760,8 +768,8 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
                                     {t.creditLimitAmount
                                       ? `$${toNum(t.creditLimitAmount)}`
                                       : t.highBalanceAmount
-                                      ? `$${toNum(t.highBalanceAmount)}`
-                                      : "-"}
+                                        ? `$${toNum(t.highBalanceAmount)}`
+                                        : "-"}
                                   </div>
                                   <div className="text-[9px] text-neutral-500 mt-1">
                                     {t.accountType || "-"}

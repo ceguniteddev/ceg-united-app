@@ -101,6 +101,8 @@ export const bankProductCriteriaSchema = z.object({
   allowsForwardingViaEmail: YesNoEnum.optional().or(z.literal("")),
   canBeFinalizedOnline: YesNoEnum.optional().or(z.literal("")),
   clientNeedsToGoToBranch: YesNoEnum.optional().or(z.literal("")),
+  appointmentOnly: YesNoEnum.optional().or(z.literal("")),
+  openSaturdays: YesNoEnum.optional().or(z.literal("")),
 
   // webUrl: z.string().min(1, "Required"),
   priorityLevel: z.coerce
