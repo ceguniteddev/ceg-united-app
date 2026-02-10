@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   ColumnDef,
   ColumnFiltersState,
+  FilterFn,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -23,6 +24,7 @@ import {
   Trash2Icon,
   XIcon,
   PlusIcon,
+  ChevronDownIcon,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -37,9 +39,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { US_STATES } from "@/constant/common";
 import { Input } from "@/components/ui/input";
 import IconMenu from "@/components/icon-menu";
 import {
@@ -52,7 +57,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { BankFormData } from "@/schema/bank-products";
+import { BankFormData, CreditBureauEnum } from "@/schema/bank-products";
 import {
   useBankProductsMutation,
   useBankProductsQuery,
@@ -60,6 +65,20 @@ import {
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import BankProductsForm from "./bank-product-form";
 import SortableHeader from "@/components/SortableHeader";
+
+const bureauFilterFn: FilterFn<BankFormData> = (row, columnId, filterValue) => {
+  const value = row.getValue<string>(columnId);
+  const selectedFilter = String(filterValue);
+  if (!selectedFilter || selectedFilter === "all") return true;
+  return value.includes(selectedFilter);
+};
+
+const stateFilterFn: FilterFn<BankFormData> = (row, columnId, filterValue) => {
+  const value = row.getValue<string>(columnId);
+  const selectedFilter = String(filterValue);
+  if (!selectedFilter || selectedFilter === "all") return true;
+  return value.includes(selectedFilter) || value.includes("Nationwide");
+};
 
 const columns: ColumnDef<BankFormData>[] = [
   {
@@ -128,6 +147,62 @@ const columns: ColumnDef<BankFormData>[] = [
       );
     },
     size: 180,
+    filterFn: bureauFilterFn,
+  },
+  {
+    id: "stateAvailability",
+    accessorFn: (row) => {
+      const products = row.products || [];
+      const bureaus = products
+        .map((p) => {
+          if (Array.isArray(p.stateAvailability)) {
+            return p.stateAvailability.join(", ");
+          }
+          return p.stateAvailability || "";
+        })
+        .filter(Boolean);
+
+      // Get unique bureaus
+      const uniqueBureaus = Array.from(
+        new Set(bureaus.join(", ").split(", ")),
+      ).filter(Boolean);
+      return uniqueBureaus.join(", ");
+    },
+    header: ({ column }) => <SortableHeader column={column} title="State" />,
+    cell: ({ row }) => {
+      const products = row.original.products || [];
+      const bureaus = products
+        .map((p) => {
+          if (Array.isArray(p.stateAvailability)) {
+            return p.stateAvailability.join(", ");
+          }
+          return p.stateAvailability || "";
+        })
+        .filter(Boolean);
+
+      const states = Array.from(new Set(bureaus.join(", ").split(", "))).filter(
+        Boolean,
+      );
+
+      return (
+        <div className="flex flex-wrap gap-1 max-w-[180px]">
+          {states.length > 0 ? (
+            states.map((state, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+              >
+                {state}
+              </span>
+            ))
+          ) : (
+            <span className="text-muted-foreground text-sm">-</span>
+          )}
+        </div>
+      );
+    },
+    size: 180,
+    filterFn: stateFilterFn,
   },
   {
     id: "products",
@@ -187,6 +262,8 @@ const columns: ColumnDef<BankFormData>[] = [
 const BankProductManagement = () => {
   const { products, isLoading } = useBankProductsQuery();
   const [open, setOpen] = useState(false);
+  const [bureauFilter, setBureauFilter] = useState("all");
+  const [stateFilter, setStateFilter] = useState("all");
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -220,6 +297,20 @@ const BankProductManagement = () => {
       globalFilter,
     },
   });
+
+  useEffect(() => {
+    const col = table.getColumn("bureau");
+    if (!col) return;
+    if (bureauFilter === "all") col.setFilterValue(undefined);
+    else col.setFilterValue(bureauFilter);
+  }, [bureauFilter, table]);
+
+  useEffect(() => {
+    const col = table.getColumn("stateAvailability");
+    if (!col) return;
+    if (stateFilter === "all") col.setFilterValue(undefined);
+    else col.setFilterValue(stateFilter);
+  }, [stateFilter, table]);
 
   const handleExportCSV = () => {
     if (!products) return;
@@ -354,14 +445,14 @@ const BankProductManagement = () => {
   if (isLoading) return <Spinner displayText="Loading bank products…" />;
 
   return (
-    <div className="space-y-6">
+    <div>
       <div className="flex justify-between items-center">
         <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
           Bank Product Management
         </h2>
         <Button
           onClick={() => setOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm h-9 sm:h-10"
+          className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm"
         >
           <IconMenu
             text="Add Bank Product"
@@ -382,21 +473,104 @@ const BankProductManagement = () => {
         <BankProductsForm setOpen={setOpen} />
       </ResponsiveDialog>
 
-      <div className="flex flex-col sm:flex-row sm:items-center py-4 gap-3 px-4 sm:px-0">
-        <Input
-          placeholder="Filter"
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="w-full sm:max-w-sm h-10 sm:h-11"
-        />
-        <Button
-          variant="outline"
-          className="w-full sm:w-auto sm:ml-auto h-11 cursor-pointer"
-          onClick={handleExportCSV}
-        >
-          <DownloadIcon className="mr-2 h-4 w-4" />
-          Export CSV
-        </Button>
+      <div className="flex flex-col gap-3 py-4 px-4 sm:px-0">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Input
+            placeholder="Filter"
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="w-full"
+          />
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto cursor-pointer"
+            onClick={handleExportCSV}
+          >
+            <DownloadIcon className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Bureau Filter */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-muted-foreground">
+              Bureau
+            </label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-9 w-full justify-between"
+                >
+                  <span>
+                    {bureauFilter === "all" ? "All Bureaus" : bureauFilter}
+                  </span>
+                  <ChevronDownIcon className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[200px]">
+                <DropdownMenuRadioGroup
+                  value={bureauFilter}
+                  onValueChange={setBureauFilter}
+                >
+                  <DropdownMenuRadioItem value="all">
+                    All Bureaus
+                  </DropdownMenuRadioItem>
+                  {CreditBureauEnum.options.map((bureau) => (
+                    <DropdownMenuRadioItem key={bureau} value={bureau}>
+                      {bureau}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* State Filter */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-muted-foreground">
+              State
+            </label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-9 w-full justify-between"
+                >
+                  <span>
+                    {stateFilter === "all"
+                      ? "All States"
+                      : US_STATES.find((s) => s.value === stateFilter)?.label ||
+                        stateFilter}
+                  </span>
+                  <ChevronDownIcon className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="w-[200px] max-h-[300px] overflow-y-auto"
+              >
+                <DropdownMenuRadioGroup
+                  value={stateFilter}
+                  onValueChange={setStateFilter}
+                >
+                  <DropdownMenuRadioItem value="all">
+                    All States
+                  </DropdownMenuRadioItem>
+                  {US_STATES.map((state) => (
+                    <DropdownMenuRadioItem
+                      key={state.value}
+                      value={state.value}
+                    >
+                      {state.label}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
       </div>
 
       {/* Mobile Card View */}
