@@ -37,11 +37,19 @@ import React, { useCallback, useMemo, useState } from "react";
 
 import Image from "next/image";
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { Card, CardContent } from "@/components/ui/card";
 import { DOCUMENT_TYPES, DocumentType } from "@/lib/document-types";
 
 const cleanFileName = (fileName: string) => {
   const matchingDocType = DOCUMENT_TYPES.find((dt) =>
-    fileName.startsWith(dt.id + "_")
+    fileName.startsWith(dt.id + "_"),
   );
   if (matchingDocType) {
     return fileName.substring((matchingDocType.id + "_").length);
@@ -69,83 +77,98 @@ const DocumentPreviewer = ({
       </p>
     );
   }
-  return (
-    <div className="space-y-3">
-      {docs.map((doc) => {
-        const isReadOnly = doc.path.toLowerCase().includes("asset-report");
-        return (
-          <div
-            key={doc.path}
-            className="border rounded-lg p-3 shadow-sm bg-white hover:shadow-md transition-shadow overflow-hidden"
-          >
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
-              <div className="flex-1 min-w-0 max-w-full">
-                <h3 className="font-semibold text-sm leading-tight break-words w-full">
-                  {cleanFileName(doc.name.split("/").pop() || "")}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {doc.contentType ?? "unknown"} •{" "}
-                  {(doc.size / 1024).toFixed(1)} KB
-                </p>
-              </div>
-              <div className="flex items-center gap-1 sm:gap-0.5">
-                <Button
-                  variant="ghost"
-                  className="cursor-pointer touch-manipulation flex-shrink-0 h-8 w-8 p-0"
-                  asChild
-                >
-                  <a
-                    href={doc.downloadUrl || doc.signedUrl}
-                    download={doc.name.split("/").pop()}
-                  >
-                    <Download className="h-4 w-4" />
-                  </a>
-                </Button>
-                {!isReadOnly && (
-                  <Button
-                    variant="ghost"
-                    className="cursor-pointer touch-manipulation flex-shrink-0 h-8 w-8 p-0"
-                    onClick={() => onDelete(doc)}
-                    disabled={isDeleting}
-                  >
-                    <Trash2Icon className="h-4 w-4 text-red-500" />
-                  </Button>
-                )}
-              </div>
-            </div>
 
-            {doc.contentType?.startsWith("image/") ? (
-              <div className="overflow-hidden rounded-md">
-                <ImageZoom>
-                  <Image
-                    src={doc.signedUrl}
-                    alt={doc.name}
-                    className="w-full h-48 sm:h-64 lg:h-80 object-contain rounded-md border bg-gray-50"
-                    width={500}
-                    height={500}
-                    unoptimized
-                  />
-                </ImageZoom>
-              </div>
-            ) : doc.contentType === "application/pdf" ? (
-              <div className="overflow-hidden rounded-md">
-                <iframe
-                  src={`${doc.signedUrl}#toolbar=1&view=FitH`}
-                  title={doc.name}
-                  className="w-full h-48 sm:h-64 lg:h-80 rounded-md border bg-white"
-                  loading="lazy"
-                />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-48 sm:h-64 lg:h-80 bg-muted rounded-md overflow-hidden">
-                <p className="text-xs text-muted-foreground">
-                  Preview unavailable
-                </p>
-              </div>
-            )}
-          </div>
-        );
-      })}
+  return (
+    <div className="w-full max-w-6xl mx-auto px-0 sm:px-12 py-4">
+      <Carousel className="w-full" opts={{ loop: true }}>
+        <CarouselContent>
+          {docs.map((doc) => {
+            const isReadOnly = doc.path.toLowerCase().includes("asset-report");
+            return (
+              <CarouselItem key={doc.path}>
+                <div className="p-1">
+                  <Card>
+                    <CardContent className="flex flex-col p-3 sm:p-6 space-y-3 sm:space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-2">
+                        <div className="flex-1 min-w-0 max-w-full">
+                          <h3 className="font-semibold text-sm leading-tight break-words w-full">
+                            {cleanFileName(doc.name.split("/").pop() || "")}
+                          </h3>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {doc.contentType ?? "unknown"} •{" "}
+                            {(doc.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 sm:gap-0.5">
+                          <Button
+                            variant="ghost"
+                            className="cursor-pointer touch-manipulation flex-shrink-0 h-8 w-8 p-0"
+                            asChild
+                          >
+                            <a
+                              href={doc.downloadUrl || doc.signedUrl}
+                              download={doc.name.split("/").pop()}
+                            >
+                              <Download className="h-4 w-4" />
+                            </a>
+                          </Button>
+                          {!isReadOnly && (
+                            <Button
+                              variant="ghost"
+                              className="cursor-pointer touch-manipulation flex-shrink-0 h-8 w-8 p-0"
+                              onClick={() => onDelete(doc)}
+                              disabled={isDeleting}
+                            >
+                              <Trash2Icon className="h-4 w-4 text-red-500" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="w-full aspect-[3/4] sm:aspect-video bg-muted rounded-md overflow-hidden border relative flex items-center justify-center group">
+                        {doc.contentType?.startsWith("image/") ? (
+                          <ImageZoom>
+                            <Image
+                              src={doc.signedUrl}
+                              alt={doc.name}
+                              className="w-full h-full object-contain"
+                              width={800}
+                              height={600}
+                              unoptimized
+                            />
+                          </ImageZoom>
+                        ) : doc.contentType === "application/pdf" ? (
+                          <iframe
+                            src={`${doc.signedUrl}#toolbar=1&view=FitH`}
+                            title={doc.name}
+                            className="w-full h-full"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="text-center p-4">
+                            <p className="text-sm text-muted-foreground">
+                              Preview unavailable for this file type
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CarouselItem>
+            );
+          })}
+        </CarouselContent>
+        <div className="hidden sm:block">
+          <CarouselPrevious />
+          <CarouselNext />
+        </div>
+      </Carousel>
+      {docs.length > 1 && (
+        <div className="sm:hidden text-center text-xs text-muted-foreground mt-2">
+          Swipe to view more documents ({docs.length})
+        </div>
+      )}
     </div>
   );
 };
@@ -176,7 +199,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
       const fileName = doc.name.split("/").pop() || "";
 
       const matchingDocType = DOCUMENT_TYPES.find((dt) =>
-        fileName.startsWith(dt.id + "_")
+        fileName.startsWith(dt.id + "_"),
       );
 
       if (matchingDocType) {
@@ -230,15 +253,15 @@ export default function ClientDocuments({ userId }: { userId: string }) {
     selectedDocType === "ALL"
       ? "All Documents"
       : selectedDocType === "OTHER"
-      ? "Other Documents"
-      : DOCUMENT_TYPES.find((dt) => dt.id === selectedDocType.id)?.title ||
-        "Select Document Type";
+        ? "Other Documents"
+        : DOCUMENT_TYPES.find((dt) => dt.id === selectedDocType.id)?.title ||
+          "Select Document Type";
 
   return (
-    <main className="flex flex-col gap-4 sm:gap-5 p-3 sm:p-5 w-full max-w-full overflow-x-hidden">
+    <main className="flex flex-col gap-3 sm:gap-5 p-2 sm:p-5 w-full max-w-full overflow-x-hidden">
       {/* Document Type Dropdown */}
       <div className="w-full">
-        <h2 className="text-base sm:text-lg font-semibold mb-3">
+        <h2 className="text-sm sm:text-lg font-semibold mb-2 sm:mb-3">
           Select Document Type
         </h2>
         <Select
@@ -246,8 +269,8 @@ export default function ClientDocuments({ userId }: { userId: string }) {
             selectedDocType === "ALL"
               ? "ALL"
               : selectedDocType === "OTHER"
-              ? "OTHER"
-              : selectedDocType.id
+                ? "OTHER"
+                : selectedDocType.id
           }
           onValueChange={(value) => {
             if (value === "ALL") {
