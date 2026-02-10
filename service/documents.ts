@@ -39,7 +39,7 @@ export const uploadDocument = async (
   } else {
     // UNCATEGORIZED ("OTHER") UPLOAD LOGIC
     // Sanitize the original filename and make it unique to prevent conflicts.
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const sanitizedName = file.name?.replace(/[^a-zA-Z0-9._-]/g, "_");
     newFilename = `${Date.now()}_${sanitizedName}`;
   }
 
