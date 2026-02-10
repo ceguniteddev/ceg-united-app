@@ -109,7 +109,7 @@ const ClientData = ({
             {!isBrokerView && (
               <Button
                 variant="ghost"
-                size="sm"
+                size="lg"
                 onClick={() => setEditModalOpen(true)}
                 className="cursor-pointer h-8 px-3 hover:bg-blue-300 bg-blue-200"
               >
@@ -147,6 +147,7 @@ const ClientData = ({
                 <RefreshCRSData user={user} />
                 <Button
                   variant="outline"
+                  size={"lg"}
                   className="w-full cursor-pointer bg-green-50/50 hover:bg-green-100 border-green-200 text-green-700 font-medium shadow-sm"
                   onClick={() => sendClientServiceAgreement()}
                   disabled={isSending}
@@ -242,16 +243,16 @@ const PremiumStatusPicker = ({ user }: { user: UserWithId }) => {
   return (
     <div
       className={[
-        "flex flex-row items-center justify-between rounded-lg px-3 py-2 border w-full sm:flex-1 transition-all duration-200",
+        "flex flex-row items-center justify-between rounded-lg px-3 py-3 border w-full sm:flex-1 transition-all duration-200",
         isPremium
-          ? "border-purple-200 bg-purple-50/50 shadow-sm"
-          : "border-gray-200 bg-white",
+          ? "border-purple-300 bg-purple-50/50 shadow-sm"
+          : "border-purple-200 bg-purple-50/50 shadow-sm",
       ].join(" ")}
     >
       <span
         className={[
           "text-xs font-semibold",
-          isPremium ? "text-purple-700" : "text-gray-600",
+          isPremium ? "text-purple-700" : "text-purple-600",
         ].join(" ")}
       >
         Premium Client
@@ -425,6 +426,7 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
     <>
       <Button
         variant="outline"
+        size={"lg"}
         className="w-full cursor-pointer bg-blue-50/50 hover:bg-blue-100 border-blue-200 text-blue-700 font-medium shadow-sm"
         onClick={() => setRefreshConfirmationOpen(true)}
       >

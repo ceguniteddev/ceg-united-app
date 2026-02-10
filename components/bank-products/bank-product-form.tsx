@@ -159,6 +159,8 @@ const BankProductsForm = ({
       allowsForwardingViaEmail: data.allowsForwardingViaEmail || "No",
       canBeFinalizedOnline: data.canBeFinalizedOnline || "No",
       clientNeedsToGoToBranch: data.clientNeedsToGoToBranch || "No",
+      appointmentOnly: data.appointmentOnly || "No",
+      openSaturdays: data.openSaturdays || "No",
       webUrl: data.webUrl || "",
       priorityLevel: data.priorityLevel,
     }));
@@ -229,6 +231,8 @@ const BankProductsForm = ({
         allowsForwardingViaEmail: "No",
         canBeFinalizedOnline: "No",
         clientNeedsToGoToBranch: "No",
+        appointmentOnly: "No",
+        openSaturdays: "No",
         membershipRequiredBeforeApplicationRequired: "No",
         membershipRequiredUponApprovalRequired: "No",
         accountOpeningBeforeApplicationRequired: "No",
@@ -569,9 +573,22 @@ const BankProductsForm = ({
                           type="select"
                           options={yesNo}
                         />
+
                         <CustomFormField
                           name={`products.${selectedProductIndex}.personalVerifiableIncomeRequired`}
-                          label="Verifiable Income Req"
+                          label="Verifiable Income Required"
+                          type="select"
+                          options={yesNo}
+                        />
+                        <CustomFormField
+                          name={`products.${selectedProductIndex}.appointmentOnly`}
+                          label="Appointment Only?"
+                          type="select"
+                          options={yesNo}
+                        />
+                        <CustomFormField
+                          name={`products.${selectedProductIndex}.openSaturdays`}
+                          label="Open Saturdays?"
                           type="select"
                           options={yesNo}
                         />

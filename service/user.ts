@@ -31,6 +31,7 @@ import {
 } from "./crs";
 import { RegistrationType } from "@/schema/users";
 import { generateEmailVerificationToken } from "./email-verification";
+import { createAsanaTaskForLender } from "@/lib/n8n";
 
 export const getUserRecordByEmail = async (email: string) => {
   const authentication = authenticationAdmin();
@@ -151,6 +152,7 @@ export const registerUser = async ({
   delete (userData as { password?: string }).password;
 
   const docRef = await collectionRef.add(userData);
+  const userId = docRef.id;
   const data = (await docRef.get()).data();
 
   // Create business record first if business data exists
@@ -158,7 +160,7 @@ export const registerUser = async ({
   let referenceNumber: string | undefined;
   if (fundingData?.businessName && fundingData.businessName.trim().length > 0) {
     const businessData: Business = {
-      userId: docRef.id,
+      userId: userId,
       businessName: fundingData.businessName,
       businessStreetAddress: fundingData.businessStreetAddress ?? "",
       businessStreetHouseNumber: fundingData.businessStreetHouseNumber,
@@ -182,7 +184,7 @@ export const registerUser = async ({
   if (fundingData) {
     const fundApplication: ApplyFunding = {
       ...fundingData,
-      userId: docRef.id,
+      userId: userId,
       businessId: businessId, // Set the businessId from created business
       appliedDate: fundingData.appliedDate || new Date(),
       status: fundingData.status || "New",
@@ -215,13 +217,13 @@ export const registerUser = async ({
       // For non-self registrations (Broker/Admin), trigger analysis immediately
       // Send Client Congrats Message
       await sendClientFundingApplicationCongratsMessage({
-        userId: docRef.id,
+        userId: userId,
         referenceNumber,
       });
 
       // Send Client Audit Analysis
       await sendClientFundingApplicationAuditAnalysis({
-        userId: docRef.id,
+        userId: userId,
         referenceNumber,
       });
     }
@@ -230,7 +232,7 @@ export const registerUser = async ({
   const authAdmin = authenticationAdmin();
 
   await authAdmin.createUser({
-    uid: docRef.id,
+    uid: userId,
     email: user.email,
     password: user.password,
     displayName: `${user.firstName} ${user.lastName}`,
@@ -239,7 +241,7 @@ export const registerUser = async ({
   });
 
   logInfo("Generating token...", {
-    userId: docRef.id,
+    userId: userId,
     email: user.email,
     referenceNumber: referenceNumber,
     registrationType,
@@ -247,7 +249,7 @@ export const registerUser = async ({
 
   // Generate custom verification token
   const verificationToken = await generateEmailVerificationToken({
-    userId: docRef.id,
+    userId: userId,
     email: user.email,
     referenceNumber: referenceNumber,
     registrationType,
@@ -289,6 +291,18 @@ export const registerUser = async ({
     emailTo: process.env.NEW_REGISTRATION_EMAIL_NOTIF!,
     subject: `New Registration - ${user.firstName} ${user.lastName}`,
     bodyHTML: registrationBody,
+  });
+
+  await fetch(`${process.env.n8n_HOST}/${await createAsanaTaskForLender()}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      userId: userId,
+      referenceNumber: referenceNumber,
+    }),
   });
 
   return {
