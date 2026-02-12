@@ -279,6 +279,7 @@ export const registerUser = async ({
   } else {
     requestBody = getVerifyEmailBody(verificationLink);
   }
+
   await sendMail({
     emailTo: user.email,
     subject: "Verify Email",
@@ -293,6 +294,24 @@ export const registerUser = async ({
     bodyHTML: registrationBody,
   });
 
+  await createAsanaTaskForNewRegistration({
+    userId: userId,
+    referenceNumber: referenceNumber,
+  });
+
+  return {
+    id: docRef.id,
+    ...normalizeAllDates(data),
+  };
+};
+
+const createAsanaTaskForNewRegistration = async ({
+  userId,
+  referenceNumber,
+}: {
+  userId: string;
+  referenceNumber?: string;
+}) => {
   await fetch(`${process.env.n8n_HOST}/${await createAsanaTaskForLender()}`, {
     method: "POST",
     headers: {
@@ -304,11 +323,6 @@ export const registerUser = async ({
       referenceNumber: referenceNumber,
     }),
   });
-
-  return {
-    id: docRef.id,
-    ...normalizeAllDates(data),
-  };
 };
 
 const getVerifyEmailBody = (link: string) => {
@@ -1148,4 +1162,53 @@ export const deleteUser = async (userId: string) => {
     logError(new Error(`Error deleting user with id: ${userId}`), error);
     throw new AppError("Failed to delete user.");
   }
+};
+
+export const updateClientBrokerMapping = async ({
+  clientId,
+  brokerId,
+  brokerName,
+}: {
+  clientId: string;
+  brokerId: string | null;
+  brokerName: string;
+}) => {
+  logInfo("Updating client broker mapping", { clientId, brokerId, brokerName });
+
+  if (!clientId) throw new AppError("Client ID is required");
+
+  const db = firestoreAdmin();
+
+  // First, deactivate any existing active mappings for this client
+  const existingMappings = await db
+    .collection(BROKER_CLIENT_MAPPING)
+    .where("clientId", "==", clientId)
+    .where("status", "==", "Active")
+    .get();
+
+  const batch = db.batch();
+
+  // Deactivate all existing mappings
+  existingMappings.docs.forEach((doc) => {
+    batch.update(doc.ref, { status: "Inactive", updatedAt: new Date() });
+  });
+
+  // If brokerId is provided, create new mapping
+  if (brokerId) {
+    const newMappingRef = db.collection(BROKER_CLIENT_MAPPING).doc();
+    batch.set(newMappingRef, {
+      clientId,
+      brokerId,
+      brokerName,
+      status: "Active",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    logInfo("Creating new broker-client mapping", { clientId, brokerId });
+  } else {
+    logInfo("Removing broker assignment from client", { clientId });
+  }
+
+  await batch.commit();
+  logInfo("Broker mapping updated successfully", { clientId, brokerId });
 };
