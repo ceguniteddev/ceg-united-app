@@ -34,6 +34,8 @@ import {
   useUpdateUserProfileMutation,
   useSendClientServiceAgreementMutation,
   useDeleteUserMutation,
+  useUsersQuery,
+  useUpdateClientBrokerMutation,
 } from "@/hooks/user";
 import { useRefreshCRSData } from "@/hooks/crs";
 import { toast } from "sonner";
@@ -793,9 +795,19 @@ const EditClientModal = ({
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   user: UserWithId;
 }) => {
-  const { updateUserProfile, isUpdating } = useUpdateUserProfileMutation({
-    userId: user.id,
-  });
+  const { updateUserProfile, isUpdating: isUpdatingProfile } =
+    useUpdateUserProfileMutation({
+      userId: user.id,
+    });
+  const { updateClientBroker, isUpdating: isUpdatingBroker } =
+    useUpdateClientBrokerMutation({
+      userId: user.id,
+    });
+  const { users: brokers, isLoading: isBrokersLoading } =
+    useUsersQuery("Broker");
+
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(null);
+  const [hasChangedBroker, setHasChangedBroker] = useState(false);
 
   const updateSchema = registrationSchema.partial().omit({
     password: true,
@@ -816,14 +828,45 @@ const EditClientModal = ({
     },
   });
 
+  // Initialize broker selection when modal opens
+  React.useEffect(() => {
+    if (isOpen && brokers) {
+      // Find current broker ID from broker name
+      const currentBroker = brokers.find(
+        (b: any) => `${b.firstName} ${b.lastName}` === user.brokerName,
+      );
+      setSelectedBrokerId(currentBroker?.id || null);
+      setHasChangedBroker(false);
+    }
+  }, [isOpen, brokers, user.brokerName]);
+
   const handleSubmit = async (data: any) => {
     try {
+      // Update user profile
       await updateUserProfile(data);
+
+      // Update broker assignment if changed
+      if (hasChangedBroker) {
+        const selectedBroker = brokers?.find(
+          (b: any) => b.id === selectedBrokerId,
+        );
+        const brokerName = selectedBroker
+          ? `${selectedBroker.firstName} ${selectedBroker.lastName}`
+          : "";
+
+        await updateClientBroker({
+          brokerId: selectedBrokerId,
+          brokerName,
+        });
+      }
+
       setIsOpen(false);
     } catch (error) {
       console.error("Error updating user:", error);
     }
   };
+
+  const isUpdating = isUpdatingProfile || isUpdatingBroker;
 
   return (
     <ResponsiveDialog
@@ -874,6 +917,37 @@ const EditClientModal = ({
                 placeholder=" "
                 options={genderTypes()}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Assigned Broker</Label>
+              <Select
+                value={selectedBrokerId || "none"}
+                onValueChange={(value) => {
+                  setSelectedBrokerId(value === "none" ? null : value);
+                  setHasChangedBroker(true);
+                }}
+                disabled={isBrokersLoading}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a broker" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">
+                    <span className="text-muted-foreground">No Broker</span>
+                  </SelectItem>
+                  {brokers?.map((broker: any) => (
+                    <SelectItem key={broker.id} value={broker.id}>
+                      {broker.firstName} {broker.lastName} ({broker.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {user.brokerName && (
+                <p className="text-xs text-muted-foreground">
+                  Current: {user.brokerName}
+                </p>
+              )}
             </div>
           </div>
 
