@@ -333,8 +333,11 @@ const DenefitsPaymentsList = ({ denefitsPayments }: Props) => {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:flex rounded-md border">
-        <ScrollArea type="always" className="w-1 flex-1">
+      <div className="rounded-md border hidden md:flex">
+        <ScrollArea
+          type="always"
+          className="w-1 flex-1 h-[calc(100vh-380px)] min-h-[400px]"
+        >
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
