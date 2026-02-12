@@ -22,6 +22,35 @@ export default function VerifyEmailPage() {
   const [verificationResult, setVerificationResult] =
     useState<VerificationResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingStep, setLoadingStep] = useState(0);
+
+  const loadingSteps = [
+    "Verifying email signature...",
+    "Validating account information...",
+    "Initializing secure session...",
+    "Retrieving credit report data...",
+    "Analyzing credit profile...",
+    "Calculating credit utilization...",
+    "Checking payment history...",
+    "Scanning for derogatory marks...",
+    "Generating financial assessment...",
+    "Finalizing verification...",
+  ];
+
+  useEffect(() => {
+    // Start progress animation immediately
+    const interval = setInterval(() => {
+      setLoadingStep((prev) => {
+        // Keep cycling through the analysis steps until loading is complete
+        if (prev < loadingSteps.length - 1) {
+          return prev + 1;
+        }
+        return prev;
+      });
+    }, 5000); // 5 seconds per step for better readability
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const verifyEmail = async () => {
@@ -39,7 +68,7 @@ export default function VerifyEmailPage() {
         const data = await response.json();
 
         if (!response.ok) {
-            console.log(data)
+          console.log(data);
           setVerificationResult({
             success: false,
             message: data.errors || "Verification failed.",
@@ -86,10 +115,24 @@ export default function VerifyEmailPage() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-8">
-                <Loader2 className="h-12 w-12 animate-spin text-blue-500 mb-4" />
-                <p className="text-gray-600 text-center">
-                  Verifying your email address...
+              <div className="flex flex-col items-center justify-center py-8 w-full max-w-xs mx-auto">
+                <Loader2 className="h-12 w-12 animate-spin text-blue-500 mb-6" />
+                <h3 className="text-xl font-semibold text-gray-800 mb-2 text-center">
+                  Processing Application
+                </h3>
+                <p className="text-gray-500 text-sm text-center mb-8 animate-pulse min-h-[1.5rem] font-medium">
+                  {loadingSteps[loadingStep]}
+                </p>
+                <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out shadow-sm"
+                    style={{
+                      width: `${Math.min(((loadingStep + 1) / loadingSteps.length) * 100, 95)}%`,
+                    }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-400 mt-2 text-center">
+                  This may take up to a minute...
                 </p>
               </div>
             ) : (
