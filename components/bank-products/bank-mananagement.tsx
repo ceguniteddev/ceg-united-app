@@ -61,6 +61,7 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   flexRender,
   createColumnHelper,
   type ColumnDef,
@@ -68,7 +69,6 @@ import {
   type ColumnFiltersState,
 } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
-import { ArrowUpDown } from "lucide-react";
 import SortableHeader from "../SortableHeader";
 import { DataTablePagination } from "../funding/pagination";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
@@ -195,6 +195,7 @@ const BankManagement = () => {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
@@ -233,7 +234,7 @@ const BankManagement = () => {
       <div className="rounded-md border hidden md:flex">
         <ScrollArea
           type="always"
-          className="w-1 flex-1 h-[calc(100vh-280px)] min-h-[400px]"
+          className="w-1 flex-1 h-[calc(100vh-380px)] min-h-[400px]"
         >
           <Table>
             <TableHeader>

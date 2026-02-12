@@ -51,7 +51,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 const statusFilterFn: FilterFn<BrokerRegistration & { id: string }> = (
   row,
   columnId,
-  filterValue
+  filterValue,
 ) => {
   const raw = row.getValue<string | undefined>(columnId);
   const v = (raw ?? "Active").toLowerCase();
@@ -64,7 +64,7 @@ const BrokersList = () => {
   const { brokers, isLoading } = useGetAllBrokers();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -259,7 +259,10 @@ const BrokersList = () => {
 
       {/* Desktop Table View */}
       <div className="rounded-md border hidden md:flex">
-        <ScrollArea type="always" className="w-1 flex-1">
+        <ScrollArea
+          type="always"
+          className="w-1 flex-1 h-[calc(100vh-380px)] min-h-[400px]"
+        >
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -271,7 +274,7 @@ const BrokersList = () => {
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                       </TableHead>
                     );
@@ -290,7 +293,7 @@ const BrokersList = () => {
                       <TableCell key={cell.id}>
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}
@@ -385,7 +388,7 @@ const StatusPicker = ({
         });
       }
     },
-    [updateBrokerStatus]
+    [updateBrokerStatus],
   );
 
   return (
