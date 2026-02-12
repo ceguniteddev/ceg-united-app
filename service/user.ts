@@ -847,6 +847,7 @@ export const getUserDocuments = async ({
           updated: meta.updated ?? "",
           signedUrl,
           downloadUrl,
+          metadata: meta.metadata || {}, // Include custom metadata
         };
       }),
   );
