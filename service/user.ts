@@ -294,10 +294,12 @@ export const registerUser = async ({
     bodyHTML: registrationBody,
   });
 
-  await createAsanaTaskForNewRegistration({
-    userId: userId,
-    referenceNumber: referenceNumber,
-  });
+  if (user.role === "Client" && referenceNumber) {
+    await createAsanaTaskForNewRegistration({
+      userId: userId,
+      referenceNumber: referenceNumber,
+    });
+  }
 
   return {
     id: docRef.id,
