@@ -1,11 +1,11 @@
 "use server";
 
-import { storageAdmin } from "@/lib/fireabase-admin";
 import { logError, logInfo } from "@/lib/logger";
 import { getAnalysis } from "./analysis";
 import { renderToBuffer, Document } from "@react-pdf/renderer";
 import { FundingAnalysisDocument } from "@/components/pdf/FundingAnalysisDocument";
 import React from "react";
+import { uploadDocument } from "./documents";
 
 /**
  * Converts the funding analysis HTML content to PDF and saves it to Firebase Storage
@@ -17,7 +17,7 @@ import React from "react";
  */
 export const saveAnalysisToPDF = async (
   referenceNumber: string,
-  userId: string
+  userId: string,
 ) => {
   logInfo("saveAnalysisToPDF", { referenceNumber, userId });
 
@@ -38,35 +38,33 @@ export const saveAnalysisToPDF = async (
         React.createElement(FundingAnalysisDocument, {
           analysisData,
           referenceNumber,
-        })
-      )
+        }),
+      ),
     );
 
-    // Upload to Firebase Storage
-    const filename = `funding-analysis-${referenceNumber}.pdf`;
-    const gcsPath = `documents/${userId}/${filename}`;
-
-    const bucket = storageAdmin();
-    const file = bucket.file(gcsPath);
-
-    await file.save(pdfBuffer, {
-      metadata: {
-        contentType: "application/pdf",
-        metadata: {
-          referenceNumber,
-          documentType: "FUNDING_ANALYSIS",
-          generatedAt: new Date().toISOString(),
-        },
-      },
+    // Create a File object from the buffer
+    const filename = `${referenceNumber}.pdf`;
+    const file = new File([new Uint8Array(pdfBuffer)], filename, {
+      type: "application/pdf",
     });
 
-    logInfo("saveAnalysisToPDF success", { gcsPath, size: pdfBuffer.length });
+    // Upload using centralized uploadDocument service function
+    const result = await uploadDocument(userId, file, "FUNDING_ANALYSIS", {
+      referenceNumber,
+      documentType: "FUNDING_ANALYSIS",
+      generatedAt: new Date().toISOString(),
+    });
+
+    logInfo("saveAnalysisToPDF success", {
+      gcsPath: result.gcsPath,
+      size: result.size,
+    });
 
     return {
-      gcsPath,
-      filename,
-      size: pdfBuffer.length,
-      contentType: "application/pdf",
+      gcsPath: result.gcsPath,
+      filename: result.originalFilename,
+      size: result.size,
+      contentType: result.contentType,
     };
   } catch (error: any) {
     logError(new Error(`saveAnalysisToPDF error: ${error.message}`));

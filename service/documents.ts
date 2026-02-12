@@ -12,12 +12,14 @@ import { UploadedFileData } from "@/schema";
  * @param userId - The ID of the user.
  * @param file - A single File object.
  * @param documentType - The category of the document (e.g., "DRIVERS_LICENSE").
+ * @param customMetadata - Optional custom metadata to attach to the file.
  * @returns A promise that resolves to the details of the uploaded file.
  */
 export const uploadDocument = async (
   userId: string,
   file: File,
-  documentType: string | null // <-- Now optional
+  documentType: string | null, // <-- Now optional
+  customMetadata?: Record<string, string>, // <-- Optional metadata parameter
 ): Promise<UploadedFileData> => {
   const bucket = storageAdmin();
   const userDocumentPrefix = `documents/${userId}/`;
@@ -52,6 +54,7 @@ export const uploadDocument = async (
   await blob.save(buffer, {
     metadata: {
       contentType: file.type,
+      ...customMetadata, // Merge custom metadata
     },
   });
 
@@ -78,7 +81,7 @@ export const deleteDocument = async (path: string) => {
     // It's often safe to ignore "Not Found" errors during deletion
     if (error.code === 404) {
       console.warn(
-        `Attempted to delete a document that does not exist: ${path}`
+        `Attempted to delete a document that does not exist: ${path}`,
       );
       return;
     }
