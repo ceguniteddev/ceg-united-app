@@ -25,6 +25,7 @@ import {
 import { noteSchema, NoteSchema } from "@/schema/notes";
 import { getUserById } from "./user";
 import { RegistrationType } from "@/schema/users";
+import { uploadDocument } from "./documents";
 
 export const applyFunding = async ({
   value,
@@ -38,8 +39,8 @@ export const applyFunding = async ({
     throw new AppError("User not found");
   }
 
-  logInfo("applyFunding::userData", userData);
-  logInfo("applyFunding::registrationType", { registrationType });
+  // logInfo("applyFunding::userData", userData);
+  // logInfo("applyFunding::registrationType", { registrationType });
 
   const db = firestoreAdmin();
 
@@ -56,8 +57,6 @@ export const applyFunding = async ({
 
   // Upload documents to Firebase Storage
   if (bankStatements || driverLicenseDocuments) {
-    const bucket = storageAdmin();
-
     // Upload bank statements
     if (bankStatements && bankStatements.length > 0) {
       for (const doc of bankStatements) {
@@ -65,16 +64,15 @@ export const applyFunding = async ({
           // Extract base64 data (remove data:application/pdf;base64, prefix)
           const base64Data = doc.base64.split(",")[1];
           const buffer = Buffer.from(base64Data, "base64");
-          const fileName = `BANK_STATEMENTS_${doc.name}`;
-          const filePath = `documents/${value.userId}/${fileName}`;
 
-          const file = bucket.file(filePath);
-          await file.save(buffer, {
-            contentType: doc.type,
-            metadata: {
-              uploadedAt: new Date().toISOString(),
-              originalName: doc.name,
-            },
+          // Create a File object from the buffer
+          const file = new File([buffer], doc.name, { type: doc.type });
+
+          // Use uploadDocument service function
+          await uploadDocument(value.userId!, file, "BANK_STATEMENTS", {
+            referenceNumber,
+            documentType: "BANK_STATEMENTS",
+            uploadedAt: new Date().toISOString(),
           });
         } catch (error) {
           console.error("Error uploading bank statement:", error);
@@ -90,16 +88,15 @@ export const applyFunding = async ({
           // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix)
           const base64Data = doc.base64.split(",")[1];
           const buffer = Buffer.from(base64Data, "base64");
-          const fileName = `DRIVERS_LICENSE_${doc.name}`;
-          const filePath = `documents/${value.userId}/${fileName}`;
 
-          const file = bucket.file(filePath);
-          await file.save(buffer, {
-            contentType: doc.type,
-            metadata: {
-              uploadedAt: new Date().toISOString(),
-              originalName: doc.name,
-            },
+          // Create a File object from the buffer
+          const file = new File([buffer], doc.name, { type: doc.type });
+
+          // Use uploadDocument service function
+          await uploadDocument(value.userId!, file, "DRIVERS_LICENSE", {
+            referenceNumber,
+            documentType: "DRIVERS_LICENSE",
+            uploadedAt: new Date().toISOString(),
           });
         } catch (error) {
           console.error("Error uploading driver license:", error);
@@ -133,7 +130,7 @@ export const applyFunding = async ({
       await generateCRSReportBusiness(
         value.userId!,
         referenceNumber,
-        value.businessId
+        value.businessId,
       );
     }
   }
@@ -144,7 +141,7 @@ export const applyFunding = async ({
 };
 
 export const getApplyFunding = async (
-  userId: string
+  userId: string,
 ): Promise<ApplyFunding[] | null> => {
   const db = firestoreAdmin();
   const collectionRef = db
@@ -247,7 +244,7 @@ export const getApplyFundingByReferenceNumber = async ({
 };
 
 export const deleteApplyFunding = async (
-  referenceNumber: string
+  referenceNumber: string,
 ): Promise<void> => {
   if (!referenceNumber) {
     throw new AppError("Reference number is required.");
@@ -336,7 +333,7 @@ function randomString(length: number) {
 export const updateApplicationStatus = async (
   referenceNumber: string,
   status: FundingApplicationSatus,
-  approveOrDeclineValue?: FundingApplicationApproveDecline
+  approveOrDeclineValue?: FundingApplicationApproveDecline,
 ) => {
   logInfo("updateApplicationStatus", { referenceNumber, status });
 
@@ -367,14 +364,14 @@ export const addFundApplicationNotes = async ({
 
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/notes`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/notes`,
   );
   const docRef = collectionRef.doc(referenceNumber);
   await docRef.set({ notes });
 };
 
 export const getFundApplicationNotes = async (
-  referenceNumber: string
+  referenceNumber: string,
 ): Promise<string[]> => {
   if (!referenceNumber) throw new AppError("Reference number is required.");
 
@@ -386,7 +383,7 @@ export const getFundApplicationNotes = async (
 
   const db = firestoreAdmin();
   const collectionRef = db.collection(
-    `${USER_FUNDING_APPLICATION}/${referenceNumber}/notes`
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/notes`,
   );
   const docRef = collectionRef.doc(referenceNumber);
   const doc = await docRef.get();
@@ -398,7 +395,7 @@ const NOTE_COLLECTION = "internalNotes";
 const NOTE_DOC_ID = "main";
 
 export const getFundApplicationNote = async (
-  referenceNumber: string
+  referenceNumber: string,
 ): Promise<NoteSchema> => {
   if (!referenceNumber) {
     throw new AppError("Reference number is required.");
@@ -495,8 +492,6 @@ export const updateApplyFunding = async ({
 
   // Upload documents to Firebase Storage
   if (bankStatements || driverLicenseDocuments) {
-    const bucket = storageAdmin();
-
     // Upload bank statements
     if (bankStatements && bankStatements.length > 0) {
       for (const doc of bankStatements) {
@@ -504,16 +499,15 @@ export const updateApplyFunding = async ({
           // Extract base64 data (remove data:application/pdf;base64, prefix)
           const base64Data = doc.base64.split(",")[1];
           const buffer = Buffer.from(base64Data, "base64");
-          const fileName = `BANK_STATEMENTS_${doc.name}`;
-          const filePath = `documents/${value.userId}/${fileName}`;
 
-          const file = bucket.file(filePath);
-          await file.save(buffer, {
-            contentType: doc.type,
-            metadata: {
-              uploadedAt: new Date().toISOString(),
-              originalName: doc.name,
-            },
+          // Create a File object from the buffer
+          const file = new File([buffer], doc.name, { type: doc.type });
+
+          // Use uploadDocument service function
+          await uploadDocument(value.userId!, file, "BANK_STATEMENTS", {
+            referenceNumber: value.referenceNumber!,
+            documentType: "BANK_STATEMENTS",
+            uploadedAt: new Date().toISOString(),
           });
         } catch (error) {
           console.error("Error uploading bank statement:", error);
@@ -529,16 +523,15 @@ export const updateApplyFunding = async ({
           // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix)
           const base64Data = doc.base64.split(",")[1];
           const buffer = Buffer.from(base64Data, "base64");
-          const fileName = `DRIVERS_LICENSE_${doc.name}`;
-          const filePath = `documents/${value.userId}/${fileName}`;
 
-          const file = bucket.file(filePath);
-          await file.save(buffer, {
-            contentType: doc.type,
-            metadata: {
-              uploadedAt: new Date().toISOString(),
-              originalName: doc.name,
-            },
+          // Create a File object from the buffer
+          const file = new File([buffer], doc.name, { type: doc.type });
+
+          // Use uploadDocument service function
+          await uploadDocument(value.userId!, file, "DRIVERS_LICENSE", {
+            referenceNumber: value.referenceNumber!,
+            documentType: "DRIVERS_LICENSE",
+            uploadedAt: new Date().toISOString(),
           });
         } catch (error) {
           console.error("Error uploading driver license:", error);

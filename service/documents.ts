@@ -1,9 +1,58 @@
 "use server";
 
 import { storageAdmin } from "@/lib/fireabase-admin";
+import { logInfo } from "@/lib/logger";
 import { UploadedFileData } from "@/schema";
+import { headers } from "next/headers";
+import { getCurrentUser } from "./user";
 
 // The shape of the returned data remains the same
+
+/**
+ * Extracts the client IP address from request headers.
+ * Checks multiple headers in order of preference.
+ * Supports both IPv4 and IPv6 addresses.
+ */
+const getClientIP = async (): Promise<string> => {
+  const headersList = await headers();
+
+  let ipAddress: string | null = null;
+
+  // Check x-forwarded-for first (most common behind proxies/load balancers)
+  const forwarded = headersList.get("x-forwarded-for");
+  if (forwarded) {
+    // x-forwarded-for can be a comma-separated list, take the first IP
+    ipAddress = forwarded.split(",")[0].trim();
+  }
+
+  // Check x-real-ip (used by nginx)
+  if (!ipAddress) {
+    const realIp = headersList.get("x-real-ip");
+    if (realIp) ipAddress = realIp;
+  }
+
+  // Check x-client-ip
+  if (!ipAddress) {
+    const clientIp = headersList.get("x-client-ip");
+    if (clientIp) ipAddress = clientIp;
+  }
+
+  // If no IP found, return unknown
+  if (!ipAddress) return "unknown";
+
+  // Clean and normalize the IP address
+  // Remove port if present (e.g., "192.168.1.1:8080" -> "192.168.1.1")
+  ipAddress =
+    ipAddress.split(":").length > 2
+      ? ipAddress // Keep IPv6 as is (has multiple colons)
+      : ipAddress.split(":")[0]; // Remove port from IPv4
+
+  // Add IP version indicator for metadata
+  // const isIPv6 = ipAddress.includes(":");
+  // const ipVersion = isIPv6 ? "IPv6" : "IPv4";
+
+  return ipAddress;
+};
 
 /**
  * Uploads a single document for a specific user and document type.
@@ -12,12 +61,14 @@ import { UploadedFileData } from "@/schema";
  * @param userId - The ID of the user.
  * @param file - A single File object.
  * @param documentType - The category of the document (e.g., "DRIVERS_LICENSE").
+ * @param customMetadata - Optional custom metadata to attach to the file.
  * @returns A promise that resolves to the details of the uploaded file.
  */
 export const uploadDocument = async (
   userId: string,
   file: File,
-  documentType: string | null // <-- Now optional
+  documentType: string | null, // <-- Now optional
+  customMetadata?: Record<string, string>, // <-- Optional metadata parameter
 ): Promise<UploadedFileData> => {
   const bucket = storageAdmin();
   const userDocumentPrefix = `documents/${userId}/`;
@@ -45,13 +96,26 @@ export const uploadDocument = async (
 
   const path = `${userDocumentPrefix}${newFilename}`;
 
+  // Check if current user is Admin to skip IP recording
+  const currentUser = await getCurrentUser();
+  const isAdmin = currentUser?.role === "Admin";
+
+  // Capture client IP address only if not Admin
+  const clientIP = isAdmin ? undefined : await getClientIP();
+  // logInfo("uploadDocument", { userId, documentType, clientIP, customMetadata });
+
   // --- Upload Logic (same for both branches) ---
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
   const blob = bucket.file(path);
+
   await blob.save(buffer, {
     metadata: {
-      contentType: file.type,
+      metadata: {
+        contentType: file.type,
+        ...(clientIP && { clientIP }), // Only include clientIP if not Admin
+        ...customMetadata,
+      },
     },
   });
 
@@ -78,7 +142,7 @@ export const deleteDocument = async (path: string) => {
     // It's often safe to ignore "Not Found" errors during deletion
     if (error.code === 404) {
       console.warn(
-        `Attempted to delete a document that does not exist: ${path}`
+        `Attempted to delete a document that does not exist: ${path}`,
       );
       return;
     }
