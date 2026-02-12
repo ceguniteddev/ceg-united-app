@@ -3,6 +3,7 @@
 import {
   useGetBrokerClients,
   useSubmitClientApplication,
+  useInviteClientMutation,
 } from "@/hooks/broker";
 import {
   Card,
@@ -23,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, Search, Mail, Calendar, Plus } from "lucide-react";
+import { Users, Search, Mail, Calendar, Plus, Send } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -37,8 +38,11 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 export default function MyClientsPage() {
   const { clients, isLoading } = useGetBrokerClients();
   const mutation = useSubmitClientApplication();
+  const { inviteClient, isInviting } = useInviteClientMutation();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = async (
@@ -64,11 +68,26 @@ export default function MyClientsPage() {
     }
   };
 
+  const handleSendInvite = async () => {
+    if (!inviteEmail || !inviteEmail.includes("@")) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    try {
+      await inviteClient({ email: inviteEmail });
+      setIsInviteModalOpen(false);
+      setInviteEmail("");
+    } catch (error) {
+      // Error handled by mutation
+    }
+  };
+
   const filteredClients =
     clients?.filter(
       (client: any) =>
-        client.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.clientEmail.toLowerCase().includes(searchTerm.toLowerCase()),
+        client.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.clientEmail?.toLowerCase().includes(searchTerm.toLowerCase()),
     ) || [];
 
   if (isLoading) {
@@ -92,14 +111,24 @@ export default function MyClientsPage() {
             Manage and view all your clients
           </p>
         </div>
-        <Button
-          variant={"outline"}
-          className="bg-blue-200 hover:bg-blue-300 cursor-pointer"
-          onClick={() => setIsModalOpen(true)}
-        >
-          <Plus className="h-4 w-4" />
-          Add New Client
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button
+            variant={"default"}
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all cursor-pointer font-semibold"
+            onClick={() => setIsInviteModalOpen(true)}
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Invite Client
+          </Button>
+          <Button
+            variant={"outline"}
+            className="bg-blue-200 hover:bg-blue-300 cursor-pointer"
+            onClick={() => setIsModalOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add New Client
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -270,6 +299,75 @@ export default function MyClientsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Invite Client Modal */}
+      <ResponsiveDialog
+        isOpen={isInviteModalOpen}
+        setIsOpen={setIsInviteModalOpen}
+        title="Invite Client"
+        description="Send an invitation email to your client to join the platform"
+        className="w-[calc(100vw-16px)] sm:max-w-md"
+        isModal={false}
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label
+              htmlFor="invite-email"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Client Email Address
+            </label>
+            <Input
+              id="invite-email"
+              type="email"
+              placeholder="client@example.com"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !isInviting) {
+                  handleSendInvite();
+                }
+              }}
+              className="w-full"
+              disabled={isInviting}
+            />
+            <p className="text-xs text-muted-foreground">
+              Your client will receive an email with a link to create their
+              account.
+            </p>
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsInviteModalOpen(false);
+                setInviteEmail("");
+              }}
+              disabled={isInviting}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSendInvite}
+              disabled={isInviting || !inviteEmail}
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+            >
+              {isInviting ? (
+                <>
+                  <span className="mr-2">Sending...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Invite
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </ResponsiveDialog>
 
       {/* Multi-Step Registration Form */}
       <ResponsiveDialog

@@ -268,3 +268,40 @@ export const useUpdateBrokerStatusMutation = ({
     isUpdating: mutation.isPending,
   };
 };
+
+// Invite client
+export const useInviteClientMutation = () => {
+  const mutation = useMutation({
+    mutationFn: async ({ email }: { email: string }) => {
+      const response = await fetch("/api/broker/invite-client", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.errors || "Failed to send invitation");
+      }
+
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast.success("Invitation sent successfully!", {
+        description: `An invitation email has been sent to ${data.email}`,
+      });
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to send invitation", {
+        description: error.message,
+      });
+    },
+  });
+
+  return {
+    inviteClient: mutation.mutateAsync,
+    isInviting: mutation.isPending,
+  };
+};
