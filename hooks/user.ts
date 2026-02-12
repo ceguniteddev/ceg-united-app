@@ -314,6 +314,57 @@ export const useUpdateUserProfileMutation = ({
   };
 };
 
+export const useUpdateClientBrokerMutation = ({
+  userId,
+}: {
+  userId: string;
+}) => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const updateBrokerMutation = useMutation({
+    mutationFn: async ({
+      brokerId,
+      brokerName,
+    }: {
+      brokerId: string | null;
+      brokerName: string;
+    }) => {
+      if (!user) {
+        throw new AppError("User not authenticated");
+      }
+
+      const response = await fetch(`/api/user/${userId}/broker`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ brokerId, brokerName }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error updating broker assignment:", errorData);
+        throw new AppError("Failed to update broker assignment.");
+      }
+    },
+    onSuccess: () => {
+      // toast.success("Broker assignment updated successfully");
+      queryClient.invalidateQueries({ queryKey: [GET_USER, userId] });
+      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
+    },
+    onError: (error: any) => {
+      console.log("Error updating broker assignment:", error);
+      toast.error("Failed to update broker assignment. Please try again.");
+    },
+  });
+
+  return {
+    updateClientBroker: updateBrokerMutation.mutateAsync,
+    isUpdating: updateBrokerMutation.isPending,
+  };
+};
+
 export const useToggleLetterFeatureMutation = ({
   userId,
 }: {
