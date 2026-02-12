@@ -35,6 +35,7 @@ declare global {
     updated: string;
     signedUrl: string;
     downloadUrl?: string;
+    metadata?: Record<string, string | number | boolean | null>; // Custom metadata from storage
   };
 
   type GetBankFormDataResponse = {

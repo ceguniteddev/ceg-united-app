@@ -98,6 +98,32 @@ const DocumentPreviewer = ({
                             {doc.contentType ?? "unknown"} •{" "}
                             {(doc.size / 1024).toFixed(1)} KB
                           </p>
+
+                          {/* {doc.metadata &&
+                            Object.keys(doc.metadata).length > 0 && (
+                              <div className="mt-2 pt-2 border-t border-muted">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">
+                                  Metadata:
+                                </p>
+                                <div className="space-y-0.5">
+                                  {Object.entries(doc.metadata).map(
+                                    ([key, value]) => (
+                                      <div
+                                        key={key}
+                                        className="text-xs text-muted-foreground flex gap-1"
+                                      >
+                                        <span className="font-medium">
+                                          {key}:
+                                        </span>
+                                        <span className="break-all">
+                                          {String(value)}
+                                        </span>
+                                      </div>
+                                    ),
+                                  )}
+                                </div>
+                              </div>
+                            )} */}
                         </div>
                         <div className="flex items-center gap-1 sm:gap-0.5">
                           <Button
