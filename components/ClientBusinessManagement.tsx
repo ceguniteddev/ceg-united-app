@@ -78,7 +78,7 @@ const ClientBusinessManagement = ({
       // Merge existing social media data with the full list of platforms
       const socialMediaData = SOCIAL_MEDIA_PLATFORMS.map((platform) => {
         const existing = formValues.socialMedia?.find(
-          (s) => s?.platform === platform.value
+          (s) => s?.platform === platform.value,
         );
         return {
           platform: platform.value,
@@ -106,7 +106,7 @@ const ClientBusinessManagement = ({
   const onSubmit: SubmitHandler<BusinessForm> = useCallback(
     async (values) => {
       const nonEmptySocialMedia = values.socialMedia?.filter(
-        (s) => s?.handle && s.handle.trim() !== ""
+        (s) => s?.handle && s.handle.trim() !== "",
       );
 
       const payload: Business = {
@@ -119,10 +119,12 @@ const ClientBusinessManagement = ({
         await updateBusiness({ id: editingBusiness.id, values: payload });
         setEditingBusiness(null);
         form.reset(defaultValues);
+        setOpen?.(false);
       } else {
         await recordBusiness({ values: payload, userId });
         await onSaveSuccess?.(payload.businessName);
         form.reset(defaultValues);
+        setOpen?.(false);
       }
     },
     [
@@ -133,7 +135,8 @@ const ClientBusinessManagement = ({
       setEditingBusiness,
       userId,
       onSaveSuccess,
-    ]
+      setOpen,
+    ],
   );
 
   const isSubmitting = isRecording || isUpdating;
