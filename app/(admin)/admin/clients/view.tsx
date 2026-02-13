@@ -7,7 +7,14 @@ import {
   UserWithId,
 } from "@/schema/registration";
 import { format } from "date-fns";
-import { Loader2Icon, RefreshCcw, XIcon, Edit2Icon, Send } from "lucide-react";
+import {
+  Loader2Icon,
+  RefreshCcw,
+  XIcon,
+  Edit2Icon,
+  Send,
+  CreditCard,
+} from "lucide-react";
 import type { Metadata } from "next";
 import React, { useCallback, useState } from "react";
 import {
@@ -58,6 +65,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { genderTypes } from "@/schema";
 import { registrationSchema } from "@/schema/registration";
+import { sendPaymentLink } from "@/service/whop";
 import { cn } from "@/lib/utils";
 
 function toDate(d?: string | Date) {
@@ -86,10 +94,7 @@ const ClientData = ({
   isBrokerView?: boolean;
 }) => {
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const { sendClientServiceAgreement, isSending } =
-    useSendClientServiceAgreementMutation({
-      userId: user.id,
-    });
+
 
   if (!user) {
     return <EmptyState title="User not found" description="" />;
@@ -147,25 +152,8 @@ const ClientData = ({
                 <StatusPicker user={user} />
                 <PremiumStatusPicker user={user} />
                 <RefreshCRSData user={user} />
-                <Button
-                  variant="outline"
-                  size={"lg"}
-                  className="w-full cursor-pointer bg-green-50/50 hover:bg-green-100 border-green-200 text-green-700 font-medium shadow-sm"
-                  onClick={() => sendClientServiceAgreement()}
-                  disabled={isSending}
-                >
-                  {isSending ? (
-                    <>
-                      <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Send Client Agreement
-                    </>
-                  )}
-                </Button>
+                <SendPaymentLink user={user} />
+                <SendClientAgreement user={user} />
               </div>
             )}
           </div>
@@ -786,6 +774,150 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
   );
 };
 
+const SendPaymentLink = ({ user }: { user: UserWithId }) => {
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+
+  const handleSendLink = async () => {
+    setIsSending(true);
+    try {
+      await sendPaymentLink({ userId: user.id, paymentKey: "FullPayment" });
+      toast.success("Payment link sent successfully!");
+      setConfirmationOpen(false);
+    } catch (error) {
+      console.error("Error sending payment link:", error);
+      toast.error("Failed to send payment link.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        size={"lg"}
+        className="w-full cursor-pointer bg-orange-50/50 hover:bg-orange-100 border-orange-200 text-orange-600 font-medium shadow-sm"
+        onClick={() => setConfirmationOpen(true)}
+      >
+        <CreditCard className="h-4 w-4 mr-2" />
+        Send Payment Link
+      </Button>
+
+      <AlertDialog open={confirmationOpen} onOpenChange={setConfirmationOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send Payment Link</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to send a payment link to{" "}
+              <strong>
+                {user.firstName} {user.lastName}
+              </strong>
+              ? They will receive an email with instructions to complete their
+              payment.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-orange-600 hover:bg-orange-700"
+              onClick={(e) => {
+                e.preventDefault();
+                handleSendLink();
+              }}
+              disabled={isSending}
+            >
+              {isSending ? (
+                <IconMenu
+                  icon={<Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
+                  text="Sending..."
+                />
+              ) : (
+                <IconMenu
+                  icon={<Send className="h-4 w-4 mr-2" />}
+                  text="Send Payment Link"
+                />
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+const SendClientAgreement = ({ user }: { user: UserWithId }) => {
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const { sendClientServiceAgreement, isSending } =
+    useSendClientServiceAgreementMutation({
+      userId: user.id,
+    });
+
+  const handleSend = async () => {
+    try {
+      await sendClientServiceAgreement();
+      setConfirmationOpen(false);
+    } catch (error) {
+      console.error("Error sending agreement:", error);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        size={"lg"}
+        className="w-full cursor-pointer bg-green-50/50 hover:bg-green-100 border-green-200 text-green-700 font-medium shadow-sm"
+        onClick={() => setConfirmationOpen(true)}
+        disabled={isSending}
+      >
+        <IconMenu
+          icon={<Send className="h-4 w-4 mr-2" />}
+          text="Send Client Agreement"
+        />
+      </Button>
+
+      <AlertDialog open={confirmationOpen} onOpenChange={setConfirmationOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send Client Service Agreement</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to send the Client Service Agreement to{" "}
+              <strong>
+                {user.firstName} {user.lastName}
+              </strong>
+              ? They will receive an email with instructions to sign the agreement.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-green-600 hover:bg-green-700"
+              onClick={(e) => {
+                e.preventDefault();
+                handleSend();
+              }}
+              disabled={isSending}
+            >
+              {isSending ? (
+                <IconMenu
+                  icon={<Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
+                  text="Sending..."
+                />
+              ) : (
+                <IconMenu
+                  icon={<Send className="h-4 w-4 mr-2" />}
+                  text="Send Agreement"
+                />
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
 const EditClientModal = ({
   isOpen,
   setIsOpen,
@@ -1055,7 +1187,7 @@ const DeleteClientModal = ({
             disabled={isDeleting}
             onClick={async (e) => {
               e.preventDefault();
-              deleteUser();
+              await deleteUser();
             }}
             className="bg-red-600 hover:bg-red-700"
           >
