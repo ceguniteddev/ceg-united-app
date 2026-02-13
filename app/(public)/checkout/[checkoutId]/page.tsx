@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import CheckoutClient from "./checkout-client";
 import { getWhopCheckoutDetailByCheckoutId } from "@/service/whop";
+import { WhopCheckoutView } from "@/components/funding/WhopCheckoutView";
 
 export const metadata = {
   title: "Complete Your Purchase - CEG United",
@@ -22,7 +22,7 @@ export default async function CheckoutPage({
   const serializedDetails = JSON.parse(JSON.stringify(checkoutDetails));
 
   return (
-    <CheckoutClient
+    <WhopCheckoutView
       checkoutDetails={serializedDetails}
       checkoutId={checkoutId}
     />
