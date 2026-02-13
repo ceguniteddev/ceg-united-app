@@ -83,11 +83,17 @@ export const useBusinessMutation = () => {
 
       await updateBusiness(id, values);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast.success("Business details recorded successfully.");
-      queryClient.invalidateQueries({
-        queryKey: ["GET_BUSINESS_DETAILS", user?.uid],
-      });
+      if (variables.values.userId) {
+        queryClient.invalidateQueries({
+          queryKey: ["GET_BUSINESS_DETAILS", variables.values.userId],
+        });
+      } else {
+        queryClient.invalidateQueries({
+          queryKey: ["GET_BUSINESS_DETAILS", user?.uid],
+        });
+      }
     },
     onError: (error: any) => {
       if (error instanceof AppError) {

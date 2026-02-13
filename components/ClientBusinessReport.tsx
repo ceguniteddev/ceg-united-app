@@ -23,6 +23,17 @@ import { Business, businessRecordSchema } from "@/schema";
 import { useBusinessQuery } from "@/hooks/business";
 import Spinner from "@/components/Spinner";
 import EmptyState from "./EmptyState";
+import ClientBusinessManagement from "./ClientBusinessManagement";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useAuth } from "@/provider/AuthContext";
+import { useState } from "react";
+import { Pencil } from "lucide-react";
 
 // ---- Utilities ----
 const formatCurrency = (n?: number) =>
@@ -78,10 +89,18 @@ const Address = ({ rec }: { rec: Business }) => (
   </div>
 );
 
-function BusinessRecordCard({ rec }: { rec: Business }) {
+function BusinessRecordCard({
+  rec,
+  isAdmin,
+  onEdit,
+}: {
+  rec: Business;
+  isAdmin: boolean;
+  onEdit: (rec: Business) => void;
+}) {
   return (
     <Card className="group relative flex flex-col overflow-hidden border-2 border-transparent bg-gradient-to-b from-white to-muted/30 transition hover:border-primary/40 dark:from-background dark:to-muted/10">
-      <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-primary/10 blur-2xl transition group-hover:bg-primary/20" />
+      <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-primary/10 blur-2xl transition group-hover:bg-primary/20" />
 
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
@@ -91,6 +110,16 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
               {rec.businessName}
             </CardTitle>
           </div>
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEdit(rec)}
+              className="h-8 w-8 text-muted-foreground hover:text-primary"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <CardDescription className="flex items-center gap-1.5">
           <Hash className="h-4 w-4" /> EIN: {rec.employerIdentificationNumber}
@@ -140,7 +169,7 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
                 key={index}
                 href={getSocialLink(
                   social?.platform ?? "",
-                  social?.handle ?? ""
+                  social?.handle ?? "",
                 )}
                 target="_blank"
                 rel="noreferrer"
@@ -204,9 +233,22 @@ function BusinessRecordCard({ rec }: { rec: Business }) {
 // ---- Page ----
 export default function BusinessRecordsPage({ userId }: { userId: string }) {
   const { businessData, isLoading } = useBusinessQuery(userId, true);
+  const { isAdmin } = useAuth();
+  const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
+  const handleEdit = (rec: Business) => {
+    setEditingBusiness(rec);
+    setIsEditOpen(true);
+  };
+
+  const handleClose = () => {
+    setIsEditOpen(false);
+    setEditingBusiness(null);
+  };
 
   const list = businessData?.map((r: Business) =>
-    businessRecordSchema.parse(r)
+    businessRecordSchema.parse(r),
   );
 
   if (isLoading) {
@@ -232,9 +274,35 @@ export default function BusinessRecordsPage({ userId }: { userId: string }) {
 
       <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {list?.map((rec: Business) => (
-          <BusinessRecordCard key={rec.id ?? rec.businessName} rec={rec} />
+          <BusinessRecordCard
+            key={rec.id ?? rec.businessName}
+            rec={rec}
+            isAdmin={!!isAdmin}
+            onEdit={handleEdit}
+          />
         ))}
       </section>
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Business Details</DialogTitle>
+            <DialogDescription>
+              Make changes to the business information below.
+            </DialogDescription>
+          </DialogHeader>
+          <ClientBusinessManagement
+            userId={userId}
+            editingBusiness={editingBusiness}
+            setEditingBusiness={setEditingBusiness}
+            isModal={true}
+            setOpen={setIsEditOpen}
+            onSaveSuccess={async () => {
+              handleClose();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
