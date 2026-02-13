@@ -10,6 +10,7 @@ export const USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED =
 export const LINK_TOKEN_COLLECTION = "plaid-link-token";
 export const USER_TOKEN_COLLECTION = "plaid-user-token";
 export const USER_DENEFITS_CONTRACT = "user-denefits-contract";
+export const PAYMENT_REQUESTS_COLLECTION = "whop-payment-requests";
 export const USER_WHOP_PAYMENTS = "user-whop-payments";
 
 export const PLAID_ITEM_WEBHOOK_COLLECTION = "plaid-item-webhook-data";

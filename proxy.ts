@@ -30,6 +30,8 @@ function isPublic(pathname: string) {
 
   if (pathname.startsWith("/api/auth/verify-email")) return true;
 
+  if (pathname.startsWith("/payment")) return true;
+
   // example: add /register subpaths if you have any
   return false;
 }
@@ -176,6 +178,7 @@ export const config = {
     "/client/:path*", // client area
     "/admin/:path*", // admin area
     "/broker/:path*", // broker area
+    "/payment/:path*", // payment area
     "/api/:path*", // api guarding
   ],
 };

@@ -6,7 +6,7 @@ import z from "zod";
 import { PaymentPlanEnum } from "@/schema/payments";
 
 const requestBodySchema = z.object({
-  referenceNumber: z.string().min(1, { error: "Required" }),
+  // referenceNumber: z.string().min(1, { error: "Required" }),
   paymentKey: PaymentPlanEnum,
 });
 
@@ -36,7 +36,7 @@ export const POST = withAuth(
     try {
       const { checkoutId } = await createWhopCheckoutConfig({
         userId,
-        referenceNumber: parseResult.data.referenceNumber,
+        // referenceNumber: parseResult.data.referenceNumber,
         paymentKey: parseResult.data.paymentKey,
       });
 

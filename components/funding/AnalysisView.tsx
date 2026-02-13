@@ -40,6 +40,12 @@ import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { PaymentPlan } from "@/schema/payments";
 
+import {
+  PaymentOptionCard,
+  WhopCheckoutButtonBase,
+} from "@/components/funding/PaymentOptionCard";
+import { PAYMENT_OPTIONS } from "@/constant/payment";
+
 // const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
 type Props = {
@@ -360,47 +366,6 @@ const PricingDetailsButton = ({
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const paymentOptions = [
-    {
-      key: "FullPayment",
-      name: "Payment Plan",
-      price: "$15,000",
-      // incentive: "Save 10% - Pay only $13,500!",
-      description: "Split payment available",
-      features: [
-        "Saves $2,500 🚀",
-        "Split your payments $2,500 a month",
-        "Credit card / ACH accepted",
-        // "Immediate processing",
-        // "Full funding access",
-        // "Priority support",
-        // "Document preparation assistance",
-      ],
-      recommended: true,
-      badge: "Best Value",
-      // returnURL: "/client/dashboard",
-    },
-    {
-      key: "FinancingPlan",
-      name: "Payment Plan",
-      price: "$2,500",
-      description: "Down payment + Denefits plan",
-      additionalCost: "+ $15,000 Denefits plan",
-      features: [
-        "$2,500 down payment via Whop",
-        "Debit card accepted",
-        "$15,000 Denefits plan included",
-        // "Access to funding analysis",
-        // "Credit report review",
-        // "Business assessment",
-        // "Email support",
-      ],
-      recommended: false,
-      badge: null,
-      // returnURL: process.env.NEXT_PUBLIC_DEFENITS_URL || "",
-    },
-  ];
-
   return (
     <>
       <Button
@@ -422,77 +387,15 @@ const PricingDetailsButton = ({
         className="max-w-[90vw] sm:max-w-4xl"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 p-4">
-          {paymentOptions.map((option) => (
-            <div
-              key={option.key}
-              className={`relative rounded-lg border-2 p-4 sm:p-6 flex flex-col ${
-                option.recommended
-                  ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-              }`}
-            >
-              {option.badge && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-green-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                    {option.badge}
-                  </span>
-                </div>
-              )}
-              <div className="text-center mb-4">
-                <h3 className="text-lg sm:text-xl font-bold mb-2">
-                  {option.name}
-                </h3>
-                {/* {option.incentive && (
-                  <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 text-sm font-semibold py-2 px-3 rounded-md mb-3">
-                    {option.incentive}
-                  </div>
-                )} */}
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-3xl sm:text-4xl font-bold">
-                    {option.price}
-                  </span>
-                  {option.description && (
-                    <span className="text-gray-600 dark:text-gray-400 text-sm">
-                      {option.description}
-                    </span>
-                  )}
-                  {option.additionalCost && (
-                    <span className="text-gray-700 dark:text-gray-300 text-sm font-medium mt-1">
-                      {option.additionalCost}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <ul className="space-y-3 mb-6 flex-grow">
-                {option.features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm">
-                    <svg
-                      className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    <span className="text-gray-700 dark:text-gray-300">
-                      {feature}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+          {PAYMENT_OPTIONS.map((option) => (
+            <PaymentOptionCard key={option.key} option={option}>
               <WhopCheckoutButton
                 // returnURL={option.returnURL}
                 paymentKey={option.key as PaymentPlan}
-                referenceNumber={referenceNumber}
                 buttonName={`Select ${option.name}`}
                 className={`w-full  text-white w-full sm:w-auto h-10 sm:h-9 ${option.recommended ? "bg-green-500 hover:bg-green-600" : "bg-blue-500 hover:bg-blue-600"}`}
               />
-            </div>
+            </PaymentOptionCard>
           ))}
         </div>
         <div className="flex justify-center p-4 border-t">
@@ -510,13 +413,11 @@ const PricingDetailsButton = ({
 };
 
 const WhopCheckoutButton = ({
-  referenceNumber,
   buttonName,
   className,
   paymentKey,
   // returnURL,
 }: {
-  referenceNumber: string;
   buttonName: string;
   className: string;
   paymentKey: PaymentPlan;
@@ -537,7 +438,7 @@ const WhopCheckoutButton = ({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ referenceNumber, paymentKey }),
+        body: JSON.stringify({ paymentKey }),
       });
 
       if (!response.ok) {
@@ -568,24 +469,12 @@ const WhopCheckoutButton = ({
   };
 
   return (
-    <Button
-      variant={"ghost"}
+    <WhopCheckoutButtonBase
+      buttonName={buttonName}
       className={className}
+      isLoading={isLoading}
       onClick={handleCheckout}
-      disabled={isLoading}
-    >
-      {isLoading ? (
-        <IconMenu
-          text="Processing..."
-          icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
-        />
-      ) : (
-        <IconMenu
-          icon={<ShoppingCart className="h-4 w-4" />}
-          text={buttonName}
-        />
-      )}
-    </Button>
+    />
   );
 };
 
