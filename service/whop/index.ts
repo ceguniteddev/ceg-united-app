@@ -5,14 +5,14 @@ import { logError, logInfo } from "@/lib/logger";
 import { getUserById } from "../user";
 import { authenticationAdmin, firestoreAdmin } from "@/lib/fireabase-admin";
 import {
-  USER_DENEFITS_CONTRACT,
   USER_WHOP_PAYMENTS,
   WHOP_CHECKOUTS_COLLECTION,
 } from "@/constant/collection-name";
 import { whopSdk } from "@/lib/whop-sdk";
 import { Payment } from "@whop/sdk/resources.js";
-import { map } from "zod";
 import { PaymentPlan } from "@/schema/payments";
+import { sendMail } from "@/lib/nodemailer";
+import { randomUUID } from "crypto";
 
 const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID;
 const productId = process.env.WHOP_PRODUCT_ID;
@@ -33,7 +33,10 @@ export const createWhopCheckoutConfig = async ({
   userId,
   referenceNumber,
   paymentKey,
-}: CreateCheckoutConfigParams): Promise<string> => {
+}: CreateCheckoutConfigParams): Promise<{
+  checkoutId: string;
+  url: string;
+}> => {
   // console.log("createWhopCheckoutConfig called with:", {
   //   userId,
   //   referenceNumber,
@@ -72,7 +75,10 @@ export const createWhopCheckoutConfig = async ({
           checkoutId: existingCheckout.checkoutId,
           paymentKey,
         });
-        return existingCheckout.checkoutId;
+        return {
+          checkoutId: existingCheckout.checkoutId,
+          url: existingCheckout.url,
+        };
       }
     }
 
@@ -138,7 +144,7 @@ export const createWhopCheckoutConfig = async ({
     // );
 
     // logInfo("createWhopCheckoutConfig (SDK) success", { checkoutId });
-    return checkoutId;
+    return { checkoutId, url: checkoutConfig.purchase_url };
   } catch (error: any) {
     logError(
       new Error(
@@ -299,6 +305,64 @@ export const getWhopCheckoutDetailByCheckoutId = async (checkoutId: string) => {
       ),
       { checkoutId },
     );
+    throw error;
+  }
+};
+
+export const sendPaymentLink = async ({
+  userId,
+  paymentKey = "FullPayment",
+}: {
+  userId: string;
+  paymentKey?: PaymentPlan;
+}) => {
+  try {
+    const user = await getUserById(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const referenceNumber = randomUUID();
+
+    const { url: paymentUrl } = await createWhopCheckoutConfig({
+      userId,
+      referenceNumber,
+      paymentKey,
+    });
+
+    const bodyHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Complete Your Payment - CEG United LLC</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+  <p>Hi ${user.firstName},</p>
+  
+  <p>Thank you for choosing CEG UNITED! To complete your signup, please click the link below:</p>
+  
+  <p><a href="${paymentUrl}">Complete Payment</a></p>
+  
+  <p>If you have any questions or need assistance, feel free to reach out. We’re here to help!</p>
+  
+  <p>Thanks again, and welcome aboard!</p>
+  
+  <p>Best regards,<br>
+  CEG UNITED LLC</p>
+</body>
+</html>
+  `;
+
+    await sendMail({
+      emailTo: user.email,
+      subject: "Complete Your Payment",
+      bodyHTML,
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    logError(new Error(`Error sending payment link: ${error.message}`));
     throw error;
   }
 };

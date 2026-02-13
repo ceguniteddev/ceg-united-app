@@ -34,7 +34,7 @@ export const POST = withAuth(
     }
 
     try {
-      const checkoutId = await createWhopCheckoutConfig({
+      const { checkoutId } = await createWhopCheckoutConfig({
         userId,
         referenceNumber: parseResult.data.referenceNumber,
         paymentKey: parseResult.data.paymentKey,
