@@ -23,6 +23,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { ScrollArea, ScrollBar } from "./ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 // --- Utilities ---
 const toNum = (v?: NumericString) => {
@@ -638,259 +647,260 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
                 <Empty>No accounts present for {bureau}.</Empty>
               </Card>
             ) : (
-              <Card className="overflow-hidden">
-                <div className="overflow-x-auto -mx-1 sm:mx-0">
-                  <div className="inline-block min-w-full align-middle">
-                    <table className="min-w-full text-[10px] sm:text-xs">
-                      <thead className="bg-neutral-100 border-b-2 border-neutral-300">
-                        <tr>
-                          <th className="text-left px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                            <div>E</div>
-                            <div>C</div>
-                            <div>O</div>
-                            <div>A</div>
-                          </th>
-                          <th className="text-left px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[120px]">
-                            Creditor
-                          </th>
-                          <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                            <div>Date</div>
-                            <div>Reported</div>
-                          </th>
-                          <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                            <div>Date</div>
-                            <div>Opened</div>
-                            <div className="font-normal">DLA</div>
-                          </th>
-                          <th className="text-right px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                            <div>High Credit</div>
-                            <div>or Limit</div>
-                            <div className="font-normal">Acct Type</div>
-                          </th>
-                          <th className="text-right px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                            <div>Balance</div>
-                            <div className="font-normal">Terms</div>
-                          </th>
-                          <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                            <div>Past</div>
-                            <div>Due</div>
-                          </th>
-                          <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                            <div>Mo</div>
-                            <div>Rev</div>
-                          </th>
-                          <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                            30
-                          </th>
-                          <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                            60
-                          </th>
-                          <th className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                            90+
-                          </th>
-                          <th className="text-left px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[100px]">
-                            <div>Status</div>
-                            <div className="font-normal">Source</div>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {tradelinesByBureau[bureau].map((t, i) => {
-                          const acctOwnershipCode =
-                            t.accountOwnershipType?.charAt(0).toUpperCase() ||
-                            "-";
-                          return (
-                            <React.Fragment key={`${t.accountIdentifier}-${i}`}>
-                              <tr
-                                className={cn(
-                                  "border-b hover:bg-neutral-50",
-                                  t.accountStatusType?.toLowerCase() === "open"
-                                    ? "bg-blue-100"
-                                    : "",
-                                )}
-                              >
-                                {/* ECOA Column */}
-                                <td className="px-2 py-2 text-center align-top font-medium">
-                                  {acctOwnershipCode}
-                                </td>
-
-                                {/* Creditor Column */}
-                                <td className="px-2 py-2 align-top">
-                                  <div className="font-semibold">
-                                    {t.creditorName || "Unknown"}
-                                  </div>
-                                  <div className="text-[9px] text-neutral-500 font-mono mt-0.5">
-                                    {t.accountIdentifier}
-                                  </div>
-                                </td>
-
-                                {/* Date Reported Column */}
-                                <td className="px-2 py-2 text-center align-top">
-                                  <div>
-                                    {t.accountReportedDate
-                                      ? new Date(
-                                          t.accountReportedDate,
-                                        ).toLocaleDateString("en-US", {
-                                          month: "2-digit",
-                                          year: "2-digit",
-                                        })
-                                      : "-"}
-                                  </div>
-                                </td>
-
-                                {/* Date Opened / DLA Column */}
-                                <td className="px-2 py-2 text-center align-top">
-                                  <div>
-                                    {t.accountOpenedDate
-                                      ? new Date(
-                                          t.accountOpenedDate,
-                                        ).toLocaleDateString("en-US", {
-                                          month: "2-digit",
-                                          year: "2-digit",
-                                        })
-                                      : "-"}
-                                  </div>
-                                  <div className="text-[9px] text-neutral-500 mt-1">
-                                    {t.lastActivityDate
-                                      ? new Date(
-                                          t.lastActivityDate,
-                                        ).toLocaleDateString("en-US", {
-                                          month: "2-digit",
-                                          year: "2-digit",
-                                        })
-                                      : "--/--"}
-                                  </div>
-                                </td>
-
-                                {/* High Credit/Limit Column */}
-                                <td className="px-2 py-2 text-right align-top">
-                                  <div className="font-semibold">
-                                    {t.creditLimitAmount
-                                      ? `$${toNum(t.creditLimitAmount)}`
-                                      : t.highBalanceAmount
-                                        ? `$${toNum(t.highBalanceAmount)}`
-                                        : "-"}
-                                  </div>
-                                  <div className="text-[9px] text-neutral-500 mt-1">
-                                    {t.accountType || "-"}
-                                  </div>
-                                </td>
-
-                                {/* Balance Column */}
-                                <td className="px-2 py-2 text-right align-top">
-                                  <div className="font-semibold">
-                                    {t.currentBalanceAmount
-                                      ? `$${toNum(t.currentBalanceAmount)}`
-                                      : "-"}
-                                  </div>
-                                  <div className="text-[9px] text-neutral-500 mt-1">
-                                    {t.monthlyPaymentAmount
-                                      ? `$${toNum(t.monthlyPaymentAmount)}`
-                                      : "-"}
-                                  </div>
-                                </td>
-
-                                {/* Past Due Column */}
-                                <td className="px-2 py-2 text-center align-top">
-                                  <div>
-                                    {t.pastDueAmount &&
-                                    toNum(t.pastDueAmount) > 0
-                                      ? `$${toNum(t.pastDueAmount)}`
-                                      : "-"}
-                                  </div>
-                                </td>
-
-                                {/* Mo Rev Column */}
-                                <td className="px-2 py-2 text-center align-top">
-                                  <div>{t.monthsReviewedCount || "-"}</div>
-                                </td>
-
-                                {/* 30 Days Late Column */}
-                                <td className="px-2 py-2 text-center align-top">
-                                  <div
-                                    className={
-                                      toNum(t._30DayLates) > 0
-                                        ? "text-red-600 font-semibold"
-                                        : ""
-                                    }
-                                  >
-                                    {toNum(t._30DayLates)}
-                                  </div>
-                                </td>
-
-                                {/* 60 Days Late Column */}
-                                <td className="px-2 py-2 text-center align-top">
-                                  <div
-                                    className={
-                                      toNum(t._60DayLates) > 0
-                                        ? "text-red-600 font-semibold"
-                                        : ""
-                                    }
-                                  >
-                                    {toNum(t._60DayLates)}
-                                  </div>
-                                </td>
-
-                                {/* 90+ Days Late Column */}
-                                <td className="px-2 py-2 text-center align-top">
-                                  <div
-                                    className={
-                                      toNum(t._90DayLates) > 0
-                                        ? "text-red-600 font-semibold"
-                                        : ""
-                                    }
-                                  >
-                                    {toNum(t._90DayLates)}
-                                  </div>
-                                </td>
-
-                                {/* Status Column */}
-                                <td className="px-2 py-2 align-top">
-                                  <div className="font-medium">
-                                    {t.currentRatingType || "AS AGREED"}
-                                  </div>
-                                  <div className="text-[9px] text-neutral-500 mt-0.5">
-                                    {bureauLabel(t.sourceType)
-                                      ?.toUpperCase()
-                                      .slice(0, 3)}
-                                  </div>
-                                </td>
-                              </tr>
-
-                              {/* Additional Row for Original Creditor / Comments */}
-                              {(t.originalCreditorName ||
-                                (t.comments && t.comments.length > 0)) && (
-                                <tr className="border-b bg-blue-50">
-                                  <td></td>
-                                  <td
-                                    colSpan={11}
-                                    className="px-2 py-2 text-[9px] sm:text-[10px]"
-                                  >
-                                    {t.originalCreditorName && (
-                                      <div className="text-blue-700 font-medium uppercase">
-                                        ORIGINAL CREDITOR:{" "}
-                                        {t.originalCreditorName}
-                                      </div>
-                                    )}
-                                    {t.comments && t.comments.length > 0 && (
-                                      <div className="text-neutral-700 mt-1">
-                                        {t.comments.map((comment, idx) => (
-                                          <div key={idx}>
-                                            {comment.commentText}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </td>
-                                </tr>
+              <Card className="grid grid-cols-1 overflow-hidden">
+                <ScrollArea
+                  type="always"
+                  className="h-[calc(100vh-380px)] min-h-[400px] w-full min-w-0 rounded-md border"
+                >
+                  <Table className="min-w-full text-[10px] sm:text-xs">
+                    <TableHeader className="bg-neutral-100 border-b-2 border-neutral-300">
+                      <TableRow>
+                        <TableHead className="text-left px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>E</div>
+                          <div>C</div>
+                          <div>O</div>
+                          <div>A</div>
+                        </TableHead>
+                        <TableHead className="text-left px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[120px]">
+                          Creditor
+                        </TableHead>
+                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>Date</div>
+                          <div>Reported</div>
+                        </TableHead>
+                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>Date</div>
+                          <div>Opened</div>
+                          <div className="font-normal">DLA</div>
+                        </TableHead>
+                        <TableHead className="text-right px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>High Credit</div>
+                          <div>or Limit</div>
+                          <div className="font-normal">Acct Type</div>
+                        </TableHead>
+                        <TableHead className="text-right px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>Balance</div>
+                          <div className="font-normal">Terms</div>
+                        </TableHead>
+                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>Past</div>
+                          <div>Due</div>
+                        </TableHead>
+                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          <div>Mo</div>
+                          <div>Rev</div>
+                        </TableHead>
+                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          30
+                        </TableHead>
+                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          60
+                        </TableHead>
+                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                          90+
+                        </TableHead>
+                        <TableHead className="text-left px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[100px]">
+                          <div>Status</div>
+                          <div className="font-normal">Source</div>
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tradelinesByBureau[bureau].map((t, i) => {
+                        const acctOwnershipCode =
+                          t.accountOwnershipType?.charAt(0).toUpperCase() ||
+                          "-";
+                        return (
+                          <React.Fragment key={`${t.accountIdentifier}-${i}`}>
+                            <TableRow
+                              className={cn(
+                                "border-b hover:bg-neutral-50",
+                                t.accountStatusType?.toLowerCase() === "open"
+                                  ? "bg-blue-100"
+                                  : "",
                               )}
-                            </React.Fragment>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                            >
+                              {/* ECOA Column */}
+                              <TableCell className="px-2 py-2 text-center align-top font-medium">
+                                {acctOwnershipCode}
+                              </TableCell>
+
+                              {/* Creditor Column */}
+                              <TableCell className="px-2 py-2 align-top">
+                                <div className="font-semibold">
+                                  {t.creditorName || "Unknown"}
+                                </div>
+                                <div className="text-[9px] text-neutral-500 font-mono mt-0.5">
+                                  {t.accountIdentifier}
+                                </div>
+                              </TableCell>
+
+                              {/* Date Reported Column */}
+                              <TableCell className="px-2 py-2 text-center align-top">
+                                <div>
+                                  {t.accountReportedDate
+                                    ? new Date(
+                                        t.accountReportedDate,
+                                      ).toLocaleDateString("en-US", {
+                                        month: "2-digit",
+                                        year: "2-digit",
+                                      })
+                                    : "-"}
+                                </div>
+                              </TableCell>
+
+                              {/* Date Opened / DLA Column */}
+                              <TableCell className="px-2 py-2 text-center align-top">
+                                <div>
+                                  {t.accountOpenedDate
+                                    ? new Date(
+                                        t.accountOpenedDate,
+                                      ).toLocaleDateString("en-US", {
+                                        month: "2-digit",
+                                        year: "2-digit",
+                                      })
+                                    : "-"}
+                                </div>
+                                <div className="text-[9px] text-neutral-500 mt-1">
+                                  {t.lastActivityDate
+                                    ? new Date(
+                                        t.lastActivityDate,
+                                      ).toLocaleDateString("en-US", {
+                                        month: "2-digit",
+                                        year: "2-digit",
+                                      })
+                                    : "--/--"}
+                                </div>
+                              </TableCell>
+
+                              {/* High Credit/Limit Column */}
+                              <TableCell className="px-2 py-2 text-right align-top">
+                                <div className="font-semibold">
+                                  {t.creditLimitAmount
+                                    ? `$${toNum(t.creditLimitAmount)}`
+                                    : t.highBalanceAmount
+                                      ? `$${toNum(t.highBalanceAmount)}`
+                                      : "-"}
+                                </div>
+                                <div className="text-[9px] text-neutral-500 mt-1">
+                                  {t.accountType || "-"}
+                                </div>
+                              </TableCell>
+
+                              {/* Balance Column */}
+                              <TableCell className="px-2 py-2 text-right align-top">
+                                <div className="font-semibold">
+                                  {t.currentBalanceAmount
+                                    ? `$${toNum(t.currentBalanceAmount)}`
+                                    : "-"}
+                                </div>
+                                <div className="text-[9px] text-neutral-500 mt-1">
+                                  {t.monthlyPaymentAmount
+                                    ? `$${toNum(t.monthlyPaymentAmount)}`
+                                    : "-"}
+                                </div>
+                              </TableCell>
+
+                              {/* Past Due Column */}
+                              <TableCell className="px-2 py-2 text-center align-top">
+                                <div>
+                                  {t.pastDueAmount && toNum(t.pastDueAmount) > 0
+                                    ? `$${toNum(t.pastDueAmount)}`
+                                    : "-"}
+                                </div>
+                              </TableCell>
+
+                              {/* Mo Rev Column */}
+                              <TableCell className="px-2 py-2 text-center align-top">
+                                <div>{t.monthsReviewedCount || "-"}</div>
+                              </TableCell>
+
+                              {/* 30 Days Late Column */}
+                              <TableCell className="px-2 py-2 text-center align-top">
+                                <div
+                                  className={
+                                    toNum(t._30DayLates) > 0
+                                      ? "text-red-600 font-semibold"
+                                      : ""
+                                  }
+                                >
+                                  {toNum(t._30DayLates)}
+                                </div>
+                              </TableCell>
+
+                              {/* 60 Days Late Column */}
+                              <TableCell className="px-2 py-2 text-center align-top">
+                                <div
+                                  className={
+                                    toNum(t._60DayLates) > 0
+                                      ? "text-red-600 font-semibold"
+                                      : ""
+                                  }
+                                >
+                                  {toNum(t._60DayLates)}
+                                </div>
+                              </TableCell>
+
+                              {/* 90+ Days Late Column */}
+                              <TableCell className="px-2 py-2 text-center align-top">
+                                <div
+                                  className={
+                                    toNum(t._90DayLates) > 0
+                                      ? "text-red-600 font-semibold"
+                                      : ""
+                                  }
+                                >
+                                  {toNum(t._90DayLates)}
+                                </div>
+                              </TableCell>
+
+                              {/* Status Column */}
+                              <TableCell className="px-2 py-2 align-top">
+                                <div className="font-medium">
+                                  {t.currentRatingType || "AS AGREED"}
+                                </div>
+                                <div className="text-[9px] text-neutral-500 mt-0.5">
+                                  {bureauLabel(t.sourceType)
+                                    ?.toUpperCase()
+                                    .slice(0, 3)}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+
+                            {/* Additional Row for Original Creditor / Comments */}
+                            {(t.originalCreditorName ||
+                              (t.comments && t.comments.length > 0)) && (
+                              <TableRow className="border-b bg-blue-50">
+                                <TableCell></TableCell>
+                                <TableCell
+                                  colSpan={11}
+                                  className="px-2 py-2 text-[9px] sm:text-[10px]"
+                                >
+                                  {t.originalCreditorName && (
+                                    <div className="text-blue-700 font-medium uppercase">
+                                      ORIGINAL CREDITOR:{" "}
+                                      {t.originalCreditorName}
+                                    </div>
+                                  )}
+                                  {t.comments && t.comments.length > 0 && (
+                                    <div className="text-neutral-700 mt-1">
+                                      {t.comments.map((comment, idx) => (
+                                        <div key={idx}>
+                                          {comment.commentText}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                  <ScrollBar orientation="horizontal" className="w-full" />
+                </ScrollArea>
               </Card>
             )}
           </div>
@@ -902,14 +912,17 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         title="Negative Items"
         sub="Accounts with derogatories or any reported late payments (all bureaus)"
       />
-      <Card className="overflow-hidden mb-6 sm:mb-10">
+      <Card className="grid grid-cols-1 overflow-hidden mb-6 sm:mb-10">
         {negItems.length === 0 ? (
           <Empty>
             No negative items detected from the provided tradelines.
           </Empty>
         ) : (
-          <div className="overflow-x-auto">
-            <div className="inline-block min-w-full align-middle">
+          <ScrollArea
+            type="always"
+            className="w-full min-w-0 rounded-md border"
+          >
+            <div className="min-w-full inline-block align-middle">
               <table className="min-w-full text-xs sm:text-sm">
                 <thead className="bg-neutral-100 text-neutral-700">
                   <tr>
@@ -972,7 +985,8 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
                 </tbody>
               </table>
             </div>
-          </div>
+            <ScrollBar orientation="horizontal" className="w-full" />
+          </ScrollArea>
         )}
       </Card>
 
@@ -995,29 +1009,6 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
           </ul>
         )}
       </Card>
-
-      {/* Call to action */}
-      {!isAdminView && false && (
-        <Card className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-0 sm:justify-between">
-          <div className="flex-1">
-            <div className="text-base sm:text-lg font-semibold">
-              Need help improving your credit?
-            </div>
-            <div className="text-neutral-600 text-xs sm:text-sm mt-1">
-              Tap the button to start credit repair with Rapid Repair Now.
-            </div>
-          </div>
-          <a
-            href="https://rapidrepairnow.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-neutral-900 hover:bg-neutral-900 hover:text-white transition w-full sm:w-auto justify-center text-sm sm:text-base"
-            aria-label="Fix my credit at Rapid Repair Now"
-          >
-            Fix my credit
-          </a>
-        </Card>
-      )}
 
       <p className="text-[10px] sm:text-xs text-neutral-500 mt-3 sm:mt-4">
         Note: When multiple docs per bureau exist, the newest is used.
