@@ -44,6 +44,8 @@ interface MultiStepRegistrationFormProps {
   isSubmitting?: boolean;
   onClose?: () => void;
   registrationType: "client" | "broker" | "admin";
+  initialEmail?: string;
+  isEmailReadOnly?: boolean;
 }
 
 export function MultiStepRegistrationForm({
@@ -51,6 +53,8 @@ export function MultiStepRegistrationForm({
   isSubmitting = false,
   onClose,
   registrationType = "client",
+  initialEmail,
+  isEmailReadOnly = false,
 }: MultiStepRegistrationFormProps) {
   const { user } = useAuth();
   const {
@@ -87,12 +91,16 @@ export function MultiStepRegistrationForm({
       if (typeof restored.registrationDate === "string") {
         restored.registrationDate = new Date(restored.registrationDate);
       }
+      if (initialEmail && !restored.email) {
+        restored.email = initialEmail;
+      }
       return restored;
     }
     return {
       middleName: "",
+      email: initialEmail || "",
     };
-  }, [savedDraft?.step1]);
+  }, [savedDraft?.step1, initialEmail]);
 
   const defaultValuesStep2 = useMemo(() => {
     if (savedDraft?.step2 && Object.keys(savedDraft.step2).length > 0) {
@@ -181,6 +189,16 @@ export function MultiStepRegistrationForm({
       form2.reset(restored);
     }
   }, [savedDraft?.step2, form2, isDirty2]);
+
+  // Set initial email from invitation
+  useEffect(() => {
+    if (initialEmail) {
+      const currentEmail = form1.getValues("email");
+      if (currentEmail !== initialEmail) {
+        form1.setValue("email", initialEmail);
+      }
+    }
+  }, [initialEmail, form1]);
 
   // Auto-save Step 1 with debounce
   const lastSavedStep1Ref = useRef<string>("");
@@ -470,7 +488,10 @@ export function MultiStepRegistrationForm({
             <form onSubmit={(e) => e.preventDefault()}>
               <fieldset disabled={isSubmitting}>
                 <div className="space-y-4 sm:space-y-6">
-                  <Step1PersonalInfo registrationType={registrationType} />
+                  <Step1PersonalInfo
+                    registrationType={registrationType}
+                    isEmailReadOnly={isEmailReadOnly}
+                  />
                 </div>
               </fieldset>
             </form>

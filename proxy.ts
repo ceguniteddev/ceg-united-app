@@ -14,6 +14,7 @@ const PUBLIC_ROUTES = new Set<string>([
   "/api/register",
   "/api/auth/verify-session",
   "/api/auth/verify-email",
+  "/api/auth/validate-invitation",
   "/api/broker/validate-token",
   "/api/broker/register",
   "/api/payments/whop",
@@ -29,6 +30,8 @@ function isPublic(pathname: string) {
   if (pathname.startsWith("/verify-email")) return true;
 
   if (pathname.startsWith("/api/auth/verify-email")) return true;
+
+  if (pathname.startsWith("/api/auth/validate-invitation")) return true;
 
   if (pathname.startsWith("/payment")) return true;
 
