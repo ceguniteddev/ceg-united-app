@@ -73,9 +73,41 @@ export const useGetBrokerClients = () => {
   };
 };
 
+// Get broker pending invitations
+export const useGetBrokerPendingInvitations = () => {
+  const { user } = useAuth();
+
+  const {
+    data: invitations,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["BROKER_INVITATIONS", user?.uid],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+
+      const response = await fetch(`/api/broker/${user.uid}/invitations`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch invitations");
+      }
+
+      return await response.json();
+    },
+    enabled: !!user,
+  });
+
+  return {
+    invitations: invitations || [],
+    isLoading,
+    error,
+    refetch,
+  };
+};
+
 // Get broker commissions
 export const useGetBrokerCommissions = (
-  status?: "Pending" | "Approved" | "Paid"
+  status?: "Pending" | "Approved" | "Paid",
 ) => {
   const { user } = useAuth();
 
@@ -134,7 +166,7 @@ export const useSubmitClientApplication = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ step1Data, step2Data }),
-        }
+        },
       );
 
       if (!response.ok) {

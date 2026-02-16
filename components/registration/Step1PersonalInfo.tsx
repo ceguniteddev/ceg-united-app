@@ -6,14 +6,14 @@ import { PasswordStrength } from "@/components/PasswordStrength";
 import { genderTypes } from "@/schema";
 import { useFormContext, useWatch } from "react-hook-form";
 
-import { useState } from "react";
-
 interface Step1PersonalInfoProps {
   registrationType: "client" | "broker" | "admin";
+  isEmailReadOnly?: boolean;
 }
 
 export function Step1PersonalInfo({
   registrationType = "client",
+  isEmailReadOnly = false,
 }: Step1PersonalInfoProps) {
   const { control, register, setValue } = useFormContext();
   const password = useWatch({
@@ -58,6 +58,7 @@ export function Step1PersonalInfo({
             type="email"
             placeholder=""
             label="* Email Address"
+            readonly={isEmailReadOnly}
           />
           <CustomFormField
             name={"phoneNumber"}

@@ -252,6 +252,8 @@ export const registerUser = async ({
       clientId: userId,
       brokerId,
       brokerName: brokerName || "",
+      clientName: `${user.firstName} ${user.lastName}`,
+      clientEmail: user.email,
     });
   }
 
@@ -1163,6 +1165,25 @@ export const deleteUser = async (userId: string) => {
     await bucket.deleteFiles({ prefix });
     logInfo(`Deleted files from storage for user: ${userId}`);
 
+    // Delete broker-client mappings
+    const brokerClientMappingsQuery = db
+      .collection(BROKER_CLIENT_MAPPING)
+      .where("clientId", "==", userId);
+    const brokerClientMappingsSnapshot = await brokerClientMappingsQuery.get();
+
+    if (!brokerClientMappingsSnapshot.empty) {
+      const batch = db.batch();
+      brokerClientMappingsSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      logInfo(
+        `Deleted ${brokerClientMappingsSnapshot.size} broker-client mappings for user: ${userId}`,
+      );
+    } else {
+      logInfo(`No broker-client mappings found for user: ${userId}`);
+    }
+
     const userDocRef = db.collection(USER_COLLECTION).doc(userId);
     await userDocRef.delete();
     logInfo("User deleted from Firestore");
@@ -1186,10 +1207,14 @@ export const updateClientBrokerMapping = async ({
   clientId,
   brokerId,
   brokerName,
+  clientName,
+  clientEmail,
 }: {
   clientId: string;
   brokerId: string | null;
   brokerName: string;
+  clientName?: string;
+  clientEmail?: string;
 }) => {
   logInfo("Updating client broker mapping", { clientId, brokerId, brokerName });
 
@@ -1221,6 +1246,8 @@ export const updateClientBrokerMapping = async ({
       status: "Active",
       createdAt: new Date(),
       updatedAt: new Date(),
+      clientName: clientName || "",
+      clientEmail: clientEmail || "",
     });
     logInfo("Creating new broker-client mapping", { clientId, brokerId });
   } else {

@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
 import Image from "next/image";
@@ -17,6 +17,31 @@ const RegistrationForm = () => {
   const searchParams = useSearchParams();
   const invitationToken = searchParams.get("token");
   const invitationType = searchParams.get("type");
+
+  const [invitationEmail, setInvitationEmail] = useState<string>("");
+  const [isEmailReadOnly, setIsEmailReadOnly] = useState(false);
+
+  useEffect(() => {
+    const fetchInvitation = async () => {
+      if (invitationToken && invitationType === "client") {
+        try {
+          const res = await fetch(
+            `/api/auth/validate-invitation?token=${invitationToken}`,
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data.email) {
+              setInvitationEmail(data.email);
+              setIsEmailReadOnly(true);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching invitation", error);
+        }
+      }
+    };
+    fetchInvitation();
+  }, [invitationToken, invitationType]);
 
   const onSubmit = async (
     step1Data: ClientApplicationForm,
@@ -85,6 +110,8 @@ const RegistrationForm = () => {
               isSubmitting={isSubmitting}
               onClose={() => router.push("/")}
               registrationType="client"
+              initialEmail={invitationEmail}
+              isEmailReadOnly={isEmailReadOnly}
             />
           </CardContent>
         </Card>
