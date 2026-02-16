@@ -20,7 +20,7 @@ export const useSendClientServiceAgreementMutation = ({
   onSuccess?: () => void;
 }) => {
   const {
-    mutate: sendClientServiceAgreement,
+    mutateAsync: sendClientServiceAgreement,
     isPending: isSending,
     isError,
     error,
@@ -58,7 +58,7 @@ export const useDeleteUserMutation = ({
   const queryClient = useQueryClient();
 
   const {
-    mutate: deleteUser,
+    mutateAsync: deleteUser,
     isPending: isDeleting,
     isError,
     error,

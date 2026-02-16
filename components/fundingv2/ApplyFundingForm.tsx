@@ -1644,269 +1644,313 @@ const ApplyFundingForm = ({
                       </Card>
                     )}
 
-                  {/* Bridge Loan Application Form (Business Income Based Funding) */}
-                  {isBusinessIncomeBased && (
-                    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-indigo-200">
-                      <CardContent className="space-y-6 px-4 md:px-6">
-                        {/* Use of Funds */}
-                        <CustomFormField
-                          name="useOfFunds"
-                          label="Use of Funds"
-                        />
-
-                        {/* Financial Metrics */}
-                        <Separator className="my-4" />
-                        <h4 className="font-medium text-indigo-900 flex items-center gap-2">
-                          <span>💰</span> Financial Information
-                        </h4>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-indigo-200">
+                    <CardContent className="space-y-6 px-4 md:px-6">
+                      {/* Bridge Loan Application Form (Business Income Based Funding) */}
+                      {isBusinessIncomeBased && (
+                        <>
+                          {/* Use of Funds */}
                           <CustomFormField
-                            name="annualBusinessRevenue"
-                            type="number"
-                            label="Annual Business Revenue"
+                            name="useOfFunds"
+                            label="Use of Funds"
                           />
-                          <CustomFormField
-                            name="avgMonthlyCreditCardSales"
-                            type="number"
-                            label="Avg. Monthly Credit Card Sales"
-                          />
-                          <CustomFormField
-                            name="avgDailyBankBalance"
-                            type="number"
-                            label="Avg. Daily Bank Balance"
-                          />
-                        </div>
 
-                        {/* Business Property Information */}
-                        <Separator className="my-4" />
-                        <h4 className="font-medium text-indigo-900 flex items-center gap-2">
-                          <span>🏠</span> Business Property Information
-                        </h4>
+                          {/* Financial Metrics */}
+                          <Separator className="my-4" />
+                          <h4 className="font-medium text-indigo-900 flex items-center gap-2">
+                            <span>💰</span> Financial Information
+                          </h4>
 
-                        <CustomFormField
-                          name="businessPropertyType"
-                          label="* Business Property Type"
-                          type="select"
-                          placeholder="Select type"
-                          options={[
-                            { value: "Lease", label: "Lease" },
-                            { value: "Own", label: "Own" },
-                          ]}
-                        />
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <CustomFormField
+                              name="annualBusinessRevenue"
+                              type="number"
+                              label="Annual Business Revenue"
+                            />
+                            <CustomFormField
+                              name="avgMonthlyCreditCardSales"
+                              type="number"
+                              label="Avg. Monthly Credit Card Sales"
+                            />
+                            <CustomFormField
+                              name="avgDailyBankBalance"
+                              type="number"
+                              label="Avg. Daily Bank Balance"
+                            />
+                          </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <CustomFormField
-                            name="landlordName"
-                            label="Landlord Name"
-                          />
-                          <CustomFormField
-                            name="landlordPhone"
-                            label="Landlord Phone"
-                          />
-                          <CustomFormField
-                            name="monthlyPayment"
-                            type="number"
-                            label="Monthly Payment"
-                          />
-                        </div>
+                          {/* Business Property Information */}
+                          <Separator className="my-4" />
+                          <h4 className="font-medium text-indigo-900 flex items-center gap-2">
+                            <span>🏠</span> Business Property Information
+                          </h4>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <CustomFormField
-                            name="isSeasonalBusiness"
-                            label="* Is this a seasonal business?"
+                            name="businessPropertyType"
+                            label="* Business Property Type"
                             type="select"
-                            placeholder="Select option"
+                            placeholder="Select type"
                             options={[
-                              { value: "No", label: "No" },
-                              { value: "Yes", label: "Yes" },
+                              { value: "Lease", label: "Lease" },
+                              { value: "Own", label: "Own" },
                             ]}
                           />
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <CustomFormField
+                              name="landlordName"
+                              label="Landlord Name"
+                            />
+                            <CustomFormField
+                              name="landlordPhone"
+                              label="Landlord Phone"
+                            />
+                            <CustomFormField
+                              name="monthlyPayment"
+                              type="number"
+                              label="Monthly Payment"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <CustomFormField
+                              name="isSeasonalBusiness"
+                              label="* Is this a seasonal business?"
+                              type="select"
+                              placeholder="Select option"
+                              options={[
+                                { value: "No", label: "No" },
+                                { value: "Yes", label: "Yes" },
+                              ]}
+                            />
+                            <CustomFormField
+                              name="hasOutstandingAdvances"
+                              label="* Any outstanding advances?"
+                              type="select"
+                              placeholder="Select option"
+                              options={[
+                                { value: "No", label: "No" },
+                                { value: "Yes", label: "Yes" },
+                              ]}
+                            />
+                          </div>
+
+                          {/* Additional Information */}
+                          <Separator className="my-4" />
+                          <h4 className="font-medium text-indigo-900 flex items-center gap-2">
+                            <span>ℹ️</span> Additional Information
+                          </h4>
+
+                          {/* Referral */}
                           <CustomFormField
-                            name="hasOutstandingAdvances"
-                            label="* Any outstanding advances?"
-                            type="select"
-                            placeholder="Select option"
-                            options={[
-                              { value: "No", label: "No" },
-                              { value: "Yes", label: "Yes" },
-                            ]}
+                            name="whoReferredYou"
+                            label="Who Referred You?"
                           />
-                        </div>
 
-                        {/* Additional Information */}
-                        <Separator className="my-4" />
-                        <h4 className="font-medium text-indigo-900 flex items-center gap-2">
-                          <span>ℹ️</span> Additional Information
-                        </h4>
+                          {/* Document Upload Section */}
+                          <Separator className="my-3 sm:my-4" />
+                          <h4 className="font-medium text-indigo-900 flex items-center gap-2 mb-3 text-sm sm:text-base">
+                            <span>📄</span> Required Documents
+                          </h4>
 
-                        {/* Referral */}
-                        <CustomFormField
-                          name="whoReferredYou"
-                          label="Who Referred You?"
-                        />
+                          {bankStatementsFromForm.length === 0 &&
+                            driverLicenseDocsFromForm.length === 0 && (
+                              <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                <div className="flex items-start gap-2">
+                                  <svg
+                                    className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 flex-shrink-0 mt-0.5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                    />
+                                  </svg>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] sm:text-xs font-medium text-amber-900 mb-1">
+                                      No Documents Uploaded Yet
+                                    </p>
+                                    <p className="text-[10px] sm:text-xs text-amber-700 leading-tight">
+                                      Upload bank statements and driver's
+                                      license below
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
 
-                        {/* Document Upload Section */}
-                        <Separator className="my-3 sm:my-4" />
-                        <h4 className="font-medium text-indigo-900 flex items-center gap-2 mb-3 text-sm sm:text-base">
-                          <span>📄</span> Required Documents
-                        </h4>
-
-                        {bankStatementsFromForm.length === 0 &&
-                          driverLicenseDocsFromForm.length === 0 && (
-                            <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                              <div className="flex items-start gap-2">
-                                <svg
-                                  className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 flex-shrink-0 mt-0.5"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-indigo-600 flex-shrink-0" />
+                              <h3 className="text-xs sm:text-sm font-semibold text-indigo-900">
+                                4 Months Bank Statements (PDF only)
+                              </h3>
+                            </div>
+                            {bankStatementsFromForm.length > 0 && (
+                              <div className="space-y-1.5">
+                                {bankStatementsFromForm.map((file, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center gap-2 bg-gray-50 p-2 rounded text-xs overflow-hidden"
+                                  >
+                                    <span className="flex-1 truncate">
+                                      {file.name}
+                                    </span>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeBankStatement(idx)}
+                                      className="h-6 w-6 p-0 hover:bg-red-100 flex-shrink-0"
+                                    >
+                                      <CircleX className="h-3 w-3 text-red-500" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <Dropzone
+                              maxFiles={10}
+                              accept={{
+                                "application/pdf": [".pdf"],
+                              }}
+                              className={`cursor-pointer w-full ${
+                                form.formState.errors.bankStatements
+                                  ? "border-red-500 bg-red-50"
+                                  : ""
+                              }`}
+                              onDrop={async (files) => {
+                                const pdfFiles = files.filter(
+                                  (f) => f.type === "application/pdf",
+                                );
+                                if (pdfFiles.length !== files.length) {
+                                  alert("Only PDF files are allowed!");
+                                  return;
+                                }
+                                await handleBankStatementsUpload(pdfFiles);
+                              }}
+                            >
+                              <DropzoneEmptyState>
+                                <div className="flex flex-col items-center gap-1.5">
+                                  <Upload
+                                    className={`h-6 w-6 ${
+                                      form.formState.errors.bankStatements
+                                        ? "text-red-400"
+                                        : "text-indigo-400"
+                                    }`}
                                   />
-                                </svg>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[10px] sm:text-xs font-medium text-amber-900 mb-1">
-                                    No Documents Uploaded Yet
-                                  </p>
-                                  <p className="text-[10px] sm:text-xs text-amber-700 leading-tight">
-                                    Upload bank statements and driver's license
-                                    below
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-indigo-600 flex-shrink-0" />
-                            <h3 className="text-xs sm:text-sm font-semibold text-indigo-900">
-                              4 Months Bank Statements (PDF only)
-                            </h3>
-                          </div>
-                          {bankStatementsFromForm.length > 0 && (
-                            <div className="space-y-1.5">
-                              {bankStatementsFromForm.map((file, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex items-center gap-2 bg-gray-50 p-2 rounded text-xs overflow-hidden"
-                                >
-                                  <span className="flex-1 truncate">
-                                    {file.name}
-                                  </span>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeBankStatement(idx)}
-                                    className="h-6 w-6 p-0 hover:bg-red-100 flex-shrink-0"
+                                  <p
+                                    className={`text-xs font-medium ${
+                                      form.formState.errors.bankStatements
+                                        ? "text-red-500"
+                                        : ""
+                                    }`}
                                   >
-                                    <CircleX className="h-3 w-3 text-red-500" />
-                                  </Button>
+                                    Click to upload
+                                  </p>
                                 </div>
-                              ))}
-                            </div>
-                          )}
-                          <Dropzone
-                            maxFiles={10}
-                            accept={{
-                              "application/pdf": [".pdf"],
-                            }}
-                            maxSize={2 * 1024 * 1024}
-                            className="cursor-pointer w-full"
-                            onDrop={async (files) => {
-                              const pdfFiles = files.filter(
-                                (f) => f.type === "application/pdf",
-                              );
-                              if (pdfFiles.length !== files.length) {
-                                alert("Only PDF files are allowed!");
-                                return;
-                              }
-                              await handleBankStatementsUpload(pdfFiles);
-                            }}
-                          >
-                            <DropzoneEmptyState>
-                              <div className="flex flex-col items-center gap-1.5">
-                                <Upload className="h-6 w-6 text-indigo-400" />
-                                <p className="text-xs font-medium">
-                                  Click to upload
-                                </p>
-                              </div>
-                            </DropzoneEmptyState>
-                            <DropzoneContent />
-                          </Dropzone>
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-indigo-600 flex-shrink-0" />
-                            <h3 className="text-xs sm:text-sm font-semibold text-indigo-900">
-                              Driver License (PDF or Images)
-                            </h3>
+                              </DropzoneEmptyState>
+                              <DropzoneContent />
+                            </Dropzone>
+                            {form.formState.errors.bankStatements && (
+                              <p className="text-xs text-red-500 mt-1 font-medium">
+                                {form.formState.errors.bankStatements.message}
+                              </p>
+                            )}
                           </div>
-                          {driverLicenseDocsFromForm.length > 0 && (
-                            <div className="space-y-1.5">
-                              {driverLicenseDocsFromForm.map((file, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex items-center gap-2 bg-gray-50 p-2 rounded text-xs overflow-hidden"
-                                >
-                                  <span className="flex-1 truncate">
-                                    {file.name}
-                                  </span>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeDriverLicense(idx)}
-                                    className="h-6 w-6 p-0 hover:bg-red-100 flex-shrink-0"
-                                  >
-                                    <CircleX className="h-3 w-3 text-red-500" />
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          <Dropzone
-                            maxFiles={10}
-                            accept={{
-                              "application/pdf": [".pdf"],
-                              "image/*": [".png", ".jpg", ".jpeg", ".gif"],
-                            }}
-                            maxSize={2 * 1024 * 1024}
-                            className="cursor-pointer w-full"
-                            onDrop={async (files) => {
-                              const validFiles = files.filter(
-                                (f) =>
-                                  f.type === "application/pdf" ||
-                                  f.type.startsWith("image/"),
-                              );
-                              if (validFiles.length !== files.length) {
-                                alert("Only PDF and image files are allowed!");
-                                return;
-                              }
-                              await handleDriverLicenseUpload(validFiles);
-                            }}
-                          >
-                            <DropzoneEmptyState>
-                              <div className="flex flex-col items-center gap-1.5">
-                                <Upload className="h-6 w-6 text-indigo-400" />
-                                <p className="text-xs font-medium">
-                                  Click to upload
-                                </p>
-                              </div>
-                            </DropzoneEmptyState>
-                            <DropzoneContent />
-                          </Dropzone>
+                        </>
+                      )}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-indigo-600 flex-shrink-0" />
+                          <h3 className="text-xs sm:text-sm font-semibold text-indigo-900">
+                            Driver License (PDF or Images)
+                          </h3>
                         </div>
-                      </CardContent>
-                    </Card>
-                  )}
+                        {driverLicenseDocsFromForm.length > 0 && (
+                          <div className="space-y-1.5">
+                            {driverLicenseDocsFromForm.map((file, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center gap-2 bg-gray-50 p-2 rounded text-xs overflow-hidden"
+                              >
+                                <span className="flex-1 truncate">
+                                  {file.name}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeDriverLicense(idx)}
+                                  className="h-6 w-6 p-0 hover:bg-red-100 flex-shrink-0"
+                                >
+                                  <CircleX className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <Dropzone
+                          maxFiles={10}
+                          accept={{
+                            "application/pdf": [".pdf"],
+                            "image/*": [".png", ".jpg", ".jpeg", ".gif"],
+                          }}
+                          className={`cursor-pointer w-full ${
+                            form.formState.errors.driverLicenseDocuments
+                              ? "border-red-500 bg-red-50"
+                              : ""
+                          }`}
+                          onDrop={async (files) => {
+                            const validFiles = files.filter(
+                              (f) =>
+                                f.type === "application/pdf" ||
+                                f.type.startsWith("image/"),
+                            );
+                            if (validFiles.length !== files.length) {
+                              alert("Only PDF and image files are allowed!");
+                              return;
+                            }
+                            await handleDriverLicenseUpload(validFiles);
+                          }}
+                        >
+                          <DropzoneEmptyState>
+                            <div className="flex flex-col items-center gap-1.5">
+                              <Upload
+                                className={`h-6 w-6 ${
+                                  form.formState.errors.driverLicenseDocuments
+                                    ? "text-red-400"
+                                    : "text-indigo-400"
+                                }`}
+                              />
+                              <p
+                                className={`text-xs font-medium ${
+                                  form.formState.errors.driverLicenseDocuments
+                                    ? "text-red-500"
+                                    : ""
+                                }`}
+                              >
+                                Click to upload
+                              </p>
+                            </div>
+                          </DropzoneEmptyState>
+                          <DropzoneContent />
+                        </Dropzone>
+                        {form.formState.errors.driverLicenseDocuments && (
+                          <p className="text-xs text-red-500 mt-1 font-medium">
+                            {
+                              form.formState.errors.driverLicenseDocuments
+                                .message
+                            }
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </CardContent>
 
                 <CardFooter className="flex flex-col gap-4 px-3 sm:px-4 md:px-6 py-4 md:py-6">

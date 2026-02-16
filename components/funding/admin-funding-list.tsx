@@ -41,7 +41,7 @@ const normalize = (s: unknown) =>
 export const nameFilterFn: FilterFn<ApplyFundingWithUser> = (
   row,
   columnId,
-  filterValue
+  filterValue,
 ) => {
   const haystack = normalize(row.getValue<string>(columnId));
   const q = normalize(filterValue);
@@ -158,7 +158,7 @@ type Props = {
 const AdminFundingList = ({ appliedFunding, rowActions }: Props) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -283,8 +283,11 @@ const AdminFundingList = ({ appliedFunding, rowActions }: Props) => {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:flex rounded-md border">
-        <ScrollArea type="always" className="w-1 flex-1">
+      <div className="rounded-md border hidden md:flex">
+        <ScrollArea
+          type="always"
+          className="w-1 flex-1 h-[calc(100vh-380px)] min-h-[400px]"
+        >
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -296,7 +299,7 @@ const AdminFundingList = ({ appliedFunding, rowActions }: Props) => {
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                       </TableHead>
                     );
@@ -315,7 +318,7 @@ const AdminFundingList = ({ appliedFunding, rowActions }: Props) => {
                       <TableCell key={cell.id}>
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}

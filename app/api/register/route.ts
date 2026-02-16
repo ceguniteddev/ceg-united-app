@@ -2,7 +2,7 @@ import { badRequest, internalServerError, notAllowed } from "@/app/api/helpers";
 import AppError from "@/error/AppError";
 import { createEnterpriseAssessment } from "@/lib/captcha/captcha";
 import { User } from "@/schema/registration";
-import { registerUser } from "@/service/user";
+import { consumeClientInvitationToken, registerUser, verifyClientInvitationToken } from "@/service/user";
 import { NextRequest, NextResponse } from "next/server";
 
 export const POST = async (req: NextRequest) => {
@@ -11,7 +11,7 @@ export const POST = async (req: NextRequest) => {
   }
 
   const body = await req.json();
-  const { token, step1Data, step2Data, values } = body;
+  const { token, step1Data, step2Data, values, invitationToken, invitationType } = body;
 
   try {
     if (!token) {
@@ -25,6 +25,22 @@ export const POST = async (req: NextRequest) => {
 
     await createEnterpriseAssessment(token, "registration");
 
+    let brokerId: string | undefined;
+    let brokerName: string | undefined;
+    let invitationId: string | undefined;
+
+    // Handle Client Invitation
+    if (invitationToken && invitationType === "client") {
+      try {
+        const invitation = await verifyClientInvitationToken(invitationToken);
+        brokerId = invitation.brokerId;
+        brokerName = invitation.brokerName;
+        invitationId = invitation.id;
+      } catch (error: any) {
+        return badRequest({ errors: error.message });
+      }
+    }
+
     // If step1Data and step2Data are provided, use the multi-step registration
     if (step1Data && step2Data) {
       await registerUser({
@@ -36,10 +52,24 @@ export const POST = async (req: NextRequest) => {
         } as User,
         fundingData: step2Data,
         registrationType: "Self",
+        brokerId,
+        brokerName,
+        isBrokerInvite: !!invitationId,
       });
     } else {
       // Fallback to old single-step registration
-      await registerUser({ user: values, registrationType: "Self" });
+      await registerUser({ 
+        user: values, 
+        registrationType: "Self",
+        brokerId,
+        brokerName,
+        isBrokerInvite: !!invitationId,
+      });
+    }
+
+    // Mark invitation as accepted if successful
+    if (invitationId) {
+      await consumeClientInvitationToken(invitationId);
     }
 
     return NextResponse.json({ message: "ok" }, { status: 200 });

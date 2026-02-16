@@ -1,6 +1,7 @@
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import {
   BROKER_INVITATION,
+  CLIENT_INVITATION,
   BROKER_CLIENT_MAPPING,
   BROKER_COMMISSION,
   USER_FUNDING_APPLICATION,
@@ -26,7 +27,7 @@ const db = firestoreAdmin();
 export const createBrokerInvitation = async (
   email: string,
   invitedBy: string,
-  invitedByName: string
+  invitedByName: string,
 ): Promise<string> => {
   // Check if invitation already exists for this email
   const existingInvitations = await db
@@ -66,7 +67,7 @@ export const createBrokerInvitation = async (
 
 // Get broker invitation by token
 export const getBrokerInvitationByToken = async (
-  token: string
+  token: string,
 ): Promise<(BrokerInvitation & { id: string }) | null> => {
   const snapshot = await db
     .collection(BROKER_INVITATION)
@@ -142,9 +143,26 @@ export const linkClientToBroker = async ({
   await db.collection(BROKER_CLIENT_MAPPING).add(mapping);
 };
 
+// Get pending client invitations for a broker
+export const getBrokerPendingInvitations = async (
+  brokerId: string,
+): Promise<any[]> => {
+  const snapshot = await db
+    .collection(CLIENT_INVITATION)
+    .where("brokerId", "==", brokerId)
+    .where("status", "==", "Pending")
+    .orderBy("createdAt", "desc")
+    .get();
+
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...normalizeAllDates(doc.data()),
+  }));
+};
+
 // Get broker's clients
 export const getBrokerClients = async (
-  brokerId: string
+  brokerId: string,
 ): Promise<BrokerClientMapping[]> => {
   const snapshot = await db
     .collection(BROKER_CLIENT_MAPPING)
@@ -182,19 +200,32 @@ export const getBrokerClients = async (
   }
 
   // Map the user data to the mappings
-  const enrichedMappings = mappings.map((mapping) => {
-    const userData = userDataMap.get(mapping.clientId);
-    return {
-      ...mapping,
-      clientActiveStatus: userData?.activeStatus || "Active",
-    };
-  });
+  const enrichedMappings = mappings
+    .map((mapping) => {
+      const userData = userDataMap.get(mapping.clientId);
+
+      // Skip if user data doesn't exist (user deleted)
+      if (!userData) {
+        return null;
+      }
+
+      return {
+        ...mapping,
+        clientActiveStatus: userData.activeStatus || "Active",
+        clientName:
+          mapping.clientName ||
+          `${userData.firstName || ""} ${userData.lastName || ""}`.trim(),
+        clientEmail: mapping.clientEmail || userData.email || "",
+      };
+    })
+    .filter((mapping) => mapping !== null) as BrokerClientMapping[];
+
   return enrichedMappings;
 };
 
 // Create commission record
 export const createCommission = async (
-  data: Omit<BrokerCommission, "createdAt">
+  data: Omit<BrokerCommission, "createdAt">,
 ): Promise<void> => {
   const commission: BrokerCommission = {
     ...data,
@@ -207,7 +238,7 @@ export const createCommission = async (
 // Get broker commissions
 export const getBrokerCommissions = async (
   brokerId: string,
-  status?: "Pending" | "Approved" | "Paid"
+  status?: "Pending" | "Approved" | "Paid",
 ): Promise<BrokerCommission[]> => {
   let query = db
     .collection(BROKER_COMMISSION)
@@ -224,7 +255,7 @@ export const getBrokerCommissions = async (
 
 // Get broker statistics
 export const getBrokerStatistics = async (
-  brokerId: string
+  brokerId: string,
 ): Promise<BrokerStatistics> => {
   const clients = await getBrokerClients(brokerId);
   const clientIds = clients.map((c) => c.clientId);
@@ -259,7 +290,7 @@ export const getBrokerStatistics = async (
 
         fundMappingsSnapshot.docs.forEach((mappingDoc) => {
           const mappingData = normalizeAllDates(
-            mappingDoc.data()
+            mappingDoc.data(),
           ) as ApprovedBankFormData;
           const status = mappingData.clientApplicationStatus;
 
@@ -294,7 +325,7 @@ export const getBrokerStatistics = async (
 
   const totalCommissionEarned = commissions.reduce(
     (sum, c) => sum + c.commissionAmount,
-    0
+    0,
   );
   const totalCommissionPending = commissions
     .filter((c) => c.status === "Pending")
@@ -377,7 +408,7 @@ export const updateBrokerStatus = async ({
 
 // Get all mapped funding products for broker's clients
 export const getBrokerClientsMappedFunding = async (
-  brokerId: string
+  brokerId: string,
 ): Promise<ApprovedBankFormData[]> => {
   // First, get all clients for this broker
   const clients = await getBrokerClients(brokerId);

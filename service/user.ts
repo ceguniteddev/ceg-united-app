@@ -1,6 +1,7 @@
 "use server";
 import {
   BROKER_CLIENT_MAPPING,
+  CLIENT_INVITATION,
   USER_COLLECTION,
   USER_FUNDING_APPLICATION,
   USER_FUNDING_APPLICATION_CONGRATS,
@@ -25,6 +26,7 @@ import { FieldPath } from "firebase-admin/firestore";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { applyFunding } from "./apply-funding";
 import { recordBusiness } from "./business";
+import * as crypto from "node:crypto";
 import {
   sendClientFundingApplicationAuditAnalysis,
   sendClientFundingApplicationCongratsMessage,
@@ -125,12 +127,16 @@ export const registerUser = async ({
   user,
   registrationType,
   brokerName,
+  brokerId,
   fundingData,
+  isBrokerInvite = false,
 }: {
   user: User;
   registrationType: RegistrationType;
   brokerName?: string;
+  brokerId?: string;
   fundingData?: ApplyFunding;
+  isBrokerInvite?: boolean;
 }) => {
   const userRecord = await getUserRecordByEmail(user.email);
 
@@ -239,6 +245,17 @@ export const registerUser = async ({
     disabled: false,
     emailVerified: false,
   });
+
+  // Link client to broker if brokerId is provided
+  if (brokerId && user.role === "Client") {
+    await updateClientBrokerMapping({
+      clientId: userId,
+      brokerId,
+      brokerName: brokerName || "",
+      clientName: `${user.firstName} ${user.lastName}`,
+      clientEmail: user.email,
+    });
+  }
 
   logInfo("Generating token...", {
     userId: userId,
@@ -1148,6 +1165,25 @@ export const deleteUser = async (userId: string) => {
     await bucket.deleteFiles({ prefix });
     logInfo(`Deleted files from storage for user: ${userId}`);
 
+    // Delete broker-client mappings
+    const brokerClientMappingsQuery = db
+      .collection(BROKER_CLIENT_MAPPING)
+      .where("clientId", "==", userId);
+    const brokerClientMappingsSnapshot = await brokerClientMappingsQuery.get();
+
+    if (!brokerClientMappingsSnapshot.empty) {
+      const batch = db.batch();
+      brokerClientMappingsSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      logInfo(
+        `Deleted ${brokerClientMappingsSnapshot.size} broker-client mappings for user: ${userId}`,
+      );
+    } else {
+      logInfo(`No broker-client mappings found for user: ${userId}`);
+    }
+
     const userDocRef = db.collection(USER_COLLECTION).doc(userId);
     await userDocRef.delete();
     logInfo("User deleted from Firestore");
@@ -1171,10 +1207,14 @@ export const updateClientBrokerMapping = async ({
   clientId,
   brokerId,
   brokerName,
+  clientName,
+  clientEmail,
 }: {
   clientId: string;
   brokerId: string | null;
   brokerName: string;
+  clientName?: string;
+  clientEmail?: string;
 }) => {
   logInfo("Updating client broker mapping", { clientId, brokerId, brokerName });
 
@@ -1206,6 +1246,8 @@ export const updateClientBrokerMapping = async ({
       status: "Active",
       createdAt: new Date(),
       updatedAt: new Date(),
+      clientName: clientName || "",
+      clientEmail: clientEmail || "",
     });
     logInfo("Creating new broker-client mapping", { clientId, brokerId });
   } else {
@@ -1214,4 +1256,95 @@ export const updateClientBrokerMapping = async ({
 
   await batch.commit();
   logInfo("Broker mapping updated successfully", { clientId, brokerId });
+};
+
+export const generateClientInvitation = async ({
+  email,
+  brokerId,
+  brokerName,
+}: {
+  email: string;
+  brokerId: string;
+  brokerName: string;
+}) => {
+  logInfo("Generating client invitation", { email, brokerId, brokerName });
+
+  // Check if user already exists
+  const existingUser = await getUserRecordByEmail(email);
+  if (existingUser) {
+    throw new AppError("A user with this email already exists.");
+  }
+
+  const db = firestoreAdmin();
+  const invitationsRef = db.collection(CLIENT_INVITATION);
+
+  // Check for existing active invitation
+  const existingInvitations = await invitationsRef
+    .where("email", "==", email)
+    .where("status", "==", "Pending")
+    .get();
+
+  if (!existingInvitations.empty) {
+    throw new AppError("An invitation has already been sent to this email.");
+  }
+
+  // Generate invitation token
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
+
+  // Create invitation record
+  const invitationData = {
+    email,
+    brokerId,
+    brokerName,
+    token,
+    status: "Pending",
+    createdAt: new Date(),
+    expiresAt,
+  };
+
+  await invitationsRef.add(invitationData);
+
+  // logInfo("Client invitation created successfully", { email, token });
+
+  return {
+    token,
+    email,
+    brokerName,
+  };
+};
+
+export const verifyClientInvitationToken = async (token: string) => {
+  const db = firestoreAdmin();
+  const snapshot = await db
+    .collection(CLIENT_INVITATION)
+    .where("token", "==", token)
+    .where("status", "==", "Pending")
+    .limit(1)
+    .get();
+
+  if (snapshot.empty) {
+    throw new AppError("Invalid or expired invitation token.");
+  }
+
+  const doc = snapshot.docs[0];
+  const data = normalizeAllDates(doc.data());
+
+  if (new Date() > new Date(data.expiresAt)) {
+    throw new AppError("Invitation token has expired.");
+  }
+
+  return {
+    id: doc.id,
+    ...data,
+  };
+};
+
+export const consumeClientInvitationToken = async (tokenId: string) => {
+  const db = firestoreAdmin();
+  await db.collection(CLIENT_INVITATION).doc(tokenId).update({
+    status: "Accepted",
+    acceptedAt: new Date(),
+  });
 };

@@ -14,6 +14,7 @@ const PUBLIC_ROUTES = new Set<string>([
   "/api/register",
   "/api/auth/verify-session",
   "/api/auth/verify-email",
+  "/api/auth/validate-invitation",
   "/api/broker/validate-token",
   "/api/broker/register",
   "/api/payments/whop",
@@ -29,6 +30,10 @@ function isPublic(pathname: string) {
   if (pathname.startsWith("/verify-email")) return true;
 
   if (pathname.startsWith("/api/auth/verify-email")) return true;
+
+  if (pathname.startsWith("/api/auth/validate-invitation")) return true;
+
+  if (pathname.startsWith("/payment")) return true;
 
   // example: add /register subpaths if you have any
   return false;
@@ -176,6 +181,7 @@ export const config = {
     "/client/:path*", // client area
     "/admin/:path*", // admin area
     "/broker/:path*", // broker area
+    "/payment/:path*", // payment area
     "/api/:path*", // api guarding
   ],
 };

@@ -267,6 +267,18 @@ export const applyFundingSchema = z
     // If the product is NOT excluded, then all driver's license fields become required.
     // We now check each one and add an issue if it's empty.
 
+    // Validate Driver License Documents
+    if (
+      !data.driverLicenseDocuments ||
+      data.driverLicenseDocuments.length === 0
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Driver license document is required.",
+        path: ["driverLicenseDocuments"],
+      });
+    }
+
     // if (
     //   !data.driverLicenseNumber ||
     //   data.driverLicenseNumber.trim().length === 0
@@ -1029,6 +1041,15 @@ export const applyFundingSchema = z
           code: "custom",
           message: "Required",
           path: ["hasOutstandingAdvances"],
+        });
+      }
+
+      // Bank Statements are required (PDF only)
+      if (!data.bankStatements || data.bankStatements.length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Bank statements are required (PDF only).",
+          path: ["bankStatements"],
         });
       }
     }

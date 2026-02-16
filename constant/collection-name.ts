@@ -10,6 +10,7 @@ export const USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED =
 export const LINK_TOKEN_COLLECTION = "plaid-link-token";
 export const USER_TOKEN_COLLECTION = "plaid-user-token";
 export const USER_DENEFITS_CONTRACT = "user-denefits-contract";
+export const PAYMENT_REQUESTS_COLLECTION = "whop-payment-requests";
 export const USER_WHOP_PAYMENTS = "user-whop-payments";
 
 export const PLAID_ITEM_WEBHOOK_COLLECTION = "plaid-item-webhook-data";
@@ -48,6 +49,7 @@ export const USER_COURSE_PROGRESS = "user-course-progress";
 export const USER_COURSE_ENROLLMENT = "user-course-enrollment";
 
 export const BROKER_INVITATION = "broker-invitation";
+export const CLIENT_INVITATION = "client-invitation";
 export const BROKER_CLIENT_MAPPING = "broker-client-mapping";
 export const BROKER_COMMISSION = "broker-commission";
 

@@ -135,6 +135,16 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: WHOP_FULL_PAYMENT_AMOUNT
+    value: 15000
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_FINANCING_AMOUNT
+    value: 2500
+    availability:
+      - BUILD
+      - RUNTIME
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   - variable: FIREBASE_CLIENT_EMAIL
