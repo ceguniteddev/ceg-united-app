@@ -317,6 +317,59 @@ export function MailTable({ data }: { data: Mail[] }) {
         </div>
       </div>
 
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const to = row.getValue("to") as string | string[];
+            const recipient = Array.isArray(to) ? to.join(", ") : to;
+
+            return (
+              <div
+                key={row.id}
+                className="bg-white border rounded-lg p-4 shadow-sm space-y-3 w-full"
+              >
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <div
+                      className="font-semibold text-sm truncate"
+                      title={recipient}
+                    >
+                      {recipient}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {row.original.message.subject}
+                    </div>
+                  </div>
+                  <RetryButton id={row.original.id} />
+                </div>
+
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground">
+                    {format(
+                      new Date(row.getValue("createdAt") as string),
+                      "PP p",
+                    )}
+                  </span>
+                  <Badge variant="outline">
+                    {row.getValue("job") || "GENERAL"}
+                  </Badge>
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Status
+                  </span>
+                  <StatusCell row={row} />
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-8 text-gray-500">No results.</div>
+        )}
+      </div>
+
       <div className="rounded-md border hidden md:flex">
         <ScrollArea
           type="always"
