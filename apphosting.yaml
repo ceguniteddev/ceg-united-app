@@ -65,11 +65,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  - variable: EMAIL_USER
-    value: noreply@cegunited.com
-    availability:
-      - BUILD
-      - RUNTIME
+  # - variable: EMAIL_USER
+  #   value: noreply@cegunited.com
+  #   availability:
+  #     - BUILD
+  #     - RUNTIME
   - variable: n8n_HOST
     value: https://n8n.srv967756.hstgr.cloud/webhook
     availability:
@@ -159,8 +159,8 @@ env:
     secret: PLAID_SECRET_PRODUCTION
   # - variable: RECAPTCHA_SECRET_KEY
   #   secret: RECAPTCHA_SECRET_KEY_PRODUCTION
-  - variable: EMAIL_PASSWORD
-    secret: EMAIL_PASSWORD
+  # - variable: EMAIL_PASSWORD
+  #   secret: EMAIL_PASSWORD
   - variable: ENCRYPTION_KEY
     secret: ENCRYPTION_KEY
   - variable: FIREBASE_PRIVATE_KEY_BASE64

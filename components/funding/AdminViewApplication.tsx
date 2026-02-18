@@ -8,7 +8,7 @@ import { updateApplicationStatus } from "@/service/apply-funding";
 import AdminApproveDeclineApplication from "./AdminApproveDeclineApplication";
 import FundingApplicationView from "./AdminViewApplicationForm";
 import AdminViewUserProfile from "./AdminViewUserProfile";
-import SendEmail from "../SendEmail";
+// import SendEmail from "../SendEmail";
 // import FundApplicationNotes from "@/components/notes/FundApplicationNotes";
 import AdminMappedFunds from "./AdminMappedFunds";
 import FundApplicationNotesV2 from "../notes/FundApplicationNotesV2";
@@ -49,7 +49,7 @@ const AdminViewApplication = ({ formSetOpen, formData }: Props) => {
         {/* <TabsTrigger value="approve-decline">
           Approve/Decline Application
         </TabsTrigger> */}
-        <TabsTrigger value="email">Email</TabsTrigger>
+        {/* <TabsTrigger value="email">Email</TabsTrigger> */}
       </TabsList>
       <TabsContent value="fund-mapping" className="w-full">
         <AdminMappedFunds
@@ -62,12 +62,12 @@ const AdminViewApplication = ({ formSetOpen, formData }: Props) => {
           applicationReferenceNumber={formData?.referenceNumber ?? ""}
         />
       </TabsContent>
-      <TabsContent value="email" className="w-full">
+      {/* <TabsContent value="email" className="w-full">
         <SendEmail
           referenceNumber={formData?.referenceNumber ?? ""}
           userId={formData?.userId ?? ""}
         />
-      </TabsContent>
+      </TabsContent> */}
       <TabsContent value="application" className="w-full">
         <FundingApplicationView data={formData} />
       </TabsContent>

@@ -15,7 +15,8 @@ import {
   storageAdmin,
 } from "@/lib/fireabase-admin";
 import { logError, logInfo } from "@/lib/logger";
-import { sendMail } from "@/lib/nodemailer";
+import { sendTriggerEmail } from "@/service/trigger-email";
+import { EmailJobs } from "@/schema/trigger-email";
 import { ChangePassword, CurrentUser, Role, Business } from "@/schema";
 import { noteSchema, NoteSchema } from "@/schema/notes";
 
@@ -297,18 +298,24 @@ export const registerUser = async ({
     requestBody = getVerifyEmailBody(verificationLink);
   }
 
-  await sendMail({
-    emailTo: user.email,
-    subject: "Verify Email",
-    bodyHTML: requestBody,
+  await sendTriggerEmail({
+    to: user.email,
+    message: {
+      subject: "Verify Email",
+      html: requestBody,
+    },
+    job: EmailJobs.EMAIL_VERIFICATION,
   });
 
   const registrationBody = getNewRegistrationBody(user);
 
-  await sendMail({
-    emailTo: process.env.NEW_REGISTRATION_EMAIL_NOTIF!,
-    subject: `New Registration - ${user.firstName} ${user.lastName}`,
-    bodyHTML: registrationBody,
+  await sendTriggerEmail({
+    to: process.env.NEW_REGISTRATION_EMAIL_NOTIF!,
+    message: {
+      subject: `New Registration - ${user.firstName} ${user.lastName}`,
+      html: registrationBody,
+    },
+    job: EmailJobs.NEW_REGISTRATION,
   });
 
   if (user.role === "Client" && referenceNumber) {

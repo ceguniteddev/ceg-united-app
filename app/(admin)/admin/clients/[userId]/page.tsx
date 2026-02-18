@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClientData from "@/app/(admin)/admin/clients/view";
 import { UserWithId } from "@/schema/registration";
 import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
-import SendEmail from "@/components/SendEmail";
+// import SendEmail from "@/components/SendEmail";
 import ClientNotes from "@/components/notes/ClientNotes";
 import ClientAppliedFunding from "@/components/ClientAppliedFundingList";
 import ClientDocuments from "@/components/ClientDocuments";
@@ -89,7 +89,7 @@ const ClientProfilePage = () => {
 
     options.push(
       { value: "note", label: "Note" },
-      { value: "email", label: "Email" },
+      // { value: "email", label: "Email" },
     );
 
     return options;
@@ -200,9 +200,9 @@ const ClientProfilePage = () => {
         <ClientNotes userId={userId} />
       </TabsContent>
 
-      <TabsContent value="email" className="w-full">
+      {/* <TabsContent value="email" className="w-full">
         <SendEmail userId={userId} />
-      </TabsContent>
+      </TabsContent> */}
 
       <ResponsiveDialog
         isOpen={isLetterFormOpen}

@@ -12,8 +12,9 @@ import {
 import { whopSdk } from "@/lib/whop-sdk";
 import { Payment } from "@whop/sdk/resources.js";
 import { PaymentPlan } from "@/schema/payments";
-import { sendMail } from "@/lib/nodemailer";
 import { randomUUID } from "crypto";
+import { sendTriggerEmail } from "../trigger-email";
+import { EmailJobs } from "@/schema/trigger-email";
 
 const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID;
 const productId = process.env.WHOP_PRODUCT_ID;
@@ -418,10 +419,13 @@ export const sendPaymentLink = async ({
 </html>
   `;
 
-    await sendMail({
-      emailTo: user.email,
-      subject: "Complete Your Payment",
-      bodyHTML,
+    await sendTriggerEmail({
+      to: user.email,
+      message: {
+        subject: "Complete Your Payment",
+        html: bodyHTML,
+      },
+      job: EmailJobs.SEND_PAYMENT_LINK,
     });
 
     return { success: true };
