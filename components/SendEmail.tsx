@@ -23,7 +23,8 @@ import { Loader2Icon, MailIcon } from "lucide-react";
 import { useUserQuery } from "@/hooks/user";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { sendMail } from "@/lib/nodemailer";
+import { sendTriggerEmail } from "@/service/trigger-email";
+import { EmailJobs } from "@/schema/trigger-email";
 import { toast } from "sonner";
 
 type Props = {
@@ -60,11 +61,20 @@ const SendEmail = ({ referenceNumber, userId }: Props) => {
     setIsSending(true);
 
     try {
-      await sendMail({
-        emailTo: userData.email,
-        subject,
-        bodyHTML: content,
-        cc: cc.split(","),
+      const ccList = cc
+        ? cc
+            .split(",")
+            .map((e) => e.trim())
+            .filter(Boolean)
+        : undefined;
+      await sendTriggerEmail({
+        to: userData.email,
+        message: {
+          subject,
+          html: content,
+        },
+        cc: ccList && ccList.length > 0 ? ccList : undefined,
+        job: EmailJobs.GENERAL,
       });
       toast.success("Email sent successfully");
       setIsDeleteDialogOpen(false);

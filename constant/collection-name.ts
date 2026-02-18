@@ -48,6 +48,8 @@ export const WHOP_CHECKOUTS_COLLECTION = "whop-checkouts";
 export const USER_COURSE_PROGRESS = "user-course-progress";
 export const USER_COURSE_ENROLLMENT = "user-course-enrollment";
 
+export const MAIL_COLLECTION = "mail";
+
 export const BROKER_INVITATION = "broker-invitation";
 export const CLIENT_INVITATION = "client-invitation";
 export const BROKER_CLIENT_MAPPING = "broker-client-mapping";
