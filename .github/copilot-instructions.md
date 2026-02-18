@@ -251,3 +251,13 @@ Internal docs in `docs/` explain specific features:
 - Disabled rules: `@typescript-eslint/no-explicit-any`, `no-unused-vars`, `no-unused-expressions`
 - Tailwind CSS for styling with custom animations (`tw-animate-css`)
 - Use `cn()` utility from `lib/utils.ts` for conditional classes
+
+## Testing Guidelines
+
+- **Comprehensive Coverage**: When writing test cases (e.g., Jest, Vitest), ensure all logical scenarios are covered, including:
+  - **Success paths**: Valid inputs producing expected 200/201 responses.
+  - **Validation errors**: Invalid inputs triggering 400 Bad Request responses with specific error messages.
+  - **Edge cases**: Boundary conditions, missing optional fields, and empty states.
+  - **Error handling**: Mocked service failures, database errors, and 500 Internal Server Error responses.
+  - **Mocking**: Properly mock external dependencies (services, auth middleware) to isolate the unit under test.
+- **Run Tests**: Use `npm test` to verify all tests pass after creation or modification.
