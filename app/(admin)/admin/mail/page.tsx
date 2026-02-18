@@ -2,6 +2,8 @@ import HeaderBox from "@/components/HeaderBox";
 import { MailTable } from "@/components/MailTable";
 import { getTriggerEmails } from "@/service/trigger-email";
 
+export const dynamic = "force-dynamic";
+
 export default async function MailPage() {
   const emails = await getTriggerEmails();
 
