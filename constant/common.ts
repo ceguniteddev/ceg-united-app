@@ -190,6 +190,11 @@ export const adminSidebarLinks = [
     route: "/admin/educational-materials",
     label: "Educational Materials",
   },
+  {
+    imgURL: "/icons/mail.svg",
+    route: "/admin/mail",
+    label: "Mail",
+  },
 ];
 
 export const brokerSidebarLinks = [
@@ -243,6 +248,12 @@ export const settingsSidebarAdmin = [
 
 export const transactionCategoryStyles = {
   Declined: {
+    borderColor: "border-red-700",
+    backgroundColor: "bg-red-700",
+    textColor: "text-red-700",
+    chipBackgroundColor: "bg-inherit",
+  },
+  ERROR: {
     borderColor: "border-red-700",
     backgroundColor: "bg-red-700",
     textColor: "text-red-700",
@@ -309,6 +320,12 @@ export const transactionCategoryStyles = {
     chipBackgroundColor: "bg-emerald-50",
   },
   Success: {
+    borderColor: "border-emerald-300",
+    backgroundColor: "bg-emerald-600",
+    textColor: "text-emerald-700",
+    chipBackgroundColor: "bg-emerald-50",
+  },
+  SUCCESS: {
     borderColor: "border-emerald-300",
     backgroundColor: "bg-emerald-600",
     textColor: "text-emerald-700",

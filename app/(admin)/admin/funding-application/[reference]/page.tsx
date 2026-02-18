@@ -6,7 +6,7 @@ import FundingApplicationView from "@/components/funding/AdminViewApplicationFor
 import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
 import AnalysisView from "@/components/funding/AnalysisView";
 import FundApplicationNotesV2 from "@/components/notes/FundApplicationNotesV2";
-import SendEmail from "@/components/SendEmail";
+// import SendEmail from "@/components/SendEmail";
 import Spinner from "@/components/Spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -54,7 +54,7 @@ const AdminViewApplication = () => {
     { value: "analysis", label: "Analysis" },
     { value: "fund-mapping", label: "Fund Mapping" },
     { value: "notes", label: "Notes" },
-    { value: "email", label: "Email" },
+    // { value: "email", label: "Email" },
   ];
 
   return (
@@ -92,12 +92,12 @@ const AdminViewApplication = () => {
             applicationReferenceNumber={formData?.referenceNumber ?? ""}
           />
         </TabsContent>
-        <TabsContent value="email" className="w-full">
+        {/* <TabsContent value="email" className="w-full">
           <SendEmail
             referenceNumber={formData?.referenceNumber ?? ""}
             userId={formData?.userId ?? ""}
           />
-        </TabsContent>
+        </TabsContent> */}
         <TabsContent value="application" className="w-full">
           <FundingApplicationView data={formData} />
         </TabsContent>
