@@ -43,10 +43,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { Info } from "lucide-react";
 import { DataTablePagination } from "@/components/funding/pagination";
 import SortableHeader from "@/components/SortableHeader";
 import CategoryBadge from "./CategoryBadge";
@@ -138,39 +139,36 @@ const columns: ColumnDef<Mail>[] = [
 const StatusCell = ({ row }: { row: any }) => {
   const state = (row.original.delivery?.state || "PENDING") as string;
   const error = row.original.delivery?.error;
-  const [isOpen, setIsOpen] = useState(false);
-
-  //   let variant: "default" | "secondary" | "destructive" | "outline" = "outline";
-  //   if (state === "SUCCESS") variant = "secondary";
-  //   if (state === "ERROR") variant = "destructive";
-  //   if (state === "PROCESSING") variant = "default";
 
   if (state === "ERROR" && error) {
     return (
-      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
-        <div className="flex items-center gap-2">
-          <CategoryBadge category={state} />
-          <CollapsibleTrigger asChild>
+      <div className="flex items-center gap-2">
+        <CategoryBadge category={state} />
+        <HoverCard>
+          <HoverCardTrigger asChild>
             <Button
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0 hover:bg-transparent"
             >
-              <ChevronDown
-                className={`h-4 w-4 transition-transform ${
-                  isOpen ? "rotate-180" : ""
-                }`}
-              />
-              <span className="sr-only">Toggle error</span>
+              <Info className="h-4 w-4 text-destructive" />
+              <span className="sr-only">View error</span>
             </Button>
-          </CollapsibleTrigger>
-        </div>
-        <CollapsibleContent className="mt-2">
-          <div className="rounded-md bg-red-50 p-2 text-xs text-red-900 font-mono break-all border border-red-100 max-w-[300px]">
-            {error}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+          </HoverCardTrigger>
+          <HoverCardContent className="w-[320px] sm:w-[400px]">
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-destructive">
+                Error Details
+              </h4>
+              <div className="rounded-md bg-muted p-2 max-h-[200px] overflow-y-auto">
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words">
+                  {error}
+                </p>
+              </div>
+            </div>
+          </HoverCardContent>
+        </HoverCard>
+      </div>
     );
   }
 
@@ -327,14 +325,11 @@ export function MailTable({ data }: { data: Mail[] }) {
             return (
               <div
                 key={row.id}
-                className="bg-white border rounded-lg p-4 shadow-sm space-y-3 w-full"
+                className="bg-white border rounded-lg p-3 shadow-sm space-y-2 w-full text-sm"
               >
                 <div className="flex justify-between items-start gap-2">
-                  <div className="flex flex-col gap-1 min-w-0">
-                    <div
-                      className="font-semibold text-sm truncate"
-                      title={recipient}
-                    >
+                  <div className="flex flex-col min-w-0">
+                    <div className="font-semibold truncate" title={recipient}>
                       {recipient}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">
@@ -344,20 +339,20 @@ export function MailTable({ data }: { data: Mail[] }) {
                   <RetryButton id={row.original.id} />
                 </div>
 
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">
+                <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <span>
                     {format(
                       new Date(row.getValue("createdAt") as string),
                       "PP p",
                     )}
                   </span>
-                  <Badge variant="outline">
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                     {row.getValue("job") || "GENERAL"}
                   </Badge>
                 </div>
 
                 <div className="flex justify-between items-center pt-2 border-t">
-                  <span className="text-sm font-medium text-muted-foreground">
+                  <span className="text-xs font-medium text-muted-foreground">
                     Status
                   </span>
                   <StatusCell row={row} />

@@ -66,12 +66,14 @@ export const retryTriggerEmail = async (id: string) => {
     throw new Error("Email not found");
   }
 
-  const data = doc.data() as TriggerEmail & { delivery?: any; createdAt?: any };
+  // According to Firebase Trigger Email extension documentation:
+  // To retry a failed delivery, set the 'delivery.state' field to 'RETRY'.
+  // This preserves the original document and history.
+  await docRef.update({
+    "delivery.state": "RETRY",
+    "delivery.error": FieldValue.delete(), // Clear previous error
+    "delivery.endTime": FieldValue.delete(), // Clear previous completion time
+  });
 
-  // Create a clean copy without metadata
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { delivery, createdAt, ...emailData } = data;
-
-  // Use the existing send function to ensure consistency
-  return sendTriggerEmail(emailData);
+  return id;
 };
