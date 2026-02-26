@@ -2,6 +2,8 @@ import Sidebar from "@/components/SidebarAdmin";
 import MobileNavAdmin from "@/components/MobileNavAdmin";
 import { Metadata } from "next";
 
+import { N8nChatAdmin } from "@/components/N8nChatAdmin";
+
 export const metadata: Metadata = {
   title: "CEG United LLC",
   description: "CEG United LLC",
@@ -25,6 +27,12 @@ export default function AdminLayout({
           {children}
         </div>
       </div>
+
+      <N8nChatAdmin />
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css"
+      />
     </div>
   );
   // return (

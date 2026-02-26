@@ -27,11 +27,13 @@ import { removeItemLinkUpdateModeNewAccount } from "./item";
 import { getPlaidUserToken, recordPlaidUserToken } from "./data";
 import { generateCRSReport } from "../crs";
 
-const PLAID_COUNTRY_CODES = (process.env.PLAID_COUNTRY_CODES || "US").split(",") as CountryCode[];
+const PLAID_COUNTRY_CODES = (process.env.PLAID_COUNTRY_CODES || "US").split(
+  ",",
+) as CountryCode[];
 
-const PLAID_PRODUCTS = (process.env.PLAID_PRODUCTS || Products.Transactions).split(
-  ","
-) as Products[];
+const PLAID_PRODUCTS = (
+  process.env.PLAID_PRODUCTS || Products.Transactions
+).split(",") as Products[];
 
 const OPTIONAL_PLAID_PRODUCTS = (process.env.OPTIONAL_PLAID_PRODUCTS || "")
   .split(",")
@@ -41,7 +43,9 @@ const REQUIRED_IF_SUPPORTED = (process.env.REQUIRED_IF_SUPPORTED || "")
   .split(",")
   .filter((p) => p.trim() !== "") as Products[];
 
-const ADDITIONAL_CONSENTED_PRODUCTS = (process.env.ADDITIONAL_CONSENTED_PRODUCTS || "")
+const ADDITIONAL_CONSENTED_PRODUCTS = (
+  process.env.ADDITIONAL_CONSENTED_PRODUCTS || ""
+)
   .split(",")
   .filter((p) => p.trim() !== "") as Products[];
 
@@ -54,6 +58,13 @@ export const getPlaidLinkToken = async ({
   isNewAccount,
 }: PlaidLinkTokenCreateRequest) => {
   if (!userId) throw new Error("User id is required");
+
+  if (process.env.IS_PLAID_PRODUCTION_READY !== "true") {
+    logInfo(
+      "getPlaidLinkToken::Plaid is not production ready, returning dummy token",
+    );
+    return null;
+  }
 
   let userToken = null;
   if (
@@ -76,7 +87,11 @@ export const getPlaidLinkToken = async ({
 
   const clientName = "CEG United LLC";
 
-  logInfo("getPlaidLinkToken::entry data", { userId, userToken, incomeSourceType });
+  logInfo("getPlaidLinkToken::entry data", {
+    userId,
+    userToken,
+    incomeSourceType,
+  });
   let configs: LinkTokenCreateRequest = {
     user: {
       client_user_id: userId,
@@ -164,7 +179,9 @@ export const getPlaidLinkToken = async ({
 
   try {
     const linkTokenResponse = await plaidClient.linkTokenCreate(configs);
-    logInfo("getPlaidLinkToken::linkTokenResponse.data", { data: linkTokenResponse.data });
+    logInfo("getPlaidLinkToken::linkTokenResponse.data", {
+      data: linkTokenResponse.data,
+    });
     return linkTokenResponse.data;
   } catch (e: any) {
     console.error("getPlaidLinkToken::Plaid Error :", e.response?.data);
@@ -172,9 +189,13 @@ export const getPlaidLinkToken = async ({
   }
 };
 
-export const unlinkPlaidItem = async (userId: string, bankItemIds: string[]) => {
+export const unlinkPlaidItem = async (
+  userId: string,
+  bankItemIds: string[],
+) => {
   if (!userId) throw new Error("User id is required");
-  if (!bankItemIds || !bankItemIds.length) throw new Error("Bank item ids is required");
+  if (!bankItemIds || !bankItemIds.length)
+    throw new Error("Bank item ids is required");
 
   logInfo("unlinkPlaidItem", { userId, bankItemIds });
   for (const bankItemId of bankItemIds) {
@@ -192,7 +213,9 @@ export const unlinkPlaidItem = async (userId: string, bankItemIds: string[]) => 
           assetReportId: data.assetReportId,
           itemId: data.itemId,
         });
-        await plaidClient.assetReportRemove({ asset_report_token: data.assetReportToken });
+        await plaidClient.assetReportRemove({
+          asset_report_token: data.assetReportToken,
+        });
         await deleteAssetReportRequest(data.id ?? "");
       }
     }
@@ -204,7 +227,9 @@ export const unlinkPlaidItem = async (userId: string, bankItemIds: string[]) => 
     // remove the storage file for the asset report pdfs
     try {
       const storage = storageAdmin();
-      const bucketFile = storage.file(`documents/${userId}/asset-report-${bankItemId}.pdf`);
+      const bucketFile = storage.file(
+        `documents/${userId}/asset-report-${bankItemId}.pdf`,
+      );
       await bucketFile.delete();
     } catch (error: any) {
       console.error("unlinkPlaidItem::error", error);
@@ -218,7 +243,7 @@ export const exchangeAccessToken = async (
   userId: string,
   tokenType: TokenType,
   itemId?: string,
-  isNewAccount?: boolean
+  isNewAccount?: boolean,
 ) => {
   if (!userId) throw new Error("User id is required");
   if (!publicToken) throw new Error("Public token is required");
@@ -255,7 +280,7 @@ export const recordAccessToken = async (
   userId: string,
   accessToken: string,
   itemId: string,
-  tokenType: TokenType
+  tokenType: TokenType,
 ) => {
   logInfo("recordAccessToken", { userId, itemId, tokenType });
   const db = firestoreAdmin();
@@ -276,12 +301,14 @@ export const recordAccessToken = async (
 export const getAccessToken = async (
   userId: string,
   tokenType?: TokenType,
-  itemId?: string
+  itemId?: string,
 ): Promise<PlaidAccessToken[] | null> => {
   logInfo("getAccessToken", { userId, tokenType, itemId });
   const db = firestoreAdmin();
 
-  let collectionRef = db.collection(PLAID_TOKEN_COLLECTION).where("userId", "==", userId);
+  let collectionRef = db
+    .collection(PLAID_TOKEN_COLLECTION)
+    .where("userId", "==", userId);
 
   if (tokenType) {
     collectionRef = collectionRef.where("tokenType", "==", tokenType);
@@ -321,7 +348,7 @@ export const getAccessToken = async (
 export async function hasAccessToken(
   userId: string,
   tokenType?: TokenType,
-  itemId?: string
+  itemId?: string,
 ): Promise<boolean> {
   const db = firestoreAdmin();
   logInfo("hasAccessToken", { userId, tokenType, itemId });
@@ -371,7 +398,7 @@ export const getPlaidAccounts = async (userId: string) => {
           subtype: String(a.subtype),
           bankItemId: bank.itemId,
         }));
-      })
+      }),
     )
   ).flat();
 
@@ -410,8 +437,14 @@ export const getPlaidAccounts = async (userId: string) => {
   // overall totals
   const totalAccounts = accounts.length;
   const totalInstitutions = groups.length;
-  const totalCurrentBalance = groups.reduce((s, g) => s + g.totalCurrentBalance, 0);
-  const totalAvailableBalance = groups.reduce((s, g) => s + g.totalAvailableBalance, 0);
+  const totalCurrentBalance = groups.reduce(
+    (s, g) => s + g.totalCurrentBalance,
+    0,
+  );
+  const totalAvailableBalance = groups.reduce(
+    (s, g) => s + g.totalAvailableBalance,
+    0,
+  );
 
   return parseStringify({
     data: accounts, // flat list (unchanged)
@@ -423,7 +456,9 @@ export const getPlaidAccounts = async (userId: string) => {
   });
 };
 
-export const getInstitution = async ({ institutionId }: getInstitutionProps) => {
+export const getInstitution = async ({
+  institutionId,
+}: getInstitutionProps) => {
   logInfo("getInstitution", { institutionId });
   const institutionResponse = await plaidClient.institutionsGetById({
     institution_id: institutionId,
@@ -465,7 +500,9 @@ export const getPlaidAccountByUserIdAndItemId = async ({
       access_token: bank[0].accessToken,
       options: { account_ids: [accountId] },
     });
-    logInfo("getPlaidAccountByUserIdAndItemId", { requestId: response.data.request_id });
+    logInfo("getPlaidAccountByUserIdAndItemId", {
+      requestId: response.data.request_id,
+    });
   } catch (err: any) {
     console.error("Plaid Error:", err.response?.data);
     logError(err, { userId, itemId, accountId });
@@ -501,7 +538,7 @@ export const getPlaidAccountByUserIdAndItemId = async ({
 
   // most recent first
   const allTransactions = [...transactions].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
   return parseStringify({
@@ -510,7 +547,10 @@ export const getPlaidAccountByUserIdAndItemId = async ({
   });
 };
 
-export const getTransactions = async ({ accessToken, accountId }: getTransactionsProps) => {
+export const getTransactions = async ({
+  accessToken,
+  accountId,
+}: getTransactionsProps) => {
   let hasMore = true;
   let transactions: CEGTransactionSyncResponse[] = [];
 
@@ -531,7 +571,8 @@ export const getTransactions = async ({ accessToken, accountId }: getTransaction
 
     transactions = response.data.added.map((transaction) => ({
       id: transaction.transaction_id,
-      name: transaction.merchant_name ?? removeSpecialCharacters(transaction.name),
+      name:
+        transaction.merchant_name ?? removeSpecialCharacters(transaction.name),
       paymentChannel: transaction.payment_channel,
       type: transaction.payment_channel,
       accountId: transaction.account_id,
@@ -544,7 +585,8 @@ export const getTransactions = async ({ accessToken, accountId }: getTransaction
     hasMore = data.has_more;
     cursor = data.next_cursor;
   }
-  if (accountId) transactions = transactions.filter((t) => t.accountId === accountId);
+  if (accountId)
+    transactions = transactions.filter((t) => t.accountId === accountId);
 
   return parseStringify(transactions) as CEGTransactionSyncResponse[];
 };
