@@ -11,7 +11,8 @@
       "indexes": "firestore.indexes.json"
     }
   ],
-  "firebase-commands": "firebase deploy --only firestore:ceg-united-db-production --project ceg-united-llc-prod",
+  "firebase-commands-prod": "firebase deploy --only firestore:ceg-united-db-production --project ceg-united-llc-prod",
+  "firebase-commands-staging": "firebase deploy --only firestore:ceg-united-db-staging --project cegunitedllc",
   "functions": [
     {
       "source": "functions",

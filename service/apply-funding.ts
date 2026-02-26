@@ -13,7 +13,7 @@ import {
   FundingApplicationApproveDecline,
   FundingApplicationSatus,
 } from "@/schema/apply-funding";
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp, Query } from "firebase-admin/firestore";
 import * as crypto from "node:crypto";
 import {
   fundAnalysis,
@@ -147,15 +147,24 @@ export const getApplyFunding = async (
   const collectionRef = db
     .collection(USER_FUNDING_APPLICATION)
     .where("userId", "==", userId);
-  const snapshot = await collectionRef.orderBy("appliedDate", "desc").get();
+  const snapshot = await collectionRef.get();
   if (snapshot.empty) {
     console.log("No matching documents.");
     return null;
   }
-  return snapshot.docs.map((doc) => ({
+  let results = snapshot.docs.map((doc) => ({
     referenceNumber: doc.id,
     ...normalizeAllDates(doc.data()),
   }));
+
+  // Sort by appliedDate in descending order (newest first)
+  results.sort((a, b) => {
+    const dateA = new Date(a.appliedDate).getTime();
+    const dateB = new Date(b.appliedDate).getTime();
+    return dateB - dateA;
+  });
+
+  return results;
 };
 
 type Props = {
@@ -170,10 +179,9 @@ export const getFundingApplications = async ({
   userId,
 }: Props): Promise<ApplyFundingWithUser[] | null> => {
   const db = firestoreAdmin();
-  let collectionRef = db
-    .collection(USER_FUNDING_APPLICATION)
-    .orderBy("appliedDate", "desc");
+  let collectionRef: Query = db.collection(USER_FUNDING_APPLICATION);
 
+  // Apply all where clauses BEFORE orderBy
   if (userId) {
     collectionRef = collectionRef.where("userId", "==", userId);
   }
@@ -185,6 +193,7 @@ export const getFundingApplications = async ({
   if (status) {
     collectionRef = collectionRef.where("status", "==", status);
   }
+
   const snapshot = await collectionRef.get();
   if (snapshot.empty) {
     console.log("No matching documents.");
@@ -218,6 +227,13 @@ export const getFundingApplications = async ({
 
   // remove results with user == null
   results = results.filter((result) => result.user !== null);
+
+  // Sort by appliedDate in descending order (newest first)
+  results.sort((a, b) => {
+    const dateA = new Date(a.appliedDate).getTime();
+    const dateB = new Date(b.appliedDate).getTime();
+    return dateB - dateA;
+  });
 
   return results;
 };
