@@ -156,7 +156,9 @@ type Props = {
 };
 
 const AdminFundingList = ({ appliedFunding, rowActions }: Props) => {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "appliedDate", desc: true },
+  ]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
   );

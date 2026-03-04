@@ -19,7 +19,7 @@ import { EmailJobs } from "@/schema/trigger-email";
 const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID;
 const productId = process.env.WHOP_PRODUCT_ID;
 const WHOP_FULL_PAYMENT_AMOUNT =
-  process.env.WHOP_FULL_PAYMENT_AMOUNT || "15000";
+  process.env.NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT || "15000";
 const WHOP_FINANCING_AMOUNT = process.env.WHOP_FINANCING_AMOUNT || "2500";
 
 type CreateCheckoutConfigParams = {
@@ -92,12 +92,26 @@ export const createWhopCheckoutConfig = async ({
       throw new Error("User not found");
     }
 
+    const fullPaymentAmount =
+      paymentKey === "FullPayment" && user.paymentAmount
+        ? Number(user.paymentAmount)
+        : Number(WHOP_FULL_PAYMENT_AMOUNT);
+    // console.log("Using payment amount:", {
+    //   paymentKey,
+    //   fullPaymentAmount,
+    //   userPaymentAmount: user.paymentAmount,
+    // });
+    const paymentAmount =
+      paymentKey === "FullPayment"
+        ? fullPaymentAmount
+        : Number(WHOP_FINANCING_AMOUNT);
+
     const planDetails = {
       company_id: WHOP_COMPANY_ID,
       currency: "usd" as const,
       initial_price:
         paymentKey === "FullPayment"
-          ? Number(WHOP_FULL_PAYMENT_AMOUNT)
+          ? fullPaymentAmount
           : Number(WHOP_FINANCING_AMOUNT),
       plan_type: "one_time" as const,
       product_id: productId!,
