@@ -6,7 +6,7 @@ import Spinner from "@/components/Spinner";
 import ClientBusinessManagement from "@/components/ClientBusinessManagement";
 import { useState } from "react";
 import { Business } from "@/schema";
-import PlaidLink from "@/components/PlaidLink";
+// import PlaidLink from "@/components/PlaidLink";
 
 const MyBusinessPage = () => {
   const { user } = useAuth();
@@ -17,7 +17,7 @@ const MyBusinessPage = () => {
   }
   return (
     <section className="home">
-      <div className="home-content">
+      <div className="home-content mb-16 sm:mb-0">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
           <header className="home-header">
             <HeaderBox
@@ -25,9 +25,9 @@ const MyBusinessPage = () => {
               subtext="Manage your business information"
             />
           </header>
-          <div className="w-full sm:w-auto">
+          {/* <div className="w-full sm:w-auto">
             <PlaidLink displayText="Link Business Account" />
-          </div>
+          </div> */}
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <ClientBusinessManagement

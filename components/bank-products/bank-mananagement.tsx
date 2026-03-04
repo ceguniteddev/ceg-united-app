@@ -67,6 +67,7 @@ import {
   type ColumnDef,
   type SortingState,
   type ColumnFiltersState,
+  VisibilityState,
 } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import SortableHeader from "../SortableHeader";
@@ -189,19 +190,27 @@ const BankManagement = () => {
     [handleEdit],
   );
 
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
+
   const table = useReactTable({
     data: banks || [],
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
     state: {
       sorting,
       columnFilters,
+      columnVisibility,
+      rowSelection,
       globalFilter,
     },
   });
@@ -209,7 +218,7 @@ const BankManagement = () => {
   if (isLoading) return <Spinner />;
 
   return (
-    <div className="space-y-2 px-2 sm:px-0">
+    <div className="space-y-4">
       <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
         Bank Management
       </h2>
@@ -284,74 +293,77 @@ const BankManagement = () => {
       </div>
 
       <div className="md:hidden space-y-3 px-4 sm:px-0">
-        {banks?.length === 0 ? (
+        {table.getRowModel().rows.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground border border-dashed rounded-md">
             No banks found.
           </div>
         ) : (
-          banks?.map((bank) => (
-            <Card key={bank.id} className="overflow-hidden">
-              <CardHeader className="bg-muted/30 p-4 pb-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg font-bold break-words">
-                      {bank.website ? (
-                        <a
-                          href={bank.website}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="hover:underline flex items-center gap-2"
-                        >
-                          {bank.bankName}
-                        </a>
-                      ) : (
-                        bank.bankName
-                      )}
-                    </CardTitle>
-                  </div>
-                  <ActionMenu
-                    bank={bank}
-                    onEdit={handleEdit}
-                    onDelete={(id) => setDeletingBankId(id)}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 pt-3">
-                {bank.contacts && bank.contacts.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Contacts
+          table.getRowModel().rows.map((row) => {
+            const bank = row.original;
+            return (
+              <Card key={bank.id} className="overflow-hidden">
+                <CardHeader className="bg-muted/30 p-4 pb-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg font-bold break-words">
+                        {bank.website ? (
+                          <a
+                            href={bank.website}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="hover:underline flex items-center gap-2"
+                          >
+                            {bank.bankName}
+                          </a>
+                        ) : (
+                          bank.bankName
+                        )}
+                      </CardTitle>
                     </div>
-                    {bank.contacts.map((contact, i) => (
-                      <div
-                        key={i}
-                        className="text-sm bg-slate-50 p-2.5 rounded-md border border-slate-100"
-                      >
-                        <div className="font-semibold flex items-center gap-1.5 mb-1.5 text-slate-800">
-                          <User className="h-3.5 w-3.5 text-blue-500" />{" "}
-                          {contact.name}
-                        </div>
-                        <div className="text-slate-600 text-xs pl-5 space-y-1">
-                          <div className="flex items-center gap-1.5">
-                            <Mail className="h-3 w-3 text-slate-400" />{" "}
-                            {contact.email}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Phone className="h-3 w-3 text-slate-400" />{" "}
-                            {contact.phone}
-                          </div>
-                        </div>
+                    <ActionMenu
+                      bank={bank}
+                      onEdit={handleEdit}
+                      onDelete={(id) => setDeletingBankId(id)}
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-3">
+                  {bank.contacts && bank.contacts.length > 0 ? (
+                    <div className="space-y-3">
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Contacts
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground italic">
-                    No contacts listed
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))
+                      {bank.contacts.map((contact, i) => (
+                        <div
+                          key={i}
+                          className="text-sm bg-slate-50 p-2.5 rounded-md border border-slate-100"
+                        >
+                          <div className="font-semibold flex items-center gap-1.5 mb-1.5 text-slate-800">
+                            <User className="h-3.5 w-3.5 text-blue-500" />{" "}
+                            {contact.name}
+                          </div>
+                          <div className="text-slate-600 text-xs pl-5 space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <Mail className="h-3 w-3 text-slate-400" />{" "}
+                              {contact.email}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Phone className="h-3 w-3 text-slate-400" />{" "}
+                              {contact.phone}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">
+                      No contacts listed
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
 

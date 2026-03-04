@@ -135,7 +135,7 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  - variable: WHOP_FULL_PAYMENT_AMOUNT
+  - variable: NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT
     value: 2500
     availability:
       - BUILD

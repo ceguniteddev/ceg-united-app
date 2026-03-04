@@ -99,6 +99,7 @@ export type UserWithId = User & {
   status: UserFundMapStatus;
   brokerId: string;
   brokerName: string;
+  paymentAmount?: number;
 };
 
 export type UserPlaid = User & { plaidData?: PlaidAccessToken[]; id: string };
