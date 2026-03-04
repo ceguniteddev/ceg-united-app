@@ -33,29 +33,151 @@ import {
   XCircle,
   Download,
 } from "lucide-react";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import Image from "next/image";
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
 import {
   Carousel,
+  CarouselApi,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { DOCUMENT_TYPES, DocumentType } from "@/lib/document-types";
 
+const UUID_PREFIX_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[_-]/i;
+
 const cleanFileName = (fileName: string) => {
+  // Strip document type prefix
   const matchingDocType = DOCUMENT_TYPES.find((dt) =>
     fileName.startsWith(dt.id + "_"),
   );
   if (matchingDocType) {
-    return fileName.substring((matchingDocType.id + "_").length);
+    fileName = fileName.substring((matchingDocType.id + "_").length);
   }
 
+  // Strip leading UUID segment (e.g. "550e8400-e29b-..._actual-name.pdf")
+  fileName = fileName.replace(UUID_PREFIX_RE, "");
+
   return fileName;
+};
+
+// Mobile-only: vertical list with bottom-sheet preview
+const MobileDocumentList = ({
+  docs,
+  onDelete,
+  isDeleting,
+}: {
+  docs: UserDoc[];
+  onDelete: (doc: UserDoc) => void;
+  isDeleting: boolean;
+}) => {
+  const [previewDoc, setPreviewDoc] = useState<UserDoc | null>(null);
+
+  if (docs.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground mt-3 text-center">
+        No documents uploaded for this category yet.
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <div className="space-y-2 mt-3">
+        {docs.map((doc) => {
+          const isReadOnly = doc.path.toLowerCase().includes("asset-report");
+          const fileName = cleanFileName(doc.name.split("/").pop() || "");
+          return (
+            <div
+              key={doc.path}
+              className="flex items-center gap-2 p-3 rounded-lg border bg-card"
+            >
+              <button
+                className="flex-1 min-w-0 text-left"
+                onClick={() => setPreviewDoc(doc)}
+              >
+                <p className="text-sm font-medium truncate">{fileName}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {doc.contentType ?? "unknown"} •{" "}
+                  {(doc.size / 1024).toFixed(1)} KB
+                </p>
+              </button>
+              <div className="flex items-center gap-0.5 flex-shrink-0">
+                <Button variant="ghost" className="h-9 w-9 p-0" asChild>
+                  <a
+                    href={doc.downloadUrl || doc.signedUrl}
+                    download={doc.name.split("/").pop()}
+                  >
+                    <Download className="h-4 w-4" />
+                  </a>
+                </Button>
+                {!isReadOnly && (
+                  <Button
+                    variant="ghost"
+                    className="h-9 w-9 p-0"
+                    onClick={() => onDelete(doc)}
+                    disabled={isDeleting}
+                  >
+                    <Trash2Icon className="h-4 w-4 text-red-500" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <Sheet
+        open={!!previewDoc}
+        onOpenChange={(open) => !open && setPreviewDoc(null)}
+      >
+        <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0">
+          <SheetHeader className="p-4 pb-2 border-b flex-shrink-0">
+            <SheetTitle className="text-sm break-words text-left leading-snug">
+              {previewDoc && cleanFileName(previewDoc.name.split("/").pop() || "")}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-hidden p-2">
+            {previewDoc?.contentType?.startsWith("image/") ? (
+              <ImageZoom>
+                <Image
+                  src={previewDoc.signedUrl}
+                  alt={previewDoc.name}
+                  className="w-full h-full object-contain"
+                  width={800}
+                  height={600}
+                  unoptimized
+                />
+              </ImageZoom>
+            ) : previewDoc?.contentType === "application/pdf" ? (
+              <iframe
+                src={`${previewDoc.signedUrl}#toolbar=1&view=FitH`}
+                title={previewDoc.name}
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-sm text-muted-foreground">
+                  Preview unavailable for this file type
+                </p>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
+  );
 };
 
 // A new, reusable component to display a list of documents
@@ -70,6 +192,15 @@ const DocumentPreviewer = ({
   isDeleting: boolean;
   isAdmin: boolean;
 }) => {
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    if (!api) return;
+    setCurrent(api.selectedScrollSnap());
+    api.on("select", () => setCurrent(api.selectedScrollSnap()));
+  }, [api]);
+
   if (docs.length === 0) {
     return (
       <p className="text-xs sm:text-sm text-muted-foreground mt-3 sm:mt-4 text-center">
@@ -80,7 +211,7 @@ const DocumentPreviewer = ({
 
   return (
     <div className="w-full max-w-6xl mx-auto px-0 sm:px-12 py-4">
-      <Carousel className="w-full" opts={{ loop: true }}>
+      <Carousel className="w-full" opts={{ loop: true }} setApi={setApi}>
         <CarouselContent>
           {docs.map((doc) => {
             const isReadOnly = doc.path.toLowerCase().includes("asset-report");
@@ -91,7 +222,7 @@ const DocumentPreviewer = ({
                     <CardContent className="flex flex-col p-3 sm:p-6 space-y-3 sm:space-y-4">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-2">
                         <div className="flex-1 min-w-0 max-w-full">
-                          <h3 className="font-semibold text-sm leading-tight break-words w-full">
+                          <h3 className="font-semibold text-sm leading-tight truncate" title={cleanFileName(doc.name.split("/").pop() || "")}>
                             {cleanFileName(doc.name.split("/").pop() || "")}
                           </h3>
                           <p className="text-xs text-muted-foreground mt-1">
@@ -191,8 +322,18 @@ const DocumentPreviewer = ({
         </div>
       </Carousel>
       {docs.length > 1 && (
-        <div className="sm:hidden text-center text-xs text-muted-foreground mt-2">
-          Swipe to view more documents ({docs.length})
+        <div className="flex justify-center items-center gap-1.5 mt-3">
+          {docs.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => api?.scrollTo(i)}
+              className={`h-1.5 rounded-full transition-all duration-200 ${
+                i === current
+                  ? "w-4 bg-foreground"
+                  : "w-1.5 bg-muted-foreground/30"
+              }`}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -412,35 +553,61 @@ export default function ClientDocuments({ userId }: { userId: string }) {
         {selectedDocType === "ALL" ? (
           // --- View for "All Documents" ---
           <div>
-            <DocumentPreviewer
-              docs={allDocuments}
-              onDelete={handleOpenDeleteDialog}
-              isDeleting={isDeleting}
-              isAdmin={isAdmin || isBroker}
-            />
+            <div className="sm:hidden">
+              <MobileDocumentList
+                docs={allDocuments}
+                onDelete={handleOpenDeleteDialog}
+                isDeleting={isDeleting}
+              />
+            </div>
+            <div className="hidden sm:block">
+              <DocumentPreviewer
+                docs={allDocuments}
+                onDelete={handleOpenDeleteDialog}
+                isDeleting={isDeleting}
+                isAdmin={isAdmin || isBroker}
+              />
+            </div>
           </div>
         ) : selectedDocType === "OTHER" ? (
           // --- View for "Other Documents" ---
           <div>
-            {<UploadFile userId={userId} />}
-            <DocumentPreviewer
-              docs={otherDocs}
-              onDelete={handleOpenDeleteDialog}
-              isDeleting={isDeleting}
-              isAdmin={isAdmin || isBroker}
-            />
+            <UploadFile userId={userId} />
+            <div className="sm:hidden">
+              <MobileDocumentList
+                docs={otherDocs}
+                onDelete={handleOpenDeleteDialog}
+                isDeleting={isDeleting}
+              />
+            </div>
+            <div className="hidden sm:block">
+              <DocumentPreviewer
+                docs={otherDocs}
+                onDelete={handleOpenDeleteDialog}
+                isDeleting={isDeleting}
+                isAdmin={isAdmin || isBroker}
+              />
+            </div>
           </div>
         ) : (
           // --- View for Required Documents ---
           <div>
             <UploadFile userId={userId} documentType={selectedDocType} />
-
-            <DocumentPreviewer
-              docs={currentRequiredDocuments}
-              onDelete={handleOpenDeleteDialog}
-              isDeleting={isDeleting}
-              isAdmin={isAdmin || isBroker}
-            />
+            <div className="sm:hidden">
+              <MobileDocumentList
+                docs={currentRequiredDocuments}
+                onDelete={handleOpenDeleteDialog}
+                isDeleting={isDeleting}
+              />
+            </div>
+            <div className="hidden sm:block">
+              <DocumentPreviewer
+                docs={currentRequiredDocuments}
+                onDelete={handleOpenDeleteDialog}
+                isDeleting={isDeleting}
+                isAdmin={isAdmin || isBroker}
+              />
+            </div>
           </div>
         )}
       </section>

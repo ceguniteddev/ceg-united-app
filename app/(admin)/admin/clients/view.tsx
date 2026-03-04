@@ -14,6 +14,7 @@ import {
   Edit2Icon,
   Send,
   CreditCard,
+  Save,
 } from "lucide-react";
 import type { Metadata } from "next";
 import React, { useCallback, useState } from "react";
@@ -95,7 +96,6 @@ const ClientData = ({
 }) => {
   const [editModalOpen, setEditModalOpen] = useState(false);
 
-
   if (!user) {
     return <EmptyState title="User not found" description="" />;
   }
@@ -154,6 +154,7 @@ const ClientData = ({
                 <RefreshCRSData user={user} />
                 <SendPaymentLink user={user} />
                 <SendClientAgreement user={user} />
+                <PaymentAmountDisplay user={user} />
               </div>
             )}
           </div>
@@ -886,7 +887,8 @@ const SendClientAgreement = ({ user }: { user: UserWithId }) => {
               <strong>
                 {user.firstName} {user.lastName}
               </strong>
-              ? They will receive an email with instructions to sign the agreement.
+              ? They will receive an email with instructions to sign the
+              agreement.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -915,6 +917,61 @@ const SendClientAgreement = ({ user }: { user: UserWithId }) => {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+};
+
+const PaymentAmountDisplay = ({ user }: { user: UserWithId }) => {
+  const defaultAmount = process.env.NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT || "15000";
+  const [amount, setAmount] = useState<string>(
+    String((user as any).paymentAmount ?? defaultAmount),
+  );
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/user/${user.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentAmount: Number(amount) }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      toast.success("Payment amount updated.");
+    } catch {
+      toast.error("Failed to update payment amount.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-row items-center gap-2 rounded-lg px-3 py-2 border border-blue-200 bg-blue-50/50 shadow-sm w-full">
+      <span className="text-xs font-semibold text-blue-700 whitespace-nowrap flex-shrink-0">
+        Payment Amount
+      </span>
+      <div className="flex items-center gap-1 flex-1 min-w-0">
+        <span className="text-xs font-semibold text-blue-700">$</span>
+        <Input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="h-7 text-sm font-semibold text-blue-900 border-blue-200 bg-white flex-1 min-w-0 px-1.5"
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 flex-shrink-0 text-blue-700 hover:bg-blue-100 cursor-pointer"
+          onClick={handleSave}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Save className="h-3.5 w-3.5" />
+          )}
+        </Button>
+      </div>
+    </div>
   );
 };
 
