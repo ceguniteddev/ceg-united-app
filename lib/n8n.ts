@@ -43,3 +43,6 @@ export const sendClientServiceAgreementN8N = async () =>
   isProd()
     ? "sign-client-service-agreement-prod"
     : "sign-client-service-agreement";
+
+export const createAsanaCustomerServiceTaskN8N = async () =>
+  "create-asana-customer-service";
