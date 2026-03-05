@@ -1201,6 +1201,12 @@ export function FundingApplicationFields({
                       name="industryField"
                       label="Industry Field?"
                     />
+                    <CustomFormField
+                      name="ownershipPercentage"
+                      type="number"
+                      label="Ownership Percentage (%)"
+                      placeholder="0-100"
+                    />
                   </div>
                 </div>
               </CardContent>

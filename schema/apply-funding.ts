@@ -175,6 +175,7 @@ export const applyFundingSchema = z
     businessProjectedProfit3: z.coerce.number<number>().optional(),
 
     industryField: z.string().optional(),
+    ownershipPercentage: z.coerce.number<number>().min(0).max(100).optional(),
 
     // Bridge Loan Application Fields (Business Income Based Funding)
     useOfFunds: z.string().optional(),
