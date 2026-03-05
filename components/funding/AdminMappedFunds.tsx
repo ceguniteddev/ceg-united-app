@@ -66,6 +66,7 @@ import {
   BankFormData,
   ClientApplicationStatus,
 } from "@/schema/bank-products";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import ManualAddBankProduct from "./ManualAddBankProduct";
 import SortableHeader from "../SortableHeader";
@@ -74,6 +75,7 @@ import { formatAmount } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import BankProductsForm from "@/components/bank-products/bank-product-form";
 import { useUserQuery } from "@/hooks/user";
+import { DataTablePagination } from "./pagination";
 
 type Props = {
   referenceNumber: string;
@@ -523,27 +525,24 @@ const BankProductsList = ({
             const showActions = status !== "Approved" && status !== "Funded";
 
             return (
-              <div
-                key={row.id}
-                className="border rounded-lg p-4 bg-white shadow-sm space-y-3"
-              >
-                <div className="flex justify-between items-start gap-2">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm break-words">
-                      {data.bankName}
-                    </h3>
-                    {isApproved ? (
-                      <div className="flex items-center text-green-500 text-xs">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Approved
-                      </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        Pending
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-shrink-0 flex items-center gap-2">
+              <Card key={row.id} className="overflow-hidden">
+                <CardHeader className="bg-muted/30 p-4 pb-2">
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <CardTitle className="text-sm font-bold break-words">
+                        {data.bankName}
+                      </CardTitle>
+                      {isApproved ? (
+                        <div className="flex items-center text-green-500 text-xs mt-1">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Approved
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          Pending
+                        </span>
+                      )}
+                    </div>
                     {showActions && (
                       <ActionCell
                         row={row}
@@ -555,9 +554,8 @@ const BankProductsList = ({
                       />
                     )}
                   </div>
-                </div>
-
-                <div className="space-y-2 text-sm">
+                </CardHeader>
+                <CardContent className="p-4 pt-3 space-y-2 text-sm">
                   <div>
                     <span className="text-muted-foreground text-xs">
                       Product Names:
@@ -600,21 +598,20 @@ const BankProductsList = ({
                       <p className="text-xs break-words">{approvedRemarks}</p>
                     </div>
                   )}
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           })
         ) : (
-          <div className="text-center py-8 text-muted-foreground text-sm">
+          <div className="text-center py-8 text-muted-foreground border border-dashed rounded-md">
             No results.
           </div>
         )}
       </div>
 
       {/* Desktop Table View */}
-      {/* <div className="hidden md:block overflow-hidden rounded-md border"> */}
       <div className="hidden md:flex rounded-md border">
-        <ScrollArea type="always" className="w-1 flex-1">
+        <ScrollArea type="always" className="w-1 flex-1 h-[calc(100vh-380px)] min-h-[400px]">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -666,6 +663,8 @@ const BankProductsList = ({
           <ScrollBar orientation="horizontal" className="w-full" />
         </ScrollArea>
       </div>
+
+      <DataTablePagination table={table} />
     </div>
   );
 };
