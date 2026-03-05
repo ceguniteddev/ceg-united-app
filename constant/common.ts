@@ -3,6 +3,7 @@ export const FIREBASE_TOKEN_NAME = "auth_token";
 export const yesNo = [
   { value: "Yes", label: "Yes" },
   { value: "No", label: "No" },
+  { value: "Unknown", label: "Unknown" },
 ];
 export const monthNames = [
   "January",

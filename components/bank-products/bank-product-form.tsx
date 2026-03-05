@@ -116,7 +116,7 @@ const BankProductsForm = ({
       maximumFundingAmount: data.maximumFundingAmount,
       // averageApprovalAmount: data.averageApprovalAmount,
       grossFundingPercentage: data.grossFundingPercentage,
-      doubleDipAllowed: data.doubleDipAllowed || "No",
+      doubleDipAllowed: data.doubleDipAllowed || "Unknown",
       minimumFicoScore: data.minimumFicoScore,
       creditBureauPulled: data.creditBureauPulled || [],
       maximumInquiriesAllowed: data.maximumInquiriesAllowed,
@@ -126,7 +126,7 @@ const BankProductsForm = ({
       maximumDebtToIncomeRatio: data.maximumDebtToIncomeRatio,
       maximumDebtServiceRatio: data.maximumDebtServiceRatio,
       personalVerifiableIncomeRequired:
-        data.personalVerifiableIncomeRequired || "No",
+        data.personalVerifiableIncomeRequired || "Unknown",
       // noDocumentationRequired: data.noDocumentationRequired || "No",
 
       // Business fields
@@ -156,11 +156,11 @@ const BankProductsForm = ({
       immigrationStatusRequirement: data.immigrationStatusRequirement || "",
       stateAvailability: data.stateAvailability || [],
       applicationMethod: data.applicationMethod || [],
-      allowsForwardingViaEmail: data.allowsForwardingViaEmail || "No",
-      canBeFinalizedOnline: data.canBeFinalizedOnline || "No",
-      clientNeedsToGoToBranch: data.clientNeedsToGoToBranch || "No",
-      appointmentOnly: data.appointmentOnly || "No",
-      openSaturdays: data.openSaturdays || "No",
+      allowsForwardingViaEmail: data.allowsForwardingViaEmail || "Unknown",
+      canBeFinalizedOnline: data.canBeFinalizedOnline || "Unknown",
+      clientNeedsToGoToBranch: data.clientNeedsToGoToBranch || "Unknown",
+      appointmentOnly: data.appointmentOnly || "Unknown",
+      openSaturdays: data.openSaturdays || "Unknown",
       webUrl: data.webUrl || "",
       priorityLevel: data.priorityLevel,
     }));
@@ -223,24 +223,26 @@ const BankProductsForm = ({
         maximumDebtToIncomeRatio: undefined,
         maximumDebtServiceRatio: undefined,
         priorityLevel: undefined,
-        doubleDipAllowed: "No",
-        personalVerifiableIncomeRequired: "No",
-        // noDocumentationRequired: "No",
+        notes: "",
+        softPull: "Unknown",
+        doubleDipAllowed: "Unknown",
+        personalVerifiableIncomeRequired: "Unknown",
+        // noDocumentationRequired: "Unknown",
         businessTaxesRequired: undefined,
         personalTaxesRequired: "None",
-        allowsForwardingViaEmail: "No",
-        canBeFinalizedOnline: "No",
-        clientNeedsToGoToBranch: "No",
-        appointmentOnly: "No",
-        openSaturdays: "No",
-        membershipRequiredBeforeApplicationRequired: "No",
-        membershipRequiredUponApprovalRequired: "No",
-        accountOpeningBeforeApplicationRequired: "No",
-        accountOpeningAfterApprovalRequired: "No",
-        businessBankStatementsRequired: "No",
-        profitAndLossStatementRequired: "No",
-        balanceSheetRequired: "No",
-        businessPlanRequired: "No",
+        allowsForwardingViaEmail: "Unknown",
+        canBeFinalizedOnline: "Unknown",
+        clientNeedsToGoToBranch: "Unknown",
+        appointmentOnly: "Unknown",
+        openSaturdays: "Unknown",
+        membershipRequiredBeforeApplicationRequired: "Unknown",
+        membershipRequiredUponApprovalRequired: "Unknown",
+        accountOpeningBeforeApplicationRequired: "Unknown",
+        accountOpeningAfterApprovalRequired: "Unknown",
+        businessBankStatementsRequired: "Unknown",
+        profitAndLossStatementRequired: "Unknown",
+        balanceSheetRequired: "Unknown",
+        businessPlanRequired: "Unknown",
       };
 
       append(newProduct);
@@ -504,6 +506,12 @@ const BankProductsForm = ({
                         decimalScale={0}
                         allowNegative={false}
                       />
+                      <CustomFormField
+                        name={`products.${selectedProductIndex}.softPull`}
+                        label="Soft Pull"
+                        type="select"
+                        options={yesNo}
+                      />
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -696,6 +704,15 @@ const BankProductsForm = ({
                           />
                         )}
                       </div>
+                    </div>
+
+                    <div className="border-t pt-3 sm:pt-4">
+                      <CustomFormField
+                        name={`products.${selectedProductIndex}.notes`}
+                        placeholder="e.g. Special underwriting notes for this product..."
+                        label="Product Notes"
+                        type="textarea"
+                      />
                     </div>
                   </div>
                 ) : (
