@@ -5,6 +5,7 @@ import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import {
   ApplyFunding,
   applyFundingSchema,
+  FUNDING_PRODUCTS_BY_CATEGORY,
   FundingProductEnumType,
   FundingProductTypeEnum,
 } from "@/schema/apply-funding";
@@ -90,11 +91,9 @@ const ApplyFundingForm = ({
   const [interestedProductSelected, setInterestedProductSelected] = useState<
     FundingProductEnumType | undefined
   >(undefined);
-  // const [tradelinesOrShelf, setTradelinesOrShelf] = useState<boolean>(false);
   const [isCommunity, setIsCommunity] = useState<boolean>(false);
   const [isEquipmentFinancing, setIsEquipmentFinancing] =
     useState<boolean>(false);
-  const [isTradeLines, setIsTradeLines] = useState<boolean>(false);
   const [isAutoLoan, setIsAutoLoan] = useState<boolean>(false);
   const [vehicleFinancingType, setVehicleFinancingType] = useState<
     string | undefined
@@ -132,6 +131,12 @@ const ApplyFundingForm = ({
     refetch: refetchBusinesses,
   } = useBusinessQuery(userData.id, false);
 
+  const updateDerivedStates = useCallback((products: string[]) => {
+    setIsAutoLoan(products.some((p) => p.includes("Auto Loan")));
+    setIsEquipmentFinancing(products.includes("Business Equipment Financing"));
+    setIsBusinessIncomeBased(products.includes("Business Income Based Funding"));
+  }, []);
+
   useEffect(() => {
     if (data) {
       if (data.interestedProduct) {
@@ -140,15 +145,14 @@ const ApplyFundingForm = ({
         );
         if (product) {
           setInterestedProductSelected(product);
-          setIsBusinessIncomeBased(
-            data.interestedProduct === "Business Income Based Funding",
-          );
-          setIsAutoLoan(data.interestedProduct === "Auto Loan");
-          setIsEquipmentFinancing(product.type.includes("Equipment Financing"));
           if (product.type.includes("Business")) {
             refetchBusinesses();
           }
         }
+      }
+
+      if (data.fundingProducts) {
+        updateDerivedStates(data.fundingProducts);
       }
 
       if (data.howDoYouGetPaid) {
@@ -203,7 +207,7 @@ const ApplyFundingForm = ({
         socialMediaInitialized.current = true;
       }
     }
-  }, [data, refetchBusinesses]);
+  }, [data, refetchBusinesses, updateDerivedStates]);
 
   const businessOptions = useMemo<DropdownOption[]>(
     () =>
@@ -337,14 +341,11 @@ const ApplyFundingForm = ({
           );
           if (product) {
             setInterestedProductSelected(product);
-            setIsBusinessIncomeBased(
-              savedDraft.interestedProduct === "Business Income Based Funding",
-            );
-            setIsAutoLoan(savedDraft.interestedProduct === "Auto Loan");
-            setIsEquipmentFinancing(
-              product.type.includes("Equipment Financing"),
-            );
           }
+        }
+
+        if (savedDraft.fundingProducts) {
+          updateDerivedStates(savedDraft.fundingProducts);
         }
 
         if (savedDraft.howDoYouGetPaid) {
@@ -508,10 +509,6 @@ const ApplyFundingForm = ({
       // );
 
       setIsCommunity(interestedProductSelected.type.includes("Community"));
-      setIsEquipmentFinancing(
-        interestedProductSelected.type.includes("Equipment Financing"),
-      );
-      setIsTradeLines(interestedProductSelected.type.includes("Tradelines"));
     }
   }, [interestedProductSelected]);
 
@@ -675,18 +672,16 @@ const ApplyFundingForm = ({
           shouldDirty: true,
         });
 
-        // Check if it's Business Income Based Funding
-        setIsBusinessIncomeBased(value === "Business Income Based Funding");
-
-        // Check if it's Auto Loan
-        setIsAutoLoan(value === "Auto Loan");
+        // Clear product checkboxes and reset derived states when category changes
+        form.setValue("fundingProducts", [], { shouldDirty: true });
+        updateDerivedStates([]);
 
         if (selectedProduct.type.includes("Business")) {
           refetchBusinesses();
         }
       }
     },
-    [form, refetchBusinesses],
+    [form, refetchBusinesses, updateDerivedStates],
   );
 
   const handleDoYouHaveAJobChange = useCallback(
@@ -888,61 +883,82 @@ const ApplyFundingForm = ({
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-5 px-4 md:px-6">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         <CustomFormField
                           name={"interestedProduct"}
-                          label="The Product You're Most Interested In"
+                          label="Type of Funding"
                           type="select"
-                          placeholder=" "
+                          placeholder="Select funding category"
                           options={FundingProductTypeEnum.map((type) => ({
                             value: type.value,
                             label: type.label,
                           }))}
                           onSelectValue={handleInterestedProductChange}
                         />
-                        {interestedProductSelected?.type?.includes(
-                          "Personal",
-                        ) &&
-                          !isTradeLines && (
-                            <CustomFormField
-                              name={"personalAmountFunding"}
-                              label="How Much Personal Funding Are You Looking For?"
-                              type="number"
-                            />
-                          )}
-                        {(isCommunity || isAutoLoan) && (
+                        {interestedProductSelected?.type?.includes("Personal") && (
+                          <CustomFormField
+                            name={"personalAmountFunding"}
+                            label="How Much Personal Funding Are You Looking For?"
+                            type="number"
+                          />
+                        )}
+                        {interestedProductSelected?.type?.includes("Business") && (
+                          <CustomFormField
+                            name={"businessAmountFunding"}
+                            label="How Much Business Funding Are You Looking For?"
+                            type="number"
+                          />
+                        )}
+                        {isCommunity && (
                           <CustomFormField
                             name={"personalAmountFunding"}
                             label="How much funding are you looking for?"
                             type="number"
                           />
                         )}
-                        {isEquipmentFinancing && !isAutoLoan && (
-                          <CustomFormField
-                            className="col-span-2"
-                            name={"personalAmountFunding"}
-                            label="How much in equipment financing are you looking for?"
-                            type="number"
-                          />
-                        )}
-                        {isTradeLines && (
-                          <CustomFormField
-                            name={"personalAmountFunding"}
-                            label="How much funding are you looking for?"
-                            type="number"
-                          />
-                        )}
-                        {interestedProductSelected?.type?.includes(
-                          "Business",
-                        ) &&
-                          !isTradeLines && (
-                            <CustomFormField
-                              name={"businessAmountFunding"}
-                              label="How Much Business Funding Are You Looking For?"
-                              type="number"
-                            />
-                          )}
                       </div>
+
+                      {interestedProductSelected &&
+                        (FUNDING_PRODUCTS_BY_CATEGORY[
+                          interestedProductSelected.value
+                        ]?.length ?? 0) > 0 && (
+                          <div className="space-y-3">
+                            <p className="text-sm font-medium">
+                              Select the specific products you&apos;re interested in:
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {FUNDING_PRODUCTS_BY_CATEGORY[
+                                interestedProductSelected.value
+                              ].map((product) => {
+                                const checked =
+                                  form.watch("fundingProducts")?.includes(product) ??
+                                  false;
+                                return (
+                                  <label
+                                    key={product}
+                                    className="flex items-center gap-2 cursor-pointer rounded-md border border-slate-200 px-3 py-2 hover:bg-slate-50"
+                                  >
+                                    <Checkbox
+                                      checked={checked}
+                                      onCheckedChange={(val) => {
+                                        const current =
+                                          form.getValues("fundingProducts") ?? [];
+                                        const updated = val
+                                          ? [...current, product]
+                                          : current.filter((p) => p !== product);
+                                        form.setValue("fundingProducts", updated, {
+                                          shouldDirty: true,
+                                        });
+                                        updateDerivedStates(updated);
+                                      }}
+                                    />
+                                    <span className="text-sm">{product}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                     </CardContent>
                   </Card>
 
@@ -1006,7 +1022,7 @@ const ApplyFundingForm = ({
                     </Card>
                   )}
 
-                  {!isCommunity && !isTradeLines && (
+                  {!isCommunity && !false && (
                     <Card className="bg-slate-100 border-slate-200">
                       <CardHeader className="px-3 sm:px-4 md:px-6">
                         <CardTitle className="text-base md:text-lg flex items-center gap-2">
@@ -1015,7 +1031,7 @@ const ApplyFundingForm = ({
                       </CardHeader>
                       <CardContent className="space-y-3 sm:space-y-4 md:space-y-5 px-3 sm:px-4 md:px-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 items-start">
-                          {!isTradeLines && false && (
+                          {!false && false && (
                             <CustomFormField
                               name={"isMarried"}
                               label={"Are you married?"}
@@ -1039,7 +1055,7 @@ const ApplyFundingForm = ({
                             />
                           )}
                         </div>
-                        {!isTradeLines && false && (
+                        {!false && false && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <CustomFormField
                               name={"driverLicenseNumber"}
@@ -1170,7 +1186,7 @@ const ApplyFundingForm = ({
                     </Card>
                   )}
 
-                  {isTradeLines && (
+                  {false && (
                     <Card className="bg-slate-100 border-slate-200">
                       <CardHeader className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                         <CardTitle className="text-base md:text-lg flex items-center gap-2">
@@ -1231,11 +1247,9 @@ const ApplyFundingForm = ({
                     </Card>
                   )}
 
-                  {!isTradeLines &&
-                    !isCommunity &&
+                  {!isCommunity &&
                     interestedProductSelected &&
-                    interestedProductSelected.value !==
-                      "Business Income Based Funding" &&
+                    !form.watch("fundingProducts")?.includes("Business Income Based Funding") &&
                     (!isAutoLoan ||
                       (isAutoLoan && vehicleFinancingType === "Personal")) && (
                       <Card className="bg-slate-100 border-slate-200">
@@ -1547,9 +1561,8 @@ const ApplyFundingForm = ({
 
                   {(interestedProductSelected?.type?.includes("Business") ||
                     isCommunity ||
-                    (!isAutoLoan && isEquipmentFinancing) ||
-                    (isAutoLoan && vehicleFinancingType === "Business")) &&
-                    !isTradeLines && (
+                    isEquipmentFinancing ||
+                    (isAutoLoan && vehicleFinancingType === "Business")) && (
                       <Card className="bg-slate-100 border-slate-200">
                         <CardHeader className="px-3 sm:px-4 md:px-6">
                           <CardTitle className="flex flex-col md:flex-row justify-between gap-2 text-base md:text-lg">
@@ -1637,6 +1650,12 @@ const ApplyFundingForm = ({
                               <CustomFormField
                                 name={"industryField"}
                                 label={"Industry Field?"}
+                              />
+                              <CustomFormField
+                                name={"ownershipPercentage"}
+                                type="number"
+                                label={"Ownership Percentage (%)"}
+                                placeholder="0-100"
                               />
                             </div>
                           )}
@@ -2078,7 +2097,7 @@ const ApplyFundingForm = ({
 
                                     {isEditing
                                       ? "Updating..."
-                                      : isTradeLines
+                                      : false
                                         ? "Boosting..."
                                         : "Applying..."}
                                   </>
@@ -2087,7 +2106,7 @@ const ApplyFundingForm = ({
                                     <BanknoteIcon className="mr-2 h-4 w-4" />{" "}
                                     {isEditing
                                       ? "Update Application"
-                                      : isTradeLines
+                                      : false
                                         ? "Boost My Score"
                                         : "Apply Funding"}
                                   </>

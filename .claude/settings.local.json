@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"d:\\\\workspace\\\\nodejs\\\\ceg-united\\\\ceg-united-app\\\\app\\\\\\(admin\\)\" -type f -name \"*.tsx\")",
+      "Bash(find \"d:\\\\workspace\\\\nodejs\\\\ceg-united\\\\ceg-united-app\\\\app\\\\\\(broker\\)\" -type f -name \"*funding*\")",
+      "Bash(xargs grep -l \"prompt\\\\|Prompt\")",
+      "Bash(xargs grep -l \"apiPrompt\\\\|aiPrompt\\\\|letter.*prompt\")",
+      "Bash(find /d/workspace/nodejs/ceg-united/ceg-united-app/app/api/user/[userId]/dispute-letter -type f)",
+      "Bash(ls -la /d/workspace/nodejs/ceg-united/ceg-united-app/app/api/user/[userId]/dispute-letter/)"
+    ]
+  }
+}
