@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const YesNoEnum = z
-  .enum(["Yes", "No"], { error: "Required" })
+  .enum(["Yes", "No", "Unknown"], { error: "Required" })
   .optional();
 
 export const ApplicationMethodEnum = z.enum(
@@ -59,6 +59,7 @@ export const bankProductCriteriaSchema = z.object({
   maximumFundingAmount: z.coerce.number<number>().optional(),
   // averageApprovalAmount: z.coerce.number<number>().optional(),
   grossFundingPercentage: z.coerce.number<number>().optional(),
+  softPull: YesNoEnum.optional().or(z.literal("")),
   doubleDipAllowed: YesNoEnum.optional().or(z.literal("")),
   minimumFicoScore: z.coerce.number<number>().optional(),
 
@@ -103,6 +104,8 @@ export const bankProductCriteriaSchema = z.object({
   clientNeedsToGoToBranch: YesNoEnum.optional().or(z.literal("")),
   appointmentOnly: YesNoEnum.optional().or(z.literal("")),
   openSaturdays: YesNoEnum.optional().or(z.literal("")),
+
+  notes: z.string().optional(),
 
   // webUrl: z.string().min(1, "Required"),
   priorityLevel: z.coerce

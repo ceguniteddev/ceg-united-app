@@ -67,6 +67,7 @@ export const applyFundingSchema = z
     referenceNumber: z.string().optional(),
 
     interestedProduct: z.string().min(1, { error: "Required" }),
+    fundingProducts: z.array(z.string()).optional(),
     fundingType: FundingApplicationTypeEnum,
 
     personalAmountFunding: z.coerce.number<number>().optional(),
@@ -175,6 +176,7 @@ export const applyFundingSchema = z
     businessProjectedProfit3: z.coerce.number<number>().optional(),
 
     industryField: z.string().optional(),
+    ownershipPercentage: z.coerce.number<number>().min(0).max(100).optional(),
 
     // Bridge Loan Application Fields (Business Income Based Funding)
     useOfFunds: z.string().optional(),
@@ -439,10 +441,10 @@ export const applyFundingSchema = z
     if (
       data.employmentStatus === "yes" &&
       !(
-        (data.interestedProduct === "Auto Loan" &&
+        (data.fundingProducts?.some((p) => p.includes("Auto Loan")) &&
           data.vehicleFinancingType === "Business") ||
         data.fundingType === "Community" ||
-        data.interestedProduct === "Business Income Based Funding"
+        data.fundingProducts?.includes("Business Income Based Funding")
       )
     ) {
       // If it is, validate each employment field
@@ -695,8 +697,7 @@ export const applyFundingSchema = z
 
     // If funded by Equipment Financing (excluding Auto Loan), require personal amount and business info
     if (
-      data.fundingType?.includes("Equipment Financing") &&
-      data.interestedProduct !== "Auto Loan"
+      data.fundingProducts?.includes("Business Equipment Financing")
     ) {
       if (
         data.personalAmountFunding == null ||
@@ -794,7 +795,7 @@ export const applyFundingSchema = z
     }
 
     // Auto Loan validation
-    if (data.interestedProduct === "Auto Loan") {
+    if (data.fundingProducts?.some((p) => p.includes("Auto Loan"))) {
       // Funding amount is required
       if (
         data.personalAmountFunding == null ||
@@ -938,7 +939,7 @@ export const applyFundingSchema = z
     }
 
     // Business Income Based Funding validation
-    if (data.interestedProduct === "Business Income Based Funding") {
+    if (data.fundingProducts?.includes("Business Income Based Funding")) {
       // Use of Funds is required
       if (!data.useOfFunds || data.useOfFunds.trim().length === 0) {
         ctx.addIssue({
@@ -1184,16 +1185,6 @@ export type FundingProductEnumType = {
 
 export const FundingProductTypeEnum: FundingProductEnumType[] = [
   {
-    value: "Personal & Business Funding",
-    label: "Personal & Business Funding",
-    type: "Personal And Business",
-  },
-  {
-    value: "Business Income Based Funding",
-    label: "Business Income Based Funding",
-    type: "Business",
-  },
-  {
     value: "Personal Funding",
     label: "Personal Funding",
     type: "Personal",
@@ -1203,41 +1194,54 @@ export const FundingProductTypeEnum: FundingProductEnumType[] = [
     label: "Business Funding",
     type: "Business",
   },
-  // {
-  //   value: "Personal Tradelines",
-  //   label: "Personal Tradelines",
-  //   type: "Tradelines",
-  // },
-  // {
-  //   value: "Business Tradelines",
-  //   label: "Business Tradelines",
-  //   type: "Tradelines",
-  // },
-  // {
-  //   value: "Personal & Business Tradelines",
-  //   label: "Personal & Business Tradelines",
-  //   type: "Tradelines",
-  // },
-  // {
-  //   value: "Aged Shelf Corporation",
-  //   label: "Aged Shelf Corporation",
-  //   type: "Business",
-  // },
+  {
+    value: "Personal & Business Funding",
+    label: "Personal & Business Funding",
+    type: "Personal And Business",
+  },
   {
     value: "Credit Analysis",
     label: "Credit Analysis",
     type: "Community",
   },
-  {
-    value: "Auto Loan",
-    label: "Auto Loan",
-    type: "Equipment Financing",
-  },
-  {
-    value: "Equipment Financing",
-    label: "Equipment Financing",
-    type: "Equipment Financing",
-  },
 ];
+
+export const FUNDING_PRODUCTS_BY_CATEGORY: Record<string, string[]> = {
+  "Personal Funding": [
+    "Personal Line of Credit",
+    "Personal Credit Cards",
+    "Personal Loan",
+    "Personal Auto Loan",
+    "HELOC",
+    "Mortgage",
+  ],
+  "Business Funding": [
+    "Business Line of Credit",
+    "Business Credit Cards",
+    "Business Term Loan",
+    "Business Auto Loan",
+    "Business Equipment Financing",
+    "Business Property Mortgage",
+    "Business Income Based Funding",
+    "SBA",
+  ],
+  "Personal & Business Funding": [
+    "Personal Line of Credit",
+    "Personal Credit Cards",
+    "Personal Loan",
+    "Personal Auto Loan",
+    "HELOC",
+    "Mortgage",
+    "Business Line of Credit",
+    "Business Credit Cards",
+    "Business Term Loan",
+    "Business Auto Loan",
+    "Business Equipment Financing",
+    "Business Property Mortgage",
+    "Business Income Based Funding",
+    "SBA",
+  ],
+  "Credit Analysis": [],
+};
 
 export type FundingProductType = (typeof FundingProductTypeEnum)[number];

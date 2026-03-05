@@ -115,7 +115,7 @@ export default function FundingApplicationView({ data }: Props) {
         <section>
           <h3 className="text-sm font-semibold mb-3">Product</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Interested Product" value={data.interestedProduct} />
+            <Field label="Funding Category" value={data.interestedProduct} />
             <Field label="Funding Type" value={data.fundingType || "All"} />
             <Field
               label="Personal Requested Amount"
@@ -126,6 +126,23 @@ export default function FundingApplicationView({ data }: Props) {
               value={currency(data.businessAmountFunding)}
             />
           </div>
+          {data.fundingProducts && data.fundingProducts.length > 0 && (
+            <div className="mt-3">
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                Selected Products
+              </span>
+              <div className="flex flex-wrap gap-2 mt-1.5">
+                {data.fundingProducts.map((product) => (
+                  <span
+                    key={product}
+                    className="text-xs bg-slate-100 border border-slate-200 rounded-full px-2.5 py-1"
+                  >
+                    {product}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         <Separator />
@@ -161,7 +178,7 @@ export default function FundingApplicationView({ data }: Props) {
         )}
 
         {/* Auto Loan Specific Fields */}
-        {data.interestedProduct === "Auto Loan" && (
+        {data.fundingProducts?.some((p) => p.includes("Auto Loan")) && (
           <>
             <section>
               <h3 className="text-sm font-semibold mb-3">Auto Loan Details</h3>
@@ -254,6 +271,12 @@ export default function FundingApplicationView({ data }: Props) {
                 )}
 
                 <Field label="Industry Field" value={data.industryField} />
+                {data.ownershipPercentage !== undefined && (
+                  <Field
+                    label="Ownership Percentage"
+                    value={`${data.ownershipPercentage}%`}
+                  />
+                )}
 
                 {/* <Field
                   label="Last Year Taxes"
@@ -340,7 +363,7 @@ export default function FundingApplicationView({ data }: Props) {
             <Separator />
 
             {/* Bridge Loan Application (Business Income Based Funding) */}
-            {data.interestedProduct === "Business Income Based Funding" && (
+            {data.fundingProducts?.includes("Business Income Based Funding") && (
               <>
                 <section>
                   <h3 className="text-sm font-semibold mb-3">
