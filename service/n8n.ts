@@ -1,5 +1,8 @@
 import { logInfo } from "@/lib/logger";
-import { sendClientServiceAgreementN8N } from "@/lib/n8n";
+import {
+  createAsanaCustomerServiceTaskN8N,
+  sendClientServiceAgreementN8N,
+} from "@/lib/n8n";
 
 export const sendClientServiceAgreement = async ({
   userId,
@@ -22,4 +25,36 @@ export const sendClientServiceAgreement = async ({
       }),
     },
   );
+};
+
+export const createAsanaCustomerServiceTask = async ({
+  userId,
+  bankProductId,
+  referenceNumber,
+}: {
+  userId: string;
+  bankProductId: string;
+  referenceNumber: string;
+}) => {
+  logInfo("Creating Asana customer service task...", {
+    userId,
+    bankProductId,
+    referenceNumber,
+  });
+  const url = `${process.env.n8n_HOST}/${await createAsanaCustomerServiceTaskN8N()}`;
+  // logInfo("Asana task creation URL:", {
+  //   url,
+  // });
+  return await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      userId,
+      bankProductId,
+      referenceNumber,
+    }),
+  });
 };
