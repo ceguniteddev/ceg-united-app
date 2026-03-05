@@ -29,6 +29,7 @@ import {
 } from "./apply-funding";
 // import { createAsanaTaskForLender } from "@/lib/n8n";
 import NotFoundError from "@/error/NotFoundError";
+import { createAsanaCustomerServiceTask } from "./n8n";
 
 export const recordBankProduct = async (value: BankFormData) => {
   const db = firestoreAdmin();
@@ -962,24 +963,18 @@ export const applyApprovedMappedFund = async ({
       };
     }
 
+    const bankProductId = docData?.bankProductId as string;
+
+    const data = await createAsanaCustomerServiceTask({
+      userId: docData?.userId,
+      bankProductId,
+      referenceNumber,
+    });
+
     await collectionRef
       .doc(fundMappingApprovedId)
       .set({ clientApplicationStatus: "Sent to Lender" }, { merge: true });
 
-    // await fetch(`${process.env.n8n_HOST}/${await createAsanaTaskForLender()}`, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-    //   },
-    //   body: JSON.stringify({
-    //     userId: docData?.userId,
-    //     bankProductId: docData?.bankProductId,
-    //     referenceNumber: referenceNumber,
-    //   }),
-    // });
-
-    // 4. Return a successful response
     return { success: true };
   } catch (error: any) {
     // 5. Catch any unexpected errors and return a generic error response
