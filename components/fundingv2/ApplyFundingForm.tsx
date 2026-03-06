@@ -1249,7 +1249,8 @@ const ApplyFundingForm = ({
 
                   {!isCommunity &&
                     interestedProductSelected &&
-                    !form.watch("fundingProducts")?.includes("Business Income Based Funding") &&
+                    !(form.watch("fundingProducts")?.length === 1 &&
+                      form.watch("fundingProducts")?.includes("Business Income Based Funding")) &&
                     (!isAutoLoan ||
                       (isAutoLoan && vehicleFinancingType === "Personal")) && (
                       <Card className="bg-slate-100 border-slate-200">

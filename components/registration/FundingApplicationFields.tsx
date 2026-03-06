@@ -105,7 +105,9 @@ export function FundingApplicationFields({
   const updateDerivedStates = useCallback((products: string[]) => {
     setIsAutoLoan(products.some((p) => p.includes("Auto Loan")));
     setIsEquipmentFinancing(products.includes("Business Equipment Financing"));
-    setIsBusinessIncomeBased(products.includes("Business Income Based Funding"));
+    setIsBusinessIncomeBased(
+      products.includes("Business Income Based Funding"),
+    );
   }, []);
 
   // Initialize state from form values (for saved drafts)
@@ -760,7 +762,8 @@ export function FundingApplicationFields({
 
         {!isCommunity &&
           interestedProductSelected &&
-          !form.watch("fundingProducts")?.includes("Business Income Based Funding") &&
+          !(form.watch("fundingProducts")?.length === 1 &&
+            form.watch("fundingProducts")?.includes("Business Income Based Funding")) &&
           (!isAutoLoan ||
             (isAutoLoan && vehicleFinancingType === "Personal")) && (
             <Card className="bg-slate-100 border-slate-200">
@@ -769,7 +772,7 @@ export function FundingApplicationFields({
                   <div className="flex items-center gap-2">
                     <span>💼</span> Employment Information
                   </div>
-                  {howDoYouGetPaidSelectedBank && (
+                  {howDoYouGetPaidSelectedBank && false && (
                     <PlaidLink displayText="Link Personal Account" />
                   )}
                 </CardTitle>
@@ -1065,175 +1068,172 @@ export function FundingApplicationFields({
           isCommunity ||
           isEquipmentFinancing ||
           (isAutoLoan && vehicleFinancingType === "Business")) && (
-            <Card className="bg-slate-100 border-slate-200">
-              <CardHeader className="px-4 md:px-6">
-                <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                  <span>🏢</span> Business Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-5 px-4 md:px-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                  <CustomFormField
-                    name="businessName"
-                    label="* Business Name"
-                  />
-                  <CustomFormField
-                    name="employerIdentificationNumber"
-                    label="* Employer Identification Number"
-                  />
-                </div>
+          <Card className="bg-slate-100 border-slate-200">
+            <CardHeader className="px-4 md:px-6">
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <span>🏢</span> Business Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5 px-4 md:px-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <CustomFormField name="businessName" label="* Business Name" />
+                <CustomFormField
+                  name="employerIdentificationNumber"
+                  label="* Employer Identification Number"
+                />
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CustomFormField
+                  name="businessEmail"
+                  type="email"
+                  label="* Email Address"
+                />
+                <CustomFormField
+                  name="businessPhoneNumber"
+                  label="* Phone Number"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <CustomFormField
+                  className="md:col-span-2"
+                  name="businessStreetAddress"
+                  label="* Street Address"
+                />
+                <CustomFormField
+                  name="businessStreetHouseNumber"
+                  label="Apartment/Suite/Unit"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <CustomFormField name="businessCityAddress" label="* City" />
+                <CustomFormField
+                  name="businessStateAddress"
+                  label="* State"
+                  type="select"
+                  placeholder="Select a state"
+                  options={US_STATES}
+                />
+                <CustomFormField
+                  name="businessPostalAddress"
+                  label="* Zip Code"
+                />
+              </div>
+
+              <CustomFormField name="businessWebsite" label="Website" />
+
+              <div>
+                <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+                  <span>📱</span> Social Media Handle
+                </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <CustomFormField
-                    name="businessEmail"
-                    type="email"
-                    label="* Email Address"
+                    name="socialMedia.0.platform"
+                    label="Platform"
+                    type="select"
+                    placeholder="Select platform"
+                    options={SOCIAL_MEDIA_PLATFORMS}
+                    onSelectValue={handleSocialPlatformChange}
                   />
                   <CustomFormField
-                    name="businessPhoneNumber"
-                    label="* Phone Number"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <CustomFormField
-                    className="md:col-span-2"
-                    name="businessStreetAddress"
-                    label="* Street Address"
-                  />
-                  <CustomFormField
-                    name="businessStreetHouseNumber"
-                    label="Apartment/Suite/Unit"
+                    name="socialMedia.0.handle"
+                    label="Username/Handle"
+                    placeholder="Enter your username"
+                    onChange={handleSocialHandleChange}
+                    value={
+                      selectedSocialPlatform
+                        ? socialMediaHandles[selectedSocialPlatform] || ""
+                        : ""
+                    }
                   />
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <CustomFormField name="businessCityAddress" label="* City" />
+              <Separator className="my-4" />
+
+              <div className="space-y-4">
+                <h4 className="font-medium flex items-center gap-2">
+                  <span>📊</span> Financial Information
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <CustomFormField
-                    name="businessStateAddress"
-                    label="* State"
+                    name="dateOfIncorporation"
+                    type="date-picker"
+                    label="Date of Incorporation?"
+                  />
+                  <CustomFormField
+                    name="stateOfIncorporation"
+                    label="State of Incorporation?"
                     type="select"
                     placeholder="Select a state"
                     options={US_STATES}
                   />
+                </div>
+
+                {/* 2026 Gross Revenue */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <CustomFormField
-                    name="businessPostalAddress"
-                    label="* Zip Code"
+                    name="businessGrossProjectedRevenue1"
+                    type="number"
+                    placeholder="Enter amount"
+                    label={`${currentYear} Gross Revenue`}
+                  />
+
+                  <CustomFormField
+                    type="checkbox"
+                    label="Filed with IRS?"
+                    name="businessFiledWithIRS1"
                   />
                 </div>
 
-                <CustomFormField name="businessWebsite" label="Website" />
+                {/* 2025 Gross Revenue */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CustomFormField
+                    name="businessGrossProjectedRevenue2"
+                    type="number"
+                    placeholder="Enter amount"
+                    label={`${currentYear - 1} Gross Revenue`}
+                  />
 
-                <div>
-                  <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                    <span>📱</span> Social Media Handle
-                  </label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <CustomFormField
-                      name="socialMedia.0.platform"
-                      label="Platform"
-                      type="select"
-                      placeholder="Select platform"
-                      options={SOCIAL_MEDIA_PLATFORMS}
-                      onSelectValue={handleSocialPlatformChange}
-                    />
-                    <CustomFormField
-                      name="socialMedia.0.handle"
-                      label="Username/Handle"
-                      placeholder="Enter your username"
-                      onChange={handleSocialHandleChange}
-                      value={
-                        selectedSocialPlatform
-                          ? socialMediaHandles[selectedSocialPlatform] || ""
-                          : ""
-                      }
-                    />
-                  </div>
+                  <CustomFormField
+                    type="checkbox"
+                    name="businessFiledWithIRS2"
+                    label="Filed with IRS?"
+                  />
                 </div>
+                {/* 2024 Gross Revenue */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CustomFormField
+                    name="businessGrossProjectedRevenue3"
+                    type="number"
+                    placeholder="Enter amount"
+                    label={`${currentYear - 2} Gross Revenue`}
+                  />
 
-                <Separator className="my-4" />
-
-                <div className="space-y-4">
-                  <h4 className="font-medium flex items-center gap-2">
-                    <span>📊</span> Financial Information
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <CustomFormField
-                      name="dateOfIncorporation"
-                      type="date-picker"
-                      label="Date of Incorporation?"
-                    />
-                    <CustomFormField
-                      name="stateOfIncorporation"
-                      label="State of Incorporation?"
-                      type="select"
-                      placeholder="Select a state"
-                      options={US_STATES}
-                    />
-                  </div>
-
-                  {/* 2026 Gross Revenue */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <CustomFormField
-                      name="businessGrossProjectedRevenue1"
-                      type="number"
-                      placeholder="Enter amount"
-                      label={`${currentYear} Gross Revenue`}
-                    />
-
-                    <CustomFormField
-                      type="checkbox"
-                      label="Filed with IRS?"
-                      name="businessFiledWithIRS1"
-                    />
-                  </div>
-
-                  {/* 2025 Gross Revenue */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <CustomFormField
-                      name="businessGrossProjectedRevenue2"
-                      type="number"
-                      placeholder="Enter amount"
-                      label={`${currentYear - 1} Gross Revenue`}
-                    />
-
-                    <CustomFormField
-                      type="checkbox"
-                      name="businessFiledWithIRS2"
-                      label="Filed with IRS?"
-                    />
-                  </div>
-                  {/* 2024 Gross Revenue */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <CustomFormField
-                      name="businessGrossProjectedRevenue3"
-                      type="number"
-                      placeholder="Enter amount"
-                      label={`${currentYear - 2} Gross Revenue`}
-                    />
-
-                    <CustomFormField
-                      type="checkbox"
-                      label="Filed with IRS?"
-                      name="businessFiledWithIRS3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <CustomFormField
-                      name="industryField"
-                      label="Industry Field?"
-                    />
-                    <CustomFormField
-                      name="ownershipPercentage"
-                      type="number"
-                      label="Ownership Percentage (%)"
-                      placeholder="0-100"
-                    />
-                  </div>
+                  <CustomFormField
+                    type="checkbox"
+                    label="Filed with IRS?"
+                    name="businessFiledWithIRS3"
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CustomFormField
+                    name="industryField"
+                    label="Industry Field?"
+                  />
+                  <CustomFormField
+                    name="ownershipPercentage"
+                    type="number"
+                    label="Ownership Percentage (%)"
+                    placeholder="0-100"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-indigo-200">
           <CardContent className="space-y-6 px-4 md:px-6">
