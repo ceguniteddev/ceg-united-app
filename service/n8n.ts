@@ -31,15 +31,18 @@ export const createAsanaCustomerServiceTask = async ({
   userId,
   bankProductId,
   referenceNumber,
+  fundMappingApprovedId,
 }: {
   userId: string;
   bankProductId: string;
   referenceNumber: string;
+  fundMappingApprovedId: string;
 }) => {
   logInfo("Creating Asana customer service task...", {
     userId,
     bankProductId,
     referenceNumber,
+    fundMappingApprovedId,
   });
   const url = `${process.env.n8n_HOST}/${await createAsanaCustomerServiceTaskN8N()}`;
   // logInfo("Asana task creation URL:", {
@@ -55,6 +58,7 @@ export const createAsanaCustomerServiceTask = async ({
       userId,
       bankProductId,
       referenceNumber,
+      fundMappingApprovedId,
     }),
   });
 };
