@@ -921,7 +921,8 @@ const SendClientAgreement = ({ user }: { user: UserWithId }) => {
 };
 
 const PaymentAmountDisplay = ({ user }: { user: UserWithId }) => {
-  const defaultAmount = process.env.NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT || "15000";
+  const defaultAmount =
+    process.env.NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT || "15000";
   const [amount, setAmount] = useState<string>(
     String((user as any).paymentAmount ?? defaultAmount),
   );
@@ -1002,7 +1003,6 @@ const EditClientModal = ({
     password: true,
     email: true,
     role: true,
-    ssn: true,
   });
 
   const form = useForm({
@@ -1014,6 +1014,7 @@ const EditClientModal = ({
       phoneNumber: user.phoneNumber || "",
       birthdate: user.birthdate ? new Date(user.birthdate) : undefined,
       gender: user.gender || "",
+      ssn: user.ssn || "",
     },
   });
 
@@ -1105,6 +1106,15 @@ const EditClientModal = ({
                 label="* Gender"
                 placeholder=" "
                 options={genderTypes()}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <CustomFormField
+                name="ssn"
+                type="ssn"
+                label="SSN"
+                placeholder="XXX-XX-XXXX"
               />
             </div>
 
