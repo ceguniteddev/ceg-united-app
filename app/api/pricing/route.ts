@@ -45,7 +45,7 @@ export const GET = withAuth(async () => {
     .map(([k, v]) => `${k}=${v}`)
     .join("&");
   const url = `${BASE_URL}?${queryParts}&oauth_signature=${encodeURIComponent(signature)}`;
-  console.log("Requesting URL:", url);
+  // console.log("Requesting URL:", url);
   const response = await fetch(url, {
     headers: {
       "cache-control": "no-cache",

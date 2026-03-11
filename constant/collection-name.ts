@@ -28,6 +28,7 @@ export const USER_LINK_UPDATE_MODE = "user-link-update-mode";
 export const NEW_ACCOUNTS_AVAILABLE = "user-link-new-accounts-available";
 
 export const FUNDING_PRODUCTS_COLLECTION = "funding-products";
+export const USER_TRADELINE_COLLECTION = "user-tradeline";
 export const BANK_PRODUCTS_COLLECTION = "bank-products";
 export const BANK_MANAGEMENT_COLLECTION = "bank-management";
 export const CRS_REPORT_DATA = "crs-report-data";
@@ -54,6 +55,8 @@ export const BROKER_INVITATION = "broker-invitation";
 export const CLIENT_INVITATION = "client-invitation";
 export const BROKER_CLIENT_MAPPING = "broker-client-mapping";
 export const BROKER_COMMISSION = "broker-commission";
+
+export const SYSTEM_CONFIG_COLLECTION = "system-config";
 
 export const DISPUTE_LETTER = "dispute-letter";
 export const LETTER_TEMPLATE = "letter-template";

@@ -123,8 +123,8 @@ const Sidebar = () => {
                 href={item.route}
                 key={item.label}
                 className={cn(
-                  "flex gap-2 md:gap-3 items-center py-1 md:p-2 2xl:p-1 rounded-lg justify-start",
-                  { "bg-bank-gradient": isActive }
+                  "flex gap-2 md:gap-3 items-center py-1 md:p-1 2xl:p-1 rounded-lg justify-start",
+                  { "bg-bank-gradient": isActive },
                 )}
               >
                 <div className="relative size-5 md:size-6">

@@ -9,7 +9,7 @@ type ExtraInfoType = {
 };
 
 export function withAdminGuard<P>(
-  WrappedComponent: React.ComponentType<P & ExtraInfoType>
+  WrappedComponent: React.ComponentType<P & ExtraInfoType>,
 ) {
   const ComponentWithExtraInfo = (props: P) => {
     const { role, user, loading } = useAuth();
@@ -32,7 +32,7 @@ export function withAdminGuard<P>(
 }
 
 export function withBrokerGuard<P>(
-  WrappedComponent: React.ComponentType<P & ExtraInfoType>
+  WrappedComponent: React.ComponentType<P & ExtraInfoType>,
 ) {
   const ComponentWithExtraInfo = (props: P) => {
     const { role, user, loading } = useAuth();
@@ -45,6 +45,29 @@ export function withBrokerGuard<P>(
     }, [loading, user, role, router]);
 
     if (loading || !user || role !== "Broker") {
+      return <Spinner />;
+    }
+
+    return <WrappedComponent {...props} extraInfo="" />;
+  };
+
+  return ComponentWithExtraInfo;
+}
+
+export function withClientGuard<P>(
+  WrappedComponent: React.ComponentType<P & ExtraInfoType>,
+) {
+  const ComponentWithExtraInfo = (props: P) => {
+    const { role, user, loading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+      if (!loading && (!user || role !== "Client")) {
+        router.push("/");
+      }
+    }, [loading, user, role, router]);
+
+    if (loading || !user || role !== "Client") {
       return <Spinner />;
     }
 
