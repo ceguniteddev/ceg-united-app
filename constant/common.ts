@@ -172,6 +172,11 @@ export const adminSidebarLinks = [
     label: "Funding Applications",
   },
   {
+    imgURL: "/icons/chart-no-axes-combined.svg",
+    route: "/admin/tradelines",
+    label: "Tradelines",
+  },
+  {
     imgURL: "/icons/dollar-circle.svg",
     route: "/admin/payments",
     label: "Payments",
