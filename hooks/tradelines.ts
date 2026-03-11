@@ -7,6 +7,7 @@ import {
   getUserTradelines,
   getAllPurchasedTradelines,
   updateTradelineStatus,
+  getPendingTradelinesCount,
 } from "@/service/tradelines";
 
 const QUERY_KEY = ["system-config", "markupPercentage"];
@@ -14,6 +15,9 @@ const USER_TRADELINES_KEY = ["user-tradelines"];
 export const USER_ALL_TRADELINES_KEY = ["user-all-tradelines"];
 export const ADMIN_ALL_PURCHASED_TRADELINES_KEY = [
   "admin-all-purchased-tradelines",
+];
+export const ADMIN_PENDING_TRADELINES_COUNT_KEY = [
+  "admin-pending-tradelines-count",
 ];
 
 export const useMarkupPercentage = () => {
@@ -95,8 +99,21 @@ export const useUpdateTradelineStatus = () => {
       queryClient.invalidateQueries({
         queryKey: ADMIN_ALL_PURCHASED_TRADELINES_KEY,
       });
+      queryClient.invalidateQueries({
+        queryKey: ADMIN_PENDING_TRADELINES_COUNT_KEY,
+      });
     },
     onError: () => toast.error("Failed to update tradeline status."),
   });
   return { updateStatus, isPending };
+};
+
+export const usePendingTradelinesCount = () => {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ADMIN_PENDING_TRADELINES_COUNT_KEY,
+    queryFn: async () => {
+      return await getPendingTradelinesCount();
+    },
+  });
+  return { count: data ?? 0, isLoading, error, refetch };
 };
