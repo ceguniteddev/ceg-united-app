@@ -52,6 +52,23 @@ function stripHtml(html: string): string {
   return el.textContent ?? el.innerText ?? html;
 }
 
+function formatCurrency(value: number | string | undefined | null): string {
+  if (value == null || value === "") return "";
+  if (typeof value === "string") {
+    if (!/\d/.test(value)) return value;
+    const num = Number(value.replace(/[^0-9.-]+/g, ""));
+    if (isNaN(num)) return value;
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(num);
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value);
+}
+
 const columnHelper = createColumnHelper<PricingItem>();
 
 export default function ClientTradelinesTable() {
@@ -86,11 +103,11 @@ export default function ClientTradelinesTable() {
     try {
       setPurchasingId(item.card_id);
 
-      let formattedPrice = `$${item.price}`;
+      let formattedPrice = formatCurrency(item.price);
       const rawPrice = Number(item.price);
       if (!isNaN(rawPrice)) {
         const markup = (rawPrice * markupPercentage) / 100;
-        formattedPrice = `$${(rawPrice + markup).toFixed(2)}`;
+        formattedPrice = formatCurrency(rawPrice + markup);
       }
 
       await purchaseTradeline(user.uid, {
@@ -141,7 +158,7 @@ export default function ClientTradelinesTable() {
         header: ({ column }) => (
           <SortableHeader column={column} title="Credit Limit" />
         ),
-        cell: (info) => stripHtml(String(info.row.original.credit_limit)),
+        cell: (info) => formatCurrency(info.row.original.credit_limit_original),
       }),
       columnHelper.accessor("date_opened_original", {
         id: "date_opened",
@@ -189,9 +206,9 @@ export default function ClientTradelinesTable() {
         header: "Price",
         cell: (info) => {
           const price = Number(info.row.original.price);
-          if (isNaN(price)) return `$${info.row.original.price}`;
+          if (isNaN(price)) return formatCurrency(info.row.original.price);
           const markup = (price * markupPercentage) / 100;
-          return `$${(price + markup).toFixed(2)}`;
+          return formatCurrency(price + markup);
         },
       }),
       columnHelper.display({
@@ -202,11 +219,11 @@ export default function ClientTradelinesTable() {
           const isOut = Number(item.stock) === 0;
           const isPurchasing = purchasingId === item.card_id;
 
-          let formattedPrice = `$${item.price}`;
+          let formattedPrice = formatCurrency(item.price);
           const rawPrice = Number(item.price);
           if (!isNaN(rawPrice)) {
             const markup = (rawPrice * markupPercentage) / 100;
-            formattedPrice = `$${(rawPrice + markup).toFixed(2)}`;
+            formattedPrice = formatCurrency(rawPrice + markup);
           }
 
           const descriptionNode = (
@@ -231,7 +248,7 @@ export default function ClientTradelinesTable() {
                   <span className="font-semibold text-foreground">
                     Credit Limit:
                   </span>{" "}
-                  {stripHtml(String(item.credit_limit))}
+                  {formatCurrency(item.credit_limit_original)}
                 </li>
                 <li>
                   <span className="font-semibold text-foreground">
@@ -250,6 +267,20 @@ export default function ClientTradelinesTable() {
                     Reporting Date:
                   </span>{" "}
                   {item.reporting_period}
+                </li>
+                <li>
+                  <span className="font-semibold text-foreground">
+                    Available Stock:
+                  </span>{" "}
+                  <span
+                    className={
+                      Number(item.stock) === 0
+                        ? "text-red-500 font-medium"
+                        : "text-green-600 font-medium"
+                    }
+                  >
+                    {item.stock}
+                  </span>
                 </li>
                 <li className="pt-2 mt-2 border-t">
                   <span className="font-semibold text-foreground">
