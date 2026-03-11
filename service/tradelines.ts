@@ -67,7 +67,7 @@ export const getUserTradelines = async (userId: string): Promise<any[]> => {
 
   const docs = snapshot.docs.map((doc) => ({
     id: doc.id,
-    ...doc.data(),
+    ...(doc.data() as any),
   }));
 
   // Sort by createdAt descending locally to avoid requiring a composite index in Firestore
@@ -82,7 +82,7 @@ export const getAllPurchasedTradelines = async (): Promise<any[]> => {
 
   const docs = snapshot.docs.map((doc) => ({
     id: doc.id,
-    ...doc.data(),
+    ...(doc.data() as any),
   }));
 
   // Extract unique userIds to minimize database reads
@@ -141,4 +141,15 @@ export const updateTradelineStatus = async (
     updateData.reason = reason;
   }
   await db.collection(USER_TRADELINE_COLLECTION).doc(id).update(updateData);
+};
+
+export const getPendingTradelinesCount = async (): Promise<number> => {
+  const db = firestoreAdmin();
+  const snapshot = await db
+    .collection(USER_TRADELINE_COLLECTION)
+    .where("status", "==", "pending")
+    .count()
+    .get();
+
+  return snapshot.data().count;
 };
