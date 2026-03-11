@@ -2,12 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ShoppingCartIcon, Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
-import { useMarkupPercentage } from "@/hooks/tradelines";
+import {
+  useMarkupPercentage,
+  useUserRecentTradelines,
+  USER_ALL_TRADELINES_KEY,
+} from "@/hooks/tradelines";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { purchaseTradeline } from "@/service/tradelines";
 import { useAuth } from "@/provider/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useReactTable,
   getCoreRowModel,
@@ -28,6 +34,7 @@ import {
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import SortableHeader from "@/components/SortableHeader";
 import { DataTablePagination } from "@/components/funding/pagination";
+import Spinner from "./Spinner";
 
 interface PricingItem {
   image: string;
@@ -71,8 +78,144 @@ function formatCurrency(value: number | string | undefined | null): string {
 
 const columnHelper = createColumnHelper<PricingItem>();
 
+function ActionCell({
+  item,
+  markupPercentage,
+  isPurchasing,
+  onPurchase,
+  recentTradelines,
+}: {
+  item: PricingItem;
+  markupPercentage: number;
+  isPurchasing: boolean;
+  onPurchase: (item: PricingItem, quantity: number) => void;
+  recentTradelines: any[];
+}) {
+  const [quantity, setQuantity] = useState<number>(1);
+  const stock = Number(item.stock);
+  const isOut = stock === 0;
+
+  const hasPurchasedRecently = recentTradelines.some(
+    (rt) => rt.card_id === item.card_id,
+  );
+
+  let formattedPrice = formatCurrency(item.price);
+  const rawPrice = Number(item.price);
+  let finalRawPrice = rawPrice;
+
+  if (!isNaN(rawPrice)) {
+    const markup = (rawPrice * markupPercentage) / 100;
+    finalRawPrice = rawPrice + markup;
+    formattedPrice = formatCurrency(finalRawPrice);
+  }
+
+  const grandTotal = formatCurrency(finalRawPrice * quantity);
+
+  const descriptionNode = (
+    <div className="space-y-2 mt-4 text-left">
+      <div className="font-medium text-foreground">
+        Are you sure you want to purchase the following tradeline?
+      </div>
+      <ul className="text-sm space-y-1 list-none p-0">
+        <li>
+          <span className="font-semibold text-foreground">Bank Name:</span>{" "}
+          {item.bank_name}
+        </li>
+        <li>
+          <span className="font-semibold text-foreground">Card ID:</span>{" "}
+          {item.card_id}
+        </li>
+        <li>
+          <span className="font-semibold text-foreground">Credit Limit:</span>{" "}
+          {formatCurrency(item.credit_limit_original)}
+        </li>
+        <li>
+          <span className="font-semibold text-foreground">Date Opened:</span>{" "}
+          {item.date_opened}
+        </li>
+        <li>
+          <span className="font-semibold text-foreground">Purchase By:</span>{" "}
+          {item.purchase_deadline}
+        </li>
+        <li>
+          <span className="font-semibold text-foreground">Reporting Date:</span>{" "}
+          {item.reporting_period}
+        </li>
+        <li>
+          <span className="font-semibold text-foreground">
+            Available Stock:
+          </span>{" "}
+          <span
+            className={
+              stock === 0
+                ? "text-red-500 font-medium"
+                : "text-green-600 font-medium"
+            }
+          >
+            {item.stock}
+          </span>
+        </li>
+        <li className="pt-4 flex items-center space-x-3">
+          <span className="font-semibold text-foreground">Quantity:</span>
+          <Input
+            type="number"
+            min={1}
+            max={stock > 0 ? stock : 1}
+            value={quantity}
+            onChange={(e) => {
+              const val = parseInt(e.target.value, 10);
+              if (isNaN(val) || val < 1) {
+                setQuantity(1);
+              } else if (val > stock) {
+                setQuantity(stock);
+              } else {
+                setQuantity(val);
+              }
+            }}
+            className="w-24"
+          />
+        </li>
+        <li className="pt-2 mt-2 border-t">
+          <span className="font-semibold text-foreground">Total Price:</span>{" "}
+          <span className="text-green-600 font-bold">{grandTotal}</span>
+        </li>
+      </ul>
+    </div>
+  );
+
+  return (
+    <ConfirmModal
+      onConfirm={() => {
+        onPurchase(item, quantity);
+        setQuantity(1);
+      }}
+      description={descriptionNode}
+    >
+      <Button
+        size="icon"
+        variant="ghost"
+        disabled={isOut || isPurchasing || hasPurchasedRecently}
+        title={
+          isOut
+            ? "Out of Stock"
+            : hasPurchasedRecently
+              ? "Purchased recently (60 days)"
+              : "Purchase"
+        }
+      >
+        {isPurchasing ? (
+          <Loader2Icon className="h-4 w-4 animate-spin" />
+        ) : (
+          <ShoppingCartIcon className="h-4 w-4" />
+        )}
+      </Button>
+    </ConfirmModal>
+  );
+}
+
 export default function ClientTradelinesTable() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [items, setItems] = useState<PricingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +225,9 @@ export default function ClientTradelinesTable() {
   );
 
   const { markupPercentage } = useMarkupPercentage();
+  const { recentTradelines, refetch: refetchRecent } = useUserRecentTradelines(
+    user?.uid,
+  );
 
   useEffect(() => {
     fetch("/api/pricing")
@@ -94,7 +240,7 @@ export default function ClientTradelinesTable() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handlePurchase = async (item: PricingItem) => {
+  const handlePurchase = async (item: PricingItem, quantity: number) => {
     if (!user) {
       toast.error("You must be logged in to purchase.");
       return;
@@ -104,21 +250,29 @@ export default function ClientTradelinesTable() {
       setPurchasingId(item.card_id);
 
       let formattedPrice = formatCurrency(item.price);
+      let grandTotalFormatted = formatCurrency(item.price);
       const rawPrice = Number(item.price);
       if (!isNaN(rawPrice)) {
         const markup = (rawPrice * markupPercentage) / 100;
         formattedPrice = formatCurrency(rawPrice + markup);
+        grandTotalFormatted = formatCurrency((rawPrice + markup) * quantity);
       }
 
       await purchaseTradeline(user.uid, {
         ...item,
+        quantity,
         finalPrice: formattedPrice,
+        grandTotal: grandTotalFormatted,
         status: "pending",
       });
 
       toast.success(
         `Purchase successfully recorded for ${item.bank_name} - ${item.card_id}`,
       );
+      refetchRecent();
+      queryClient.invalidateQueries({
+        queryKey: [...USER_ALL_TRADELINES_KEY, user.uid],
+      });
     } catch (err: any) {
       toast.error("Failed to process purchase: " + err.message);
     } finally {
@@ -214,113 +368,48 @@ export default function ClientTradelinesTable() {
       columnHelper.display({
         id: "actions",
         header: "Actions",
-        cell: (info) => {
-          const item = info.row.original;
-          const isOut = Number(item.stock) === 0;
-          const isPurchasing = purchasingId === item.card_id;
-
-          let formattedPrice = formatCurrency(item.price);
-          const rawPrice = Number(item.price);
-          if (!isNaN(rawPrice)) {
-            const markup = (rawPrice * markupPercentage) / 100;
-            formattedPrice = formatCurrency(rawPrice + markup);
-          }
-
-          const descriptionNode = (
-            <div className="space-y-2 mt-4 text-left">
-              <div className="font-medium text-foreground">
-                Are you sure you want to purchase the following tradeline?
-              </div>
-              <ul className="text-sm space-y-1 list-none p-0">
-                <li>
-                  <span className="font-semibold text-foreground">
-                    Bank Name:
-                  </span>{" "}
-                  {item.bank_name}
-                </li>
-                <li>
-                  <span className="font-semibold text-foreground">
-                    Card ID:
-                  </span>{" "}
-                  {item.card_id}
-                </li>
-                <li>
-                  <span className="font-semibold text-foreground">
-                    Credit Limit:
-                  </span>{" "}
-                  {formatCurrency(item.credit_limit_original)}
-                </li>
-                <li>
-                  <span className="font-semibold text-foreground">
-                    Date Opened:
-                  </span>{" "}
-                  {item.date_opened}
-                </li>
-                <li>
-                  <span className="font-semibold text-foreground">
-                    Purchase By:
-                  </span>{" "}
-                  {item.purchase_deadline}
-                </li>
-                <li>
-                  <span className="font-semibold text-foreground">
-                    Reporting Date:
-                  </span>{" "}
-                  {item.reporting_period}
-                </li>
-                <li>
-                  <span className="font-semibold text-foreground">
-                    Available Stock:
-                  </span>{" "}
-                  <span
-                    className={
-                      Number(item.stock) === 0
-                        ? "text-red-500 font-medium"
-                        : "text-green-600 font-medium"
-                    }
-                  >
-                    {item.stock}
-                  </span>
-                </li>
-                <li className="pt-2 mt-2 border-t">
-                  <span className="font-semibold text-foreground">
-                    Total Price:
-                  </span>{" "}
-                  <span className="text-green-600 font-bold">
-                    {formattedPrice}
-                  </span>
-                </li>
-              </ul>
-            </div>
-          );
-
-          return (
-            <ConfirmModal
-              onConfirm={() => handlePurchase(item)}
-              description={descriptionNode}
-            >
-              <Button
-                size="icon"
-                variant="ghost"
-                disabled={isOut || isPurchasing}
-                title={isOut ? "Out of Stock" : "Purchase"}
-              >
-                {isPurchasing ? (
-                  <Loader2Icon className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ShoppingCartIcon className="h-4 w-4" />
-                )}
-              </Button>
-            </ConfirmModal>
-          );
-        },
+        cell: (info) => (
+          <ActionCell
+            item={info.row.original}
+            markupPercentage={markupPercentage}
+            isPurchasing={purchasingId === info.row.original.card_id}
+            onPurchase={handlePurchase}
+            recentTradelines={recentTradelines}
+          />
+        ),
       }),
     ],
-    [markupPercentage, purchasingId, user],
+    [markupPercentage, purchasingId, user, recentTradelines],
   );
 
+  const filteredItems = useMemo(() => {
+    const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    return items.filter((item) => {
+      // Find all purchases for this specific card_id
+
+      const purchases = recentTradelines.filter(
+        (rt) => rt.card_id === item.card_id,
+      );
+
+      // console.log(purchases);
+
+      // If never purchased, it's available
+      if (purchases.length === 0) return true;
+
+      // Find the most recent purchase date for this card
+      const mostRecentPurchaseMs = Math.max(
+        ...purchases.map((rt) => new Date(rt.createdAt).getTime()),
+      );
+
+      // It is available if the most recent purchase was > 60 days ago
+      return now - mostRecentPurchaseMs > sixtyDaysMs;
+    });
+  }, [items, recentTradelines]);
+
   const table = useReactTable({
-    data: items,
+    data: filteredItems,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
@@ -330,13 +419,8 @@ export default function ClientTradelinesTable() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold tracking-tight">
-          Available Tradelines
-        </h2>
-      </div>
-      {loading && <p className="text-center text-gray-500">Loading…</p>}
+    <div className="space-y-4">
+      {loading && <Spinner displayText="Loading data..." />}
       {error && <p className="text-center text-red-600">Error: {error}</p>}
       {!loading && !error && (
         <>

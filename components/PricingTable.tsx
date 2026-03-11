@@ -29,6 +29,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import SortableHeader from "@/components/SortableHeader";
 import { DataTablePagination } from "@/components/funding/pagination";
 import { NumberInput } from "./input-number";
+import Spinner from "./Spinner";
 
 interface PricingItem {
   image: string;
@@ -221,7 +222,7 @@ export default function PricingTable() {
           </div>
         </div>
       </div>
-      {loading && <p className="text-center text-gray-500">Loading…</p>}
+      {loading && <Spinner displayText="Loading data..." />}
       {error && <p className="text-center text-red-600">Error: {error}</p>}
       {!loading && !error && (
         <>
