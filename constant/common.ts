@@ -118,11 +118,11 @@ export const sidebarLinks = [
     route: "/client/my-learning",
     label: "My Learning",
   },
-  // {
-  //   imgURL: "/icons/dollar-circle.svg",
-  //   route: "/other-services",
-  //   label: "Other Services",
-  // },
+  {
+    imgURL: "/icons/chart-no-axes-combined.svg",
+    route: "/client/tradelines",
+    label: "Tradelines",
+  },
   // {
   //   imgURL: "/icons/dollar-circle.svg",
   //   route: "/whats-new",
