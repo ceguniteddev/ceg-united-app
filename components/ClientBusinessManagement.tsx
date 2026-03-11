@@ -86,6 +86,8 @@ const ClientBusinessManagement = ({
         };
       });
 
+      console.log("Merged Social Media Data:", formValues);
+
       form.reset({
         ...formValues,
         businessStateAddress: formValues.businessStateAddress ?? "",
@@ -251,7 +253,7 @@ const ClientBusinessManagement = ({
 
               <CardFooter>
                 <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full">
-                  {isEditing && (
+                  {isEditing && !isModal && (
                     <Button
                       type="button"
                       variant="outline"
@@ -266,7 +268,7 @@ const ClientBusinessManagement = ({
                     </Button>
                   )}
 
-                  {isModal && setOpen && !isEditing && (
+                  {isModal && setOpen && (
                     <Button
                       type="button"
                       variant="outline"

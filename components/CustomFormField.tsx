@@ -314,6 +314,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
         return (
           <div className="relative">
             <Select
+              key={field.value}
               value={field.value || (initialValue as string)}
               defaultValue={field.value || (initialValue as string)}
               onValueChange={handleSelectChange}

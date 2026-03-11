@@ -24,13 +24,7 @@ import { useBusinessQuery } from "@/hooks/business";
 import Spinner from "@/components/Spinner";
 import EmptyState from "./EmptyState";
 import ClientBusinessManagement from "./ClientBusinessManagement";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { useAuth } from "@/provider/AuthContext";
 import { useState } from "react";
 import { Pencil } from "lucide-react";
@@ -283,26 +277,25 @@ export default function BusinessRecordsPage({ userId }: { userId: string }) {
         ))}
       </section>
 
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Business Details</DialogTitle>
-            <DialogDescription>
-              Make changes to the business information below.
-            </DialogDescription>
-          </DialogHeader>
-          <ClientBusinessManagement
-            userId={userId}
-            editingBusiness={editingBusiness}
-            setEditingBusiness={setEditingBusiness}
-            isModal={true}
-            setOpen={setIsEditOpen}
-            onSaveSuccess={async () => {
-              handleClose();
-            }}
-          />
-        </DialogContent>
-      </Dialog>
+      <ResponsiveDialog
+        isOpen={isEditOpen}
+        setIsOpen={setIsEditOpen}
+        title="Edit Business Details"
+        description="Make changes to the business information below."
+        className="max-w-4xl"
+        onEscapeAttempt={handleClose}
+      >
+        <ClientBusinessManagement
+          userId={userId}
+          editingBusiness={editingBusiness}
+          setEditingBusiness={setEditingBusiness}
+          isModal={true}
+          setOpen={setIsEditOpen}
+          onSaveSuccess={async () => {
+            handleClose();
+          }}
+        />
+      </ResponsiveDialog>
     </main>
   );
 }
