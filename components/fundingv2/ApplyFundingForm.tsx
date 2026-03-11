@@ -547,9 +547,12 @@ const ApplyFundingForm = ({
       console.info("Form Errors:", form.formState.errors);
       console.info("Form Values:", form.getValues());
 
-      // Get error fields
+      // Get error fields, ignoring document upload fields when editing
       const errors = form.formState.errors;
-      const errorFields = Object.keys(errors);
+      const documentFields = ["bankStatements", "driverLicenseDocuments"];
+      const errorFields = Object.keys(errors).filter(
+        (key) => !isEditing || !documentFields.includes(key),
+      );
 
       if (errorFields.length > 0) {
         // Format field names to be human-readable
@@ -591,17 +594,23 @@ const ApplyFundingForm = ({
             duration: 8000,
           },
         );
-      } else {
+
+        // Block the ConfirmButton from opening its dialog
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      } else if (!isEditing) {
         toast.error("Please fix the validation errors", {
           description:
             "Please review and correct the highlighted fields in your application.",
         });
-      }
 
-      // Block the ConfirmButton from opening its dialog
-      e.preventDefault();
-      e.stopPropagation();
-      return;
+        // Block the ConfirmButton from opening its dialog
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      // When editing and only document errors remain, allow submission to proceed
     }
 
     // Check if Business Income Based Funding requires documents (skip validation when editing)
