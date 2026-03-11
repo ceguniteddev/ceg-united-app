@@ -88,6 +88,7 @@ const ClientBusinessManagement = ({
 
       form.reset({
         ...formValues,
+        businessStateAddress: formValues.businessStateAddress ?? "",
         socialMedia: socialMediaData,
       });
     } else {
@@ -265,7 +266,7 @@ const ClientBusinessManagement = ({
                     </Button>
                   )}
 
-                  {isModal && setOpen && (
+                  {isModal && setOpen && !isEditing && (
                     <Button
                       type="button"
                       variant="outline"
