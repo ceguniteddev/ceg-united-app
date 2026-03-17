@@ -9,6 +9,7 @@ import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
 import { useContactUsQueryIsOpen } from "@/hooks/contact-us";
 import { useGetFundingApplicationsIsNew } from "@/hooks/apply-funding";
+import { usePendingTradelinesCount } from "@/hooks/tradelines";
 import { Separator } from "./ui/separator";
 
 const Sidebar = () => {
@@ -16,6 +17,7 @@ const Sidebar = () => {
   const pathname = usePathname();
   const { requestCallsOpen } = useContactUsQueryIsOpen();
   const { appliedFunding } = useGetFundingApplicationsIsNew();
+  const { count: pendingTradelinesCount } = usePendingTradelinesCount();
   if (!user) return null;
 
   if (role === "Client") return null;
@@ -46,8 +48,8 @@ const Sidebar = () => {
               href={item.route}
               key={item.label}
               className={cn(
-                "flex gap-2 md:gap-3 items-center py-1 md:p-2 2xl:p-1 rounded-lg justify-start",
-                { "bg-bank-gradient": isActive }
+                "flex gap-2 md:gap-3 items-center py-1 md:p-1 2xl:p-1 rounded-lg justify-start",
+                { "bg-bank-gradient": isActive },
               )}
             >
               <div className="relative size-5 md:size-6">
@@ -65,6 +67,10 @@ const Sidebar = () => {
                   )}
                 {item.route === "/admin/call-requests" &&
                   (requestCallsOpen?.length ?? 0) > 0 && (
+                    <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                  )}
+                {item.route === "/admin/tradelines" &&
+                  pendingTradelinesCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
                   )}
               </div>

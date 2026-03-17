@@ -16,16 +16,37 @@ export const WhopCheckoutView = ({
   checkoutId,
   prefillEmail,
 }: WhopCheckoutViewProps) => {
-  const planName =
-    checkoutDetails.paymentKey === "FullPayment"
-      ? "Full Payment Plan"
-      : "Financing Plan";
+  const isFinancing = String(checkoutDetails.paymentKey).includes(
+    "DownPayment",
+  );
+
+  const planName = isFinancing
+    ? "Financing Plan (Down Payment)"
+    : "Full Payment Plan";
   const planPrice = checkoutDetails.initialPrice;
 
-  const returnUrl =
-    checkoutDetails.paymentKey === "FinancingPlan"
-      ? process.env.NEXT_PUBLIC_DEFENITS_URL
-      : "";
+  let returnUrl = "";
+  if (isFinancing) {
+    const paymentKey = String(checkoutDetails.paymentKey);
+    if (paymentKey.includes("Audit")) {
+      returnUrl =
+        process.env.NEXT_PUBLIC_DENEFITS_AUDIT_URL ||
+        process.env.NEXT_PUBLIC_DENEFITS_URL ||
+        "";
+    } else if (paymentKey.includes("Intelligence")) {
+      returnUrl =
+        process.env.NEXT_PUBLIC_DENEFITS_INTELLIGENCE_URL ||
+        process.env.NEXT_PUBLIC_DENEFITS_URL ||
+        "";
+    } else if (paymentKey.includes("Accelerator")) {
+      returnUrl =
+        process.env.NEXT_PUBLIC_DENEFITS_ACCELERATOR_URL ||
+        process.env.NEXT_PUBLIC_DENEFITS_URL ||
+        "";
+    } else {
+      returnUrl = process.env.NEXT_PUBLIC_DENEFITS_URL || "";
+    }
+  }
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
@@ -55,7 +76,7 @@ export const WhopCheckoutView = ({
               </span>
               <span>{currency(planPrice)}</span>
             </div>
-            {checkoutDetails.paymentKey === "FinancingPlan" && (
+            {isFinancing && (
               <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="p-3 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
                   <p className="text-xs text-center text-yellow-800 dark:text-yellow-200">

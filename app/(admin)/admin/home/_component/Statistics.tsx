@@ -210,14 +210,14 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <StatCard
               title="Total Approved Amount"
-              value={formatAmount(adminStatistics?.totalApprovedAmount || 0)}
+              value={`$${formatAmount(adminStatistics?.totalApprovedAmount || 0)}`}
               description="Total approved amount"
               icon={CircleDollarSign}
             />
 
             <StatCard
               title="Total Funded Amount"
-              value={formatAmount(adminStatistics?.totalFundedAmount || 0)}
+              value={`$${formatAmount(adminStatistics?.totalFundedAmount || 0)}`}
               description="Total funded amount"
               icon={CircleDollarSign}
             />

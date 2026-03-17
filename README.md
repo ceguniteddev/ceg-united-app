@@ -56,7 +56,10 @@ PDF_GENERATION_URL=https://generatepdf-ffuzmpuyia-uc.a.run.app
 PDF_API_KEY=<pdf_api_key>
 
 # External Services
-NEXT_PUBLIC_DEFENITS_URL=<denefits_checkout_url>
+NEXT_PUBLIC_DENEFITS_URL=<denefits_checkout_url>
+NEXT_PUBLIC_DENEFITS_AUDIT_URL=<denefits_audit_checkout_url>
+NEXT_PUBLIC_DENEFITS_INTELLIGENCE_URL=<denefits_intelligence_checkout_url>
+NEXT_PUBLIC_DENEFITS_ACCELERATOR_URL=<denefits_accelerator_checkout_url>
 NEXT_PUBLIC_FANBASIS_URL=<fanbasis_checkout_url>
 n8n_HOST=https://n8n.srv967756.hstgr.cloud/webhook
 
