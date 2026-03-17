@@ -189,8 +189,13 @@ env:
     value: 5000
     availability:
       - BUILD
-      - RUNTIME  
-  
+      - RUNTIME
+  - variable: WC_CONSUMER_KEY
+    value: ck_ea997ec7a404f79481d6e57a9b1d22bfe1278371
+    availability:
+      - BUILD
+      - RUNTIME
+
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   - variable: FIREBASE_CLIENT_EMAIL
@@ -219,3 +224,5 @@ env:
     secret: WHOP_API_KEY_STAGING
   - variable: WHOP_WEBHOOK_SECRET
     secret: WHOP_WEBHOOK_SECRET_STAGING
+  - variable: WC_CONSUMER_SECRET
+    secret: WC_CONSUMER_SECRET
