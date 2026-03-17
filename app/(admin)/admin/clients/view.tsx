@@ -782,7 +782,7 @@ const SendPaymentLink = ({ user }: { user: UserWithId }) => {
   const handleSendLink = async () => {
     setIsSending(true);
     try {
-      await sendPaymentLink({ userId: user.id, paymentKey: "FullPayment" });
+      await sendPaymentLink({ userId: user.id, paymentKey: "AcceleratorFull" });
       toast.success("Payment link sent successfully!");
       setConfirmationOpen(false);
     } catch (error) {

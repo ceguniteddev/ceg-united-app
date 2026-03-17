@@ -90,8 +90,23 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  - variable: NEXT_PUBLIC_DEFENITS_URL
+  - variable: NEXT_PUBLIC_DENEFITS_URL
     value: https://request.denefits.com/finance-panel?product_code=pc_4088bda98bce&auth_token=7554e0188f4b64b5119474d4e620c092
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_DENEFITS_AUDIT_URL
+    value: https://request.denefits.com/finance-panel?product_code=pc_4d730efb606d&auth_token=7554e0188f4b64b5119474d4e620c092
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_DENEFITS_INTELLIGENCE_URL
+    value: https://request.denefits.com/finance-panel?product_code=pc_f2b95d331837&auth_token=7554e0188f4b64b5119474d4e620c092
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_DENEFITS_ACCELERATOR_URL
+    value: https://request.denefits.com/finance-panel?product_code=pc_645a97adac6d&auth_token=7554e0188f4b64b5119474d4e620c092
     availability:
       - BUILD
       - RUNTIME
@@ -145,6 +160,37 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: WHOP_AUDIT_FULL_AMOUNT
+    value: 2000
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_INTELLIGENCE_FULL_AMOUNT
+    value: 5000
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_ACCELERATOR_FULL_AMOUNT
+    value: 15000
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_AUDIT_DOWNPAYMENT_AMOUNT
+    value: 750
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_INTELLIGENCE_DOWNPAYMENT_AMOUNT
+    value: 1000
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_ACCELERATOR_DOWNPAYMENT_AMOUNT
+    value: 5000
+    availability:
+      - BUILD
+      - RUNTIME  
+  
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   - variable: FIREBASE_CLIENT_EMAIL

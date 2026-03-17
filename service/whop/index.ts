@@ -20,7 +20,26 @@ const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID;
 const productId = process.env.WHOP_PRODUCT_ID;
 const WHOP_FULL_PAYMENT_AMOUNT =
   process.env.NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT || "15000";
-const WHOP_FINANCING_AMOUNT = process.env.WHOP_FINANCING_AMOUNT || "2500";
+// const WHOP_FINANCING_AMOUNT = process.env.WHOP_FINANCING_AMOUNT || "2500";
+
+// Payment Amount Environment Variables
+const AUDIT_FULL_AMOUNT = Number(process.env.WHOP_AUDIT_FULL_AMOUNT || "2000");
+const INTELLIGENCE_FULL_AMOUNT = Number(
+  process.env.WHOP_INTELLIGENCE_FULL_AMOUNT || "5000",
+);
+const ACCELERATOR_FULL_AMOUNT = Number(
+  process.env.WHOP_ACCELERATOR_FULL_AMOUNT || "15000",
+);
+
+const AUDIT_DOWNPAYMENT_AMOUNT = Number(
+  process.env.WHOP_AUDIT_DOWNPAYMENT_AMOUNT || "750",
+);
+const INTELLIGENCE_DOWNPAYMENT_AMOUNT = Number(
+  process.env.WHOP_INTELLIGENCE_DOWNPAYMENT_AMOUNT || "1000",
+);
+const ACCELERATOR_DOWNPAYMENT_AMOUNT = Number(
+  process.env.WHOP_ACCELERATOR_DOWNPAYMENT_AMOUNT || "5000",
+);
 
 type CreateCheckoutConfigParams = {
   userId: string;
@@ -93,26 +112,26 @@ export const createWhopCheckoutConfig = async ({
     }
 
     const fullPaymentAmount =
-      paymentKey === "FullPayment" && user.paymentAmount
-        ? Number(user.paymentAmount)
-        : Number(WHOP_FULL_PAYMENT_AMOUNT);
-    // console.log("Using payment amount:", {
-    //   paymentKey,
-    //   fullPaymentAmount,
-    //   userPaymentAmount: user.paymentAmount,
-    // });
-    const paymentAmount =
-      paymentKey === "FullPayment"
-        ? fullPaymentAmount
-        : Number(WHOP_FINANCING_AMOUNT);
+      paymentKey === "AuditFull"
+        ? AUDIT_FULL_AMOUNT
+        : paymentKey === "IntelligenceFull"
+          ? INTELLIGENCE_FULL_AMOUNT
+          : paymentKey === "AcceleratorFull"
+            ? ACCELERATOR_FULL_AMOUNT
+            : paymentKey === "AcceleratorDownPayment"
+              ? ACCELERATOR_DOWNPAYMENT_AMOUNT
+              : paymentKey === "AuditDownPayment"
+                ? AUDIT_DOWNPAYMENT_AMOUNT
+                : paymentKey === "IntelligenceDownPayment"
+                  ? INTELLIGENCE_DOWNPAYMENT_AMOUNT
+                  : user.paymentAmount
+                    ? Number(user.paymentAmount)
+                    : Number(WHOP_FULL_PAYMENT_AMOUNT);
 
     const planDetails = {
       company_id: WHOP_COMPANY_ID,
       currency: "usd" as const,
-      initial_price:
-        paymentKey === "FullPayment"
-          ? fullPaymentAmount
-          : Number(WHOP_FINANCING_AMOUNT),
+      initial_price: fullPaymentAmount,
       plan_type: "one_time" as const,
       product_id: productId!,
       visibility: "hidden" as const,
@@ -332,7 +351,7 @@ export const getWhopCheckoutDetailByCheckoutId = async (checkoutId: string) => {
 
 export const sendPaymentLink = async ({
   userId,
-  paymentKey = "FullPayment",
+  paymentKey = "AcceleratorFull",
 }: {
   userId: string;
   paymentKey?: PaymentPlan;

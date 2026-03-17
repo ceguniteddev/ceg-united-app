@@ -72,6 +72,19 @@ const cleanFileName = (fileName: string) => {
   return fileName;
 };
 
+const truncateForMobile = (fileName: string) => {
+  if (fileName.length > 30) {
+    const lastDotIndex = fileName.lastIndexOf(".");
+    if (lastDotIndex !== -1) {
+      const extension = fileName.substring(lastDotIndex);
+      const nameWithoutExt = fileName.substring(0, lastDotIndex);
+      return `${nameWithoutExt.substring(0, 30)}....${extension}`;
+    }
+    return `${fileName.substring(0, 30)}....`;
+  }
+  return fileName;
+};
+
 // Mobile-only: vertical list with bottom-sheet preview
 const MobileDocumentList = ({
   docs,
@@ -97,7 +110,9 @@ const MobileDocumentList = ({
       <div className="space-y-2 mt-3">
         {docs.map((doc) => {
           const isReadOnly = doc.path.toLowerCase().includes("asset-report");
-          const fileName = cleanFileName(doc.name.split("/").pop() || "");
+          const fileName = truncateForMobile(
+            cleanFileName(doc.name.split("/").pop() || ""),
+          );
           return (
             <div
               key={doc.path}
@@ -145,7 +160,10 @@ const MobileDocumentList = ({
         <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0">
           <SheetHeader className="p-4 pb-2 border-b flex-shrink-0">
             <SheetTitle className="text-sm break-words text-left leading-snug">
-              {previewDoc && cleanFileName(previewDoc.name.split("/").pop() || "")}
+              {previewDoc &&
+                truncateForMobile(
+                  cleanFileName(previewDoc.name.split("/").pop() || ""),
+                )}
             </SheetTitle>
           </SheetHeader>
           <div className="flex-1 overflow-hidden p-2">
@@ -222,7 +240,12 @@ const DocumentPreviewer = ({
                     <CardContent className="flex flex-col p-3 sm:p-6 space-y-3 sm:space-y-4">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-2">
                         <div className="flex-1 min-w-0 max-w-full">
-                          <h3 className="font-semibold text-sm leading-tight truncate" title={cleanFileName(doc.name.split("/").pop() || "")}>
+                          <h3
+                            className="font-semibold text-sm leading-tight truncate"
+                            title={cleanFileName(
+                              doc.name.split("/").pop() || "",
+                            )}
+                          >
                             {cleanFileName(doc.name.split("/").pop() || "")}
                           </h3>
                           <p className="text-xs text-muted-foreground mt-1">

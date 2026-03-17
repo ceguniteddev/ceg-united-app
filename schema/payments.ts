@@ -1,6 +1,13 @@
 import z from "zod";
 
-export const PaymentPlanEnum = z.enum(["FullPayment", "FinancingPlan"]);
+export const PaymentPlanEnum = z.enum([
+  "AuditFull",
+  "IntelligenceFull",
+  "AcceleratorFull",
+  "AcceleratorDownPayment",
+  "AuditDownPayment",
+  "IntelligenceDownPayment",
+]);
 
 export type PaymentPlan = z.infer<typeof PaymentPlanEnum>;
 
