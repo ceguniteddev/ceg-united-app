@@ -497,7 +497,7 @@ export const ClientDashboard = ({
   }, [clientData, denefitsContract]);
 
   const handleSignUp = useCallback(() => {
-    let url = process.env.NEXT_PUBLIC_DEFENITS_URL;
+    let url = process.env.NEXT_PUBLIC_DENEFITS_URL;
     if (stats?.downPaymentRequired) {
       url = process.env.NEXT_PUBLIC_FANBASIS_URL;
     }
