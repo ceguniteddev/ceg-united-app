@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { useUserTradelines } from "@/hooks/tradelines";
 import { useAuth } from "@/provider/AuthContext";
 import {
@@ -198,6 +199,58 @@ export default function ClientPurchasedTradelinesTable() {
               </Table>
               <ScrollBar orientation="horizontal" className="w-full" />
             </ScrollArea>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:hidden">
+            {table.getRowModel().rows.length === 0 ? (
+              <Card>
+                <CardContent className="p-6 text-center text-muted-foreground">
+                  No purchased tradelines found.
+                </CardContent>
+              </Card>
+            ) : (
+              table.getRowModel().rows.map((row) => {
+                const mobileLabels: Record<string, string> = {
+                  bank_name: "Bank Name",
+                  card_id: "Card ID",
+                  credit_limit: "Credit Limit",
+                  createdAt: "Purchased On",
+                  quantity: "Quantity",
+                  grandTotal: "Total Paid",
+                  status: "Status",
+                };
+
+                return (
+                  <Card key={row.id}>
+                    <CardContent className="p-4 flex flex-col gap-3">
+                      {row.getVisibleCells().map((cell) => {
+                        const columnId = cell.column.id;
+
+                        if (columnId === "image") {
+                          return null;
+                        }
+
+                        return (
+                          <div
+                            key={cell.id}
+                            className="flex justify-between items-center py-2 border-b last:border-0 last:pb-0"
+                          >
+                            <span className="text-sm font-medium text-muted-foreground mr-4">
+                              {mobileLabels[columnId] || columnId}
+                            </span>
+                            <span className="text-sm font-medium text-right break-words">
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
           </div>
           <DataTablePagination table={table} />
         </>
