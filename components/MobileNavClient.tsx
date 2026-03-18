@@ -104,7 +104,7 @@ const MobileNavClient = () => {
                       <Link
                         href={item.route}
                         className={cn(
-                          "flex gap-3 items-center py-3 px-4 rounded-lg mb-2",
+                          "flex gap-3 items-center py-1 px-4 rounded-lg mb-2",
                           { "bg-bank-gradient": isActive }
                         )}
                       >
