@@ -73,14 +73,14 @@ const cleanFileName = (fileName: string) => {
 };
 
 const truncateForMobile = (fileName: string) => {
-  if (fileName.length > 30) {
+  if (fileName.length > 20) {
     const lastDotIndex = fileName.lastIndexOf(".");
     if (lastDotIndex !== -1) {
       const extension = fileName.substring(lastDotIndex);
       const nameWithoutExt = fileName.substring(0, lastDotIndex);
-      return `${nameWithoutExt.substring(0, 30)}....${extension}`;
+      return `${nameWithoutExt.substring(0, 20)}....${extension}`;
     }
-    return `${fileName.substring(0, 30)}....`;
+    return `${fileName.substring(0, 20)}....`;
   }
   return fileName;
 };

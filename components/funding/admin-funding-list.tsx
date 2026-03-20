@@ -55,16 +55,6 @@ export const nameFilterFn: FilterFn<ApplyFundingWithUser> = (
 
 export const columns: ColumnDef<ApplyFundingWithUser>[] = [
   {
-    accessorKey: "referenceNumber",
-    id: "referenceNumber",
-    header: ({ column }) => (
-      <SortableHeader column={column} title="Reference Number" />
-    ),
-    cell: ({ row }) => {
-      return <div>{row.getValue("referenceNumber")}</div>;
-    },
-  },
-  {
     // Build a single string for filtering/sorting
     id: "name",
     accessorFn: (row) => {
@@ -146,6 +136,16 @@ export const columns: ColumnDef<ApplyFundingWithUser>[] = [
           <CategoryBadge category={row.getValue("status")} />
         </div>
       );
+    },
+  },
+  {
+    accessorKey: "referenceNumber",
+    id: "referenceNumber",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Reference Number" />
+    ),
+    cell: ({ row }) => {
+      return <div>{row.getValue("referenceNumber")}</div>;
     },
   },
 ];

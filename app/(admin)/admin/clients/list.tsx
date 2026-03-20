@@ -73,6 +73,20 @@ const denefitsStatusFilterFn: FilterFn<UserWithId> = (
   return value === selectedFilter;
 };
 
+const whopPaymentFilterFn: FilterFn<UserWithId> = (
+  row,
+  columnId,
+  filterValue,
+) => {
+  // The accessorFn provides the value, which will be "Active" or "InActive"
+  const value = row.getValue<string>(columnId);
+  const selectedFilter = String(filterValue);
+  // If no filter is selected, show all rows
+  if (!selectedFilter) return true;
+
+  return value === selectedFilter;
+};
+
 const premiumFilterFn: FilterFn<UserWithId> = (row, columnId, filterValue) => {
   const raw = row.getValue<boolean | undefined>(columnId);
   const isPremium = raw === true;
@@ -90,7 +104,9 @@ const ClientsList = () => {
   const [premiumFilter, setPremiumFilter] = useState("all");
 
   const { users, isLoading } = useUsersQuery("Client");
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "registrationDate", desc: true },
+  ]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
   );
@@ -121,6 +137,58 @@ const ClientsList = () => {
   const [globalFilter, setGlobalFilter] = React.useState("");
 
   const columns: ColumnDef<UserWithId>[] = [
+    {
+      id: "clientName",
+      header: ({ column }) => (
+        <SortableHeader column={column} title="Client Name" />
+      ),
+      accessorFn: (row) =>
+        [row.firstName, row.middleName, row.lastName].filter(Boolean).join(" "),
+      cell: ({ row }) => <div>{row.getValue("clientName")}</div>,
+    },
+    {
+      accessorKey: "email",
+      id: "email",
+      header: ({ column }) => <SortableHeader column={column} title="Email" />,
+      cell: ({ row }) => {
+        return <div>{row.getValue("email")}</div>;
+      },
+    },
+    {
+      id: "phoneNumber",
+      accessorKey: "phoneNumber",
+      header: ({ column }) => (
+        <SortableHeader column={column} title="Phone Number" />
+      ),
+      cell: ({ row }) => {
+        return <div>{row.getValue("phoneNumber")}</div>;
+      },
+    },
+    {
+      id: "brokerName",
+      accessorKey: "brokerName",
+      header: ({ column }) => <SortableHeader column={column} title="Broker" />,
+      cell: ({ row }) => {
+        const brokerName = row.getValue("brokerName") as string | undefined;
+        return (
+          <div className={brokerName === "" ? "text-muted-foreground" : ""}>
+            {brokerName}
+          </div>
+        );
+      },
+    },
+    {
+      id: "registrationDate",
+      accessorKey: "registrationDate",
+      header: ({ column }) => (
+        <SortableHeader column={column} title="Date Added" />
+      ),
+      cell: ({ row }) => {
+        const val = row.getValue("registrationDate") as string | undefined;
+        if (!val) return <div>-</div>;
+        return <div>{new Date(val).toLocaleDateString()}</div>;
+      },
+    },
     {
       accessorKey: "activeStatus",
       id: "activeStatus",
@@ -173,7 +241,7 @@ const ClientsList = () => {
           </div>
         );
       },
-      filterFn: denefitsStatusFilterFn,
+      filterFn: whopPaymentFilterFn,
     },
     {
       accessorKey: "isPremiumClient",
@@ -191,46 +259,7 @@ const ClientsList = () => {
       },
       filterFn: premiumFilterFn,
     },
-    {
-      id: "clientName",
-      header: ({ column }) => (
-        <SortableHeader column={column} title="Client Name" />
-      ),
-      accessorFn: (row) =>
-        [row.firstName, row.middleName, row.lastName].filter(Boolean).join(" "),
-      cell: ({ row }) => <div>{row.getValue("clientName")}</div>,
-    },
-    {
-      accessorKey: "email",
-      id: "email",
-      header: ({ column }) => <SortableHeader column={column} title="Email" />,
-      cell: ({ row }) => {
-        return <div>{row.getValue("email")}</div>;
-      },
-    },
-    {
-      id: "phoneNumber",
-      accessorKey: "phoneNumber",
-      header: ({ column }) => (
-        <SortableHeader column={column} title="Phone Number" />
-      ),
-      cell: ({ row }) => {
-        return <div>{row.getValue("phoneNumber")}</div>;
-      },
-    },
-    {
-      id: "brokerName",
-      accessorKey: "brokerName",
-      header: ({ column }) => <SortableHeader column={column} title="Broker" />,
-      cell: ({ row }) => {
-        const brokerName = row.getValue("brokerName") as string | undefined;
-        return (
-          <div className={brokerName === "" ? "text-muted-foreground" : ""}>
-            {brokerName}
-          </div>
-        );
-      },
-    },
+
     {
       id: "actions",
       cell: ({ row }) => {
