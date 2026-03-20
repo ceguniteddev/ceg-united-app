@@ -6,6 +6,7 @@ import FundingApplicationView from "@/components/funding/AdminViewApplicationFor
 import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
 import AnalysisView from "@/components/funding/AnalysisView";
 import FundApplicationNotesV2 from "@/components/notes/FundApplicationNotesV2";
+import ClientData from "@/app/(admin)/admin/clients/view";
 // import SendEmail from "@/components/SendEmail";
 import Spinner from "@/components/Spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,43 +20,88 @@ import {
 import { useGetApplyFundingByReferenceNumber } from "@/hooks/apply-funding";
 import { updateApplicationStatus } from "@/service/apply-funding";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+
+import ClientCreditReport from "@/components/ClientCreditReport";
+import BusinessRecordsPage from "@/components/ClientBusinessReport";
+import ClientAppliedFunding from "@/components/ClientAppliedFundingList";
+import UserLearningMaterials from "@/components/UserLearningMaterials";
+import AdminLetterFeatureManagement from "@/components/AdminLetterFeatureManagement";
+import LetterList from "@/components/letter-stream/list";
+import LetterForm from "@/components/letter-stream/form";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { useUserQuery } from "@/hooks/user";
+import { UserWithId } from "@/schema/registration";
+import AdminFundingList from "@/components/funding/admin-funding-list";
+import { useGetClientApplyFunding } from "@/hooks/apply-funding";
+import { RowActions } from "@/app/(admin)/admin/funding-application/_components/RowActions";
+import { ApplyFundingWithUser } from "@/schema/apply-funding";
 
 const AdminViewApplication = () => {
   const params = useParams();
   const reference = params.reference as string;
   const [activeTab, setActiveTab] = useState("application");
+  const [isLetterFormOpen, setIsLetterFormOpen] = useState(false);
 
   const { appliedFunding: formData, isLoading } =
     useGetApplyFundingByReferenceNumber({
       referenceNumber: reference,
     });
 
+  const userId = formData?.userId ?? "";
+
+  const { userData, isLoading: isUserLoading } = useUserQuery(userId);
+  const { appliedFunding, isLoading: isFundingLoading } =
+    useGetClientApplyFunding(userId);
+
+  const appliedFundingWithUser: ApplyFundingWithUser[] | undefined =
+    useMemo(() => {
+      return appliedFunding?.map((item) => ({
+        ...item,
+        user: userData,
+      }));
+    }, [appliedFunding, userData]);
+
+  const hasLearningMaterialsAccess = useMemo(() => {
+    return userData?.isPremiumClient;
+  }, [userData]);
+
+  const hasLetterFeatureEnabled = useMemo(() => {
+    return !!userData?.letterFeatureEnabled;
+  }, [userData]);
+
   useEffect(() => {
     const updateStatus = async () => {
       if (formData?.status === "New") {
         await updateApplicationStatus(
           formData.referenceNumber ?? "",
-          "Processing"
+          "Processing",
         );
       }
     };
     updateStatus();
   }, [formData]);
 
-  if (isLoading) {
+  const tabOptions = useMemo(() => {
+    const options = [
+      { value: "application", label: "Application" },
+      { value: "personal-information", label: "Client Information" },
+      { value: "client-profile", label: "Client Profile" },
+      { value: "documents", label: "Documents" },
+      { value: "analysis", label: "Analysis" },
+      { value: "fund-mapping", label: "Fund Mapping" },
+      { value: "notes", label: "Notes" },
+      { value: "credit-report", label: "Credit Report" },
+      { value: "business", label: "Business" },
+      { value: "applied-funding", label: "Applied Funding" },
+    ];
+
+    return options;
+  }, [hasLearningMaterialsAccess, hasLetterFeatureEnabled]);
+
+  if (isLoading || isUserLoading) {
     return <Spinner displayText="Loading data..." />;
   }
-
-  const tabOptions = [
-    { value: "application", label: "Application" },
-    { value: "user-profile", label: "User Profile" },
-    { value: "documents", label: "Documents" },
-    { value: "analysis", label: "Analysis" },
-    { value: "fund-mapping", label: "Fund Mapping" },
-    { value: "notes", label: "Notes" },
-    // { value: "email", label: "Email" },
-  ];
 
   return (
     <div className="w-full p-2 sm:p-3 md:p-4 lg:p-6">
@@ -81,6 +127,9 @@ const AdminViewApplication = () => {
         onValueChange={setActiveTab}
         className="w-full flex flex-col"
       >
+        <TabsContent value="personal-information" className="w-full">
+          {userData && <ClientData user={userData as UserWithId} />}
+        </TabsContent>
         <TabsContent value="fund-mapping" className="w-full">
           <AdminMappedFunds
             referenceNumber={formData?.referenceNumber ?? ""}
@@ -101,7 +150,7 @@ const AdminViewApplication = () => {
         <TabsContent value="application" className="w-full">
           <FundingApplicationView data={formData} />
         </TabsContent>
-        <TabsContent value="user-profile" className="w-full">
+        <TabsContent value="client-profile" className="w-full">
           <AdminViewUserProfile
             userId={formData?.userId ?? ""}
             adminView={true}
@@ -116,16 +165,56 @@ const AdminViewApplication = () => {
           <AnalysisView referenceNumber={formData?.referenceNumber ?? ""} />
         </TabsContent>
 
-        <TabsContent value="approve-decline" className="w-full">
-          <AdminApproveDeclineApplication
-            referenceNumber={formData?.referenceNumber ?? ""}
-            defaultValues={{
-              amountApprove: formData?.approveOrDecline?.amountApprove,
-              remarks: formData?.approveOrDecline?.remarks,
-            }}
-          />
+        <TabsContent value="credit-report" className="w-full">
+          <ClientCreditReport userId={userId} isAdminView />
         </TabsContent>
+
+        <TabsContent value="business" className="w-full">
+          <BusinessRecordsPage userId={userId} />
+        </TabsContent>
+
+        <TabsContent value="applied-funding" className="w-full">
+          <ClientAppliedFunding userId={userId} isAdminView={true} />
+        </TabsContent>
+
+        {hasLearningMaterialsAccess && (
+          <TabsContent value="learning-materials" className="w-full">
+            <UserLearningMaterials userId={userId} isAdminView />
+          </TabsContent>
+        )}
+
+        <TabsContent value="letters" className="w-full">
+          {userData && (
+            <AdminLetterFeatureManagement user={userData as UserWithId} />
+          )}
+        </TabsContent>
+
+        {hasLetterFeatureEnabled && (
+          <TabsContent value="dispute-letters" className="w-full">
+            <LetterList
+              userId={userId}
+              onCreateNew={() => setIsLetterFormOpen(true)}
+            />
+          </TabsContent>
+        )}
       </Tabs>
+
+      <ResponsiveDialog
+        isOpen={isLetterFormOpen}
+        setIsOpen={setIsLetterFormOpen}
+        title="Create New Dispute Letter"
+        description="Create a dispute letter for this client."
+        className="w-4/6"
+      >
+        {userData && (
+          <LetterForm
+            userId={userId}
+            userData={userData as UserWithId}
+            onSuccess={() => setIsLetterFormOpen(false)}
+            onCancel={() => setIsLetterFormOpen(false)}
+          />
+        )}
+      </ResponsiveDialog>
     </div>
   );
 };
