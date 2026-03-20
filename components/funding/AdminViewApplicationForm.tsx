@@ -20,6 +20,7 @@ import {
   Home,
   IdCard,
   Landmark,
+  MailIcon,
   MapPin,
   Package,
   User,
@@ -28,7 +29,7 @@ import {
   Loader2Icon,
 } from "lucide-react";
 import { format, formatDate } from "date-fns";
-import * as React from "react";
+import { useState } from "react";
 import {
   businessTaxes,
   howDoYouGetPaid,
@@ -38,6 +39,7 @@ import CategoryBadge from "../CategoryBadge";
 import { IconBadge } from "@/components/icon-badge";
 import { useUserQuery } from "@/hooks/user";
 import { useSaveApplicationPdf } from "@/hooks/admin/funding-application/application-pdf";
+import SendEmail from "@/components/SendEmail";
 
 type Props = {
   data?: ApplyFunding;
@@ -87,6 +89,8 @@ export default function FundingApplicationView({ data }: Props) {
   const { savePdf, isSaving } = useSaveApplicationPdf(
     data?.referenceNumber ?? "",
   );
+
+  const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
 
   const handleSavePdf = async () => {
     try {
@@ -169,6 +173,18 @@ export default function FundingApplicationView({ data }: Props) {
               </>
             )}
           </Button>
+
+          {/* Send Email Button */}
+          {data.userId && (
+            <Button
+              variant="outline"
+              className="cursor-pointer w-full sm:w-auto h-10 sm:h-9"
+              onClick={() => setIsSendEmailOpen(true)}
+            >
+              <MailIcon className="mr-2 h-4 w-4" />
+              Send Email
+            </Button>
+          )}
         </div>
       </CardHeader>
 
@@ -739,6 +755,16 @@ export default function FundingApplicationView({ data }: Props) {
             </section>
           )}
       </CardContent>
+
+      {/* Send Email Modal */}
+      {data.userId && (
+        <SendEmail
+          userId={data.userId}
+          referenceNumber={data.referenceNumber}
+          isOpen={isSendEmailOpen}
+          setIsOpen={setIsSendEmailOpen}
+        />
+      )}
 
       {/* <CardFooter>
         <Button
