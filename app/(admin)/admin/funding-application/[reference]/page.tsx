@@ -82,10 +82,6 @@ const AdminViewApplication = () => {
     updateStatus();
   }, [formData]);
 
-  if (isLoading || isUserLoading) {
-    return <Spinner displayText="Loading data..." />;
-  }
-
   const tabOptions = useMemo(() => {
     const options = [
       { value: "application", label: "Application" },
@@ -102,6 +98,10 @@ const AdminViewApplication = () => {
 
     return options;
   }, [hasLearningMaterialsAccess, hasLetterFeatureEnabled]);
+
+  if (isLoading || isUserLoading) {
+    return <Spinner displayText="Loading data..." />;
+  }
 
   return (
     <div className="w-full p-2 sm:p-3 md:p-4 lg:p-6">

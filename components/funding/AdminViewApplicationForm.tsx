@@ -24,6 +24,8 @@ import {
   Package,
   User,
   Users,
+  FileDown,
+  Loader2Icon,
 } from "lucide-react";
 import { format, formatDate } from "date-fns";
 import * as React from "react";
@@ -35,6 +37,7 @@ import {
 import CategoryBadge from "../CategoryBadge";
 import { IconBadge } from "@/components/icon-badge";
 import { useUserQuery } from "@/hooks/user";
+import { useSaveApplicationPdf } from "@/hooks/admin/funding-application/application-pdf";
 
 type Props = {
   data?: ApplyFunding;
@@ -80,6 +83,18 @@ export default function FundingApplicationView({ data }: Props) {
   const name = user
     ? [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ")
     : "—";
+
+  const { savePdf, isSaving } = useSaveApplicationPdf(
+    data?.referenceNumber ?? "",
+  );
+
+  const handleSavePdf = async () => {
+    try {
+      await savePdf();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   if (!data) {
     return (
@@ -136,6 +151,24 @@ export default function FundingApplicationView({ data }: Props) {
             <span className="text-muted-foreground">Status:</span>
             <CategoryBadge category={data.status} />
           </div>
+          <Button
+            variant="ghost"
+            className="cursor-pointer bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto h-10 sm:h-9"
+            onClick={handleSavePdf}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <FileDown className="mr-2 h-4 w-4" />
+                Save to My Documents
+              </>
+            )}
+          </Button>
         </div>
       </CardHeader>
 
