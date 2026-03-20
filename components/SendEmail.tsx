@@ -313,56 +313,58 @@ const SendEmail = ({ referenceNumber, userId, isOpen, setIsOpen }: Props) => {
                 side="bottom"
                 className="h-[85vh] sm:h-[80vh] flex flex-col p-0"
               >
-                <SheetHeader className="px-4 py-4 sm:px-6 border-b">
+                <SheetHeader className="px-4 py-4 sm:px-6 border-b flex-shrink-0">
                   <SheetTitle>Select Documents</SheetTitle>
                   <p className="text-sm text-muted-foreground">
                     Choose from client&apos;s uploaded documents
                   </p>
                 </SheetHeader>
-                <ScrollArea className="flex-1 px-4 py-2 sm:px-6">
-                  <div className="flex flex-col gap-2">
-                    {!userDocuments || userDocuments.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <FileIcon className="size-12 text-muted-foreground mb-3" />
-                        <p className="text-sm text-muted-foreground">
-                          No documents available
-                        </p>
-                      </div>
-                    ) : (
-                      userDocuments.map((doc: UserDoc) => {
-                        const isSelected = selectedDocuments.some(
-                          (d) => d.path === doc.path,
-                        );
-                        return (
-                          <div
-                            key={doc.path}
-                            className={cn(
-                              "flex items-center gap-3 p-3 sm:p-4 rounded-lg border bg-card hover:bg-muted cursor-pointer transition-colors",
-                              isSelected && "bg-muted border-primary",
-                            )}
-                            onClick={() => toggleDocument(doc)}
-                          >
-                            <Checkbox
-                              checked={isSelected}
-                              className="flex-shrink-0"
-                            />
-                            <FileText className="size-5 text-muted-foreground flex-shrink-0" />
-                            <div className="flex flex-col gap-1 min-w-0 flex-1">
-                              <span className="text-sm font-medium break-words">
-                                {doc.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {formatFileSize(doc.size)}
-                              </span>
+                <div className="flex-1 overflow-hidden">
+                  <ScrollArea className="h-full px-4 py-2 sm:px-6">
+                    <div className="flex flex-col gap-2">
+                      {!userDocuments || userDocuments.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                          <FileIcon className="size-12 text-muted-foreground mb-3" />
+                          <p className="text-sm text-muted-foreground">
+                            No documents available
+                          </p>
+                        </div>
+                      ) : (
+                        userDocuments.map((doc: UserDoc) => {
+                          const isSelected = selectedDocuments.some(
+                            (d) => d.path === doc.path,
+                          );
+                          return (
+                            <div
+                              key={doc.path}
+                              className={cn(
+                                "flex items-center gap-3 p-3 sm:p-4 rounded-lg border bg-card hover:bg-muted cursor-pointer transition-colors",
+                                isSelected && "bg-muted border-primary",
+                              )}
+                              onClick={() => toggleDocument(doc)}
+                            >
+                              <Checkbox
+                                checked={isSelected}
+                                className="flex-shrink-0"
+                              />
+                              <FileText className="size-5 text-muted-foreground flex-shrink-0" />
+                              <div className="flex flex-col gap-1 min-w-0 flex-1">
+                                <span className="text-sm font-medium break-words">
+                                  {doc.name}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatFileSize(doc.size)}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </ScrollArea>
+                          );
+                        })
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
                 {selectedDocuments.length > 0 && (
-                  <div className="flex items-center justify-between px-4 py-3 sm:px-6 border-t bg-muted/30">
+                  <div className="flex items-center justify-between px-4 py-3 sm:px-6 border-t bg-muted/30 flex-shrink-0">
                     <span className="text-sm font-medium">
                       {selectedDocuments.length} selected (
                       {formatFileSize(totalAttachmentSize)})
