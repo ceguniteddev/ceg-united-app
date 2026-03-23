@@ -6,6 +6,12 @@ CEG United LLC is a Next.js 16 (App Router) financial services platform for fund
 
 ## Architecture & Key Concepts
 
+## Design & UI Principles
+
+- **Mobile-First & Responsive:** Always design and build for mobile screens first. Use Tailwind CSS responsive utility classes (e.g., `sm:`, `md:`, `lg:`, `xl:`) to progressively enhance the layout for larger viewports. Ensure seamless usability and readability across all devices.
+- **Theming (Dark & Light Mode):** Build with first-class support for both dark and light modes. Utilize `next-themes` alongside shadcn/ui's CSS variables and Tailwind's native dark mode variants to ensure seamless theme switching and consistent visual hierarchy.
+- **Modern Web Design:** Focus on clean, contemporary aesthetics. Emphasize ample whitespace, strong and readable typography, rounded corners, and intuitive layouts. Enhance the user experience with subtle, smooth hover states and transitions using Tailwind utilities (or Framer Motion where appropriate).
+
 ### Route Groups (Critical Pattern)
 
 The app uses Next.js route groups to define role-based layouts:

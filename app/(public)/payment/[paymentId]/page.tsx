@@ -37,7 +37,7 @@ export default async function PaymentPage({
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-4xl">
-        <PaymentSelection user={user} />
+        <PaymentSelection user={user} paymentId={paymentId} />
       </div>
     </div>
   );

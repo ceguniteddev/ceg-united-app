@@ -18,6 +18,7 @@ const PUBLIC_ROUTES = new Set<string>([
   "/api/broker/validate-token",
   "/api/broker/register",
   "/api/payments/whop",
+  "/api/denefits/create-proposal",
 ]);
 const CLIENT_HOME = "/client/home";
 const ADMIN_HOME = "/admin/home";

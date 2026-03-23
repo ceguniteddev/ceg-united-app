@@ -15,6 +15,7 @@ import { PaymentPlan } from "@/schema/payments";
 import { randomUUID } from "crypto";
 import { sendTriggerEmail } from "../trigger-email";
 import { EmailJobs } from "@/schema/trigger-email";
+import { createDenefitsProposal } from "../denefits";
 
 const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID;
 const productId = process.env.WHOP_PRODUCT_ID;
@@ -235,7 +236,142 @@ export const recordPaymentSucceeded = async ({
 
   const collectionRef = db.collection(USER_WHOP_PAYMENTS);
   await collectionRef.add({ ...payment, userId: authUser.uid });
+
+  // Check if this is a downpayment and create Denefits proposal
+  await handleDenefitsProposal(authUser.uid, payment);
 };
+
+/**
+ * Handles creating a Denefits proposal for downpayment transactions
+ */
+async function handleDenefitsProposal(userId: string, payment: Payment) {
+  try {
+    const db = firestoreAdmin();
+
+    // Look up the checkout document by userId to find the paymentKey
+    const checkoutQuery = await db
+      .collection(WHOP_CHECKOUTS_COLLECTION)
+      .where("userId", "==", userId)
+      .orderBy("createdAt", "desc")
+      .limit(10) // Get recent checkouts
+      .get();
+
+    if (checkoutQuery.empty) {
+      logInfo("No checkout found for user", { userId });
+      return;
+    }
+
+    // Find the matching checkout based on payment amount
+    let matchingCheckout: any = null;
+    for (const doc of checkoutQuery.docs) {
+      const checkoutData = doc.data();
+      // Match by amount (payment.total is in cents)
+      if (
+        checkoutData.initialPrice &&
+        checkoutData.initialPrice * 100 === payment.total
+      ) {
+        matchingCheckout = { id: doc.id, ...checkoutData };
+        break;
+      }
+    }
+
+    if (!matchingCheckout) {
+      logInfo("No matching checkout found for payment", {
+        userId,
+        paymentId: payment.id,
+        paymentAmount: payment.total,
+      });
+      return;
+    }
+
+    const paymentKey = matchingCheckout.paymentKey as PaymentPlan;
+
+    // Check if this is a downpayment plan
+    if (
+      paymentKey !== "AcceleratorDownPayment" &&
+      paymentKey !== "IntelligenceDownPayment" &&
+      paymentKey !== "AuditDownPayment"
+    ) {
+      logInfo("Payment is not a downpayment plan, skipping Denefits proposal", {
+        userId,
+        paymentKey,
+      });
+      return;
+    }
+
+    // Determine service amount and downpayment based on plan
+    let serviceAmount = 0;
+    let downpaymentAmount = 0;
+    let serviceName = "";
+    let proposalType: "in-house" | "no-fee" = "no-fee"; // Default to no-fee
+
+    switch (paymentKey) {
+      case "AcceleratorDownPayment":
+        serviceAmount = 12000; // $15k - $5k down + $2k fee = $12k remaining
+        downpaymentAmount = 5000;
+        serviceName = "CEG Brain™ Capital Accelerator";
+        proposalType = "in-house"; // High-value plan uses In-House Financing
+        break;
+      case "IntelligenceDownPayment":
+        serviceAmount = 5000; // $5k total service with $1k downpayment
+        downpaymentAmount = 1000;
+        serviceName = "CEG Brain™ Intelligence";
+        proposalType = "no-fee"; // Mid-tier uses No-Fee Financing
+        break;
+      case "AuditDownPayment":
+        serviceAmount = 2000; // $2k total service with $750 downpayment
+        downpaymentAmount = 750;
+        serviceName = "CEG Brain™ Audit";
+        proposalType = "no-fee"; // Lower-tier uses No-Fee Financing
+        break;
+    }
+
+    logInfo("Creating Denefits proposal for downpayment", {
+      userId,
+      paymentKey,
+      serviceAmount,
+      downpaymentAmount,
+      proposalType,
+    });
+
+    // Create Denefits proposal with plan-specific financing type
+    const result = await createDenefitsProposal({
+      userId,
+      serviceAmount,
+      downpaymentAmount,
+      serviceName,
+      proposalType, // Routes to IHF or No-Fee endpoint based on plan
+    });
+
+    logInfo("Denefits proposal created successfully", {
+      userId,
+      proposal_id: result.proposal_id,
+      stored_doc_id: result.stored_doc_id,
+    });
+
+    // Update the checkout document with proposal_id
+    await db
+      .collection(WHOP_CHECKOUTS_COLLECTION)
+      .doc(matchingCheckout.id)
+      .update({
+        denefitsProposalId: result.proposal_id,
+        denefitsStoredDocId: result.stored_doc_id,
+        denefitsProposalCreatedAt: new Date(),
+      });
+
+    logInfo("Updated checkout with Denefits proposal ID", {
+      checkoutId: matchingCheckout.id,
+      proposal_id: result.proposal_id,
+    });
+  } catch (error) {
+    logError(new Error("Failed to handle Denefits proposal creation"), {
+      userId,
+      paymentId: payment.id,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    // Don't throw - we don't want to fail the webhook if Denefits creation fails
+  }
+}
 
 export const getWhopPayments = async () => {
   const db = firestoreAdmin();

@@ -45,6 +45,7 @@ export const ATTACHMENT = "attachment";
 export const MUX_DATA = "mux-data";
 
 export const WHOP_CHECKOUTS_COLLECTION = "whop-checkouts";
+export const DENEFITS_PROPOSALS = "denefits-proposals";
 
 export const USER_COURSE_PROGRESS = "user-course-progress";
 export const USER_COURSE_ENROLLMENT = "user-course-enrollment";
