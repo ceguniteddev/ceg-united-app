@@ -11,23 +11,12 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  DollarSign,
-  Landmark,
-  FileText,
-  TrendingUp,
-  Scale,
   AlertCircle,
-  Briefcase,
-  Banknote,
-  CalendarDays,
-  BanknoteArrowUp,
   AlertTriangle,
   ArrowRight,
   PartyPopper,
 } from "lucide-react";
 import Link from "next/link";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import { Doughnut } from "react-chartjs-2";
 
 // --- IMPORT YOUR ACTUAL APPLICATION TYPES ---
 import { User, UserWithId } from "@/schema/registration";
@@ -54,8 +43,26 @@ import {
 import { useAuth } from "@/provider/AuthContext";
 import { useConfettiStore } from "@/hooks/use-confetti-store";
 
-// Register Chart.js components
-ChartJS.register(ArcElement, Tooltip, Legend);
+// CEG Brain Dashboard Components
+import { MetricCards } from "@/components/dashboard/MetricCards";
+import { CreditScoresSection } from "@/components/dashboard/CreditScoresSection";
+import { FundabilityScoreCard } from "@/components/dashboard/FundabilityScoreCard";
+import { FinancialSnapshotSection } from "@/components/dashboard/FinancialSnapshotSection";
+import { MyBusinessesSection } from "@/components/dashboard/MyBusinessesSection";
+import { NextStepsPanel } from "@/components/dashboard/NextStepsPanel";
+import { ApplicationStatusChart } from "@/components/dashboard/ApplicationStatusChart";
+import {
+  MetricCardSkeleton,
+  CreditScoreSkeleton,
+  FundabilityScoreSkeleton,
+  NextStepsSkeleton,
+  ApplicationStatusSkeleton,
+  BusinessCardSkeleton,
+  SnapshotSkeleton,
+} from "@/components/dashboard/Skeletons";
+
+// Data transformation
+import { transformClientDataToDashboard } from "@/lib/dashboard-data-mapper";
 
 interface IssueItem {
   issues: string[];
@@ -186,169 +193,6 @@ function groupByBureau(
   }
   return out;
 }
-
-// --- HELPER COMPONENTS ---
-const StatCard = ({
-  title,
-  value,
-  description,
-  icon: Icon,
-  className = "",
-}: {
-  title: string;
-  value: string | number;
-  description: string;
-  icon: React.ElementType;
-  className?: string;
-}) => (
-  <Card className={className}>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      <Icon className="h-4 w-4 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">{value}</div>
-      <p className="text-xs text-muted-foreground">{description}</p>
-    </CardContent>
-  </Card>
-);
-const FundingStatusChart = ({ data }: { data: ApplyFunding[] | null }) => {
-  const chartData = useMemo(() => {
-    if (!data) return { labels: [], datasets: [] };
-    const statusCounts = data.reduce(
-      (acc, app) => {
-        const status = app.status || "Unknown";
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-    return {
-      labels: Object.keys(statusCounts),
-      datasets: [
-        {
-          label: "Applications",
-          data: Object.values(statusCounts),
-          backgroundColor: [
-            "rgba(59, 130, 246, 0.7)",
-            "rgba(249, 115, 22, 0.7)",
-            "rgba(34, 197, 94, 0.7)",
-            "rgba(239, 68, 68, 0.7)",
-          ],
-          borderColor: [
-            "rgba(59, 130, 246, 1)",
-            "rgba(249, 115, 22, 1)",
-            "rgba(34, 197, 94, 1)",
-            "rgba(239, 68, 68, 1)",
-          ],
-          borderWidth: 1,
-        },
-      ],
-    };
-  }, [data]);
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[250px] text-center">
-        <FileText className="h-8 w-8 text-muted-foreground mb-2" />
-        <p className="text-sm font-medium">No Funding Applications</p>
-        <p className="text-xs text-muted-foreground">
-          Apply for funding to see your status here.
-        </p>
-      </div>
-    );
-  }
-  return (
-    <Doughnut
-      data={chartData}
-      options={{ responsive: true, maintainAspectRatio: false }}
-    />
-  );
-};
-
-const ScoreCard: React.FC<{
-  bureau: "Experian" | "Equifax" | "TransUnion";
-  score?: CreditScore;
-}> = ({ bureau, score }) => {
-  const value = score?.scoreValue ? Number(score.scoreValue) : undefined;
-  const max = score?.scoreMaximumValue ? Number(score.scoreMaximumValue) : 850;
-  const pct = value && max ? Math.min(100, Math.round((value / max) * 100)) : 0;
-
-  return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-sm text-neutral-500">{bureau}</div>
-          <div className="text-3xl font-bold mt-1">{value ?? "—"}</div>
-        </div>
-        <div className="w-28">
-          <div className="h-2 w-full rounded bg-neutral-100 overflow-hidden">
-            <div
-              className="h-2 rounded bg-black"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <div className="text-[10px] text-neutral-500 mt-1">
-            {value ? `${pct}% of max` : "No score"}
-          </div>
-        </div>
-      </div>
-      {score?.modelName && (
-        <div className="text-xs text-neutral-500 mt-2">{score.modelName}</div>
-      )}
-    </Card>
-  );
-};
-
-const DTICard: React.FC<{
-  data: {
-    monthlyIncome: string;
-    monthlyDebtPayments: string;
-    finalDTI: string;
-  } | null;
-}> = ({ data }) => {
-  if (!data) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Debt-to-Income Ratio</CardTitle>
-          <CardDescription>
-            Your debt-to-income (DTI) ratio could not be calculated.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center text-muted-foreground">
-            No DTI data available.
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Debt-to-Income Ratio</CardTitle>
-        <CardDescription>
-          A summary of your debt-to-income ratio.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Monthly Income</span>
-          <span className="font-semibold">{data.monthlyIncome}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Monthly Debt Payments</span>
-          <span className="font-semibold">{data.monthlyDebtPayments}</span>
-        </div>
-        <div className="flex items-center justify-between text-lg font-bold">
-          <span>Final DTI</span>
-          <span>{data.finalDTI}</span>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
 
 // --- MAIN DASHBOARD COMPONENT ---
 export const ClientDashboard = ({
@@ -579,9 +423,13 @@ export const ClientDashboard = ({
       maximumFractionDigits: 0,
     }).format(amount);
 
+  // Transform data for new dashboard components
+  const dashboardData = transformClientDataToDashboard(clientData);
+  const loading = !dashboardData;
+
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-4 md:p-6 bg-gray-50/50 dark:bg-background">
-      <header className="flex flex-col sm:flex-row items-start gap-3 sm:gap-0 sm:justify-between">
+    <div className="flex flex-col h-full">
+      <header className="px-6 py-6">
         {/* <ResponsiveDialog
           isOpen={isOpenFunding}
           setIsOpen={setIsOpenFunding}
@@ -607,228 +455,118 @@ export const ClientDashboard = ({
         </ResponsiveDialog>
         <div className="flex-1">
           {adminView ? (
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+            <h1 className="text-xl font-bold text-gray-900">
               {`${userData?.firstName} ${userData?.lastName}` || "Client"}
             </h1>
           ) : (
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-                Welcome, {userData?.firstName || "Client"}!
+            <div className="animate-fadeInUp">
+              <h1 className="text-xl font-bold text-gray-900">
+                Welcome back, {userData?.firstName || "Client"}
               </h1>
-              <p className="text-sm sm:text-base text-muted-foreground">{`Here's a summary of your financial overview.`}</p>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Your Financial Intelligence Center
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Real-time overview of your funding readiness and financial
+                profile
+              </p>
             </div>
           )}
         </div>
-        {!adminView && (
-          <Button
-            className="signup-link-playful w-full sm:w-auto"
-            onClick={handleSignUp}
-          >
-            Sign Up
-          </Button>
-        )}
       </header>
 
-      <main className="grid gap-4 sm:gap-6">
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-3">
-          <StatCard
-            title="Total Requested Amount"
-            value={formatCurrency(stats.totalRequested)}
-            description="Sum of all funding applications"
-            icon={FileText}
-          />
-          <StatCard
-            title="Total Approved Amount"
-            value={formatCurrency(stats.totalApproved)}
-            description="Total funds approved to date"
-            icon={DollarSign}
-          />
-          <StatCard
-            title="Total Funded Amount"
-            value={formatCurrency(stats.totalFunded)}
-            description="Total amount funded to date"
-            icon={BanknoteArrowUp}
-          />
-        </div>
+      <main className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="max-w-[1400px] mx-auto px-6 py-6">
+          {/* Grid: main content (left) + sidebar panels (right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+            {/* === LEFT COLUMN === */}
+            <div className="space-y-6 min-w-0">
+              {/* Metric Cards: Total Requested + Total Approved + Total Funded */}
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <MetricCardSkeleton />
+                  <MetricCardSkeleton />
+                  <MetricCardSkeleton />
+                </div>
+              ) : (
+                <MetricCards metrics={dashboardData.fundingMetrics} />
+              )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-          <div className={stats.dtiReport ? "md:col-span-2" : "md:col-span-3"}>
-            <Card>
-              <CardHeader>
-                <CardTitle>Personal Credit Scores</CardTitle>
-                <CardDescription>
-                  Scores from the three major credit bureaus.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <ScoreCard
-                  bureau="Experian"
-                  score={stats.scoresByBureau.Experian}
+              {/* Credit Scores: Experian, Equifax, TransUnion */}
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <CreditScoreSkeleton />
+                  <CreditScoreSkeleton />
+                  <CreditScoreSkeleton />
+                </div>
+              ) : (
+                <CreditScoresSection scores={dashboardData.creditScores} />
+              )}
+
+              {/* My Businesses grid */}
+              {loading ? (
+                <div>
+                  <div className="h-5 w-32 skeleton rounded mb-4" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <BusinessCardSkeleton />
+                    <BusinessCardSkeleton />
+                    <BusinessCardSkeleton />
+                  </div>
+                </div>
+              ) : (
+                <MyBusinessesSection businesses={dashboardData.businesses} />
+              )}
+
+              {/* Financial Snapshot: Deposits, Balance, Income */}
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <SnapshotSkeleton />
+                  <SnapshotSkeleton />
+                  <SnapshotSkeleton />
+                </div>
+              ) : (
+                <FinancialSnapshotSection
+                  data={dashboardData.financialSnapshot}
                 />
-                <ScoreCard
-                  bureau="Equifax"
-                  score={stats.scoresByBureau.Equifax}
-                />
-                <ScoreCard
-                  bureau="TransUnion"
-                  score={stats.scoresByBureau.TransUnion}
-                />
-              </CardContent>
-            </Card>
-          </div>
-          {stats.dtiReport && <DTICard data={stats.dtiReport} />}
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Personal Financial Snapshot</CardTitle>
-              <CardDescription>
-                Based on your connected Plaid accounts.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-              <StatCard
-                title="Last Month's Deposits"
-                value={formatCurrency(stats.lastMonthDeposits)}
-                description="Total deposits in the last 30 days"
-                icon={TrendingUp}
-              />
-              <StatCard
-                title="Avg. Monthly Balance"
-                value={formatCurrency(stats.averageMonthlyBalance)}
-                description="Average of current account balances"
-                icon={Scale}
-              />
-              <StatCard
-                title="Avg. Verified Income"
-                value={formatCurrency(stats.averageMonthlyIncome)}
-                description="Average monthly income from Plaid"
-                icon={Banknote}
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Application Status</CardTitle>
-              <CardDescription>Breakdown of your applications.</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[250px] w-full">
-              <FundingStatusChart data={fundingApplications} />
-            </CardContent>
-          </Card>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h2 className="text-xl sm:text-2xl font-bold">Business Profiles</h2>
-          </div>
-          {businessesWithCrsData && businessesWithCrsData.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-              {businessesWithCrsData.map((business) => {
-                const profile = business.crsBusinessProfile?.report;
-                const commScore = profile?.scoreInformation?.commercialScore;
-                const fsrScore = profile?.scoreInformation?.fsrScore;
-                const isActive =
-                  profile?.commercialFraudShieldSummary
-                    ?.activeBusinessIndicator;
-
-                return (
-                  <Card key={business.id} className="flex flex-col">
-                    <CardHeader className="pb-3 sm:pb-6">
-                      <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-0 sm:justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="text-lg sm:text-xl">
-                            {business.businessName}
-                          </CardTitle>
-                          <CardDescription className="text-xs sm:text-sm">
-                            Employer Idenfication Number:{" "}
-                            {business.employerIdentificationNumber}
-                          </CardDescription>
-                        </div>
-                        <Badge
-                          variant={isActive ? "default" : "destructive"}
-                          className={isActive ? "bg-green-600 text-white" : ""}
-                        >
-                          {isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="grid flex-grow grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-md">
-                          <TrendingUp className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-semibold">
-                            {commScore?.score ?? "N/A"}
-                          </p>
-                          <p className="text-muted-foreground text-xs">
-                            Business Credit Score
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-md">
-                          <Landmark className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-semibold">
-                            {fsrScore?.riskClass.definition ?? "N/A"}
-                          </p>
-                          <p className="text-muted-foreground text-xs">
-                            Financial Stability Risk
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 opacity-60">
-                        <div className="p-2 bg-gray-500/10 rounded-md">
-                          <DollarSign className="h-5 w-5 text-gray-500" />
-                        </div>
-                        <div>
-                          <p className="font-semibold">N/A</p>
-                          <p className="text-muted-foreground text-xs">
-                            Account Balance
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 opacity-60">
-                        <div className="p-2 bg-gray-500/10 rounded-md">
-                          <CalendarDays className="h-5 w-5 text-gray-500" />
-                        </div>
-                        <div>
-                          <p className="font-semibold">N/A</p>
-                          <p className="text-muted-foreground text-xs">
-                            Monthly Deposits
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                    {/* <div className="p-4 pt-0">
-                      <Button variant="secondary" className="w-full">
-                        View Full Report <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div> */}
-                  </Card>
-                );
-              })}
+              )}
             </div>
-          ) : (
-            <Card className="flex flex-col items-center justify-center py-12 text-center">
-              <Briefcase className="h-10 w-10 text-muted-foreground" />
-              <CardTitle className="mt-4">No Businesses Found</CardTitle>
-              <CardDescription className="mt-2">
-                Add a business profile to get started.
-              </CardDescription>
-            </Card>
+
+            {/* === RIGHT COLUMN (sidebar panels) === */}
+            <div className="space-y-5">
+              {/* Fundability Score Ring */}
+              {loading ? (
+                <FundabilityScoreSkeleton />
+              ) : (
+                <FundabilityScoreCard data={dashboardData.fundabilityScore} />
+              )}
+
+              {/* Next Steps Checklist */}
+              {loading ? (
+                <NextStepsSkeleton />
+              ) : (
+                <NextStepsPanel steps={dashboardData.nextSteps} />
+              )}
+
+              {/* Application Status Donut */}
+              {loading ? (
+                <ApplicationStatusSkeleton />
+              ) : (
+                <ApplicationStatusChart
+                  data={dashboardData.applicationStatus}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Issues Card (if needed) */}
+          {stats?.reportIssues && stats.reportIssues.length > 0 && (
+            <IssuesCard
+              issues={stats.reportIssues}
+              negatives={stats.reportNegatives}
+              derogatory={stats.reportDerogatory}
+            />
           )}
         </div>
-
-        <IssuesCard
-          issues={stats.reportIssues}
-          negatives={stats.reportNegatives}
-          derogatory={stats.reportDerogatory}
-        />
       </main>
 
       {/* Congratulations Message Modal */}
