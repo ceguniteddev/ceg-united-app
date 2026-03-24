@@ -71,9 +71,11 @@
 
   /* Box Shadows */
   --shadow-form: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
-  --shadow-chart: 0px 1px 3px 0px rgba(16, 24, 40, 0.1),
+  --shadow-chart:
+    0px 1px 3px 0px rgba(16, 24, 40, 0.1),
     0px 1px 2px 0px rgba(16, 24, 40, 0.06);
-  --shadow-profile: 0px 12px 16px -4px rgba(16, 24, 40, 0.08),
+  --shadow-profile:
+    0px 12px 16px -4px rgba(16, 24, 40, 0.08),
     0px 4px 6px -2px rgba(16, 24, 40, 0.03);
   --shadow-creditCard: 8px 10px 16px 0px rgba(0, 0, 0, 0.05);
 
@@ -143,8 +145,22 @@
   }
 }
 
+/* ============================================
+   CEG Brain Dashboard — Custom Animations
+   ============================================ */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 /* Light Mode Theme Variables */
 :root {
+  /* CEG Brain brand color */
+  --color-brand-600: #2563eb;
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.13 0.028 261.692);
@@ -577,6 +593,60 @@
   &::-webkit-scrollbar-thumb:hover {
     background: #7878a3;
   }
+}
+
+/* ============================================
+   CEG Brain Dashboard — Custom Utilities
+   ============================================ */
+
+/* Card hover lift effect */
+.card-hover {
+  @apply transition-all duration-200 ease-out;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.08),
+    0 4px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* Animated progress ring for Fundability Score */
+.progress-ring-circle {
+  transition: stroke-dashoffset 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Skeleton loading shimmer */
+.skeleton {
+  @apply bg-gray-200 rounded;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Stagger animation delays */
+.stagger-1 {
+  animation-delay: 50ms;
+}
+.stagger-2 {
+  animation-delay: 100ms;
+}
+.stagger-3 {
+  animation-delay: 150ms;
+}
+.stagger-4 {
+  animation-delay: 200ms;
+}
+.stagger-5 {
+  animation-delay: 250ms;
+}
+.stagger-6 {
+  animation-delay: 300ms;
+}
+.stagger-7 {
+  animation-delay: 350ms;
+}
+.stagger-8 {
+  animation-delay: 400ms;
 }
 
 .signup-link-playful {

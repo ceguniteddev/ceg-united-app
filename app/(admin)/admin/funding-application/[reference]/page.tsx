@@ -105,6 +105,73 @@ const AdminViewApplication = () => {
 
   return (
     <div className="w-full p-2 sm:p-3 md:p-4 lg:p-6">
+      {/* Client Information Header */}
+      {userData && (
+        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-xl font-bold text-gray-900">
+                  {userData.firstName} {userData.middleName} {userData.lastName}
+                </h1>
+                {userData.isPremiumClient && (
+                  <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800">
+                    Premium Client
+                  </span>
+                )}
+                {userData.activeStatus && (
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      userData.activeStatus === "Active"
+                        ? "bg-green-100 text-green-800"
+                        : userData.activeStatus === "Paused"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {userData.activeStatus}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600">
+                <span className="flex items-center gap-1">
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                  {userData.email}
+                </span>
+                <span className="flex items-center gap-1">
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                    />
+                  </svg>
+                  {userData.phoneNumber}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Section Dropdown */}
       <div className="mb-4">
         <Select value={activeTab} onValueChange={setActiveTab}>
