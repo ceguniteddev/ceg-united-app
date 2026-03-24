@@ -46,7 +46,7 @@ type Item = { id: string; analysis?: string };
 const AnalysisView = ({ referenceNumber }: Props) => {
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
   const { updateAnalysis } = useAnalysisMutation();
-  const { isAdmin, role } = useAuth();
+  const { isAdmin, role, userData } = useAuth();
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
 
@@ -73,7 +73,7 @@ const AnalysisView = ({ referenceNumber }: Props) => {
             </div>
           </>
         )}
-        {role === "Client" && (
+        {role === "Client" && !userData?.isPremiumClient && (
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             {/* <SaveToDocumentsButton referenceNumber={referenceNumber} /> */}
             <PricingDetailsButton referenceNumber={referenceNumber} />
