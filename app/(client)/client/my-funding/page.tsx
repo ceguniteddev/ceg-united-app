@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import Spinner from "@/components/Spinner";
+import { Bot } from "lucide-react";
 
 const ApplyFundingPage = () => {
   const { user } = useAuth();
@@ -78,7 +79,7 @@ const ApplyFundingPage = () => {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <label
               htmlFor="reference-filter"
-              className="text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="text-sm font-medium text-gray-900"
             >
               Filter by Application:
             </label>
@@ -88,7 +89,7 @@ const ApplyFundingPage = () => {
               defaultValue={referenceOptions[0]?.value}
             >
               <SelectTrigger
-                className="w-full sm:max-w-xs"
+                className="w-full sm:max-w-xs border-gray-200 focus:border-blue-600 focus:ring-blue-600"
                 id="reference-filter"
               >
                 <SelectValue placeholder="Select application date" />
@@ -108,6 +109,14 @@ const ApplyFundingPage = () => {
           <FundingBankProducts selectedReference={selectedReference} />
         </section>
       </div>
+
+      {/* Floating assistant button */}
+      {/* <button
+        className="group fixed bottom-6 right-6 size-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all flex items-center justify-center z-30 lg:bottom-8 lg:right-8"
+        aria-label="Assistant"
+      >
+        <Bot className="size-5 transition-all group-hover:fill-white group-hover:stroke-[1.5]" />
+      </button> */}
     </section>
   );
 };

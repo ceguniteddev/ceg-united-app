@@ -1,5 +1,5 @@
 "use client";
-import Spinner from "@/components/Spinner";
+import { FundingTableSkeleton } from "@/components/funding/v2/Skeletons";
 import FundingList from "@/components/funding/funding-list";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
 import { useAuth } from "@/provider/AuthContext";
@@ -19,6 +19,7 @@ export const FundingBankProducts = ({ selectedReference }: Props) => {
 
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
     userId: user?.uid,
+    referenceNumber: selectedReference,
   });
 
   // Filter mapped funds by selected reference number
@@ -32,7 +33,7 @@ export const FundingBankProducts = ({ selectedReference }: Props) => {
     );
   }, [mappedFund, selectedReference]);
 
-  if (isLoading) return <Spinner />;
+  if (isLoading) return <FundingTableSkeleton />;
 
   if (!mappedFund || mappedFund.length === 0)
     return (

@@ -1,0 +1,231 @@
+// ============================================
+// DynamicOddsCard — Shows approval odds with "Apply Now" button
+// ============================================
+// Changes based on selected method (specialist vs online)
+
+"use client";
+
+import { TrendingUp, Loader2, CheckCircle2, SendIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { ApprovedBankFormData } from "@/schema/bank-products";
+import type { ApplicationMethod } from "./MethodSelectionCard";
+import { Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import IconMenu from "@/components/icon-menu";
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+);
+
+interface DynamicOddsCardProps {
+  lender: ApprovedBankFormData;
+  method: ApplicationMethod;
+  onApplyNow: () => void;
+  isLoading?: boolean;
+}
+
+export function DynamicOddsCard({
+  lender,
+  method,
+  onApplyNow,
+  isLoading = false,
+}: DynamicOddsCardProps) {
+  // Adjust odds slightly based on method (specialist typically has better odds)
+  const baseOdds = lender.approvalOdds || 75;
+  const displayOdds =
+    method === "specialist" ? Math.min(baseOdds + 5, 95) : baseOdds;
+
+  // Chart configuration
+  const chartData = {
+    labels: [""],
+    datasets: [
+      {
+        data: [displayOdds],
+        backgroundColor:
+          displayOdds >= 80
+            ? "#10b981"
+            : displayOdds >= 60
+              ? "#3b82f6"
+              : "#f59e0b",
+        borderRadius: 4,
+        barThickness: 24,
+      },
+    ],
+  };
+
+  const chartOptions = {
+    indexAxis: "y" as const,
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        enabled: false,
+      },
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        max: 100,
+        display: false,
+      },
+      y: {
+        display: false,
+      },
+    },
+  };
+
+  // Extract requirements from lender products
+  const requirements = [];
+  if (lender.products && lender.products.length > 0) {
+    const firstProduct = lender.products[0];
+    if (firstProduct.minimumFicoScore) {
+      requirements.push({
+        label: `${firstProduct.minimumFicoScore}+ FICO Score`,
+        met: true,
+      });
+    }
+    if (firstProduct.minimumRevenueRequired) {
+      const revenueK = firstProduct.minimumRevenueRequired / 1000;
+      requirements.push({
+        label: `$${revenueK}K+ Annual Income`,
+        met: true,
+      });
+    }
+  }
+
+  // Fallback if no products
+  if (requirements.length === 0) {
+    if (lender.ficoMin) {
+      requirements.push({
+        label: `${lender.ficoMin}+ FICO Score`,
+        met: true,
+      });
+    }
+    if (lender.revenueMin) {
+      const revenueK = lender.revenueMin / 1000;
+      requirements.push({
+        label: `$${revenueK}K+ Annual Income`,
+        met: true,
+      });
+    }
+  }
+
+  const buttonText =
+    method === "specialist" ? "Request Banker Contact" : "Apply Now";
+  const buttonSubtext =
+    method === "specialist"
+      ? `A ${lender.bankName} specialist will contact you within 1-2 business days.`
+      : `You'll be redirected to ${lender.bankName}'s secure website to complete your application.`;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-card p-6 sticky top-6 space-y-6">
+      {/* Bank name and connection status */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="size-10 rounded-lg bg-gray-800 text-white flex items-center justify-center font-bold text-sm">
+            {lender.bankName[0]}
+          </div>
+          <div>
+            <div className="font-semibold text-sm text-gray-900">
+              {lender.bankName}
+            </div>
+            <div className="flex items-center gap-1 text-xs text-green-600">
+              <div className="size-1.5 rounded-full bg-green-600 animate-pulse" />
+              <span>{displayOdds}% Connected</span>
+            </div>
+          </div>
+        </div>
+        <button className="text-gray-400 hover:text-gray-600">
+          <svg
+            className="size-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {/* Your Approval Odds */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingUp className="size-4 text-emerald-500" />
+          <span className="text-sm font-medium text-gray-900">
+            Your Approval Odds
+          </span>
+        </div>
+
+        {/* Chart */}
+        <div className="h-4 mb-2">
+          <Bar data={chartData} options={chartOptions} />
+        </div>
+
+        <p className="text-xs text-gray-500 text-center">
+          How likely you are to be approved for funding with {lender.bankName}
+        </p>
+      </div>
+
+      {/* Requirements */}
+      {requirements.length > 0 && (
+        <div className="space-y-2">
+          {requirements.map((req, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <CheckCircle2 className="size-4 text-green-600" />
+              <span className="text-xs text-gray-700">{req.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Apply button */}
+      <div className="space-y-3">
+        <Button
+          onClick={onApplyNow}
+          disabled={isLoading}
+          size="lg"
+          className="group w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm disabled:opacity-50 transition-all"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="size-4 animate-spin mr-2" />
+              Processing...
+            </>
+          ) : (
+            <IconMenu
+              icon={
+                <SendIcon className="h-4 w-4 transition-all group-hover:fill-white group-hover:stroke-[1.5]" />
+              }
+              text={buttonText}
+            />
+          )}
+        </Button>
+        <p className="text-xs text-gray-500 text-center leading-relaxed">
+          {buttonSubtext}
+        </p>
+      </div>
+    </div>
+  );
+}

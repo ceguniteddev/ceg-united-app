@@ -20,8 +20,35 @@ import crypto from "crypto";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { ApprovedBankFormData } from "@/schema/bank-products";
 import { FieldPath } from "firebase-admin/firestore";
+import { getBanks } from "./bank-management";
 
 const db = firestoreAdmin();
+
+// Cache for bank websites (5 minute TTL)
+let banksCache: Awaited<ReturnType<typeof getBanks>> | null = null;
+let banksCacheTime: number = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+/**
+ * Helper function to get bank website URL by bank name
+ * Uses cached bank data with 5-minute TTL for performance
+ */
+async function getBankWebsite(bankName: string): Promise<string | undefined> {
+  const now = Date.now();
+
+  // Refresh cache if expired or not yet loaded
+  if (!banksCache || now - banksCacheTime > CACHE_TTL) {
+    banksCache = await getBanks();
+    banksCacheTime = now;
+  }
+
+  // Case-insensitive lookup
+  const bank = banksCache.find(
+    (b) => b.bankName.toLowerCase() === bankName.toLowerCase(),
+  );
+
+  return bank?.website;
+}
 
 // Create broker invitation
 export const createBrokerInvitation = async (
@@ -491,6 +518,9 @@ export const getBrokerClientsMappedFunding = async (
           }
         }
 
+        // Get applicationUrl from bank management collection
+        const applicationUrl = await getBankWebsite(bankProduct.bankName);
+
         // Combine the data
         const mappedFund: ApprovedBankFormData = {
           ...bankProduct,
@@ -505,6 +535,7 @@ export const getBrokerClientsMappedFunding = async (
           fundedAmount: mappingData.fundedAmount,
           fundedRemarks: mappingData.fundedRemarks,
           userId: appData.userId,
+          applicationUrl, // Add applicationUrl to top level
           personalAmountFunding: appData.personalAmountFunding,
           businessAmountFunding: appData.businessAmountFunding,
           // Add client name and email for broker's view

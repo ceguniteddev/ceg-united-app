@@ -4,12 +4,19 @@ export const YesNoEnum = z
   .enum(["Yes", "No", "Unknown"], { error: "Required" })
   .optional();
 
+// Bank product application methods (what banks offer)
 export const ApplicationMethodEnum = z.enum(
   ["Online", "Branch", "Referral", "Phone"],
   {
     error: "Required",
   },
 );
+
+// Client application method selection (how client chooses to apply)
+export const ClientApplicationMethodEnum = z.enum(["specialist", "online"]);
+export type ClientApplicationMethod = z.infer<
+  typeof ClientApplicationMethodEnum
+>;
 
 export const CreditBureauEnum = z.enum(
   [
@@ -37,6 +44,7 @@ export const ClientApplicationStatusEnum = z.enum(
     "Approved",
     "Declined",
     "Funded",
+    "Lender Skipped",
   ],
   {
     error: "Required",
@@ -67,7 +75,8 @@ export const bankProductCriteriaSchema = z.object({
   maximumInquiriesAllowed: z.coerce.number<number>().optional(),
   minimumNumberOfAccountsOnCredit: z.coerce.number<number>().optional(),
   // minimumCreditAgeRequired: z.string(),
-  // minimumIncomeRequired: z.coerce.number<number>().optional(),
+  minimumRevenueRequired: z.coerce.number<number>().optional(), // Annual revenue requirement
+  timeInBusinessRequired: z.string().optional(), // e.g., "6 months", "1 year", "2+ years"
   maximumDebtToIncomeRatio: z.coerce.number<number>().optional(),
   maximumDebtServiceRatio: z.coerce.number<number>().optional(),
   personalVerifiableIncomeRequired: YesNoEnum.optional().or(z.literal("")),
@@ -143,4 +152,16 @@ export type ApprovedBankFormData = BankFormData & {
   fundedAmount?: number;
   fundedRemarks?: string;
   userId: string;
+  applicationMethod?: ClientApplicationMethod; // Track selected application method (specialist/online)
+  // New fields for enhanced UI
+  approvalOdds?: number; // 0-100 percentage
+  rank?: number; // Ranking position for display
+  ficoMin?: number; // Minimum FICO requirement (duplicates minimumFicoScore for top-level access)
+  revenueMin?: number; // Minimum revenue requirement
+  timeInBusiness?: string; // e.g., "6 months", "1 year", "2+ years"
+  fundingRange?: string; // e.g., "$10K - $250K"
+  applicationUrl?: string; // External lender application URL
+  logoInitial?: string; // For LenderLogo component (e.g., "C" for Chase)
+  logoBg?: string; // Background color class (e.g., "bg-blue-100")
+  logoColor?: string; // Text color class (e.g., "text-blue-600")
 };
