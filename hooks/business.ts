@@ -137,3 +137,49 @@ export const useBusinessMutation = () => {
     isDeleteSuccess: deleteMutation.isSuccess,
   };
 };
+export const useBusinessByIdQuery = (userId: string, businessId: string) => {
+  const { data: business, isLoading } = useQuery({
+    queryKey: ["GET_BUSINESS_BY_ID", userId, businessId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/user/${userId}/business/${businessId}`,
+      );
+      if (!response.ok) {
+        toast.error("Failed to fetch business details.");
+        return null;
+      }
+      return response.json();
+    },
+    enabled: !!userId && !!businessId,
+  });
+
+  return { business, isLoading };
+};
+
+export const useBusinessAuditQuery = (userId: string, businessId: string) => {
+  const { data, isLoading } = useQuery({
+    queryKey: ["GET_BUSINESS_AUDIT", userId, businessId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/user/${userId}/business/${businessId}/audit`,
+      );
+      if (!response.ok) {
+        toast.error("Failed to fetch business audit data.");
+        return {
+          auditItems: [],
+          fundabilityScore: 0,
+          fundabilityStatus: "No Data",
+        };
+      }
+      return response.json();
+    },
+    enabled: !!userId && !!businessId,
+  });
+
+  return {
+    auditItems: data?.auditItems || [],
+    fundabilityScore: data?.fundabilityScore || 0,
+    fundabilityStatus: data?.fundabilityStatus || "No Data",
+    isLoading,
+  };
+};
