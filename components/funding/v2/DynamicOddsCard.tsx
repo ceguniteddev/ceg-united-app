@@ -91,41 +91,8 @@ export function DynamicOddsCard({
     },
   };
 
-  // Extract requirements from lender products
-  const requirements = [];
-  if (lender.products && lender.products.length > 0) {
-    const firstProduct = lender.products[0];
-    if (firstProduct.minimumFicoScore) {
-      requirements.push({
-        label: `${firstProduct.minimumFicoScore}+ FICO Score`,
-        met: true,
-      });
-    }
-    if (firstProduct.minimumRevenueRequired) {
-      const revenueK = firstProduct.minimumRevenueRequired / 1000;
-      requirements.push({
-        label: `$${revenueK}K+ Annual Income`,
-        met: true,
-      });
-    }
-  }
-
-  // Fallback if no products
-  if (requirements.length === 0) {
-    if (lender.ficoMin) {
-      requirements.push({
-        label: `${lender.ficoMin}+ FICO Score`,
-        met: true,
-      });
-    }
-    if (lender.revenueMin) {
-      const revenueK = lender.revenueMin / 1000;
-      requirements.push({
-        label: `$${revenueK}K+ Annual Income`,
-        met: true,
-      });
-    }
-  }
+  // Check if we have products to display
+  const hasProducts = lender.products && lender.products.length > 0;
 
   const buttonText =
     method === "specialist" ? "Request Banker Contact" : "Apply Now";
@@ -189,14 +156,30 @@ export function DynamicOddsCard({
       </div>
 
       {/* Requirements */}
-      {requirements.length > 0 && (
+      {hasProducts && (
         <div className="space-y-2">
-          {requirements.map((req, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              <CheckCircle2 className="size-4 text-green-600" />
-              <span className="text-xs text-gray-700">{req.label}</span>
-            </div>
-          ))}
+          {lender.products.map((product: any, idx: number) => {
+            const parts: string[] = [];
+
+            // Product Name
+            if (product.productName) {
+              parts.push(product.productName);
+            }
+
+            // Min FICO
+            if (product.minimumFicoScore) {
+              parts.push(`FICO ${product.minimumFicoScore}+`);
+            }
+
+            return (
+              <div key={idx} className="flex items-center gap-2">
+                <CheckCircle2 className="size-4 text-green-600" />
+                <span className="text-xs text-gray-700">
+                  {parts.length > 0 ? parts.join(" • ") : "—"}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
 

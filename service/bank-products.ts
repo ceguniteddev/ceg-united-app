@@ -29,9 +29,11 @@ import {
   getApplyFundingByReferenceNumber,
   updateApplicationStatus,
 } from "./apply-funding";
+import { ApplyFunding } from "@/schema/apply-funding";
 // import { createAsanaTaskForLender } from "@/lib/n8n";
 import NotFoundError from "@/error/NotFoundError";
 import { createAsanaCustomerServiceTask } from "./n8n";
+import { getCRSReport, getCRSBusinessProfile } from "@/service/crs";
 
 // Cache for bank websites (5 minute TTL)
 let banksCache: Awaited<ReturnType<typeof getBanks>> | null = null;
@@ -57,6 +59,355 @@ async function getBankWebsite(bankName: string): Promise<string | undefined> {
   );
 
   return bank?.website;
+}
+
+/**
+ * Calculate approval odds (0-100%) based on how well client meets bank requirements
+ * Factors in:
+ * - Credit score strength (30%)
+ * - Income/revenue strength (25%)
+ * - Credit history quality (25%)
+ * - Requirement matching (20%)
+ */
+async function calculateApprovalOdds(
+  userId: string,
+  clientData: ApplyFunding,
+  productCriteria: BankProductCriteria,
+): Promise<number> {
+  let totalScore = 0;
+
+  // === 1. CREDIT SCORE STRENGTH (0-30 points) ===
+  const minFico = productCriteria.minimumFicoScore || 0;
+  const clientFico = await estimateClientCreditScore(userId, clientData);
+  // console.log(
+  //   `[Approval Odds] Client FICO: ${clientFico}, Minimum Required: ${minFico}`,
+  // );
+  if (minFico > 0 && clientFico > 0) {
+    if (clientFico >= minFico + 100) {
+      totalScore += 30; // Excellent - 100+ above minimum
+    } else if (clientFico >= minFico + 50) {
+      totalScore += 25; // Strong - 50-99 above minimum
+    } else if (clientFico >= minFico + 20) {
+      totalScore += 20; // Good - 20-49 above minimum
+    } else if (clientFico >= minFico) {
+      totalScore += 15; // Meets minimum
+    } else if (clientFico >= minFico - 20) {
+      totalScore += 10; // Close - within 20 points
+    } else {
+      totalScore += 5; // Below minimum
+    }
+  } else {
+    totalScore += 20; // No requirement or no data - average score
+  }
+
+  // === 2. INCOME/REVENUE STRENGTH (0-25 points) ===
+  const clientRevenue =
+    clientData.annualBusinessRevenue ||
+    clientData.businessGrossProjectedRevenue1 ||
+    (clientData.employmentPayPerMonth || 0) * 12 ||
+    0;
+
+  // Score based on absolute revenue levels
+  if (clientRevenue >= 500000) {
+    totalScore += 25; // $500K+ annual revenue
+  } else if (clientRevenue >= 250000) {
+    totalScore += 22; // $250K-$500K
+  } else if (clientRevenue >= 100000) {
+    totalScore += 18; // $100K-$250K
+  } else if (clientRevenue >= 50000) {
+    totalScore += 15; // $50K-$100K
+  } else if (clientRevenue >= 25000) {
+    totalScore += 10; // $25K-$50K
+  } else if (clientRevenue > 0) {
+    totalScore += 5; // Some revenue reported
+  } else {
+    totalScore += 12; // No data - neutral score
+  }
+
+  // === 3. CREDIT HISTORY STRENGTH (0-25 points) ===
+  let historyScore = 0;
+
+  // Time in business - absolute scoring
+  if (clientData.dateOfIncorporation) {
+    const businessAgeMonths =
+      (Date.now() - new Date(clientData.dateOfIncorporation).getTime()) /
+      (1000 * 60 * 60 * 24 * 30);
+
+    if (businessAgeMonths >= 36) {
+      historyScore += 12; // 3+ years in business
+    } else if (businessAgeMonths >= 24) {
+      historyScore += 10; // 2-3 years
+    } else if (businessAgeMonths >= 12) {
+      historyScore += 7; // 1-2 years
+    } else if (businessAgeMonths >= 6) {
+      historyScore += 5; // 6-12 months
+    } else {
+      historyScore += 3; // Less than 6 months
+    }
+  } else {
+    historyScore += 8; // No data, average score
+  }
+
+  // Employment stability
+  if (clientData.employmentDateOfHire) {
+    const employmentMonths =
+      (Date.now() - new Date(clientData.employmentDateOfHire).getTime()) /
+      (1000 * 60 * 60 * 24 * 30);
+
+    if (employmentMonths >= 36)
+      historyScore += 8; // 3+ years
+    else if (employmentMonths >= 24)
+      historyScore += 7; // 2-3 years
+    else if (employmentMonths >= 12)
+      historyScore += 5; // 1-2 years
+    else historyScore += 3; // Less than 1 year
+  } else {
+    historyScore += 5; // No data, average score
+  }
+
+  // Address stability
+  if (clientData.moveInCurrentAddress) {
+    const addressMonths =
+      (Date.now() - new Date(clientData.moveInCurrentAddress).getTime()) /
+      (1000 * 60 * 60 * 24 * 30);
+
+    if (addressMonths >= 24)
+      historyScore += 5; // 2+ years at address
+    else if (addressMonths >= 12)
+      historyScore += 4; // 1-2 years
+    else historyScore += 2; // Less than 1 year
+  } else {
+    historyScore += 3; // No data, average score
+  }
+
+  totalScore += Math.min(historyScore, 25);
+
+  // === 4. REQUIREMENT MATCHING (0-20 points) ===
+  let requirementsMet = 0;
+  let totalRequirements = 0;
+
+  // State availability
+  if (
+    productCriteria.stateAvailability &&
+    productCriteria.stateAvailability.length > 0
+  ) {
+    totalRequirements++;
+    if (
+      clientData.addressState &&
+      productCriteria.stateAvailability.includes(clientData.addressState)
+    ) {
+      requirementsMet++;
+    }
+  }
+
+  // Business documents
+  if (productCriteria.businessBankStatementsRequired === "Yes") {
+    totalRequirements++;
+    if (
+      clientData.annualBusinessRevenue ||
+      clientData.businessGrossProjectedRevenue1
+    ) {
+      requirementsMet++;
+    }
+  }
+
+  // Personal taxes
+  if (
+    productCriteria.personalTaxesRequired &&
+    productCriteria.personalTaxesRequired !== "None"
+  ) {
+    totalRequirements++;
+    if (clientData.personalTaxes1 || clientData.personalTaxesStatus) {
+      requirementsMet++;
+    }
+  }
+
+  // Business taxes
+  if (
+    productCriteria.businessTaxesRequired &&
+    productCriteria.businessTaxesRequired !== "None"
+  ) {
+    totalRequirements++;
+    if (
+      clientData.businessFiledWithIRS1 ||
+      clientData.businessProjectedProfit1
+    ) {
+      requirementsMet++;
+    }
+  }
+
+  // Verifiable income
+  if (productCriteria.personalVerifiableIncomeRequired === "Yes") {
+    totalRequirements++;
+    if (
+      clientData.employmentPayPerMonth ||
+      clientData.annualBusinessRevenue ||
+      clientData.howDoYouGetPaid
+    ) {
+      requirementsMet++;
+    }
+  }
+
+  // Calculate requirement matching score
+  if (totalRequirements > 0) {
+    const matchPercentage = requirementsMet / totalRequirements;
+    totalScore += Math.round(matchPercentage * 20);
+  } else {
+    totalScore += 15; // No specific requirements, give average score
+  }
+
+  return Math.min(Math.round(totalScore), 100);
+}
+
+/**
+ * Get client credit score from CRS reports or estimate if not available
+ * Fetches actual credit scores from Experian, Equifax, and TransUnion reports
+ * Falls back to estimation if no credit reports exist
+ */
+async function estimateClientCreditScore(
+  userId: string,
+  clientData: ApplyFunding,
+): Promise<number> {
+  try {
+    // Fetch actual credit reports - gets LATEST from EACH bureau (Equifax, Experian, TransUnion)
+    // Note: Users can select which bureaus to generate, so we may have 1, 2, or 3 bureau reports
+    const crsReports = await getCRSReport(userId, true); // isLatest = true per bureau
+
+    if (crsReports && crsReports.length > 0) {
+      // Extract credit scores from all available bureaus
+      const bureauScores: { bureau: string; score: number }[] = [];
+
+      for (const report of crsReports) {
+        const bureauName = report.type || report.id; // Bureau name (equifax/experian/transunion)
+        const scoreValue = report.report?.scores?.[0]?.scoreValue;
+
+        if (scoreValue) {
+          const numericScore = Number(scoreValue);
+          if (!isNaN(numericScore) && numericScore > 0) {
+            bureauScores.push({ bureau: bureauName, score: numericScore });
+          }
+        }
+      }
+
+      // If we have actual credit scores from any bureau, calculate median
+      if (bureauScores.length > 0) {
+        // Log which bureaus provided scores for debugging
+        // console.log(
+        //   `[Credit Score] Found ${bureauScores.length} bureau(s):`,
+        //   bureauScores.map((b) => `${b.bureau}=${b.score}`).join(", "),
+        // );
+
+        // Sort scores and calculate median (most stable measure)
+        const scores = bureauScores.map((b) => b.score).sort((a, b) => a - b);
+        const median =
+          scores.length % 2 === 0
+            ? Math.round(
+                (scores[scores.length / 2 - 1] + scores[scores.length / 2]) / 2,
+              )
+            : scores[Math.floor(scores.length / 2)];
+
+        // console.log(
+        //   `[Credit Score] Using median score: ${median} from ${scores.join(", ")}`,
+        // );
+        return median;
+      } else {
+        console.log("[Credit Score] No valid scores found in CRS reports");
+      }
+    } else {
+      console.log("[Credit Score] No CRS reports found for user");
+    }
+
+    // Try business credit score if personal credit not available
+    if (clientData.businessId) {
+      console.log(
+        `[Credit Score] Attempting business credit for businessId: ${clientData.businessId}`,
+      );
+      const businessProfile = await getCRSBusinessProfile(
+        clientData.businessId,
+      );
+      const commercialScore =
+        businessProfile?.report?.scoreInformation?.commercialScore?.score;
+      if (commercialScore && !isNaN(Number(commercialScore))) {
+        // Convert commercial score (typically 0-100) to FICO-like scale (300-850)
+        const normalizedScore = Math.round(
+          300 + (Number(commercialScore) / 100) * 550,
+        );
+        console.log(
+          `[Credit Score] Using business credit: ${commercialScore} (normalized to ${normalizedScore})`,
+        );
+        return normalizedScore;
+      } else {
+        console.log("[Credit Score] No valid business credit score found");
+      }
+    }
+  } catch (error) {
+    console.log(
+      "[Credit Score] Error fetching CRS reports, falling back to estimation:",
+      error,
+    );
+  }
+
+  // Fallback to estimation if no credit reports available
+  console.log(
+    "[Credit Score] Using estimation based on employment, business age, address, and income",
+  );
+  let baseScore = 650; // Average starting point
+
+  // Employment stability
+  if (clientData.employmentDateOfHire) {
+    const employmentMonths =
+      (Date.now() - new Date(clientData.employmentDateOfHire).getTime()) /
+      (1000 * 60 * 60 * 24 * 30);
+    if (employmentMonths >= 36) baseScore += 50;
+    else if (employmentMonths >= 24) baseScore += 30;
+    else if (employmentMonths >= 12) baseScore += 15;
+  }
+
+  // Business age
+  if (clientData.dateOfIncorporation) {
+    const businessAgeMonths =
+      (Date.now() - new Date(clientData.dateOfIncorporation).getTime()) /
+      (1000 * 60 * 60 * 24 * 30);
+    if (businessAgeMonths >= 24) baseScore += 40;
+    else if (businessAgeMonths >= 12) baseScore += 20;
+  }
+
+  // Address stability
+  if (clientData.moveInCurrentAddress) {
+    const addressMonths =
+      (Date.now() - new Date(clientData.moveInCurrentAddress).getTime()) /
+      (1000 * 60 * 60 * 24 * 30);
+    if (addressMonths >= 24) baseScore += 20;
+    else if (addressMonths >= 12) baseScore += 10;
+  }
+
+  // Income level
+  const monthlyIncome =
+    clientData.employmentPayPerMonth ||
+    (clientData.annualBusinessRevenue || 0) / 12 ||
+    0;
+  if (monthlyIncome >= 10000) baseScore += 30;
+  else if (monthlyIncome >= 5000) baseScore += 20;
+  else if (monthlyIncome >= 3000) baseScore += 10;
+
+  const estimatedScore = Math.min(baseScore, 850); // Cap at maximum FICO
+  console.log(`[Credit Score] Estimated score: ${estimatedScore}`);
+  return estimatedScore;
+}
+
+/**
+ * Parse time in business requirement string to months
+ */
+function parseTimeInBusiness(requirement?: string): number {
+  if (!requirement) return 0;
+  const lower = requirement.toLowerCase();
+
+  if (lower.includes("2") && lower.includes("year")) return 24;
+  if (lower.includes("1") && lower.includes("year")) return 12;
+  if (lower.includes("6") && lower.includes("month")) return 6;
+  if (lower.includes("3") && lower.includes("month")) return 3;
+
+  return 0;
 }
 
 export const recordBankProduct = async (value: BankFormData) => {
@@ -471,6 +822,11 @@ export const getFundMappingAnalysisDetails = async ({
 
   if (!bankProductIds) return null;
 
+  // Fetch client funding application data for approval odds calculation
+  const clientFundingData = referenceNumber
+    ? await getApplyFundingByReferenceNumber({ referenceNumber })
+    : null;
+
   const result: ApprovedBankFormData[] = [];
   for (const bankProductId of bankProductIds) {
     // Check if this is a manual entry or has a valid bankProductId
@@ -532,8 +888,42 @@ export const getFundMappingAnalysisDetails = async ({
         // Get applicationUrl from bank management collection
         const applicationUrl = await getBankWebsite(bankProduct.bankName);
 
+        // Calculate approval odds for each product
+        const productsWithOdds = clientFundingData
+          ? await Promise.all(
+              bankProduct.products.map(async (product) => ({
+                ...product,
+                approvalOdds: await calculateApprovalOdds(
+                  bankProductId.userId,
+                  clientFundingData,
+                  product,
+                ),
+              })),
+            )
+          : bankProduct.products;
+        // console.log(
+        //   `Calculated approval odds for products of reference ${bankProductId.referenceNumber}:`,
+        //   productsWithOdds.map((p) => ({
+        //     productName: p.productName,
+        //     approvalOdds: p.approvalOdds,
+        //   })),
+        // );
+        // Calculate overall approval odds (average of all products)
+        const overallApprovalOdds =
+          productsWithOdds.length > 0
+            ? Math.round(
+                productsWithOdds.reduce(
+                  (sum, p: any) => sum + (p.approvalOdds || 0),
+                  0,
+                ) / productsWithOdds.length,
+              )
+            : undefined;
+        // console.log(
+        //   `Calculated overall approval odds for reference ${bankProductId.referenceNumber}: ${overallApprovalOdds}%`,
+        // );
         result.push({
           ...bankProduct,
+          products: productsWithOdds,
           fundMappingApprovedId: bankProductId.id,
           clientApplicationStatus: bankProductId.clientApplicationStatus,
           adminApprovedStatus: bankProductId.adminApprovedStatus,
@@ -544,6 +934,7 @@ export const getFundMappingAnalysisDetails = async ({
           fundedRemarks: bankProductId.fundedRemarks,
           userId: bankProductId.userId,
           applicationUrl, // Add applicationUrl to top level
+          approvalOdds: overallApprovalOdds, // Add calculated approval odds
         });
       }
     }
