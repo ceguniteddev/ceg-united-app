@@ -1,5 +1,6 @@
 import z from "zod";
 import { registrationSchema } from "./registration";
+import { ClientApplicationMethodEnum } from "./bank-products";
 
 export const FundingApplicationSatus = [
   "New",
@@ -252,6 +253,8 @@ export const applyFundingSchema = z
       .optional(),
     consentConfirmTerms: z.boolean(),
     consentConfirmPrivacy: z.boolean(),
+    // Application method selection (Specialist vs Online)
+    applicationMethod: ClientApplicationMethodEnum.optional(),
   })
   .superRefine((data, ctx) => {
     // Define the exclusion condition for clarity
@@ -696,9 +699,7 @@ export const applyFundingSchema = z
     }
 
     // If funded by Equipment Financing (excluding Auto Loan), require personal amount and business info
-    if (
-      data.fundingProducts?.includes("Business Equipment Financing")
-    ) {
+    if (data.fundingProducts?.includes("Business Equipment Financing")) {
       if (
         data.personalAmountFunding == null ||
         data.personalAmountFunding <= 0

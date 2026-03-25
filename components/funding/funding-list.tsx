@@ -19,27 +19,12 @@ import {
   BanknoteX,
   CircleDollarSign,
   Loader2Icon,
+  SendIcon,
+  XCircle,
 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
+
+import { DialogFooter } from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { Form } from "@/components/ui/form";
 
 import { Button } from "@/components/ui/button";
@@ -65,6 +50,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CustomFormField } from "../CustomFormField";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import { useAuth } from "@/provider/AuthContext";
+import { useRouter } from "next/navigation";
+import { ApprovalOddsBadge } from "./v2/ApprovalOddsBadge";
+import { LenderLogo } from "./v2/LenderLogo";
+import { CheckCircle2 } from "lucide-react";
+import IconMenu from "../icon-menu";
 
 const baseColumns: ColumnDef<BankFormData>[] = [
   {
@@ -81,46 +71,104 @@ const baseColumns: ColumnDef<BankFormData>[] = [
     header: ({ column }) => (
       <SortableHeader column={column} title="Bank Name" />
     ),
-    cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
+    cell: ({ row }) => {
+      const data = row.original as ApprovedBankFormData;
+      return (
+        <div className="flex items-center gap-3">
+          <LenderLogo
+            initial={data.logoInitial || data.bankName[0]}
+            bgClass={data.logoBg || "bg-blue-100"}
+            colorClass={data.logoColor || "text-blue-600"}
+            size="sm"
+          />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-900 truncate">
+              {data.bankName}
+            </p>
+            {data.clientApplicationStatus === "Funded" && data.fundedAmount && (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <CheckCircle2 className="size-3.5 text-blue-500" />
+                <span className="text-xs text-gray-500">
+                  Funded ${data.fundedAmount.toLocaleString()}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    },
   },
-  // {
-  //   accessorKey: "productName",
-  //   id: "productName",
-  //   header: ({ column }) => (
-  //     <SortableHeader column={column} title="Product Name" />
-  //   ),
-  //   cell: ({ row }) => {
-  //     const productNames = row.getValue("productName") as string[];
+  {
+    accessorKey: "approvalOdds",
+    id: "approvalOdds",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Approval Odds" />
+    ),
+    cell: ({ row }) => {
+      const data = row.original as ApprovedBankFormData;
+      const odds = data.approvalOdds || 0;
+      return odds > 0 ? (
+        <ApprovalOddsBadge odds={odds} />
+      ) : (
+        <span className="text-xs text-gray-400">N/A</span>
+      );
+    },
+  },
+  {
+    accessorKey: "requirements",
+    id: "requirements",
+    header: () => (
+      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+        Requirements
+      </span>
+    ),
+    cell: ({ row }) => {
+      const data = row.original as ApprovedBankFormData;
 
-  //     return (
-  //       <div className="flex flex-col gap-1">
-  //         {" "}
-  //         {/* gap-1 adds a small space between items */}
-  //         {productNames?.map((name, index) => (
-  //           <span key={index}>{name}</span>
-  //         ))}
-  //       </div>
-  //     );
-  //   },
-  // },
-  // {
-  //   accessorKey: "financingTerm",
-  //   id: "financingTerm",
-  //   header: ({ column }) => (
-  //     <SortableHeader column={column} title="Financing Term" />
-  //   ),
-  //   cell: ({ row }) => <div>{row.getValue("financingTerm")}</div>,
-  // },
-  // {
-  //   accessorKey: "maximumFundingAmount",
-  //   id: "maximumFundingAmount",
-  //   header: ({ column }) => (
-  //     <SortableHeader column={column} title="Maximum Funding Amount" />
-  //   ),
-  //   cell: ({ row }) => (
-  //     <div>{formatAmount(row.getValue("maximumFundingAmount"))}</div>
-  //   ),
-  // },
+      // Display each product as a separate row
+      if (!data.products || data.products.length === 0) {
+        return <div className="text-sm text-gray-400">—</div>;
+      }
+
+      return (
+        <div className="space-y-2">
+          {data.products.map((product: any, idx: number) => {
+            const parts: string[] = [];
+
+            // Product Name
+            if (product.productName) {
+              parts.push(product.productName);
+            }
+
+            // Min FICO
+            if (product.minimumFicoScore) {
+              parts.push(`FICO ${product.minimumFicoScore}+`);
+            }
+
+            // Max Funding
+            if (product.maximumFundingAmount) {
+              parts.push(`$${product.maximumFundingAmount.toLocaleString()}`);
+            }
+
+            // Application Method
+            if (
+              product.applicationMethod &&
+              product.applicationMethod.length > 0
+            ) {
+              parts.push(product.applicationMethod.join("/"));
+            }
+
+            return (
+              <div key={idx} className="text-xs text-gray-700 leading-relaxed">
+                {parts.length > 0 ? parts.join(" • ") : "—"}
+              </div>
+            );
+          })}
+        </div>
+      );
+    },
+  },
+
   {
     accessorKey: "clientApplicationStatus",
     id: "clientApplicationStatus",
@@ -212,6 +260,13 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
         return false;
       }
 
+      if (
+        isAdminView &&
+        (column.id === "requirements" || column.id === "approvalOdds")
+      ) {
+        return false;
+      }
+
       if (!isAdminView && column.id === "referenceNumber") {
         return false;
       }
@@ -266,7 +321,7 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block overflow-x-auto rounded-md border">
+      <div className="hidden lg:block overflow-x-auto rounded-md border animate-fade-in-up stagger-2">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -288,10 +343,13 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map((row, idx) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className={`transition-colors hover:bg-blue-50/30 ${
+                    idx === 0 ? "bg-blue-50/40" : ""
+                  }`}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -372,10 +430,71 @@ const FundingCard = ({
         </div>
       )}
 
-      <div>
-        <p className="text-xs text-gray-500">Bank Name</p>
-        <p className="font-semibold">{data.bankName}</p>
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3 flex-1">
+          <LenderLogo
+            initial={data.logoInitial || data.bankName[0]}
+            bgClass={data.logoBg || "bg-blue-100"}
+            colorClass={data.logoColor || "text-blue-600"}
+            size="md"
+          />
+          <div>
+            <p className="text-xs text-gray-500">Bank Name</p>
+            <p className="font-semibold">{data.bankName}</p>
+            {data.clientApplicationStatus === "Funded" && data.fundedAmount && (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <CheckCircle2 className="size-3.5 text-blue-500" />
+                <span className="text-xs text-gray-500">
+                  Funded ${data.fundedAmount.toLocaleString()}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+        {isAdminView && data.rank && (
+          <div className="size-7 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0">
+            <span className="text-xs font-bold">{data.rank}</span>
+          </div>
+        )}
       </div>
+
+      {data.approvalOdds && data.approvalOdds > 0 && (
+        <div>
+          <p className="text-xs text-gray-500">Approval Odds</p>
+          <div className="mt-1">
+            <ApprovalOddsBadge odds={data.approvalOdds} />
+          </div>
+        </div>
+      )}
+
+      {data.products && data.products.length > 0 && (
+        <div>
+          <p className="text-xs text-gray-500">Requirements</p>
+          <div className="space-y-2 mt-1">
+            {data.products.map((product: any, idx: number) => {
+              const parts: string[] = [];
+
+              if (product.productName) parts.push(product.productName);
+              if (product.minimumFicoScore)
+                parts.push(`FICO ${product.minimumFicoScore}+`);
+              if (product.maximumFundingAmount)
+                parts.push(`$${product.maximumFundingAmount.toLocaleString()}`);
+              if (
+                product.applicationMethod &&
+                product.applicationMethod.length > 0
+              ) {
+                parts.push(product.applicationMethod.join("/"));
+              }
+
+              return (
+                <div key={idx} className="text-sm text-gray-700">
+                  {parts.length > 0 ? parts.join(" • ") : "—"}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* <div>
         <p className="text-xs text-gray-500">Product Name</p>
@@ -433,14 +552,24 @@ const FundingCard = ({
 };
 
 const ActionCell = ({ row }: { row: any }) => {
-  const { applyApprovedMappedFund, isApplying } =
-    useApprovedMappedFundsMutation();
+  const router = useRouter();
   const [isDenefitsPaid, setIsDenefitsPaid] = React.useState(false);
+  const [isSkipDialogOpen, setSkipDialogOpen] = React.useState(false);
   const { userData } = useAuth();
 
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
     row.original.userId,
   );
+
+  const { skipLenderAppliedBankProduct, isSkipping } =
+    useApprovedMappedFundsMutation();
+
+  const formSkip = useForm<SkipLenderFormValues>({
+    resolver: zodResolver(skipLenderFormSchema),
+    defaultValues: {
+      skipReason: "",
+    },
+  });
 
   React.useEffect(() => {
     if (denefitsContract && denefitsContract.length > 0) {
@@ -448,36 +577,108 @@ const ActionCell = ({ row }: { row: any }) => {
     }
   }, [denefitsContract]);
 
-  const handleApproveClickCapture = async () => {
-    await applyApprovedMappedFund({
-      fundMappingApprovedId: row.original.fundMappingApprovedId,
+  const handleApproveClickCapture = () => {
+    router.push(
+      `/client/my-funding/apply/${row.original.fundMappingApprovedId}`,
+    );
+  };
+
+  const onSkipSubmit = async (data: SkipLenderFormValues) => {
+    await skipLenderAppliedBankProduct({
       referenceNumber: row.original.referenceNumber,
+      fundMappingApprovedId: row.original.fundMappingApprovedId,
+      skipReason: data.skipReason,
     });
+    setSkipDialogOpen(false);
+    formSkip.reset();
   };
 
   if (row.original.clientApplicationStatus !== "Not Applied") return null;
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        disabled={isApplying || (!isDenefitsPaid && !userData?.isPremiumClient)}
-        className="bg-green-200 hover:bg-green-400 cursor-pointer w-full lg:w-auto"
-        onClick={() => handleApproveClickCapture()}
-      >
-        {isApplying ? (
-          <>
-            <Loader2Icon className="h-4 w-4 animate-spin" />
-            <span className="ml-2">Applying...</span>
-          </>
-        ) : (
-          <>
-            <BanknoteIcon className="h-4 w-4" />
-            <span className="ml-2">Apply</span>
-          </>
-        )}
-      </Button>
+      <div className="flex gap-2 w-full lg:w-auto">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!isDenefitsPaid && !userData?.isPremiumClient}
+          className="group bg-blue-500 hover:bg-blue-600 text-white cursor-pointer flex-1 lg:flex-none transition-all"
+          onClick={() => handleApproveClickCapture()}
+        >
+          <IconMenu
+            icon={
+              <SendIcon className="h-4 w-4 transition-all group-hover:fill-white group-hover:stroke-[1.5]" />
+            }
+            text="Apply"
+          />
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="group border-gray-300 hover:border-gray-400 hover:bg-gray-50 flex-1 lg:flex-none transition-all"
+          onClick={() => setSkipDialogOpen(true)}
+        >
+          <IconMenu
+            icon={
+              <XCircle className="h-4 w-4 text-gray-600 transition-all group-hover:text-gray-700" />
+            }
+            text="Skip"
+          />
+        </Button>
+
+        <ResponsiveDialog
+          isOpen={isSkipDialogOpen}
+          setIsOpen={setSkipDialogOpen}
+          title="Skip Lender"
+          description={
+            <>
+              Are you sure you want to skip applying to{" "}
+              <span className="font-semibold">{row.original.bankName}</span>?
+              You can optionally provide a reason below.
+            </>
+          }
+          className="sm:max-w-md"
+        >
+          <Form {...formSkip}>
+            <form
+              onSubmit={formSkip.handleSubmit(onSkipSubmit)}
+              className="space-y-4"
+            >
+              <CustomFormField
+                name="skipReason"
+                type="textarea"
+                label="Reason (Optional)"
+                placeholder="Enter reason for skipping this lender..."
+              />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSkipDialogOpen(false)}
+                  disabled={isSkipping}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSkipping}
+                  className="bg-gray-600 hover:bg-gray-700"
+                >
+                  {isSkipping ? (
+                    <>
+                      <Loader2Icon className="animate-spin h-4 w-4 mr-2" />
+                      Skipping...
+                    </>
+                  ) : (
+                    "Confirm Skip"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </ResponsiveDialog>
+      </div>
     </>
   );
 };
@@ -509,10 +710,18 @@ const fundedFormSchema = z.object({
     .optional(),
 });
 
+const skipLenderFormSchema = z.object({
+  skipReason: z
+    .string()
+    .max(500, { error: "Skip reason cannot exceed 500 characters." })
+    .optional(),
+});
+
 // Infer the type from the schema for type safety
 type ApprovalFormValues = z.infer<typeof approvalFormSchema>;
 type DeclineFormValues = z.infer<typeof declineFormSchema>;
 type FundedFormValues = z.infer<typeof fundedFormSchema>;
+type SkipLenderFormValues = z.infer<typeof skipLenderFormSchema>;
 
 const AdminActionCell = ({ row }: { row: any }) => {
   const [isApproveDialogOpen, setApproveDialogOpen] = React.useState(false);
@@ -596,43 +805,42 @@ const AdminActionCell = ({ row }: { row: any }) => {
   return (
     <div className="flex flex-col lg:flex-row gap-2 w-full">
       {showDeclineButton && (
-        <Dialog open={isDeclineDialogOpen} onOpenChange={setDeclineDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              className="bg-red-300 hover:bg-red-400 cursor-pointer w-full lg:w-auto"
-              disabled={
-                isDeclining ||
-                isApproving ||
-                row.original.clientApplicationStatus === "Declined"
-              }
-            >
-              {isDeclining ? (
-                <>
-                  <Loader2Icon className="h-4 w-4 animate-spin" />
-                  <span className="ml-2">Processing...</span>
-                </>
-              ) : (
-                <>
-                  <BanknoteX className="h-4 w-4" />
-                  <span className="ml-2">Decline</span>
-                </>
-              )}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="w-11/12 max-w-md">
-            <DialogHeader>
-              <DialogTitle>Decline Funding Application</DialogTitle>
-              <DialogDescription>
-                Please provide a reason for declining this funding application.
-              </DialogDescription>
-            </DialogHeader>
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            className="bg-red-300 hover:bg-red-400 cursor-pointer w-full lg:w-auto"
+            disabled={
+              isDeclining ||
+              isApproving ||
+              row.original.clientApplicationStatus === "Declined"
+            }
+            onClick={() => setDeclineDialogOpen(true)}
+          >
+            {isDeclining ? (
+              <>
+                <Loader2Icon className="h-4 w-4 animate-spin" />
+                <span className="ml-2">Processing...</span>
+              </>
+            ) : (
+              <>
+                <BanknoteX className="h-4 w-4" />
+                <span className="ml-2">Decline</span>
+              </>
+            )}
+          </Button>
 
+          <ResponsiveDialog
+            isOpen={isDeclineDialogOpen}
+            setIsOpen={setDeclineDialogOpen}
+            title="Decline Funding Application"
+            description="Please provide a reason for declining this funding application."
+            className="sm:max-w-md"
+          >
             <Form {...formDecline}>
               <form
                 onSubmit={formDecline.handleSubmit(onDeclineSubmit)}
-                className="space-y-4 py-4"
+                className="space-y-4"
               >
                 <CustomFormField
                   name="declineReason"
@@ -657,40 +865,38 @@ const AdminActionCell = ({ row }: { row: any }) => {
                 </DialogFooter>
               </form>
             </Form>
-          </DialogContent>
-        </Dialog>
+          </ResponsiveDialog>
+        </>
       )}
 
       {showApproveButton && (
-        <Dialog open={isApproveDialogOpen} onOpenChange={setApproveDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              className="bg-green-200 hover:bg-green-400 cursor-pointer w-full lg:w-auto"
-              disabled={
-                isApproving ||
-                isDeclining ||
-                row.original.clientApplicationStatus === "Approved"
-              }
-            >
-              <BanknoteIcon className="h-4 w-4" />
-              <span className="ml-2">Approve</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="w-11/12 max-w-md">
-            <DialogHeader>
-              <DialogTitle>Approve Funding Application</DialogTitle>
-              <DialogDescription>
-                Enter the approved amount and any relevant remarks below. Click
-                confirm to finalize.
-              </DialogDescription>
-            </DialogHeader>
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            className="bg-green-200 hover:bg-green-400 cursor-pointer w-full lg:w-auto"
+            disabled={
+              isApproving ||
+              isDeclining ||
+              row.original.clientApplicationStatus === "Approved"
+            }
+            onClick={() => setApproveDialogOpen(true)}
+          >
+            <BanknoteIcon className="h-4 w-4" />
+            <span className="ml-2">Approve</span>
+          </Button>
 
+          <ResponsiveDialog
+            isOpen={isApproveDialogOpen}
+            setIsOpen={setApproveDialogOpen}
+            title="Approve Funding Application"
+            description="Enter the approved amount and any relevant remarks below. Click confirm to finalize."
+            className="sm:max-w-md"
+          >
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onApproveSubmit)}
-                className="space-y-4 py-4"
+                className="space-y-4"
               >
                 <CustomFormField
                   name="amountApproved"
@@ -721,36 +927,34 @@ const AdminActionCell = ({ row }: { row: any }) => {
                 </DialogFooter>
               </form>
             </Form>
-          </DialogContent>
-        </Dialog>
+          </ResponsiveDialog>
+        </>
       )}
 
       {showFundedButton && (
-        <Dialog open={isFundedDialogOpen} onOpenChange={setFundedDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              className="bg-green-200 hover:bg-green-400 cursor-pointer w-full lg:w-auto"
-              disabled={isApproving || isDeclining || isFunding}
-            >
-              <CircleDollarSign className="h-4 w-4" />
-              <span className="ml-2">Funded</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="w-11/12 max-w-md">
-            <DialogHeader>
-              <DialogTitle>Lender Funds</DialogTitle>
-              {/* <DialogDescription>
-                Enter the funded amount and any relevant remarks below. Click
-                confirm to finalize.
-              </DialogDescription> */}
-            </DialogHeader>
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            className="bg-green-200 hover:bg-green-400 cursor-pointer w-full lg:w-auto"
+            disabled={isApproving || isDeclining || isFunding}
+            onClick={() => setFundedDialogOpen(true)}
+          >
+            <CircleDollarSign className="h-4 w-4" />
+            <span className="ml-2">Funded</span>
+          </Button>
 
+          <ResponsiveDialog
+            isOpen={isFundedDialogOpen}
+            setIsOpen={setFundedDialogOpen}
+            title="Lender Funds"
+            description="Enter the funded amount and any relevant remarks below. Click confirm to finalize."
+            className="sm:max-w-md"
+          >
             <Form {...formFunded}>
               <form
                 onSubmit={formFunded.handleSubmit(onFundedSubmit)}
-                className="space-y-4 py-4"
+                className="space-y-4"
               >
                 <CustomFormField
                   name="amountFunded"
@@ -781,8 +985,8 @@ const AdminActionCell = ({ row }: { row: any }) => {
                 </DialogFooter>
               </form>
             </Form>
-          </DialogContent>
-        </Dialog>
+          </ResponsiveDialog>
+        </>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import {
   ApprovedBankFormData,
   BankProductCriteria,
   ClientApplicationStatus,
+  ClientApplicationMethod,
 } from "@/schema/bank-products";
 import {
   applyApprovedMappedFund,
@@ -12,6 +13,7 @@ import {
   cancelMappedFund,
   declineAppliedBankProduct,
   fundedAppliedBankProduct,
+  skipLenderAppliedBankProduct,
   getApprovedMappedFunds,
   getFundMappingAnalysis,
   getFundMappingAnalysisDetails,
@@ -417,15 +419,18 @@ export const useApprovedMappedFundsMutation = () => {
     mutationFn: async ({
       referenceNumber,
       fundMappingApprovedId,
+      applicationMethod,
     }: {
       referenceNumber: string;
       fundMappingApprovedId: string;
+      applicationMethod?: ClientApplicationMethod;
     }) => {
       if (!user) throw new Error("User not authenticated");
 
       await applyApprovedMappedFund({
         referenceNumber,
         fundMappingApprovedId,
+        applicationMethod,
       });
     },
     onSuccess: (_data, variable) => {
@@ -599,6 +604,50 @@ export const useApprovedMappedFundsMutation = () => {
     },
   });
 
+  const skipLenderAppliedBankProductMutation = useMutation({
+    mutationFn: async ({
+      referenceNumber,
+      fundMappingApprovedId,
+      skipReason,
+    }: {
+      referenceNumber: string;
+      fundMappingApprovedId: string;
+      skipReason?: string;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      await skipLenderAppliedBankProduct({
+        referenceNumber,
+        fundMappingApprovedId,
+        skipReason,
+      });
+    },
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "GET_FUNDING_APPLICATION_MAPPED_FUNDS",
+          variable.referenceNumber,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["useClientMappedFundingDetailsQuery"],
+        exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.referenceNumber],
+      });
+      toast.success("Lender skipped successfully.");
+    },
+    onError: (error: any) => {
+      if (error instanceof AppError) {
+        toast.warning(error.message);
+      } else {
+        toast.warning(error.message);
+        console.error(error);
+      }
+    },
+  });
+
   return {
     applyApprovedMappedFund: applyApprovedMappedFundMutation.mutateAsync,
     isApplying: applyApprovedMappedFundMutation.isPending,
@@ -611,6 +660,10 @@ export const useApprovedMappedFundsMutation = () => {
 
     fundedAppliedBankProduct: fundedAppliedBankProductMutation.mutateAsync,
     isFunding: fundedAppliedBankProductMutation.isPending,
+
+    skipLenderAppliedBankProduct:
+      skipLenderAppliedBankProductMutation.mutateAsync,
+    isSkipping: skipLenderAppliedBankProductMutation.isPending,
   };
 };
 
@@ -744,6 +797,7 @@ export const useClientMappedFundingDetailsQuery = ({
       }
 
       const data = await response.json();
+      // console.log("Fetched client mapped funding details:", data);
       return data;
     },
     staleTime: 0,

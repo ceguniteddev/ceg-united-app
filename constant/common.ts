@@ -259,6 +259,12 @@ export const transactionCategoryStyles = {
     textColor: "text-red-700",
     chipBackgroundColor: "bg-inherit",
   },
+  "Lender Skipped": {
+    borderColor: "border-red-700",
+    backgroundColor: "bg-red-700",
+    textColor: "text-red-700",
+    chipBackgroundColor: "bg-inherit",
+  },
   ERROR: {
     borderColor: "border-red-700",
     backgroundColor: "bg-red-700",

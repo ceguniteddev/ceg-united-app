@@ -65,10 +65,10 @@ const ApplyFunding = ({ userId }: { userId: string }) => {
         size="lg"
         variant="outline"
         // className="w-full md:w-auto bg-green-200 hover:bg-green-400 cursor-pointer"
-        className="cursor-pointer bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto h-10 sm:h-9"
+        className="group cursor-pointer bg-blue-500 hover:bg-blue-600 text-white w-full sm:w-auto h-10 sm:h-9 transition-all"
         onClick={() => setOpen(true)}
       >
-        <BanknoteIcon className="h-4 w-4" />
+        <BanknoteIcon className="h-4 w-4 transition-all group-hover:fill-white group-hover:stroke-[1.5]" />
         {"Get Pre-Qualify"}
       </Button>
     </div>

@@ -251,3 +251,35 @@ Internal docs in `docs/` explain specific features:
 - Disabled rules: `@typescript-eslint/no-explicit-any`, `no-unused-vars`, `no-unused-expressions`
 - Tailwind CSS for styling with custom animations (`tw-animate-css`)
 - Use `cn()` utility from `lib/utils.ts` for conditional classes
+
+## Design System & Color Scheme
+
+The application follows a **high-end, modern financial intelligence interface** design philosophy with a consistent color scheme:
+
+### Primary Colors
+
+- **Blue Accents** (`blue-600`, `blue-700`): Primary action buttons, selected states, interactive elements
+- **Blue Highlights** (`blue-50`, `blue-100`): Background highlights, selected card backgrounds, step number badges
+- **White/Light Backgrounds** (`white`, `gray-50`, `gray-100`): Card backgrounds, page backgrounds
+
+### Supporting Colors
+
+- **Green Success** (`green-600`, `emerald-500`, `#10b981`): Approval indicators, positive metrics, success states
+- **Gray Scale** (`gray-900`, `gray-700`, `gray-600`, `gray-500`): Text hierarchy from headings to body text
+- **Brand Colors** (`brand-600`, `brand-700`): Legacy brand colors, transitioning to blue scheme
+
+### UI Component Patterns
+
+- **Cards**: White background with subtle borders (`border-gray-100`), rounded corners (`rounded-xl`)
+- **Interactive Elements**: Blue-600 base with blue-700 hover states
+- **Selection States**: Blue borders with light blue backgrounds for selected items
+- **Typography**: Bold headings in gray-900, body text in gray-600/700, muted text in gray-500
+- **Shadows**: Subtle shadows (`shadow-sm`, `shadow-card`) for depth without heaviness
+
+### Chart/Visualization Colors
+
+- **High Performance** (≥80%): Green (`#10b981`)
+- **Medium Performance** (60-79%): Blue (`#3b82f6`)
+- **Lower Performance** (<60%): Amber (`#f59e0b`)
+
+This color scheme ensures a professional, trustworthy appearance suitable for financial services while maintaining excellent readability and accessibility.
