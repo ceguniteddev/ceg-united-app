@@ -18,8 +18,10 @@ import {
   BankFormData,
   BankProductCriteria,
   ClientApplicationStatus,
+  ClientApplicationMethod,
 } from "@/schema/bank-products";
 import { getCurrentUser, getUserById } from "./user";
+import { getBanks } from "./bank-management";
 import { Timestamp } from "firebase-admin/firestore";
 
 import { normalizeAllDates } from "@/lib/date-parser";
@@ -30,6 +32,32 @@ import {
 // import { createAsanaTaskForLender } from "@/lib/n8n";
 import NotFoundError from "@/error/NotFoundError";
 import { createAsanaCustomerServiceTask } from "./n8n";
+
+// Cache for bank websites (5 minute TTL)
+let banksCache: Awaited<ReturnType<typeof getBanks>> | null = null;
+let banksCacheTime: number = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+/**
+ * Helper function to get bank website URL by bank name
+ * Uses cached bank data with 5-minute TTL for performance
+ */
+async function getBankWebsite(bankName: string): Promise<string | undefined> {
+  const now = Date.now();
+
+  // Refresh cache if expired or not yet loaded
+  if (!banksCache || now - banksCacheTime > CACHE_TTL) {
+    banksCache = await getBanks();
+    banksCacheTime = now;
+  }
+
+  // Case-insensitive lookup
+  const bank = banksCache.find(
+    (b) => b.bankName.toLowerCase() === bankName.toLowerCase(),
+  );
+
+  return bank?.website;
+}
 
 export const recordBankProduct = async (value: BankFormData) => {
   const db = firestoreAdmin();
@@ -495,11 +523,15 @@ export const getFundMappingAnalysisDetails = async ({
             clientNeedsToGoToBranch: "No",
           },
         ],
+        applicationUrl: undefined, // Manual entries don't have application URLs
       } as ApprovedBankFormData);
     } else {
       // For regular entries, fetch from bank products collection
       const bankProduct = await getBankProduct(bankProductId.bankProductId);
       if (bankProduct) {
+        // Get applicationUrl from bank management collection
+        const applicationUrl = await getBankWebsite(bankProduct.bankName);
+
         result.push({
           ...bankProduct,
           fundMappingApprovedId: bankProductId.id,
@@ -511,6 +543,7 @@ export const getFundMappingAnalysisDetails = async ({
           fundedAmount: bankProductId.fundedAmount,
           fundedRemarks: bankProductId.fundedRemarks,
           userId: bankProductId.userId,
+          applicationUrl, // Add applicationUrl to top level
         });
       }
     }
@@ -722,22 +755,28 @@ export const getApprovedMappedFunds = async (
     });
 
     // 2. Fetch all bank products in parallel for better performance
-    const bankProductPromises = bankProductInfo.map(async (info) => {
-      const bankProduct = await getBankProduct(info.bankProductId);
-      if (bankProduct) {
-        return {
-          ...bankProduct,
-          clientApplicationStatus: info.clientApplicationStatus,
-          fundMappingApprovedId: info.id,
-          referenceNumber: info.referenceNumber,
-          approvedAmount: info.approvedAmount,
-          approvedRemarks: info.approvedRemarks,
-          userId: referenceData.userId!,
-          products: info.products, // Use approved products over all products
-        };
-      }
-      return null; // Return null if a specific bank product isn't found
-    });
+    const bankProductPromises = bankProductInfo.map(
+      async (info): Promise<ApprovedBankFormData | null> => {
+        const bankProduct = await getBankProduct(info.bankProductId);
+        if (bankProduct) {
+          // Get applicationUrl from bank management collection
+          const applicationUrl = await getBankWebsite(bankProduct.bankName);
+
+          return {
+            ...bankProduct,
+            clientApplicationStatus: info.clientApplicationStatus,
+            fundMappingApprovedId: info.id,
+            referenceNumber: info.referenceNumber,
+            approvedAmount: info.approvedAmount,
+            approvedRemarks: info.approvedRemarks,
+            userId: referenceData.userId!,
+            products: info.products, // Use approved products over all products
+            applicationUrl, // Add applicationUrl to top level
+          } as ApprovedBankFormData;
+        }
+        return null; // Return null if a specific bank product isn't found
+      },
+    );
 
     const resolvedBankProducts = await Promise.all(bankProductPromises);
 
@@ -958,9 +997,11 @@ export const getApprovedMappedFund = async ({
 export const applyApprovedMappedFund = async ({
   referenceNumber,
   fundMappingApprovedId,
+  applicationMethod,
 }: {
   referenceNumber: string;
   fundMappingApprovedId: string;
+  applicationMethod?: ClientApplicationMethod;
 }): Promise<CommonResponse> => {
   try {
     // 1. Return structured errors for invalid inputs
@@ -1015,9 +1056,13 @@ export const applyApprovedMappedFund = async ({
       fundMappingApprovedId,
     });
 
-    await collectionRef
-      .doc(fundMappingApprovedId)
-      .set({ clientApplicationStatus: "Sent to Lender" }, { merge: true });
+    await collectionRef.doc(fundMappingApprovedId).set(
+      {
+        clientApplicationStatus: "Sent to Lender",
+        applicationMethod: applicationMethod || "Specialist",
+      },
+      { merge: true },
+    );
 
     return { success: true };
   } catch (error: any) {
@@ -1277,6 +1322,59 @@ export const declineAppliedBankProduct = async ({
       error: "error",
       message:
         "An unexpected error occurred while approving the application for the bank product.",
+    };
+  }
+};
+
+export const skipLenderAppliedBankProduct = async ({
+  referenceNumber,
+  fundMappingApprovedId,
+  skipReason,
+}: {
+  referenceNumber: string;
+  fundMappingApprovedId: string;
+  skipReason?: string;
+}): Promise<CommonResponse> => {
+  try {
+    // 1. Return structured errors for invalid inputs
+    if (!referenceNumber) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Reference number is required.",
+      };
+    }
+
+    if (!fundMappingApprovedId) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Fund mapping approved id is required.",
+      };
+    }
+
+    const db = firestoreAdmin();
+    const collectionRef = db.collection(
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
+    );
+
+    await collectionRef.doc(fundMappingApprovedId).set(
+      {
+        clientApplicationStatus: "Lender Skipped",
+        skipReason: skipReason || "",
+      },
+      { merge: true },
+    );
+
+    // 4. Return a successful response
+    return { success: true };
+  } catch (error: any) {
+    // 5. Catch any unexpected errors and return a generic error response
+    console.error("Unexpected error in skipLenderAppliedBankProduct:", error);
+    return {
+      success: false,
+      error: "error",
+      message: "An unexpected error occurred while skipping the lender.",
     };
   }
 };

@@ -1,6 +1,7 @@
 import Sidebar from "@/components/Sidebar";
 import MobileNavClient from "@/components/MobileNavClient";
 import "driver.js/dist/driver.css";
+import "@/app/globals-funding.css";
 // import UserBanners from "@/components/UserBanners";
 import { Metadata } from "next";
 
