@@ -12,8 +12,8 @@ interface LenderLogoProps {
 
 export function LenderLogo({
   initial,
-  bgClass = "bg-blue-100",
-  colorClass = "text-blue-600",
+  bgClass = "bg-blue-600",
+  colorClass = "text-white",
   size = "md",
 }: LenderLogoProps) {
   const sizeClasses = {

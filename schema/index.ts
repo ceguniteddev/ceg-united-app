@@ -87,11 +87,8 @@ export const businessRecordSchema = z.object({
   businessStreetHouseNumber: z.string().optional(),
   businessCityAddress: z.string().min(1, { message: "Required" }),
   businessStateAddress: z.string().min(1, { message: "Required" }),
-  businessPostalAddress: z
-    .string()
-    .trim()
-    .nonempty({ message: "Required" }),
-    // .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" }),
+  businessPostalAddress: z.string().trim().nonempty({ message: "Required" }),
+  // .regex(/^\d{5}$/, { message: "Must be exactly 5 digits" }),
   employerIdentificationNumber: z.string().min(1, { message: "Required" }),
   businessPhoneNumber: z.string().min(1, { message: "Required" }),
   businessEmail: z.email({ message: "Invalid email" }),
@@ -103,7 +100,7 @@ export const businessRecordSchema = z.object({
           platform: z.string().optional(),
           handle: z.string().optional(),
         })
-        .optional()
+        .optional(),
     )
     .optional(),
 });
@@ -114,6 +111,60 @@ export type Business = z.infer<typeof businessRecordSchema>;
 // What the form edits (no userId here):
 export const businessFormSchema = businessRecordSchema.omit({ userId: true });
 export type BusinessForm = z.infer<typeof businessFormSchema>;
+
+// ============================================================
+// Business Detail — display/analytics types (not stored as-is)
+// These types are used by the Business Detail tab views.
+// ============================================================
+
+export type AuditItemStatus =
+  | "verified"
+  | "warning"
+  | "needs_update"
+  | "pending";
+export type CreditRating = "Poor" | "Fair" | "Good" | "Very Good" | "Excellent";
+
+export interface AuditItem {
+  id: string;
+  label: string;
+  value: string;
+  status: AuditItemStatus;
+  statusLabel: string;
+  checkable: boolean;
+}
+
+export interface CreditAccount {
+  id: string;
+  type: string;
+  balance: number;
+  limit: number;
+  status: "Current" | "Past Due" | "Closed";
+  age: string;
+}
+
+export interface FinancialMetric {
+  id: string;
+  label: string;
+  value: string;
+  status: "Healthy" | "Moderate" | "At Risk" | "Verified";
+  icon: string;
+}
+
+export interface TradelineSuggestion {
+  id: string;
+  name: string;
+  benefit: string;
+  recommendedLimit: string;
+  type: string;
+  impactScore: number;
+}
+
+export interface CompatibilityFactor {
+  id: string;
+  label: string;
+  met: boolean;
+  detail: string;
+}
 
 export const changePasswordSchema = z
   .object({
