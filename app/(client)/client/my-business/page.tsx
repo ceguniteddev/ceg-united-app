@@ -1,46 +1,74 @@
 "use client";
-import HeaderBox from "@/components/HeaderBox";
-import BusinessList from "./list";
+import { useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
 import Spinner from "@/components/Spinner";
 import ClientBusinessManagement from "@/components/ClientBusinessManagement";
-import { useState } from "react";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { useBusinessQuery } from "@/hooks/business";
+import { BusinessCard, AddBusinessCard } from "./_components/BusinessCard";
 import { Business } from "@/schema";
-// import PlaidLink from "@/components/PlaidLink";
 
 const MyBusinessPage = () => {
   const { user } = useAuth();
-  const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
+  const { businessData, isLoading } = useBusinessQuery(
+    user?.uid ?? "",
+    !!user?.uid,
+  );
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
-  if (!user) {
-    return <Spinner displayText="Loading data..." />;
+  if (!user || isLoading) {
+    return <Spinner displayText="Loading businesses..." />;
   }
+
+  const businesses: Business[] = Array.isArray(businessData)
+    ? businessData
+    : [];
+
   return (
     <section className="home">
       <div className="home-content mb-16 sm:mb-0">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-          <header className="home-header">
-            <HeaderBox
-              title="My Business"
-              subtext="Manage your business information"
-            />
-          </header>
-          {/* <div className="w-full sm:w-auto">
-            <PlaidLink displayText="Link Business Account" />
-          </div> */}
+        {/* Page Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">My Businesses</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Manage and monitor your registered businesses
+          </p>
         </div>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+
+        {/* Business Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {businesses.map((biz) => (
+            <BusinessCard key={biz.id} business={biz} />
+          ))}
+          <AddBusinessCard onClick={() => setIsAddOpen(true)} />
+        </div>
+
+        {/* Business Count Footer */}
+        {businesses.length > 0 && (
+          <p className="mt-6 text-sm text-gray-400">
+            {businesses.length} business{businesses.length !== 1 ? "es" : ""}{" "}
+            registered
+          </p>
+        )}
+      </div>
+
+      {/* Add Business Modal */}
+      <ResponsiveDialog
+        isOpen={isAddOpen}
+        setIsOpen={setIsAddOpen}
+        title="Add New Business"
+        className="sm:max-w-3xl w-full"
+      >
+        <div className="overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-6">
           <ClientBusinessManagement
             userId={user.uid}
-            editingBusiness={editingBusiness}
-            setEditingBusiness={setEditingBusiness}
+            editingBusiness={null}
+            setEditingBusiness={() => {}}
+            isModal
+            setOpen={setIsAddOpen}
           />
-
-          <aside className="lg:col-span-5 lg:pl-2 lg:sticky lg:top-24">
-            <BusinessList onEdit={(business) => setEditingBusiness(business)} />
-          </aside>
         </div>
-      </div>
+      </ResponsiveDialog>
     </section>
   );
 };

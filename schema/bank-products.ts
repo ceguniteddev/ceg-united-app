@@ -75,8 +75,6 @@ export const bankProductCriteriaSchema = z.object({
   maximumInquiriesAllowed: z.coerce.number<number>().optional(),
   minimumNumberOfAccountsOnCredit: z.coerce.number<number>().optional(),
   // minimumCreditAgeRequired: z.string(),
-  minimumRevenueRequired: z.coerce.number<number>().optional(), // Annual revenue requirement
-  timeInBusinessRequired: z.string().optional(), // e.g., "6 months", "1 year", "2+ years"
   maximumDebtToIncomeRatio: z.coerce.number<number>().optional(),
   maximumDebtServiceRatio: z.coerce.number<number>().optional(),
   personalVerifiableIncomeRequired: YesNoEnum.optional().or(z.literal("")),
@@ -123,6 +121,9 @@ export const bankProductCriteriaSchema = z.object({
     .max(5)
     .optional()
     .or(z.literal("")),
+
+  // Dynamically calculated approval odds (0-100%)
+  approvalOdds: z.number().min(0).max(100).optional(),
 });
 
 export type BankProductCriteria = z.infer<typeof bankProductCriteriaSchema>;

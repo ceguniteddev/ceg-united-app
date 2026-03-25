@@ -73,10 +73,11 @@ const baseColumns: ColumnDef<BankFormData>[] = [
     ),
     cell: ({ row }) => {
       const data = row.original as ApprovedBankFormData;
+
       return (
         <div className="flex items-center gap-3">
           <LenderLogo
-            initial={data.logoInitial || data.bankName[0]}
+            initial={data.logoInitial || data.bankName.trim()[0]}
             bgClass={data.logoBg || "bg-blue-100"}
             colorClass={data.logoColor || "text-blue-600"}
             size="sm"
@@ -143,19 +144,6 @@ const baseColumns: ColumnDef<BankFormData>[] = [
             // Min FICO
             if (product.minimumFicoScore) {
               parts.push(`FICO ${product.minimumFicoScore}+`);
-            }
-
-            // Max Funding
-            if (product.maximumFundingAmount) {
-              parts.push(`$${product.maximumFundingAmount.toLocaleString()}`);
-            }
-
-            // Application Method
-            if (
-              product.applicationMethod &&
-              product.applicationMethod.length > 0
-            ) {
-              parts.push(product.applicationMethod.join("/"));
             }
 
             return (
@@ -433,7 +421,7 @@ const FundingCard = ({
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3 flex-1">
           <LenderLogo
-            initial={data.logoInitial || data.bankName[0]}
+            initial={data.logoInitial || data.bankName.trim()[0]}
             bgClass={data.logoBg || "bg-blue-100"}
             colorClass={data.logoColor || "text-blue-600"}
             size="md"
@@ -477,14 +465,6 @@ const FundingCard = ({
               if (product.productName) parts.push(product.productName);
               if (product.minimumFicoScore)
                 parts.push(`FICO ${product.minimumFicoScore}+`);
-              if (product.maximumFundingAmount)
-                parts.push(`$${product.maximumFundingAmount.toLocaleString()}`);
-              if (
-                product.applicationMethod &&
-                product.applicationMethod.length > 0
-              ) {
-                parts.push(product.applicationMethod.join("/"));
-              }
 
               return (
                 <div key={idx} className="text-sm text-gray-700">
