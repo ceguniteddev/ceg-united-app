@@ -10,7 +10,7 @@ export function TradelineSuggestionsTab({ tradelines = [] }: Props) {
   if (tradelines.length === 0) {
     return (
       <div className="animate-fade-in">
-        <h3 className="text-base font-bold text-gray-900 mb-1">
+        <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1">
           Recommended Tradelines
         </h3>
         <p className="text-sm text-gray-500 mb-5">
@@ -31,7 +31,7 @@ export function TradelineSuggestionsTab({ tradelines = [] }: Props) {
 
   return (
     <div className="animate-fade-in">
-      <h3 className="text-base font-bold text-gray-900 mb-1">
+      <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1">
         Recommended Tradelines
       </h3>
       <p className="text-sm text-gray-500 mb-5">
@@ -63,7 +63,7 @@ export function TradelineSuggestionsTab({ tradelines = [] }: Props) {
               {tl.benefit}
             </p>
 
-            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-between gap-2 flex-wrap pt-3 border-t border-gray-100">
               <div>
                 <p className="text-[10px] text-gray-400 uppercase tracking-wider">
                   Recommended Limit
@@ -72,7 +72,7 @@ export function TradelineSuggestionsTab({ tradelines = [] }: Props) {
                   {tl.recommendedLimit}
                 </p>
               </div>
-              <button className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+              <button className="inline-flex items-center gap-1 min-h-[44px] px-2 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                 Add to Report
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>

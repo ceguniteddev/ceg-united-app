@@ -39,7 +39,7 @@ export function FundabilityAuditTab({ business, factors = [] }: Props) {
           <ShieldCheck className="w-5 h-5 text-blue-600" />
           Business Verification
         </h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {verificationItems.map((item) => (
             <div
               key={item.label}
@@ -54,7 +54,7 @@ export function FundabilityAuditTab({ business, factors = [] }: Props) {
                 <p className="text-[10px] text-gray-400 uppercase tracking-wider">
                   {item.label}
                 </p>
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-gray-900 break-all">
                   {item.value}
                 </p>
               </div>
@@ -73,7 +73,7 @@ export function FundabilityAuditTab({ business, factors = [] }: Props) {
             {factors.map((f) => (
               <div
                 key={f.id}
-                className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-gray-50 transition-colors min-h-[44px]"
               >
                 {f.met ? (
                   <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />

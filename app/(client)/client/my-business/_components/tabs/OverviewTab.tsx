@@ -29,21 +29,13 @@ export function OverviewTab({
   const dashOffset = circumference - progress;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 animate-fade-in">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 sm:gap-6 animate-fade-in">
       {/* Left: Audit Report */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-bold text-gray-900">
+          <h3 className="text-sm sm:text-base font-bold text-gray-900">
             Business Finance Audit Report
           </h3>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <button className="p-1 hover:bg-gray-100 rounded">
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <button className="p-1 hover:bg-gray-100 rounded">
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
         </div>
 
         {auditItems.length === 0 ? (

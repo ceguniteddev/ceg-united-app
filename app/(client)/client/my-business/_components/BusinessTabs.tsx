@@ -5,7 +5,15 @@ import {
   BarChart2,
   Zap,
   ShieldCheck,
+  ChevronDown,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const TABS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -23,22 +31,60 @@ interface Props {
 }
 
 export function BusinessTabs({ activeTab, onTabChange }: Props) {
+  const activeTabData = TABS.find((tab) => tab.id === activeTab);
+
   return (
-    <div className="flex items-center gap-1 border-b border-gray-100 mb-6 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-      {TABS.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => onTabChange(tab.id)}
-          className={`cursor-pointer inline-flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-sm font-medium rounded-t-lg transition-all whitespace-nowrap flex-shrink-0 ${
-            activeTab === tab.id
-              ? "bg-blue-600 text-white"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-          }`}
+    <div>
+      {/* Mobile Dropdown */}
+      <div className="md:hidden">
+        <Select
+          value={activeTab}
+          onValueChange={(value) => onTabChange(value as BusinessTab)}
         >
-          <tab.icon className="w-4 h-4" />
-          {tab.label}
-        </button>
-      ))}
+          <SelectTrigger className="w-full min-h-[48px] bg-white border-gray-200">
+            <div className="flex items-center gap-2">
+              {activeTabData && (
+                <>
+                  <activeTabData.icon className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                  <span className="font-medium text-gray-900">
+                    {activeTabData.label}
+                  </span>
+                </>
+              )}
+            </div>
+          </SelectTrigger>
+          <SelectContent>
+            {TABS.map((tab) => (
+              <SelectItem key={tab.id} value={tab.id}>
+                <div className="flex items-center gap-2">
+                  <tab.icon className="w-4 h-4 flex-shrink-0" />
+                  <span>{tab.label}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Desktop Tabs */}
+      <div className="hidden md:block border-b border-gray-100">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-px">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className={`cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-3 min-h-[48px] text-sm font-medium rounded-t-lg transition-all whitespace-nowrap flex-shrink-0 ${
+                activeTab === tab.id
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+            >
+              <tab.icon className="w-5 h-5 flex-shrink-0" />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
