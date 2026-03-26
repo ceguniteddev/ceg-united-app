@@ -29,7 +29,9 @@ const MyBusinessPage = () => {
       <div className="home-content mb-16 sm:mb-0">
         {/* Page Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">My Businesses</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            My Businesses
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
             Manage and monitor your registered businesses
           </p>

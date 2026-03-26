@@ -77,9 +77,11 @@ export function CreditReportTab({
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
-              <span className="text-4xl font-bold text-gray-900">{score}</span>
+              <span className="text-3xl sm:text-4xl font-bold text-gray-900">
+                {score}
+              </span>
               <span
-                className={`text-sm font-semibold ${ratingColor[creditRating] || "text-gray-500"}`}
+                className={`text-xs sm:text-sm font-semibold ${ratingColor[creditRating] || "text-gray-500"}`}
               >
                 {creditRating}
               </span>
