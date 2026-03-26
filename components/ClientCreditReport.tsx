@@ -1,7 +1,7 @@
 "use client";
-import NoBankLinked from "@/components/NoBankLinked";
 import Spinner from "@/components/Spinner";
 import { useClientCRSReportQuery } from "@/hooks/crs";
+import { useCountUp } from "@/hooks/useCountUp";
 import { useAuth } from "@/provider/AuthContext";
 import {
   CreditReport,
@@ -13,7 +13,33 @@ import {
   ResponseAlertMessage,
   Tradeline,
 } from "@/types/crs";
+import {
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  LinearScale,
+  Title,
+  Tooltip,
+} from "chart.js";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  CreditCard,
+  FileCheck,
+  Info,
+  Search,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
+import Image from "next/image";
 import React, { useMemo, useState } from "react";
+import { Bar, Doughnut } from "react-chartjs-2";
 import EmptyState from "./EmptyState";
 import {
   Select,
@@ -32,6 +58,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+);
 
 // --- Utilities ---
 const toNum = (v?: NumericString) => {
@@ -213,67 +249,520 @@ const Card: React.FC<{ className?: string; children: React.ReactNode }> = ({
   children,
 }) => (
   <div
-    className={`rounded-2xl shadow-sm border border-neutral-200 bg-white ${className}`}
+    className={`rounded-xl shadow-card border border-gray-100 bg-white ${className}`}
   >
     {children}
   </div>
 );
 
-const SectionTitle: React.FC<{ title: string; sub?: string }> = ({
-  title,
-  sub,
-}) => (
+const SectionTitle: React.FC<{
+  title: string;
+  sub?: string;
+  icon?: React.ReactNode;
+}> = ({ title, sub, icon }) => (
   <div className="mb-3 sm:mb-4">
-    <h2 className="text-lg sm:text-xl font-semibold tracking-tight">{title}</h2>
-    {sub && <p className="text-xs sm:text-sm text-neutral-500 mt-1">{sub}</p>}
+    <div className="flex items-center gap-2">
+      <h2 className="text-base font-bold text-gray-900 sm:text-lg tracking-tight">
+        {title}
+      </h2>
+      {icon}
+    </div>
+    {sub && <p className="text-xs text-gray-500 mt-1">{sub}</p>}
   </div>
 );
 
-const Badge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span className="px-2 py-0.5 rounded-full text-xs bg-neutral-100 text-neutral-700 border border-neutral-200">
+const Badge: React.FC<{ children: React.ReactNode; className?: string }> = ({
+  children,
+  className = "",
+}) => (
+  <span
+    className={`px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 ${className}`}
+  >
     {children}
   </span>
 );
 
 const Empty: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="text-neutral-500 text-sm py-6 text-center">{children}</div>
+  <div className="text-gray-400 text-sm py-6 text-center">{children}</div>
 );
 
+// --- Bureau colors ---
+const bureauColors: Record<
+  "Experian" | "Equifax" | "TransUnion",
+  { stroke: string; bg: string; text: string; chartColor: string }
+> = {
+  Experian: {
+    stroke: "stroke-blue-500",
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    chartColor: "#3b82f6",
+  },
+  Equifax: {
+    stroke: "stroke-rose-500",
+    bg: "bg-rose-50",
+    text: "text-rose-700",
+    chartColor: "#f43f5e",
+  },
+  TransUnion: {
+    stroke: "stroke-violet-500",
+    bg: "bg-violet-50",
+    text: "text-violet-700",
+    chartColor: "#8b5cf6",
+  },
+};
+
+function getScoreRating(score: number) {
+  if (score >= 800) return { label: "Exceptional", color: "text-emerald-600" };
+  if (score >= 740) return { label: "Very Good", color: "text-blue-600" };
+  if (score >= 670) return { label: "Good", color: "text-teal-600" };
+  if (score >= 580) return { label: "Fair", color: "text-amber-600" };
+  return { label: "Poor", color: "text-red-600" };
+}
+
+// --- ScoreCard with animated semi-circle gauge ---
 const ScoreCard: React.FC<{
   bureau: "Experian" | "Equifax" | "TransUnion";
   score?: CreditScore;
-}> = ({ bureau, score }) => {
-  const value = score?.scoreValue ? Number(score.scoreValue) : undefined;
+  index: number;
+}> = ({ bureau, score, index }) => {
+  const rawValue = score?.scoreValue ? Number(score.scoreValue) : 0;
   const max = score?.scoreMaximumValue ? Number(score.scoreMaximumValue) : 850;
-  const pct = value && max ? Math.min(100, Math.round((value / max) * 100)) : 0;
+  const animatedScore = useCountUp(rawValue, 1400);
+  const colors = bureauColors[bureau];
+
+  const radius = 70;
+  const circumference = Math.PI * radius;
+  const scoreRatio = max > 0 ? rawValue / max : 0;
+  const dashOffset = circumference * (1 - scoreRatio);
+  const pct = max > 0 ? Math.min(100, Math.round((rawValue / max) * 100)) : 0;
+  const rating = rawValue ? getScoreRating(rawValue) : null;
 
   return (
-    <Card className="p-3 sm:p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-xs sm:text-sm text-neutral-500">{bureau}</div>
-          <div className="text-2xl sm:text-3xl font-bold mt-1">
-            {value ?? "—"}
-          </div>
-        </div>
-        <div className="w-20 sm:w-28">
-          <div className="h-1.5 sm:h-2 w-full rounded bg-neutral-100 overflow-hidden">
-            <div
-              className="h-1.5 sm:h-2 rounded bg-black"
-              style={{ width: `${pct}%` }}
+    <div
+      className={`bg-white rounded-xl border border-gray-100 shadow-card p-5 card-hover animate-fade-in-up stagger-${index + 1}`}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <Image
+              src={`/icons/${bureau}.png`}
+              alt={bureau}
+              width={28}
+              height={28}
+              className="object-contain"
             />
           </div>
-          <div className="text-[9px] sm:text-[10px] text-neutral-500 mt-1">
-            {value ? `${pct}% of max` : "No score"}
+          <span className="text-sm font-semibold text-gray-900">{bureau}</span>
+        </div>
+        <span
+          className={`text-xs font-semibold px-2.5 py-1 rounded-full ${colors.bg} ${colors.text}`}
+        >
+          {rawValue ? `${pct}% of max` : "No score"}
+        </span>
+      </div>
+
+      {/* Semi-circle gauge */}
+      <div className="relative w-full flex justify-center mb-2">
+        <div className="relative w-[160px] h-[88px]">
+          <svg viewBox="0 0 180 100" className="w-full h-full">
+            <path
+              d="M 10 90 A 70 70 0 0 1 170 90"
+              fill="none"
+              strokeWidth="10"
+              strokeLinecap="round"
+              className="stroke-gray-100"
+            />
+            <path
+              d="M 10 90 A 70 70 0 0 1 170 90"
+              fill="none"
+              strokeWidth="10"
+              strokeLinecap="round"
+              className={colors.stroke}
+              strokeDasharray={`${circumference}`}
+              strokeDashoffset={`${dashOffset}`}
+              style={{
+                transition:
+                  "stroke-dashoffset 1.4s cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-end pb-0">
+            <span className="text-3xl font-bold text-gray-900 font-mono">
+              {rawValue ? animatedScore : "—"}
+            </span>
+            {rating && (
+              <span className={`text-xs font-semibold ${rating.color}`}>
+                {rating.label}
+              </span>
+            )}
           </div>
         </div>
       </div>
+
       {score?.modelName && (
-        <div className="text-[10px] sm:text-xs text-neutral-500 mt-2">
+        <p className="text-[11px] text-gray-400 text-center mt-1 truncate">
           {score.modelName}
-        </div>
+        </p>
       )}
-    </Card>
+    </div>
+  );
+};
+
+// --- Score History Bar Chart ---
+const ScoreHistoryChart: React.FC<{
+  timestamps: string[];
+  reportsByTimestamp: Record<string, CreditReportWithId[]>;
+}> = ({ timestamps, reportsByTimestamp }) => {
+  if (timestamps.length < 2) return null;
+
+  const orderedTs = [...timestamps].reverse();
+  const labels = orderedTs.map((ts) =>
+    new Date(ts).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "2-digit",
+    }),
+  );
+
+  const bureauList = ["Experian", "Equifax", "TransUnion"] as const;
+
+  const datasets = bureauList.map((bureau) => ({
+    label: bureau,
+    data: orderedTs.map((ts) => {
+      const docs = reportsByTimestamp[ts] ?? [];
+      const bureauDoc = docs.find((d) => {
+        const b = d?.report ? detectBureau(d.report) : null;
+        return b === bureau;
+      });
+      const val = bureauDoc?.report?.scores?.[0]?.scoreValue;
+      return val ? Number(val) : null;
+    }),
+    backgroundColor: bureauColors[bureau].chartColor + "cc",
+    borderColor: bureauColors[bureau].chartColor,
+    borderWidth: 1.5,
+    borderRadius: 4,
+  }));
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-card p-5 mb-6 animate-fade-in-up">
+      <h3 className="text-sm font-bold text-gray-900 mb-4">
+        Score History Over Time
+      </h3>
+      <Bar
+        data={{ labels, datasets }}
+        options={{
+          responsive: true,
+          plugins: {
+            legend: { position: "top" as const, labels: { boxWidth: 12 } },
+            tooltip: { mode: "index" as const, intersect: false },
+          },
+          scales: {
+            y: {
+              min: 300,
+              max: 850,
+              grid: { color: "rgba(0,0,0,0.04)" },
+              ticks: { font: { size: 11 } },
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 11 } },
+            },
+          },
+        }}
+      />
+    </div>
+  );
+};
+
+// --- Utilization Doughnut ---
+const UtilizationDoughnut: React.FC<{
+  balance: number;
+  limit: number;
+  pct: number;
+}> = ({ balance, limit, pct }) => {
+  const utilized = Math.max(0, Math.min(balance, limit));
+  const remaining = Math.max(0, limit - utilized);
+  const primaryColor =
+    pct <= 30 ? "#10b981" : pct <= 60 ? "#f59e0b" : "#ef4444";
+
+  return (
+    <div className="w-20 h-20 flex-shrink-0">
+      <Doughnut
+        data={{
+          datasets: [
+            {
+              data: limit > 0 ? [utilized, remaining] : [1, 0],
+              backgroundColor: [primaryColor, "#f1f5f9"],
+              borderWidth: 0,
+              hoverOffset: 2,
+            },
+          ],
+        }}
+        options={{
+          cutout: "70%",
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false },
+          },
+          animation: { duration: 1200 },
+        }}
+      />
+    </div>
+  );
+};
+
+// --- Collapsible bureau section for credit accounts ---
+const BureauSection: React.FC<{
+  bureau: "Experian" | "Equifax" | "TransUnion";
+  tradelines: Tradeline[];
+}> = ({ bureau, tradelines }) => {
+  const [expanded, setExpanded] = useState(true);
+  const colors = bureauColors[bureau];
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-card overflow-hidden animate-fade-in-up">
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center justify-between px-4 sm:px-5 py-4 border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded bg-white border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <Image
+              src={`/icons/${bureau}.png`}
+              alt={bureau}
+              width={24}
+              height={24}
+              className="object-contain"
+            />
+          </div>
+          <h3 className="text-sm font-bold text-gray-900">{bureau}</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500 font-medium">
+            {tradelines.length} account{tradelines.length !== 1 ? "s" : ""}
+          </span>
+          {expanded ? (
+            <ChevronUp className="w-4 h-4 text-gray-400" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-gray-400" />
+          )}
+        </div>
+      </button>
+
+      {expanded && (
+        <ScrollArea
+          type="always"
+          className="h-[calc(100vh-380px)] min-h-[400px] w-full min-w-0 rounded-b-xl"
+        >
+          <Table className="min-w-full text-[10px] sm:text-xs">
+            <TableHeader className="bg-gray-50/70 border-b border-gray-100">
+              <TableRow>
+                <TableHead className="text-left px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                  <div>E</div>
+                  <div>C</div>
+                  <div>O</div>
+                  <div>A</div>
+                </TableHead>
+                <TableHead className="text-left px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[120px]">
+                  Creditor
+                </TableHead>
+                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                  <div>Date</div>
+                  <div>Reported</div>
+                </TableHead>
+                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                  <div>Date</div>
+                  <div>Opened</div>
+                  <div className="font-normal text-gray-400">DLA</div>
+                </TableHead>
+                <TableHead className="text-right px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                  <div>High Credit</div>
+                  <div>or Limit</div>
+                  <div className="font-normal text-gray-400">Acct Type</div>
+                </TableHead>
+                <TableHead className="text-right px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                  <div>Balance</div>
+                  <div className="font-normal text-gray-400">Terms</div>
+                </TableHead>
+                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                  <div>Past</div>
+                  <div>Due</div>
+                </TableHead>
+                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                  <div>Mo</div>
+                  <div>Rev</div>
+                </TableHead>
+                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                  30
+                </TableHead>
+                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                  60
+                </TableHead>
+                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                  90+
+                </TableHead>
+                <TableHead className="text-left px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[100px]">
+                  <div>Status</div>
+                  <div className="font-normal text-gray-400">Source</div>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tradelines.map((t, i) => {
+                const acctOwnershipCode =
+                  t.accountOwnershipType?.charAt(0).toUpperCase() || "-";
+                const isOpen = t.accountStatusType?.toLowerCase() === "open";
+                return (
+                  <React.Fragment key={`${t.accountIdentifier}-${i}`}>
+                    <TableRow
+                      className={cn(
+                        "border-b hover:bg-blue-50/30 transition-colors",
+                        isOpen ? "bg-blue-50/40" : "",
+                      )}
+                    >
+                      <TableCell className="px-2 py-2.5 text-center align-top font-medium">
+                        {acctOwnershipCode}
+                      </TableCell>
+                      <TableCell className="px-2 py-2.5 align-top">
+                        <div className="font-semibold text-gray-900">
+                          {t.creditorName || "Unknown"}
+                        </div>
+                        <div className="text-[9px] text-gray-400 font-mono mt-0.5">
+                          {t.accountIdentifier}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-2 py-2.5 text-center align-top">
+                        {t.accountReportedDate
+                          ? new Date(t.accountReportedDate).toLocaleDateString(
+                              "en-US",
+                              { month: "2-digit", year: "2-digit" },
+                            )
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="px-2 py-2.5 text-center align-top">
+                        <div>
+                          {t.accountOpenedDate
+                            ? new Date(t.accountOpenedDate).toLocaleDateString(
+                                "en-US",
+                                { month: "2-digit", year: "2-digit" },
+                              )
+                            : "-"}
+                        </div>
+                        <div className="text-[9px] text-gray-400 mt-1">
+                          {t.lastActivityDate
+                            ? new Date(t.lastActivityDate).toLocaleDateString(
+                                "en-US",
+                                { month: "2-digit", year: "2-digit" },
+                              )
+                            : "--/--"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-2 py-2.5 text-right align-top">
+                        <div className="font-semibold">
+                          {t.creditLimitAmount
+                            ? `$${toNum(t.creditLimitAmount).toLocaleString()}`
+                            : t.highBalanceAmount
+                              ? `$${toNum(t.highBalanceAmount).toLocaleString()}`
+                              : "-"}
+                        </div>
+                        <div className="text-[9px] text-gray-400 mt-1">
+                          {t.accountType || "-"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-2 py-2.5 text-right align-top">
+                        <div className="font-semibold">
+                          {t.currentBalanceAmount
+                            ? `$${toNum(t.currentBalanceAmount).toLocaleString()}`
+                            : "-"}
+                        </div>
+                        <div className="text-[9px] text-gray-400 mt-1">
+                          {t.monthlyPaymentAmount
+                            ? `$${toNum(t.monthlyPaymentAmount).toLocaleString()}`
+                            : "-"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-2 py-2.5 text-center align-top">
+                        {t.pastDueAmount && toNum(t.pastDueAmount) > 0
+                          ? `$${toNum(t.pastDueAmount).toLocaleString()}`
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="px-2 py-2.5 text-center align-top">
+                        {t.monthsReviewedCount || "-"}
+                      </TableCell>
+                      <TableCell className="px-2 py-2.5 text-center align-top">
+                        <span
+                          className={
+                            toNum(t._30DayLates) > 0
+                              ? "text-red-600 font-semibold"
+                              : ""
+                          }
+                        >
+                          {toNum(t._30DayLates)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-2 py-2.5 text-center align-top">
+                        <span
+                          className={
+                            toNum(t._60DayLates) > 0
+                              ? "text-red-600 font-semibold"
+                              : ""
+                          }
+                        >
+                          {toNum(t._60DayLates)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-2 py-2.5 text-center align-top">
+                        <span
+                          className={
+                            toNum(t._90DayLates) > 0
+                              ? "text-red-600 font-semibold"
+                              : ""
+                          }
+                        >
+                          {toNum(t._90DayLates)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-2 py-2.5 align-top">
+                        <div className="font-medium text-gray-800">
+                          {t.currentRatingType || "AS AGREED"}
+                        </div>
+                        <div className="text-[9px] text-gray-400 mt-0.5">
+                          {bureauLabel(t.sourceType)?.toUpperCase().slice(0, 3)}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {(t.originalCreditorName ||
+                      (t.comments && t.comments.length > 0)) && (
+                      <TableRow className="border-b bg-blue-50/20">
+                        <TableCell />
+                        <TableCell
+                          colSpan={11}
+                          className="px-2 py-2 text-[9px] sm:text-[10px]"
+                        >
+                          {t.originalCreditorName && (
+                            <div className="text-blue-700 font-medium uppercase">
+                              ORIGINAL CREDITOR: {t.originalCreditorName}
+                            </div>
+                          )}
+                          {t.comments && t.comments.length > 0 && (
+                            <div className="text-gray-600 mt-1">
+                              {t.comments.map((comment, idx) => (
+                                <div key={idx}>{comment.commentText}</div>
+                              ))}
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </TableBody>
+          </Table>
+          <ScrollBar orientation="horizontal" className="w-full" />
+        </ScrollArea>
+      )}
+    </div>
   );
 };
 
@@ -319,6 +808,15 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
 
   // State for selected timestamp (default to most recent)
   const [selectedTimestamp, setSelectedTimestamp] = useState<string>("");
+
+  // State for inquiries section collapsed/expanded per bureau
+  const [expandedInquiries, setExpandedInquiries] = useState<
+    Record<string, boolean>
+  >({
+    Experian: true,
+    Equifax: true,
+    TransUnion: true,
+  });
 
   // Set initial timestamp when data loads
   React.useEffect(() => {
@@ -421,8 +919,49 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
     return new Date(Math.max(...dates)).toLocaleString();
   }, [bureauMap]);
 
+  // Animated summary stats
+  const openAccounts = allTradelines.filter(
+    (t) => t.accountStatusType?.toLowerCase() === "open",
+  ).length;
+  const animatedPct = useCountUp(Math.round(util.pct), 1200);
+  const animatedOpen = useCountUp(openAccounts, 1000);
+  const animatedNeg = useCountUp(negItems.length, 900);
+
   if (isLoading) {
-    return <Spinner displayText="Loading credit reports..." />;
+    return (
+      <div className="mx-auto max-w-6xl p-4 sm:p-6 bg-gray-50 min-h-screen">
+        {/* Header skeleton */}
+        <div className="mb-6">
+          <div className="skeleton h-7 w-48 rounded-lg mb-2" />
+          <div className="skeleton h-4 w-64 rounded" />
+        </div>
+        {/* Score cards skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className={`bg-white rounded-xl border border-gray-100 p-5 stagger-${i + 1}`}
+            >
+              <div className="skeleton h-4 w-24 rounded mb-4" />
+              <div className="skeleton h-24 w-full rounded-lg mb-3" />
+              <div className="skeleton h-6 w-16 rounded mx-auto" />
+            </div>
+          ))}
+        </div>
+        {/* Stats skeleton */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="bg-white rounded-xl border border-gray-100 p-5"
+            >
+              <div className="skeleton h-4 w-20 rounded mb-3" />
+              <div className="skeleton h-8 w-16 rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const hasAnyReport = Boolean(
@@ -438,27 +977,36 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-3 sm:p-4 md:p-6 bg-neutral-50 min-h-screen">
-      <header className="mb-4 sm:mb-6">
+    <div className="mx-auto max-w-6xl p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <header className="mb-5 sm:mb-7 animate-fade-in-up">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
-              My Credit
-            </h1>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                <CreditCard className="w-4 h-4 text-white" />
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+                My Credit Report
+              </h1>
+            </div>
             {pulledAt && (
-              <p className="text-neutral-600 text-sm mt-1">Pulled {pulledAt}</p>
+              <p className="text-gray-500 text-sm flex items-center gap-1.5 ml-10">
+                <Clock className="w-3.5 h-3.5" />
+                Pulled {pulledAt}
+              </p>
             )}
           </div>
           {timestamps.length > 1 && (
             <div className="flex items-center gap-2">
-              <label className="text-sm text-neutral-600 whitespace-nowrap">
+              <label className="text-sm text-gray-600 whitespace-nowrap font-medium">
                 Report Date:
               </label>
               <Select
                 value={selectedTimestamp}
                 onValueChange={setSelectedTimestamp}
               >
-                <SelectTrigger className="w-[200px] sm:w-[240px]">
+                <SelectTrigger className="w-[200px] sm:w-[240px] border-gray-200">
                   <SelectValue placeholder="Select report date" />
                 </SelectTrigger>
                 <SelectContent>
@@ -478,52 +1026,109 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         </div>
       </header>
 
-      {/* Scores */}
+      {/* Credit Scores */}
       <SectionTitle
         title="Credit Scores"
-        sub="Across Experian, Equifax, and TransUnion"
+        sub="Across all three bureaus — Experian, Equifax, and TransUnion"
+        icon={<ShieldCheck className="w-4 h-4 text-blue-600" />}
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        <ScoreCard bureau="Experian" score={scoresByBureau.Experian} />
-        <ScoreCard bureau="Equifax" score={scoresByBureau.Equifax} />
-        <ScoreCard bureau="TransUnion" score={scoresByBureau.TransUnion} />
+        <ScoreCard
+          bureau="Experian"
+          score={scoresByBureau.Experian}
+          index={0}
+        />
+        <ScoreCard bureau="Equifax" score={scoresByBureau.Equifax} index={1} />
+        <ScoreCard
+          bureau="TransUnion"
+          score={scoresByBureau.TransUnion}
+          index={2}
+        />
       </div>
+
+      {/* Score History Chart */}
+      <ScoreHistoryChart
+        timestamps={timestamps}
+        reportsByTimestamp={reportsByTimestamp}
+      />
 
       {/* Quick stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-10">
-        <Card className="p-3 sm:p-4">
-          <div className="text-xs sm:text-sm text-neutral-500">
-            Total Open Revolving Utilization
-          </div>
-          <div className="mt-1 text-xl sm:text-2xl font-semibold">
-            {util.pct.toFixed(0)}%
-          </div>
-          <div className="text-[10px] sm:text-xs text-neutral-500 mt-1">
-            {fmtCurrency(util.totalBal)} / {fmtCurrency(util.totalLimit)}
+        {/* Utilization card with doughnut */}
+        <Card className="p-4 sm:p-5 flex items-center gap-4 card-hover animate-fade-in-up stagger-1">
+          <UtilizationDoughnut
+            balance={util.totalBal}
+            limit={util.totalLimit}
+            pct={Math.round(util.pct)}
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-gray-500 font-medium mb-1">
+              Revolving Utilization
+            </p>
+            <p
+              className={cn(
+                "text-3xl font-bold font-mono",
+                util.pct <= 30
+                  ? "text-emerald-600"
+                  : util.pct <= 60
+                    ? "text-amber-600"
+                    : "text-red-600",
+              )}
+            >
+              {animatedPct}%
+            </p>
+            <p className="text-[11px] text-gray-400 mt-1">
+              {fmtCurrency(util.totalBal)} / {fmtCurrency(util.totalLimit)}
+            </p>
           </div>
         </Card>
-        <Card className="p-3 sm:p-4">
-          <div className="text-xs sm:text-sm text-neutral-500">
-            Open Accounts
+
+        <Card className="p-4 sm:p-5 flex items-center gap-4 card-hover animate-fade-in-up stagger-2">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+            <FileCheck className="w-6 h-6 text-blue-600" />
           </div>
-          <div className="mt-1 text-xl sm:text-2xl font-semibold">
-            {
-              allTradelines.filter(
-                (t) => t.accountStatusType?.toLowerCase() === "open",
-              ).length
-            }
+          <div>
+            <p className="text-xs text-gray-500 font-medium mb-1">
+              Open Accounts
+            </p>
+            <p className="text-3xl font-bold font-mono text-gray-900">
+              {animatedOpen}
+            </p>
+            <p className="text-[11px] text-gray-400 mt-1">
+              Reporting with status &quot;Open&quot;
+            </p>
           </div>
-          <div className="text-[10px] sm:text-xs text-neutral-500 mt-1">{`Reporting with status "Open"`}</div>
         </Card>
-        <Card className="p-3 sm:p-4">
-          <div className="text-xs sm:text-sm text-neutral-500">
-            Negative Items
+
+        <Card className="p-4 sm:p-5 flex items-center gap-4 card-hover animate-fade-in-up stagger-3">
+          <div
+            className={cn(
+              "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+              negItems.length > 0 ? "bg-red-50" : "bg-emerald-50",
+            )}
+          >
+            <ShieldAlert
+              className={cn(
+                "w-6 h-6",
+                negItems.length > 0 ? "text-red-500" : "text-emerald-500",
+              )}
+            />
           </div>
-          <div className="mt-1 text-xl sm:text-2xl font-semibold">
-            {negItems.length}
-          </div>
-          <div className="text-[10px] sm:text-xs text-neutral-500 mt-1">
-            Derogatory flags or late payments
+          <div>
+            <p className="text-xs text-gray-500 font-medium mb-1">
+              Negative Items
+            </p>
+            <p
+              className={cn(
+                "text-3xl font-bold font-mono",
+                negItems.length > 0 ? "text-red-600" : "text-emerald-600",
+              )}
+            >
+              {animatedNeg}
+            </p>
+            <p className="text-[11px] text-gray-400 mt-1">
+              Derogatory flags or late payments
+            </p>
           </div>
         </Card>
       </div>
@@ -533,449 +1138,282 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         <>
           <SectionTitle
             title="Alert Messages"
-            sub="Important alerts and notifications from credit bureaus"
+            sub="Important notifications from credit bureaus"
+            icon={<AlertTriangle className="w-4 h-4 text-amber-500" />}
           />
-          <Card className="p-3 sm:p-4 mb-6 sm:mb-10">
-            <div className="space-y-3">
-              {allAlertMessages.map((alert, i) => (
+          <div className="space-y-3 mb-6 sm:mb-10">
+            {allAlertMessages.map((alert, i) => {
+              const cat =
+                alert.responseAlertMessageCategoryType?.toLowerCase() ?? "";
+              const isError = cat.includes("fraud") || cat.includes("block");
+              const isInfo = cat.includes("info") || cat.includes("notice");
+              return (
                 <div
                   key={i}
-                  className="p-3 bg-amber-50 border border-amber-200 rounded-lg"
+                  className={cn(
+                    "p-4 rounded-xl border flex items-start gap-3 animate-fade-in-up card-hover",
+                    isError
+                      ? "bg-red-50 border-red-200"
+                      : isInfo
+                        ? "bg-blue-50 border-blue-200"
+                        : "bg-amber-50 border-amber-200",
+                  )}
                 >
-                  <div className="flex items-start gap-2">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <svg
-                        className="w-5 h-5 text-amber-600"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-amber-900">
-                          {bureauLabel(alert.sourceType)}
-                        </span>
-                        {alert.responseAlertMessageCategoryType && (
-                          <Badge>
-                            {alert.responseAlertMessageCategoryType}
-                          </Badge>
+                  <AlertTriangle
+                    className={cn(
+                      "w-5 h-5 flex-shrink-0 mt-0.5",
+                      isError
+                        ? "text-red-500"
+                        : isInfo
+                          ? "text-blue-500"
+                          : "text-amber-500",
+                    )}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span
+                        className={cn(
+                          "text-xs font-semibold",
+                          isError
+                            ? "text-red-800"
+                            : isInfo
+                              ? "text-blue-800"
+                              : "text-amber-800",
                         )}
-                      </div>
-                      <p className="text-sm text-amber-800">
-                        {alert.responseAlertMessageText}
-                      </p>
+                      >
+                        {bureauLabel(alert.sourceType)}
+                      </span>
+                      {alert.responseAlertMessageCategoryType && (
+                        <Badge
+                          className={cn(
+                            isError
+                              ? "bg-red-100 text-red-700"
+                              : isInfo
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-amber-100 text-amber-700",
+                          )}
+                        >
+                          {alert.responseAlertMessageCategoryType}
+                        </Badge>
+                      )}
                     </div>
+                    <p
+                      className={cn(
+                        "text-sm",
+                        isError
+                          ? "text-red-700"
+                          : isInfo
+                            ? "text-blue-700"
+                            : "text-amber-700",
+                      )}
+                    >
+                      {alert.responseAlertMessageText}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </Card>
+              );
+            })}
+          </div>
         </>
       )}
 
       {/* Inquiries per bureau */}
       <SectionTitle
         title="Inquiries by Bureau"
-        sub="Each hard inquiry listed per bureau"
+        sub="Hard inquiries reported per bureau"
+        icon={<Search className="w-4 h-4 text-gray-500" />}
       />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-10">
-        {(["Experian", "Equifax", "TransUnion"] as const).map((b) => (
-          <Card key={b} className="p-3 sm:p-4">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <div className="text-sm sm:text-base font-medium">{b}</div>
-              <Badge>
-                {inquiriesByBureau[b].length} inquiry
-                {inquiriesByBureau[b].length !== 1 ? "ies" : ""}
-              </Badge>
+      <div className="space-y-3 mb-6 sm:mb-10">
+        {(["Experian", "Equifax", "TransUnion"] as const).map((b, idx) => {
+          const colors = bureauColors[b];
+          const expanded = expandedInquiries[b];
+
+          return (
+            <div
+              key={b}
+              className={`bg-white rounded-xl border border-gray-100 shadow-card overflow-hidden animate-fade-in-up stagger-${idx + 1}`}
+            >
+              <button
+                onClick={() =>
+                  setExpandedInquiries((prev) => ({ ...prev, [b]: !prev[b] }))
+                }
+                className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded bg-white border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <Image
+                      src={`/icons/${b}.png`}
+                      alt={b}
+                      width={24}
+                      height={24}
+                      className="object-contain"
+                    />
+                  </div>
+                  <span className="text-sm font-bold text-gray-900">{b}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge className={`${colors.bg} ${colors.text}`}>
+                    {inquiriesByBureau[b].length}
+                  </Badge>
+                  {expanded ? (
+                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  )}
+                </div>
+              </button>
+              {expanded && (
+                <div className="p-4">
+                  {inquiriesByBureau[b].length === 0 ? (
+                    <Empty>No inquiries for {b}.</Empty>
+                  ) : (
+                    <ul className="space-y-2.5 max-h-60 overflow-auto pr-1">
+                      {inquiriesByBureau[b].map((q, i) => (
+                        <li
+                          key={`${q.creditorName}-${q.inquiryDate}-${i}`}
+                          className="flex items-center justify-between gap-2 py-1.5 border-b border-gray-50 last:border-0"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-gray-800 truncate">
+                              {q.creditorName || "Unknown"}
+                            </p>
+                            {q.businessType && (
+                              <p className="text-[10px] text-gray-400">
+                                {q.businessType}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-gray-400 flex-shrink-0">
+                            {q.inquiryDate
+                              ? new Date(q.inquiryDate).toLocaleDateString()
+                              : "—"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
-            {inquiriesByBureau[b].length === 0 ? (
-              <Empty>No inquiries present for {b}.</Empty>
-            ) : (
-              <ul className="space-y-2 max-h-64 overflow-auto pr-1">
-                {inquiriesByBureau[b].map((q, i) => (
-                  <li
-                    key={`${q.creditorName}-${q.inquiryDate}-${i}`}
-                    className="text-sm"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="truncate flex-1 min-w-0">
-                        {q.creditorName || "Unknown"}
-                        {q.businessType ? ` · ${q.businessType}` : ""}
-                      </span>
-                      <span className="text-neutral-500 text-[10px] sm:text-xs flex-shrink-0">
-                        {q.inquiryDate
-                          ? new Date(q.inquiryDate).toLocaleDateString()
-                          : "—"}
-                      </span>
-                    </div>
-                    {q.subscriberCode && (
-                      <div className="text-[10px] sm:text-[11px] text-neutral-500">
-                        Code: {q.subscriberCode}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Tradelines by Bureau */}
+      {/* Tradelines by Bureau — collapsible sections */}
       <SectionTitle
-        title="Credit"
-        sub="Credit account information from each bureau"
+        title="Credit Accounts"
+        sub="All accounts reported per bureau"
+        icon={<Info className="w-4 h-4 text-gray-500" />}
       />
-      <div className="space-y-6 mb-6 sm:mb-10">
-        {(["Experian", "Equifax", "TransUnion"] as const).map((bureau) => (
-          <div key={bureau}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-base sm:text-lg font-semibold">{bureau}</h3>
-              <Badge>
-                {tradelinesByBureau[bureau].length} account
-                {tradelinesByBureau[bureau].length !== 1 ? "s" : ""}
-              </Badge>
+      <div className="space-y-4 mb-6 sm:mb-10">
+        {(["Experian", "Equifax", "TransUnion"] as const).map((bureau) =>
+          tradelinesByBureau[bureau].length === 0 ? (
+            <div
+              key={bureau}
+              className="bg-white rounded-xl border border-gray-100 shadow-card p-4 text-center"
+            >
+              <Empty>No accounts for {bureau}.</Empty>
             </div>
-            {tradelinesByBureau[bureau].length === 0 ? (
-              <Card className="p-4">
-                <Empty>No accounts present for {bureau}.</Empty>
-              </Card>
-            ) : (
-              <Card className="grid grid-cols-1 overflow-hidden">
-                <ScrollArea
-                  type="always"
-                  className="h-[calc(100vh-380px)] min-h-[400px] w-full min-w-0 rounded-md border"
-                >
-                  <Table className="min-w-full text-[10px] sm:text-xs">
-                    <TableHeader className="bg-neutral-100 border-b-2 border-neutral-300">
-                      <TableRow>
-                        <TableHead className="text-left px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                          <div>E</div>
-                          <div>C</div>
-                          <div>O</div>
-                          <div>A</div>
-                        </TableHead>
-                        <TableHead className="text-left px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[120px]">
-                          Creditor
-                        </TableHead>
-                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                          <div>Date</div>
-                          <div>Reported</div>
-                        </TableHead>
-                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                          <div>Date</div>
-                          <div>Opened</div>
-                          <div className="font-normal">DLA</div>
-                        </TableHead>
-                        <TableHead className="text-right px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                          <div>High Credit</div>
-                          <div>or Limit</div>
-                          <div className="font-normal">Acct Type</div>
-                        </TableHead>
-                        <TableHead className="text-right px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                          <div>Balance</div>
-                          <div className="font-normal">Terms</div>
-                        </TableHead>
-                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                          <div>Past</div>
-                          <div>Due</div>
-                        </TableHead>
-                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                          <div>Mo</div>
-                          <div>Rev</div>
-                        </TableHead>
-                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                          30
-                        </TableHead>
-                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                          60
-                        </TableHead>
-                        <TableHead className="text-center px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                          90+
-                        </TableHead>
-                        <TableHead className="text-left px-2 py-2 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[100px]">
-                          <div>Status</div>
-                          <div className="font-normal">Source</div>
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {tradelinesByBureau[bureau].map((t, i) => {
-                        const acctOwnershipCode =
-                          t.accountOwnershipType?.charAt(0).toUpperCase() ||
-                          "-";
-                        return (
-                          <React.Fragment key={`${t.accountIdentifier}-${i}`}>
-                            <TableRow
-                              className={cn(
-                                "border-b hover:bg-neutral-50",
-                                t.accountStatusType?.toLowerCase() === "open"
-                                  ? "bg-blue-100"
-                                  : "",
-                              )}
-                            >
-                              {/* ECOA Column */}
-                              <TableCell className="px-2 py-2 text-center align-top font-medium">
-                                {acctOwnershipCode}
-                              </TableCell>
-
-                              {/* Creditor Column */}
-                              <TableCell className="px-2 py-2 align-top">
-                                <div className="font-semibold">
-                                  {t.creditorName || "Unknown"}
-                                </div>
-                                <div className="text-[9px] text-neutral-500 font-mono mt-0.5">
-                                  {t.accountIdentifier}
-                                </div>
-                              </TableCell>
-
-                              {/* Date Reported Column */}
-                              <TableCell className="px-2 py-2 text-center align-top">
-                                <div>
-                                  {t.accountReportedDate
-                                    ? new Date(
-                                        t.accountReportedDate,
-                                      ).toLocaleDateString("en-US", {
-                                        month: "2-digit",
-                                        year: "2-digit",
-                                      })
-                                    : "-"}
-                                </div>
-                              </TableCell>
-
-                              {/* Date Opened / DLA Column */}
-                              <TableCell className="px-2 py-2 text-center align-top">
-                                <div>
-                                  {t.accountOpenedDate
-                                    ? new Date(
-                                        t.accountOpenedDate,
-                                      ).toLocaleDateString("en-US", {
-                                        month: "2-digit",
-                                        year: "2-digit",
-                                      })
-                                    : "-"}
-                                </div>
-                                <div className="text-[9px] text-neutral-500 mt-1">
-                                  {t.lastActivityDate
-                                    ? new Date(
-                                        t.lastActivityDate,
-                                      ).toLocaleDateString("en-US", {
-                                        month: "2-digit",
-                                        year: "2-digit",
-                                      })
-                                    : "--/--"}
-                                </div>
-                              </TableCell>
-
-                              {/* High Credit/Limit Column */}
-                              <TableCell className="px-2 py-2 text-right align-top">
-                                <div className="font-semibold">
-                                  {t.creditLimitAmount
-                                    ? `$${toNum(t.creditLimitAmount)}`
-                                    : t.highBalanceAmount
-                                      ? `$${toNum(t.highBalanceAmount)}`
-                                      : "-"}
-                                </div>
-                                <div className="text-[9px] text-neutral-500 mt-1">
-                                  {t.accountType || "-"}
-                                </div>
-                              </TableCell>
-
-                              {/* Balance Column */}
-                              <TableCell className="px-2 py-2 text-right align-top">
-                                <div className="font-semibold">
-                                  {t.currentBalanceAmount
-                                    ? `$${toNum(t.currentBalanceAmount)}`
-                                    : "-"}
-                                </div>
-                                <div className="text-[9px] text-neutral-500 mt-1">
-                                  {t.monthlyPaymentAmount
-                                    ? `$${toNum(t.monthlyPaymentAmount)}`
-                                    : "-"}
-                                </div>
-                              </TableCell>
-
-                              {/* Past Due Column */}
-                              <TableCell className="px-2 py-2 text-center align-top">
-                                <div>
-                                  {t.pastDueAmount && toNum(t.pastDueAmount) > 0
-                                    ? `$${toNum(t.pastDueAmount)}`
-                                    : "-"}
-                                </div>
-                              </TableCell>
-
-                              {/* Mo Rev Column */}
-                              <TableCell className="px-2 py-2 text-center align-top">
-                                <div>{t.monthsReviewedCount || "-"}</div>
-                              </TableCell>
-
-                              {/* 30 Days Late Column */}
-                              <TableCell className="px-2 py-2 text-center align-top">
-                                <div
-                                  className={
-                                    toNum(t._30DayLates) > 0
-                                      ? "text-red-600 font-semibold"
-                                      : ""
-                                  }
-                                >
-                                  {toNum(t._30DayLates)}
-                                </div>
-                              </TableCell>
-
-                              {/* 60 Days Late Column */}
-                              <TableCell className="px-2 py-2 text-center align-top">
-                                <div
-                                  className={
-                                    toNum(t._60DayLates) > 0
-                                      ? "text-red-600 font-semibold"
-                                      : ""
-                                  }
-                                >
-                                  {toNum(t._60DayLates)}
-                                </div>
-                              </TableCell>
-
-                              {/* 90+ Days Late Column */}
-                              <TableCell className="px-2 py-2 text-center align-top">
-                                <div
-                                  className={
-                                    toNum(t._90DayLates) > 0
-                                      ? "text-red-600 font-semibold"
-                                      : ""
-                                  }
-                                >
-                                  {toNum(t._90DayLates)}
-                                </div>
-                              </TableCell>
-
-                              {/* Status Column */}
-                              <TableCell className="px-2 py-2 align-top">
-                                <div className="font-medium">
-                                  {t.currentRatingType || "AS AGREED"}
-                                </div>
-                                <div className="text-[9px] text-neutral-500 mt-0.5">
-                                  {bureauLabel(t.sourceType)
-                                    ?.toUpperCase()
-                                    .slice(0, 3)}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-
-                            {/* Additional Row for Original Creditor / Comments */}
-                            {(t.originalCreditorName ||
-                              (t.comments && t.comments.length > 0)) && (
-                              <TableRow className="border-b bg-blue-50">
-                                <TableCell></TableCell>
-                                <TableCell
-                                  colSpan={11}
-                                  className="px-2 py-2 text-[9px] sm:text-[10px]"
-                                >
-                                  {t.originalCreditorName && (
-                                    <div className="text-blue-700 font-medium uppercase">
-                                      ORIGINAL CREDITOR:{" "}
-                                      {t.originalCreditorName}
-                                    </div>
-                                  )}
-                                  {t.comments && t.comments.length > 0 && (
-                                    <div className="text-neutral-700 mt-1">
-                                      {t.comments.map((comment, idx) => (
-                                        <div key={idx}>
-                                          {comment.commentText}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                  <ScrollBar orientation="horizontal" className="w-full" />
-                </ScrollArea>
-              </Card>
-            )}
-          </div>
-        ))}
+          ) : (
+            <BureauSection
+              key={bureau}
+              bureau={bureau}
+              tradelines={tradelinesByBureau[bureau]}
+            />
+          ),
+        )}
       </div>
 
       {/* Negative items */}
       <SectionTitle
         title="Negative Items"
-        sub="Accounts with derogatories or any reported late payments (all bureaus)"
+        sub="Accounts with derogatory marks or late payments across all bureaus"
+        icon={<ShieldAlert className="w-4 h-4 text-red-500" />}
       />
-      <Card className="grid grid-cols-1 overflow-hidden mb-6 sm:mb-10">
+      <Card className="overflow-hidden mb-6 sm:mb-10 animate-fade-in-up">
         {negItems.length === 0 ? (
-          <Empty>
-            No negative items detected from the provided tradelines.
-          </Empty>
+          <div className="flex flex-col items-center justify-center py-10 gap-3">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center">
+              <ShieldCheck className="w-7 h-7 text-emerald-500" />
+            </div>
+            <p className="text-sm font-semibold text-gray-700">
+              No Negative Items
+            </p>
+            <p className="text-xs text-gray-400 text-center max-w-xs">
+              No derogatory marks or late payments detected across all bureaus.
+            </p>
+          </div>
         ) : (
-          <ScrollArea
-            type="always"
-            className="w-full min-w-0 rounded-md border"
-          >
+          <ScrollArea type="always" className="w-full min-w-0">
             <div className="min-w-full inline-block align-middle">
-              <table className="min-w-full text-xs sm:text-sm">
-                <thead className="bg-neutral-100 text-neutral-700">
+              <table className="min-w-full text-xs">
+                <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <th className="text-left px-2 sm:px-4 py-2 font-medium text-[10px] sm:text-xs">
-                      Bureau
-                    </th>
-                    <th className="text-left px-2 sm:px-4 py-2 font-medium text-[10px] sm:text-xs">
-                      Creditor
-                    </th>
-                    <th className="text-left px-2 sm:px-4 py-2 font-medium text-[10px] sm:text-xs">
-                      Acct #
-                    </th>
-                    <th className="text-left px-2 sm:px-4 py-2 font-medium text-[10px] sm:text-xs">
-                      Status
-                    </th>
-                    <th className="text-left px-2 sm:px-4 py-2 font-medium text-[10px] sm:text-xs">
-                      Late 30/60/90
-                    </th>
-                    <th className="text-left px-2 sm:px-4 py-2 font-medium text-[10px] sm:text-xs">
-                      Current Balance
-                    </th>
-                    <th className="text-left px-2 sm:px-4 py-2 font-medium text-[10px] sm:text-xs">
-                      Last Activity
-                    </th>
+                    {[
+                      "Bureau",
+                      "Creditor",
+                      "Acct #",
+                      "Status",
+                      "Late 30/60/90",
+                      "Balance",
+                      "Last Activity",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-gray-500"
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {negItems.map((t, i) => (
                     <tr
                       key={`${t.sourceType}-${t.accountIdentifier}-${i}`}
-                      className="border-t"
+                      className="border-t border-gray-50 hover:bg-red-50/30 transition-colors"
                     >
-                      <td className="px-2 sm:px-4 py-2 whitespace-nowrap text-[10px] sm:text-xs">
-                        {bureauLabel(t.sourceType)}
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <span
+                          className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                            bureauColors[
+                              bureauLabel(t.sourceType) as
+                                | "Experian"
+                                | "Equifax"
+                                | "TransUnion"
+                            ]?.bg ?? "bg-gray-100",
+                            bureauColors[
+                              bureauLabel(t.sourceType) as
+                                | "Experian"
+                                | "Equifax"
+                                | "TransUnion"
+                            ]?.text ?? "text-gray-600",
+                          )}
+                        >
+                          {bureauLabel(t.sourceType)}
+                        </span>
                       </td>
-                      <td className="px-2 sm:px-4 py-2 whitespace-nowrap text-[10px] sm:text-xs">
+                      <td className="px-3 py-2.5 font-medium text-gray-900">
                         {t.creditorName || "—"}
                       </td>
-                      <td className="px-2 sm:px-4 py-2 text-[10px] sm:text-xs">
+                      <td className="px-3 py-2.5 font-mono text-gray-500">
                         {maskId(t.accountIdentifier)}
                       </td>
-                      <td className="px-2 sm:px-4 py-2 text-[10px] sm:text-xs">
-                        {t.accountStatusType || "—"}
-                        {t.derogatoryDataIndicator ? " · Derogatory" : ""}
+                      <td className="px-3 py-2.5">
+                        <span className="text-red-600 font-semibold">
+                          {t.accountStatusType || "—"}
+                          {t.derogatoryDataIndicator ? " · Derog." : ""}
+                        </span>
                       </td>
-                      <td className="px-2 sm:px-4 py-2 text-[10px] sm:text-xs">
+                      <td className="px-3 py-2.5 font-mono text-red-600 font-semibold">
                         {toNum(t._30DayLates)}/{toNum(t._60DayLates)}/
                         {toNum(t._90DayLates)}
                       </td>
-                      <td className="px-2 sm:px-4 py-2 text-[10px] sm:text-xs">
+                      <td className="px-3 py-2.5 font-medium">
                         {fmtCurrency(toNum(t.currentBalanceAmount))}
                       </td>
-                      <td className="px-2 sm:px-4 py-2 text-[10px] sm:text-xs">
+                      <td className="px-3 py-2.5 text-gray-500">
                         {t.lastActivityDate
                           ? new Date(t.lastActivityDate).toLocaleDateString()
                           : "—"}
@@ -993,25 +1431,33 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
       {/* Positive factors */}
       <SectionTitle
         title="Positive Factors"
-        sub="Strengths inferred from the combined tradelines and score context"
+        sub="Strengths identified from your combined credit profile"
+        icon={<Sparkles className="w-4 h-4 text-blue-500" />}
       />
-      <Card className="p-3 sm:p-4 mb-6 sm:mb-10">
+      <Card className="p-4 sm:p-5 mb-6 sm:mb-10 animate-fade-in-up">
         {positives.length === 0 ? (
           <Empty>
-            No explicit positive factors detected. Provide more bureau data for
-            a fuller picture.
+            No positive factors detected yet. Provide more bureau data for a
+            fuller picture.
           </Empty>
         ) : (
-          <ul className="list-disc pl-4 sm:pl-5 space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+          <ul className="space-y-2.5">
             {positives.map((p, i) => (
-              <li key={i}>{p}</li>
+              <li
+                key={i}
+                className={`flex items-start gap-2.5 stagger-${Math.min(i + 1, 8)}`}
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                <span className="text-sm text-gray-700">{p}</span>
+              </li>
             ))}
           </ul>
         )}
       </Card>
 
-      <p className="text-[10px] sm:text-xs text-neutral-500 mt-3 sm:mt-4">
-        Note: When multiple docs per bureau exist, the newest is used.
+      <p className="text-[10px] sm:text-xs text-gray-400 mt-3 sm:mt-4">
+        Note: When multiple docs per bureau exist for the same date, the newest
+        is used.
       </p>
     </div>
   );
