@@ -632,6 +632,15 @@
     0 1px 2px 0 rgba(16, 24, 40, 0.06);
 }
 
+/* Hide scrollbars while maintaining scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
 /* Card hover lift effect */
 .card-hover {
   @apply transition-all duration-200 ease-out;

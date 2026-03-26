@@ -267,7 +267,7 @@ const SectionTitle: React.FC<{
       </h2>
       {icon}
     </div>
-    {sub && <p className="text-xs text-gray-500 mt-1">{sub}</p>}
+    {sub && <p className="text-xs sm:text-sm text-gray-500 mt-1">{sub}</p>}
   </div>
 );
 
@@ -520,13 +520,13 @@ const BureauSection: React.FC<{
   const colors = bureauColors[bureau];
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-card overflow-hidden animate-fade-in-up">
+    <div className="bg-white rounded-xl border border-gray-100 shadow-card animate-fade-in-up">
       <button
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center justify-between px-4 sm:px-5 py-4 border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded bg-white border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+          <div className="w-7 h-7 rounded bg-white border border-gray-100 flex items-center justify-center flex-shrink-0">
             <Image
               src={`/icons/${bureau}.png`}
               alt={bureau}
@@ -550,217 +550,394 @@ const BureauSection: React.FC<{
       </button>
 
       {expanded && (
-        <ScrollArea
-          type="always"
-          className="h-[calc(100vh-380px)] min-h-[400px] w-full min-w-0 rounded-b-xl"
-        >
-          <Table className="min-w-full text-[10px] sm:text-xs">
-            <TableHeader className="bg-gray-50/70 border-b border-gray-100">
-              <TableRow>
-                <TableHead className="text-left px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                  <div>E</div>
-                  <div>C</div>
-                  <div>O</div>
-                  <div>A</div>
-                </TableHead>
-                <TableHead className="text-left px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[120px]">
-                  Creditor
-                </TableHead>
-                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                  <div>Date</div>
-                  <div>Reported</div>
-                </TableHead>
-                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                  <div>Date</div>
-                  <div>Opened</div>
-                  <div className="font-normal text-gray-400">DLA</div>
-                </TableHead>
-                <TableHead className="text-right px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                  <div>High Credit</div>
-                  <div>or Limit</div>
-                  <div className="font-normal text-gray-400">Acct Type</div>
-                </TableHead>
-                <TableHead className="text-right px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                  <div>Balance</div>
-                  <div className="font-normal text-gray-400">Terms</div>
-                </TableHead>
-                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                  <div>Past</div>
-                  <div>Due</div>
-                </TableHead>
-                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                  <div>Mo</div>
-                  <div>Rev</div>
-                </TableHead>
-                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                  30
-                </TableHead>
-                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                  60
-                </TableHead>
-                <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
-                  90+
-                </TableHead>
-                <TableHead className="text-left px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[100px]">
-                  <div>Status</div>
-                  <div className="font-normal text-gray-400">Source</div>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tradelines.map((t, i) => {
-                const acctOwnershipCode =
-                  t.accountOwnershipType?.charAt(0).toUpperCase() || "-";
-                const isOpen = t.accountStatusType?.toLowerCase() === "open";
-                return (
-                  <React.Fragment key={`${t.accountIdentifier}-${i}`}>
-                    <TableRow
+        <>
+          {/* ── Mobile: card list (< md) ── */}
+          <div className="md:hidden divide-y divide-gray-50">
+            {tradelines.map((t, i) => {
+              const isOpen = t.accountStatusType?.toLowerCase() === "open";
+              const limit = t.creditLimitAmount
+                ? `$${toNum(t.creditLimitAmount).toLocaleString()}`
+                : t.highBalanceAmount
+                  ? `$${toNum(t.highBalanceAmount).toLocaleString()}`
+                  : "-";
+              const balance = t.currentBalanceAmount
+                ? `$${toNum(t.currentBalanceAmount).toLocaleString()}`
+                : "-";
+              const has30 = toNum(t._30DayLates) > 0;
+              const has60 = toNum(t._60DayLates) > 0;
+              const has90 = toNum(t._90DayLates) > 0;
+              const hasLates = has30 || has60 || has90;
+              return (
+                <div
+                  key={`${t.accountIdentifier}-${i}`}
+                  className={cn(
+                    "p-4 space-y-3 transition-colors cursor-pointer",
+                    isOpen
+                      ? "bg-blue-200 hover:bg-blue-400"
+                      : "bg-white hover:bg-gray-50",
+                  )}
+                >
+                  {/* Card header */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {t.creditorName || "Unknown"}
+                      </p>
+                      <p className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">
+                        {t.accountIdentifier}
+                      </p>
+                    </div>
+                    <span
                       className={cn(
-                        "border-b hover:bg-blue-50/30 transition-colors",
-                        isOpen ? "bg-blue-50/40" : "",
+                        "flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full",
+                        isOpen
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-gray-100 text-gray-600",
                       )}
                     >
-                      <TableCell className="px-2 py-2.5 text-center align-top font-medium">
-                        {acctOwnershipCode}
-                      </TableCell>
-                      <TableCell className="px-2 py-2.5 align-top">
-                        <div className="font-semibold text-gray-900">
-                          {t.creditorName || "Unknown"}
-                        </div>
-                        <div className="text-[9px] text-gray-400 font-mono mt-0.5">
-                          {t.accountIdentifier}
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-2 py-2.5 text-center align-top">
-                        {t.accountReportedDate
-                          ? new Date(t.accountReportedDate).toLocaleDateString(
+                      {t.currentRatingType || "AS AGREED"}
+                    </span>
+                  </div>
+
+                  {/* Key metrics grid */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                        Balance
+                      </p>
+                      <p className="font-semibold text-gray-900">{balance}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                        Limit / High Credit
+                      </p>
+                      <p className="font-semibold text-gray-900">{limit}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                        Opened
+                      </p>
+                      <p className="text-gray-700">
+                        {t.accountOpenedDate
+                          ? new Date(t.accountOpenedDate).toLocaleDateString(
                               "en-US",
-                              { month: "2-digit", year: "2-digit" },
+                              { month: "2-digit", year: "numeric" },
                             )
                           : "-"}
-                      </TableCell>
-                      <TableCell className="px-2 py-2.5 text-center align-top">
-                        <div>
-                          {t.accountOpenedDate
-                            ? new Date(t.accountOpenedDate).toLocaleDateString(
-                                "en-US",
-                                { month: "2-digit", year: "2-digit" },
-                              )
-                            : "-"}
-                        </div>
-                        <div className="text-[9px] text-gray-400 mt-1">
-                          {t.lastActivityDate
-                            ? new Date(t.lastActivityDate).toLocaleDateString(
-                                "en-US",
-                                { month: "2-digit", year: "2-digit" },
-                              )
-                            : "--/--"}
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-2 py-2.5 text-right align-top">
-                        <div className="font-semibold">
-                          {t.creditLimitAmount
-                            ? `$${toNum(t.creditLimitAmount).toLocaleString()}`
-                            : t.highBalanceAmount
-                              ? `$${toNum(t.highBalanceAmount).toLocaleString()}`
-                              : "-"}
-                        </div>
-                        <div className="text-[9px] text-gray-400 mt-1">
-                          {t.accountType || "-"}
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-2 py-2.5 text-right align-top">
-                        <div className="font-semibold">
-                          {t.currentBalanceAmount
-                            ? `$${toNum(t.currentBalanceAmount).toLocaleString()}`
-                            : "-"}
-                        </div>
-                        <div className="text-[9px] text-gray-400 mt-1">
-                          {t.monthlyPaymentAmount
-                            ? `$${toNum(t.monthlyPaymentAmount).toLocaleString()}`
-                            : "-"}
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-2 py-2.5 text-center align-top">
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                        Last Activity
+                      </p>
+                      <p className="text-gray-700">
+                        {t.lastActivityDate
+                          ? new Date(t.lastActivityDate).toLocaleDateString(
+                              "en-US",
+                              { month: "2-digit", year: "numeric" },
+                            )
+                          : "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                        Acct Type
+                      </p>
+                      <p className="text-gray-700">{t.accountType || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                        Past Due
+                      </p>
+                      <p
+                        className={cn(
+                          "font-semibold",
+                          t.pastDueAmount && toNum(t.pastDueAmount) > 0
+                            ? "text-red-600"
+                            : "text-gray-700",
+                        )}
+                      >
                         {t.pastDueAmount && toNum(t.pastDueAmount) > 0
                           ? `$${toNum(t.pastDueAmount).toLocaleString()}`
                           : "-"}
-                      </TableCell>
-                      <TableCell className="px-2 py-2.5 text-center align-top">
-                        {t.monthsReviewedCount || "-"}
-                      </TableCell>
-                      <TableCell className="px-2 py-2.5 text-center align-top">
-                        <span
-                          className={
-                            toNum(t._30DayLates) > 0
-                              ? "text-red-600 font-semibold"
-                              : ""
-                          }
-                        >
-                          {toNum(t._30DayLates)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Late payments row */}
+                  {hasLates && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">
+                        Late:
+                      </span>
+                      {has30 && (
+                        <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                          30×{toNum(t._30DayLates)}
                         </span>
-                      </TableCell>
-                      <TableCell className="px-2 py-2.5 text-center align-top">
-                        <span
-                          className={
-                            toNum(t._60DayLates) > 0
-                              ? "text-red-600 font-semibold"
-                              : ""
-                          }
-                        >
-                          {toNum(t._60DayLates)}
+                      )}
+                      {has60 && (
+                        <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                          60×{toNum(t._60DayLates)}
                         </span>
-                      </TableCell>
-                      <TableCell className="px-2 py-2.5 text-center align-top">
-                        <span
-                          className={
-                            toNum(t._90DayLates) > 0
-                              ? "text-red-600 font-semibold"
-                              : ""
-                          }
-                        >
-                          {toNum(t._90DayLates)}
+                      )}
+                      {has90 && (
+                        <span className="text-[10px] font-semibold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
+                          90+×{toNum(t._90DayLates)}
                         </span>
-                      </TableCell>
-                      <TableCell className="px-2 py-2.5 align-top">
-                        <div className="font-medium text-gray-800">
-                          {t.currentRatingType || "AS AGREED"}
-                        </div>
-                        <div className="text-[9px] text-gray-400 mt-0.5">
-                          {bureauLabel(t.sourceType)?.toUpperCase().slice(0, 3)}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    {(t.originalCreditorName ||
-                      (t.comments && t.comments.length > 0)) && (
-                      <TableRow className="border-b bg-blue-50/20">
-                        <TableCell />
-                        <TableCell
-                          colSpan={11}
-                          className="px-2 py-2 text-[9px] sm:text-[10px]"
-                        >
-                          {t.originalCreditorName && (
-                            <div className="text-blue-700 font-medium uppercase">
-                              ORIGINAL CREDITOR: {t.originalCreditorName}
-                            </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Original creditor / comments */}
+                  {(t.originalCreditorName ||
+                    (t.comments && t.comments.length > 0)) && (
+                    <div className="pt-1 border-t border-gray-100 space-y-0.5">
+                      {t.originalCreditorName && (
+                        <p className="text-[10px] text-blue-700 font-medium uppercase">
+                          Original creditor: {t.originalCreditorName}
+                        </p>
+                      )}
+                      {t.comments?.map((c, ci) => (
+                        <p key={ci} className="text-[10px] text-gray-500">
+                          {c.commentText}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ── Desktop: scrollable table (≥ md) ── */}
+          <div className="hidden md:block">
+            <ScrollArea
+              type="always"
+              className="h-[calc(100vh-380px)] min-h-[400px] w-full min-w-0 rounded-b-xl"
+            >
+              <Table className="min-w-[1100px] text-[10px] sm:text-xs">
+                <TableHeader className="bg-gray-50/70 border-b border-gray-100">
+                  <TableRow>
+                    <TableHead className="text-left px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                      <div>E</div>
+                      <div>C</div>
+                      <div>O</div>
+                      <div>A</div>
+                    </TableHead>
+                    <TableHead className="text-left px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[120px]">
+                      Creditor
+                    </TableHead>
+                    <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                      <div>Date</div>
+                      <div>Reported</div>
+                    </TableHead>
+                    <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                      <div>Date</div>
+                      <div>Opened</div>
+                      <div className="font-normal text-gray-400">DLA</div>
+                    </TableHead>
+                    <TableHead className="text-right px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                      <div>High Credit</div>
+                      <div>or Limit</div>
+                      <div className="font-normal text-gray-400">Acct Type</div>
+                    </TableHead>
+                    <TableHead className="text-right px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                      <div>Balance</div>
+                      <div className="font-normal text-gray-400">Terms</div>
+                    </TableHead>
+                    <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                      <div>Past</div>
+                      <div>Due</div>
+                    </TableHead>
+                    <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                      <div>Mo</div>
+                      <div>Rev</div>
+                    </TableHead>
+                    <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                      30
+                    </TableHead>
+                    <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                      60
+                    </TableHead>
+                    <TableHead className="text-center px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide">
+                      90+
+                    </TableHead>
+                    <TableHead className="text-left px-2 py-2.5 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wide min-w-[100px]">
+                      <div>Status</div>
+                      <div className="font-normal text-gray-400">Source</div>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tradelines.map((t, i) => {
+                    const acctOwnershipCode =
+                      t.accountOwnershipType?.charAt(0).toUpperCase() || "-";
+                    const isOpen =
+                      t.accountStatusType?.toLowerCase() === "open";
+                    return (
+                      <React.Fragment key={`${t.accountIdentifier}-${i}`}>
+                        <TableRow
+                          className={cn(
+                            "border-b hover:bg-blue-50/30 transition-colors",
+                            isOpen ? "bg-blue-200 hover:bg-blue-400" : "",
                           )}
-                          {t.comments && t.comments.length > 0 && (
-                            <div className="text-gray-600 mt-1">
-                              {t.comments.map((comment, idx) => (
-                                <div key={idx}>{comment.commentText}</div>
-                              ))}
+                        >
+                          <TableCell className="px-2 py-2.5 text-center align-top font-medium">
+                            {acctOwnershipCode}
+                          </TableCell>
+                          <TableCell className="px-2 py-2.5 align-top">
+                            <div className="font-semibold text-gray-900">
+                              {t.creditorName || "Unknown"}
                             </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </TableBody>
-          </Table>
-          <ScrollBar orientation="horizontal" className="w-full" />
-        </ScrollArea>
+                            <div className="text-[9px] text-gray-400 font-mono mt-0.5">
+                              {t.accountIdentifier}
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-2 py-2.5 text-center align-top">
+                            {t.accountReportedDate
+                              ? new Date(
+                                  t.accountReportedDate,
+                                ).toLocaleDateString("en-US", {
+                                  month: "2-digit",
+                                  year: "2-digit",
+                                })
+                              : "-"}
+                          </TableCell>
+                          <TableCell className="px-2 py-2.5 text-center align-top">
+                            <div>
+                              {t.accountOpenedDate
+                                ? new Date(
+                                    t.accountOpenedDate,
+                                  ).toLocaleDateString("en-US", {
+                                    month: "2-digit",
+                                    year: "2-digit",
+                                  })
+                                : "-"}
+                            </div>
+                            <div className="text-[9px] text-gray-400 mt-1">
+                              {t.lastActivityDate
+                                ? new Date(
+                                    t.lastActivityDate,
+                                  ).toLocaleDateString("en-US", {
+                                    month: "2-digit",
+                                    year: "2-digit",
+                                  })
+                                : "--/--"}
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-2 py-2.5 text-right align-top">
+                            <div className="font-semibold">
+                              {t.creditLimitAmount
+                                ? `$${toNum(t.creditLimitAmount).toLocaleString()}`
+                                : t.highBalanceAmount
+                                  ? `$${toNum(t.highBalanceAmount).toLocaleString()}`
+                                  : "-"}
+                            </div>
+                            <div className="text-[9px] text-gray-400 mt-1">
+                              {t.accountType || "-"}
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-2 py-2.5 text-right align-top">
+                            <div className="font-semibold">
+                              {t.currentBalanceAmount
+                                ? `$${toNum(t.currentBalanceAmount).toLocaleString()}`
+                                : "-"}
+                            </div>
+                            <div className="text-[9px] text-gray-400 mt-1">
+                              {t.monthlyPaymentAmount
+                                ? `$${toNum(t.monthlyPaymentAmount).toLocaleString()}`
+                                : "-"}
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-2 py-2.5 text-center align-top">
+                            {t.pastDueAmount && toNum(t.pastDueAmount) > 0
+                              ? `$${toNum(t.pastDueAmount).toLocaleString()}`
+                              : "-"}
+                          </TableCell>
+                          <TableCell className="px-2 py-2.5 text-center align-top">
+                            {t.monthsReviewedCount || "-"}
+                          </TableCell>
+                          <TableCell className="px-2 py-2.5 text-center align-top">
+                            <span
+                              className={
+                                toNum(t._30DayLates) > 0
+                                  ? "text-red-600 font-semibold"
+                                  : ""
+                              }
+                            >
+                              {toNum(t._30DayLates)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="px-2 py-2.5 text-center align-top">
+                            <span
+                              className={
+                                toNum(t._60DayLates) > 0
+                                  ? "text-red-600 font-semibold"
+                                  : ""
+                              }
+                            >
+                              {toNum(t._60DayLates)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="px-2 py-2.5 text-center align-top">
+                            <span
+                              className={
+                                toNum(t._90DayLates) > 0
+                                  ? "text-red-600 font-semibold"
+                                  : ""
+                              }
+                            >
+                              {toNum(t._90DayLates)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="px-2 py-2.5 align-top">
+                            <div className="font-medium text-gray-800">
+                              {t.currentRatingType || "AS AGREED"}
+                            </div>
+                            <div className="text-[9px] text-gray-400 mt-0.5">
+                              {bureauLabel(t.sourceType)
+                                ?.toUpperCase()
+                                .slice(0, 3)}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {(t.originalCreditorName ||
+                          (t.comments && t.comments.length > 0)) && (
+                          <TableRow
+                            className={cn(
+                              "border-b hover:bg-blue-50/30 transition-colors",
+                              isOpen ? "bg-blue-200 hover:bg-blue-400" : "",
+                            )}
+                          >
+                            <TableCell />
+                            <TableCell
+                              colSpan={11}
+                              className="px-2 py-2 text-[9px] sm:text-[10px]"
+                            >
+                              {t.originalCreditorName && (
+                                <div className="text-blue-700 font-medium uppercase">
+                                  ORIGINAL CREDITOR: {t.originalCreditorName}
+                                </div>
+                              )}
+                              {t.comments && t.comments.length > 0 && (
+                                <div className="text-gray-600 mt-1">
+                                  {t.comments.map((comment, idx) => (
+                                    <div key={idx}>{comment.commentText}</div>
+                                  ))}
+                                </div>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              <ScrollBar orientation="horizontal" className="w-full" />
+            </ScrollArea>
+          </div>
+        </>
       )}
     </div>
   );
@@ -929,7 +1106,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-6xl p-4 sm:p-6 bg-gray-50 min-h-screen">
+      <div className="w-full mx-auto max-w-6xl p-4 sm:p-6 bg-gray-50 min-h-screen">
         {/* Header skeleton */}
         <div className="mb-6">
           <div className="skeleton h-7 w-48 rounded-lg mb-2" />
@@ -949,7 +1126,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
           ))}
         </div>
         {/* Stats skeleton */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
@@ -977,7 +1154,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
+    <div className="w-full mx-auto max-w-6xl p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
       {/* Header */}
       <header className="mb-5 sm:mb-7 animate-fade-in-up">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
@@ -998,7 +1175,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
             )}
           </div>
           {timestamps.length > 1 && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
               <label className="text-sm text-gray-600 whitespace-nowrap font-medium">
                 Report Date:
               </label>
@@ -1006,7 +1183,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
                 value={selectedTimestamp}
                 onValueChange={setSelectedTimestamp}
               >
-                <SelectTrigger className="w-[200px] sm:w-[240px] border-gray-200">
+                <SelectTrigger className="w-full sm:w-[240px] border-gray-200">
                   <SelectValue placeholder="Select report date" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1053,7 +1230,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
       />
 
       {/* Quick stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-10">
         {/* Utilization card with doughnut */}
         <Card className="p-4 sm:p-5 flex items-center gap-4 card-hover animate-fade-in-up stagger-1">
           <UtilizationDoughnut
@@ -1267,7 +1444,7 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
                   {inquiriesByBureau[b].length === 0 ? (
                     <Empty>No inquiries for {b}.</Empty>
                   ) : (
-                    <ul className="space-y-2.5 max-h-60 overflow-auto pr-1">
+                    <ul className="space-y-2.5 max-h-48 sm:max-h-60 overflow-auto pr-1">
                       {inquiriesByBureau[b].map((q, i) => (
                         <li
                           key={`${q.creditorName}-${q.inquiryDate}-${i}`}

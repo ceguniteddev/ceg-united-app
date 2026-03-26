@@ -198,6 +198,45 @@ Admin-only components should use `withAdminGuard()` HOC from `components/wrapper
 - `SortableHeader` component for sortable columns
 - `Pagination` component for multi-page tables
 
+### Responsive Design
+
+All generated components and HTML elements **must be mobile-first and fully responsive** using Tailwind CSS and shadcn/ui.
+
+**Tailwind CSS breakpoints** (always start with base mobile styles, then add larger breakpoints):
+
+| Prefix   | Min-width | Target                       |
+| -------- | --------- | ---------------------------- |
+| _(none)_ | 0px       | Mobile (default)             |
+| `sm:`    | 640px     | Large phones / small tablets |
+| `md:`    | 768px     | Tablets                      |
+| `lg:`    | 1024px    | Desktops                     |
+| `xl:`    | 1280px    | Wide screens                 |
+
+**Layout rules**:
+
+- Stacked on mobile → side-by-side on desktop: `flex flex-col md:flex-row`
+- Card grids: `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`
+- Sidebar + content: hidden sidebar on mobile, visible on `lg:` and above
+- Full-width on mobile, constrained on desktop: `w-full max-w-screen-lg mx-auto`
+
+**Typography**: Scale with responsive modifiers — e.g., `text-sm md:text-base lg:text-lg`
+
+**Spacing**: Use responsive padding/margin — e.g., `p-4 md:p-6 lg:p-8`, never fixed pixel widths that break small screens
+
+**Images**: Always use `w-full`, `max-w-*`, or `object-cover` with a constrained container; never fixed pixel widths
+
+**Tables**: Wrap in `overflow-x-auto` on mobile; consider card-based alternatives for narrow screens
+
+**Touch targets**: Interactive elements must be at least `min-h-[44px]` tall for mobile accessibility
+
+**shadcn/ui responsive patterns**:
+
+- Use `Sheet` for mobile drawers, `Dialog` for desktop modals — or `ResponsiveDialog` which auto-switches
+- Use `DropdownMenu` / `Popover` with proper mobile fallbacks
+- Prefer `Card` + `CardContent` over bare `div` wrappers for consistent spacing
+
+**Navigation**: Mobile nav uses sheet/drawer (`MobileNavClient`, `MobileNavAdmin`, `MobileNavBroker`); sidebar is desktop-only
+
 ## Environment Variables
 
 **Required for Firebase Admin**:
