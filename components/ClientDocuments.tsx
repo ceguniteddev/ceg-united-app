@@ -2,7 +2,6 @@
 
 "use client";
 
-import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -32,20 +31,21 @@ import {
   Trash2Icon,
   XCircle,
   Download,
+  FileText,
+  FileSpreadsheet,
+  File,
+  Image as ImageIcon,
+  FileX,
+  FileStack,
+  Search,
+  Calendar,
+  HardDrive,
+  Eye,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 
 import Image from "next/image";
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
-import {
-  Carousel,
-  CarouselApi,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Sheet,
   SheetContent,
@@ -53,22 +53,28 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { DOCUMENT_TYPES, DocumentType } from "@/lib/document-types";
+import { cn } from "@/lib/utils";
 
 const UUID_PREFIX_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[_-]/i;
 
 const cleanFileName = (fileName: string) => {
-  // Strip document type prefix
   const matchingDocType = DOCUMENT_TYPES.find((dt) =>
     fileName.startsWith(dt.id + "_"),
   );
   if (matchingDocType) {
     fileName = fileName.substring((matchingDocType.id + "_").length);
   }
-
-  // Strip leading UUID segment (e.g. "550e8400-e29b-..._actual-name.pdf")
   fileName = fileName.replace(UUID_PREFIX_RE, "");
-
+  // Replace hyphens with spaces for readability
+  const lastDot = fileName.lastIndexOf(".");
+  if (lastDot !== -1) {
+    fileName =
+      fileName.substring(0, lastDot).replace(/-/g, " ") +
+      fileName.substring(lastDot);
+  } else {
+    fileName = fileName.replace(/-/g, " ");
+  }
   return fileName;
 };
 
@@ -85,74 +91,280 @@ const truncateForMobile = (fileName: string) => {
   return fileName;
 };
 
-// Mobile-only: vertical list with bottom-sheet preview
-const MobileDocumentList = ({
+// File type icon config
+const getFileIconConfig = (contentType?: string, name?: string) => {
+  const ext = (name?.split(".").pop() || "").toLowerCase();
+  const mime = contentType || "";
+  if (mime === "application/pdf" || ext === "pdf")
+    return { Icon: FileText, color: "text-red-500", bg: "bg-red-50" };
+  if (
+    mime.includes("spreadsheet") ||
+    mime.includes("excel") ||
+    ext === "xlsx" ||
+    ext === "csv"
+  )
+    return {
+      Icon: FileSpreadsheet,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+    };
+  if (
+    mime.startsWith("image/") ||
+    ext === "png" ||
+    ext === "jpg" ||
+    ext === "jpeg"
+  )
+    return { Icon: ImageIcon, color: "text-violet-500", bg: "bg-violet-50" };
+  return { Icon: File, color: "text-gray-500", bg: "bg-gray-100" };
+};
+
+// Category color config
+const getCategoryBadge = (docType?: DocumentType) => {
+  if (!docType) return { label: "Other", color: "bg-gray-100 text-gray-600" };
+  const categoryColors: Record<string, string> = {
+    "funding-analysis": "bg-violet-50 text-violet-700",
+    "business-documents": "bg-blue-50 text-blue-700",
+    "personal-documents": "bg-amber-50 text-amber-700",
+    "tax-documents": "bg-rose-50 text-rose-700",
+    "credit-reports": "bg-emerald-50 text-emerald-700",
+  };
+  return {
+    label: docType.title,
+    color: categoryColors[docType.category] || "bg-gray-100 text-gray-600",
+  };
+};
+
+// Skeleton loading rows
+const DocumentsSkeleton = () => (
+  <div className="space-y-3 mt-4">
+    {Array.from({ length: 5 }).map((_, i) => (
+      <div
+        key={i}
+        className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 flex items-center gap-4"
+      >
+        <div className="skeleton w-11 h-11 rounded-xl flex-shrink-0" />
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="skeleton h-4 w-3/4 rounded" />
+          <div className="skeleton h-3 w-1/2 rounded" />
+        </div>
+        <div className="skeleton h-6 w-20 rounded-full hidden sm:block" />
+      </div>
+    ))}
+  </div>
+);
+
+// Unified document list (all screen sizes)
+const DocList = ({
   docs,
   onDelete,
   isDeleting,
+  isFiltered,
+  onClearFilter,
 }: {
   docs: UserDoc[];
   onDelete: (doc: UserDoc) => void;
   isDeleting: boolean;
+  isFiltered?: boolean;
+  onClearFilter?: () => void;
 }) => {
   const [previewDoc, setPreviewDoc] = useState<UserDoc | null>(null);
 
   if (docs.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground mt-3 text-center">
-        No documents uploaded for this category yet.
-      </p>
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 sm:p-14 text-center animate-fade-in-up mt-3">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center">
+            <FileX className="w-7 h-7 text-gray-400" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-700">
+              {isFiltered ? "No documents found" : "No documents yet"}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              {isFiltered
+                ? "Try adjusting your search or filter"
+                : "Upload your first document using the uploader above"}
+            </p>
+          </div>
+          {isFiltered && onClearFilter && (
+            <button
+              onClick={onClearFilter}
+              className="text-xs text-blue-600 hover:text-blue-700 font-medium mt-1"
+            >
+              View all documents
+            </button>
+          )}
+        </div>
+      </div>
     );
   }
 
+  const staggerClasses = [
+    "stagger-1",
+    "stagger-2",
+    "stagger-3",
+    "stagger-4",
+    "stagger-5",
+    "stagger-6",
+    "stagger-7",
+    "stagger-8",
+  ];
+
   return (
     <>
-      <div className="space-y-2 mt-3">
-        {docs.map((doc) => {
+      <div className="space-y-3 mt-3">
+        {docs.map((doc, i) => {
           const isReadOnly = doc.path.toLowerCase().includes("asset-report");
-          const fileName = truncateForMobile(
-            cleanFileName(doc.name.split("/").pop() || ""),
+          const rawName = doc.name.split("/").pop() || "";
+          const displayName = cleanFileName(rawName);
+          const { Icon, color, bg } = getFileIconConfig(
+            doc.contentType,
+            rawName,
           );
+          const matchedType = DOCUMENT_TYPES.find((dt) =>
+            rawName.startsWith(dt.id + "_"),
+          );
+          const badge = getCategoryBadge(matchedType);
+          const sizeKB = (doc.size / 1024).toFixed(1);
+          const updatedDate = doc.updated
+            ? new Date(doc.updated).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
+            : null;
+          const stagger = staggerClasses[i % staggerClasses.length];
+
           return (
             <div
               key={doc.path}
-              className="flex items-center gap-2 p-3 rounded-lg border bg-card"
+              className={cn(
+                "group bg-white rounded-xl border border-gray-100 shadow-sm card-hover animate-fade-in-up",
+                stagger,
+              )}
             >
-              <button
-                className="flex-1 min-w-0 text-left"
+              <div
+                className="p-4 sm:p-5 flex items-center gap-4 cursor-pointer min-w-0"
                 onClick={() => setPreviewDoc(doc)}
               >
-                <p className="text-sm font-medium truncate">{fileName}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {doc.contentType ?? "unknown"} •{" "}
-                  {(doc.size / 1024).toFixed(1)} KB
-                </p>
-              </button>
-              <div className="flex items-center gap-0.5 flex-shrink-0">
-                <Button variant="ghost" className="h-9 w-9 p-0" asChild>
-                  <a
-                    href={doc.downloadUrl || doc.signedUrl}
-                    download={doc.name.split("/").pop()}
+                {/* File icon badge */}
+                <div
+                  className={cn(
+                    "w-11 h-11 rounded-xl flex-shrink-0 flex items-center justify-center",
+                    bg,
+                  )}
+                >
+                  <Icon className={cn("w-5 h-5", color)} />
+                </div>
+
+                {/* Name + meta + mobile actions */}
+                <div className="flex-1 min-w-0">
+                  {/* Category badge */}
+                  <span
+                    className={cn(
+                      "inline-block mb-1 text-[10px] font-medium px-2 py-0.5 rounded-full",
+                      badge.color,
+                    )}
                   >
-                    <Download className="h-4 w-4" />
-                  </a>
-                </Button>
-                {!isReadOnly && (
+                    {badge.label}
+                  </span>
+                  <p
+                    className="text-sm font-semibold text-gray-900 line-clamp-2 sm:truncate sm:line-clamp-none"
+                    title={displayName}
+                  >
+                    {displayName}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+                    <span className="flex items-center gap-1 text-xs text-gray-400">
+                      <HardDrive className="w-3 h-3" />
+                      {sizeKB} KB
+                    </span>
+                    {updatedDate && (
+                      <span className="flex items-center gap-1 text-xs text-gray-400">
+                        <Calendar className="w-3 h-3" />
+                        {updatedDate}
+                      </span>
+                    )}
+                  </div>
+                  {/* Mobile actions — below meta, hidden on sm+ */}
+                  <div
+                    className="flex items-center gap-1 mt-2 sm:hidden"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 gap-1.5"
+                      asChild
+                      title="Download"
+                    >
+                      <a
+                        href={doc.downloadUrl || doc.signedUrl}
+                        download={rawName}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span className="text-xs">Download</span>
+                      </a>
+                    </Button>
+                    {!isReadOnly && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 text-red-400 hover:text-red-600 hover:bg-red-50 gap-1.5"
+                        onClick={() => onDelete(doc)}
+                        disabled={isDeleting}
+                        title="Delete"
+                      >
+                        <Trash2Icon className="w-3.5 h-3.5" />
+                        <span className="text-xs">Delete</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Desktop actions — icon-only, hover reveal, hidden on mobile */}
+                <div
+                  className="hidden sm:flex items-center gap-1 flex-shrink-0 sm:opacity-0 sm:group-hover:opacity-100 sm:transition-opacity sm:duration-150"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Button
                     variant="ghost"
-                    className="h-9 w-9 p-0"
-                    onClick={() => onDelete(doc)}
-                    disabled={isDeleting}
+                    size="icon"
+                    className="h-9 w-9 text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                    asChild
+                    title="Download"
                   >
-                    <Trash2Icon className="h-4 w-4 text-red-500" />
+                    <a
+                      href={doc.downloadUrl || doc.signedUrl}
+                      download={rawName}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Download className="w-4 h-4" />
+                    </a>
                   </Button>
-                )}
+                  {!isReadOnly && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-red-400 hover:text-red-600 hover:bg-red-50"
+                      onClick={() => onDelete(doc)}
+                      disabled={isDeleting}
+                      title="Delete"
+                    >
+                      <Trash2Icon className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           );
         })}
       </div>
 
+      {/* Preview Sheet */}
       <Sheet
         open={!!previewDoc}
         onOpenChange={(open) => !open && setPreviewDoc(null)}
@@ -161,9 +373,7 @@ const MobileDocumentList = ({
           <SheetHeader className="p-4 pb-2 border-b flex-shrink-0">
             <SheetTitle className="text-sm break-words text-left leading-snug">
               {previewDoc &&
-                truncateForMobile(
-                  cleanFileName(previewDoc.name.split("/").pop() || ""),
-                )}
+                cleanFileName(previewDoc.name.split("/").pop() || "")}
             </SheetTitle>
           </SheetHeader>
           <div className="flex-1 overflow-hidden p-2">
@@ -198,173 +408,7 @@ const MobileDocumentList = ({
   );
 };
 
-// A new, reusable component to display a list of documents
-const DocumentPreviewer = ({
-  docs,
-  onDelete,
-  isDeleting,
-  isAdmin,
-}: {
-  docs: UserDoc[];
-  onDelete: (doc: UserDoc) => void;
-  isDeleting: boolean;
-  isAdmin: boolean;
-}) => {
-  const [api, setApi] = useState<CarouselApi>();
-  const [current, setCurrent] = useState(0);
-
-  useEffect(() => {
-    if (!api) return;
-    setCurrent(api.selectedScrollSnap());
-    api.on("select", () => setCurrent(api.selectedScrollSnap()));
-  }, [api]);
-
-  if (docs.length === 0) {
-    return (
-      <p className="text-xs sm:text-sm text-muted-foreground mt-3 sm:mt-4 text-center">
-        No documents uploaded for this category yet.
-      </p>
-    );
-  }
-
-  return (
-    <div className="w-full max-w-6xl mx-auto px-0 sm:px-12 py-4">
-      <Carousel className="w-full" opts={{ loop: true }} setApi={setApi}>
-        <CarouselContent>
-          {docs.map((doc) => {
-            const isReadOnly = doc.path.toLowerCase().includes("asset-report");
-            return (
-              <CarouselItem key={doc.path}>
-                <div className="p-1">
-                  <Card>
-                    <CardContent className="flex flex-col p-3 sm:p-6 space-y-3 sm:space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-2">
-                        <div className="flex-1 min-w-0 max-w-full">
-                          <h3
-                            className="font-semibold text-sm leading-tight truncate"
-                            title={cleanFileName(
-                              doc.name.split("/").pop() || "",
-                            )}
-                          >
-                            {cleanFileName(doc.name.split("/").pop() || "")}
-                          </h3>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {doc.contentType ?? "unknown"} •{" "}
-                            {(doc.size / 1024).toFixed(1)} KB
-                          </p>
-
-                          {/* {doc.metadata &&
-                            Object.keys(doc.metadata).length > 0 && (
-                              <div className="mt-2 pt-2 border-t border-muted">
-                                <p className="text-xs font-medium text-muted-foreground mb-1">
-                                  Metadata:
-                                </p>
-                                <div className="space-y-0.5">
-                                  {Object.entries(doc.metadata).map(
-                                    ([key, value]) => (
-                                      <div
-                                        key={key}
-                                        className="text-xs text-muted-foreground flex gap-1"
-                                      >
-                                        <span className="font-medium">
-                                          {key}:
-                                        </span>
-                                        <span className="break-all">
-                                          {String(value)}
-                                        </span>
-                                      </div>
-                                    ),
-                                  )}
-                                </div>
-                              </div>
-                            )} */}
-                        </div>
-                        <div className="flex items-center gap-1 sm:gap-0.5">
-                          <Button
-                            variant="ghost"
-                            className="cursor-pointer touch-manipulation flex-shrink-0 h-8 w-8 p-0"
-                            asChild
-                          >
-                            <a
-                              href={doc.downloadUrl || doc.signedUrl}
-                              download={doc.name.split("/").pop()}
-                            >
-                              <Download className="h-4 w-4" />
-                            </a>
-                          </Button>
-                          {!isReadOnly && (
-                            <Button
-                              variant="ghost"
-                              className="cursor-pointer touch-manipulation flex-shrink-0 h-8 w-8 p-0"
-                              onClick={() => onDelete(doc)}
-                              disabled={isDeleting}
-                            >
-                              <Trash2Icon className="h-4 w-4 text-red-500" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="w-full aspect-[3/4] sm:aspect-video bg-muted rounded-md overflow-hidden border relative flex items-center justify-center group">
-                        {doc.contentType?.startsWith("image/") ? (
-                          <ImageZoom>
-                            <Image
-                              src={doc.signedUrl}
-                              alt={doc.name}
-                              className="w-full h-full object-contain"
-                              width={800}
-                              height={600}
-                              unoptimized
-                            />
-                          </ImageZoom>
-                        ) : doc.contentType === "application/pdf" ? (
-                          <iframe
-                            src={`${doc.signedUrl}#toolbar=1&view=FitH`}
-                            title={doc.name}
-                            className="w-full h-full"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="text-center p-4">
-                            <p className="text-sm text-muted-foreground">
-                              Preview unavailable for this file type
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CarouselItem>
-            );
-          })}
-        </CarouselContent>
-        <div className="hidden sm:block">
-          <CarouselPrevious />
-          <CarouselNext />
-        </div>
-      </Carousel>
-      {docs.length > 1 && (
-        <div className="flex justify-center items-center gap-1.5 mt-3">
-          {docs.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => api?.scrollTo(i)}
-              className={`h-1.5 rounded-full transition-all duration-200 ${
-                i === current
-                  ? "w-4 bg-foreground"
-                  : "w-1.5 bg-muted-foreground/30"
-              }`}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
 export default function ClientDocuments({ userId }: { userId: string }) {
-  const { role, isBroker, isAdmin } = useAuth();
   const { userDocuments, isLoading, refetch } = useUserDocumentsQuery({
     userId,
   });
@@ -375,9 +419,9 @@ export default function ClientDocuments({ userId }: { userId: string }) {
   >("ALL");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [docToDelete, setDocToDelete] = useState<UserDoc | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { requiredDocsMap, otherDocs } = useMemo(() => {
-    // The map will now store an array of documents for each ID
     const requiredDocsMap = new Map<string, UserDoc[]>();
     const otherDocs: UserDoc[] = [];
 
@@ -387,17 +431,13 @@ export default function ClientDocuments({ userId }: { userId: string }) {
 
     userDocuments.forEach((doc: any) => {
       const fileName = doc.name.split("/").pop() || "";
-
       const matchingDocType = DOCUMENT_TYPES.find((dt) =>
         fileName.startsWith(dt.id + "_"),
       );
-
       if (matchingDocType) {
-        // If this is the first document for this type, initialize the array
         if (!requiredDocsMap.has(matchingDocType.id)) {
           requiredDocsMap.set(matchingDocType.id, []);
         }
-        // Push the document into the array for its type
         requiredDocsMap.get(matchingDocType.id)?.push(doc);
       } else {
         otherDocs.push(doc);
@@ -407,13 +447,11 @@ export default function ClientDocuments({ userId }: { userId: string }) {
     return { requiredDocsMap, otherDocs };
   }, [userDocuments]);
 
-  // This now gets an array of documents for the selected required type
   const currentRequiredDocuments = useMemo(() => {
     if (typeof selectedDocType === "string") return [];
     return requiredDocsMap.get(selectedDocType.id) || [];
   }, [requiredDocsMap, selectedDocType]);
 
-  // Get all documents combined for "ALL" view
   const allDocuments = useMemo(() => {
     const allDocs: UserDoc[] = [];
     requiredDocsMap.forEach((docs) => {
@@ -422,6 +460,29 @@ export default function ClientDocuments({ userId }: { userId: string }) {
     allDocs.push(...otherDocs);
     return allDocs;
   }, [requiredDocsMap, otherDocs]);
+
+  // Filtered docs based on search query
+  const displayDocs = useMemo(() => {
+    const base =
+      selectedDocType === "ALL"
+        ? allDocuments
+        : selectedDocType === "OTHER"
+          ? otherDocs
+          : currentRequiredDocuments;
+    if (!searchQuery.trim()) return base;
+    const q = searchQuery.toLowerCase();
+    return base.filter((d) =>
+      cleanFileName(d.name.split("/").pop() || "")
+        .toLowerCase()
+        .includes(q),
+    );
+  }, [
+    selectedDocType,
+    allDocuments,
+    otherDocs,
+    currentRequiredDocuments,
+    searchQuery,
+  ]);
 
   const handleOpenDeleteDialog = (doc: UserDoc) => {
     setDocToDelete(doc);
@@ -436,9 +497,6 @@ export default function ClientDocuments({ userId }: { userId: string }) {
     refetch();
   }, [docToDelete, refetch, deleteDocument]);
 
-  if (isLoading) return <Spinner displayText="Loading documents..." />;
-
-  // Get the current selected document type label for display
   const selectedDocTypeLabel =
     selectedDocType === "ALL"
       ? "All Documents"
@@ -447,195 +505,221 @@ export default function ClientDocuments({ userId }: { userId: string }) {
         : DOCUMENT_TYPES.find((dt) => dt.id === selectedDocType.id)?.title ||
           "Select Document Type";
 
-  return (
-    <main className="flex flex-col gap-3 sm:gap-5 p-2 sm:p-5 w-full max-w-full overflow-x-hidden">
-      {/* Document Type Dropdown */}
-      <div className="w-full">
-        <h2 className="text-sm sm:text-lg font-semibold mb-2 sm:mb-3">
-          Select Document Type
-        </h2>
-        <Select
-          value={
-            selectedDocType === "ALL"
-              ? "ALL"
-              : selectedDocType === "OTHER"
-                ? "OTHER"
-                : selectedDocType.id
-          }
-          onValueChange={(value) => {
-            if (value === "ALL") {
-              setSelectedDocType("ALL");
-            } else if (value === "OTHER") {
-              setSelectedDocType("OTHER");
-            } else {
-              const docType = DOCUMENT_TYPES.find((dt) => dt.id === value);
-              if (docType) setSelectedDocType(docType);
-            }
-          }}
-        >
-          <SelectTrigger className="w-full h-10 sm:h-11">
-            <SelectValue placeholder="Select a document type">
-              <div className="flex items-center gap-2">
-                {selectedDocType === "ALL" ? (
-                  <>
-                    <FolderArchive className="h-4 w-4 flex-shrink-0" />
-                    <span className="flex-grow text-left text-sm">
-                      {selectedDocTypeLabel}
-                    </span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium flex-shrink-0">
-                      {allDocuments.length}
-                    </span>
-                  </>
-                ) : selectedDocType === "OTHER" ? (
-                  <>
-                    <FolderArchive className="h-4 w-4 flex-shrink-0" />
-                    <span className="flex-grow text-left text-sm">
-                      Other Documents
-                    </span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium flex-shrink-0">
-                      {otherDocs.length}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <selectedDocType.icon className="h-4 w-4 flex-shrink-0" />
-                    <span className="flex-grow text-left text-sm">
-                      {selectedDocTypeLabel}
-                    </span>
-                    {(() => {
-                      const uploadedDocs =
-                        requiredDocsMap.get(selectedDocType.id) || [];
-                      return uploadedDocs.length > 0 ? (
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium">
-                            {uploadedDocs.length}
-                          </span>
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        </div>
-                      ) : (
-                        <XCircle className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      );
-                    })()}
-                  </>
-                )}
-              </div>
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="max-h-[60vh] overflow-y-auto">
-            <SelectItem value="ALL" className="py-3">
-              <div className="flex items-center gap-2 w-full">
-                <FolderArchive className="h-4 w-4 flex-shrink-0" />
-                <span className="flex-grow text-sm">All Documents</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium flex-shrink-0">
-                  {allDocuments.length}
-                </span>
-              </div>
-            </SelectItem>
-            {DOCUMENT_TYPES.map((docType) => {
-              const uploadedDocs = requiredDocsMap.get(docType.id) || [];
-              const isUploaded = uploadedDocs.length > 0;
+  const baseDocs =
+    selectedDocType === "ALL"
+      ? allDocuments
+      : selectedDocType === "OTHER"
+        ? otherDocs
+        : currentRequiredDocuments;
 
-              return (
-                <SelectItem
-                  key={docType.id}
-                  value={docType.id}
-                  className="py-3"
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    <docType.icon className="h-4 w-4 flex-shrink-0" />
-                    <span className="flex-grow text-sm">{docType.title}</span>
-                    {isUploaded ? (
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium">
-                          {uploadedDocs.length}
-                        </span>
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      </div>
-                    ) : (
-                      <XCircle className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                    )}
-                  </div>
-                </SelectItem>
-              );
-            })}
-            <SelectItem value="OTHER" className="py-3">
-              <div className="flex items-center gap-2 w-full">
-                <FolderArchive className="h-4 w-4 flex-shrink-0" />
-                <span className="flex-grow text-sm">Other Documents</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground text-background font-medium flex-shrink-0">
-                  {otherDocs.length}
-                </span>
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
+  const isFiltered = searchQuery.trim().length > 0;
+
+  return (
+    <main className="flex flex-col gap-5 p-3 sm:p-5 w-full max-w-full overflow-x-hidden">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 animate-fade-in-up">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">My Documents</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Manage your personal or business documents
+          </p>
+        </div>
+        {!isLoading && (
+          <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-full">
+            <FileStack className="w-3.5 h-3.5" />
+            {allDocuments.length} total document
+            {allDocuments.length !== 1 ? "s" : ""}
+          </span>
+        )}
       </div>
 
-      {/* Document Display or Upload Section */}
-      <section className="w-full">
-        {selectedDocType === "ALL" ? (
-          // --- View for "All Documents" ---
-          <div>
-            <div className="sm:hidden">
-              <MobileDocumentList
-                docs={allDocuments}
-                onDelete={handleOpenDeleteDialog}
-                isDeleting={isDeleting}
-              />
-            </div>
-            <div className="hidden sm:block">
-              <DocumentPreviewer
-                docs={allDocuments}
-                onDelete={handleOpenDeleteDialog}
-                isDeleting={isDeleting}
-                isAdmin={isAdmin || isBroker}
+      {/* Filter panel */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 animate-fade-in-up stagger-1">
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Document type select */}
+          <div className="flex-1 min-w-0">
+            <label className="text-xs font-medium text-gray-500 mb-1.5 block">
+              Document Type
+            </label>
+            <Select
+              value={
+                selectedDocType === "ALL"
+                  ? "ALL"
+                  : selectedDocType === "OTHER"
+                    ? "OTHER"
+                    : selectedDocType.id
+              }
+              onValueChange={(value) => {
+                setSearchQuery("");
+                if (value === "ALL") {
+                  setSelectedDocType("ALL");
+                } else if (value === "OTHER") {
+                  setSelectedDocType("OTHER");
+                } else {
+                  const docType = DOCUMENT_TYPES.find((dt) => dt.id === value);
+                  if (docType) setSelectedDocType(docType);
+                }
+              }}
+            >
+              <SelectTrigger className="w-full h-10 bg-gray-50 border-gray-200 focus:ring-blue-500">
+                <SelectValue placeholder="Select a document type">
+                  <div className="flex items-center gap-2">
+                    {selectedDocType === "ALL" ? (
+                      <>
+                        <FolderArchive className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                        <span className="flex-grow text-left text-sm text-gray-700">
+                          {selectedDocTypeLabel}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 font-medium flex-shrink-0">
+                          {allDocuments.length}
+                        </span>
+                      </>
+                    ) : selectedDocType === "OTHER" ? (
+                      <>
+                        <FolderArchive className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                        <span className="flex-grow text-left text-sm text-gray-700">
+                          Other Documents
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 font-medium flex-shrink-0">
+                          {otherDocs.length}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <selectedDocType.icon className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                        <span className="flex-grow text-left text-sm text-gray-700">
+                          {selectedDocTypeLabel}
+                        </span>
+                        {(() => {
+                          const uploadedDocs =
+                            requiredDocsMap.get(selectedDocType.id) || [];
+                          return uploadedDocs.length > 0 ? (
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                                {uploadedDocs.length}
+                              </span>
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            </div>
+                          ) : (
+                            <XCircle className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                          );
+                        })()}
+                      </>
+                    )}
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent
+                className="max-h-[70vh] overflow-y-auto"
+                position="item-aligned"
+              >
+                <SelectItem value="ALL" className="py-3">
+                  <div className="flex items-center gap-2 w-full">
+                    <FolderArchive className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                    <span className="flex-grow text-sm">All Documents</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 font-medium flex-shrink-0">
+                      {allDocuments.length}
+                    </span>
+                  </div>
+                </SelectItem>
+                {DOCUMENT_TYPES.map((docType) => {
+                  const uploadedDocs = requiredDocsMap.get(docType.id) || [];
+                  const isUploaded = uploadedDocs.length > 0;
+                  return (
+                    <SelectItem
+                      key={docType.id}
+                      value={docType.id}
+                      className="py-3"
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        <docType.icon className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                        <span className="flex-grow text-sm">
+                          {docType.title}
+                        </span>
+                        {isUploaded ? (
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                              {uploadedDocs.length}
+                            </span>
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                          </div>
+                        ) : (
+                          <XCircle className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                        )}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+                <SelectItem value="OTHER" className="py-3">
+                  <div className="flex items-center gap-2 w-full">
+                    <FolderArchive className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                    <span className="flex-grow text-sm">Other Documents</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 font-medium flex-shrink-0">
+                      {otherDocs.length}
+                    </span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Search input */}
+          <div className="flex-1 min-w-0 sm:max-w-xs">
+            <label className="text-xs font-medium text-gray-500 mb-1.5 block">
+              Search
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search documents..."
+                className="w-full h-10 pl-9 pr-3 text-sm bg-gray-50 border border-gray-200 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400 text-gray-700"
               />
             </div>
           </div>
-        ) : selectedDocType === "OTHER" ? (
-          // --- View for "Other Documents" ---
-          <div>
+        </div>
+      </div>
+
+      {/* Upload zone (shown for specific / other types) */}
+      {selectedDocType !== "ALL" && (
+        <div className="animate-fade-in-up stagger-2">
+          {selectedDocType === "OTHER" ? (
             <UploadFile userId={userId} />
-            <div className="sm:hidden">
-              <MobileDocumentList
-                docs={otherDocs}
-                onDelete={handleOpenDeleteDialog}
-                isDeleting={isDeleting}
-              />
-            </div>
-            <div className="hidden sm:block">
-              <DocumentPreviewer
-                docs={otherDocs}
-                onDelete={handleOpenDeleteDialog}
-                isDeleting={isDeleting}
-                isAdmin={isAdmin || isBroker}
-              />
-            </div>
-          </div>
-        ) : (
-          // --- View for Required Documents ---
-          <div>
+          ) : (
             <UploadFile userId={userId} documentType={selectedDocType} />
-            <div className="sm:hidden">
-              <MobileDocumentList
-                docs={currentRequiredDocuments}
-                onDelete={handleOpenDeleteDialog}
-                isDeleting={isDeleting}
-              />
-            </div>
-            <div className="hidden sm:block">
-              <DocumentPreviewer
-                docs={currentRequiredDocuments}
-                onDelete={handleOpenDeleteDialog}
-                isDeleting={isDeleting}
-                isAdmin={isAdmin || isBroker}
-              />
-            </div>
-          </div>
+          )}
+        </div>
+      )}
+
+      {/* Document list */}
+      <section className="w-full">
+        {isLoading ? (
+          <DocumentsSkeleton />
+        ) : (
+          <DocList
+            docs={displayDocs}
+            onDelete={handleOpenDeleteDialog}
+            isDeleting={isDeleting}
+            isFiltered={isFiltered}
+            onClearFilter={() => setSearchQuery("")}
+          />
         )}
       </section>
 
-      {/* Delete Confirmation Dialog (Unchanged) */}
+      {/* Footer count */}
+      {!isLoading && baseDocs.length > 0 && (
+        <div className="flex items-center justify-center gap-2 text-xs text-gray-400 pb-2 animate-fade-in">
+          <FileStack className="w-3.5 h-3.5" />
+          <span>
+            {displayDocs.length} of {baseDocs.length} document
+            {baseDocs.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
       <AlertDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
@@ -643,12 +727,11 @@ export default function ClientDocuments({ userId }: { userId: string }) {
         <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base sm:text-lg">
-              Are you absolutely sure?
+              Delete Document?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-sm">
-              This action cannot be undone. This will permanently delete the
-              file
-              <span className="font-bold block mt-2 break-all text-xs sm:text-sm">
+              This action cannot be undone. This will permanently delete:
+              <span className="font-semibold block mt-2 break-all text-xs sm:text-sm text-gray-700">
                 {cleanFileName(docToDelete?.name.split("/").pop() || "")}
               </span>
             </AlertDialogDescription>
