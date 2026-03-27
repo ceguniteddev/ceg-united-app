@@ -149,6 +149,107 @@ export const removeSpecialCharacters = (value: string) => {
   return value.replace(/[^\w\s]/gi, "");
 };
 
+// ============================================
+// Tradelines Utility Functions
+// ============================================
+
+import type { TradelineStatus } from "@/types/tradelines";
+
+/**
+ * Get stock status based on available quantity
+ */
+export function getStockStatus(stock: number): TradelineStatus {
+  if (stock === 0) return "out-of-stock";
+  if (stock <= 2) return "low-stock";
+  return "in-stock";
+}
+
+/**
+ * Get Tailwind color classes for stock status
+ */
+export function getStockColor(stock: number): string {
+  if (stock === 0) return "text-gray-400 bg-gray-50";
+  if (stock <= 2) return "text-amber-600 bg-amber-50";
+  return "text-emerald-600 bg-emerald-50";
+}
+
+/**
+ * Get human-readable stock label
+ */
+export function getStockLabel(stock: number): string {
+  if (stock === 0) return "Out of Stock";
+  if (stock <= 2) return `Only ${stock} left`;
+  return `${stock} in stock`;
+}
+
+/**
+ * Get status badge color for purchase status
+ */
+export function getPurchaseStatusColor(status: string): string {
+  switch (status.toLowerCase()) {
+    case "approved":
+      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    case "pending":
+      return "bg-amber-50 text-amber-700 border-amber-200";
+    case "declined":
+      return "bg-red-50 text-red-700 border-red-200";
+    default:
+      return "bg-gray-50 text-gray-700 border-gray-200";
+  }
+}
+
+/**
+ * Calculate time remaining until a date
+ */
+export function getTimeLeft(expiresAt: string): string {
+  const diff = new Date(expiresAt).getTime() - Date.now();
+  if (diff <= 0) return "Expired";
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+  if (days > 0) return `${days}d ${hours}h left`;
+
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  return `${hours}h ${mins}m left`;
+}
+
+/**
+ * Get tag color classes for special deal tags
+ */
+export function getTagColor(tag: string): string {
+  switch (tag) {
+    case "Flash Sale":
+      return "bg-red-50 text-red-700 border-red-200";
+    case "Limited Time":
+      return "bg-amber-50 text-amber-700 border-amber-200";
+    case "Best Value":
+      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    default:
+      return "bg-blue-50 text-blue-700 border-blue-200";
+  }
+}
+
+/**
+ * Format short date for tradeline display (e.g., "2015 Mar")
+ */
+export function formatDateShort(date: Date | string): string {
+  const d = new Date(date);
+  const month = d.toLocaleString("en-US", { month: "short" });
+  const year = d.getFullYear();
+  return `${year} ${month}`;
+}
+
+/**
+ * Strip HTML tags from string (for API data)
+ */
+export function stripHtml(html: string): string {
+  if (typeof window === "undefined") return html.replace(/<[^>]*>/g, "");
+  const el = document.createElement("div");
+  el.innerHTML = html;
+  return el.textContent ?? el.innerText ?? html;
+}
+
 export function getAccountTypeColors(type: AccountTypes) {
   switch (type) {
     case "depository":
