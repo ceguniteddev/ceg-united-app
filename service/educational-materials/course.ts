@@ -100,7 +100,7 @@ export const getCourses = async (): Promise<Course[] | null> => {
           console.error(`Failed to process course ${doc.id}:`, error);
           return null;
         }
-      })
+      }),
     );
 
     return courses.filter((course) => course !== null);
@@ -108,6 +108,18 @@ export const getCourses = async (): Promise<Course[] | null> => {
     console.error("Failed to get courses:", error);
     return null;
   }
+};
+
+/**
+ * Get IDs of all published courses (lightweight, no subcollection fetching)
+ */
+export const getPublishedCourseIds = async (): Promise<string[]> => {
+  const db = firestoreAdmin();
+  const querySnapshot = await db
+    .collection(COURSE)
+    .where("isPublished", "==", true)
+    .get();
+  return querySnapshot.docs.map((doc) => doc.id);
 };
 
 export const uploadCourseDocument = async ({
@@ -158,7 +170,7 @@ export const deleteCourseDocument = async (path: string) => {
     // It's often safe to ignore "Not Found" errors during deletion
     if (error.code === 404) {
       console.warn(
-        `Attempted to delete a document that does not exist: ${path}`
+        `Attempted to delete a document that does not exist: ${path}`,
       );
       return;
     }
@@ -263,7 +275,7 @@ export const getAttachmentsByCourseId = async (courseId: string) => {
         ...normalizeAllDates(data),
         url,
       };
-    })
+    }),
   );
 
   return attachments;
@@ -309,9 +321,8 @@ export const getUserCourses = async (userId: string): Promise<Course[]> => {
     const db = firestoreAdmin();
 
     // Check if user exists in USER_DENEFITS_CONTRACT collection
-    const { USER_DENEFITS_CONTRACT } = await import(
-      "@/constant/collection-name"
-    );
+    const { USER_DENEFITS_CONTRACT } =
+      await import("@/constant/collection-name");
     const denefitsRef = db
       .collection(USER_DENEFITS_CONTRACT)
       .where("userId", "==", userId);
@@ -351,7 +362,7 @@ export const getUserCourses = async (userId: string): Promise<Course[]> => {
           console.error(`Failed to process course ${doc.id}:`, error);
           return null;
         }
-      })
+      }),
     );
 
     return courses.filter((course) => course !== null) as Course[];

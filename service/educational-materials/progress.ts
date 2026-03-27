@@ -14,7 +14,8 @@ import {
   CourseWithProgress,
 } from "@/schema/educational-materials/course";
 import { Timestamp } from "firebase-admin/firestore";
-import { getCourseById } from "./course";
+import { getCourseById, getPublishedCourseIds } from "./course";
+import { getUserById } from "@/service/user";
 
 /**
  * Update user progress for a chapter (complete or incomplete)
@@ -352,7 +353,7 @@ export const updateCourseProgress = async ({
 
   const completedChapters = progressSnapshot.size;
   const progressPercentage = Math.round(
-    (completedChapters / totalChapters) * 100
+    (completedChapters / totalChapters) * 100,
   );
 
   // Update enrollment
@@ -380,12 +381,43 @@ export const updateCourseProgress = async ({
 };
 
 /**
- * Get all courses with progress for a user
+ * Get all courses with progress for a user.
+ * Premium clients are automatically enrolled in all published courses.
  */
 export const getUserCoursesWithProgress = async (
-  userId: string
+  userId: string,
 ): Promise<CourseWithProgress[]> => {
   const db = firestoreAdmin();
+
+  // Auto-enroll premium clients in all published courses
+  const user = await getUserById(userId);
+  if (user?.isPremiumClient) {
+    const [publishedCourseIds, existingEnrollmentsSnapshot] = await Promise.all(
+      [
+        getPublishedCourseIds(),
+        db
+          .collection(USER_COURSE_ENROLLMENT)
+          .where("userId", "==", userId)
+          .get(),
+      ],
+    );
+
+    const enrolledCourseIds = new Set(
+      existingEnrollmentsSnapshot.docs.map((doc) => doc.data().courseId),
+    );
+
+    const missingCourseIds = publishedCourseIds.filter(
+      (id) => !enrolledCourseIds.has(id),
+    );
+
+    if (missingCourseIds.length > 0) {
+      await Promise.all(
+        missingCourseIds.map((courseId) =>
+          enrollUserInCourse({ userId, courseId }),
+        ),
+      );
+    }
+  }
 
   // Get user's enrollments
   const enrollmentsSnapshot = await db
@@ -417,7 +449,7 @@ export const getUserCoursesWithProgress = async (
 
       const totalChapters = course.chapters?.length || 0;
       const completedChapters = userProgress.filter(
-        (p) => p.isCompleted
+        (p) => p.isCompleted,
       ).length;
 
       coursesWithProgress.push({
