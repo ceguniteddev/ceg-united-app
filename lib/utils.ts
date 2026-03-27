@@ -283,6 +283,6 @@ export const currency = (v: number | string | undefined | null) => {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(Number(v));
 };

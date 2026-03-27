@@ -145,6 +145,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: WHOP_TRADELINE_PRODUCT_ID
+    value: prod_1PZ2aXMZQH1Dc
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: WHOP_BASE_URL
     value: https://sandbox-api.whop.com/api/v1
     availability:

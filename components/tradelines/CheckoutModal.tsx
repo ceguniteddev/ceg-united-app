@@ -13,8 +13,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CreditCard, ShoppingBag, X } from "lucide-react";
+import { CreditCard, ShoppingBag, X, Loader2 } from "lucide-react";
 import type { CartItem } from "@/types/tradelines";
+import IconMenu from "../icon-menu";
 
 interface CheckoutModalProps {
   open: boolean;
@@ -49,7 +50,7 @@ export function CheckoutModal({
             <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
               Order Summary
             </h4>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
               {items.map((item) => (
                 <div
                   key={item.tradeline.id}
@@ -95,15 +96,6 @@ export function CheckoutModal({
             </span>
           </div>
 
-          {/* Important notice */}
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-            <p className="text-xs text-blue-900">
-              <strong>Important:</strong> All tradeline purchases are subject to
-              admin approval. You will receive a confirmation email once your
-              order is processed.
-            </p>
-          </div>
-
           {/* Action buttons */}
           <div className="flex gap-3 pt-2">
             <Button
@@ -121,12 +113,15 @@ export function CheckoutModal({
               disabled={isLoading}
             >
               {isLoading ? (
-                <>Processing...</>
+                <IconMenu
+                  text="Processing..."
+                  icon={<Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                />
               ) : (
-                <>
-                  <ShoppingBag className="w-4 h-4 mr-2" />
-                  Confirm Purchase
-                </>
+                <IconMenu
+                  text="Confirm Purchase"
+                  icon={<ShoppingBag className="w-4 h-4 mr-2" />}
+                />
               )}
             </Button>
           </div>

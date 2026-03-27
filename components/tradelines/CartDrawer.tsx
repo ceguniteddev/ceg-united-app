@@ -4,10 +4,15 @@
 // Shows cart items with quantity controls,
 // subtotal, and checkout button.
 
-import { X, Minus, Plus, Trash2, ShoppingBag, CreditCard } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, CreditCard } from "lucide-react";
 import type { CartItem } from "@/types/tradelines";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 interface CartDrawerProps {
   open: boolean;
@@ -29,40 +34,24 @@ export function CartDrawer({
   onCheckout,
 }: CartDrawerProps) {
   return (
-    <>
-      {/* Overlay */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/30 z-[60] transition-opacity"
-          onClick={onClose}
-        />
-      )}
-
-      {/* Drawer */}
-      <div
-        className={`fixed top-0 right-0 bottom-0 w-full max-w-[420px] bg-white z-[70] shadow-2xl flex flex-col transition-transform duration-300 ease-out ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
+    <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <SheetContent
+        side="right"
+        className="w-full max-w-[420px] p-0 flex flex-col gap-0 overflow-hidden h-full"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-2.5">
-            <ShoppingBag className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Your Cart</h2>
-            <span className="ml-1 text-xs font-semibold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
-              {items.length} {items.length === 1 ? "item" : "items"}
-            </span>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
+        <SheetHeader className="flex-row items-center gap-2.5 px-5 py-4 border-b border-gray-100 space-y-0">
+          <ShoppingBag className="w-5 h-5 text-blue-600 flex-shrink-0" />
+          <SheetTitle className="text-lg font-semibold text-gray-900">
+            Your Cart
+          </SheetTitle>
+          <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+            {items.length} {items.length === 1 ? "item" : "items"}
+          </span>
+        </SheetHeader>
 
         {/* Cart items */}
-        <ScrollArea className="flex-1 px-5 py-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
@@ -98,7 +87,7 @@ export function CartDrawer({
                     </div>
                     <button
                       onClick={() => onRemove(item.tradeline.id)}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                      className="cursor-pointer p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -153,7 +142,7 @@ export function CartDrawer({
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         {/* Footer with subtotal and checkout */}
         {items.length > 0 && (
@@ -180,7 +169,7 @@ export function CartDrawer({
             </p>
           </div>
         )}
-      </div>
-    </>
+      </SheetContent>
+    </Sheet>
   );
 }

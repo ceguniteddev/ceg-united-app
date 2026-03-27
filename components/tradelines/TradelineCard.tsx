@@ -135,7 +135,7 @@ export function TradelineCard({
         <button
           onClick={() => !isOutOfStock && !isInCart && onAddToCart(tradeline)}
           disabled={isOutOfStock || isInCart}
-          className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 min-h-[44px] md:px-4 ${
+          className={`cursor-pointer flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 min-h-[44px] md:px-4 ${
             isInCart
               ? "bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default"
               : isOutOfStock

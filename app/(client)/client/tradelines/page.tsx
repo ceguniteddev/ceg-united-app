@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { withClientGuard } from "@/components/wrapper";
 import { useAuth } from "@/provider/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import type {
   AvailableTradeline,
+  CartItem,
   PurchasedTradeline,
   TradelineCategory,
 } from "@/types/tradelines";
@@ -25,8 +27,15 @@ import { TradelineCard } from "@/components/tradelines/TradelineCard";
 import { PurchasedTradelineCard } from "@/components/tradelines/PurchasedTradelineCard";
 import { CartDrawer } from "@/components/tradelines/CartDrawer";
 import { CheckoutModal } from "@/components/tradelines/CheckoutModal";
+import { TradelineCheckoutView } from "@/components/tradelines/TradelineCheckoutView";
 import { CreditBuilderSection } from "@/components/tradelines/CreditBuilderSection";
 import { SpecialDealsSection } from "@/components/tradelines/SpecialDealsSection";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { TradelineGridSkeleton } from "@/components/tradelines/TradelineCardSkeleton";
 import { useCartStore } from "@/components/tradelines/useCartStore";
 import {
@@ -40,9 +49,15 @@ import {
   useUserTradelines,
   USER_ALL_TRADELINES_KEY,
 } from "@/hooks/tradelines";
-import { purchaseTradeline } from "@/service/tradelines";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { stripHtml } from "@/lib/utils";
 
 type TabId =
@@ -109,7 +124,6 @@ function convertToAvailableTradeline(
 
 function TradelinesPage() {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const cart = useCartStore();
 
   // Data state
@@ -124,6 +138,12 @@ function TradelinesPage() {
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [checkoutSheetOpen, setCheckoutSheetOpen] = useState(false);
+  const [checkoutData, setCheckoutData] = useState<{
+    checkoutId: string;
+    items: CartItem[];
+    totalPrice: number;
+  } | null>(null);
 
   // Fetch data
   const { markupPercentage } = useMarkupPercentage();
@@ -132,6 +152,17 @@ function TradelinesPage() {
   );
   const { tradelines: purchasedTradelines, isLoading: purchasedLoading } =
     useUserTradelines(user?.uid);
+
+  // Set userId and load cart from Firestore when user is authenticated
+  useEffect(() => {
+    if (user?.uid) {
+      cart.setUserId(user.uid);
+      if (!cart.isInitialized) {
+        cart.loadCart();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid, cart.isInitialized]);
 
   // Fetch available tradelines
   useEffect(() => {
@@ -266,46 +297,46 @@ function TradelinesPage() {
     try {
       setIsPurchasing(true);
 
-      // Process each cart item
-      for (const cartItem of cart.items) {
-        const originalItem = pricingItems.find(
-          (p) => String(p.card_id) === cartItem.tradeline.id,
-        );
-
-        if (!originalItem) continue;
-
-        const finalPrice = cartItem.tradeline.price.toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-        });
-        const grandTotal = (
-          cartItem.tradeline.price * cartItem.quantity
-        ).toLocaleString(undefined, { minimumFractionDigits: 2 });
-
-        await purchaseTradeline(user.uid, {
-          ...originalItem,
-          quantity: cartItem.quantity,
-          finalPrice: `$${finalPrice}`,
-          grandTotal: `$${grandTotal}`,
-          status: "pending",
-        });
-      }
-
-      toast.success(
-        `Successfully purchased ${cart.items.length} tradeline${cart.items.length > 1 ? "s" : ""}`,
+      // Create Whop checkout session
+      const totalPrice = cart.getTotalPrice();
+      const response = await fetch(
+        `/api/user/${user.uid}/tradelines/checkout`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: cart.items,
+            totalPrice,
+          }),
+        },
       );
 
-      // Refresh data
-      refetchRecent();
-      queryClient.invalidateQueries({
-        queryKey: [...USER_ALL_TRADELINES_KEY, user.uid],
-      });
+      if (!response.ok) {
+        throw new Error("Failed to create checkout session");
+      }
 
-      // Clear cart and close modal
-      cart.clearCart();
+      const { checkoutId } = await response.json();
+
+      // Store cart data in sessionStorage for backup
+      sessionStorage.setItem(
+        "tradeline_checkout_data",
+        JSON.stringify({
+          items: cart.items,
+          totalPrice,
+        }),
+      );
+
+      // Open checkout sheet inline
+      setCheckoutData({
+        checkoutId,
+        items: cart.items,
+        totalPrice,
+      });
+      setCheckoutSheetOpen(true);
       setCheckoutOpen(false);
+      setIsPurchasing(false);
     } catch (err: any) {
-      toast.error("Failed to process purchase: " + err.message);
-    } finally {
+      toast.error("Failed to initiate checkout: " + err.message);
       setIsPurchasing(false);
     }
   };
@@ -336,39 +367,88 @@ function TradelinesPage() {
       </div>
 
       {/* Tab navigation */}
-      <div className="border-b border-gray-200 mb-6">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-px snap-x snap-mandatory">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+      <div className="mb-6">
+        {/* Mobile dropdown */}
+        <div className="md:hidden">
+          <Select
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as TabId)}
+          >
+            <SelectTrigger className="w-full h-12 bg-white">
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const activeTabDef = tabs.find((t) => t.id === activeTab);
+                  if (!activeTabDef) return null;
+                  const Icon = activeTabDef.icon;
+                  return (
+                    <>
+                      <Icon className="w-4 h-4 flex-shrink-0 text-blue-600" />
+                      <span className="font-medium">{activeTabDef.label}</span>
+                      {activeTabDef.count !== undefined && (
+                        <span className="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-50 text-blue-700">
+                          {activeTabDef.count}
+                        </span>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <SelectItem key={tab.id} value={tab.id}>
+                    <div className="flex items-center gap-2">
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      <span>{tab.label}</span>
+                      {tab.count !== undefined && (
+                        <span className="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
+                          {tab.count}
+                        </span>
+                      )}
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
 
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors snap-start min-h-[44px] ${
-                  isActive
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.shortLabel}</span>
-                {tab.count !== undefined && (
-                  <span
-                    className={`ml-1 px-2 py-0.5 text-xs font-semibold rounded-full ${
-                      isActive
-                        ? "bg-blue-50 text-blue-700"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        {/* Desktop tabs */}
+        <div className="hidden md:block border-b border-gray-200">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-px">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`cursor-pointer flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                    isActive
+                      ? "border-blue-600 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span>{tab.label}</span>
+                  {tab.count !== undefined && (
+                    <span
+                      className={`ml-1 px-2 py-0.5 text-xs font-semibold rounded-full ${
+                        isActive
+                          ? "bg-blue-50 text-blue-700"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -512,6 +592,31 @@ function TradelinesPage() {
         onConfirm={handleCheckoutConfirm}
         isLoading={isPurchasing}
       />
+
+      {/* Checkout sheet */}
+      <Sheet open={checkoutSheetOpen} onOpenChange={setCheckoutSheetOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden"
+        >
+          <SheetHeader className="px-6 py-4 border-b border-gray-200">
+            <SheetTitle className="text-xl font-bold">
+              Secure Checkout
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            {checkoutData && (
+              <TradelineCheckoutView
+                checkoutId={checkoutData.checkoutId}
+                items={checkoutData.items}
+                totalPrice={checkoutData.totalPrice}
+                prefillEmail={user?.email || ""}
+                userId={user?.uid || ""}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
