@@ -15,9 +15,12 @@ import { PaymentPlan } from "@/schema/payments";
 import { randomUUID } from "crypto";
 import { sendTriggerEmail } from "../trigger-email";
 import { EmailJobs } from "@/schema/trigger-email";
+import { currency } from "@/lib/utils";
 
 const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID;
 const productId = process.env.WHOP_PRODUCT_ID;
+const tradelineProductId = process.env.WHOP_TRADELINE_PRODUCT_ID;
+
 const WHOP_FULL_PAYMENT_AMOUNT =
   process.env.NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT || "15000";
 // const WHOP_FINANCING_AMOUNT = process.env.WHOP_FINANCING_AMOUNT || "2500";
@@ -45,6 +48,7 @@ type CreateCheckoutConfigParams = {
   userId: string;
   // referenceNumber: string;
   paymentKey: PaymentPlan;
+  customAmount?: number; // Optional custom amount in cents for tradeline purchases
 };
 
 /**
@@ -57,6 +61,7 @@ export const createWhopCheckoutConfig = async ({
   userId,
   // referenceNumber,
   paymentKey,
+  customAmount,
 }: CreateCheckoutConfigParams): Promise<{
   checkoutId: string;
   url: string;
@@ -77,7 +82,11 @@ export const createWhopCheckoutConfig = async ({
     throw new Error("Server configuration error.");
   }
 
-  if (!productId) {
+  const productIdToUse = paymentKey.includes("Tradeline")
+    ? tradelineProductId
+    : productId;
+
+  if (!productIdToUse) {
     logError(new Error("WHOP_PRODUCT_ID is not set."));
     throw new Error("Server configuration error.");
   }
@@ -111,8 +120,9 @@ export const createWhopCheckoutConfig = async ({
       throw new Error("User not found");
     }
 
-    const fullPaymentAmount =
-      paymentKey === "AuditFull"
+    const fullPaymentAmount = customAmount
+      ? customAmount
+      : paymentKey === "AuditFull"
         ? AUDIT_FULL_AMOUNT
         : paymentKey === "IntelligenceFull"
           ? INTELLIGENCE_FULL_AMOUNT
@@ -133,7 +143,7 @@ export const createWhopCheckoutConfig = async ({
       currency: "usd" as const,
       initial_price: fullPaymentAmount,
       plan_type: "one_time" as const,
-      product_id: productId!,
+      product_id: productIdToUse!,
       visibility: "hidden" as const,
     };
 

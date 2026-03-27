@@ -13,6 +13,8 @@ export const GET_FUNDING_PRODUCT = "get-funding-product";
 export const GET_BANK_PRODUCTS = "get-bank-products";
 export const GET_BANK_MANAGEMENT = "get-bank-management";
 
+export const GET_USER_CART = "get-user-cart";
+
 export const GET_USER_CRS_REPORT = "get-user-crs-report";
 
 export const GET_DENEFITS_CONTRACT_BY_USER_ID =
