@@ -1,64 +1,65 @@
 import { PaymentPlan } from "@/schema/payments";
 
+export type PricingPlanType = "installments" | "one-time" | "contact";
+
 export type PricingPlan = {
+  type: PricingPlanType;
   title: string;
   price: string;
   priceSubtext: string;
+  badge?: string;
   subtitle: string;
   features: string[];
   recommended?: boolean;
-  whopKey: PaymentPlan;
-  denefitsWhopKey?: PaymentPlan; // If they need a whop down payment first
-  hasDenefits: boolean;
-  denefitsText: string;
-  denefitsNote?: string;
+  whopKey?: PaymentPlan;
+  isDenefits?: boolean;
+  denefitsUrlEnvKey?: "audit" | "intelligence" | "accelerator";
 };
 
 export const PRICING_PLANS: PricingPlan[] = [
   {
-    title: "CEG Brain™ Audit",
-    price: "$2,000",
-    priceSubtext: "",
-    subtitle: "Clarity before capital.",
+    type: "installments",
+    title: "12 Monthly Payments",
+    price: "$497",
+    priceSubtext: "/mo",
+    subtitle: "Finance your capital intelligence over 12 months.",
     features: [
+      "150-point underwriting audit",
+      "AI-generated Funding Map™",
       "Complete personal credit analysis",
       "Business credit deep-dive",
-      "Bank account positioning review",
-      "Initial funding capacity estimate",
-      "Written strategic findings report",
+      "Credit optimization blueprint",
+      "Bank relationship strategy",
+      "Training & Insights Library",
     ],
-    whopKey: "AuditFull",
-    hasDenefits: true,
-    denefitsWhopKey: "AuditDownPayment",
-    denefitsText: "Finance in Installments",
-    denefitsNote: "($2,000 + $500 finance charge, $750 down)",
+    isDenefits: true,
+    denefitsUrlEnvKey: "intelligence",
   },
   {
-    title: "CEG Brain™ Intelligence",
-    price: "$5,000",
+    type: "one-time",
+    title: "One Payment",
+    price: "$4,950",
     priceSubtext: "",
-    subtitle: "Strategic positioning before application.",
+    badge: "Save $1,050",
+    subtitle: "Best value — one payment, full access.",
     features: [
-      "Everything in Audit, plus:",
-      "AI-generated Funding Map™",
       "150-point underwriting audit",
+      "AI-generated Funding Map™",
+      "Complete personal credit analysis",
+      "Business credit deep-dive",
       "Credit optimization blueprint",
-      "Tax & entity structure review",
       "Bank relationship strategy",
-      "30-day positioning roadmap",
+      "Training & Insights Library",
     ],
     recommended: true,
     whopKey: "IntelligenceFull",
-    hasDenefits: true,
-    denefitsWhopKey: "IntelligenceDownPayment",
-    denefitsText: "Finance in Installments",
-    denefitsNote: "($5,000 + $1,000 finance charge, $1k down)",
   },
   {
-    title: "CEG Brain™ Capital Accelerator",
-    price: "$15,000",
+    type: "contact",
+    title: "Capital Accelerator",
+    price: "Custom",
     priceSubtext: "",
-    subtitle: "White-glove capital execution.",
+    subtitle: "White-glove capital execution — closed by phone.",
     features: [
       "Everything in Intelligence, plus:",
       "Direct relationship banker introductions",
@@ -68,10 +69,5 @@ export const PRICING_PLANS: PricingPlan[] = [
       "Exclusive program access",
       "Priority response & consultation",
     ],
-    whopKey: "AcceleratorFull",
-    hasDenefits: true,
-    denefitsWhopKey: "AcceleratorDownPayment",
-    denefitsText: "Finance in Installments",
-    denefitsNote: "($15,000 + $2k finance charge, $5k down)",
   },
 ];
