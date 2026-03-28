@@ -29,6 +29,8 @@ export const NEW_ACCOUNTS_AVAILABLE = "user-link-new-accounts-available";
 
 export const FUNDING_PRODUCTS_COLLECTION = "funding-products";
 export const USER_TRADELINE_COLLECTION = "user-tradeline";
+export const USER_CART_COLLECTION = "user-tradeline-cart";
+export const SPECIAL_DEALS_COLLECTION = "special-deals";
 export const BANK_PRODUCTS_COLLECTION = "bank-products";
 export const BANK_MANAGEMENT_COLLECTION = "bank-management";
 export const CRS_REPORT_DATA = "crs-report-data";
