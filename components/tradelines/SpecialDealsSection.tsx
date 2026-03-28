@@ -6,15 +6,38 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { CreditCard, Zap, Clock, ShoppingCart, Check, Tag } from "lucide-react";
 import type { SpecialDeal, AvailableTradeline } from "@/types/tradelines";
+import type { SpecialDeal as SpecialDealSchema } from "@/schema/special-deals";
+import { useActiveSpecialDeals } from "@/hooks/special-deals";
 import { getTagColor, getTimeLeft } from "@/lib/utils";
+import Spinner from "@/components/Spinner";
 
 interface SpecialDealsSectionProps {
-  deals: SpecialDeal[];
   isInCart: (id: string) => boolean;
   onAddToCart: (t: AvailableTradeline) => void;
+}
+
+// Convert schema SpecialDeal to UI SpecialDeal
+function convertSchemaToUI(deal: SpecialDealSchema): SpecialDeal {
+  return {
+    id: deal.id!,
+    bankName: deal.bank_name,
+    cardId: deal.card_id,
+    creditLimit: deal.credit_limit,
+    dateOpened: deal.date_opened,
+    originalPrice: deal.originalPrice,
+    salePrice: deal.salePrice,
+    discountPercent: deal.discountPercent,
+    stock: deal.stock,
+    expiresAt:
+      typeof deal.expiresAt === "string"
+        ? deal.expiresAt
+        : deal.expiresAt.toISOString(),
+    tag: deal.tag,
+    image: deal.image,
+  };
 }
 
 // Convert a SpecialDeal to AvailableTradeline for cart compatibility
@@ -39,17 +62,28 @@ function dealToTradeline(deal: SpecialDeal): AvailableTradeline {
 }
 
 export function SpecialDealsSection({
-  deals,
   isInCart,
   onAddToCart,
 }: SpecialDealsSectionProps) {
   const [, setTick] = useState(0);
+  const { data: dealsData = [], isLoading } = useActiveSpecialDeals();
+
+  // Convert schema deals to UI deals
+  const deals = useMemo(() => dealsData.map(convertSchemaToUI), [dealsData]);
 
   // Refresh countdown every minute
   useEffect(() => {
     const interval = setInterval(() => setTick((t) => t + 1), 60000);
     return () => clearInterval(interval);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Spinner displayText="Loading special deals..." />
+      </div>
+    );
+  }
 
   if (deals.length === 0) {
     return (
@@ -111,9 +145,11 @@ export function SpecialDealsSection({
                   <Tag className="w-3 h-3 inline mr-0.5 -mt-0.5" />
                   {deal.tag}
                 </span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
-                  {deal.discountPercent}% OFF
-                </span>
+                {deal.discountPercent > 0 && (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                    {deal.discountPercent}% OFF
+                  </span>
+                )}
               </div>
 
               {/* Content */}
@@ -177,9 +213,11 @@ export function SpecialDealsSection({
                 {/* Price and CTA */}
                 <div className="flex items-end justify-between">
                   <div>
-                    <p className="text-xs text-gray-400 line-through font-mono">
-                      ${deal.originalPrice.toLocaleString()}
-                    </p>
+                    {deal.discountPercent > 0 && (
+                      <p className="text-xs text-gray-400 line-through font-mono">
+                        ${deal.originalPrice.toLocaleString()}
+                      </p>
+                    )}
                     <p className="text-lg font-bold text-red-600 font-mono">
                       $
                       {deal.salePrice.toLocaleString(undefined, {

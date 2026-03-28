@@ -41,7 +41,6 @@ import { useCartStore } from "@/components/tradelines/useCartStore";
 import {
   mockPersonalCreditBuilders,
   mockBusinessCreditBuilders,
-  mockSpecialDeals,
 } from "@/lib/tradelineMockData";
 import {
   useMarkupPercentage,
@@ -49,6 +48,7 @@ import {
   useUserTradelines,
   USER_ALL_TRADELINES_KEY,
 } from "@/hooks/tradelines";
+import { useActiveSpecialDeals } from "@/hooks/special-deals";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -152,6 +152,7 @@ function TradelinesPage() {
   );
   const { tradelines: purchasedTradelines, isLoading: purchasedLoading } =
     useUserTradelines(user?.uid);
+  const { data: specialDeals } = useActiveSpecialDeals();
 
   // Set userId and load cart from Firestore when user is authenticated
   useEffect(() => {
@@ -238,10 +239,14 @@ function TradelinesPage() {
         label: "Special Deals",
         shortLabel: "Deals",
         icon: Zap,
-        count: mockSpecialDeals.length,
+        count: specialDeals?.length ?? 0,
       },
     ],
-    [availableTradelines.length, purchasedTradelinesDisplay.length],
+    [
+      availableTradelines.length,
+      purchasedTradelinesDisplay.length,
+      specialDeals?.length,
+    ],
   );
 
   // Filtered + sorted available tradelines
@@ -560,7 +565,6 @@ function TradelinesPage() {
 
       {activeTab === "special-deals" && (
         <SpecialDealsSection
-          deals={mockSpecialDeals}
           isInCart={cart.isInCart}
           onAddToCart={(t) => {
             cart.addItem(t);
