@@ -137,7 +137,7 @@ export function OverviewTab({
           </span>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        {/* <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
             <Link2 className="w-4 h-4 text-blue-600" />
             Tradeline Suggestions
@@ -146,7 +146,7 @@ export function OverviewTab({
             <span>+ Add to your report</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -20,12 +20,6 @@ export const getBusinessAuditData = async (
   // Filter to only apps related to this business
   const businessApps =
     allApps?.filter((app) => app.businessId === businessId) || [];
-  // Get CRS DTI data
-  const crsReports = await getCRSReport(userId, true, ["dti"]);
-
-  const dtiReport = crsReports?.find((report) => report.type === "dti");
-
-  const auditItems: AuditItem[] = [];
 
   // Only generate audit items if there's at least one business funding application
   if (businessApps.length === 0) {
@@ -35,6 +29,13 @@ export const getBusinessAuditData = async (
       fundabilityStatus: "No Data",
     };
   }
+
+  // Get CRS DTI data
+  const crsReports = await getCRSReport(userId, true, ["dti"]);
+
+  const dtiReport = crsReports?.find((report) => report.type === "dti");
+
+  const auditItems: AuditItem[] = [];
 
   // Use the most recent funding application for business data
   const latestApp = businessApps[0]; // Already sorted by date in getApplyFunding
