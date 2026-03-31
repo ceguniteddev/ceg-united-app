@@ -537,7 +537,11 @@ export const ClientDashboard = ({
               {loading ? (
                 <FundabilityScoreSkeleton />
               ) : (
-                <FundabilityScoreCard data={dashboardData.fundabilityScore} />
+                <FundabilityScoreCard
+                  score={dashboardData.fundabilityScore.score}
+                  maxScore={dashboardData.fundabilityScore.maxScore}
+                  status={dashboardData.fundabilityScore.status}
+                />
               )}
 
               {/* Next Steps Checklist */}

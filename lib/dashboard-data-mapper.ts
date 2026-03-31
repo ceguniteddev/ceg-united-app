@@ -154,23 +154,29 @@ export function transformClientDataToDashboard(
   }
 
   // 3. Fundability Score
+  // Pre-computed per-business in service/statistics.ts (single source of truth).
+  // Same priority logic as service/business-audit.ts:
+  //   Priority 1 — CRS business score (when populated by N8N)
+  //   Priority 2 — Verified audit-item ratio (revenue, tax, DTI, utilization)
   const avgBusinessScore =
     businessesWithCrsData.length > 0
-      ? businessesWithCrsData.reduce((sum, biz) => {
-          const score = biz.crsBusinessScore?.score || 0;
-          return sum + score;
-        }, 0) / businessesWithCrsData.length
-      : 78;
+      ? businessesWithCrsData.reduce(
+          (sum, biz) => sum + ((biz as any).computedFundabilityScore ?? 0),
+          0,
+        ) / businessesWithCrsData.length
+      : 0;
 
   const fundabilityScore: FundabilityScore = {
     score: Math.round(avgBusinessScore),
     maxScore: 100,
     status:
-      avgBusinessScore >= 75
-        ? "Strong"
-        : avgBusinessScore >= 50
-          ? "Average"
-          : "Weak",
+      avgBusinessScore >= 80
+        ? "Excellent"
+        : avgBusinessScore >= 60
+          ? "Good"
+          : avgBusinessScore >= 40
+            ? "Fair"
+            : "Needs Improvement",
   };
 
   // 4. Financial Snapshot - Calculate from Plaid data
@@ -264,24 +270,27 @@ export function transformClientDataToDashboard(
     },
   ];
 
-  // 7. Application Status
-  const pending =
-    fundingApplications?.filter(
-      (app) => app.status?.toLowerCase() === "pending",
-    ).length || 0;
-  const approved =
-    fundingApplications?.filter(
-      (app) => app.status?.toLowerCase() === "approved",
-    ).length || 0;
-  const denied =
-    fundingApplications?.filter((app) => app.status?.toLowerCase() === "denied")
+  // 7. Application Status (using schema statuses: New, Processing, Pre-Approved, Approved, Declined)
+  // Note: Pre-Approved and Approved are combined into one "Approved" segment
+  const newApps =
+    fundingApplications?.filter((app) => app.status === "New").length || 0;
+  const processing =
+    fundingApplications?.filter((app) => app.status === "Processing").length ||
+    0;
+  const preApproved =
+    fundingApplications?.filter((app) => app.status === "Pre-Approved")
       .length || 0;
+  const approved =
+    fundingApplications?.filter((app) => app.status === "Approved").length || 0;
+  const declined =
+    fundingApplications?.filter((app) => app.status === "Declined").length || 0;
 
   const applicationStatus: ApplicationStatus = {
     total: fundingApplications?.length || 0,
-    pending,
-    approved,
-    denied,
+    new: newApps,
+    processing,
+    approved: preApproved + approved, // Combined Pre-Approved + Approved
+    declined,
   };
 
   return {

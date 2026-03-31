@@ -50,8 +50,18 @@ export default function BusinessDetailPage({ params }: Props) {
     user?.uid ?? "",
     businessId,
   );
-  const { auditItems, fundabilityScore, fundabilityStatus } =
-    useBusinessAuditQuery(user?.uid ?? "", businessId);
+  const {
+    auditItems,
+    fundabilityScore,
+    fundabilityStatus,
+    creditScore,
+    creditRating,
+    creditChange,
+    accounts,
+    metrics,
+    revenueData,
+    compatibilityFactors,
+  } = useBusinessAuditQuery(user?.uid ?? "", businessId);
   const { deleteBusiness, isDeleting } = useBusinessMutation();
 
   const [activeTab, setActiveTab] = useState<BusinessTab>("overview");
@@ -108,13 +118,26 @@ export default function BusinessDetailPage({ params }: Props) {
           />
         );
       case "credit-report":
-        return <CreditReportTab business={business} accounts={[]} />;
+        return (
+          <CreditReportTab
+            business={business}
+            creditScore={creditScore}
+            creditRating={creditRating}
+            creditChange={creditChange}
+            accounts={accounts}
+          />
+        );
       case "finance-audit":
-        return <FinanceAuditTab />;
+        return <FinanceAuditTab metrics={metrics} revenueData={revenueData} />;
       case "tradeline-suggestions":
         return <TradelineSuggestionsTab />;
       case "fundability-audit":
-        return <FundabilityAuditTab business={business} />;
+        return (
+          <FundabilityAuditTab
+            business={business}
+            factors={compatibilityFactors}
+          />
+        );
       default:
         return (
           <OverviewTab
@@ -150,9 +173,26 @@ export default function BusinessDetailPage({ params }: Props) {
                 <h1 className="text-base sm:text-xl font-bold text-gray-900 truncate">
                   {business.businessName}
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-400 truncate">
-                  EIN: {business.employerIdentificationNumber}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                  <p className="text-xs sm:text-sm text-gray-400 truncate">
+                    EIN: {business.employerIdentificationNumber}
+                  </p>
+                  {fundabilityStatus && fundabilityStatus !== "No Data" && (
+                    <span
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                        fundabilityStatus === "Excellent"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : fundabilityStatus === "Good"
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                            : fundabilityStatus === "Fair"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : "bg-red-50 text-red-600 border-red-200"
+                      }`}
+                    >
+                      {fundabilityStatus}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 

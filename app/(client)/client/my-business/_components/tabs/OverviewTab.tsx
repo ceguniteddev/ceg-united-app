@@ -1,14 +1,7 @@
 "use client";
-import {
-  CheckCircle2,
-  AlertCircle,
-  FileText,
-  ChevronLeft,
-  ChevronRight,
-  Link2,
-} from "lucide-react";
-import { useCountUp } from "@/hooks/useCountUp";
+import { CheckCircle2, AlertCircle, FileText } from "lucide-react";
 import { Business, AuditItem } from "@/schema";
+import { FundabilityScoreCard } from "@/components/dashboard/FundabilityScoreCard";
 
 interface Props {
   business: Business;
@@ -23,11 +16,6 @@ export function OverviewTab({
   fundabilityScore = 0,
   fundabilityStatus = "—",
 }: Props) {
-  const score = useCountUp(fundabilityScore, 1400);
-  const circumference = 2 * Math.PI * 45;
-  const progress = (fundabilityScore / 100) * circumference;
-  const dashOffset = circumference - progress;
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 sm:gap-6 animate-fade-in">
       {/* Left: Audit Report */}
@@ -95,58 +83,14 @@ export function OverviewTab({
         )}
       </div>
 
-      {/* Right: Fundability Score + Tradeline CTA */}
+      {/* Right: Fundability Score */}
       <div className="space-y-4">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col items-center">
-          <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="text-lg">📊</span> Fundability Score
-          </h4>
-
-          <div className="relative w-[130px] h-[130px]">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                fill="none"
-                strokeWidth="8"
-                className="stroke-emerald-100"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                fill="none"
-                strokeWidth="8"
-                strokeLinecap="round"
-                className="stroke-emerald-400"
-                strokeDasharray={circumference}
-                strokeDashoffset={dashOffset}
-                style={{ transition: "stroke-dashoffset 1.4s ease-out" }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-bold text-gray-900 leading-none">
-                {score}
-              </span>
-            </div>
-          </div>
-
-          <span className="mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-            {fundabilityStatus}
-          </span>
-        </div>
-
-        {/* <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-            <Link2 className="w-4 h-4 text-blue-600" />
-            Tradeline Suggestions
-          </h4>
-          <button className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-blue-600 transition-colors">
-            <span>+ Add to your report</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div> */}
+        <FundabilityScoreCard
+          score={fundabilityScore}
+          maxScore={100}
+          status={fundabilityStatus}
+          className="shadow-sm p-5"
+        />
       </div>
     </div>
   );

@@ -180,6 +180,13 @@ export const useBusinessAuditQuery = (userId: string, businessId: string) => {
     auditItems: data?.auditItems || [],
     fundabilityScore: data?.fundabilityScore || 0,
     fundabilityStatus: data?.fundabilityStatus || "No Data",
+    creditScore: data?.creditScore ?? 0,
+    creditRating: data?.creditRating ?? "Good",
+    creditChange: data?.creditChange ?? 0,
+    accounts: data?.accounts || [],
+    metrics: data?.metrics || [],
+    revenueData: data?.revenueData || [],
+    compatibilityFactors: data?.compatibilityFactors || [],
     isLoading,
   };
 };
