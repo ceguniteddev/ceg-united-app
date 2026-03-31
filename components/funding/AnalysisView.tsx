@@ -85,16 +85,15 @@ const AnalysisView = ({ referenceNumber }: Props) => {
       <Card className="w-full border-none shadow-none sm:border-solid sm:border sm:shadow-sm bg-transparent sm:bg-card">
         <CardContent className="p-0 sm:p-6 space-y-4 sm:space-y-8">
           {(analysisData as Item[])?.map((item) => (
-            <div className="w-full overflow-hidden" key={item.id}>
-              <AnalysisDetailsView
-                updateAnalysis={({ referenceNumber, id, analysis }) =>
-                  updateAnalysis({ referenceNumber, id, analysis })
-                }
-                referenceNumber={referenceNumber}
-                id={item.id}
-                analysis={item.analysis ?? ""}
-              />
-            </div>
+            <AnalysisDetailsView
+              key={item.id}
+              updateAnalysis={({ referenceNumber, id, analysis }) =>
+                updateAnalysis({ referenceNumber, id, analysis })
+              }
+              referenceNumber={referenceNumber}
+              id={item.id}
+              analysis={item.analysis ?? ""}
+            />
           ))}
         </CardContent>
       </Card>
@@ -440,40 +439,19 @@ const AnalysisDetailsView = ({
     () => extractHtmlFromFence(analysis),
     [analysis],
   );
-  // const [content, setContent] = React.useState(initial);
+  const [iframeHeight, setIframeHeight] = React.useState(600);
 
-  // React.useEffect(() => {
-  //   setContent((prev) => (prev === initial ? prev : initial));
-  // }, [initial]);
-
-  // const saveToDb = React.useCallback(
-  //   async (html: string) => {
-  //     try {
-  //       await updateAnalysis({
-  //         referenceNumber,
-  //         id,
-  //         analysis: extractHtmlFromFence(html),
-  //       });
-  //     } catch (e) {
-  //       console.error("Failed to save analysis", e);
-  //     }
-  //   },
-  //   [id, updateAnalysis, referenceNumber],
-  // );
-
-  // const debouncedSave = useDebouncedCallback((next: string) => {
-  //   saveToDb(next);
-  // }, 200);
-
-  // const handleSetContent = React.useCallback(
-  //   (next: string) => {
-  //     setContent(next);
-  //     debouncedSave(next);
-  //   },
-  //   [debouncedSave],
-  // );
-
-  // React.useEffect(() => () => debouncedSave.flush(), [debouncedSave]);
+  const handleLoad = React.useCallback(
+    (e: React.SyntheticEvent<HTMLIFrameElement>) => {
+      const doc = e.currentTarget.contentDocument;
+      if (doc) {
+        setIframeHeight(
+          doc.documentElement.scrollHeight || doc.body.scrollHeight,
+        );
+      }
+    },
+    [],
+  );
 
   // If user is a Client, display read-only HTML content
   // if (role === "Client") {
@@ -481,9 +459,12 @@ const AnalysisDetailsView = ({
     <div className="w-full">
       <iframe
         srcDoc={initial}
-        className="h-screen w-full border-0"
+        className="w-full border-0"
+        style={{ height: iframeHeight }}
         title="Analysis Details"
         sandbox="allow-same-origin allow-scripts"
+        scrolling="no"
+        onLoad={handleLoad}
       />
     </div>
   );

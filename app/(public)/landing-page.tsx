@@ -37,7 +37,7 @@ const Landing = () => {
             />
           ))}
         </div>
-        <div className="w-full lg:w-1/2 px-0 sm:px-4 lg:px-8 xl:px-16 mx-auto">
+        <div className="w-full lg:w-1/2 lg:px-8 xl:px-16 mx-auto">
           <Login />
         </div>
       </motion.div>

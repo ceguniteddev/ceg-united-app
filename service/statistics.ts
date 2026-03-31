@@ -49,7 +49,7 @@ export const getAdminStatistics = async (): Promise<AdminStatistics> => {
 
       return acc;
     },
-    { states: {}, statuses: {} }
+    { states: {}, statuses: {} },
   );
 
   return {
@@ -112,6 +112,7 @@ const processApplicationData = (applications: any) => {
 export interface BusinessWithCRSData extends Business {
   crsBusinessProfile: any;
   crsBusinessScore: any;
+  computedFundabilityScore: number;
 }
 
 export const getClientStatistics = async (userId: string) => {
@@ -124,13 +125,19 @@ export const getClientStatistics = async (userId: string) => {
     clientApplicationStatus: ["Approved", "Funded"],
   });
 
-  // get total funding approved amount
-  const crsReportData = await getCRSReport(userId);
+  // Fetch CRS report data and DTI report in parallel
+  const [crsReportData, dtiReportData] = await Promise.all([
+    getCRSReport(userId),
+    getCRSReport(userId, true, ["dti"]),
+  ]);
+
+  const dtiReport = dtiReportData?.find((r) => r.type === "dti");
 
   // get business details
   const businessDetails: Business[] = await getBusiness(userId);
-  // get CRS business prorfile
-  // get CRS business score
+
+  // get CRS business profile + score, and compute fundability score per business
+  // Single source of truth — same logic as service/business-audit.ts
   const businessesWithCrsData = await Promise.all(
     businessDetails.map(async (business) => {
       const [businessProfile, businessScore] = await Promise.all([
@@ -138,12 +145,71 @@ export const getClientStatistics = async (userId: string) => {
         getCRSBusinessScore(business.id ?? ""),
       ]);
 
+      // ── Fundability Score ────────────────────────────────────────────────
+      // Priority 1: CRS Business Score (when populated by N8N)
+      const crsScore = Number(businessScore?.report?.score ?? 0);
+      let computedFundabilityScore = 0;
+
+      if (crsScore > 0) {
+        computedFundabilityScore = crsScore;
+      } else {
+        // Priority 2: Audit-item ratio — same 4 checks as business-audit.ts
+        const bizApps = (fundingApplications ?? []).filter(
+          (a) => a.businessId === (business.id ?? ""),
+        );
+
+        if (bizApps.length > 0) {
+          const app = bizApps[0];
+          let verified = 0;
+          let total = 0;
+
+          // 1. Revenue
+          if (app.annualBusinessRevenue || app.businessGrossProjectedRevenue1) {
+            total++;
+            verified++;
+          }
+
+          // 2. Tax returns
+          if (app.businessFiledWithIRS1 !== undefined) {
+            total++;
+            if (app.businessFiledWithIRS1) verified++;
+          }
+
+          // 3. DTI
+          if (
+            dtiReport?.report &&
+            Array.isArray(dtiReport.report) &&
+            dtiReport.report.length > 0
+          ) {
+            const dtiData = (dtiReport.report as any[])[0];
+            const dtiValue =
+              dtiData.finalDTI || dtiData.dti || dtiData.debtToIncomeRatio;
+            if (dtiValue) {
+              const dtiPercent =
+                typeof dtiValue === "number"
+                  ? dtiValue
+                  : parseFloat(dtiValue.toString().replace("%", ""));
+              total++;
+              if (dtiPercent < 20) verified++;
+            }
+          }
+
+          // 4. Funding utilization (always verified when apps exist)
+          total++;
+          verified++;
+
+          computedFundabilityScore =
+            total > 0 ? Math.round((verified / total) * 100) : 0;
+        }
+      }
+
       return {
         ...business,
         crsBusinessProfile: businessProfile,
         crsBusinessScore: businessScore,
+        computedFundabilityScore,
       };
-    })
+    }),
   );
 
   const getPlaidCompleteData = await getPlaidCompleteDataForUser(userId);

@@ -39,7 +39,7 @@ export default function LoginPage() {
   );
 
   return (
-    <div className="flex items-center justify-center min-h-screen px-4 sm:px-6">
+    <div className="flex items-center justify-center w-full px-4 sm:px-6">
       <ResponsiveDialog
         isOpen={openForgotPassword}
         setIsOpen={setOpenForgotPassword}
@@ -49,7 +49,7 @@ export default function LoginPage() {
       >
         <ForgotPassword setOpenForgotPassword={setOpenForgotPassword} />
       </ResponsiveDialog>
-      <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-md">
+      <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg w-full max-w-md">
         <div className="flex justify-center mb-4">
           <Image
             src="/icon.png"
@@ -59,7 +59,7 @@ export default function LoginPage() {
             className="object-contain"
           />
         </div>
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-700">
+        <h2 className="text-xl sm:text-2xl font-bold text-center mb-6 text-gray-700">
           Sign In to {process.env.NEXT_PUBLIC_APP_NAME}
         </h2>
 
@@ -69,13 +69,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin}>
           <fieldset disabled={loading}>
-            <div className="mb-3 sm:mb-4">
-              <Label className="block text-gray-600 font-medium mb-1 text-sm sm:text-base">
+            <div className="mb-4">
+              <Label className="block text-gray-600 font-medium mb-1 text-sm">
                 Email Address
               </Label>
               <Input
                 type="email"
-                className="w-full px-3 py-2 text-sm sm:text-base border rounded-md focus:outline-none focus:ring focus:ring-blue-300"
+                className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring focus:ring-blue-300"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -84,13 +84,13 @@ export default function LoginPage() {
             </div>
 
             <div className="mb-2">
-              <Label className="block text-gray-600 font-medium mb-1 text-sm sm:text-base">
+              <Label className="block text-gray-600 font-medium mb-1 text-sm">
                 Password
               </Label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
-                  className="w-full px-3 py-2 pr-10 text-sm sm:text-base border rounded-md focus:outline-none focus:ring focus:ring-blue-300"
+                  className="w-full px-3 py-2 pr-10 text-sm border rounded-md focus:outline-none focus:ring focus:ring-blue-300"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -101,6 +101,7 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer"
                   tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -111,8 +112,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Forgot Password button-link */}
-            <div className="mb-3 sm:mb-4 flex justify-end">
+            <div className="mb-5 flex justify-end">
               <Link
                 href=""
                 className={`text-sm font-medium underline underline-offset-4 hover:no-underline focus:outline-none focus:ring-2 focus:ring-offset-2 ${
@@ -127,25 +127,25 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full py-2.5 sm:py-2 text-sm sm:text-base bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 transition cursor-pointer disabled:opacity-70"
+              className="w-full min-h-[44px] py-2.5 text-sm bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition cursor-pointer disabled:opacity-70"
               disabled={loading}
             >
               {loading ? (
-                <div className="flex items-center flex-row justify-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <LoaderIcon className="animate-spin h-4 w-4" />
-                  <span className="text-sm sm:text-base">Signing in...</span>
+                  <span>Signing in...</span>
                 </div>
               ) : (
-                <div className="flex items-center flex-row justify-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <LogInIcon className="h-4 w-4" />
-                  <span className="text-sm sm:text-base">Sign In</span>
+                  <span>Sign In</span>
                 </div>
               )}
             </button>
           </fieldset>
         </form>
 
-        <div className="text-xs sm:text-sm text-gray-600 text-center mt-3 sm:mt-4">
+        <div className="text-sm text-gray-600 text-center mt-4">
           No account?{" "}
           <Link
             href="/register"

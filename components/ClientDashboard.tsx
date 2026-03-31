@@ -209,7 +209,6 @@ export const ClientDashboard = ({
     clientData?.userData?.id || "",
   );
 
-  const [isOpen, setIsOpen] = useState(false);
   const [congratsModalOpen, setCongratsModalOpen] = useState(false);
   const [currentCongratsMessage, setCurrentCongratsMessage] = useState<{
     id: string;
@@ -348,15 +347,6 @@ export const ClientDashboard = ({
     window.open(url, "_blank", "noopener,noreferrer");
   }, [stats]);
 
-  useEffect(() => {
-    if (
-      stats?.downPaymentRequired === true &&
-      (adminView === false || adminView === undefined)
-    ) {
-      setIsOpen(true);
-    }
-  }, [stats, adminView]);
-
   // Check for unread congrats messages
   useEffect(() => {
     if (congratsMessages && !adminView) {
@@ -430,29 +420,6 @@ export const ClientDashboard = ({
   return (
     <div className="flex flex-col h-full">
       <header className="px-6 py-6">
-        {/* <ResponsiveDialog
-          isOpen={isOpenFunding}
-          setIsOpen={setIsOpenFunding}
-          title="Apply Funding"
-          description={""}
-          descriptionClassName="text-red-500 text-lg font-semibold"
-          className="w-full sm:w-5/6 lg:w-4/6 max-w-6xl"
-        >
-          <ApplyFundingForm
-            setOpen={setIsOpenFunding}
-            // userId={userData?.id || ""}
-            userData={userData!}
-          />
-        </ResponsiveDialog> */}
-        <ResponsiveDialog
-          isOpen={isOpen}
-          setIsOpen={setIsOpen}
-          title=""
-          description={""}
-          className="w-full sm:w-5/6 md:w-4/6 lg:w-3/6 max-w-2xl"
-        >
-          <CreditRepairClientMessage setIsOpen={setIsOpen} />
-        </ResponsiveDialog>
         <div className="flex-1">
           {adminView ? (
             <h1 className="text-xl font-bold text-gray-900">
@@ -537,7 +504,11 @@ export const ClientDashboard = ({
               {loading ? (
                 <FundabilityScoreSkeleton />
               ) : (
-                <FundabilityScoreCard data={dashboardData.fundabilityScore} />
+                <FundabilityScoreCard
+                  score={dashboardData.fundabilityScore.score}
+                  maxScore={dashboardData.fundabilityScore.maxScore}
+                  status={dashboardData.fundabilityScore.status}
+                />
               )}
 
               {/* Next Steps Checklist */}
@@ -674,92 +645,5 @@ const IssuesCard = ({
         )}
       </CardContent>
     </Card>
-  );
-};
-
-const CreditRepairClientMessage = ({
-  setIsOpen,
-}: {
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) => {
-  return (
-    <div className="flex flex-col lg:flex-row gap-4">
-      <div className="bg-card text-card-foreground rounded-xl border shadow-lg max-w-lg mx-auto font-sans">
-        <div className="flex flex-col space-y-1.5 p-4 sm:p-6">
-          <h3 className="font-semibold tracking-tight text-xl sm:text-2xl">
-            Complete Your Enrollment
-          </h3>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Please follow the steps below to finalize your application.
-          </p>
-        </div>
-        <div className="p-4 sm:p-6 pt-0">
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-lg p-4 mb-6">
-            <div className="flex items-start">
-              <AlertTriangle className="h-5 w-5 mr-3 mt-1" />
-              <div className="flex-1">
-                <h5 className="font-semibold mb-1">Action Required</h5>
-                <p className="text-sm">
-                  Based on your personal credit profile, a two-step payment
-                  process is necessary to get started.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4 sm:space-y-6">
-            <div>
-              <h4 className="font-semibold text-sm sm:text-md mb-2">
-                Step 1: Initial Payment
-              </h4>
-              <p className="text-muted-foreground mb-4 text-sm">
-                First, please submit the initial payment of **$2,000** through
-                our secure Fanbasis link. This will register you in our system.
-              </p>
-              <Link
-                href={process.env.NEXT_PUBLIC_FANBASIS_URL as string}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full"
-              >
-                Pay with Fanbasis ($2,000)
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-sm sm:text-md mb-2">
-                Step 2: Enrollment Fee
-              </h4>
-              <p className="text-muted-foreground text-sm">
-                After completing the first step, Fanbasis will automatically
-                redirect you to complete the final **$39 enrollment fee** with
-                Denefits.
-              </p>
-              <p className="text-xs text-muted-foreground mt-3">
-                This finalizes your enrollment and gives you full access to our
-                services.
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center p-4 sm:p-6 pt-0">
-          <p className="text-xs text-muted-foreground">
-            {`If you have any questions, please don't hesitate to contact our
-          support team.`}
-          </p>
-        </div>
-        <div className="flex items-center justify-end p-4 sm:p-6 pt-0">
-          <Button
-            className="cursor-pointer bg-blue-200 hover:bg-blue-300"
-            variant={"outline"}
-            onClick={() => setIsOpen(false)}
-          >
-            Close
-          </Button>
-        </div>
-      </div>
-      <CalendlyScheduler />
-    </div>
   );
 };

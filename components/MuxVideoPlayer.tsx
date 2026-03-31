@@ -18,11 +18,13 @@ export const MuxVideoPlayer = ({
   title,
 }: MuxVideoPlayerProps) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const playerRef = useRef<any>(null);
   const [hasTrackedCompletion, setHasTrackedCompletion] = useState(false);
 
   useEffect(() => {
     setHasTrackedCompletion(false);
+    setHasError(false);
   }, [playbackId]);
 
   const handleLoadedData = () => {
@@ -59,6 +61,12 @@ export const MuxVideoPlayer = ({
     }
   };
 
+  const handleError = (error: any) => {
+    console.error("Mux player error:", error);
+    setHasError(true);
+    setIsLoading(false);
+  };
+
   if (!playbackId) {
     return (
       <div className="aspect-video bg-gray-200 flex items-center justify-center">
@@ -69,9 +77,20 @@ export const MuxVideoPlayer = ({
 
   return (
     <div className="relative aspect-video bg-black">
-      {isLoading && (
+      {isLoading && !hasError && (
         <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
           <Loader2 className="w-8 h-8 animate-spin text-white" />
+        </div>
+      )}
+      {hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
+          <div className="text-center text-white px-4">
+            <p className="text-sm font-medium">Video unavailable</p>
+            <p className="text-xs mt-2 opacity-70">
+              This video may still be processing or is not compatible with your
+              device
+            </p>
+          </div>
         </div>
       )}
       <MuxPlayer
@@ -81,6 +100,9 @@ export const MuxVideoPlayer = ({
           video_title: title || "Course Video",
         }}
         streamType="on-demand"
+        playsInline
+        preferPlayback="native"
+        onError={handleError}
         onLoadedData={handleLoadedData}
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleEnded}
