@@ -1,11 +1,24 @@
+"use client";
 import { useEffect, useState } from "react";
+import { Doughnut } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  ChartOptions,
+} from "chart.js";
 import { useCountUp } from "@/hooks/useCountUp";
+
+// Register Chart.js components
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 export interface ApplicationStatus {
   total: number;
-  pending: number;
+  new: number;
+  processing: number;
   approved: number;
-  denied: number;
+  declined: number;
 }
 
 export function ApplicationStatusChart({ data }: { data: ApplicationStatus }) {
@@ -17,14 +30,60 @@ export function ApplicationStatusChart({ data }: { data: ApplicationStatus }) {
     return () => clearTimeout(t);
   }, []);
 
-  const sum = data.pending + data.approved + data.denied;
-  const radius = 42;
-  const circ = 2 * Math.PI * radius;
-  const gap = 4;
+  const chartData = {
+    labels: ["New", "Processing", "Approved", "Declined"],
+    datasets: [
+      {
+        data: [data.new, data.processing, data.approved, data.declined],
+        backgroundColor: [
+          "rgb(59, 130, 246)", // blue-500 (New)
+          "rgb(168, 85, 247)", // purple-500 (Processing)
+          "rgb(16, 185, 129)", // emerald-500 (Approved - includes Pre-Approved)
+          "rgb(248, 113, 113)", // red-400 (Declined)
+        ],
+        borderColor: "rgb(255, 255, 255)",
+        borderWidth: 2,
+      },
+    ],
+  };
 
-  const pendingLen = sum > 0 ? (data.pending / sum) * circ : 0;
-  const approvedLen = sum > 0 ? (data.approved / sum) * circ : 0;
-  const deniedLen = sum > 0 ? (data.denied / sum) * circ : 0;
+  const options: ChartOptions<"doughnut"> = {
+    responsive: true,
+    maintainAspectRatio: true,
+    cutout: "70%",
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        enabled: true,
+        backgroundColor: "rgb(31, 41, 55)",
+        titleColor: "rgb(255, 255, 255)",
+        bodyColor: "rgb(229, 231, 235)",
+        padding: 12,
+        displayColors: true,
+        callbacks: {
+          label: function (context) {
+            const label = context.label || "";
+            const value = context.parsed || 0;
+            const total = context.dataset.data.reduce(
+              (a, b) => (a as number) + (b as number),
+              0,
+            ) as number;
+            const percentage =
+              total > 0 ? ((value / total) * 100).toFixed(1) : "0";
+            return `${label}: ${value} (${percentage}%)`;
+          },
+        },
+      },
+    },
+    animation: {
+      animateRotate: true,
+      animateScale: true,
+      duration: 1000,
+      easing: "easeInOutQuart",
+    },
+  };
 
   return (
     <div className="card-hover rounded-xl border border-gray-100 bg-white p-5 flex flex-col items-center animate-scaleIn stagger-5">
@@ -32,55 +91,9 @@ export function ApplicationStatusChart({ data }: { data: ApplicationStatus }) {
         Application Status
       </h3>
 
-      <div className="relative w-[120px] h-[120px] mb-4">
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-          {/* Pending — blue */}
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            fill="none"
-            strokeWidth="10"
-            className="stroke-blue-500"
-            strokeLinecap="round"
-            strokeDasharray={`${mounted ? Math.max(pendingLen - gap, 0) : 0} ${circ}`}
-            strokeDashoffset={0}
-            style={{
-              transition: "stroke-dasharray 1s cubic-bezier(0.16,1,0.3,1)",
-            }}
-          />
-          {/* Approved — green */}
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            fill="none"
-            strokeWidth="10"
-            className="stroke-emerald-500"
-            strokeLinecap="round"
-            strokeDasharray={`${mounted ? Math.max(approvedLen - gap, 0) : 0} ${circ}`}
-            strokeDashoffset={-pendingLen}
-            style={{
-              transition: "stroke-dasharray 1s cubic-bezier(0.16,1,0.3,1) 0.1s",
-            }}
-          />
-          {/* Denied — red */}
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            fill="none"
-            strokeWidth="10"
-            className="stroke-red-400"
-            strokeLinecap="round"
-            strokeDasharray={`${mounted ? Math.max(deniedLen - gap, 0) : 0} ${circ}`}
-            strokeDashoffset={-(pendingLen + approvedLen)}
-            style={{
-              transition: "stroke-dasharray 1s cubic-bezier(0.16,1,0.3,1) 0.2s",
-            }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <div className="relative w-[140px] h-[140px] mb-4">
+        {mounted && <Doughnut data={chartData} options={options} />}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <span className="text-2xl font-bold text-gray-900 leading-none">
             {total}
           </span>
@@ -89,10 +102,14 @@ export function ApplicationStatusChart({ data }: { data: ApplicationStatus }) {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-blue-500" />
-          <span className="text-gray-500">Pending</span>
+          <span className="text-gray-500">New</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-purple-500" />
+          <span className="text-gray-500">Processing</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -100,7 +117,7 @@ export function ApplicationStatusChart({ data }: { data: ApplicationStatus }) {
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-red-400" />
-          <span className="text-gray-500">Denied</span>
+          <span className="text-gray-500">Declined</span>
         </div>
       </div>
     </div>
