@@ -75,7 +75,7 @@ export default function BrokerRegistrationPage({
 
       try {
         const response = await fetch(
-          `/api/broker/validate-token?token=${token}`
+          `/api/broker/validate-token?token=${token}`,
         );
         if (!response.ok) {
           throw new Error("Invalid or expired invitation");
@@ -215,7 +215,11 @@ export default function BrokerRegistrationPage({
         </CardHeader>
         <CardContent>
           <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              method="post"
+              className="space-y-6"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <CustomFormField
                   name="firstName"
