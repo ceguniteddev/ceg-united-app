@@ -1,7 +1,12 @@
 "use-client";
 
 import React, { useState } from "react";
-import { useForm, useWatch, useFormContext, SubmitHandler } from "react-hook-form";
+import {
+  useForm,
+  useWatch,
+  useFormContext,
+  SubmitHandler,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Loader2 } from "lucide-react"; // Import a loader icon
 import {
@@ -38,7 +43,8 @@ const PasswordInput = ({
 }) => {
   const { control } = useFormContext();
   const currentValue = useWatch({ control, name });
-  const passwordsMatch = valueToMatch && currentValue && valueToMatch === currentValue;
+  const passwordsMatch =
+    valueToMatch && currentValue && valueToMatch === currentValue;
 
   return (
     <div className="relative">
@@ -103,13 +109,18 @@ const ChangePasswordModal = ({ setOpen }: Props) => {
 
     try {
       // Re-authenticate
-      const credential = EmailAuthProvider.credential(user.email, formData.currentPassword);
+      const credential = EmailAuthProvider.credential(
+        user.email,
+        formData.currentPassword,
+      );
       await reauthenticateWithCredential(user, credential);
 
       // Call the service to change the password
       await changePassword(formData);
 
-      toast.success("Password updated successfully! You will now be logged out.");
+      toast.success(
+        "Password updated successfully! You will now be logged out.",
+      );
 
       // Log out the user for security
       await logOut();
@@ -121,7 +132,10 @@ const ChangePasswordModal = ({ setOpen }: Props) => {
       console.error("Password change error:", error);
       if (error.code === "auth/wrong-password") {
         toast.error("The current password you entered is incorrect.");
-        form.setError("currentPassword", { type: "manual", message: "Incorrect password" });
+        form.setError("currentPassword", {
+          type: "manual",
+          message: "Incorrect password",
+        });
       } else {
         toast.error("Failed to change password. Please try again.");
       }
@@ -138,9 +152,15 @@ const ChangePasswordModal = ({ setOpen }: Props) => {
         <CardContent className="p-0">
           <Form {...form}>
             {/* The form now triggers the first stage of submission */}
-            <form onSubmit={form.handleSubmit(onFormSubmit)}>
-              <fieldset disabled={form.formState.isSubmitting} className="space-y-6">
-                <PasswordInput name="currentPassword" label="Current password" />
+            <form onSubmit={form.handleSubmit(onFormSubmit)} method="post">
+              <fieldset
+                disabled={form.formState.isSubmitting}
+                className="space-y-6"
+              >
+                <PasswordInput
+                  name="currentPassword"
+                  label="Current password"
+                />
 
                 <div className="space-y-2">
                   <PasswordInput name="newPassword" label="New password" />
@@ -154,7 +174,10 @@ const ChangePasswordModal = ({ setOpen }: Props) => {
                 />
 
                 <div className="pt-2">
-                  <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white">
+                  <Button
+                    type="submit"
+                    className="w-full bg-red-600 hover:bg-red-700 text-white"
+                  >
                     Change password
                   </Button>
                 </div>
@@ -170,12 +193,14 @@ const ChangePasswordModal = ({ setOpen }: Props) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              Changing your password will log you out from all of your devices, including this one.
-              You will need to sign in again.
+              Changing your password will log you out from all of your devices,
+              including this one. You will need to sign in again.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isChangingPassword}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isChangingPassword}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmPasswordChange}
               disabled={isChangingPassword}
