@@ -1,3 +1,5 @@
+import { describe, it, expect } from "vitest";
+
 /**
  * Session Implementation Validation Tests
  *
@@ -59,6 +61,75 @@ export function validateCookieConfig() {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Vitest test suites wrapping the validation helpers above
+// ---------------------------------------------------------------------------
+describe("SESSION_CONFIG", () => {
+  it("should have a 6-hour duration in ms", () => {
+    expect(SESSION_CONFIG.DURATION_MS).toBe(21_600_000);
+  });
+
+  it("should have a 6-hour duration in seconds", () => {
+    expect(SESSION_CONFIG.DURATION_SECONDS).toBe(21_600);
+  });
+
+  it("should have a 30-minute refresh interval in ms", () => {
+    expect(SESSION_CONFIG.REFRESH_INTERVAL_MS).toBe(1_800_000);
+  });
+});
+
+describe("validateSessionDuration()", () => {
+  it("should return true", () => {
+    expect(validateSessionDuration()).toBe(true);
+  });
+});
+
+describe("validateRefreshInterval()", () => {
+  it("should return true", () => {
+    expect(validateRefreshInterval()).toBe(true);
+  });
+
+  it("refresh interval × 12 should equal the full session duration", () => {
+    expect(SESSION_CONFIG.REFRESH_INTERVAL_MS * 12).toBe(
+      SESSION_CONFIG.DURATION_MS,
+    );
+  });
+});
+
+describe("validateCookieConfig()", () => {
+  it("should have httpOnly set to true", () => {
+    expect(validateCookieConfig().httpOnly).toBe(true);
+  });
+
+  it("should have sameSite set to lax", () => {
+    expect(validateCookieConfig().sameSite).toBe("lax");
+  });
+
+  it("should have path set to /", () => {
+    expect(validateCookieConfig().path).toBe("/");
+  });
+
+  it("should have maxAge equal to duration in seconds", () => {
+    expect(validateCookieConfig().maxAge).toBe(SESSION_CONFIG.DURATION_SECONDS);
+  });
+});
+
+describe("runValidationTests()", () => {
+  it("should pass all validations", () => {
+    const { passed, results } = runValidationTests();
+    expect(passed).toBe(true);
+    expect(results.durationValid).toBe(true);
+    expect(results.refreshIntervalValid).toBe(true);
+    expect(results.cookieConfigValid).toBe(true);
+  });
+
+  it("should return details array with strings", () => {
+    const { details } = runValidationTests();
+    expect(Array.isArray(details)).toBe(true);
+    expect(details.length).toBeGreaterThan(0);
+  });
+});
+
 /**
  * Run all validation tests
  */
@@ -84,7 +155,7 @@ export function runValidationTests(): {
   if (results.refreshIntervalValid) {
     details.push("✓ Refresh interval: 30 minutes (1,800,000 ms)");
     details.push(
-      "✓ Refresh happens halfway through session (30 min × 12 = 6 hours)"
+      "✓ Refresh happens halfway through session (30 min × 12 = 6 hours)",
     );
   } else {
     details.push("✗ Refresh interval validation failed");
@@ -112,7 +183,7 @@ if (typeof window === "undefined") {
       validation.passed
         ? "✅ All validations passed"
         : "❌ Some validations failed"
-    }\n`
+    }\n`,
   );
 }
 
