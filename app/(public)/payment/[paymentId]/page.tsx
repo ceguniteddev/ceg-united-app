@@ -1,8 +1,8 @@
 import { Metadata } from "next";
-import PaymentSelection from "./payment-selection";
 import { getUserById } from "@/service/user";
 import { notFound } from "next/navigation";
 import { getPaymentRequestById } from "@/service/whop/utils";
+import PricingPlansGrid from "@/components/funding/PricingPlansGrid";
 
 export const metadata: Metadata = {
   title: "Complete Your Payment - CEG United",
@@ -37,7 +37,7 @@ export default async function PaymentPage({
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-4xl">
-        <PaymentSelection user={user} />
+        <PricingPlansGrid userId={user.id} />
       </div>
     </div>
   );
