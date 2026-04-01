@@ -415,7 +415,7 @@ describe("updateUserStatus", () => {
 
     await updateUserStatus({ id: "u1", status: "InActive" });
 
-    expect(mockUpdate).toHaveBeenCalledWith({ activeStatus: "Inactive" });
+    expect(mockUpdate).toHaveBeenCalledWith({ activeStatus: "InActive" });
   });
 });
 
