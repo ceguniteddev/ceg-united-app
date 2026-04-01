@@ -46,6 +46,9 @@ import {
   recordContractCreated,
   getContracts,
   getContractsByUserId,
+  getDenefitsPayments,
+  updateDenefitsContractUserId,
+  unmapDenefitsContract,
 } from "@/service/denefits";
 import { getUserById } from "@/service/user";
 import AppError from "@/error/AppError";
@@ -166,6 +169,99 @@ describe("service/denefits", () => {
       const result = await getContractsByUserId("user-xyz");
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({ userId: "user-xyz" });
+    });
+  });
+
+  describe("getDenefitsPayments", () => {
+    it("returns payments with mapped user data", async () => {
+      mockGet.mockResolvedValue({
+        docs: [
+          { id: "c1", data: () => ({ contract_code: "A", userId: "u1" }) },
+        ],
+      });
+      vi.mocked(getUserById).mockResolvedValue({
+        id: "u1",
+        email: "a@b.com",
+        firstName: "Jane",
+        lastName: "Doe",
+      } as any);
+      const result = await getDenefitsPayments();
+      expect(result).toHaveLength(1);
+      expect(result[0].mappedEmail).toBe("a@b.com");
+      expect(result[0].mappedFirstName).toBe("Jane");
+    });
+    it("handles missing user gracefully", async () => {
+      mockGet.mockResolvedValue({
+        docs: [
+          { id: "c1", data: () => ({ contract_code: "A", userId: "u1" }) },
+        ],
+      });
+      vi.mocked(getUserById).mockRejectedValue(new Error("Not found"));
+      const result = await getDenefitsPayments();
+      expect(result[0].mappedEmail).toBeNull();
+    });
+    it("returns null fields when userId is null", async () => {
+      mockGet.mockResolvedValue({
+        docs: [
+          { id: "c1", data: () => ({ contract_code: "A", userId: null }) },
+        ],
+      });
+      const result = await getDenefitsPayments();
+      expect(result[0].mappedEmail).toBeNull();
+    });
+  });
+
+  describe("updateDenefitsContractUserId", () => {
+    it("throws if contractId is missing", async () => {
+      await expect(
+        updateDenefitsContractUserId({ contractId: "", userId: "u1" }),
+      ).rejects.toThrow(AppError);
+    });
+    it("throws if userId is missing", async () => {
+      await expect(
+        updateDenefitsContractUserId({ contractId: "c1", userId: "" }),
+      ).rejects.toThrow(AppError);
+    });
+    it("throws if contract not found", async () => {
+      mockGet.mockResolvedValue({ exists: false });
+      await expect(
+        updateDenefitsContractUserId({ contractId: "c1", userId: "u1" }),
+      ).rejects.toThrow(AppError);
+    });
+    it("updates userId on success", async () => {
+      mockGet.mockResolvedValue({
+        exists: true,
+        data: () => ({ contract_code: "A" }),
+      });
+      const result = await updateDenefitsContractUserId({
+        contractId: "c1",
+        userId: "u1",
+      });
+      expect(mockUpdate).toHaveBeenCalledWith({ userId: "u1" });
+      expect(result.userId).toBe("u1");
+    });
+  });
+
+  describe("unmapDenefitsContract", () => {
+    it("throws if contractId is missing", async () => {
+      await expect(unmapDenefitsContract({ contractId: "" })).rejects.toThrow(
+        AppError,
+      );
+    });
+    it("throws if contract not found", async () => {
+      mockGet.mockResolvedValue({ exists: false });
+      await expect(unmapDenefitsContract({ contractId: "c1" })).rejects.toThrow(
+        AppError,
+      );
+    });
+    it("sets userId to null on success", async () => {
+      mockGet.mockResolvedValue({
+        exists: true,
+        data: () => ({ contract_code: "A" }),
+      });
+      const result = await unmapDenefitsContract({ contractId: "c1" });
+      expect(mockUpdate).toHaveBeenCalledWith({ userId: null });
+      expect(result.userId).toBeNull();
     });
   });
 });

@@ -72,14 +72,34 @@ vi.mock("@/lib/date-parser", () => ({
   normalizeAllDates: vi.fn((x: any) => x),
 }));
 
-import { getAnalysis, recordAnalysis } from "@/service/analysis";
+import {
+  getAnalysis,
+  recordAnalysis,
+  updateAnalysis,
+  deleteAnalysis,
+  refreshAnalysis,
+  getCongrats,
+  recordCongrats,
+  updateCongrats,
+  deleteCongrats,
+  markCongratsAsRead,
+  sendClientAnalysisData,
+} from "@/service/analysis";
 import { getApplyFundingByReferenceNumber } from "@/service/apply-funding";
 import { getUserById } from "@/service/user";
+import { getFundMappingAnalysis } from "@/service/bank-products";
+import { fundAnalysis } from "@/service/crs";
+import { deleteFundingAnalysis, sendClientAnalysisN8N } from "@/lib/n8n";
 import AppError from "@/error/AppError";
+
+const mockFetch = vi.fn().mockResolvedValue({ ok: true });
+vi.stubGlobal("fetch", mockFetch);
+process.env.n8n_HOST = "https://n8n.example.com";
 
 describe("service/analysis", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.mockClear();
     mockAdd.mockResolvedValue({ id: "new-analysis-id" });
     mockGet.mockResolvedValue({ empty: true, docs: [] });
     mockOrderBy.mockReturnValue(mockCollectionRef);
@@ -223,6 +243,181 @@ describe("service/analysis", () => {
           userId: "user-1",
         }),
       );
+    });
+  });
+
+  describe("updateAnalysis", () => {
+    it("throws if docId is empty", async () => {
+      await expect(updateAnalysis("REF", "", "text")).rejects.toThrow(AppError);
+    });
+    it("updates the document", async () => {
+      await updateAnalysis("REF", "doc-1", "updated");
+      expect(mockUpdate).toHaveBeenCalledWith({ analysis: "updated" });
+    });
+  });
+
+  describe("deleteAnalysis", () => {
+    it("throws if docId is empty", async () => {
+      await expect(deleteAnalysis("REF", "")).rejects.toThrow(AppError);
+    });
+    it("deletes the document", async () => {
+      await deleteAnalysis("REF", "doc-1");
+      expect(mockDelete).toHaveBeenCalled();
+    });
+  });
+
+  describe("refreshAnalysis", () => {
+    it("throws if funding app not found", async () => {
+      vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue(
+        null as any,
+      );
+      await expect(refreshAnalysis("REF-001")).rejects.toThrow(AppError);
+    });
+    it("deletes existing analysis, calls fundAnalysis", async () => {
+      vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue({
+        referenceNumber: "REF-001",
+        userId: "u1",
+      } as any);
+      mockGet.mockResolvedValueOnce({ empty: true, docs: [] }); // getAnalysis subcollection
+      vi.mocked(getFundMappingAnalysis).mockResolvedValue([] as any);
+      vi.mocked(deleteFundingAnalysis).mockResolvedValue("webhook" as any);
+      await refreshAnalysis("REF-001");
+      expect(mockFetch).toHaveBeenCalled();
+      expect(vi.mocked(fundAnalysis)).toHaveBeenCalledWith({
+        referenceNumber: "REF-001",
+        userId: "u1",
+      });
+    });
+  });
+
+  describe("getCongrats", () => {
+    it("throws if app not found", async () => {
+      vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue(
+        null as any,
+      );
+      await expect(getCongrats("REF")).rejects.toThrow(AppError);
+    });
+    it("returns null if empty", async () => {
+      vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue({
+        referenceNumber: "REF",
+      } as any);
+      mockGet.mockResolvedValue({ empty: true, docs: [] });
+      expect(await getCongrats("REF")).toBeNull();
+    });
+    it("returns congrats docs", async () => {
+      vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue({
+        referenceNumber: "REF",
+      } as any);
+      mockGet.mockResolvedValue({
+        empty: false,
+        docs: [{ id: "c1", data: () => ({ message: "Congrats!" }) }],
+      });
+      const result = await getCongrats("REF");
+      expect(result).toHaveLength(1);
+      expect(result![0].message).toBe("Congrats!");
+    });
+  });
+
+  describe("recordCongrats", () => {
+    it("throws if userId is empty", async () => {
+      await expect(recordCongrats("", "REF", "msg")).rejects.toThrow(AppError);
+    });
+    it("throws if referenceNumber is empty", async () => {
+      await expect(recordCongrats("u1", "", "msg")).rejects.toThrow(AppError);
+    });
+    it("throws if message is empty", async () => {
+      await expect(recordCongrats("u1", "REF", "")).rejects.toThrow(AppError);
+    });
+    it("throws if app not found", async () => {
+      vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue(
+        null as any,
+      );
+      await expect(recordCongrats("u1", "REF", "msg")).rejects.toThrow(
+        AppError,
+      );
+    });
+    it("throws if user not found", async () => {
+      vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue({
+        referenceNumber: "REF",
+      } as any);
+      vi.mocked(getUserById).mockResolvedValue(null as any);
+      await expect(recordCongrats("u1", "REF", "msg")).rejects.toThrow(
+        AppError,
+      );
+    });
+    it("adds congrats document on success", async () => {
+      vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue({
+        referenceNumber: "REF",
+      } as any);
+      vi.mocked(getUserById).mockResolvedValue({ id: "u1" } as any);
+      await recordCongrats("u1", "REF", "Great job!");
+      expect(mockAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Great job!",
+          userId: "u1",
+          isRead: false,
+        }),
+      );
+    });
+  });
+
+  describe("updateCongrats", () => {
+    it("throws if docId is empty", async () => {
+      await expect(updateCongrats("REF", "", "msg")).rejects.toThrow(AppError);
+    });
+    it("updates the message", async () => {
+      await updateCongrats("REF", "doc-1", "updated msg");
+      expect(mockUpdate).toHaveBeenCalledWith({ message: "updated msg" });
+    });
+  });
+
+  describe("deleteCongrats", () => {
+    it("throws if docId is empty", async () => {
+      await expect(deleteCongrats("REF", "")).rejects.toThrow(AppError);
+    });
+    it("deletes the document", async () => {
+      await deleteCongrats("REF", "doc-1");
+      expect(mockDelete).toHaveBeenCalled();
+    });
+  });
+
+  describe("markCongratsAsRead", () => {
+    it("throws if docId is empty", async () => {
+      await expect(markCongratsAsRead("REF", "")).rejects.toThrow(AppError);
+    });
+    it("updates isRead to true", async () => {
+      await markCongratsAsRead("REF", "doc-1");
+      expect(mockUpdate).toHaveBeenCalledWith({ isRead: true });
+    });
+  });
+
+  describe("sendClientAnalysisData", () => {
+    it("throws if app not found", async () => {
+      vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue(
+        null as any,
+      );
+      await expect(sendClientAnalysisData("REF")).rejects.toThrow(AppError);
+    });
+    it("throws if user not found", async () => {
+      vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue({
+        referenceNumber: "REF",
+        userId: "u1",
+      } as any);
+      vi.mocked(getUserById).mockResolvedValue(null as any);
+      await expect(sendClientAnalysisData("REF")).rejects.toThrow(AppError);
+    });
+    it("calls fetch on success", async () => {
+      vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue({
+        referenceNumber: "REF",
+        userId: "u1",
+      } as any);
+      vi.mocked(getUserById).mockResolvedValue({
+        id: "u1",
+        email: "u@t.com",
+      } as any);
+      vi.mocked(sendClientAnalysisN8N).mockResolvedValue("webhook-url");
+      await sendClientAnalysisData("REF");
+      expect(mockFetch).toHaveBeenCalled();
     });
   });
 });

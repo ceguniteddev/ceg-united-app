@@ -10,7 +10,10 @@ import {
   WHOP_CHECKOUTS_COLLECTION,
 } from "@/constant/collection-name";
 import { whopSdk } from "@/lib/whop-sdk";
-import { Payment } from "@whop/sdk/resources.js";
+import {
+  CheckoutConfigurationCreateParams,
+  Payment,
+} from "@whop/sdk/resources.js";
 import { PaymentPlan } from "@/schema/payments";
 import { randomUUID } from "crypto";
 import { sendTriggerEmail } from "../trigger-email";
@@ -138,14 +141,20 @@ export const createWhopCheckoutConfig = async ({
                     ? Number(user.paymentAmount)
                     : Number(WHOP_FULL_PAYMENT_AMOUNT);
 
-    const planDetails = {
-      company_id: WHOP_COMPANY_ID,
-      currency: "usd" as const,
-      initial_price: fullPaymentAmount,
-      plan_type: "one_time" as const,
-      product_id: productIdToUse!,
-      visibility: "hidden" as const,
-    };
+    const planDetails: CheckoutConfigurationCreateParams.CreateCheckoutSessionInputModePaymentWithPlan.Plan =
+      {
+        company_id: WHOP_COMPANY_ID,
+        currency: "usd" as const,
+        initial_price: fullPaymentAmount,
+        plan_type: "one_time" as const,
+        product_id: productIdToUse!,
+        visibility: "hidden" as const,
+        payment_method_configuration: {
+          enabled: ["card", "paypal"],
+          disabled: ["apple_pay", "google_pay"],
+          include_platform_defaults: false,
+        },
+      };
 
     const checkoutConfig = await whopSdk.checkoutConfigurations.create({
       plan: planDetails,
