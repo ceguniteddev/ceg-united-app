@@ -154,6 +154,18 @@ export default function LoginPage() {
             Register here
           </Link>
         </div>
+
+        <div className="text-xs text-gray-500 text-center mt-3 pt-3 border-t border-gray-100">
+          By signing in, you agree to our{" "}
+          <a
+            href="https://www.cegunited.com/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline underline-offset-2 hover:no-underline focus:outline-none focus:ring-2 focus:ring-offset-1"
+          >
+            Privacy Policy
+          </a>
+        </div>
       </div>
     </div>
   );
