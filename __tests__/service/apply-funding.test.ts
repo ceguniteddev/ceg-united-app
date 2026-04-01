@@ -86,8 +86,11 @@ import {
   getFundApplicationNote,
   updateFundApplicationNote,
   createReferenceId,
+  getFundingApplications,
+  updateApplyFunding,
 } from "@/service/apply-funding";
 import { noteSchema } from "@/schema/notes";
+import { uploadDocument } from "@/service/documents";
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 describe("service/apply-funding", () => {
@@ -455,6 +458,109 @@ describe("service/apply-funding", () => {
       await expect(createReferenceId()).rejects.toThrow(
         "Firestore unavailable",
       );
+    });
+  });
+
+  describe("getFundingApplications", () => {
+    it("returns null when no matching docs", async () => {
+      mockGet.mockResolvedValue({ empty: true, docs: [] });
+      const result = await getFundingApplications({});
+      expect(result).toBeNull();
+    });
+    it("returns null when users collection is empty", async () => {
+      mockGet
+        .mockResolvedValueOnce({
+          empty: false,
+          docs: [
+            {
+              id: "d1",
+              data: () => ({ userId: "u1", appliedDate: "2024-01-01" }),
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ empty: true, docs: [] }); // users
+      const result = await getFundingApplications({});
+      expect(result).toBeNull();
+    });
+    it("returns applications with user data", async () => {
+      mockGet
+        .mockResolvedValueOnce({
+          empty: false,
+          docs: [
+            {
+              id: "d1",
+              data: () => ({ userId: "u1", appliedDate: "2024-01-01" }),
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          empty: false,
+          docs: [
+            {
+              id: "u1",
+              data: () => ({ firstName: "John" }),
+              forEach: undefined,
+            },
+          ],
+          forEach: function (cb: any) {
+            this.docs.forEach(cb);
+          },
+        });
+      const result = await getFundingApplications({});
+      expect(result).not.toBeNull();
+    });
+    it("applies userId filter when provided", async () => {
+      mockGet.mockResolvedValue({ empty: true, docs: [] });
+      await getFundingApplications({ userId: "u1" });
+      expect(mockWhere).toHaveBeenCalledWith("userId", "==", "u1");
+    });
+    it("applies state filter when provided", async () => {
+      mockGet.mockResolvedValue({ empty: true, docs: [] });
+      await getFundingApplications({ state: "CA" });
+      expect(mockWhere).toHaveBeenCalledWith("addressState", "==", "CA");
+    });
+  });
+
+  describe("updateApplyFunding", () => {
+    it("throws if referenceNumber is missing", async () => {
+      await expect(updateApplyFunding({ value: {} as any })).rejects.toThrow(
+        "Reference number is required",
+      );
+    });
+    it("throws if document not found", async () => {
+      mockGet.mockResolvedValue({ exists: false });
+      await expect(
+        updateApplyFunding({ value: { referenceNumber: "REF-001" } as any }),
+      ).rejects.toThrow("Funding application not found");
+    });
+    it("updates document with merge on success", async () => {
+      mockGet.mockResolvedValue({ exists: true });
+      await updateApplyFunding({
+        value: { referenceNumber: "REF-001", fundingType: "Personal" } as any,
+      });
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({ fundingType: "Personal" }),
+        { merge: true },
+      );
+    });
+    it("uploads bank statements when provided", async () => {
+      mockGet.mockResolvedValue({ exists: true });
+      vi.mocked(uploadDocument).mockResolvedValue({} as any);
+      await updateApplyFunding({
+        value: {
+          referenceNumber: "REF-001",
+          userId: "u1",
+          bankStatements: [
+            {
+              name: "stmt.pdf",
+              size: 100,
+              type: "application/pdf",
+              base64: "data:application/pdf;base64,AQID",
+            },
+          ],
+        } as any,
+      });
+      expect(vi.mocked(uploadDocument)).toHaveBeenCalled();
     });
   });
 });

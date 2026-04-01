@@ -61,14 +61,23 @@ vi.mock("crypto", () => ({
   })),
 }));
 
-import { generateEmailVerificationToken } from "@/service/email-verification";
+import {
+  generateEmailVerificationToken,
+  verifyEmailToken,
+  getVerificationTokenStatus,
+} from "@/service/email-verification";
 import { Timestamp } from "firebase-admin/firestore";
+import { authenticationAdmin } from "@/lib/fireabase-admin";
+import { getCRSReport, fundAnalysis, generateCRSReport } from "@/service/crs";
 
 describe("service/email-verification", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSet.mockResolvedValue(undefined);
     mockCollectionRef.doc.mockReturnValue(mockDocRef);
+    vi.mocked(authenticationAdmin).mockReturnValue({
+      updateUser: vi.fn().mockResolvedValue(undefined),
+    } as any);
   });
 
   describe("generateEmailVerificationToken", () => {
@@ -147,6 +156,112 @@ describe("service/email-verification", () => {
       });
       const setArg = mockSet.mock.calls[0][0];
       expect(setArg.referenceNumber).toBe("REF-XYZ");
+    });
+  });
+
+  describe("verifyEmailToken", () => {
+    it("returns invalid message when token doc not found", async () => {
+      mockGet.mockResolvedValue({ exists: false });
+      const result = await verifyEmailToken("bad-token");
+      expect(result.success).toBe(false);
+      expect(result.message).toMatch(/invalid/i);
+    });
+    it("returns success when already verified", async () => {
+      mockGet.mockResolvedValue({
+        exists: true,
+        data: () => ({ verified: true, email: "a@b.com" }),
+      });
+      const result = await verifyEmailToken("token-1");
+      expect(result.success).toBe(true);
+      expect(result.email).toBe("a@b.com");
+    });
+    it("returns expired when token is past expiry", async () => {
+      const pastDate = new Date(Date.now() - 100000);
+      mockGet.mockResolvedValue({
+        exists: true,
+        data: () => ({
+          verified: false,
+          email: "a@b.com",
+          expiresAt: { toDate: () => pastDate },
+          userId: "u1",
+        }),
+      });
+      const result = await verifyEmailToken("token-2");
+      expect(result.success).toBe(false);
+      expect(result.message).toMatch(/expired/i);
+    });
+    it("verifies email successfully", async () => {
+      const futureDate = new Date(Date.now() + 100000);
+      mockGet.mockResolvedValue({
+        exists: true,
+        data: () => ({
+          verified: false,
+          email: "a@b.com",
+          expiresAt: { toDate: () => futureDate },
+          userId: "u1",
+          registrationType: "Admin",
+        }),
+      });
+      mockUpdate.mockResolvedValue(undefined);
+      const result = await verifyEmailToken("token-3");
+      expect(result.success).toBe(true);
+      expect(result.email).toBe("a@b.com");
+    });
+    it("triggers CRS report for Self registration with referenceNumber", async () => {
+      const futureDate = new Date(Date.now() + 100000);
+      mockGet.mockResolvedValue({
+        exists: true,
+        data: () => ({
+          verified: false,
+          email: "a@b.com",
+          expiresAt: { toDate: () => futureDate },
+          userId: "u1",
+          referenceNumber: "REF-001",
+          registrationType: "Self",
+        }),
+      });
+      mockUpdate.mockResolvedValue(undefined);
+      vi.mocked(getCRSReport).mockResolvedValue(null as any);
+      const result = await verifyEmailToken("token-4");
+      expect(result.success).toBe(true);
+      expect(vi.mocked(generateCRSReport)).toHaveBeenCalled();
+      expect(vi.mocked(fundAnalysis)).toHaveBeenCalled();
+    });
+  });
+
+  describe("getVerificationTokenStatus", () => {
+    it("returns not exists when doc not found", async () => {
+      mockGet.mockResolvedValue({ exists: false });
+      const result = await getVerificationTokenStatus("bad");
+      expect(result.exists).toBe(false);
+    });
+    it("returns verified status", async () => {
+      const futureDate = new Date(Date.now() + 100000);
+      mockGet.mockResolvedValue({
+        exists: true,
+        data: () => ({
+          verified: true,
+          email: "a@b.com",
+          expiresAt: { toDate: () => futureDate },
+        }),
+      });
+      const result = await getVerificationTokenStatus("tok");
+      expect(result.exists).toBe(true);
+      expect(result.verified).toBe(true);
+      expect(result.expired).toBe(false);
+    });
+    it("returns expired when past expiry", async () => {
+      const pastDate = new Date(Date.now() - 100000);
+      mockGet.mockResolvedValue({
+        exists: true,
+        data: () => ({
+          verified: false,
+          email: "a@b.com",
+          expiresAt: { toDate: () => pastDate },
+        }),
+      });
+      const result = await getVerificationTokenStatus("tok");
+      expect(result.expired).toBe(true);
     });
   });
 });

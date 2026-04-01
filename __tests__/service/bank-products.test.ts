@@ -86,7 +86,14 @@ import {
   deleteFundMappingAnalysis,
   removeBankProductFromMapping,
   updateClientApplicationStatus,
+  approveMappedFund,
+  cancelMappedFund,
 } from "@/service/bank-products";
+import { getCurrentUser } from "@/service/user";
+import {
+  getApplyFundingByReferenceNumber,
+  updateApplicationStatus,
+} from "@/service/apply-funding";
 import NotFoundError from "@/error/NotFoundError";
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -277,5 +284,123 @@ describe("updateClientApplicationStatus", () => {
     expect(mockUpdate).toHaveBeenCalledWith({
       clientApplicationStatus: "Applied",
     });
+  });
+});
+
+describe("approveMappedFund", () => {
+  it("returns error if referenceNumber is missing", async () => {
+    const result = await approveMappedFund({
+      referenceNumber: "",
+      bankProductId: "bp1",
+      products: [{}] as any,
+    });
+    expect(result.success).toBe(false);
+  });
+  it("returns error if products is empty", async () => {
+    const result = await approveMappedFund({
+      referenceNumber: "REF",
+      bankProductId: "bp1",
+      products: [],
+    });
+    expect(result.success).toBe(false);
+  });
+  it("returns error if funding app not found", async () => {
+    vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue(null as any);
+    const result = await approveMappedFund({
+      referenceNumber: "REF",
+      bankProductId: "bp1",
+      products: [{}] as any,
+    });
+    expect(result.success).toBe(false);
+  });
+  it("returns error if bank product not found", async () => {
+    vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue({
+      referenceNumber: "REF",
+    } as any);
+    mockGet.mockResolvedValueOnce({ exists: false }); // getBankProduct
+    const result = await approveMappedFund({
+      referenceNumber: "REF",
+      bankProductId: "bp1",
+      products: [{}] as any,
+    });
+    expect(result.success).toBe(false);
+  });
+  it("returns error if current user not found", async () => {
+    vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue({
+      referenceNumber: "REF",
+    } as any);
+    mockGet.mockResolvedValueOnce({
+      exists: true,
+      id: "bp1",
+      data: () => ({ bankName: "Test" }),
+    });
+    vi.mocked(getCurrentUser).mockResolvedValue(null as any);
+    const result = await approveMappedFund({
+      referenceNumber: "REF",
+      bankProductId: "bp1",
+      products: [{}] as any,
+    });
+    expect(result.success).toBe(false);
+  });
+  it("creates new approval when none exists", async () => {
+    vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue({
+      referenceNumber: "REF",
+      userId: "u1",
+    } as any);
+    mockGet
+      .mockResolvedValueOnce({
+        exists: true,
+        id: "bp1",
+        data: () => ({ bankName: "Test" }),
+      }) // getBankProduct
+      .mockResolvedValueOnce({ empty: true, docs: [] }); // existing approvals query
+    vi.mocked(getCurrentUser).mockResolvedValue({ uid: "admin1" } as any);
+    vi.mocked(updateApplicationStatus).mockResolvedValue(undefined as any);
+    const result = await approveMappedFund({
+      referenceNumber: "REF",
+      bankProductId: "bp1",
+      products: [{}] as any,
+    });
+    expect(result.success).toBe(true);
+    expect(mockAdd).toHaveBeenCalled();
+  });
+});
+
+describe("cancelMappedFund", () => {
+  it("returns error if fundMappingApprovedId is missing", async () => {
+    const result = await cancelMappedFund({
+      referenceNumber: "REF",
+      fundMappingApprovedId: "",
+    });
+    expect(result.success).toBe(false);
+  });
+  it("returns error if referenceNumber is missing", async () => {
+    const result = await cancelMappedFund({
+      referenceNumber: "",
+      fundMappingApprovedId: "f1",
+    });
+    expect(result.success).toBe(false);
+  });
+  it("returns error if funding app not found", async () => {
+    vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue(null as any);
+    const result = await cancelMappedFund({
+      referenceNumber: "REF",
+      fundMappingApprovedId: "f1",
+    });
+    expect(result.success).toBe(false);
+  });
+  it("deletes and returns success", async () => {
+    vi.mocked(getApplyFundingByReferenceNumber).mockResolvedValue({
+      referenceNumber: "REF",
+    } as any);
+    vi.mocked(getCurrentUser).mockResolvedValue({ uid: "admin1" } as any);
+    mockGet.mockResolvedValue({ exists: true });
+    vi.mocked(updateApplicationStatus).mockResolvedValue(undefined as any);
+    const result = await cancelMappedFund({
+      referenceNumber: "REF",
+      fundMappingApprovedId: "f1",
+    });
+    expect(result.success).toBe(true);
+    expect(mockDelete).toHaveBeenCalled();
   });
 });
