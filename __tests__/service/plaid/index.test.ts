@@ -191,10 +191,10 @@ describe("getAccessToken", () => {
   it("applies tokenType and itemId where filters", async () => {
     mockGet.mockResolvedValue({ empty: true, docs: [] });
 
-    await getAccessToken("user-2", "INCOME", "item-2");
+    await getAccessToken("user-2", "INCOME_VERIFICATION_BANK", "item-2");
 
     // where called at least twice: once for tokenType, once for itemId
-    expect(mockWhere).toHaveBeenCalledWith("tokenType", "==", "INCOME");
+    expect(mockWhere).toHaveBeenCalledWith("tokenType", "==", "INCOME_VERIFICATION_BANK");
     expect(mockWhere).toHaveBeenCalledWith("itemId", "==", "item-2");
   });
 
@@ -371,7 +371,7 @@ describe("exchangeAccessToken", () => {
 
     const { removeItemLinkUpdateModeNewAccount } =
       await import("@/service/plaid/item");
-    vi.mocked(removeItemLinkUpdateModeNewAccount).mockResolvedValue(undefined);
+    vi.mocked(removeItemLinkUpdateModeNewAccount).mockResolvedValue(null);
 
     await exchangeAccessToken(
       "pub-token",

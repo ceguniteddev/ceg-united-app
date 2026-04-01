@@ -428,11 +428,14 @@ describe("createCommission", () => {
     await createCommission({
       brokerId: "broker-1",
       clientId: "client-1",
-      referenceNumber: "REF-001",
       fundMappingApprovedId: "fmap-1",
       commissionRate: 0.05,
       commissionAmount: 250,
       status: "Pending",
+      clientName: "",
+      fundingApplicationId: "",
+      bankName: "",
+      fundedAmount: 0,
     });
 
     expect(mockAdd).toHaveBeenCalledWith(

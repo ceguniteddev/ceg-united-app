@@ -76,7 +76,7 @@ describe("service/email-verification", () => {
       const token = await generateEmailVerificationToken({
         userId: "user-1",
         email: "user@example.com",
-        registrationType: "Client",
+        registrationType: "Self",
       });
       expect(typeof token).toBe("string");
       expect(token).toBe("mock-token-hex-string-32-bytes-long");
@@ -86,7 +86,7 @@ describe("service/email-verification", () => {
       await generateEmailVerificationToken({
         userId: "user-1",
         email: "user@example.com",
-        registrationType: "Client",
+        registrationType: "Self",
       });
       expect(mockSet).toHaveBeenCalledOnce();
       const setArg = mockSet.mock.calls[0][0];
@@ -95,7 +95,7 @@ describe("service/email-verification", () => {
         email: "user@example.com",
         token: "mock-token-hex-string-32-bytes-long",
         verified: false,
-        registrationType: "Client",
+        registrationType: "Self",
       });
     });
 
@@ -112,7 +112,7 @@ describe("service/email-verification", () => {
       await generateEmailVerificationToken({
         userId: "user-1",
         email: "user@example.com",
-        registrationType: "Client",
+        registrationType: "Self",
       });
       expect(vi.mocked(Timestamp.now)).toHaveBeenCalled();
       const setArg = mockSet.mock.calls[0][0];
@@ -123,7 +123,7 @@ describe("service/email-verification", () => {
       await generateEmailVerificationToken({
         userId: "user-1",
         email: "user@example.com",
-        registrationType: "Client",
+        registrationType: "Self",
       });
       expect(vi.mocked(Timestamp.fromDate)).toHaveBeenCalled();
     });
@@ -132,7 +132,7 @@ describe("service/email-verification", () => {
       await generateEmailVerificationToken({
         userId: "user-1",
         email: "user@example.com",
-        registrationType: "Client",
+        registrationType: "Self",
       });
       const setArg = mockSet.mock.calls[0][0];
       expect(setArg.verified).toBe(false);
@@ -143,7 +143,7 @@ describe("service/email-verification", () => {
         userId: "user-1",
         email: "user@example.com",
         referenceNumber: "REF-XYZ",
-        registrationType: "Client",
+        registrationType: "Self",
       });
       const setArg = mockSet.mock.calls[0][0];
       expect(setArg.referenceNumber).toBe("REF-XYZ");

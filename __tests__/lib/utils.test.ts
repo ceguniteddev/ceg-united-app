@@ -91,15 +91,21 @@ describe("parseStringify()", () => {
 
 describe("countTransactionCategories()", () => {
   const makeTransaction = (category: string): Transaction => ({
-    category,
-    $id: "",
-    name: "",
-    paymentChannel: "",
-    type: "",
-    accountId: "",
-    amount: 0,
-    pending: false,
-    date: new Date().toISOString(),
+      category,
+      $id: "",
+      name: "",
+      paymentChannel: "",
+      type: "",
+      accountId: "",
+      amount: 0,
+      pending: false,
+      date: new Date().toISOString(),
+      id: "",
+      image: "",
+      $createdAt: "",
+      channel: "",
+      senderBankId: "",
+      receiverBankId: ""
   });
 
   it("should count single category correctly", () => {

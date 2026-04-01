@@ -413,7 +413,7 @@ describe("updateUserStatus", () => {
     );
     mockUpdate.mockResolvedValueOnce(undefined);
 
-    await updateUserStatus({ id: "u1", status: "Inactive" });
+    await updateUserStatus({ id: "u1", status: "InActive" });
 
     expect(mockUpdate).toHaveBeenCalledWith({ activeStatus: "Inactive" });
   });
