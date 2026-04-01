@@ -31,19 +31,19 @@ export default function ForgotPasswordPage({ setOpenForgotPassword }: Props) {
         const token = await getCaptchaTokenRegistration("forgot_password");
         await resetPassword(token, email);
         setSuccess(
-          "If an account exists for that email, a reset link has been sent."
+          "If an account exists for that email, a reset link has been sent.",
         );
         setOpenForgotPassword(false);
         toast.success("Password reset link sent.");
       } catch (err: any) {
         setError(
-          err?.message || "Unable to send reset link. Please try again."
+          err?.message || "Unable to send reset link. Please try again.",
         );
       } finally {
         setLoading(false);
       }
     },
-    [email, resetPassword, setOpenForgotPassword]
+    [email, resetPassword, setOpenForgotPassword],
   );
 
   return (
@@ -60,7 +60,7 @@ export default function ForgotPasswordPage({ setOpenForgotPassword }: Props) {
           <p className="text-green-600 text-sm text-center mb-4">{success}</p>
         )}
 
-        <form onSubmit={handleReset}>
+        <form onSubmit={handleReset} method="post">
           <fieldset disabled={loading}>
             <div className="mb-4">
               <Label className="block text-gray-600 font-medium mb-1">

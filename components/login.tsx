@@ -67,7 +67,7 @@ export default function LoginPage() {
           <p className="text-red-500 text-sm text-center mb-4">{error}</p>
         )}
 
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleLogin} method="post">
           <fieldset disabled={loading}>
             <div className="mb-4">
               <Label className="block text-gray-600 font-medium mb-1 text-sm">

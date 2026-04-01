@@ -485,7 +485,7 @@ export function MultiStepRegistrationForm({
       <div className="mt-4 sm:mt-6">
         {currentStep === 1 && (
           <Form {...form1}>
-            <form onSubmit={(e) => e.preventDefault()}>
+            <form onSubmit={(e) => e.preventDefault()} method="post">
               <fieldset disabled={isSubmitting}>
                 <div className="space-y-4 sm:space-y-6">
                   <Step1PersonalInfo
@@ -500,7 +500,7 @@ export function MultiStepRegistrationForm({
 
         {currentStep === 2 && (
           <Form {...form2}>
-            <form onSubmit={(e) => e.preventDefault()}>
+            <form onSubmit={(e) => e.preventDefault()} method="post">
               <fieldset disabled={isSubmitting}>
                 <div className="space-y-4 sm:space-y-6">
                   <Step2FundingInfo userId={step1Data?.email || ""} />
