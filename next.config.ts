@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   output: "standalone",
+  generateEtags: false,
   serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
   poweredByHeader: false,
   allowedDevOrigins: ["raccoon-robust-likely.ngrok-free.app"],
