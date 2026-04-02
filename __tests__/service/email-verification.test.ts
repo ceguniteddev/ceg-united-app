@@ -55,11 +55,20 @@ vi.mock("@/lib/logger", () => ({
   logError: vi.fn(),
 }));
 
-vi.mock("crypto", () => ({
-  randomBytes: vi.fn(() => ({
+const { mockRandomBytes } = vi.hoisted(() => ({
+  mockRandomBytes: vi.fn(() => ({
     toString: () => "mock-token-hex-string-32-bytes-long",
   })),
 }));
+
+vi.mock("crypto", async (importOriginal) => {
+  const actual: any = await importOriginal();
+  return {
+    ...actual,
+    default: { ...actual, randomBytes: mockRandomBytes },
+    randomBytes: mockRandomBytes,
+  };
+});
 
 import {
   generateEmailVerificationToken,

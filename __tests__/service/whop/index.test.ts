@@ -40,7 +40,13 @@ vi.mock("@/lib/whop-sdk", () => ({
 vi.mock("@/service/user", () => ({ getUserById: vi.fn() }));
 vi.mock("@/service/trigger-email", () => ({ sendTriggerEmail: vi.fn() }));
 vi.mock("@/lib/utils", () => ({ currency: vi.fn((x: any) => `$${x}`) }));
-vi.mock("crypto", () => ({ randomUUID: vi.fn(() => "mock-uuid") }));
+vi.mock("crypto", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    randomUUID: vi.fn(() => "mock-uuid"),
+  };
+});
 
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
 import { createWhopCheckoutConfig } from "@/service/whop";
