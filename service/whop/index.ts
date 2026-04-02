@@ -149,11 +149,11 @@ export const createWhopCheckoutConfig = async ({
         plan_type: "one_time" as const,
         product_id: productIdToUse!,
         visibility: "hidden" as const,
-        payment_method_configuration: {
-          enabled: ["card", "paypal"],
-          disabled: ["apple_pay", "google_pay"],
-          include_platform_defaults: false,
-        },
+        // payment_method_configuration: {
+        //   enabled: ["card", "paypal"],
+        //   disabled: ["apple_pay", "google_pay"],
+        //   include_platform_defaults: false,
+        // },
       };
 
     const checkoutConfig = await whopSdk.checkoutConfigurations.create({
