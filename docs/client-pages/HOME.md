@@ -4,104 +4,51 @@
 
 ## Overview
 
-Your Home dashboard is the central hub of your client portal, providing a comprehensive overview of your financial status, applications, and account activity at a glance.
+Your Home dashboard acts as your "Financial Intelligence Center," providing a real-time overview of your funding readiness, financial profile, credit scores, and recent account activity.
 
 ## What You'll See
 
-### Funding Applications Summary
+### Main Content (Left Panel)
 
-- Total number of your funding applications
-- Status breakdown (pending, approved, rejected)
-- Recent application activity and updates
+- **Funding Metrics:** High-level summary of your Total Requested, Total Approved, and Total Funded amounts.
+- **Credit Scores:** Current scores directly imported from major bureaus (Experian, TransUnion, Equifax).
+- **My Businesses:** Quick-access cards displaying your connected business entities.
+- **Financial Snapshot:** Insights drawn from your linked bank accounts, including Last Month's Deposits, Average Monthly Balance, and Average Monthly Income.
 
-### Bank Accounts Overview
+### Insights & Actions (Right Panel)
 
-- Connected bank accounts
-- Total current balance across all accounts
-- Total available balance
-- Account health status and alerts
+- **Fundability Score:** A visual ring chart metric showing your overall funding readiness score and its current status.
+- **Next Steps Panel:** A dynamic checklist outlining the recommended actions required to improve your financial profile or complete your setup.
+- **Application Status:** A donut chart visualizing the proportion of your funding applications by status (e.g., Pending, Approved).
 
-### Business Information
+### Credit Analysis
 
-- Number of registered businesses
-- Business account connections
-- Quick access to manage your businesses
+If your credit report contains flags, an **Issues Card** will appear highlighting:
 
-### Credit Report Summary
-
-- Credit scores from major bureaus (Equifax, Experian, TransUnion)
-- Credit utilization percentage
-- Negative items requiring attention
-- Recent credit inquiries
-
-### Document Status
-
-- Number of uploaded documents
-- Document verification status
-- Alerts for missing required documents
-
-### Debt-to-Income (DTI) Ratio
-
-- Your calculated DTI percentage
-- Visual representation with color-coded indicators
-- Recommendations for improvement
+- Analysis Notes
+- Negative Items
+- Derogatory Marks
 
 ## Visual Features
 
-- **Charts:** Visual breakdown of your funding application statuses
-- **Progress Bars:** Credit utilization and document completion progress
-- **Status Badges:** Color-coded status indicators for quick reference
-- **Alert Cards:** Important notifications and action items
+- **Charts:** Donut chart for Application Statuses, progress ring for Fundability Score.
+- **Metric Cards:** Clean overview panels with skeleton loaders for smooth data fetching.
+- **Status Indicators:** Color-coded badges representing various states of applications and credit health.
+- **Celebration Modals:** Animated confetti pop-ups with a "Congratulations!" message triggered when significant milestones (like completing a funding audit) are reached.
 
 ## Quick Actions
 
-From your dashboard, you can:
+From this page, you can:
 
-- **Apply for Funding** - Start a new funding application
-- **Schedule Consultation** - Book an appointment with our support team
-- **Link Bank Account** - Connect additional bank accounts
-- **View Premium Services** - Check your Denefits contract status
+- **Follow Next Steps** - Click through your personalized `NextStepsPanel` checklist.
+- **View Audit Report** - Quickly navigate to `/client/my-funding` via milestone alerts.
+- **Explore Businesses** - Access detailed reports for your registered businesses.
 
-## Achievement Notifications
+## Related
 
-When you reach important milestones (such as funding approval), you'll see a congratulations message celebrating your achievement.
-
-## Premium Features
-
-If you have premium client status, you'll see:
-
-- Denefits contract status and benefits
-- Access to educational courses and learning materials
-- Enhanced support options
-
-## Responsive Design
-
-The dashboard automatically adapts to your device:
-
-- Desktop: Full grid layout with all metrics visible
-- Tablet: Adjusted layout for optimal viewing
-- Mobile: Card-based stacked layout for easy navigation
-
-## Navigation
-
-From your dashboard, quickly navigate to:
-
-- **My Funding** - Manage funding applications
-- **My Accounts** - View bank accounts and transactions
-- **My Business** - Manage business entities
-- **My Credit** - View detailed credit reports
-- **My Documents** - Upload and manage documents
-- **Letter Stream** - Create credit dispute letters
-- **My Learning** - Access educational materials (premium)
-
-## Access Requirements
-
-- Must be logged in with client credentials
-- No additional requirements to view dashboard
-
-## Best Practices
-
-- Check your dashboard regularly for important updates
-- Address any alerts or missing documents promptly
-- Monitor your credit utilization and DTI ratio
-- Keep your connected accounts up to date
+- [My Funding](MY_FUNDING.md)
+- [My Credit](MY_CREDIT.md)
+- Component: `components/ClientDashboard.tsx`
+- Page Wrapper: `app/(client)/client/home/page.tsx`
+- Data Hooks: `hooks/statistics.ts` -> `useGetClientStatistics()`
+- Sub-components: Found in `components/dashboard/` (e.g., `MetricCards`, `FundabilityScoreCard`, `ApplicationStatusChart`)
