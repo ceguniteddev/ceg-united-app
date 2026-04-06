@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { toast } from "sonner";
-import { currency } from "@/lib/utils";
 import Spinner from "@/components/Spinner";
+import { useCartStore } from "@/components/tradelines/useCartStore";
+import { USER_ALL_TRADELINES_KEY } from "@/hooks/tradelines";
 import type { CartItem } from "@/types/tradelines";
 
 type TradelineCheckoutViewProps = {
@@ -13,6 +15,7 @@ type TradelineCheckoutViewProps = {
   totalPrice: number;
   prefillEmail?: string;
   userId: string;
+  onPaymentComplete?: () => void;
 };
 
 export const TradelineCheckoutView = ({
@@ -21,8 +24,10 @@ export const TradelineCheckoutView = ({
   totalPrice,
   prefillEmail,
   userId,
+  onPaymentComplete,
 }: TradelineCheckoutViewProps) => {
   const [isRecording, setIsRecording] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleComplete = (plan_id: string, receipt_id?: string) => {
     if (isRecording) return; // Prevent duplicate calls
@@ -51,15 +56,19 @@ export const TradelineCheckoutView = ({
           throw new Error("Failed to record purchase");
         }
 
-        toast.success("Payment successful! Your order is being processed.");
+        // Clear Zustand cart state
+        useCartStore.getState().clearCart();
+
+        // Invalidate React Query cache so purchased tab shows fresh data
+        queryClient.invalidateQueries({ queryKey: USER_ALL_TRADELINES_KEY });
 
         // Clear cart from sessionStorage
         sessionStorage.removeItem("tradeline_checkout_data");
 
-        // Redirect to purchased tradelines after a short delay
-        setTimeout(() => {
-          window.location.href = "/client/tradelines?tab=purchased";
-        }, 2000);
+        // Notify parent to close sheet / switch tabs
+        onPaymentComplete?.();
+
+        toast.success("Payment successful! Your order is being processed.");
       } catch (error: any) {
         console.error("Error recording purchase:", error);
         toast.error(
