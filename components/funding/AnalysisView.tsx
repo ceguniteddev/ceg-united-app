@@ -439,32 +439,49 @@ const AnalysisDetailsView = ({
     () => extractHtmlFromFence(analysis),
     [analysis],
   );
-  const [iframeHeight, setIframeHeight] = React.useState(600);
 
-  const handleLoad = React.useCallback(
-    (e: React.SyntheticEvent<HTMLIFrameElement>) => {
-      const doc = e.currentTarget.contentDocument;
-      if (doc) {
-        setIframeHeight(
-          doc.documentElement.scrollHeight || doc.body.scrollHeight,
-        );
+  const wrappedHtml = React.useMemo(() => {
+    // Inject a script that reports document height to the parent via postMessage
+    const heightReporter = `<script>
+      function reportHeight() {
+        var h = document.documentElement.scrollHeight || document.body.scrollHeight;
+        window.parent.postMessage({ type: 'iframe-height', height: h }, '*');
       }
-    },
-    [],
-  );
+      window.addEventListener('load', function() { setTimeout(reportHeight, 100); });
+      window.addEventListener('resize', reportHeight);
+      new MutationObserver(reportHeight).observe(document.body, { childList: true, subtree: true, attributes: true });
+    </script>`;
+    return initial + heightReporter;
+  }, [initial]);
+
+  const [iframeHeight, setIframeHeight] = React.useState(600);
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+
+  React.useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (
+        e.data?.type === "iframe-height" &&
+        typeof e.data.height === "number"
+      ) {
+        setIframeHeight(e.data.height);
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   // If user is a Client, display read-only HTML content
   // if (role === "Client") {
   return (
     <div className="w-full">
       <iframe
-        srcDoc={initial}
+        ref={iframeRef}
+        srcDoc={wrappedHtml}
         className="w-full border-0"
         style={{ height: iframeHeight }}
         title="Analysis Details"
-        sandbox="allow-same-origin allow-scripts"
+        sandbox="allow-scripts"
         scrolling="no"
-        onLoad={handleLoad}
       />
     </div>
   );
