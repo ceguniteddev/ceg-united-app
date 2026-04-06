@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { withClientGuard } from "@/components/wrapper";
 import { useAuth } from "@/provider/AuthContext";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   CreditCard,
@@ -132,7 +131,20 @@ function TradelinesPage() {
   const [error, setError] = useState<string | null>(null);
 
   // UI state
-  const [activeTab, setActiveTab] = useState<TabId>("available");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") as TabId | null;
+  const [activeTab, setActiveTab] = useState<TabId>(
+    initialTab &&
+      [
+        "available",
+        "purchased",
+        "personal-builder",
+        "business-builder",
+        "special-deals",
+      ].includes(initialTab)
+      ? initialTab
+      : "available",
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortField>("price-asc");
   const [cartOpen, setCartOpen] = useState(false);
@@ -344,6 +356,13 @@ function TradelinesPage() {
       toast.error("Failed to initiate checkout: " + err.message);
       setIsPurchasing(false);
     }
+  };
+
+  // Handle payment completion
+  const handlePaymentComplete = () => {
+    setCheckoutData(null);
+    setCheckoutSheetOpen(false);
+    setActiveTab("purchased");
   };
 
   return (
@@ -616,6 +635,7 @@ function TradelinesPage() {
                 totalPrice={checkoutData.totalPrice}
                 prefillEmail={user?.email || ""}
                 userId={user?.uid || ""}
+                onPaymentComplete={handlePaymentComplete}
               />
             )}
           </div>

@@ -17,7 +17,7 @@ interface CartStore {
   addItem: (tradeline: AvailableTradeline) => void;
   removeItem: (tradelineId: string) => void;
   updateQuantity: (tradelineId: string, quantity: number) => void;
-  clearCart: () => void;
+  clearCart: () => Promise<void>;
   getTotalPrice: () => number;
   getItemCount: () => number;
   isInCart: (tradelineId: string) => boolean;
@@ -62,7 +62,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
     } catch (error) {
       console.error("Failed to load cart:", error);
     } finally {
-      set({ isLoading: false });
+      set({ isLoading: false, isInitialized: true });
     }
   },
 
@@ -144,6 +144,10 @@ export const useCartStore = create<CartStore>((set, get) => ({
 
   clearCart: async () => {
     const { userId } = get();
+    if (syncTimeout) {
+      clearTimeout(syncTimeout);
+      syncTimeout = null;
+    }
     set({ items: [] });
 
     if (!userId) {

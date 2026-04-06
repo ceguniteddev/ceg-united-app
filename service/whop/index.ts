@@ -95,26 +95,31 @@ export const createWhopCheckoutConfig = async ({
   }
 
   try {
-    // Check if a checkout link already exists for this referenceNumber
-    const existingCheckoutQuery = await firestoreAdmin()
-      .collection(WHOP_CHECKOUTS_COLLECTION)
-      .where("userId", "==", userId)
-      .where("paymentKey", "==", paymentKey)
-      .limit(1)
-      .get();
+    // Skip reuse for tradeline purchases — amount varies per cart
+    const isTradeline = paymentKey.includes("Tradeline");
 
-    if (!existingCheckoutQuery.empty) {
-      const existingCheckout = existingCheckoutQuery.docs[0].data();
-      if (existingCheckout.checkoutId) {
-        logInfo("Found existing checkout config for userId", {
-          userId,
-          checkoutId: existingCheckout.checkoutId,
-          paymentKey,
-        });
-        return {
-          checkoutId: existingCheckout.checkoutId,
-          url: existingCheckout.url,
-        };
+    if (!isTradeline) {
+      // Check if a checkout link already exists for this referenceNumber
+      const existingCheckoutQuery = await firestoreAdmin()
+        .collection(WHOP_CHECKOUTS_COLLECTION)
+        .where("userId", "==", userId)
+        .where("paymentKey", "==", paymentKey)
+        .limit(1)
+        .get();
+
+      if (!existingCheckoutQuery.empty) {
+        const existingCheckout = existingCheckoutQuery.docs[0].data();
+        if (existingCheckout.checkoutId) {
+          logInfo("Found existing checkout config for userId", {
+            userId,
+            checkoutId: existingCheckout.checkoutId,
+            paymentKey,
+          });
+          return {
+            checkoutId: existingCheckout.checkoutId,
+            url: existingCheckout.url,
+          };
+        }
       }
     }
 
