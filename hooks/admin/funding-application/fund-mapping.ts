@@ -622,7 +622,50 @@ export const useApprovedMappedFundsMutation = () => {
         skipReason,
       });
     },
-    onSuccess: (_data, variable) => {
+    onMutate: async (variable) => {
+      // Cancel outgoing refetches so they don't overwrite optimistic update
+      await queryClient.cancelQueries({
+        queryKey: ["useClientMappedFundingDetailsQuery"],
+        exact: false,
+      });
+
+      // Snapshot previous data for rollback
+      const previousData = queryClient.getQueriesData({
+        queryKey: ["useClientMappedFundingDetailsQuery"],
+        exact: false,
+      });
+
+      // Optimistically update: set the skipped bank's status
+      queryClient.setQueriesData(
+        { queryKey: ["useClientMappedFundingDetailsQuery"], exact: false },
+        (old: any) => {
+          if (!old || !Array.isArray(old)) return old;
+          return old.map((fund: any) =>
+            fund.fundMappingApprovedId === variable.fundMappingApprovedId
+              ? { ...fund, clientApplicationStatus: "Lender Skipped" }
+              : fund,
+          );
+        },
+      );
+
+      return { previousData };
+    },
+    onError: (error: any, _variable, context) => {
+      // Rollback to previous data on error
+      if (context?.previousData) {
+        for (const [queryKey, data] of context.previousData) {
+          queryClient.setQueryData(queryKey, data);
+        }
+      }
+      if (error instanceof AppError) {
+        toast.warning(error.message);
+      } else {
+        toast.warning(error.message);
+        console.error(error);
+      }
+    },
+    onSettled: (_data, _error, variable) => {
+      // Always refetch to get server truth (includes new auto-served bank)
       queryClient.invalidateQueries({
         queryKey: [
           "GET_FUNDING_APPLICATION_MAPPED_FUNDS",
@@ -637,14 +680,6 @@ export const useApprovedMappedFundsMutation = () => {
         queryKey: ["GET_APPROVED_MAPPED_FUNDS", variable.referenceNumber],
       });
       toast.success("Lender skipped successfully.");
-    },
-    onError: (error: any) => {
-      if (error instanceof AppError) {
-        toast.warning(error.message);
-      } else {
-        toast.warning(error.message);
-        console.error(error);
-      }
     },
   });
 
@@ -763,29 +798,30 @@ export const useClientMappedFundingDetailsQuery = ({
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
 
-      // 1. Create an empty URLSearchParams object
       const queryParams = new URLSearchParams();
 
-      // 2. Conditionally append each parameter if it exists and is not empty
       if (userId) {
         queryParams.append("userId", userId);
       }
+
+      // Use auto-serve endpoint when referenceNumber is available (client funding page)
+      // Fall back to original endpoint for other views (broker, apply page, admin)
+      let baseUrl: string;
       if (referenceNumber) {
         queryParams.append("referenceNumber", referenceNumber);
+        baseUrl = "/api/funding-application/auto-serve";
+      } else {
+        // Include clientApplicationStatus for the original endpoint
+        if (clientApplicationStatus && clientApplicationStatus.length > 0) {
+          clientApplicationStatus.forEach((status) => {
+            queryParams.append("clientApplicationStatus", status);
+          });
+        }
+        baseUrl = "/api/funding-application";
       }
 
-      // 3. MOST IMPORTANT: Handle the array by appending each value separately
-      if (clientApplicationStatus && clientApplicationStatus.length > 0) {
-        clientApplicationStatus.forEach((status) => {
-          queryParams.append("clientApplicationStatus", status);
-        });
-      }
-
-      // 4. Construct the final URL
       const queryString = queryParams.toString();
-      const url = `/api/funding-application${
-        queryString ? `?${queryString}` : ""
-      }`;
+      const url = `${baseUrl}${queryString ? `?${queryString}` : ""}`;
 
       const response = await fetch(url);
 

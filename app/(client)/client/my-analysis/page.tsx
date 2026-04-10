@@ -32,7 +32,7 @@ const MyAnalysisPage = () => {
           if (!acc.find((item) => item.value === app.referenceNumber)) {
             acc.push({
               value: app.referenceNumber!,
-              label: format(new Date(app.appliedDate), "MMM dd, yyyy"),
+              label: `${format(new Date(app.appliedDate), "MMM d, yyyy")} - ${app.interestedProduct}`,
               date: new Date(app.appliedDate),
             });
           }
@@ -93,7 +93,7 @@ const MyAnalysisPage = () => {
               <SelectContent>
                 {referenceOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label} - {option.value}
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
