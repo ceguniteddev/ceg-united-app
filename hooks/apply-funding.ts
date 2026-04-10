@@ -302,7 +302,7 @@ export const useAddFundApplicationNotesQuery = ({
 
 export const getNote = async (referenceNumber: string): Promise<NoteSchema> => {
   const response = await fetch(
-    `/api/funding-application/${referenceNumber}/notes`
+    `/api/funding-application/${referenceNumber}/notes`,
   );
   if (!response.ok) {
     throw new Error("Failed to fetch note");
@@ -323,7 +323,7 @@ const updateNote = async ({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(note),
-    }
+    },
   );
   if (!response.ok) {
     throw new Error("Failed to save note");
