@@ -55,6 +55,7 @@ import { ApprovalOddsBadge } from "./v2/ApprovalOddsBadge";
 import { LenderLogo } from "./v2/LenderLogo";
 import { CheckCircle2 } from "lucide-react";
 import IconMenu from "../icon-menu";
+import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 
 const baseColumns: ColumnDef<BankFormData>[] = [
   {
@@ -309,58 +310,64 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block overflow-x-auto rounded-md border animate-fade-in-up stagger-2">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row, idx) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className={`transition-colors hover:bg-blue-50/30 ${
-                    idx === 0 ? "bg-blue-50/40" : ""
-                  }`}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
+      <div className="rounded-md border hidden md:flex">
+        <ScrollArea
+          type="always"
+          className="w-1 flex-1 h-[calc(100vh-400px)] min-h-[400px]"
+        >
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row, idx) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className={`transition-colors hover:bg-blue-50/30 ${
+                      idx === 0 ? "bg-blue-50/40" : ""
+                    }`}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+          <ScrollBar orientation="horizontal" className="w-full" />
+        </ScrollArea>
       </div>
 
       {/* Mobile Card View */}

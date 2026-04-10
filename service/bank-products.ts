@@ -943,6 +943,214 @@ export const getFundMappingAnalysisDetails = async ({
   return result;
 };
 
+export const getAutoServedClientFunds = async ({
+  userId,
+  referenceNumber,
+}: {
+  userId: string;
+  referenceNumber: string;
+}): Promise<ApprovedBankFormData[]> => {
+  const MONTHLY_CAP_STATUSES: ClientApplicationStatus[] = [
+    "Pending",
+    "Sent to Lender",
+    "Approved",
+  ];
+  const SLOT_TARGET = 4;
+  const MONTHLY_CAP = 8;
+
+  // 1. Read full queue
+  const queue = (await getFundMappingAnalysis(referenceNumber)) ?? [];
+
+  // 2. Read existing tracking records directly from Firestore
+  const db = firestoreAdmin();
+  const approvedCollectionRef = db.collection(
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
+  );
+  const approvedSnapshot = await approvedCollectionRef.get();
+  const existingDocs = approvedSnapshot.docs.map((d) => ({
+    id: d.id,
+    ...normalizeAllDates(d.data()),
+  })) as (ApprovedBankFormData & { autoServed?: boolean; createdAt?: any })[];
+
+  // 3. Count "Not Applied" records — these are the available slots for client action
+  const notAppliedCount = existingDocs.filter(
+    (r) => r.clientApplicationStatus === "Not Applied",
+  ).length;
+
+  // 5. Monthly cap check — count records created this month with cap statuses
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthlyActiveCount = existingDocs.filter((r) => {
+    if (
+      !MONTHLY_CAP_STATUSES.includes(
+        r.clientApplicationStatus as ClientApplicationStatus,
+      )
+    ) {
+      return false;
+    }
+    const createdAt = r.createdAt;
+    if (!createdAt) return false;
+    const createdDate =
+      createdAt instanceof Date ? createdAt : new Date(createdAt);
+    return createdDate >= startOfMonth;
+  }).length;
+
+  // 6. Fill slots to SLOT_TARGET — maintain 4 "Not Applied" banks until queue is exhausted
+  if (notAppliedCount < SLOT_TARGET && monthlyActiveCount < MONTHLY_CAP) {
+    const slotsToFill = Math.min(
+      SLOT_TARGET - notAppliedCount,
+      MONTHLY_CAP - monthlyActiveCount,
+    );
+
+    // Find untracked banks: queue banks whose id doesn't appear in any existing record
+    const trackedBankIds = new Set(
+      existingDocs.map((r) => (r as any).bankProductId).filter(Boolean),
+    );
+    const untrackedBanks = queue.filter((bank) => !trackedBankIds.has(bank.id));
+    const banksToServe = untrackedBanks.slice(0, slotsToFill);
+
+    for (const bank of banksToServe) {
+      // Race condition guard: check if a doc with this bankProductId already exists
+      const existing = await approvedCollectionRef
+        .where("bankProductId", "==", bank.id)
+        .limit(1)
+        .get();
+
+      if (!existing.empty) continue;
+
+      await approvedCollectionRef.add({
+        bankProductId: bank.id,
+        products: bank.products, // ALL products from the bank
+        createdAt: Timestamp.now(),
+        clientApplicationStatus: "Not Applied",
+        userId,
+        referenceNumber,
+        autoServed: true,
+      });
+    }
+  }
+
+  // 7. Build return data — re-read all fund-mapping-approved records
+  const refreshedSnapshot = await approvedCollectionRef.get();
+  const refreshedDocs = refreshedSnapshot.docs.map((d) => ({
+    id: d.id,
+    ...normalizeAllDates(d.data()),
+  }));
+
+  const clientFundingData = await getApplyFundingByReferenceNumber({
+    referenceNumber,
+  });
+
+  const result: ApprovedBankFormData[] = [];
+  for (const record of refreshedDocs) {
+    const r = record as any;
+
+    if (r.isManualEntry || !r.bankProductId) {
+      // Manual entry
+      result.push({
+        id: r.id,
+        bankName: r.manualBankName || "",
+        fundMappingApprovedId: r.id,
+        clientApplicationStatus: r.clientApplicationStatus,
+        adminApprovedStatus: r.adminApprovedStatus,
+        referenceNumber: r.referenceNumber || referenceNumber,
+        approvedAmount: r.approvedAmount || 0,
+        approvedRemarks: r.approvedRemarks || "",
+        fundedAmount: r.fundedAmount || 0,
+        fundedRemarks: r.fundedRemarks || "",
+        userId: r.userId || userId,
+        underwritingNotes: r.approvedRemarks || "",
+        products: [
+          {
+            productName: r.manualProductName || "Manual Entry",
+            category: "Manual",
+            financingTerm: "",
+            doubleDipAllowed: "No",
+            creditBureauPulled: [],
+            minimumFicoScore: 0,
+            maximumFundingAmount: r.approvedAmount || 0,
+            grossFundingPercentage: 0,
+            maximumInquiriesAllowed: 0,
+            minimumNumberOfAccountsOnCredit: 0,
+            personalVerifiableIncomeRequired: "No",
+            businessBankStatementsRequired: "No",
+            profitAndLossStatementRequired: "No",
+            balanceSheetRequired: "No",
+            businessPlanRequired: "No",
+            membershipRequiredBeforeApplicationRequired: "No",
+            membershipRequiredUponApprovalRequired: "No",
+            accountOpeningBeforeApplicationRequired: "No",
+            accountOpeningAfterApprovalRequired: "No",
+            businessTaxesRequired: "None",
+            personalTaxesRequired: "None",
+            immigrationStatusRequirement: "",
+            stateAvailability: [],
+            applicationMethod: [],
+            allowsForwardingViaEmail: "No",
+            canBeFinalizedOnline: "No",
+            clientNeedsToGoToBranch: "No",
+          },
+        ],
+        applicationUrl: undefined,
+      } as ApprovedBankFormData);
+    } else {
+      const bankProduct = await getBankProduct(r.bankProductId);
+      if (bankProduct) {
+        const applicationUrl = await getBankWebsite(bankProduct.bankName);
+
+        const productsWithOdds = clientFundingData
+          ? await Promise.all(
+              bankProduct.products.map(async (product) => ({
+                ...product,
+                approvalOdds: await calculateApprovalOdds(
+                  r.userId || userId,
+                  clientFundingData,
+                  product,
+                ),
+              })),
+            )
+          : bankProduct.products;
+
+        const overallApprovalOdds =
+          productsWithOdds.length > 0
+            ? Math.round(
+                productsWithOdds.reduce(
+                  (sum, p: any) => sum + (p.approvalOdds || 0),
+                  0,
+                ) / productsWithOdds.length,
+              )
+            : undefined;
+
+        result.push({
+          ...bankProduct,
+          products: productsWithOdds,
+          fundMappingApprovedId: r.id,
+          clientApplicationStatus: r.clientApplicationStatus,
+          adminApprovedStatus: r.adminApprovedStatus,
+          referenceNumber: r.referenceNumber || referenceNumber,
+          approvedAmount: r.approvedAmount,
+          approvedRemarks: r.approvedRemarks,
+          fundedAmount: r.fundedAmount,
+          fundedRemarks: r.fundedRemarks,
+          userId: r.userId || userId,
+          applicationUrl,
+          approvalOdds: overallApprovalOdds,
+        });
+      }
+    }
+  }
+
+  // Sort: "Not Applied" first, then by bank name alphabetically
+  result.sort((a, b) => {
+    const aNotApplied = a.clientApplicationStatus === "Not Applied" ? 0 : 1;
+    const bNotApplied = b.clientApplicationStatus === "Not Applied" ? 0 : 1;
+    if (aNotApplied !== bNotApplied) return aNotApplied - bNotApplied;
+    return (a.bankName || "").localeCompare(b.bankName || "");
+  });
+
+  return result;
+};
+
 export const approveMappedFund = async ({
   referenceNumber,
   bankProductId,
