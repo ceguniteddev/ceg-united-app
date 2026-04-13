@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' data: https://fonts.gstatic.com https://cdn.tiny.cloud",
               "connect-src 'self' https://storage.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://*.cloudfunctions.net https://api.mux.com https://stream.mux.com https://production.plaid.com https://cdn.plaid.com https://recaptchaenterprise.googleapis.com https://www.google.com",
               "media-src 'self' blob: https://storage.googleapis.com https://stream.mux.com",
-              "frame-src 'self' https://www.google.com https://recaptcha.google.com https://cdn.plaid.com https://storage.googleapis.com https://whop.com",
+              "frame-src 'self' https://www.google.com https://recaptcha.google.com https://cdn.plaid.com https://storage.googleapis.com https://whop.com https://calendly.com",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
