@@ -191,7 +191,7 @@ const makeSnapshot = (docs: any[]) => ({
   empty: docs.length === 0,
   docs,
   size: docs.length,
-  forEach: (cb: Function) => docs.forEach(cb),
+  forEach: (cb: (doc: any) => void) => docs.forEach(cb),
 });
 
 const makeDocSnap = (exists: boolean, id: string, data: object) => ({
@@ -321,7 +321,7 @@ describe("getUsers", () => {
   it("returns empty array when no users are found", async () => {
     mockGet.mockResolvedValueOnce(makeSnapshot([]));
 
-    const result = await getUsers();
+    const result = await getUsers({});
 
     expect(result).toEqual([]);
   });
@@ -347,7 +347,7 @@ describe("getUsers", () => {
     ];
     mockGet.mockResolvedValueOnce(makeSnapshot(docs));
 
-    const result = await getUsers("Admin");
+    const result = await getUsers({ role: "Admin" });
 
     expect(result).toHaveLength(2);
     expect(result[0].id).toBe("u1");
@@ -369,7 +369,7 @@ describe("getUsers", () => {
       .mockResolvedValueOnce(makeSnapshot(docs)) // main user query
       .mockResolvedValueOnce(makeSnapshot([])); // broker mappings batch query (empty)
 
-    const result = await getUsers("Client");
+    const result = await getUsers({ role: "Client" });
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("c1");

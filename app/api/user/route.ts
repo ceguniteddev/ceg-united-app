@@ -5,9 +5,12 @@ import z from "zod";
 import { getUsers } from "@/service/user";
 import { UserWithId } from "@/schema/registration";
 import { ROLES } from "@/schema";
+import { isActive } from "@tiptap/core";
 
 const querySchema = z.object({
   role: z.enum(ROLES),
+  email: z.email().optional(),
+  isActive: z.coerce.boolean().optional(),
 });
 
 export const GET = withAuth(async (request: NextRequest) => {
@@ -18,10 +21,10 @@ export const GET = withAuth(async (request: NextRequest) => {
     return badRequest({ errors: message });
   }
 
-  const { role } = query.data;
+  const { role, email, isActive } = query.data;
 
   try {
-    const data = (await getUsers(role)) as UserWithId[];
+    const data = (await getUsers({ role, email, isActive })) as UserWithId[];
     return NextResponse.json(data, { status: 200 });
   } catch (error: any) {
     console.error("Unexpected error:", error);

@@ -16,7 +16,7 @@ import { normalizeAllDates } from "@/lib/date-parser";
 
 // get all registered user
 export const getAdminStatistics = async (): Promise<AdminStatistics> => {
-  const usersClient = await getUsers("Client");
+  const usersClient = await getUsers({ role: "Client" });
   const fundingApplications = await getFundingApplications({});
 
   if (!fundingApplications) {
