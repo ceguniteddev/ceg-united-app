@@ -607,13 +607,27 @@ const getNewRegistrationBody = (value: User) => {
   `;
 };
 
-export const getUsers = async (role?: Role): Promise<UserWithId[]> => {
+export const getUsers = async ({
+  role,
+  email,
+  isActive,
+}: {
+  role?: Role;
+  email?: string;
+  isActive?: boolean;
+}): Promise<UserWithId[]> => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(USER_COLLECTION);
 
   let query: FirebaseFirestore.Query = collectionRef;
   if (role) {
-    query = collectionRef.where("role", "==", role);
+    query = query.where("role", "==", role);
+  }
+  if (email) {
+    query = query.where("email", "==", email);
+  }
+  if (isActive) {
+    query = query.where("activeStatus", "==", "Active");
   }
 
   const querySnapshot = await query.get();

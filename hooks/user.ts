@@ -95,7 +95,6 @@ export const useUsersQuery = (role?: Role) => {
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
 
-      // const data = (await getUsers(role)) as UserWithId[];
       const response = await fetch(`/api/user?role=${role}`);
       if (!response.ok) {
         toast.error("Failed to fetch users.");
