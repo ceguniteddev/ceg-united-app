@@ -7,20 +7,68 @@ import {
   CircleSlash,
   ArrowRight,
   Sparkles,
-} from 'lucide-react'
-import { AnimatedCounter } from './AnimatedCounter'
-import { StatCard } from './StatCard'
-import { GradeBadge } from './GradeBadge'
-import { formatUSD } from '@/lib/underwriting'
-import type { IncomeFundingDeal } from '@/lib/income-funding-types'
+} from "lucide-react";
+import { AnimatedCounter } from "./AnimatedCounter";
+import { StatCard } from "./StatCard";
+import { GradeBadge } from "./GradeBadge";
+import { formatUSD } from "@/lib/underwriting";
+import type { IncomeFundingDeal } from "@/lib/income-funding-types";
+import { useGetUserApplyFunding } from "@/hooks/apply-funding";
+import { ApplyFunding } from "@/schema/apply-funding";
 
 interface PreApprovalViewProps {
-  deal: IncomeFundingDeal
-  onContinue: () => void
+  deal: IncomeFundingDeal;
+  onContinue: () => void;
 }
 
 export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
-  const { underwritingInput: u, underwritingResult: r } = deal
+  const { appliedFunding } = useGetUserApplyFunding();
+  const realDeal = appliedFunding?.find((app) =>
+    app.fundingProducts?.includes("Business Income Based Funding"),
+  ) as ApplyFunding & { businessIncomeComputation?: any };
+
+  // Fallback to mock data if real data is not available yet
+  const computation = realDeal?.businessIncomeComputation || {
+    assignedGrade: deal.underwritingResult.grade,
+    multiplierUsed:
+      deal.underwritingResult.baseMultiple * deal.underwritingResult.percentage,
+    estimatedApprovalAmount: deal.underwritingResult.maxFundingAmount,
+    calculationSteps: `${deal.underwritingResult.baseMultiple} × ${Math.round(deal.underwritingResult.percentage * 100)}% × ${formatUSD(deal.underwritingInput.monthlyDeposits)} = ${formatUSD(deal.underwritingResult.maxFundingAmount)}`,
+    rationale: deal.underwritingResult.rationale,
+    isEligible: true,
+  };
+
+  // Map real deal inputs to stat cards if available
+  const u = realDeal
+    ? {
+        monthlyDeposits: realDeal.annualBusinessRevenue
+          ? realDeal.annualBusinessRevenue / 12
+          : deal.underwritingInput.monthlyDeposits,
+        timeInBusinessMonths: realDeal.dateOfIncorporation
+          ? Math.floor(
+              (Date.now() - new Date(realDeal.dateOfIncorporation).getTime()) /
+                (1000 * 60 * 60 * 24 * 30),
+            )
+          : deal.underwritingInput.timeInBusinessMonths,
+        averageDailyBalance:
+          realDeal.avgDailyBankBalance ||
+          deal.underwritingInput.averageDailyBalance,
+        endingBalance: deal.underwritingInput.endingBalance, // Not explicitly in ApplyFunding
+        nsfCount: deal.underwritingInput.nsfCount, // Not explicitly in ApplyFunding
+        negativeDays: deal.underwritingInput.negativeDays, // Not explicitly in ApplyFunding
+      }
+    : deal.underwritingInput;
+
+  if (!computation.isEligible) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-50 p-6 rounded-2xl border border-red-100">
+          <h2 className="text-xl font-bold text-red-900">Not Eligible</h2>
+          <p className="mt-2 text-red-700">{computation.rationale}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -41,12 +89,13 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
             Congratulations, you've been pre-approved
           </h1>
           <p className="mt-2 text-sm md:text-base text-gray-500 max-w-xl">
-            Based on your business cash flow and credit profile, you are pre-qualified for up to:
+            Based on your business cash flow and credit profile, you are
+            pre-qualified for up to:
           </p>
 
           <div className="mt-6 flex items-baseline gap-3 flex-wrap">
             <AnimatedCounter
-              value={r.maxFundingAmount}
+              value={computation.estimatedApprovalAmount}
               className="text-5xl md:text-6xl font-extrabold tracking-tight text-gray-900 tabular-nums"
             />
             <span className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
@@ -76,7 +125,7 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
             icon={TrendingUp}
             label="Monthly Revenue"
             value={formatUSD(u.monthlyDeposits)}
-            badge={{ text: 'Plaid synced', tone: 'info' }}
+            badge={{ text: "Plaid synced", tone: "info" }}
             hint="Avg. of last 4 months"
           />
         </div>
@@ -86,20 +135,20 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
               <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
                 <CheckCircle2 className="w-[18px] h-[18px]" />
               </div>
-              <GradeBadge grade={r.grade} size="sm" />
+              <GradeBadge grade={computation.assignedGrade} size="sm" />
             </div>
             <div className="mt-4">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                 Risk Grade
               </div>
               <div className="mt-1 text-xl font-bold text-gray-900">
-                Tier {r.grade}
+                Tier {computation.assignedGrade}
               </div>
               <div className="mt-0.5 text-xs text-gray-500">
-                {r.grade === 'A' && 'Excellent profile'}
-                {r.grade === 'B' && 'Solid profile'}
-                {r.grade === 'C' && 'Fair profile'}
-                {r.grade === 'D' && 'Subprime profile'}
+                {computation.assignedGrade === "A" && "Excellent profile"}
+                {computation.assignedGrade === "B" && "Solid profile"}
+                {computation.assignedGrade === "C" && "Fair profile"}
+                {computation.assignedGrade === "D" && "Subprime profile"}
               </div>
             </div>
           </div>
@@ -110,8 +159,11 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
             label="Time in Business"
             value={`${u.timeInBusinessMonths} months`}
             hint={`Founded ${new Date(
-              Date.now() - u.timeInBusinessMonths * 30 * 24 * 60 * 60 * 1000
-            ).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`}
+              Date.now() - u.timeInBusinessMonths * 30 * 24 * 60 * 60 * 1000,
+            ).toLocaleDateString("en-US", {
+              month: "short",
+              year: "numeric",
+            })}`}
           />
         </div>
         <div className="animate-fade-in-up stagger-4">
@@ -127,11 +179,13 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
             icon={AlertCircle}
             label="NSF / Returned"
             value={u.nsfCount}
-            hint={u.nsfCount <= 2 ? 'Within healthy range' : 'Higher than ideal'}
+            hint={
+              u.nsfCount <= 2 ? "Within healthy range" : "Higher than ideal"
+            }
             badge={
               u.nsfCount <= 2
-                ? { text: 'Healthy', tone: 'success' }
-                : { text: 'Watch', tone: 'warning' }
+                ? { text: "Healthy", tone: "success" }
+                : { text: "Watch", tone: "warning" }
             }
           />
         </div>
@@ -140,11 +194,13 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
             icon={CircleSlash}
             label="Negative Days"
             value={u.negativeDays}
-            hint={u.negativeDays === 0 ? 'No overdrafts' : 'Watch overdraft pattern'}
+            hint={
+              u.negativeDays === 0 ? "No overdrafts" : "Watch overdraft pattern"
+            }
             badge={
               u.negativeDays <= 2
-                ? { text: 'Clean', tone: 'success' }
-                : { text: 'Risk', tone: 'warning' }
+                ? { text: "Clean", tone: "success" }
+                : { text: "Risk", tone: "warning" }
             }
           />
         </div>
@@ -160,7 +216,9 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
             <div className="text-xs font-semibold uppercase tracking-wide text-brand-600">
               Underwriting Summary
             </div>
-            <h2 className="text-base font-bold text-gray-900">How we calculated your offer</h2>
+            <h2 className="text-base font-bold text-gray-900">
+              How we calculated your offer
+            </h2>
           </div>
         </div>
 
@@ -169,30 +227,13 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
             Calculation
           </div>
           <div className="mt-2 font-mono text-base md:text-lg text-gray-900 flex flex-wrap items-baseline gap-2">
-            <span className="font-bold">{r.baseMultiple}</span>
-            <span className="text-gray-400">×</span>
-            <span className="font-bold">{Math.round(r.percentage * 100)}%</span>
-            <span className="text-gray-400">×</span>
-            <span className="font-bold">{formatUSD(u.monthlyDeposits)}</span>
-            <span className="text-gray-400">=</span>
-            <span className="font-extrabold text-brand-700">
-              {formatUSD(r.maxFundingAmount)}
-            </span>
+            <span className="font-bold">{computation.calculationSteps}</span>
           </div>
-          <p className="mt-3 text-sm text-gray-600 leading-relaxed">{r.rationale}</p>
-        </div>
-
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-gray-600">
-          <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
-            <span className="font-semibold text-gray-900">Base multiple:</span> 5× monthly deposits
-            for Tiers A-C, 3× for Tier D.
-          </div>
-          <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
-            <span className="font-semibold text-gray-900">Advance rate:</span> Tier A 75% · Tier B
-            50% · Tier C 25% · Tier D 100% (capped at 3×).
-          </div>
+          <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+            {computation.rationale}
+          </p>
         </div>
       </div>
     </div>
-  )
+  );
 }

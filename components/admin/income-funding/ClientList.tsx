@@ -1,41 +1,49 @@
-import { Search } from 'lucide-react'
-import { useState } from 'react'
-import { GradeBadge } from '@/components/income-funding/GradeBadge'
-import { formatUSD } from '@/lib/underwriting'
-import type { AdminClient, DealStatus } from '@/lib/income-funding-types'
+import { Search } from "lucide-react";
+import { useState } from "react";
+import { GradeBadge } from "@/components/income-funding/GradeBadge";
+import { formatUSD } from "@/lib/underwriting";
+import type { AdminClient, DealStatus } from "@/lib/income-funding-types";
 
 interface ClientListProps {
-  clients: AdminClient[]
-  selectedId: string
-  onSelect: (uid: string) => void
+  clients: AdminClient[];
+  selectedId: string;
+  onSelect: (uid: string) => void;
 }
 
 const statusLabels: Record<DealStatus, { label: string; classes: string }> = {
-  prequalified: { label: 'Prequalified', classes: 'bg-blue-50 text-blue-700 border-blue-100' },
-  'collecting-documents': {
-    label: 'Documents',
-    classes: 'bg-gray-50 text-gray-700 border-gray-200',
+  prequalified: {
+    label: "Prequalified",
+    classes: "bg-blue-50 text-blue-700 border-blue-100",
   },
-  'under-review': {
-    label: 'Underwriting',
-    classes: 'bg-amber-50 text-amber-700 border-amber-100',
+  "collecting-documents": {
+    label: "Documents",
+    classes: "bg-gray-50 text-gray-700 border-gray-200",
   },
-  'offers-ready': {
-    label: 'Offers Ready',
-    classes: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+  "under-review": {
+    label: "Sent to Brokerage",
+    classes: "bg-amber-50 text-amber-700 border-amber-100",
   },
-  accepting: { label: 'Accepting', classes: 'bg-purple-50 text-purple-700 border-purple-100' },
-  complete: { label: 'Complete', classes: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-}
+  "offers-ready": {
+    label: "Offers Ready",
+    classes: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  },
+  accepting: {
+    label: "Accepting",
+    classes: "bg-purple-50 text-purple-700 border-purple-100",
+  },
+  complete: {
+    label: "Complete",
+    classes: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  },
+};
 
 export function ClientList({ clients, selectedId, onSelect }: ClientListProps) {
-  const [q, setQ] = useState('')
-  const filtered = clients.filter(
-    (c) =>
-      `${c.firstName} ${c.lastName} ${c.businessName}`
-        .toLowerCase()
-        .includes(q.toLowerCase())
-  )
+  const [q, setQ] = useState("");
+  const filtered = clients.filter((c) =>
+    `${c.firstName} ${c.lastName} ${c.businessName}`
+      .toLowerCase()
+      .includes(q.toLowerCase()),
+  );
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden h-full flex flex-col">
@@ -62,14 +70,14 @@ export function ClientList({ clients, selectedId, onSelect }: ClientListProps) {
       {/* List */}
       <ul className="overflow-y-auto custom-scrollbar flex-1">
         {filtered.map((c) => {
-          const isActive = c.uid === selectedId
-          const status = statusLabels[c.status]
+          const isActive = c.uid === selectedId;
+          const status = statusLabels[c.status];
           return (
             <li key={c.uid}>
               <button
                 onClick={() => onSelect(c.uid)}
                 className={`w-full text-left px-4 py-3 border-b border-gray-50 transition ${
-                  isActive ? 'bg-brand-50/60' : 'hover:bg-gray-50'
+                  isActive ? "bg-brand-50/60" : "hover:bg-gray-50"
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -78,7 +86,9 @@ export function ClientList({ clients, selectedId, onSelect }: ClientListProps) {
                     <div className="font-semibold text-sm text-gray-900 truncate">
                       {c.firstName} {c.lastName}
                     </div>
-                    <div className="text-xs text-gray-500 truncate">{c.businessName}</div>
+                    <div className="text-xs text-gray-500 truncate">
+                      {c.businessName}
+                    </div>
                     <div className="mt-1 flex items-center gap-2 flex-wrap">
                       <span
                         className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border ${status.classes}`}
@@ -93,7 +103,7 @@ export function ClientList({ clients, selectedId, onSelect }: ClientListProps) {
                 </div>
               </button>
             </li>
-          )
+          );
         })}
         {filtered.length === 0 && (
           <li className="px-4 py-8 text-center text-xs text-gray-400">
@@ -102,5 +112,5 @@ export function ClientList({ clients, selectedId, onSelect }: ClientListProps) {
         )}
       </ul>
     </div>
-  )
+  );
 }

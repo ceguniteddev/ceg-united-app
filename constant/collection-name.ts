@@ -65,3 +65,5 @@ export const LETTER_TEMPLATE = "letter-template";
 export const DISPUTE_TRACKING = "dispute-tracking";
 export const EMAIL_VERIFICATION_TOKENS = "email-verification-tokens";
 export const LETTER_RECIPIENT = "letter-recipient";
+
+export const BROKERAGE_COLLECTION = 'brokerages';

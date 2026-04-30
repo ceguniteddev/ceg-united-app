@@ -1,17 +1,45 @@
-import { Check, Clock, FileSearch, Mail, MessageSquare, Phone, Send } from 'lucide-react'
-import { mockCoordinator } from '@/lib/income-funding-mock'
-import type { IncomeFundingDeal } from '@/lib/income-funding-types'
+import {
+  Check,
+  Clock,
+  FileSearch,
+  Mail,
+  MessageSquare,
+  Phone,
+  Send,
+} from "lucide-react";
+import { mockCoordinator } from "@/lib/income-funding-mock";
+import type { IncomeFundingDeal } from "@/lib/income-funding-types";
 
 interface SubmittedViewProps {
-  deal: IncomeFundingDeal
+  deal: IncomeFundingDeal;
 }
 
 const timelineSteps = [
-  { key: 'received', label: 'Application received', icon: Send, status: 'complete' as const },
-  { key: 'verified', label: 'Documents verified', icon: Check, status: 'complete' as const },
-  { key: 'underwriting', label: 'Underwriting in progress', icon: FileSearch, status: 'active' as const },
-  { key: 'offers', label: 'Offers coming soon', icon: Mail, status: 'pending' as const },
-]
+  {
+    key: "received",
+    label: "Application received",
+    icon: Send,
+    status: "complete" as const,
+  },
+  {
+    key: "verified",
+    label: "Documents verified",
+    icon: Check,
+    status: "complete" as const,
+  },
+  {
+    key: "underwriting",
+    label: "Verification in progress",
+    icon: FileSearch,
+    status: "active" as const,
+  },
+  {
+    key: "offers",
+    label: "Offers coming soon",
+    icon: Mail,
+    status: "pending" as const,
+  },
+];
 
 export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
   return (
@@ -28,12 +56,12 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
               Under review
             </div>
             <h1 className="mt-1 text-xl md:text-2xl font-bold text-gray-900">
-              Your deal has been submitted for underwriting review
+              Your deal has been submitted for verification.
             </h1>
-            <p className="mt-2 text-sm text-gray-500 max-w-xl">
-              We typically have offers back within{' '}
-              <span className="font-semibold text-gray-700">24–48 hours</span>. You'll
-              receive an email the moment your offers are ready.
+            <p className="mt-2 text-sm text-gray-500 ">
+              We typically have offers back within{" "}
+              <span className="font-semibold text-gray-700">24-48 hours</span>.
+              You'll receive an email the moment your offers are ready.
             </p>
           </div>
         </div>
@@ -46,9 +74,9 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
         </h2>
         <ol className="space-y-4">
           {timelineSteps.map((step, i) => {
-            const Icon = step.icon
-            const isComplete = step.status === 'complete'
-            const isActive = step.status === 'active'
+            const Icon = step.icon;
+            const isComplete = step.status === "complete";
+            const isActive = step.status === "active";
             return (
               <li key={step.key} className="flex items-start gap-4">
                 <div className="flex flex-col items-center">
@@ -56,10 +84,10 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
                     className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-colors
                       ${
                         isComplete
-                          ? 'bg-emerald-500 border-emerald-500 text-white'
+                          ? "bg-emerald-500 border-emerald-500 text-white"
                           : isActive
-                          ? 'bg-amber-50 border-amber-300 text-amber-600 pulse-amber'
-                          : 'bg-white border-gray-200 text-gray-300'
+                            ? "bg-amber-50 border-amber-300 text-amber-600 pulse-amber"
+                            : "bg-white border-gray-200 text-gray-300"
                       }`}
                   >
                     {isComplete ? (
@@ -71,9 +99,9 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
                   {i < timelineSteps.length - 1 && (
                     <span
                       className={`w-0.5 flex-1 mt-1 ${
-                        isComplete ? 'bg-emerald-200' : 'bg-gray-100'
+                        isComplete ? "bg-emerald-200" : "bg-gray-100"
                       }`}
-                      style={{ minHeight: '32px' }}
+                      style={{ minHeight: "32px" }}
                     />
                   )}
                 </div>
@@ -81,10 +109,10 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
                   <div
                     className={`text-sm font-semibold ${
                       isComplete
-                        ? 'text-gray-900'
+                        ? "text-gray-900"
                         : isActive
-                        ? 'text-amber-700'
-                        : 'text-gray-400'
+                          ? "text-amber-700"
+                          : "text-gray-400"
                     }`}
                   >
                     {step.label}
@@ -97,13 +125,13 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
                   )}
                 </div>
               </li>
-            )
+            );
           })}
         </ol>
       </div>
 
       {/* Coordinator card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-6 animate-fade-in-up stagger-2">
+      {/* <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-6 animate-fade-in-up stagger-2">
         <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
           Your Loan Coordinator
         </h2>
@@ -135,7 +163,7 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
             Message
           </button>
         </div>
-      </div>
+      </div> */}
 
       {/* Empty state for offers */}
       <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center animate-fade-in-up stagger-3">
@@ -146,10 +174,10 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
           Your funding offers will appear here once approved
         </h3>
         <p className="mt-1 text-xs text-gray-500 max-w-sm mx-auto">
-          Sit tight — your dedicated coordinator is reviewing your file and matching
-          you with the best lenders for your profile.
+          Sit tight — your dedicated coordinator is reviewing your file and
+          matching you with the best lenders for your profile.
         </p>
       </div>
     </div>
-  )
+  );
 }

@@ -1,25 +1,110 @@
-import { ArrowRight, Lock, ShieldCheck } from 'lucide-react'
-import { DocumentUploadCard } from './DocumentUploadCard'
-import type { DocumentRecord, IncomeFundingDeal } from '@/lib/income-funding-types'
+import { useState } from "react";
+import { ArrowRight, Lock, ShieldCheck } from "lucide-react";
+import { DocumentUploadCard } from "./DocumentUploadCard";
+import type {
+  DocumentRecord,
+  IncomeFundingDeal,
+} from "@/lib/income-funding-types";
+import { useAuth } from "@/provider/AuthContext";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { GET_USER_DOCUMENTS } from "@/constant/react-query-keys";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
+import Image from "next/image";
 
 interface DocumentCollectionViewProps {
-  deal: IncomeFundingDeal
-  onUpload: (key: DocumentRecord['key'], fileName: string, fileSize: string) => void
-  onSubmit: () => void
+  deal: IncomeFundingDeal;
+  onUpload: (
+    key: DocumentRecord["key"],
+    fileName: string,
+    fileSize: string,
+  ) => void;
+  onSubmit: () => void;
+  isSubmitting?: boolean;
 }
 
 export function DocumentCollectionView({
   deal,
   onUpload,
   onSubmit,
+  isSubmitting = false,
 }: DocumentCollectionViewProps) {
-  const requiredDocs = deal.documents.filter((d) => d.required)
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [uploadingState, setUploadingState] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [previewDoc, setPreviewDoc] = useState<{
+    url: string;
+    title: string;
+    contentType?: string;
+  } | null>(null);
+
+  const requiredDocs = deal.documents.filter((d) => d.required);
   const allRequiredDone = requiredDocs.every(
-    (d) => d.status === 'uploaded' || d.status === 'synced'
-  )
+    (d) => d.status === "uploaded" || d.status === "synced",
+  );
   const totalDone = deal.documents.filter(
-    (d) => d.status === 'uploaded' || d.status === 'synced'
-  ).length
+    (d) => d.status === "uploaded" || d.status === "synced",
+  ).length;
+
+  const handleUpload = async (
+    key: DocumentRecord["key"],
+    file: File,
+    fileName: string,
+    fileSize: string,
+  ) => {
+    if (!user) return;
+
+    setUploadingState((prev) => ({ ...prev, [key]: true }));
+
+    // Map key to DocumentType ID
+    let documentTypeId = "OTHER";
+    if (key === "ein") documentTypeId = "EIN_LETTER";
+    else if (key === "articles") documentTypeId = "ARTICLES_OF_ORGANIZATION";
+    else if (key === "id") documentTypeId = "DRIVERS_LICENSE";
+    else if (key === "bankStatements") documentTypeId = "BANK_STATEMENTS";
+    else if (key === "voidedCheck") documentTypeId = "VOIDED_CHECK";
+
+    const formData = new FormData();
+    formData.append("userId", user.uid);
+    if (documentTypeId !== "OTHER") {
+      formData.append("documentType", documentTypeId);
+    }
+    formData.append("files", file);
+
+    try {
+      const response = await fetch(`/api/user/${user.uid}/documents`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || "Upload failed");
+      }
+
+      // Invalidate queries to refetch the document list in other parts of the app
+      queryClient.invalidateQueries({
+        queryKey: [GET_USER_DOCUMENTS, user.uid],
+      });
+
+      // Update local state to show it's uploaded
+      onUpload(key, fileName, fileSize);
+      toast.success("Document uploaded successfully");
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Failed to upload document");
+    } finally {
+      setUploadingState((prev) => ({ ...prev, [key]: false }));
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -30,8 +115,8 @@ export function DocumentCollectionView({
               Upload required documents
             </h1>
             <p className="mt-1 text-sm text-gray-500 max-w-xl">
-              We need a few more files to send your deal to underwriting. Drag and drop
-              or click to upload.
+              We need a few more files to send your deal to underwriting. Drag
+              and drop or click to upload.
             </p>
           </div>
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600">
@@ -65,7 +150,14 @@ export function DocumentCollectionView({
             key={doc.key}
             className={`animate-fade-in-up stagger-${Math.min(i + 1, 8)}`}
           >
-            <DocumentUploadCard doc={doc} onUpload={onUpload} />
+            <DocumentUploadCard
+              doc={doc}
+              onUpload={handleUpload}
+              isUploading={uploadingState[doc.key]}
+              onView={(url, title, contentType) =>
+                setPreviewDoc({ url, title, contentType })
+              }
+            />
           </div>
         ))}
       </div>
@@ -75,19 +167,59 @@ export function DocumentCollectionView({
         <div className="flex items-center gap-3">
           <Lock className="w-5 h-5 text-gray-400" />
           <p className="text-xs text-gray-500 max-w-md">
-            By submitting, you confirm the uploaded documents are accurate. Your file
-            is sent to a CEG underwriter for review.
+            By submitting, you confirm the uploaded documents are accurate. Your
+            file is sent to a CEG underwriter for review.
           </p>
         </div>
         <button
-          disabled={!allRequiredDone}
+          disabled={!allRequiredDone || isSubmitting}
           onClick={onSubmit}
-          className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all"
+          className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer"
         >
-          Submit for Underwriting
+          {isSubmitting ? "Submitting..." : "Submit for Underwriting"}
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Preview Sheet */}
+      <Sheet
+        open={!!previewDoc}
+        onOpenChange={(open) => !open && setPreviewDoc(null)}
+      >
+        <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0 z-50">
+          <SheetHeader className="p-4 pb-2 border-b flex-shrink-0">
+            <SheetTitle className="text-sm break-words text-left leading-snug">
+              {previewDoc && previewDoc.title}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-hidden p-2">
+            {previewDoc?.contentType?.startsWith("image/") ? (
+              <ImageZoom>
+                <Image
+                  src={previewDoc.url}
+                  alt={previewDoc.title}
+                  className="w-full h-full object-contain"
+                  width={800}
+                  height={600}
+                  unoptimized
+                />
+              </ImageZoom>
+            ) : previewDoc?.contentType === "application/pdf" ? (
+              <iframe
+                src={`${previewDoc.url}#toolbar=1&view=FitH`}
+                title={previewDoc.title}
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-sm text-muted-foreground">
+                  Preview unavailable for this file type
+                </p>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
-  )
+  );
 }

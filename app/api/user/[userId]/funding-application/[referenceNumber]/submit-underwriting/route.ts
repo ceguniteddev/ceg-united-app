@@ -1,0 +1,105 @@
+import { NextRequest, NextResponse } from "next/server";
+import { badRequest, internalServerError } from "@/app/api/helpers";
+import { withAuth } from "@/lib/api-validation";
+import { updateApplicationStatus } from "@/service/apply-funding";
+import { getBrokerages } from "@/service/brokerage";
+import { sendTriggerEmail } from "@/service/trigger-email";
+import { EmailJobs } from "@/schema/trigger-email";
+import { getUserById, getUserDocuments } from "@/service/user";
+
+export const POST = withAuth(
+  async (
+    request: NextRequest,
+    {
+      params,
+    }: { params?: Promise<{ userId: string; referenceNumber: string }> },
+  ) => {
+    try {
+      const resolvedParams = await params;
+      const userId = resolvedParams?.userId;
+      const referenceNumber = resolvedParams?.referenceNumber;
+
+      if (!userId || !referenceNumber) {
+        return badRequest({
+          errors: "User ID and Reference Number are required",
+        });
+      }
+
+      const user = await getUserById(userId);
+      if (!user) {
+        return badRequest({ errors: "User not found" });
+      }
+
+      // 1. Update application status to under-review
+      await updateApplicationStatus(referenceNumber, "Sent to Brokerage");
+
+      // 2. Fetch all brokerages
+      const brokerages = await getBrokerages();
+
+      if (brokerages.length > 0) {
+        const brokerageEmails = brokerages.map((b) => b.email).filter(Boolean);
+
+        // 3. Send email to brokerages
+        if (brokerageEmails.length > 0) {
+          const clientName = `${user.firstName} ${user.lastName}`;
+          const subject = `New Income-Based Funding Deal Submitted: ${clientName}`;
+          const htmlContent = `
+            <h2>New Income-Based Funding Deal Submission</h2>
+            <p>A new client has completed the required document uploads for an income-based funding deal.</p>
+            <ul>
+              <li><strong>Client Name:</strong> ${clientName}</li>
+              <li><strong>Client Email:</strong> ${user.email}</li>
+              <li><strong>Reference Number:</strong> ${referenceNumber}</li>
+            </ul>
+            <p>Please review the attached documents and shop the deal with lenders.</p>
+          `;
+
+          // Fetch user documents to attach to the email
+          const userDocs = await getUserDocuments({ userId });
+          const relevantPrefixes = [
+            "EIN_LETTER_",
+            "ARTICLES_OF_ORGANIZATION_",
+            "VOIDED_CHECK_",
+            "DRIVERS_LICENSE_",
+            "BANK_STATEMENTS_",
+          ];
+
+          const relevantDocs = userDocs.filter((doc) => {
+            const fileName = doc.name.split("/").pop() || "";
+            return relevantPrefixes.some((prefix) =>
+              fileName.startsWith(prefix),
+            );
+          });
+
+          // Use the `path` property to link directly to the signed URL
+          // This avoids the 1MB Firestore document limit that would occur if we converted them all to base64
+          const attachments = relevantDocs.map((doc) => {
+            return {
+              filename: doc.name.split("/").pop() || "document",
+              path: doc.signedUrl || doc.downloadUrl,
+              contentType: doc.contentType || "application/octet-stream",
+            };
+          });
+
+          await sendTriggerEmail({
+            to: brokerageEmails,
+            message: {
+              subject,
+              html: htmlContent,
+              attachments: attachments.length > 0 ? attachments : undefined,
+            },
+            job: EmailJobs.GENERAL,
+          });
+        }
+      }
+
+      return NextResponse.json(
+        { message: "Submitted for underwriting successfully" },
+        { status: 200 },
+      );
+    } catch (error) {
+      console.error("Error submitting for underwriting:", error);
+      return internalServerError();
+    }
+  },
+);

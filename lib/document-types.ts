@@ -156,4 +156,13 @@ export const DOCUMENT_TYPES: DocumentType[] = [
     category: "business",
     required: false, // Optional
   },
+  {
+    id: "VOIDED_CHECK",
+    title: "Voided Check",
+    description:
+      "Upload a voided business check to verify your bank account for funding.",
+    icon: ReceiptText,
+    category: "business",
+    required: false,
+  },
 ];

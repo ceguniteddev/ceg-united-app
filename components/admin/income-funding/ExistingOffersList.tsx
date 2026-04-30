@@ -1,14 +1,19 @@
-import { Pencil, Trash2 } from 'lucide-react'
-import type { DealOffer } from '@/lib/income-funding-types'
-import { formatUSD } from '@/lib/underwriting'
+import { Pencil, Trash2 } from "lucide-react";
+import type { DealOffer } from "@/lib/income-funding-types";
+import { formatUSD } from "@/lib/underwriting";
+import { ConfirmButton } from "@/components/Confirmation";
 
 interface ExistingOffersListProps {
-  offers: DealOffer[]
-  onDelete: (id: string) => void
-  onEdit?: (offer: DealOffer) => void
+  offers: DealOffer[];
+  onDelete: (id: string) => void;
+  onEdit?: (offer: DealOffer) => void;
 }
 
-export function ExistingOffersList({ offers, onDelete, onEdit }: ExistingOffersListProps) {
+export function ExistingOffersList({
+  offers,
+  onDelete,
+  onEdit,
+}: ExistingOffersListProps) {
   if (offers.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center">
@@ -16,12 +21,14 @@ export function ExistingOffersList({ offers, onDelete, onEdit }: ExistingOffersL
           No offers added yet. Use the form above to create the first offer.
         </p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-bold text-gray-900">Existing offers ({offers.length})</h3>
+      <h3 className="text-sm font-bold text-gray-900">
+        Existing offers ({offers.length})
+      </h3>
       <ul className="space-y-2">
         {offers.map((o) => (
           <li
@@ -37,8 +44,8 @@ export function ExistingOffersList({ offers, onDelete, onEdit }: ExistingOffersL
                   {o.lenderName}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {formatUSD(o.fundingAmount)} · factor {o.factorRate.toFixed(2)} ·{' '}
-                  {o.termLength} {o.termUnit}
+                  {formatUSD(o.fundingAmount)} · factor{" "}
+                  {o.factorRate.toFixed(2)} · {o.termLength} {o.termUnit}
                 </div>
               </div>
             </div>
@@ -52,17 +59,24 @@ export function ExistingOffersList({ offers, onDelete, onEdit }: ExistingOffersL
                   <Pencil className="w-4 h-4" />
                 </button>
               )}
-              <button
-                onClick={() => onDelete(o.id)}
-                className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition"
-                title="Delete"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <ConfirmButton
+                description={`Are you sure you want to delete this offer from ${o.lenderName}?`}
+                onConfirm={() => onDelete(o.id)}
+                confirmLabel="Delete"
+                classNameAction="bg-red-600 hover:bg-red-700"
+                trigger={
+                  <button
+                    className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                }
+              />
             </div>
           </li>
         ))}
       </ul>
     </div>
-  )
+  );
 }

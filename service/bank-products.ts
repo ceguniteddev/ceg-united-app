@@ -891,7 +891,7 @@ export const getFundMappingAnalysisDetails = async ({
         // Calculate approval odds for each product
         const productsWithOdds = clientFundingData
           ? await Promise.all(
-              bankProduct.products.map(async (product) => ({
+              (bankProduct.products || []).map(async (product) => ({
                 ...product,
                 approvalOdds: await calculateApprovalOdds(
                   bankProductId.userId,
@@ -900,7 +900,7 @@ export const getFundMappingAnalysisDetails = async ({
                 ),
               })),
             )
-          : bankProduct.products;
+          : bankProduct.products || [];
         // console.log(
         //   `Calculated approval odds for products of reference ${bankProductId.referenceNumber}:`,
         //   productsWithOdds.map((p) => ({
@@ -1100,7 +1100,7 @@ export const getAutoServedClientFunds = async ({
 
         const productsWithOdds = clientFundingData
           ? await Promise.all(
-              bankProduct.products.map(async (product) => ({
+              (bankProduct.products || []).map(async (product) => ({
                 ...product,
                 approvalOdds: await calculateApprovalOdds(
                   r.userId || userId,
@@ -1109,7 +1109,7 @@ export const getAutoServedClientFunds = async ({
                 ),
               })),
             )
-          : bankProduct.products;
+          : bankProduct.products || [];
 
         const overallApprovalOdds =
           productsWithOdds.length > 0

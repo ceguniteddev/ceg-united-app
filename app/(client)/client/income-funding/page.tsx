@@ -21,6 +21,7 @@ export default function IncomeFunding() {
     selectOffer,
     acceptOffer,
     reset,
+    isSubmitting,
   } = useIncomeFundingState();
 
   const selectedOffer =
@@ -41,6 +42,7 @@ export default function IncomeFunding() {
             deal={deal}
             onUpload={uploadDocument}
             onSubmit={submitForUnderwriting}
+            isSubmitting={isSubmitting}
           />
         );
       case "under-review":
@@ -64,12 +66,6 @@ export default function IncomeFunding() {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <DemoToolbar
-        status={deal.status}
-        onSetStatus={setStatus}
-        onReset={reset}
-      />
-
       <main className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
           {/* Page heading */}
@@ -94,11 +90,6 @@ export default function IncomeFunding() {
           <div key={deal.status} className="animate-fade-in">
             {renderView()}
           </div>
-
-          {/* Floating assistant button */}
-          <button className="fixed bottom-6 right-6 w-12 h-12 bg-brand-600 text-white rounded-full shadow-lg hover:bg-brand-700 hover:shadow-xl transition-all flex items-center justify-center z-30">
-            <Bot className="w-5 h-5" />
-          </button>
         </div>
       </main>
     </div>

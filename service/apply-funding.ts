@@ -557,3 +557,41 @@ export const updateApplyFunding = async ({
     }
   }
 };
+
+export const saveBusinessIncomeComputation = async (
+  referenceNumber: string,
+  userId: string,
+  computationData: any,
+) => {
+  if (!referenceNumber) {
+    throw new AppError("Reference number is required.");
+  }
+  if (!userId) {
+    throw new AppError("User ID is required.");
+  }
+
+  const db = firestoreAdmin();
+  const docRef = db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber);
+
+  const doc = await docRef.get();
+  if (!doc.exists) {
+    throw new AppError("Funding application not found.");
+  }
+
+  const data = doc.data();
+  if (data?.userId !== userId) {
+    throw new AppError("Unauthorized access to funding application.");
+  }
+
+  await docRef.set(
+    {
+      businessIncomeComputation: {
+        ...computationData,
+        createdAt: new Date().toISOString(),
+      },
+    },
+    { merge: true },
+  );
+
+  return { success: true };
+};
