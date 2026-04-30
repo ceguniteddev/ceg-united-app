@@ -10,6 +10,7 @@ import { useUserDocumentsQuery } from "@/hooks/document";
 import { useAuth } from "@/provider/AuthContext";
 import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 import { toast } from "sonner";
+import { useConfettiStore } from "@/hooks/use-confetti-store";
 
 // ============================================
 // State Machine Hook for Income-Based Funding
@@ -24,6 +25,7 @@ export function useIncomeFundingState() {
   const { user } = useAuth();
   const { userDocuments } = useUserDocumentsQuery({ userId: user?.uid || "" });
   const { appliedFunding } = useGetUserApplyFunding();
+  const { onOpen: triggerConfetti } = useConfettiStore();
 
   // Find the real deal reference number
   const realDeal = appliedFunding?.find((app) =>
@@ -333,6 +335,7 @@ export function useIncomeFundingState() {
           status: "offers-ready", // Go back to offers-ready view instead of complete
           acceptedAt: new Date().toISOString(),
         }));
+        triggerConfetti();
         toast.success("Offer accepted successfully!");
       } catch (error: any) {
         toast.error(error.message || "An error occurred.");

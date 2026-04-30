@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, FileText } from "lucide-react";
 import type { DealOffer } from "@/lib/income-funding-types";
 import { formatUSD } from "@/lib/underwriting";
 import { ConfirmButton } from "@/components/Confirmation";
@@ -54,6 +54,22 @@ export function ExistingOffersList({
                     </span>
                   )}
                 </div>
+                {o.documents && o.documents.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {o.documents.map((doc, idx) => (
+                      <a
+                        key={idx}
+                        href={doc.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2 py-1 bg-gray-50 border border-gray-100 rounded-md text-[10px] font-semibold text-brand-600 hover:bg-brand-50 hover:border-brand-100 transition truncate max-w-[200px]"
+                      >
+                        <FileText className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{doc.name}</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-1">

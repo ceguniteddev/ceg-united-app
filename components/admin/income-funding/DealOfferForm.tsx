@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Plus, Save } from "lucide-react";
-import type { DealOffer } from "@/lib/income-funding-types";
+import { Plus, Save, UploadIcon, X, FileText } from "lucide-react";
+import type { DealOffer, DealOfferDocument } from "@/lib/income-funding-types";
 import { factorRateOf, formatUSD } from "@/lib/underwriting";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,11 +26,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { ApprovalLikelihood } from "@/lib/income-funding-types";
+import {
+  Dropzone,
+  DropzoneContent,
+  DropzoneEmptyState,
+} from "@/components/ui/shadcn-io/dropzone";
 
 interface DealOfferFormProps {
   onSave: (offer: DealOffer) => void;
   initialData?: DealOffer | null;
   onCancelEdit?: () => void;
+  userId?: string;
+  referenceNumber?: string;
 }
 
 const DEAL_TYPES = [
@@ -94,9 +101,16 @@ export function DealOfferForm({
   onSave,
   initialData,
   onCancelEdit,
+  userId,
+  referenceNumber,
 }: DealOfferFormProps) {
   const [pendingValues, setPendingValues] =
     useState<DealOfferFormValues | null>(null);
+
+  const [uploadedDocs, setUploadedDocs] = useState<DealOfferDocument[]>(
+    initialData?.documents || [],
+  );
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: brokerages = [] } = useQuery<Brokerage[]>({
     queryKey: ["brokerages"],
@@ -142,9 +156,60 @@ export function DealOfferForm({
         notes: "",
       },
     );
+    setUploadedDocs(initialData?.documents || []);
   }, [initialData, form]);
 
   const { control, setValue } = form;
+
+  const handleDrop = async (droppedFiles: File[]) => {
+    if (!userId || !referenceNumber) return;
+    if (!droppedFiles || droppedFiles.length === 0) return;
+
+    const validFiles = droppedFiles.filter((f) => f.type === "application/pdf");
+
+    if (validFiles.length === 0) {
+      alert("Only PDF files are allowed!");
+      return;
+    }
+
+    setIsUploading(true);
+
+    const formData = new FormData();
+    formData.append("userId", userId);
+    formData.append("referenceNumber", referenceNumber);
+    formData.append("documentType", "OFFER_DOCUMENT");
+
+    validFiles.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    try {
+      const response = await fetch(`/api/user/${userId}/documents`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const result = await response.json();
+      const newDocs = result.data.map((d: any) => ({
+        name: d.originalFilename || "Document",
+        url: d.signedUrl || d.url || d.gcsPath,
+      }));
+
+      setUploadedDocs((prev) => [...prev, ...newDocs]);
+    } catch (error) {
+      console.error("Upload error:", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeDoc = (idx: number) => {
+    setUploadedDocs((prev) => prev.filter((_, i) => i !== idx));
+  };
 
   const fundingAmount = useWatch({ control, name: "fundingAmount" }) || 0;
   const paybackAmount = useWatch({ control, name: "paybackAmount" }) || 0;
@@ -212,10 +277,12 @@ export function DealOfferForm({
       estimatedPayment: values.estimatedPayment,
       notes: values.notes,
       approvalLikelihood: values.approvalLikelihood,
+      documents: uploadedDocs,
       createdAt: initialData?.createdAt || new Date().toISOString(),
     });
 
     setPendingValues(null);
+    setUploadedDocs([]);
     setTimeout(() => {
       form.reset({
         dealType: "MCA",
@@ -398,6 +465,67 @@ export function DealOfferForm({
             />
           </div>
 
+          {/* Documents */}
+          <div className="md:col-span-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1.5 block">
+              Offer Documents (PDFs only)
+            </span>
+            <Dropzone
+              maxFiles={10}
+              className="cursor-pointer"
+              onDrop={handleDrop}
+              disabled={isUploading || !userId || !referenceNumber}
+              accept={{
+                "application/pdf": [".pdf"],
+              }}
+            >
+              <DropzoneEmptyState>
+                <div className="flex flex-col items-center gap-1.5">
+                  <UploadIcon className="h-6 w-6 text-brand-400" />
+                  <p className="text-xs font-medium text-gray-500">
+                    {isUploading
+                      ? "Uploading..."
+                      : !userId || !referenceNumber
+                        ? "Save client application first before uploading docs"
+                        : "Click or drag to upload PDFs"}
+                  </p>
+                </div>
+              </DropzoneEmptyState>
+              <DropzoneContent />
+            </Dropzone>
+
+            {/* List uploaded docs */}
+            {uploadedDocs.length > 0 && (
+              <div className="mt-3 grid gap-2">
+                {uploadedDocs.map((doc, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-lg p-2 px-3 text-sm"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <FileText className="w-4 h-4 text-brand-600 shrink-0" />
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-gray-700 hover:text-brand-600 hover:underline truncate"
+                      >
+                        {doc.name}
+                      </a>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeDoc(idx)}
+                      className="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition shrink-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Notes */}
           <div className="md:col-span-2">
             <CustomFormField
@@ -457,54 +585,54 @@ export function DealOfferForm({
             <AlertDialogTitle>Confirm Offer Details</AlertDialogTitle>
             <AlertDialogDescription>
               Please review the offer details before saving.
-              {pendingValues && (
-                <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-gray-700 p-4 bg-gray-50 rounded-xl border border-gray-100 text-left">
-                  <div>
-                    <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
-                      Deal Type
-                    </span>
-                    {pendingValues.dealType}
-                  </div>
-                  <div>
-                    <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
-                      Brokerage
-                    </span>
-                    {brokerages.find(
-                      (b) =>
-                        b.id ===
-                        (pendingValues.brokerageId === "none"
-                          ? undefined
-                          : pendingValues.brokerageId),
-                    )?.companyName || "None"}
-                  </div>
-                  <div>
-                    <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
-                      Lender Name
-                    </span>
-                    {pendingValues.lenderName}
-                  </div>
-                  <div>
-                    <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
-                      Funding Amount
-                    </span>
-                    {formatUSD(pendingValues.fundingAmount)}
-                  </div>
-                  <div>
-                    <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
-                      Payback Amount
-                    </span>
-                    {formatUSD(pendingValues.paybackAmount)}
-                  </div>
-                  <div>
-                    <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
-                      Term Length
-                    </span>
-                    {pendingValues.termLength} {pendingValues.termUnit}
-                  </div>
-                </div>
-              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {pendingValues && (
+            <div className="my-4 grid grid-cols-2 gap-3 text-sm text-gray-700 p-4 bg-gray-50 rounded-xl border border-gray-100 text-left">
+              <div>
+                <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                  Deal Type
+                </span>
+                {pendingValues.dealType}
+              </div>
+              <div>
+                <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                  Brokerage
+                </span>
+                {brokerages.find(
+                  (b) =>
+                    b.id ===
+                    (pendingValues.brokerageId === "none"
+                      ? undefined
+                      : pendingValues.brokerageId),
+                )?.companyName || "None"}
+              </div>
+              <div>
+                <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                  Lender Name
+                </span>
+                {pendingValues.lenderName}
+              </div>
+              <div>
+                <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                  Funding Amount
+                </span>
+                {formatUSD(pendingValues.fundingAmount)}
+              </div>
+              <div>
+                <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                  Payback Amount
+                </span>
+                {formatUSD(pendingValues.paybackAmount)}
+              </div>
+              <div>
+                <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                  Term Length
+                </span>
+                {pendingValues.termLength} {pendingValues.termUnit}
+              </div>
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setPendingValues(null)}>
               Cancel

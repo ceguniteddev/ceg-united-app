@@ -111,13 +111,21 @@ export const PUT = withAuth(
             if (emailTo) {
               const clientName = `${user.firstName} ${user.lastName}`;
               const htmlContent = `
-                <h2>Client Accepted Offer</h2>
                 <p>Hello ${companyOrBrokerName},</p>
-                <p>The client <strong>${clientName}</strong> has accepted the funding offer from <strong>${acceptedOffer.lenderName}</strong> for <strong>$${Number(acceptedOffer.fundingAmount).toLocaleString()}</strong>.</p>
-                <p>The client accepts to send over contracts. The lender will email the client the contracts.</p>
+                <p>Client <strong>${clientName}</strong> agrees to the terms of the deal for <strong>${acceptedOffer.lenderName}</strong>.</p>
+                <p>Could you please send out contracts to the client for this deal to their email address: <a href="mailto:${user.email}">${user.email}</a>.</p>
                 <br/>
-                <p><strong>Reference Number:</strong> ${referenceNumber}</p>
-                <p>Thank you.</p>
+                <h3>Offer Details:</h3>
+                <ul>
+                  <li><strong>Deal Type:</strong> ${acceptedOffer.dealType}</li>
+                  <li><strong>Lender:</strong> ${acceptedOffer.lenderName}</li>
+                  <li><strong>Funding Amount:</strong> $${Number(acceptedOffer.fundingAmount).toLocaleString()}</li>
+                  <li><strong>Payback Amount:</strong> $${Number(acceptedOffer.paybackAmount).toLocaleString()}</li>
+                  <li><strong>Term:</strong> ${acceptedOffer.termLength} ${acceptedOffer.termUnit}</li>
+                </ul>
+                <br/>
+                <p>Thank you,</p>
+                <p><strong>CEG United</strong></p>
               `;
 
               await sendTriggerEmail({

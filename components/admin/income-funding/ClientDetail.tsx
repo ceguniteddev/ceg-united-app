@@ -212,6 +212,8 @@ export function ClientDetail({
                 onSave={handleSaveOffer}
                 initialData={editingOffer}
                 onCancelEdit={() => setEditingOffer(null)}
+                userId={client.uid}
+                referenceNumber={client.referenceNumber}
               />
 
               {/* Existing offers */}

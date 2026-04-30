@@ -70,6 +70,11 @@ export type ApprovalLikelihood = "most-likely" | "likely" | "possible";
 export type TermUnit = "days" | "weeks" | "months";
 export type PaymentFrequency = "daily" | "weekly" | "biweekly" | "monthly";
 
+export interface DealOfferDocument {
+  name: string;
+  url: string;
+}
+
 export interface DealOffer {
   id: string;
   dealType: DealType;
@@ -88,6 +93,7 @@ export interface DealOffer {
   createdAt: string;
   createdBy?: string;
   status?: "Pending" | "Accepted" | "Skipped";
+  documents?: DealOfferDocument[];
 }
 
 // -------- Deal Status (state machine) --------

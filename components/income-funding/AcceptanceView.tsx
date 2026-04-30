@@ -5,10 +5,27 @@ import {
   Eraser,
   FileSignature,
   ScrollText,
+  Loader2,
+  Eye,
 } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { formatUSD } from "@/lib/underwriting";
 import type { DealOffer } from "@/lib/income-funding-types";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
+import Image from "next/image";
 
 interface AcceptanceViewProps {
   offer: DealOffer;
@@ -31,6 +48,12 @@ export function AcceptanceView({
   const [hasDrawn, setHasDrawn] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
+
+  const [previewDoc, setPreviewDoc] = useState<{
+    url: string;
+    title: string;
+    contentType?: string;
+  } | null>(null);
 
   const fee = Math.round(offer.fundingAmount * FEE_PERCENTAGE);
   const today = new Date().toLocaleDateString("en-US", {
@@ -119,6 +142,37 @@ export function AcceptanceView({
           Selected Offer
         </div>
         <OfferCard offer={offer} onSelect={() => {}} hideActions />
+
+        {/* Offer Documents */}
+        {offer.documents && offer.documents.length > 0 && (
+          <div className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+            <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <ScrollText className="w-4 h-4 text-brand-600" />
+              Offer Documents
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {offer.documents.map((doc, idx) => (
+                <a
+                  key={idx}
+                  href={doc.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-brand-300 hover:bg-brand-50 transition group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-gray-400 group-hover:text-brand-600">
+                    <ScrollText className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-gray-900 truncate group-hover:text-brand-700">
+                      {doc.name}
+                    </p>
+                    <p className="text-[10px] text-gray-500">PDF Document</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Fee agreement */}
@@ -296,10 +350,69 @@ export function AcceptanceView({
           onClick={handleAccept}
           className="cursor-pointer inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all"
         >
-          {isSubmitting ? "Accepting..." : "Accept offer & continue"}
-          {!isSubmitting && <ArrowRight className="w-4 h-4" />}
+          Accept offer & continue
+          <ArrowRight className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Loading Modal */}
+      <AlertDialog open={isSubmitting}>
+        <AlertDialogContent className="sm:max-w-md flex flex-col items-center justify-center p-8 space-y-4 outline-none">
+          <AlertDialogHeader className="sr-only">
+            <AlertDialogTitle>Processing Acceptance</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please wait while we secure your offer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Loader2 className="w-12 h-12 animate-spin text-brand-600" />
+          <h2 className="text-xl font-semibold text-gray-900">
+            Processing your acceptance...
+          </h2>
+          <p className="text-sm text-gray-500 text-center">
+            Please wait while we secure your offer and generate your contract.
+          </p>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Preview Sheet */}
+      <Sheet
+        open={!!previewDoc}
+        onOpenChange={(open) => !open && setPreviewDoc(null)}
+      >
+        <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0 z-50">
+          <SheetHeader className="p-4 pb-2 border-b flex-shrink-0">
+            <SheetTitle className="text-sm break-words text-left leading-snug">
+              {previewDoc && previewDoc.title}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-hidden p-2">
+            {previewDoc?.contentType?.startsWith("image/") ? (
+              <ImageZoom>
+                <Image
+                  src={previewDoc.url}
+                  alt={previewDoc.title}
+                  className="w-full h-full object-contain"
+                  width={800}
+                  height={600}
+                  unoptimized
+                />
+              </ImageZoom>
+            ) : previewDoc?.contentType === "application/pdf" ? (
+              <iframe
+                src={`${previewDoc.url}#toolbar=1&view=FitH`}
+                title={previewDoc.title}
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-sm text-muted-foreground">
+                  Preview unavailable for this file type
+                </p>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
