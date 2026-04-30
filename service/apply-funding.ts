@@ -358,7 +358,13 @@ export const updateApplicationStatus = async (
 
   const db = firestoreAdmin();
   const appRef = db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber);
-  await appRef.update({ status, approveOrDecline: approveOrDeclineValue });
+
+  const updateData: any = { status };
+  if (approveOrDeclineValue !== undefined) {
+    updateData.approveOrDecline = approveOrDeclineValue;
+  }
+
+  await appRef.update(updateData);
 };
 
 export const addFundApplicationNotes = async ({

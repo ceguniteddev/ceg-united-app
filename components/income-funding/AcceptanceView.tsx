@@ -1,92 +1,113 @@
-import { useRef, useState, useEffect } from 'react'
-import { ArrowLeft, ArrowRight, Eraser, FileSignature, ScrollText } from 'lucide-react'
-import { OfferCard } from './OfferCard'
-import { formatUSD } from '@/lib/underwriting'
-import type { DealOffer } from '@/lib/income-funding-types'
+import { useRef, useState, useEffect } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Eraser,
+  FileSignature,
+  ScrollText,
+} from "lucide-react";
+import { OfferCard } from "./OfferCard";
+import { formatUSD } from "@/lib/underwriting";
+import type { DealOffer } from "@/lib/income-funding-types";
 
 interface AcceptanceViewProps {
-  offer: DealOffer
-  onBack: () => void
-  onAccept: () => void
+  offer: DealOffer;
+  onBack: () => void;
+  onAccept: (signature: { type: "type" | "draw"; value: string }) => void;
 }
 
-const FEE_PERCENTAGE = 0.05
+const FEE_PERCENTAGE = 0.05;
 
-export function AcceptanceView({ offer, onBack, onAccept }: AcceptanceViewProps) {
-  const [agreed, setAgreed] = useState(false)
-  const [mode, setMode] = useState<'type' | 'draw'>('type')
-  const [typedSignature, setTypedSignature] = useState('')
-  const [hasDrawn, setHasDrawn] = useState(false)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const drawing = useRef(false)
+export function AcceptanceView({
+  offer,
+  onBack,
+  onAccept,
+}: AcceptanceViewProps) {
+  const [agreed, setAgreed] = useState(false);
+  const [mode, setMode] = useState<"type" | "draw">("type");
+  const [typedSignature, setTypedSignature] = useState("");
+  const [hasDrawn, setHasDrawn] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawing = useRef(false);
 
-  const fee = Math.round(offer.fundingAmount * FEE_PERCENTAGE)
-  const today = new Date().toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  })
+  const fee = Math.round(offer.fundingAmount * FEE_PERCENTAGE);
+  const today = new Date().toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 
-  const hasSignature = mode === 'type' ? typedSignature.trim().length >= 2 : hasDrawn
-  const canAccept = agreed && hasSignature
+  const hasSignature =
+    mode === "type" ? typedSignature.trim().length >= 2 : hasDrawn;
+  const canAccept = agreed && hasSignature;
 
   // -------- canvas signature pad --------
   useEffect(() => {
-    if (mode !== 'draw') return
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ratio = window.devicePixelRatio || 1
-    const rect = canvas.getBoundingClientRect()
-    canvas.width = rect.width * ratio
-    canvas.height = rect.height * ratio
-    const ctx = canvas.getContext('2d')!
-    ctx.scale(ratio, ratio)
-    ctx.lineWidth = 2.2
-    ctx.lineCap = 'round'
-    ctx.lineJoin = 'round'
-    ctx.strokeStyle = '#1e3a5f'
-  }, [mode])
+    if (mode !== "draw") return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ratio = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * ratio;
+    canvas.height = rect.height * ratio;
+    const ctx = canvas.getContext("2d")!;
+    ctx.scale(ratio, ratio);
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#1e3a5f";
+  }, [mode]);
 
   const getPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current!
-    const rect = canvas.getBoundingClientRect()
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top }
-  }
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
 
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    drawing.current = true
-    const ctx = canvasRef.current!.getContext('2d')!
-    const { x, y } = getPos(e)
-    ctx.beginPath()
-    ctx.moveTo(x, y)
-    canvasRef.current!.setPointerCapture(e.pointerId)
-  }
+    drawing.current = true;
+    const ctx = canvasRef.current!.getContext("2d")!;
+    const { x, y } = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    canvasRef.current!.setPointerCapture(e.pointerId);
+  };
 
   const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!drawing.current) return
-    const ctx = canvasRef.current!.getContext('2d')!
-    const { x, y } = getPos(e)
-    ctx.lineTo(x, y)
-    ctx.stroke()
-    setHasDrawn(true)
-  }
+    if (!drawing.current) return;
+    const ctx = canvasRef.current!.getContext("2d")!;
+    const { x, y } = getPos(e);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    setHasDrawn(true);
+  };
 
   const onPointerUp = () => {
-    drawing.current = false
-  }
+    drawing.current = false;
+  };
 
   const clearSignature = () => {
-    if (mode === 'type') {
-      setTypedSignature('')
-      return
+    if (mode === "type") {
+      setTypedSignature("");
+      return;
     }
-    const canvas = canvasRef.current
+    const canvas = canvasRef.current;
     if (canvas) {
-      const ctx = canvas.getContext('2d')!
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      const ctx = canvas.getContext("2d")!;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-    setHasDrawn(false)
-  }
+    setHasDrawn(false);
+  };
+
+  const handleAccept = () => {
+    let signatureValue = "";
+    if (mode === "type") {
+      signatureValue = typedSignature;
+    } else {
+      signatureValue = canvasRef.current?.toDataURL() || "";
+    }
+    onAccept({ type: mode, value: signatureValue });
+  };
 
   return (
     <div className="space-y-6">
@@ -117,43 +138,48 @@ export function AcceptanceView({ offer, onBack, onAccept }: AcceptanceViewProps)
         {/* Scrollable legal */}
         <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 max-h-44 overflow-y-auto custom-scrollbar text-xs leading-relaxed text-gray-600 space-y-2">
           <p>
-            This Performance Success Fee Agreement ("Agreement") is entered into between
-            the Client and Credit Experts Group LLC ("CEG") as of the date of execution.
+            This Performance Success Fee Agreement ("Agreement") is entered into
+            between the Client and Credit Experts Group LLC ("CEG") as of the
+            date of execution.
           </p>
           <p>
-            <span className="font-semibold text-gray-800">1. Success Fee.</span> Client
-            agrees to pay CEG a success fee equal to <strong>5%</strong> of the gross
-            funding amount approved and accepted through CEG's lender network.
+            <span className="font-semibold text-gray-800">1. Success Fee.</span>{" "}
+            Client agrees to pay CEG a success fee equal to <strong>5%</strong>{" "}
+            of the gross funding amount approved and accepted through CEG's
+            lender network.
           </p>
           <p>
-            <span className="font-semibold text-gray-800">2. Payment.</span> The fee
-            becomes due upon disbursement of funds from the lender to the Client and
-            shall be paid via the same banking instrument used for funding receipt.
+            <span className="font-semibold text-gray-800">2. Payment.</span> The
+            fee becomes due upon disbursement of funds from the lender to the
+            Client and shall be paid via the same banking instrument used for
+            funding receipt.
           </p>
           <p>
-            <span className="font-semibold text-gray-800">3. Disclosure.</span> CEG is a
-            consulting and brokerage firm and is not a lender. Final approval, terms,
-            and disbursement are subject to the lender's underwriting standards.
+            <span className="font-semibold text-gray-800">3. Disclosure.</span>{" "}
+            CEG is a consulting and brokerage firm and is not a lender. Final
+            approval, terms, and disbursement are subject to the lender's
+            underwriting standards.
           </p>
           <p>
-            <span className="font-semibold text-gray-800">4. Termination.</span> This
-            Agreement remains in effect for the duration of the active funding cycle.
+            <span className="font-semibold text-gray-800">4. Termination.</span>{" "}
+            This Agreement remains in effect for the duration of the active
+            funding cycle.
           </p>
         </div>
 
         {/* Calculated fee callout */}
         <div className="mt-4 bg-gradient-to-br from-brand-50 to-white border border-brand-100 rounded-xl p-4">
           <p className="text-sm text-gray-700">
-            You agree to pay a success fee of{' '}
-            <span className="font-bold text-brand-700">5%</span> based on the approved
-            funding amount of{' '}
+            You agree to pay a success fee of{" "}
+            <span className="font-bold text-brand-700">5%</span> based on the
+            approved funding amount of{" "}
             <span className="font-bold text-gray-900 tabular-nums">
               {formatUSD(offer.fundingAmount)}
-            </span>{' '}
-            ={' '}
+            </span>{" "}
+            ={" "}
             <span className="font-extrabold text-brand-700 tabular-nums">
               {formatUSD(fee)}
-            </span>{' '}
+            </span>{" "}
             fee.
           </p>
         </div>
@@ -167,9 +193,13 @@ export function AcceptanceView({ offer, onBack, onAccept }: AcceptanceViewProps)
             className="mt-0.5 w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
           />
           <span className="text-sm text-gray-700 group-hover:text-gray-900">
-            I have read and agree to the{' '}
-            <span className="font-semibold">CEG Fee Agreement</span> and{' '}
-            <a className="text-brand-600 underline-offset-2 hover:underline" href="#">
+            I have read and agree to the{" "}
+            <span className="font-semibold">CEG Fee Agreement</span> and{" "}
+            <a
+              className="text-brand-600 underline-offset-2 hover:underline"
+              target="_blank"
+              href="https://www.cegunited.com/terms"
+            >
               Terms of Service
             </a>
             .
@@ -185,21 +215,21 @@ export function AcceptanceView({ offer, onBack, onAccept }: AcceptanceViewProps)
             </div>
             <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
               <button
-                onClick={() => setMode('type')}
+                onClick={() => setMode("type")}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
-                  mode === 'type'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
+                  mode === "type"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 Type
               </button>
               <button
-                onClick={() => setMode('draw')}
+                onClick={() => setMode("draw")}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
-                  mode === 'draw'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
+                  mode === "draw"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 Draw
@@ -207,13 +237,14 @@ export function AcceptanceView({ offer, onBack, onAccept }: AcceptanceViewProps)
             </div>
           </div>
 
-          {mode === 'type' ? (
+          {mode === "type" ? (
             <div className="relative">
               <input
                 type="text"
                 value={typedSignature}
                 onChange={(e) => setTypedSignature(e.target.value)}
                 placeholder="Type your full legal name"
+                // className="w-full font-signature text-3xl text-brand-900 px-4 py-4 bg-white border-2 border-dashed border-gray-200 rounded-xl focus:outline-none focus:border-brand-400 focus:bg-brand-50/30 transition"
                 className="w-full font-signature text-3xl text-brand-900 px-4 py-4 bg-white border-2 border-dashed border-gray-200 rounded-xl focus:outline-none focus:border-brand-400 focus:bg-brand-50/30 transition"
               />
               <div className="absolute left-4 right-4 bottom-2 h-px bg-gray-200" />
@@ -260,13 +291,13 @@ export function AcceptanceView({ offer, onBack, onAccept }: AcceptanceViewProps)
         </button>
         <button
           disabled={!canAccept}
-          onClick={onAccept}
-          className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all"
+          onClick={handleAccept}
+          className="cursor-pointer inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all"
         >
           Accept offer & continue
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     </div>
-  )
+  );
 }

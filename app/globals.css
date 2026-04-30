@@ -729,3 +729,7 @@
   transform: scale(1.05); /* Enlarge on hover */
   box-shadow: 0 6px 20px rgba(254, 180, 123, 0.6);
 }
+
+.font-signature {
+  font-family: var(--font-caveat), "Caveat", cursive;
+}

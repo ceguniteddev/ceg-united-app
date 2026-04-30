@@ -45,7 +45,10 @@ export function useIncomeFundingState() {
       if (realDeal) {
         if (realDeal.status === "Sent to Brokerage") {
           nextStatus = "under-review";
-        } else if (realDeal.status === "Pre-Approved") {
+        } else if (
+          realDeal.status === "Pre-Approved" ||
+          realDeal.status === "Offer Accepted"
+        ) {
           nextStatus = "offers-ready";
         } else if (realDeal.status === "Approved") {
           nextStatus = "complete";
@@ -227,39 +230,52 @@ export function useIncomeFundingState() {
     setDeal((d) => ({ ...d, selectedOfferId: offer.id, status: "accepting" }));
   }, []);
 
-  const acceptOffer = useCallback(async () => {
-    if (!user?.uid || !referenceNumber) {
-      toast.error("Unable to find funding application record.");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      const response = await fetch(
-        `/api/user/${user.uid}/funding-application/${referenceNumber}/status`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "Approved" }),
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to accept offer.");
+  const acceptOffer = useCallback(
+    async (
+      signature: { type: "type" | "draw"; value: string },
+      fundingAmount: number,
+    ) => {
+      if (!user?.uid || !referenceNumber) {
+        toast.error("Unable to find funding application record.");
+        return;
       }
 
-      setDeal((d) => ({
-        ...d,
-        status: "complete",
-        acceptedAt: new Date().toISOString(),
-      }));
-      toast.success("Offer accepted successfully!");
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [user?.uid, referenceNumber]);
+      const feeAmount = Math.round(fundingAmount * 0.05);
+
+      try {
+        setIsSubmitting(true);
+        const response = await fetch(
+          `/api/user/${user.uid}/funding-application/${referenceNumber}/status`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              status: "Offer Accepted",
+              signature,
+              fundingAmount,
+              feeAmount,
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to accept offer.");
+        }
+
+        setDeal((d) => ({
+          ...d,
+          status: "complete",
+          acceptedAt: new Date().toISOString(),
+        }));
+        toast.success("Offer accepted successfully!");
+      } catch (error: any) {
+        toast.error(error.message || "An error occurred.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [user?.uid, referenceNumber],
+  );
 
   const reset = useCallback(() => {
     setDeal({

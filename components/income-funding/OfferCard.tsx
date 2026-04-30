@@ -1,50 +1,50 @@
-import { CheckCircle2, Clock, Repeat, TrendingUp, X } from 'lucide-react'
-import type { ApprovalLikelihood, DealOffer } from '@/lib/income-funding-types'
-import { formatUSD } from '@/lib/underwriting'
+import { CheckCircle2, Clock, Repeat, TrendingUp, X } from "lucide-react";
+import type { ApprovalLikelihood, DealOffer } from "@/lib/income-funding-types";
+import { formatUSD } from "@/lib/underwriting";
 
 interface OfferCardProps {
-  offer: DealOffer
-  onSelect: (offer: DealOffer) => void
-  onSkip?: (offer: DealOffer) => void
-  selected?: boolean
-  compact?: boolean
-  hideActions?: boolean
+  offer: DealOffer;
+  onSelect: (offer: DealOffer) => void;
+  onSkip?: (offer: DealOffer) => void;
+  selected?: boolean;
+  compact?: boolean;
+  hideActions?: boolean;
 }
 
 const likelihoodMap: Record<
   ApprovalLikelihood,
   { label: string; dot: string; text: string; bg: string; border: string }
 > = {
-  'most-likely': {
-    label: 'Most likely',
-    dot: 'bg-emerald-500',
-    text: 'text-emerald-700',
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-100',
+  "most-likely": {
+    label: "Most likely",
+    dot: "bg-emerald-500",
+    text: "text-emerald-700",
+    bg: "bg-emerald-50",
+    border: "border-emerald-100",
   },
   likely: {
-    label: 'Likely',
-    dot: 'bg-amber-500',
-    text: 'text-amber-700',
-    bg: 'bg-amber-50',
-    border: 'border-amber-100',
+    label: "Likely",
+    dot: "bg-amber-500",
+    text: "text-amber-700",
+    bg: "bg-amber-50",
+    border: "border-amber-100",
   },
   possible: {
-    label: 'Possible',
-    dot: 'bg-blue-500',
-    text: 'text-blue-700',
-    bg: 'bg-blue-50',
-    border: 'border-blue-100',
+    label: "Possible",
+    dot: "bg-blue-500",
+    text: "text-blue-700",
+    bg: "bg-blue-50",
+    border: "border-blue-100",
   },
-}
+};
 
 const dealTypeStyles: Record<string, string> = {
-  MCA: 'bg-purple-50 text-purple-700 border-purple-100',
-  LOC: 'bg-blue-50 text-blue-700 border-blue-100',
-  'Revenue-Based': 'bg-emerald-50 text-emerald-700 border-emerald-100',
-  'Term Loan': 'bg-amber-50 text-amber-700 border-amber-100',
-  'Equipment Finance': 'bg-orange-50 text-orange-700 border-orange-100',
-}
+  MCA: "bg-purple-50 text-purple-700 border-purple-100",
+  LOC: "bg-blue-50 text-blue-700 border-blue-100",
+  "Revenue-Based": "bg-emerald-50 text-emerald-700 border-emerald-100",
+  "Term Loan": "bg-amber-50 text-amber-700 border-amber-100",
+  "Equipment Finance": "bg-orange-50 text-orange-700 border-orange-100",
+};
 
 export function OfferCard({
   offer,
@@ -54,11 +54,14 @@ export function OfferCard({
   compact,
   hideActions,
 }: OfferCardProps) {
-  const likelihood = likelihoodMap[offer.approvalLikelihood]
-  const dealStyle = dealTypeStyles[offer.dealType] || 'bg-gray-50 text-gray-700 border-gray-200'
+  const likelihood = likelihoodMap[offer.approvalLikelihood];
+  const dealStyle =
+    dealTypeStyles[offer.dealType] ||
+    "bg-gray-50 text-gray-700 border-gray-200";
 
   const freqLabel =
-    offer.paymentFrequency.charAt(0).toUpperCase() + offer.paymentFrequency.slice(1)
+    offer.paymentFrequency.charAt(0).toUpperCase() +
+    offer.paymentFrequency.slice(1);
 
   if (compact) {
     return (
@@ -80,7 +83,7 @@ export function OfferCard({
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -88,8 +91,8 @@ export function OfferCard({
       className={`group bg-white rounded-2xl border transition-all p-5 md:p-6 flex flex-col h-full
         ${
           selected
-            ? 'border-brand-500 shadow-card-hover ring-2 ring-brand-200'
-            : 'border-gray-100 shadow-card hover:shadow-card-hover hover:-translate-y-0.5'
+            ? "border-brand-500 shadow-card-hover ring-2 ring-brand-200"
+            : "border-gray-100 shadow-card hover:shadow-card-hover hover:-translate-y-0.5"
         }`}
     >
       {/* Header */}
@@ -111,7 +114,9 @@ export function OfferCard({
 
       {/* Lender + amount */}
       <div className="mt-4">
-        <div className="text-sm font-medium text-gray-500">{offer.lenderName}</div>
+        <div className="text-sm font-medium text-gray-500">
+          {offer.lenderName}
+        </div>
         <div className="mt-1 text-3xl md:text-4xl font-extrabold text-gray-900 tabular-nums">
           {formatUSD(offer.fundingAmount)}
         </div>
@@ -157,17 +162,16 @@ export function OfferCard({
             Estimated payment
           </dt>
           <dd className="mt-1 font-bold text-brand-900 tabular-nums">
-            {formatUSD(offer.estimatedPayment)}{' '}
+            {formatUSD(offer.estimatedPayment)}{" "}
             <span className="text-xs font-medium text-brand-600">
-              /{
-                offer.paymentFrequency === 'daily'
-                  ? 'day'
-                  : offer.paymentFrequency === 'weekly'
-                  ? 'week'
-                  : offer.paymentFrequency === 'biweekly'
-                  ? 'bi-week'
-                  : 'month'
-              }
+              /
+              {offer.paymentFrequency === "daily"
+                ? "day"
+                : offer.paymentFrequency === "weekly"
+                  ? "week"
+                  : offer.paymentFrequency === "biweekly"
+                    ? "bi-week"
+                    : "month"}
             </span>
           </dd>
         </div>
@@ -175,30 +179,32 @@ export function OfferCard({
 
       {/* Notes */}
       {offer.notes && (
-        <p className="mt-4 text-xs text-gray-500 leading-relaxed">{offer.notes}</p>
+        <p className="mt-4 text-xs text-gray-500 leading-relaxed">
+          {offer.notes}
+        </p>
       )}
 
       {/* CTAs */}
       {!hideActions && (
-      <div className="mt-5 pt-5 border-t border-gray-100 flex items-center gap-2">
-        <button
-          onClick={() => onSelect(offer)}
-          className="flex-1 inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition"
-        >
-          <CheckCircle2 className="w-4 h-4" />
-          Select this offer
-        </button>
-        {onSkip && (
+        <div className="mt-5 pt-5 border-t border-gray-100 flex items-center gap-2">
           <button
-            onClick={() => onSkip(offer)}
-            className="inline-flex items-center justify-center gap-1 text-gray-500 hover:text-gray-700 hover:bg-gray-50 font-semibold text-sm px-3 py-2.5 rounded-xl transition"
+            onClick={() => onSelect(offer)}
+            className="cursor-pointer flex-1 inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition"
           >
-            <X className="w-4 h-4" />
-            Skip
+            <CheckCircle2 className="w-4 h-4" />
+            Select this offer
           </button>
-        )}
-      </div>
+          {onSkip && (
+            <button
+              onClick={() => onSkip(offer)}
+              className="cursor-pointer inline-flex items-center justify-center gap-1 text-gray-500 hover:text-gray-700 hover:bg-gray-50 font-semibold text-sm px-3 py-2.5 rounded-xl transition"
+            >
+              <X className="w-4 h-4" />
+              Skip
+            </button>
+          )}
+        </div>
       )}
     </div>
-  )
+  );
 }

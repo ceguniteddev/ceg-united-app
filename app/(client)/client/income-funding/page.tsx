@@ -54,7 +54,9 @@ export default function IncomeFunding() {
           <AcceptanceView
             offer={selectedOffer}
             onBack={() => setStatus("offers-ready")}
-            onAccept={acceptOffer}
+            onAccept={(signature) =>
+              acceptOffer(signature, selectedOffer.fundingAmount)
+            }
           />
         );
       case "complete":
