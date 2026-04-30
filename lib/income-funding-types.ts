@@ -74,6 +74,8 @@ export interface DealOffer {
   id: string;
   dealType: DealType;
   lenderName: string;
+  brokerageId?: string;
+  brokerageName?: string;
   fundingAmount: number;
   paybackAmount: number;
   factorRate: number;
@@ -85,6 +87,7 @@ export interface DealOffer {
   approvalLikelihood: ApprovalLikelihood;
   createdAt: string;
   createdBy?: string;
+  status?: "Pending" | "Accepted" | "Skipped";
 }
 
 // -------- Deal Status (state machine) --------

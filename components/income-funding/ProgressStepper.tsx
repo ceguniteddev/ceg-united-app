@@ -10,7 +10,7 @@ const stages: { key: DealStatus[]; label: string }[] = [
   { key: ["prequalified", "collecting-documents"], label: "Pre-Qualified" },
   { key: ["under-review"], label: "Submitted" },
   { key: ["offers-ready", "accepting"], label: "Offers Ready" },
-  { key: ["complete"], label: "Accepted" },
+  // { key: ["complete"], label: "Accepted" },
 ];
 
 const order: DealStatus[] = [
@@ -18,15 +18,15 @@ const order: DealStatus[] = [
   "collecting-documents",
   "under-review",
   "offers-ready",
-  "accepting",
-  "complete",
+  // "accepting",
+  // "complete",
 ];
 
 export function ProgressStepper({ status }: ProgressStepperProps) {
   const currentIdx = order.indexOf(status);
 
   return (
-    <ol className="flex items-center w-full gap-2 sm:gap-4">
+    <ol className="flex items-center justify-center w-full max-w-4xl mx-auto">
       {stages.map((stage, i) => {
         const stageStartIdx = order.indexOf(stage.key[0]);
         const isActive = stage.key.includes(status);
@@ -35,8 +35,11 @@ export function ProgressStepper({ status }: ProgressStepperProps) {
         const isUpcoming = currentIdx < stageStartIdx;
 
         return (
-          <li key={stage.label} className="flex-1 flex items-center">
-            <div className="flex items-center gap-2 sm:gap-3 w-full">
+          <li
+            key={stage.label}
+            className={`flex items-center ${i < stages.length - 1 ? "flex-1" : ""}`}
+          >
+            <div className="flex items-center gap-2 sm:gap-3">
               <span
                 className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all
                   ${
@@ -64,14 +67,14 @@ export function ProgressStepper({ status }: ProgressStepperProps) {
               >
                 {stage.label}
               </span>
-              {i < stages.length - 1 && (
-                <span
-                  className={`flex-1 h-[2px] mx-1 sm:mx-2 rounded-full transition-colors ${
-                    isComplete || isActive ? "bg-brand-200" : "bg-gray-100"
-                  }`}
-                />
-              )}
             </div>
+            {i < stages.length - 1 && (
+              <div
+                className={`flex-1 h-[2px] mx-2 sm:mx-4 rounded-full transition-colors ${
+                  isComplete || isActive ? "bg-brand-200" : "bg-gray-100"
+                }`}
+              />
+            )}
             {/* mobile labels under steps */}
             <span
               className={`sm:hidden absolute mt-9 text-[10px] font-medium ${

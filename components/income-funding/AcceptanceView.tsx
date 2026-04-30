@@ -14,6 +14,7 @@ interface AcceptanceViewProps {
   offer: DealOffer;
   onBack: () => void;
   onAccept: (signature: { type: "type" | "draw"; value: string }) => void;
+  isSubmitting?: boolean;
 }
 
 const FEE_PERCENTAGE = 0.05;
@@ -22,6 +23,7 @@ export function AcceptanceView({
   offer,
   onBack,
   onAccept,
+  isSubmitting,
 }: AcceptanceViewProps) {
   const [agreed, setAgreed] = useState(false);
   const [mode, setMode] = useState<"type" | "draw">("type");
@@ -290,12 +292,12 @@ export function AcceptanceView({
           Back to offers
         </button>
         <button
-          disabled={!canAccept}
+          disabled={!canAccept || isSubmitting}
           onClick={handleAccept}
           className="cursor-pointer inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all"
         >
-          Accept offer & continue
-          <ArrowRight className="w-4 h-4" />
+          {isSubmitting ? "Accepting..." : "Accept offer & continue"}
+          {!isSubmitting && <ArrowRight className="w-4 h-4" />}
         </button>
       </div>
     </div>

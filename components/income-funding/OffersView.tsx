@@ -1,18 +1,19 @@
-import { useState } from 'react'
-import { Sparkles, Award } from 'lucide-react'
-import { OfferCard } from './OfferCard'
-import { GradeBadge } from './GradeBadge'
-import { formatUSD } from '@/lib/underwriting'
-import type { DealOffer, IncomeFundingDeal } from '@/lib/income-funding-types'
+import { useState } from "react";
+import { Sparkles, Award } from "lucide-react";
+import { OfferCard } from "./OfferCard";
+import { GradeBadge } from "./GradeBadge";
+import { formatUSD } from "@/lib/underwriting";
+import type { DealOffer, IncomeFundingDeal } from "@/lib/income-funding-types";
 
 interface OffersViewProps {
-  deal: IncomeFundingDeal
-  onSelect: (offer: DealOffer) => void
+  deal: IncomeFundingDeal;
+  onSelect: (offer: DealOffer) => void;
+  onSkip?: (offerId: string) => void;
 }
 
-export function OffersView({ deal, onSelect }: OffersViewProps) {
-  const [skipped, setSkipped] = useState<Set<string>>(new Set())
-  const visibleOffers = deal.offers.filter((o) => !skipped.has(o.id))
+export function OffersView({ deal, onSelect, onSkip }: OffersViewProps) {
+  // Use the offer status to determine visibility instead of local state
+  const visibleOffers = deal.offers.filter((o) => o.status !== "Skipped");
 
   return (
     <div className="space-y-6">
@@ -28,7 +29,8 @@ export function OffersView({ deal, onSelect }: OffersViewProps) {
               up to {formatUSD(deal.underwritingResult.maxFundingAmount)}
             </div>
             <div className="mt-1 text-xs text-brand-100">
-              Based on {formatUSD(deal.underwritingInput.monthlyDeposits)}/mo revenue
+              Based on {formatUSD(deal.underwritingInput.monthlyDeposits)}/mo
+              revenue
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -36,7 +38,9 @@ export function OffersView({ deal, onSelect }: OffersViewProps) {
               <div className="text-[10px] font-semibold uppercase tracking-wider text-brand-200">
                 Risk grade
               </div>
-              <div className="font-bold">Tier {deal.underwritingResult.grade}</div>
+              <div className="font-bold">
+                Tier {deal.underwritingResult.grade}
+              </div>
             </div>
             <GradeBadge grade={deal.underwritingResult.grade} size="md" />
           </div>
@@ -51,11 +55,12 @@ export function OffersView({ deal, onSelect }: OffersViewProps) {
             Your available funding offers
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Compare offers side-by-side. Select the one that fits your business best.
+            Compare offers side-by-side. Select the one that fits your business
+            best.
           </p>
         </div>
         <span className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 text-brand-700 text-xs font-bold border border-brand-100">
-          {visibleOffers.length} offer{visibleOffers.length === 1 ? '' : 's'}
+          {visibleOffers.length} offer{visibleOffers.length === 1 ? "" : "s"}
         </span>
       </div>
 
@@ -63,7 +68,8 @@ export function OffersView({ deal, onSelect }: OffersViewProps) {
       {visibleOffers.length === 0 ? (
         <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center">
           <p className="text-sm text-gray-500">
-            All offers have been skipped. Reach out to your coordinator for new options.
+            All offers have been skipped. Reach out to your coordinator for new
+            options.
           </p>
         </div>
       ) : (
@@ -76,12 +82,12 @@ export function OffersView({ deal, onSelect }: OffersViewProps) {
               <OfferCard
                 offer={offer}
                 onSelect={onSelect}
-                onSkip={(o) => setSkipped((s) => new Set(s).add(o.id))}
+                onSkip={(o) => onSkip && onSkip(o.id)}
               />
             </div>
           ))}
         </div>
       )}
     </div>
-  )
+  );
 }

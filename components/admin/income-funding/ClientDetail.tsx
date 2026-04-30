@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/sheet";
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
 import Image from "next/image";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ClientDetailProps {
   client: AdminClient;
@@ -195,42 +196,66 @@ export function ClientDetail({
         </div>
       </div>
 
-      {/* Documents */}
-      <div>
-        <h3 className="text-sm font-bold text-gray-900 mb-3">
-          Submitted Documents
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {client.documents.map((d) => (
-            <DocumentTile
-              key={d.key}
-              doc={d}
-              onView={(url, title, contentType) =>
-                setPreviewDoc({ url, title, contentType })
-              }
-            />
-          ))}
-        </div>
-      </div>
+      {/* Tabs Layout */}
+      <Tabs defaultValue="offers" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="offers">Offers</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+        </TabsList>
 
-      {client.backendStatus !== "New" &&
-        client.backendStatus !== "Processing" && (
-          <>
-            {/* Offer form */}
-            <DealOfferForm
-              onSave={handleSaveOffer}
-              initialData={editingOffer}
-              onCancelEdit={() => setEditingOffer(null)}
-            />
+        <TabsContent value="offers" className="space-y-6">
+          {client.backendStatus !== "New" &&
+          client.backendStatus !== "Processing" ? (
+            <>
+              {/* Offer form */}
+              <DealOfferForm
+                onSave={handleSaveOffer}
+                initialData={editingOffer}
+                onCancelEdit={() => setEditingOffer(null)}
+              />
 
-            {/* Existing offers */}
-            <ExistingOffersList
-              offers={client.offers}
-              onDelete={onDeleteOffer}
-              onEdit={setEditingOffer}
-            />
-          </>
-        )}
+              {/* Existing offers */}
+              <ExistingOffersList
+                offers={client.offers}
+                onDelete={onDeleteOffer}
+                onEdit={setEditingOffer}
+              />
+            </>
+          ) : (
+            <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center">
+              <p className="text-sm text-gray-500">
+                Offers cannot be added yet. Wait until the client has submitted
+                documents.
+              </p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="documents">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5 md:p-6">
+            <h3 className="text-sm font-bold text-gray-900 mb-4">
+              Submitted Documents
+            </h3>
+            {client.documents && client.documents.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                {client.documents.map((d) => (
+                  <DocumentTile
+                    key={d.key}
+                    doc={d}
+                    onView={(url, title, contentType) =>
+                      setPreviewDoc({ url, title, contentType })
+                    }
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-6 border border-dashed border-gray-200 rounded-xl">
+                No documents submitted yet.
+              </p>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Preview Sheet */}
       <Sheet

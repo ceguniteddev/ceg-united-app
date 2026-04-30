@@ -20,6 +20,7 @@ export default function IncomeFunding() {
     submitForUnderwriting,
     selectOffer,
     acceptOffer,
+    skipOffer,
     reset,
     isSubmitting,
   } = useIncomeFundingState();
@@ -48,7 +49,9 @@ export default function IncomeFunding() {
       case "under-review":
         return <SubmittedView deal={deal} />;
       case "offers-ready":
-        return <OffersView deal={deal} onSelect={selectOffer} />;
+        return (
+          <OffersView deal={deal} onSelect={selectOffer} onSkip={skipOffer} />
+        );
       case "accepting":
         return (
           <AcceptanceView
@@ -57,6 +60,7 @@ export default function IncomeFunding() {
             onAccept={(signature) =>
               acceptOffer(signature, selectedOffer.fundingAmount)
             }
+            isSubmitting={isSubmitting}
           />
         );
       case "complete":

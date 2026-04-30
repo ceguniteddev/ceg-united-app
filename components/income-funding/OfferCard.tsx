@@ -1,6 +1,17 @@
 import { CheckCircle2, Clock, Repeat, TrendingUp, X } from "lucide-react";
 import type { ApprovalLikelihood, DealOffer } from "@/lib/income-funding-types";
 import { formatUSD } from "@/lib/underwriting";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface OfferCardProps {
   offer: DealOffer;
@@ -187,21 +198,87 @@ export function OfferCard({
       {/* CTAs */}
       {!hideActions && (
         <div className="mt-5 pt-5 border-t border-gray-100 flex items-center gap-2">
-          <button
-            onClick={() => onSelect(offer)}
-            className="cursor-pointer flex-1 inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            Select this offer
-          </button>
-          {onSkip && (
-            <button
-              onClick={() => onSkip(offer)}
-              className="cursor-pointer inline-flex items-center justify-center gap-1 text-gray-500 hover:text-gray-700 hover:bg-gray-50 font-semibold text-sm px-3 py-2.5 rounded-xl transition"
-            >
-              <X className="w-4 h-4" />
-              Skip
-            </button>
+          {offer.status === "Accepted" ? (
+            <div className="flex-1 inline-flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-sm px-4 py-2.5 rounded-xl">
+              <CheckCircle2 className="w-4 h-4" />
+              Offer Accepted
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => onSelect(offer)}
+                className="cursor-pointer flex-1 inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Select this offer
+              </button>
+              {onSkip && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button className="cursor-pointer inline-flex items-center justify-center gap-1 text-gray-500 hover:text-gray-700 hover:bg-gray-50 font-semibold text-sm px-3 py-2.5 rounded-xl transition">
+                      <X className="w-4 h-4" />
+                      Skip
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Are you sure you want to skip this offer?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently remove the offer from{" "}
+                        {offer.lenderName} for {formatUSD(offer.fundingAmount)}.
+                        You cannot undo this action.
+                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-gray-700 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                          <div>
+                            <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                              Lender
+                            </span>
+                            {offer.lenderName}
+                          </div>
+                          <div>
+                            <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                              Type
+                            </span>
+                            {offer.dealType}
+                          </div>
+                          <div>
+                            <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                              Amount
+                            </span>
+                            {formatUSD(offer.fundingAmount)}
+                          </div>
+                          <div>
+                            <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                              Payback
+                            </span>
+                            {formatUSD(offer.paybackAmount)}
+                          </div>
+                          <div>
+                            <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                              Term
+                            </span>
+                            {offer.termLength} {offer.termUnit}
+                          </div>
+                          <div>
+                            <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                              Factor Rate
+                            </span>
+                            {offer.factorRate.toFixed(2)}
+                          </div>
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onSkip(offer)}>
+                        Skip Offer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </>
           )}
         </div>
       )}

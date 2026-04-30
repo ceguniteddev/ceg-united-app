@@ -226,6 +226,52 @@ export function useIncomeFundingState() {
     }
   }, [user?.uid, referenceNumber]);
 
+  const skipOffer = useCallback(
+    async (offerId: string) => {
+      if (!user?.uid || !referenceNumber) {
+        toast.error("Unable to find funding application record.");
+        return;
+      }
+
+      // Optimistically update local state
+      setDeal((d) => ({
+        ...d,
+        offers: d.offers.map((o) =>
+          o.id === offerId ? { ...o, status: "Skipped" } : o,
+        ),
+      }));
+
+      try {
+        const newOffers = deal.offers.map((o) =>
+          o.id === offerId ? { ...o, status: "Skipped" } : o,
+        );
+
+        const response = await fetch(
+          `/api/user/${user.uid}/funding-application/${referenceNumber}/offers`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ offers: newOffers }),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to skip offer.");
+        }
+      } catch (error: any) {
+        toast.error(
+          error.message || "An error occurred while skipping the offer.",
+        );
+        // Revert on error
+        setDeal((d) => ({
+          ...d,
+          offers: deal.offers,
+        }));
+      }
+    },
+    [user?.uid, referenceNumber, deal.offers],
+  );
+
   const selectOffer = useCallback((offer: DealOffer) => {
     setDeal((d) => ({ ...d, selectedOfferId: offer.id, status: "accepting" }));
   }, []);
@@ -244,6 +290,24 @@ export function useIncomeFundingState() {
 
       try {
         setIsSubmitting(true);
+
+        // Update the specific offer status to "Accepted"
+        const newOffers = deal.offers.map((o) =>
+          o.id === deal.selectedOfferId
+            ? { ...o, status: "Accepted" as const }
+            : o,
+        );
+
+        await fetch(
+          `/api/user/${user.uid}/funding-application/${referenceNumber}/offers`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ offers: newOffers }),
+          },
+        );
+
+        // Update overall application status and generate PDF
         const response = await fetch(
           `/api/user/${user.uid}/funding-application/${referenceNumber}/status`,
           {
@@ -254,6 +318,7 @@ export function useIncomeFundingState() {
               signature,
               fundingAmount,
               feeAmount,
+              offerId: deal.selectedOfferId,
             }),
           },
         );
@@ -264,7 +329,8 @@ export function useIncomeFundingState() {
 
         setDeal((d) => ({
           ...d,
-          status: "complete",
+          offers: newOffers,
+          status: "offers-ready", // Go back to offers-ready view instead of complete
           acceptedAt: new Date().toISOString(),
         }));
         toast.success("Offer accepted successfully!");
@@ -274,7 +340,7 @@ export function useIncomeFundingState() {
         setIsSubmitting(false);
       }
     },
-    [user?.uid, referenceNumber],
+    [user?.uid, referenceNumber, deal.offers, deal.selectedOfferId],
   );
 
   const reset = useCallback(() => {
@@ -293,6 +359,7 @@ export function useIncomeFundingState() {
     submitForUnderwriting,
     selectOffer,
     acceptOffer,
+    skipOffer,
     reset,
     isSubmitting, // Exposing loading state
   };

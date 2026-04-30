@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Save } from "lucide-react";
 import type { DealOffer } from "@/lib/income-funding-types";
-import { factorRateOf } from "@/lib/underwriting";
+import { factorRateOf, formatUSD } from "@/lib/underwriting";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -13,6 +13,19 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { CustomFormField } from "@/components/CustomFormField";
+import { useQuery } from "@tanstack/react-query";
+import { Brokerage } from "@/schema/brokerage";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import type { ApprovalLikelihood } from "@/lib/income-funding-types";
 
 interface DealOfferFormProps {
   onSave: (offer: DealOffer) => void;
@@ -29,7 +42,34 @@ const DEAL_TYPES = [
 ] as const;
 const TERM_UNITS = ["days", "weeks", "months"] as const;
 const FREQS = ["daily", "weekly", "biweekly", "monthly"] as const;
-const LIKELIHOOD = ["most-likely", "likely", "possible"] as const;
+const LIKELIHOOD: ApprovalLikelihood[] = ["most-likely", "likely", "possible"];
+
+const likelihoodMap: Record<
+  ApprovalLikelihood,
+  { label: string; dot: string; text: string; bg: string; border: string }
+> = {
+  "most-likely": {
+    label: "Most likely",
+    dot: "bg-emerald-500",
+    text: "text-emerald-700",
+    bg: "bg-emerald-50",
+    border: "border-emerald-300",
+  },
+  likely: {
+    label: "Likely",
+    dot: "bg-amber-500",
+    text: "text-amber-700",
+    bg: "bg-amber-50",
+    border: "border-amber-300",
+  },
+  possible: {
+    label: "Possible",
+    dot: "bg-blue-500",
+    text: "text-blue-700",
+    bg: "bg-blue-50",
+    border: "border-blue-300",
+  },
+};
 
 const labelize = (s: string) =>
   s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, " ");
@@ -37,6 +77,7 @@ const labelize = (s: string) =>
 const dealOfferSchema = z.object({
   dealType: z.enum(DEAL_TYPES),
   lenderName: z.string().min(1, "Lender name is required"),
+  brokerageId: z.string().min(1, "Brokerage is required"),
   fundingAmount: z.number().min(1, "Amount must be > 0"),
   paybackAmount: z.number().min(1, "Amount must be > 0"),
   termLength: z.number().min(1, "Term length must be > 0"),
@@ -54,6 +95,18 @@ export function DealOfferForm({
   initialData,
   onCancelEdit,
 }: DealOfferFormProps) {
+  const [pendingValues, setPendingValues] =
+    useState<DealOfferFormValues | null>(null);
+
+  const { data: brokerages = [] } = useQuery<Brokerage[]>({
+    queryKey: ["brokerages"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/brokerages");
+      if (!res.ok) throw new Error("Failed to fetch brokerages");
+      return res.json();
+    },
+  });
+
   const form = useForm<DealOfferFormValues>({
     resolver: zodResolver(dealOfferSchema) as any,
     defaultValues:
@@ -61,6 +114,7 @@ export function DealOfferForm({
       ({
         dealType: "MCA",
         lenderName: "",
+        brokerageId: undefined,
         fundingAmount: undefined,
         paybackAmount: undefined,
         termLength: undefined,
@@ -77,6 +131,7 @@ export function DealOfferForm({
       initialData || {
         dealType: "MCA",
         lenderName: "",
+        brokerageId: undefined,
         fundingAmount: 0 as any,
         paybackAmount: 0 as any,
         termLength: 0 as any,
@@ -130,10 +185,24 @@ export function DealOfferForm({
   ]);
 
   const onSubmit = (values: DealOfferFormValues) => {
+    setPendingValues(values);
+  };
+
+  const handleConfirmSave = () => {
+    if (!pendingValues) return;
+    const values = pendingValues;
+
+    const actualBrokerageId =
+      values.brokerageId === "none" ? undefined : values.brokerageId;
+    const brokerageName =
+      brokerages.find((b) => b.id === actualBrokerageId)?.companyName || "";
+
     onSave({
       id: initialData?.id || `offer_${Date.now()}`,
       dealType: values.dealType,
       lenderName: values.lenderName,
+      brokerageId: actualBrokerageId,
+      brokerageName,
       fundingAmount: values.fundingAmount,
       paybackAmount: values.paybackAmount,
       factorRate,
@@ -146,10 +215,12 @@ export function DealOfferForm({
       createdAt: initialData?.createdAt || new Date().toISOString(),
     });
 
+    setPendingValues(null);
     setTimeout(() => {
       form.reset({
         dealType: "MCA",
         lenderName: "",
+        brokerageId: "none",
         fundingAmount: 0 as any, // 0 to avoid undefined warning, but invalidates form until filled
         paybackAmount: 0 as any,
         termLength: 0 as any,
@@ -195,6 +266,21 @@ export function DealOfferForm({
             type="select"
             labelClassName="text-[11px] font-semibold uppercase tracking-wide text-gray-500"
             options={DEAL_TYPES.map((d) => ({ value: d, label: d }))}
+          />
+
+          {/* Brokerage */}
+          <CustomFormField
+            name="brokerageId"
+            label="Brokerage"
+            type="select"
+            labelClassName="text-[11px] font-semibold uppercase tracking-wide text-gray-500"
+            options={[
+              { value: "none", label: "Select Brokerage" },
+              ...brokerages.map((b) => ({
+                value: b.id || "none",
+                label: b.companyName,
+              })),
+            ]}
           />
 
           {/* Lender */}
@@ -287,20 +373,23 @@ export function DealOfferForm({
                   </span>
                   <FormControl>
                     <div className="mt-1 flex gap-2">
-                      {LIKELIHOOD.map((l) => (
-                        <button
-                          type="button"
-                          key={l}
-                          onClick={() => field.onChange(l)}
-                          className={`flex-1 px-3 py-2 rounded-lg border text-xs font-semibold transition ${
-                            field.value === l
-                              ? "bg-brand-50 border-brand-300 text-brand-700"
-                              : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
-                          }`}
-                        >
-                          {labelize(l)}
-                        </button>
-                      ))}
+                      {LIKELIHOOD.map((l) => {
+                        const style = likelihoodMap[l];
+                        return (
+                          <button
+                            type="button"
+                            key={l}
+                            onClick={() => field.onChange(l)}
+                            className={`flex-1 px-3 py-2 rounded-lg border text-xs font-semibold transition ${
+                              field.value === l
+                                ? `${style.bg} ${style.border} ${style.text}`
+                                : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+                            }`}
+                          >
+                            {style.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -328,6 +417,7 @@ export function DealOfferForm({
                   form.reset({
                     dealType: "MCA",
                     lenderName: "",
+                    brokerageId: "none",
                     fundingAmount: 0 as any,
                     paybackAmount: 0 as any,
                     termLength: 0 as any,
@@ -355,6 +445,76 @@ export function DealOfferForm({
           </div>
         </form>
       </Form>
+
+      <AlertDialog
+        open={pendingValues !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingValues(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Offer Details</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please review the offer details before saving.
+              {pendingValues && (
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-gray-700 p-4 bg-gray-50 rounded-xl border border-gray-100 text-left">
+                  <div>
+                    <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                      Deal Type
+                    </span>
+                    {pendingValues.dealType}
+                  </div>
+                  <div>
+                    <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                      Brokerage
+                    </span>
+                    {brokerages.find(
+                      (b) =>
+                        b.id ===
+                        (pendingValues.brokerageId === "none"
+                          ? undefined
+                          : pendingValues.brokerageId),
+                    )?.companyName || "None"}
+                  </div>
+                  <div>
+                    <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                      Lender Name
+                    </span>
+                    {pendingValues.lenderName}
+                  </div>
+                  <div>
+                    <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                      Funding Amount
+                    </span>
+                    {formatUSD(pendingValues.fundingAmount)}
+                  </div>
+                  <div>
+                    <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                      Payback Amount
+                    </span>
+                    {formatUSD(pendingValues.paybackAmount)}
+                  </div>
+                  <div>
+                    <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                      Term Length
+                    </span>
+                    {pendingValues.termLength} {pendingValues.termUnit}
+                  </div>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingValues(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSave}>
+              Confirm & Save
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
