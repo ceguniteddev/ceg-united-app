@@ -49,3 +49,7 @@ export const createAsanaCustomerServiceTaskN8N = async () =>
     ? "create-asana-customer-service-task-prod"
     : "create-asana-customer-service-task";
 
+export const calculateBusinessIncomePreApprovedN8N = async () =>
+  isProd()
+    ? "business-income-preapprove-computation-prod"
+    : "business-income-preapprove-computation";
