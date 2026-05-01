@@ -18,6 +18,7 @@ import { useAuth } from "@/provider/AuthContext";
 import { useContactUsQueryIsOpen } from "@/hooks/contact-us";
 import { useGetFundingApplicationsIsNew } from "@/hooks/apply-funding";
 import { usePendingTradelinesCount } from "@/hooks/tradelines";
+import { useAdminIncomeFunding } from "@/hooks/admin/income-funding";
 
 const MobileNavAdmin = () => {
   const { user, role } = useAuth();
@@ -25,6 +26,11 @@ const MobileNavAdmin = () => {
   const { requestCallsOpen } = useContactUsQueryIsOpen();
   const { appliedFunding } = useGetFundingApplicationsIsNew();
   const { count: pendingTradelinesCount } = usePendingTradelinesCount();
+  const { clients: coordinatorClients } = useAdminIncomeFunding();
+
+  const coordinatorNeedsAttention = coordinatorClients?.some(
+    (c) => c.status === "under-review" || c.status === "accepting",
+  );
 
   if (!user || role !== "Admin") return null;
 
@@ -88,6 +94,10 @@ const MobileNavAdmin = () => {
                           )}
                         {item.route === "/admin/call-requests" &&
                           (requestCallsOpen?.length ?? 0) > 0 && (
+                            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                          )}
+                        {item.route === "/admin/coordinator" &&
+                          coordinatorNeedsAttention && (
                             <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
                           )}
                         {item.route === "/admin/tradelines" &&

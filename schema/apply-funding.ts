@@ -8,6 +8,8 @@ export const FundingApplicationSatus = [
   "Pre-Approved",
   "Approved",
   "Declined",
+  "Sent to Brokerage",
+  "Offer Accepted",
 ] as const;
 export const FundingApplicationSatusEnum = z.enum(FundingApplicationSatus);
 export type FundingApplicationSatus = z.infer<

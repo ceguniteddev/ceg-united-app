@@ -86,7 +86,8 @@ export const uploadDocument = async (
     //   await Promise.all(deletePromises);
     // }
     // const extension = file.name.split(".").pop() || "bin";
-    newFilename = `${documentType}_${file.name}`;
+    const sanitizedName = file.name?.replace(/[^a-zA-Z0-9._-]/g, "_");
+    newFilename = `${documentType}_${Date.now()}_${sanitizedName}`;
   } else {
     // UNCATEGORIZED ("OTHER") UPLOAD LOGIC
     // Sanitize the original filename and make it unique to prevent conflicts.

@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Inter, IBM_Plex_Serif } from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+  Inter,
+  IBM_Plex_Serif,
+  Caveat,
+} from "next/font/google";
 import "./globals.css";
 import Providers from "@/provider/Providers";
 import Script from "next/script";
@@ -21,6 +27,11 @@ const ibmPlexSerif = IBM_Plex_Serif({
   subsets: ["latin"],
   weight: ["400", "700"],
   variable: "--font-ibm-plex-serif",
+});
+const caveat = Caveat({
+  subsets: ["latin"],
+  variable: "--font-caveat",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -45,7 +56,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${ibmPlexSerif.variable} antialiased h-full overflow-hidden pb-[env(safe-area-inset-bottom)]`}
+        className={`${inter.variable} ${ibmPlexSerif.variable} ${caveat.variable} antialiased h-full overflow-hidden pb-[env(safe-area-inset-bottom)]`}
       >
         <Providers>
           <ConfettiProvider />
