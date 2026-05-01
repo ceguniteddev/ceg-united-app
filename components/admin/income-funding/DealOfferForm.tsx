@@ -119,6 +119,7 @@ const dealOfferSchema = z.object({
   estimatedPayment: z.number().min(0),
   approvalLikelihood: z.enum(LIKELIHOOD),
   notes: z.string().optional().default(""),
+  percentageFee: z.number().min(0).max(100).default(15),
 });
 
 type DealOfferFormValues = z.infer<typeof dealOfferSchema>;
@@ -167,38 +168,48 @@ export function DealOfferForm({
 
   const form = useForm<DealOfferFormValues>({
     resolver: zodResolver(dealOfferSchema) as any,
-    defaultValues:
-      initialData ||
-      ({
-        dealType: "MCA",
-        lenderName: "",
-        brokerageId: undefined,
-        fundingAmount: undefined,
-        paybackAmount: undefined,
-        termLength: undefined,
-        termUnit: "months",
-        paymentFrequency: "daily",
-        estimatedPayment: 0,
-        approvalLikelihood: "likely",
-        notes: "",
-      } as any),
+    defaultValues: initialData
+      ? {
+          ...initialData,
+          percentageFee: initialData.percentageFee ?? 15,
+        }
+      : ({
+          dealType: "MCA",
+          lenderName: "",
+          brokerageId: undefined,
+          fundingAmount: undefined,
+          paybackAmount: undefined,
+          termLength: undefined,
+          termUnit: "months",
+          paymentFrequency: "daily",
+          estimatedPayment: 0,
+          approvalLikelihood: "likely",
+          notes: "",
+          percentageFee: 15,
+        } as any),
   });
 
   useEffect(() => {
     form.reset(
-      initialData || {
-        dealType: "MCA",
-        lenderName: "",
-        brokerageId: undefined,
-        fundingAmount: 0 as any,
-        paybackAmount: 0 as any,
-        termLength: 0 as any,
-        termUnit: "months",
-        paymentFrequency: "daily",
-        estimatedPayment: 0,
-        approvalLikelihood: "likely",
-        notes: "",
-      },
+      initialData
+        ? {
+            ...initialData,
+            percentageFee: initialData.percentageFee ?? 15,
+          }
+        : {
+            dealType: "MCA",
+            lenderName: "",
+            brokerageId: undefined,
+            fundingAmount: 0 as any,
+            paybackAmount: 0 as any,
+            termLength: 0 as any,
+            termUnit: "months",
+            paymentFrequency: "daily",
+            estimatedPayment: 0,
+            approvalLikelihood: "likely",
+            notes: "",
+            percentageFee: 15,
+          },
     );
 
     if (initialData?.documents && initialData.documents.length > 0) {
@@ -361,6 +372,7 @@ export function DealOfferForm({
       estimatedPayment: values.estimatedPayment,
       notes: values.notes,
       approvalLikelihood: values.approvalLikelihood,
+      percentageFee: values.percentageFee,
       documents: uploadedDocs,
       createdAt: initialData?.createdAt || new Date().toISOString(),
     });
@@ -381,6 +393,7 @@ export function DealOfferForm({
         estimatedPayment: 0,
         approvalLikelihood: "likely",
         notes: "",
+        percentageFee: 15,
       });
       if (onCancelEdit) onCancelEdit();
     }, 0);
@@ -508,6 +521,15 @@ export function DealOfferForm({
           <CustomFormField
             name="estimatedPayment"
             label="Estimated payment ($)"
+            type="number"
+            allowNegative={false}
+            labelClassName="text-[11px] font-semibold uppercase tracking-wide text-gray-500"
+          />
+
+          {/* Percentage Fee */}
+          <CustomFormField
+            name="percentageFee"
+            label="Percentage Fee (%)"
             type="number"
             allowNegative={false}
             labelClassName="text-[11px] font-semibold uppercase tracking-wide text-gray-500"
@@ -661,6 +683,7 @@ export function DealOfferForm({
                     estimatedPayment: 0,
                     approvalLikelihood: "likely",
                     notes: "",
+                    percentageFee: 15,
                   });
                   onCancelEdit();
                 }}
@@ -760,6 +783,12 @@ export function DealOfferForm({
                   Term Length
                 </span>
                 {pendingValues.termLength} {pendingValues.termUnit}
+              </div>
+              <div>
+                <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">
+                  Percentage Fee
+                </span>
+                {pendingValues.percentageFee}%
               </div>
             </div>
           )}

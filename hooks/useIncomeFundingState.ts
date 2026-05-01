@@ -24,7 +24,8 @@ export function useIncomeFundingState() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   const { userDocuments } = useUserDocumentsQuery({ userId: user?.uid || "" });
-  const { appliedFunding } = useGetUserApplyFunding();
+  const { appliedFunding, isLoading: isLoadingApplications } =
+    useGetUserApplyFunding();
   const { onOpen: triggerConfetti } = useConfettiStore();
 
   // Find the real deal reference number
@@ -282,13 +283,14 @@ export function useIncomeFundingState() {
     async (
       signature: { type: "type" | "draw"; value: string },
       fundingAmount: number,
+      percentageFee: number,
     ) => {
       if (!user?.uid || !referenceNumber) {
         toast.error("Unable to find funding application record.");
         return;
       }
 
-      const feeAmount = Math.round(fundingAmount * 0.05);
+      const feeAmount = Math.round(fundingAmount * (percentageFee / 100));
 
       try {
         setIsSubmitting(true);
@@ -320,6 +322,7 @@ export function useIncomeFundingState() {
               signature,
               fundingAmount,
               feeAmount,
+              percentageFee,
               offerId: deal.selectedOfferId,
             }),
           },
@@ -359,8 +362,41 @@ export function useIncomeFundingState() {
     });
   }, []);
 
+  const [isCalculating, setIsCalculating] = useState(false);
+
+  const calculateIncomePreApproval = useCallback(async () => {
+    if (!user?.uid || !referenceNumber) {
+      toast.error("Unable to find funding application record.");
+      return;
+    }
+
+    try {
+      setIsCalculating(true);
+      const response = await fetch(
+        `/api/user/${user.uid}/funding-application/${referenceNumber}/calculate-income`,
+        {
+          method: "POST",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to calculate business income.");
+      }
+
+      toast.success(
+        "Business income pre-approval calculated successfully! Please wait a moment while we update your status.",
+      );
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred.");
+    } finally {
+      setIsCalculating(false);
+    }
+  }, [user?.uid, referenceNumber]);
+
   return {
     deal,
+    realDeal,
+    isLoadingApplications,
     setStatus,
     setDocuments,
     uploadDocument,
@@ -369,6 +405,8 @@ export function useIncomeFundingState() {
     acceptOffer,
     skipOffer,
     reset,
-    isSubmitting, // Exposing loading state
+    isSubmitting,
+    isCalculating,
+    calculateIncomePreApproval,
   };
 }

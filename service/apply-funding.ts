@@ -26,6 +26,7 @@ import { noteSchema, NoteSchema } from "@/schema/notes";
 import { getUserById } from "./user";
 import { RegistrationType } from "@/schema/users";
 import { uploadDocument } from "./documents";
+import { calculateBusinessIncomePreApproved } from "./n8n";
 
 export const applyFunding = async ({
   value,
@@ -132,6 +133,18 @@ export const applyFunding = async ({
         referenceNumber,
         value.businessId,
       );
+    }
+  }
+
+  // add a checking if fundingProducts include "Business Income Based Funding"
+  if (value.fundingProducts?.includes("Business Income Based Funding")) {
+    try {
+      await calculateBusinessIncomePreApproved({
+        userId: value.userId!,
+        referenceNumber,
+      });
+    } catch (error) {
+      console.error("Error calculating business income pre-approved:", error);
     }
   }
 

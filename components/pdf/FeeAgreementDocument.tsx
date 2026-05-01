@@ -86,6 +86,7 @@ interface FeeAgreementProps {
   clientName: string;
   fundingAmount: number;
   feeAmount: number;
+  percentageFee: number;
   signature: {
     type: "type" | "draw";
     value: string;
@@ -98,6 +99,7 @@ export const FeeAgreementDocument = ({
   clientName,
   fundingAmount,
   feeAmount,
+  percentageFee,
   signature,
   acceptedAt,
 }: FeeAgreementProps) => {
@@ -119,8 +121,8 @@ export const FeeAgreementDocument = ({
         <Text style={styles.paragraph}>
           <Text style={styles.bold}>1. Success Fee. </Text>
           Client agrees to pay CEG a success fee equal to{" "}
-          <Text style={styles.bold}>5%</Text> of the gross funding amount
-          approved and accepted through CEG's lender network.
+          <Text style={styles.bold}>{percentageFee}%</Text> of the gross funding
+          amount approved and accepted through CEG's lender network.
         </Text>
 
         <Text style={styles.paragraph}>
@@ -146,8 +148,9 @@ export const FeeAgreementDocument = ({
 
       <View style={styles.callout}>
         <Text>
-          You agree to pay a success fee of <Text style={styles.bold}>5%</Text>{" "}
-          based on the approved funding amount of{" "}
+          You agree to pay a success fee of{" "}
+          <Text style={styles.bold}>{percentageFee}%</Text> based on the
+          approved funding amount of{" "}
           <Text style={styles.bold}>{formatUSD(fundingAmount)}</Text> ={" "}
           <Text style={styles.bold}>{formatUSD(feeAmount)}</Text> fee.
         </Text>

@@ -18,6 +18,7 @@ vi.mock("lucide-react", () => {
     ReceiptText: mockIcon,
     ShieldAlert: mockIcon,
     CreditCard: mockIcon,
+    BadgeDollarSign: mockIcon,
   };
 });
 

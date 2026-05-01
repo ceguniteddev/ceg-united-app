@@ -38,8 +38,6 @@ interface AcceptanceViewProps {
   isSubmitting?: boolean;
 }
 
-const FEE_PERCENTAGE = 0.15;
-
 const UUID_PREFIX_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[_-]/i;
 
@@ -78,7 +76,8 @@ export function AcceptanceView({
     contentType?: string;
   } | null>(null);
 
-  const fee = Math.round(offer.fundingAmount * FEE_PERCENTAGE);
+  const percentageFee = offer.percentageFee ?? 15;
+  const fee = Math.round(offer.fundingAmount * (percentageFee / 100));
   const today = new Date().toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -236,9 +235,9 @@ export function AcceptanceView({
           </p>
           <p>
             <span className="font-semibold text-gray-800">1. Success Fee.</span>{" "}
-            Client agrees to pay CEG a success fee equal to <strong>15%</strong>{" "}
-            of the gross funding amount approved and accepted through CEG's
-            lender network.
+            Client agrees to pay CEG a success fee equal to{" "}
+            <strong>{percentageFee}%</strong> of the gross funding amount
+            approved and accepted through CEG's lender network.
           </p>
           <p>
             <span className="font-semibold text-gray-800">2. Payment.</span> The
@@ -263,8 +262,8 @@ export function AcceptanceView({
         <div className="mt-4 bg-gradient-to-br from-brand-50 to-white border border-brand-100 rounded-xl p-4">
           <p className="text-sm text-gray-700">
             You agree to pay a success fee of{" "}
-            <span className="font-bold text-brand-700">15%</span> based on the
-            approved funding amount of{" "}
+            <span className="font-bold text-brand-700">{percentageFee}%</span>{" "}
+            based on the approved funding amount of{" "}
             <span className="font-bold text-gray-900 tabular-nums">
               {formatUSD(offer.fundingAmount)}
             </span>{" "}

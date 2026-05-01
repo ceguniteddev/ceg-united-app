@@ -34,7 +34,14 @@ export const PUT = withAuth(
       }
 
       const body = await request.json();
-      const { status, signature, fundingAmount, feeAmount, offerId } = body;
+      const {
+        status,
+        signature,
+        fundingAmount,
+        feeAmount,
+        percentageFee,
+        offerId,
+      } = body;
 
       if (!status) {
         return badRequest({ errors: "Status is required" });
@@ -42,7 +49,12 @@ export const PUT = withAuth(
 
       await updateApplicationStatus(referenceNumber, status, undefined);
 
-      if (signature && fundingAmount !== undefined && feeAmount !== undefined) {
+      if (
+        signature &&
+        fundingAmount !== undefined &&
+        feeAmount !== undefined &&
+        percentageFee !== undefined
+      ) {
         try {
           await saveFeeAgreementToPDF(
             referenceNumber,
@@ -50,6 +62,7 @@ export const PUT = withAuth(
             signature,
             fundingAmount,
             feeAmount,
+            percentageFee,
           );
         } catch (pdfError) {
           console.error("Error saving fee agreement PDF:", pdfError);
