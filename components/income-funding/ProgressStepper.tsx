@@ -18,8 +18,8 @@ const order: DealStatus[] = [
   "collecting-documents",
   "under-review",
   "offers-ready",
-  // "accepting",
-  // "complete",
+  "accepting",
+  "complete",
 ];
 
 export function ProgressStepper({ status }: ProgressStepperProps) {

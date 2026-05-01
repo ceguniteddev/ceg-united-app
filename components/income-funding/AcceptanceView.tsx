@@ -7,6 +7,7 @@ import {
   ScrollText,
   Loader2,
   Eye,
+  CheckCircle2,
 } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { formatUSD } from "@/lib/underwriting";
@@ -30,11 +31,33 @@ import Image from "next/image";
 interface AcceptanceViewProps {
   offer: DealOffer;
   onBack: () => void;
-  onAccept: (signature: { type: "type" | "draw"; value: string }) => void;
+  onAccept: (signature: {
+    type: "type" | "draw";
+    value: string;
+  }) => Promise<void>;
   isSubmitting?: boolean;
 }
 
-const FEE_PERCENTAGE = 0.05;
+const FEE_PERCENTAGE = 0.15;
+
+const UUID_PREFIX_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[_-]/i;
+
+const cleanFileName = (fileName: string) => {
+  if (fileName.startsWith("OFFER_DOCUMENT_")) {
+    fileName = fileName.replace(/^OFFER_DOCUMENT_\d+_/, "");
+  }
+  fileName = fileName.replace(UUID_PREFIX_RE, "");
+  const lastDot = fileName.lastIndexOf(".");
+  if (lastDot !== -1) {
+    fileName =
+      fileName.substring(0, lastDot).replace(/[-_]/g, " ") +
+      fileName.substring(lastDot);
+  } else {
+    fileName = fileName.replace(/[-_]/g, " ");
+  }
+  return fileName;
+};
 
 export function AcceptanceView({
   offer,
@@ -124,14 +147,22 @@ export function AcceptanceView({
     setHasDrawn(false);
   };
 
-  const handleAccept = () => {
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  const handleAccept = async () => {
     let signatureValue = "";
     if (mode === "type") {
       signatureValue = typedSignature;
     } else {
       signatureValue = canvasRef.current?.toDataURL() || "";
     }
-    onAccept({ type: mode, value: signatureValue });
+
+    try {
+      await onAccept({ type: mode, value: signatureValue });
+      setIsSuccess(true);
+    } catch (e) {
+      // Error handled by parent
+    }
   };
 
   return (
@@ -152,23 +183,28 @@ export function AcceptanceView({
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {offer.documents.map((doc, idx) => (
-                <a
+                <button
+                  type="button"
                   key={idx}
-                  href={doc.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-brand-300 hover:bg-brand-50 transition group"
+                  onClick={() =>
+                    setPreviewDoc({
+                      url: doc.url,
+                      title: cleanFileName(doc.name.split("/").pop() || ""),
+                      contentType: "application/pdf",
+                    })
+                  }
+                  className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-brand-300 hover:bg-brand-50 transition group text-left"
                 >
                   <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-gray-400 group-hover:text-brand-600">
                     <ScrollText className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-gray-900 truncate group-hover:text-brand-700">
-                      {doc.name}
+                      {cleanFileName(doc.name.split("/").pop() || "")}
                     </p>
                     <p className="text-[10px] text-gray-500">PDF Document</p>
                   </div>
-                </a>
+                </button>
               ))}
             </div>
           </div>
@@ -200,7 +236,7 @@ export function AcceptanceView({
           </p>
           <p>
             <span className="font-semibold text-gray-800">1. Success Fee.</span>{" "}
-            Client agrees to pay CEG a success fee equal to <strong>5%</strong>{" "}
+            Client agrees to pay CEG a success fee equal to <strong>15%</strong>{" "}
             of the gross funding amount approved and accepted through CEG's
             lender network.
           </p>
@@ -227,7 +263,7 @@ export function AcceptanceView({
         <div className="mt-4 bg-gradient-to-br from-brand-50 to-white border border-brand-100 rounded-xl p-4">
           <p className="text-sm text-gray-700">
             You agree to pay a success fee of{" "}
-            <span className="font-bold text-brand-700">5%</span> based on the
+            <span className="font-bold text-brand-700">15%</span> based on the
             approved funding amount of{" "}
             <span className="font-bold text-gray-900 tabular-nums">
               {formatUSD(offer.fundingAmount)}
@@ -356,21 +392,43 @@ export function AcceptanceView({
       </div>
 
       {/* Loading Modal */}
-      <AlertDialog open={isSubmitting}>
+      <AlertDialog open={isSubmitting || isSuccess}>
         <AlertDialogContent className="sm:max-w-md flex flex-col items-center justify-center p-8 space-y-4 outline-none">
-          <AlertDialogHeader className="sr-only">
-            <AlertDialogTitle>Processing Acceptance</AlertDialogTitle>
-            <AlertDialogDescription>
-              Please wait while we secure your offer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Loader2 className="w-12 h-12 animate-spin text-brand-600" />
-          <h2 className="text-xl font-semibold text-gray-900">
-            Processing your acceptance...
-          </h2>
-          <p className="text-sm text-gray-500 text-center">
-            Please wait while we secure your offer and generate your contract.
-          </p>
+          {isSuccess ? (
+            <>
+              <AlertDialogHeader className="sr-only">
+                <AlertDialogTitle>Offer Accepted</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Your offer was accepted successfully.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <CheckCircle2 className="w-16 h-16 text-emerald-500 mb-2" />
+              <h2 className="text-2xl font-bold text-gray-900">
+                Offer Accepted!
+              </h2>
+              <p className="text-sm text-gray-500 text-center">
+                We've secured your offer. The lender will email you the
+                contracts shortly.
+              </p>
+            </>
+          ) : (
+            <>
+              <AlertDialogHeader className="sr-only">
+                <AlertDialogTitle>Processing Acceptance</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Please wait while we secure your offer.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <Loader2 className="w-12 h-12 animate-spin text-brand-600" />
+              <h2 className="text-xl font-semibold text-gray-900">
+                Processing your acceptance...
+              </h2>
+              <p className="text-sm text-gray-500 text-center">
+                Please wait while we secure your offer and generate your
+                contract.
+              </p>
+            </>
+          )}
         </AlertDialogContent>
       </AlertDialog>
 
@@ -389,7 +447,11 @@ export function AcceptanceView({
             {previewDoc?.contentType?.startsWith("image/") ? (
               <ImageZoom>
                 <Image
-                  src={previewDoc.url}
+                  src={
+                    previewDoc.url.startsWith("http")
+                      ? previewDoc.url
+                      : `/api/documents/preview?path=${encodeURIComponent(previewDoc.url)}`
+                  }
                   alt={previewDoc.title}
                   className="w-full h-full object-contain"
                   width={800}
@@ -399,7 +461,7 @@ export function AcceptanceView({
               </ImageZoom>
             ) : previewDoc?.contentType === "application/pdf" ? (
               <iframe
-                src={`${previewDoc.url}#toolbar=1&view=FitH`}
+                src={`${previewDoc.url.startsWith("http") ? previewDoc.url : `/api/documents/preview?path=${encodeURIComponent(previewDoc.url)}`}#toolbar=1&view=FitH`}
                 title={previewDoc.title}
                 className="w-full h-full"
               />

@@ -1,7 +1,33 @@
+import { useState } from "react";
 import { Pencil, Trash2, FileText } from "lucide-react";
-import type { DealOffer } from "@/lib/income-funding-types";
+import type { DealOffer, DealOfferDocument } from "@/lib/income-funding-types";
 import { formatUSD } from "@/lib/underwriting";
 import { ConfirmButton } from "@/components/Confirmation";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+
+const UUID_PREFIX_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[_-]/i;
+
+const cleanFileName = (fileName: string) => {
+  if (fileName.startsWith("OFFER_DOCUMENT_")) {
+    fileName = fileName.replace(/^OFFER_DOCUMENT_\d+_/, "");
+  }
+  fileName = fileName.replace(UUID_PREFIX_RE, "");
+  const lastDot = fileName.lastIndexOf(".");
+  if (lastDot !== -1) {
+    fileName =
+      fileName.substring(0, lastDot).replace(/[-_]/g, " ") +
+      fileName.substring(lastDot);
+  } else {
+    fileName = fileName.replace(/[-_]/g, " ");
+  }
+  return fileName;
+};
 
 interface ExistingOffersListProps {
   offers: DealOffer[];
@@ -14,6 +40,8 @@ export function ExistingOffersList({
   onDelete,
   onEdit,
 }: ExistingOffersListProps) {
+  const [previewDoc, setPreviewDoc] = useState<DealOfferDocument | null>(null);
+
   if (offers.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center">
@@ -57,16 +85,17 @@ export function ExistingOffersList({
                 {o.documents && o.documents.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {o.documents.map((doc, idx) => (
-                      <a
+                      <button
+                        type="button"
                         key={idx}
-                        href={doc.url}
-                        target="_blank"
-                        rel="noreferrer"
+                        onClick={() => setPreviewDoc(doc)}
                         className="inline-flex items-center gap-1.5 px-2 py-1 bg-gray-50 border border-gray-100 rounded-md text-[10px] font-semibold text-brand-600 hover:bg-brand-50 hover:border-brand-100 transition truncate max-w-[200px]"
                       >
                         <FileText className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{doc.name}</span>
-                      </a>
+                        <span className="truncate">
+                          {cleanFileName(doc.name.split("/").pop() || "")}
+                        </span>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -112,6 +141,29 @@ export function ExistingOffersList({
           </li>
         ))}
       </ul>
+
+      <Sheet
+        open={!!previewDoc}
+        onOpenChange={(open) => !open && setPreviewDoc(null)}
+      >
+        <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0">
+          <SheetHeader className="p-4 pb-2 border-b flex-shrink-0">
+            <SheetTitle className="text-sm break-words text-left leading-snug">
+              {previewDoc &&
+                cleanFileName(previewDoc.name.split("/").pop() || "")}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-hidden p-2">
+            {previewDoc && (
+              <iframe
+                src={`${previewDoc.url.startsWith("http") ? previewDoc.url : `/api/documents/preview?path=${encodeURIComponent(previewDoc.url)}`}#toolbar=1&view=FitH`}
+                title={previewDoc.name}
+                className="w-full h-full"
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

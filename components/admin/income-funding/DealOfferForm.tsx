@@ -32,6 +32,13 @@ import {
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
 
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+
 interface DealOfferFormProps {
   onSave: (offer: DealOffer) => void;
   initialData?: DealOffer | null;
@@ -81,6 +88,25 @@ const likelihoodMap: Record<
 const labelize = (s: string) =>
   s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, " ");
 
+const UUID_PREFIX_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[_-]/i;
+
+const cleanFileName = (fileName: string) => {
+  if (fileName.startsWith("OFFER_DOCUMENT_")) {
+    fileName = fileName.replace(/^OFFER_DOCUMENT_\d+_/, "");
+  }
+  fileName = fileName.replace(UUID_PREFIX_RE, "");
+  const lastDot = fileName.lastIndexOf(".");
+  if (lastDot !== -1) {
+    fileName =
+      fileName.substring(0, lastDot).replace(/[-_]/g, " ") +
+      fileName.substring(lastDot);
+  } else {
+    fileName = fileName.replace(/[-_]/g, " ");
+  }
+  return fileName;
+};
+
 const dealOfferSchema = z.object({
   dealType: z.enum(DEAL_TYPES),
   lenderName: z.string().min(1, "Lender name is required"),
@@ -107,9 +133,27 @@ export function DealOfferForm({
   const [pendingValues, setPendingValues] =
     useState<DealOfferFormValues | null>(null);
 
-  const [uploadedDocs, setUploadedDocs] = useState<DealOfferDocument[]>(
-    initialData?.documents || [],
-  );
+  const [previewDoc, setPreviewDoc] = useState<DealOfferDocument | null>(null);
+
+  const LOCAL_STORAGE_KEY = `deal_offer_docs_${userId || "no_user"}_${initialData?.id || "new"}`;
+
+  const [uploadedDocs, setUploadedDocs] = useState<DealOfferDocument[]>(() => {
+    if (initialData?.documents && initialData.documents.length > 0) {
+      return initialData.documents;
+    }
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error("Failed to parse saved docs", e);
+        }
+      }
+    }
+    return [];
+  });
+
   const [isUploading, setIsUploading] = useState(false);
 
   const { data: brokerages = [] } = useQuery<Brokerage[]>({
@@ -156,8 +200,22 @@ export function DealOfferForm({
         notes: "",
       },
     );
-    setUploadedDocs(initialData?.documents || []);
-  }, [initialData, form]);
+
+    if (initialData?.documents && initialData.documents.length > 0) {
+      setUploadedDocs(initialData.documents);
+    } else {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        try {
+          setUploadedDocs(JSON.parse(saved));
+        } catch (e) {
+          setUploadedDocs([]);
+        }
+      } else {
+        setUploadedDocs([]);
+      }
+    }
+  }, [initialData, form, LOCAL_STORAGE_KEY]);
 
   const { control, setValue } = form;
 
@@ -199,7 +257,11 @@ export function DealOfferForm({
         url: d.signedUrl || d.url || d.gcsPath,
       }));
 
-      setUploadedDocs((prev) => [...prev, ...newDocs]);
+      setUploadedDocs((prev) => {
+        const next = [...prev, ...newDocs];
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(next));
+        return next;
+      });
     } catch (error) {
       console.error("Upload error:", error);
     } finally {
@@ -207,8 +269,30 @@ export function DealOfferForm({
     }
   };
 
-  const removeDoc = (idx: number) => {
-    setUploadedDocs((prev) => prev.filter((_, i) => i !== idx));
+  const removeDoc = async (idx: number) => {
+    const docToRemove = uploadedDocs[idx];
+    setUploadedDocs((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      if (next.length > 0) {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(next));
+      } else {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      }
+      return next;
+    });
+
+    // Cleanup from storage if it's an uploaded file (has gcsPath)
+    if (docToRemove.url && docToRemove.url.startsWith("documents/")) {
+      try {
+        await fetch(`/api/documents/delete`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: docToRemove.url }),
+        });
+      } catch (e) {
+        console.error("Failed to delete document from storage", e);
+      }
+    }
   };
 
   const fundingAmount = useWatch({ control, name: "fundingAmount" }) || 0;
@@ -283,6 +367,7 @@ export function DealOfferForm({
 
     setPendingValues(null);
     setUploadedDocs([]);
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
     setTimeout(() => {
       form.reset({
         dealType: "MCA",
@@ -504,14 +589,13 @@ export function DealOfferForm({
                   >
                     <div className="flex items-center gap-2 truncate">
                       <FileText className="w-4 h-4 text-brand-600 shrink-0" />
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => setPreviewDoc(doc)}
                         className="text-gray-700 hover:text-brand-600 hover:underline truncate"
                       >
-                        {doc.name}
-                      </a>
+                        {cleanFileName(doc.name.split("/").pop() || "")}
+                      </button>
                     </div>
                     <button
                       type="button"
@@ -541,7 +625,30 @@ export function DealOfferForm({
             {initialData && onCancelEdit && (
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
+                  // Clean up any newly uploaded documents
+                  const initialDocUrls = new Set(
+                    (initialData?.documents || []).map((d) => d.url),
+                  );
+                  const newDocs = uploadedDocs.filter(
+                    (d) => !initialDocUrls.has(d.url),
+                  );
+                  for (const doc of newDocs) {
+                    if (doc.url.startsWith("documents/")) {
+                      try {
+                        await fetch(`/api/documents/delete`, {
+                          method: "DELETE",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ path: doc.url }),
+                        });
+                      } catch (e) {
+                        console.error("Cleanup failed", e);
+                      }
+                    }
+                  }
+
+                  localStorage.removeItem(LOCAL_STORAGE_KEY);
+
                   form.reset({
                     dealType: "MCA",
                     lenderName: "",
@@ -573,6 +680,29 @@ export function DealOfferForm({
           </div>
         </form>
       </Form>
+
+      <Sheet
+        open={!!previewDoc}
+        onOpenChange={(open) => !open && setPreviewDoc(null)}
+      >
+        <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0">
+          <SheetHeader className="p-4 pb-2 border-b flex-shrink-0">
+            <SheetTitle className="text-sm break-words text-left leading-snug">
+              {previewDoc &&
+                cleanFileName(previewDoc.name.split("/").pop() || "")}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-hidden p-2">
+            {previewDoc && (
+              <iframe
+                src={`${previewDoc.url.startsWith("http") ? previewDoc.url : `/api/documents/preview?path=${encodeURIComponent(previewDoc.url)}`}#toolbar=1&view=FitH`}
+                title={previewDoc.name}
+                className="w-full h-full"
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog
         open={pendingValues !== null}

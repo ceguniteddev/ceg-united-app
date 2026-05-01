@@ -309,7 +309,7 @@ export function useIncomeFundingState() {
           },
         );
 
-        // Update overall application status and generate PDF
+        // Generate PDF and update status
         const response = await fetch(
           `/api/user/${user.uid}/funding-application/${referenceNumber}/status`,
           {
@@ -329,14 +329,19 @@ export function useIncomeFundingState() {
           throw new Error("Failed to accept offer.");
         }
 
+        // Trigger confetti first
+        triggerConfetti();
+        toast.success("Offer accepted successfully!");
+
+        // Wait 2.5 seconds to let the user see the confetti and success state before routing away
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+
         setDeal((d) => ({
           ...d,
           offers: newOffers,
           status: "offers-ready", // Go back to offers-ready view instead of complete
           acceptedAt: new Date().toISOString(),
         }));
-        triggerConfetti();
-        toast.success("Offer accepted successfully!");
       } catch (error: any) {
         toast.error(error.message || "An error occurred.");
       } finally {
