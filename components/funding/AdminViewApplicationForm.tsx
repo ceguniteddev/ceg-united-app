@@ -580,12 +580,12 @@ export default function FundingApplicationView({ data }: Props) {
                     label="Business Property Type"
                     value={data.businessPropertyType}
                   />
-                  <Field label="Landlord Name" value={data.landlordName} />
+                  {/* <Field label="Landlord Name" value={data.landlordName} />
                   <Field label="Landlord Phone" value={data.landlordPhone} />
                   <Field
                     label="Monthly Payment"
                     value={currency(data.monthlyPayment)}
-                  />
+                  /> */}
                   <Field
                     label="Seasonal Business?"
                     value={data.isSeasonalBusiness}

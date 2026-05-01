@@ -1284,7 +1284,7 @@ export function FundingApplicationFields({
                   ]}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <CustomFormField name="landlordName" label="Landlord Name" />
                   <CustomFormField
                     name="landlordPhone"
@@ -1295,7 +1295,7 @@ export function FundingApplicationFields({
                     type="number"
                     label="Monthly Payment"
                   />
-                </div>
+                </div> */}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <CustomFormField

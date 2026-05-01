@@ -34,6 +34,8 @@ interface AcceptanceViewProps {
   onAccept: (signature: {
     type: "type" | "draw";
     value: string;
+    ipAddress?: string;
+    macAddress?: string;
   }) => Promise<void>;
   isSubmitting?: boolean;
 }
@@ -147,8 +149,10 @@ export function AcceptanceView({
   };
 
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleAccept = async () => {
+    setIsProcessing(true);
     let signatureValue = "";
     if (mode === "type") {
       signatureValue = typedSignature;
@@ -156,11 +160,29 @@ export function AcceptanceView({
       signatureValue = canvasRef.current?.toDataURL() || "";
     }
 
+    let ipAddress = "Unknown";
     try {
-      await onAccept({ type: mode, value: signatureValue });
+      const response = await fetch("https://api.ipify.org?format=json");
+      if (response.ok) {
+        const data = await response.json();
+        ipAddress = data.ip;
+      }
+    } catch (e) {
+      console.error("Failed to fetch IP address", e);
+    }
+
+    try {
+      await onAccept({
+        type: mode,
+        value: signatureValue,
+        ipAddress,
+        macAddress: "Unavailable (Browser Security Restriction)",
+      });
       setIsSuccess(true);
     } catch (e) {
       // Error handled by parent
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -381,7 +403,7 @@ export function AcceptanceView({
           Back to offers
         </button>
         <button
-          disabled={!canAccept || isSubmitting}
+          disabled={!canAccept || isSubmitting || isProcessing}
           onClick={handleAccept}
           className="cursor-pointer inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all"
         >
@@ -391,7 +413,7 @@ export function AcceptanceView({
       </div>
 
       {/* Loading Modal */}
-      <AlertDialog open={isSubmitting || isSuccess}>
+      <AlertDialog open={isSubmitting || isSuccess || isProcessing}>
         <AlertDialogContent className="sm:max-w-md flex flex-col items-center justify-center p-8 space-y-4 outline-none">
           {isSuccess ? (
             <>

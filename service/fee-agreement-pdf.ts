@@ -9,7 +9,12 @@ import { logError, logInfo } from "@/lib/logger";
 export const saveFeeAgreementToPDF = async (
   referenceNumber: string,
   userId: string,
-  signature: { type: "type" | "draw"; value: string },
+  signature: {
+    type: "type" | "draw";
+    value: string;
+    ipAddress?: string;
+    macAddress?: string;
+  },
   fundingAmount: number,
   feeAmount: number,
   percentageFee: number,
