@@ -282,13 +282,14 @@ export function useIncomeFundingState() {
     async (
       signature: { type: "type" | "draw"; value: string },
       fundingAmount: number,
+      percentageFee: number,
     ) => {
       if (!user?.uid || !referenceNumber) {
         toast.error("Unable to find funding application record.");
         return;
       }
 
-      const feeAmount = Math.round(fundingAmount * 0.05);
+      const feeAmount = Math.round(fundingAmount * (percentageFee / 100));
 
       try {
         setIsSubmitting(true);
@@ -320,6 +321,7 @@ export function useIncomeFundingState() {
               signature,
               fundingAmount,
               feeAmount,
+              percentageFee,
               offerId: deal.selectedOfferId,
             }),
           },

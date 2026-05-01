@@ -12,6 +12,7 @@ export const saveFeeAgreementToPDF = async (
   signature: { type: "type" | "draw"; value: string },
   fundingAmount: number,
   feeAmount: number,
+  percentageFee: number,
 ) => {
   logInfo("saveFeeAgreementToPDF", { referenceNumber, userId });
 
@@ -35,6 +36,7 @@ export const saveFeeAgreementToPDF = async (
           clientName: user ? `${user.firstName} ${user.lastName}` : "Client",
           fundingAmount,
           feeAmount,
+          percentageFee,
           signature,
           acceptedAt: new Date().toISOString(),
         }),

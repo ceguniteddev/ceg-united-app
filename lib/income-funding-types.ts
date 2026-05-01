@@ -94,6 +94,7 @@ export interface DealOffer {
   createdBy?: string;
   status?: "Pending" | "Accepted" | "Skipped";
   documents?: DealOfferDocument[];
+  percentageFee?: number;
 }
 
 // -------- Deal Status (state machine) --------

@@ -58,7 +58,11 @@ export default function IncomeFunding() {
             offer={selectedOffer}
             onBack={() => setStatus("offers-ready")}
             onAccept={(signature) =>
-              acceptOffer(signature, selectedOffer.fundingAmount)
+              acceptOffer(
+                signature,
+                selectedOffer.fundingAmount,
+                selectedOffer.percentageFee ?? 15,
+              )
             }
             isSubmitting={isSubmitting}
           />
