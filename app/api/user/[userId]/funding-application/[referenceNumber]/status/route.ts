@@ -13,6 +13,7 @@ import { firestoreAdmin } from "@/lib/fireabase-admin";
 import {
   BROKER_CLIENT_MAPPING,
   USER_COLLECTION,
+  USER_FUNDING_APPLICATION,
 } from "@/constant/collection-name";
 
 export const PUT = withAuth(
@@ -48,6 +49,15 @@ export const PUT = withAuth(
       }
 
       await updateApplicationStatus(referenceNumber, status, undefined);
+
+      if (signature) {
+        const db = firestoreAdmin();
+        await db
+          .collection(USER_FUNDING_APPLICATION)
+          .doc(referenceNumber)
+          .set({ signature }, { merge: true })
+          .catch(() => {});
+      }
 
       if (
         signature &&

@@ -281,7 +281,12 @@ export function useIncomeFundingState() {
 
   const acceptOffer = useCallback(
     async (
-      signature: { type: "type" | "draw"; value: string },
+      signature: {
+        type: "type" | "draw";
+        value: string;
+        ipAddress?: string;
+        macAddress?: string;
+      },
       fundingAmount: number,
       percentageFee: number,
     ) => {

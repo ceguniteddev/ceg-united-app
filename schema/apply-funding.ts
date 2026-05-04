@@ -187,9 +187,9 @@ export const applyFundingSchema = z
     avgMonthlyCreditCardSales: z.coerce.number<number>().optional(),
     avgDailyBankBalance: z.coerce.number<number>().optional(),
     businessPropertyType: z.enum(["Lease", "Own"]).or(z.literal("")).optional(),
-    landlordName: z.string().optional(),
-    landlordPhone: z.string().optional(),
-    monthlyPayment: z.coerce.number<number>().optional(),
+    // landlordName: z.string().optional(),
+    // landlordPhone: z.string().optional(),
+    // monthlyPayment: z.coerce.number<number>().optional(),
     isSeasonalBusiness: z.enum(["Yes", "No"]).or(z.literal("")).optional(),
     hasOutstandingAdvances: z.enum(["Yes", "No"]).or(z.literal("")).optional(),
     // personalFullName: z.string().optional(),
@@ -244,6 +244,16 @@ export const applyFundingSchema = z
       )
       .optional(),
     driverLicenseDocuments: z
+      .array(
+        z.object({
+          name: z.string(),
+          size: z.number(),
+          type: z.string(),
+          base64: z.string(),
+        }),
+      )
+      .optional(),
+    einLetterDocuments: z
       .array(
         z.object({
           name: z.string(),
@@ -998,31 +1008,31 @@ export const applyFundingSchema = z
       }
 
       // Landlord Name is required
-      if (!data.landlordName || data.landlordName.trim().length === 0) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Required",
-          path: ["landlordName"],
-        });
-      }
+      // if (!data.landlordName || data.landlordName.trim().length === 0) {
+      //   ctx.addIssue({
+      //     code: "custom",
+      //     message: "Required",
+      //     path: ["landlordName"],
+      //   });
+      // }
 
       // Landlord Phone is required
-      if (!data.landlordPhone || data.landlordPhone.trim().length === 0) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Required",
-          path: ["landlordPhone"],
-        });
-      }
+      // if (!data.landlordPhone || data.landlordPhone.trim().length === 0) {
+      //   ctx.addIssue({
+      //     code: "custom",
+      //     message: "Required",
+      //     path: ["landlordPhone"],
+      //   });
+      // }
 
       // Monthly Payment is required
-      if (data.monthlyPayment == null || data.monthlyPayment <= 0) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Required",
-          path: ["monthlyPayment"],
-        });
-      }
+      // if (data.monthlyPayment == null || data.monthlyPayment <= 0) {
+      //   ctx.addIssue({
+      //     code: "custom",
+      //     message: "Required",
+      //     path: ["monthlyPayment"],
+      //   });
+      // }
 
       // Is Seasonal Business is required
       if (

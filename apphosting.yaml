@@ -231,3 +231,11 @@ env:
     secret: WHOP_WEBHOOK_SECRET_PRODUCTION
   - variable: WC_CONSUMER_SECRET
     secret: WC_CONSUMER_SECRET
+  - variable: GEMINI_MODEL
+    value: gemini-3.1-flash-lite-preview
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY_PRODUCTION
+

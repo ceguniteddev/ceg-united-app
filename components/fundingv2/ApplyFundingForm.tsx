@@ -134,7 +134,9 @@ const ApplyFundingForm = ({
   const updateDerivedStates = useCallback((products: string[]) => {
     setIsAutoLoan(products.some((p) => p.includes("Auto Loan")));
     setIsEquipmentFinancing(products.includes("Business Equipment Financing"));
-    setIsBusinessIncomeBased(products.includes("Business Income Based Funding"));
+    setIsBusinessIncomeBased(
+      products.includes("Business Income Based Funding"),
+    );
   }, []);
 
   useEffect(() => {
@@ -857,6 +859,88 @@ const ApplyFundingForm = ({
     [form],
   );
 
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
+
+  const handleSmartAutoFill = async () => {
+    const dlDocs = form.getValues("driverLicenseDocuments") || [];
+    const einDocs = form.getValues("einLetterDocuments") || [];
+    const allDocs = [...dlDocs, ...einDocs];
+
+    if (allDocs.length === 0) {
+      toast.error("Please upload Driver's License or EIN Letter first.");
+      return;
+    }
+
+    setIsAutoFilling(true);
+
+    const autoFillPromise = (async () => {
+      try {
+        const response = await fetch("/api/ocr", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ documents: allDocs }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error ||
+              "Failed to process documents. Please fill out manually.",
+          );
+        }
+
+        const { data } = await response.json();
+
+        if (data.personal) {
+          if (data.personal.addressStreet)
+            form.setValue("addressStreet", data.personal.addressStreet, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          if (data.personal.addressCity)
+            form.setValue("addressCity", data.personal.addressCity, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          if (data.personal.addressState)
+            form.setValue("addressState", data.personal.addressState, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          if (data.personal.addressPostal)
+            form.setValue("addressPostal", data.personal.addressPostal, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          if (data.personal.driverLicenseNumber)
+            form.setValue(
+              "driverLicenseNumber",
+              data.personal.driverLicenseNumber,
+              { shouldDirty: true, shouldValidate: true },
+            );
+          if (data.personal.driverLicenseState)
+            form.setValue(
+              "driverLicenseState",
+              data.personal.driverLicenseState,
+              { shouldDirty: true, shouldValidate: true },
+            );
+        }
+      } catch (error: any) {
+        console.error(error);
+        throw error;
+      } finally {
+        setIsAutoFilling(false);
+      }
+    })();
+
+    toast.promise(autoFillPromise, {
+      loading: "Uploading document... This might take a few seconds.",
+      success: "Form fields auto-filled successfully!",
+      error: (err) =>
+        err.message || "Failed to extract data. Please fill out manually.",
+    });
+  };
+
   const currentYear = new Date().getFullYear();
 
   return (
@@ -904,14 +988,18 @@ const ApplyFundingForm = ({
                           }))}
                           onSelectValue={handleInterestedProductChange}
                         />
-                        {interestedProductSelected?.type?.includes("Personal") && (
+                        {interestedProductSelected?.type?.includes(
+                          "Personal",
+                        ) && (
                           <CustomFormField
                             name={"personalAmountFunding"}
                             label="How Much Personal Funding Are You Looking For?"
                             type="number"
                           />
                         )}
-                        {interestedProductSelected?.type?.includes("Business") && (
+                        {interestedProductSelected?.type?.includes(
+                          "Business",
+                        ) && (
                           <CustomFormField
                             name={"businessAmountFunding"}
                             label="How Much Business Funding Are You Looking For?"
@@ -933,15 +1021,17 @@ const ApplyFundingForm = ({
                         ]?.length ?? 0) > 0 && (
                           <div className="space-y-3">
                             <p className="text-sm font-medium">
-                              Select the specific products you&apos;re interested in:
+                              Select the specific products you&apos;re
+                              interested in:
                             </p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                               {FUNDING_PRODUCTS_BY_CATEGORY[
                                 interestedProductSelected.value
                               ].map((product) => {
                                 const checked =
-                                  form.watch("fundingProducts")?.includes(product) ??
-                                  false;
+                                  form
+                                    .watch("fundingProducts")
+                                    ?.includes(product) ?? false;
                                 return (
                                   <label
                                     key={product}
@@ -951,13 +1041,20 @@ const ApplyFundingForm = ({
                                       checked={checked}
                                       onCheckedChange={(val) => {
                                         const current =
-                                          form.getValues("fundingProducts") ?? [];
+                                          form.getValues("fundingProducts") ??
+                                          [];
                                         const updated = val
                                           ? [...current, product]
-                                          : current.filter((p) => p !== product);
-                                        form.setValue("fundingProducts", updated, {
-                                          shouldDirty: true,
-                                        });
+                                          : current.filter(
+                                              (p) => p !== product,
+                                            );
+                                        form.setValue(
+                                          "fundingProducts",
+                                          updated,
+                                          {
+                                            shouldDirty: true,
+                                          },
+                                        );
                                         updateDerivedStates(updated);
                                       }}
                                     />
@@ -1033,10 +1130,76 @@ const ApplyFundingForm = ({
 
                   {!isCommunity && !false && (
                     <Card className="bg-slate-100 border-slate-200">
-                      <CardHeader className="px-3 sm:px-4 md:px-6">
+                      <CardHeader className="px-3 sm:px-4 md:px-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <CardTitle className="text-base md:text-lg flex items-center gap-2">
                           <span>👤</span> Personal Information
                         </CardTitle>
+                        <div className="w-full md:w-auto md:min-w-[300px]">
+                          {driverLicenseDocsFromForm.length > 0 ? (
+                            <div className="space-y-1.5">
+                              {driverLicenseDocsFromForm.map((file, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-center justify-between gap-2 bg-indigo-50 border border-indigo-200 p-2 rounded text-xs overflow-hidden"
+                                >
+                                  <span className="flex-1 truncate">
+                                    {file.name}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    {isAutoFilling && (
+                                      <Loader2Icon className="w-3 h-3 animate-spin text-indigo-600" />
+                                    )}
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeDriverLicense(idx)}
+                                      className="h-6 w-6 p-0 hover:bg-red-100 flex-shrink-0"
+                                    >
+                                      <CircleX className="h-3 w-3 text-red-500" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <Dropzone
+                              maxFiles={2}
+                              accept={{
+                                "application/pdf": [".pdf"],
+                                "image/*": [".png", ".jpg", ".jpeg", ".gif"],
+                              }}
+                              className={`min-h-[50px] sm:min-h-[50px] cursor-pointer w-full bg-white border-dashed border-2 border-indigo-200 hover:border-indigo-400 transition-colors py-2 px-4 rounded-md`}
+                              onDrop={async (files) => {
+                                const validFiles = files.filter(
+                                  (f) =>
+                                    f.type === "application/pdf" ||
+                                    f.type.startsWith("image/"),
+                                );
+                                if (validFiles.length !== files.length) {
+                                  alert(
+                                    "Only PDF and image files are allowed!",
+                                  );
+                                  return;
+                                }
+                                await handleDriverLicenseUpload(validFiles);
+                                await handleSmartAutoFill();
+                              }}
+                            >
+                              <DropzoneEmptyState>
+                                <div className="flex items-center justify-center gap-2">
+                                  <Upload className="h-4 w-4 text-indigo-500" />
+                                  <span className="text-xs sm:text-sm font-medium text-indigo-600">
+                                    {isAutoFilling
+                                      ? "Analyzing..."
+                                      : "Upload Driver's License"}
+                                  </span>
+                                </div>
+                              </DropzoneEmptyState>
+                              <DropzoneContent />
+                            </Dropzone>
+                          )}
+                        </div>
                       </CardHeader>
                       <CardContent className="space-y-3 sm:space-y-4 md:space-y-5 px-3 sm:px-4 md:px-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 items-start">
@@ -1258,8 +1421,12 @@ const ApplyFundingForm = ({
 
                   {!isCommunity &&
                     interestedProductSelected &&
-                    !(form.watch("fundingProducts")?.length === 1 &&
-                      form.watch("fundingProducts")?.includes("Business Income Based Funding")) &&
+                    !(
+                      form.watch("fundingProducts")?.length === 1 &&
+                      form
+                        .watch("fundingProducts")
+                        ?.includes("Business Income Based Funding")
+                    ) &&
                     (!isAutoLoan ||
                       (isAutoLoan && vehicleFinancingType === "Personal")) && (
                       <Card className="bg-slate-100 border-slate-200">
@@ -1573,105 +1740,105 @@ const ApplyFundingForm = ({
                     isCommunity ||
                     isEquipmentFinancing ||
                     (isAutoLoan && vehicleFinancingType === "Business")) && (
-                      <Card className="bg-slate-100 border-slate-200">
-                        <CardHeader className="px-3 sm:px-4 md:px-6">
-                          <CardTitle className="flex flex-col md:flex-row justify-between gap-2 text-base md:text-lg">
-                            <div className="flex items-center gap-2">
-                              <span>🏢</span> Business Information
-                            </div>
-                            {businessIdSelected && (
-                              <PlaidLink displayText="Link Business Acount" />
-                            )}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-4 md:px-6">
-                          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-stretch md:items-end gap-3 sm:gap-4">
-                            <CustomFormField
-                              name="businessName"
-                              label="Select Business"
-                              type="select"
-                              placeholder="Select your business"
-                              options={businessOptions}
-                              onSelectValue={handleBusinessSelect}
-                            />
-                            <Button
-                              type="button"
-                              size="lg"
-                              variant="ghost"
-                              className="justify-self-start md:justify-self-end cursor-pointer"
-                              onClick={() => setOpenBusinessModal(true)}
-                            >
-                              <IconMenu text="Add Business" icon={<Plus />} />
-                            </Button>
+                    <Card className="bg-slate-100 border-slate-200">
+                      <CardHeader className="px-3 sm:px-4 md:px-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <CardTitle className="flex flex-col md:flex-row justify-between gap-2 text-base md:text-lg">
+                          <div className="flex items-center gap-2">
+                            <span>🏢</span> Business Information
                           </div>
-
                           {businessIdSelected && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <CustomFormField
-                                name={"dateOfIncorporation"}
-                                type="date-picker"
-                                label={`Date of Incorporation?`}
-                              />
-                              <CustomFormField
-                                name={"stateOfIncorporation"}
-                                label={`State of Incorporation?`}
-                                type="select"
-                                placeholder="Select a state"
-                                options={US_STATES}
-                              />
-
-                              <CustomFormField
-                                name="businessGrossProjectedRevenue1"
-                                type="number"
-                                placeholder="Enter amount"
-                                label={`${currentYear} Gross Revenue`}
-                              />
-
-                              <CustomFormField
-                                type="checkbox"
-                                label={`Filed with IRS?`}
-                                name="businessFiledWithIRS1"
-                              />
-                              <CustomFormField
-                                name="businessGrossProjectedRevenue2"
-                                type="number"
-                                placeholder="Enter amount"
-                                label={`${currentYear - 1} Gross Revenue`}
-                              />
-
-                              <CustomFormField
-                                type="checkbox"
-                                name="businessFiledWithIRS2"
-                                label="Filed with IRS?"
-                              />
-                              <CustomFormField
-                                name="businessGrossProjectedRevenue3"
-                                type="number"
-                                placeholder="Enter amount"
-                                label={`${currentYear - 2} Gross Revenue`}
-                              />
-
-                              <CustomFormField
-                                type="checkbox"
-                                label="Filed with IRS?"
-                                name="businessFiledWithIRS3"
-                              />
-
-                              <CustomFormField
-                                name={"industryField"}
-                                label={"Industry Field?"}
-                              />
-                              <CustomFormField
-                                name={"ownershipPercentage"}
-                                type="number"
-                                label={"Ownership Percentage (%)"}
-                                placeholder="0-100"
-                              />
-                            </div>
+                            <PlaidLink displayText="Link Business Acount" />
                           )}
-                        </CardContent>
-                      </Card>
-                    )}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-4 md:px-6">
+                        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-stretch md:items-end gap-3 sm:gap-4">
+                          <CustomFormField
+                            name="businessName"
+                            label="Select Business"
+                            type="select"
+                            placeholder="Select your business"
+                            options={businessOptions}
+                            onSelectValue={handleBusinessSelect}
+                          />
+                          <Button
+                            type="button"
+                            size="lg"
+                            variant="ghost"
+                            className="justify-self-start md:justify-self-end cursor-pointer"
+                            onClick={() => setOpenBusinessModal(true)}
+                          >
+                            <IconMenu text="Add Business" icon={<Plus />} />
+                          </Button>
+                        </div>
+
+                        {businessIdSelected && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <CustomFormField
+                              name={"dateOfIncorporation"}
+                              type="date-picker"
+                              label={`Date of Incorporation?`}
+                            />
+                            <CustomFormField
+                              name={"stateOfIncorporation"}
+                              label={`State of Incorporation?`}
+                              type="select"
+                              placeholder="Select a state"
+                              options={US_STATES}
+                            />
+
+                            <CustomFormField
+                              name="businessGrossProjectedRevenue1"
+                              type="number"
+                              placeholder="Enter amount"
+                              label={`${currentYear} Gross Revenue`}
+                            />
+
+                            <CustomFormField
+                              type="checkbox"
+                              label={`Filed with IRS?`}
+                              name="businessFiledWithIRS1"
+                            />
+                            <CustomFormField
+                              name="businessGrossProjectedRevenue2"
+                              type="number"
+                              placeholder="Enter amount"
+                              label={`${currentYear - 1} Gross Revenue`}
+                            />
+
+                            <CustomFormField
+                              type="checkbox"
+                              name="businessFiledWithIRS2"
+                              label="Filed with IRS?"
+                            />
+                            <CustomFormField
+                              name="businessGrossProjectedRevenue3"
+                              type="number"
+                              placeholder="Enter amount"
+                              label={`${currentYear - 2} Gross Revenue`}
+                            />
+
+                            <CustomFormField
+                              type="checkbox"
+                              label="Filed with IRS?"
+                              name="businessFiledWithIRS3"
+                            />
+
+                            <CustomFormField
+                              name={"industryField"}
+                              label={"Industry Field?"}
+                            />
+                            <CustomFormField
+                              name={"ownershipPercentage"}
+                              type="number"
+                              label={"Ownership Percentage (%)"}
+                              placeholder="0-100"
+                            />
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
 
                   <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-indigo-200">
                     <CardContent className="space-y-6 px-4 md:px-6">
@@ -1725,7 +1892,7 @@ const ApplyFundingForm = ({
                             ]}
                           />
 
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <CustomFormField
                               name="landlordName"
                               label="Landlord Name"
@@ -1739,7 +1906,7 @@ const ApplyFundingForm = ({
                               type="number"
                               label="Monthly Payment"
                             />
-                          </div>
+                          </div> */}
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <CustomFormField
@@ -1910,15 +2077,20 @@ const ApplyFundingForm = ({
                                 <span className="flex-1 truncate">
                                   {file.name}
                                 </span>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeDriverLicense(idx)}
-                                  className="h-6 w-6 p-0 hover:bg-red-100 flex-shrink-0"
-                                >
-                                  <CircleX className="h-3 w-3 text-red-500" />
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                  {isAutoFilling && (
+                                    <Loader2Icon className="w-3 h-3 animate-spin text-indigo-600" />
+                                  )}
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeDriverLicense(idx)}
+                                    className="h-6 w-6 p-0 hover:bg-red-100 flex-shrink-0"
+                                  >
+                                    <CircleX className="h-3 w-3 text-red-500" />
+                                  </Button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1945,6 +2117,7 @@ const ApplyFundingForm = ({
                               return;
                             }
                             await handleDriverLicenseUpload(validFiles);
+                            await handleSmartAutoFill();
                           }}
                         >
                           <DropzoneEmptyState>
@@ -1963,7 +2136,9 @@ const ApplyFundingForm = ({
                                     : ""
                                 }`}
                               >
-                                Click to upload
+                                {isAutoFilling
+                                  ? "Analyzing..."
+                                  : "Click to upload"}
                               </p>
                             </div>
                           </DropzoneEmptyState>

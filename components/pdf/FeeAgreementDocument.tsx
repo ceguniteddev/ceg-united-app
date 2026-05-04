@@ -90,6 +90,8 @@ interface FeeAgreementProps {
   signature: {
     type: "type" | "draw";
     value: string;
+    ipAddress?: string;
+    macAddress?: string;
   };
   acceptedAt: string;
 }
@@ -167,6 +169,14 @@ export const FeeAgreementDocument = ({
         <Text style={styles.dateText}>
           Date: {format(new Date(acceptedAt), "MMM d, yyyy h:mm a")}
         </Text>
+        {signature.ipAddress && (
+          <Text style={styles.dateText}>IP Address: {signature.ipAddress}</Text>
+        )}
+        {signature.macAddress && (
+          <Text style={styles.dateText}>
+            MAC Address: {signature.macAddress}
+          </Text>
+        )}
       </View>
     </Page>
   );
