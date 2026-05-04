@@ -27,6 +27,7 @@ import {
 import { Plus, Trash2, CircleX } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Business } from "@/schema";
+import { toast } from "sonner";
 import PlaidLink from "../PlaidLink";
 import { Separator } from "../ui/separator";
 import {
@@ -34,7 +35,7 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
-import { FileText, Upload } from "lucide-react";
+import { FileText, Upload, Sparkles, Loader2 } from "lucide-react";
 
 const isMarried: DropdownOption[] = [
   { value: "Yes", label: "Yes" },
@@ -73,6 +74,7 @@ export function FundingApplicationFields({
   // Document upload states - now using form state
   const bankStatementsFromForm = form.watch("bankStatements") || [];
   const driverLicenseDocsFromForm = form.watch("driverLicenseDocuments") || [];
+  const einLetterDocsFromForm = form.watch("einLetterDocuments") || [];
 
   const [howDoYouGetPaidSelected, setHowDoYouGetPaidSelected] = useState<
     DropdownOption | undefined
@@ -389,6 +391,30 @@ export function FundingApplicationFields({
     [form],
   );
 
+  // Handle EIN letter upload
+  const handleEinLetterUpload = useCallback(
+    async (files: File[]) => {
+      try {
+        const currentDocs = form.getValues("einLetterDocuments") || [];
+        const newDocs = await Promise.all(
+          files.map(async (file) => ({
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            base64: await fileToBase64(file),
+          })),
+        );
+        form.setValue("einLetterDocuments", [...currentDocs, ...newDocs], {
+          shouldDirty: true,
+        });
+      } catch (error) {
+        console.error("Error converting files to base64:", error);
+        alert("Failed to process files. Please try again.");
+      }
+    },
+    [form],
+  );
+
   // Remove bank statement
   const removeBankStatement = useCallback(
     (index: number) => {
@@ -410,6 +436,135 @@ export function FundingApplicationFields({
     },
     [form],
   );
+
+  // Remove EIN Letter
+  const removeEinLetter = useCallback(
+    (index: number) => {
+      const currentDocs = form.getValues("einLetterDocuments") || [];
+      const updatedDocs = currentDocs.filter((_, i) => i !== index);
+      form.setValue("einLetterDocuments", updatedDocs, {
+        shouldDirty: true,
+      });
+    },
+    [form],
+  );
+
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
+
+  const handleSmartAutoFill = async () => {
+    const dlDocs = form.getValues("driverLicenseDocuments") || [];
+    const einDocs = form.getValues("einLetterDocuments") || [];
+    const allDocs = [...dlDocs, ...einDocs];
+
+    if (allDocs.length === 0) {
+      toast.error("Please upload Driver's License or EIN Letter first.");
+      return;
+    }
+
+    setIsAutoFilling(true);
+
+    const autoFillPromise = (async () => {
+      try {
+        const response = await fetch("/api/ocr", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ documents: allDocs }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to process documents");
+        }
+
+        const { data } = await response.json();
+
+        if (data.personal) {
+          if (data.personal.addressStreet)
+            form.setValue("addressStreet", data.personal.addressStreet, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          if (data.personal.addressCity)
+            form.setValue("addressCity", data.personal.addressCity, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          if (data.personal.addressState)
+            form.setValue("addressState", data.personal.addressState, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          if (data.personal.addressPostal)
+            form.setValue("addressPostal", data.personal.addressPostal, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          if (data.personal.driverLicenseNumber)
+            form.setValue(
+              "driverLicenseNumber",
+              data.personal.driverLicenseNumber,
+              { shouldDirty: true, shouldValidate: true },
+            );
+          if (data.personal.driverLicenseState)
+            form.setValue(
+              "driverLicenseState",
+              data.personal.driverLicenseState,
+              { shouldDirty: true, shouldValidate: true },
+            );
+          // NOTE: Date of birth might require converting to Date object if we had a DOB field.
+          // We only fill address and driver's license here.
+        }
+
+        if (data.business) {
+          if (data.business.businessName)
+            form.setValue("businessName", data.business.businessName, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          if (data.business.employerIdentificationNumber)
+            form.setValue(
+              "employerIdentificationNumber",
+              data.business.employerIdentificationNumber,
+              { shouldDirty: true, shouldValidate: true },
+            );
+          if (data.business.businessStreetAddress)
+            form.setValue(
+              "businessStreetAddress",
+              data.business.businessStreetAddress,
+              { shouldDirty: true, shouldValidate: true },
+            );
+          if (data.business.businessCityAddress)
+            form.setValue(
+              "businessCityAddress",
+              data.business.businessCityAddress,
+              { shouldDirty: true, shouldValidate: true },
+            );
+          if (data.business.businessStateAddress)
+            form.setValue(
+              "businessStateAddress",
+              data.business.businessStateAddress,
+              { shouldDirty: true, shouldValidate: true },
+            );
+          if (data.business.businessPostalAddress)
+            form.setValue(
+              "businessPostalAddress",
+              data.business.businessPostalAddress,
+              { shouldDirty: true, shouldValidate: true },
+            );
+        }
+      } catch (error) {
+        console.error(error);
+        throw error;
+      } finally {
+        setIsAutoFilling(false);
+      }
+    })();
+
+    toast.promise(autoFillPromise, {
+      loading: "Uploading document... This might take a few seconds.",
+      success: "Form fields auto-filled successfully!",
+      error: "Failed to extract data. Please fill out manually.",
+    });
+  };
 
   const currentYear = new Date().getFullYear();
 
@@ -561,10 +716,72 @@ export function FundingApplicationFields({
 
         {!isCommunity && !false && (
           <Card className="bg-slate-100 border-slate-200">
-            <CardHeader className="px-4 md:px-6">
+            <CardHeader className="px-4 md:px-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <CardTitle className="text-base md:text-lg flex items-center gap-2">
                 <span>👤</span> Personal Information
               </CardTitle>
+              <div className="w-full md:w-auto md:min-w-[300px]">
+                {driverLicenseDocsFromForm.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {driverLicenseDocsFromForm.map((file, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between gap-2 bg-indigo-50 border border-indigo-200 p-2 rounded text-xs overflow-hidden"
+                      >
+                        <span className="flex-1 truncate">{file.name}</span>
+                        <div className="flex items-center gap-2">
+                          {isAutoFilling && (
+                            <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeDriverLicense(idx)}
+                            className="h-6 w-6 p-0 hover:bg-red-100 flex-shrink-0"
+                          >
+                            <CircleX className="h-3 w-3 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Dropzone
+                    maxFiles={2}
+                    accept={{
+                      "application/pdf": [".pdf"],
+                      "image/*": [".png", ".jpg", ".jpeg", ".gif"],
+                    }}
+                    className={`min-h-[50px] sm:min-h-[50px] cursor-pointer w-full bg-white border-dashed border-2 border-indigo-200 hover:border-indigo-400 transition-colors py-2 px-4 rounded-md`}
+                    onDrop={async (files) => {
+                      const validFiles = files.filter(
+                        (f) =>
+                          f.type === "application/pdf" ||
+                          f.type.startsWith("image/"),
+                      );
+                      if (validFiles.length !== files.length) {
+                        alert("Only PDF and image files are allowed!");
+                        return;
+                      }
+                      await handleDriverLicenseUpload(validFiles);
+                      await handleSmartAutoFill();
+                    }}
+                  >
+                    <DropzoneEmptyState>
+                      <div className="flex items-center justify-center gap-2">
+                        <Upload className="h-4 w-4 text-indigo-500" />
+                        <span className="text-xs sm:text-sm font-medium text-indigo-600">
+                          {isAutoFilling
+                            ? "Analyzing..."
+                            : "Upload Driver's License"}
+                        </span>
+                      </div>
+                    </DropzoneEmptyState>
+                    <DropzoneContent />
+                  </Dropzone>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-5 px-4 md:px-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
@@ -762,8 +979,12 @@ export function FundingApplicationFields({
 
         {!isCommunity &&
           interestedProductSelected &&
-          !(form.watch("fundingProducts")?.length === 1 &&
-            form.watch("fundingProducts")?.includes("Business Income Based Funding")) &&
+          !(
+            form.watch("fundingProducts")?.length === 1 &&
+            form
+              .watch("fundingProducts")
+              ?.includes("Business Income Based Funding")
+          ) &&
           (!isAutoLoan ||
             (isAutoLoan && vehicleFinancingType === "Personal")) && (
             <Card className="bg-slate-100 border-slate-200">
@@ -1069,10 +1290,70 @@ export function FundingApplicationFields({
           isEquipmentFinancing ||
           (isAutoLoan && vehicleFinancingType === "Business")) && (
           <Card className="bg-slate-100 border-slate-200">
-            <CardHeader className="px-4 md:px-6">
+            <CardHeader className="px-4 md:px-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <CardTitle className="text-base md:text-lg flex items-center gap-2">
                 <span>🏢</span> Business Information
               </CardTitle>
+              <div className="w-full md:w-auto md:min-w-[300px]">
+                {einLetterDocsFromForm.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {einLetterDocsFromForm.map((file, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between gap-2 bg-indigo-50 border border-indigo-200 p-2 rounded text-xs overflow-hidden"
+                      >
+                        <span className="flex-1 truncate">{file.name}</span>
+                        <div className="flex items-center gap-2">
+                          {isAutoFilling && (
+                            <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeEinLetter(idx)}
+                            className="h-6 w-6 p-0 hover:bg-red-100 flex-shrink-0"
+                          >
+                            <CircleX className="h-3 w-3 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Dropzone
+                    maxFiles={2}
+                    accept={{
+                      "application/pdf": [".pdf"],
+                      "image/*": [".png", ".jpg", ".jpeg", ".gif"],
+                    }}
+                    className={`min-h-[50px] sm:min-h-[50px] cursor-pointer w-full bg-white border-dashed border-2 border-indigo-200 hover:border-indigo-400 transition-colors py-2 px-4 rounded-md`}
+                    onDrop={async (files) => {
+                      const validFiles = files.filter(
+                        (f) =>
+                          f.type === "application/pdf" ||
+                          f.type.startsWith("image/"),
+                      );
+                      if (validFiles.length !== files.length) {
+                        alert("Only PDF and image files are allowed!");
+                        return;
+                      }
+                      await handleEinLetterUpload(validFiles);
+                      await handleSmartAutoFill();
+                    }}
+                  >
+                    <DropzoneEmptyState>
+                      <div className="flex items-center justify-center gap-2">
+                        <Upload className="h-4 w-4 text-indigo-500" />
+                        <span className="text-xs sm:text-sm font-medium text-indigo-600">
+                          {isAutoFilling ? "Analyzing..." : "Upload EIN Letter"}
+                        </span>
+                      </div>
+                    </DropzoneEmptyState>
+                    <DropzoneContent />
+                  </Dropzone>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-5 px-4 md:px-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">

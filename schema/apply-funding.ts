@@ -253,6 +253,16 @@ export const applyFundingSchema = z
         }),
       )
       .optional(),
+    einLetterDocuments: z
+      .array(
+        z.object({
+          name: z.string(),
+          size: z.number(),
+          type: z.string(),
+          base64: z.string(),
+        }),
+      )
+      .optional(),
     consentConfirmTerms: z.boolean(),
     consentConfirmPrivacy: z.boolean(),
     // Application method selection (Specialist vs Online)
