@@ -39,9 +39,7 @@ export const POST = async (
       return badRequest({ errors: "Documents array is required" });
     }
 
-    const apiKey =
-      process.env.GEMINI_API_KEY_PRODUCTION ||
-      process.env.GEMINI_API_KEY_STAGING;
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       console.error("Gemini API key is not configured.");

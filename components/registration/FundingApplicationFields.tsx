@@ -472,7 +472,11 @@ export function FundingApplicationFields({
         });
 
         if (!response.ok) {
-          throw new Error("Failed to process documents");
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error ||
+              "Failed to process documents. Please fill out manually.",
+          );
         }
 
         const { data } = await response.json();
@@ -551,7 +555,7 @@ export function FundingApplicationFields({
               { shouldDirty: true, shouldValidate: true },
             );
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error(error);
         throw error;
       } finally {
@@ -562,7 +566,8 @@ export function FundingApplicationFields({
     toast.promise(autoFillPromise, {
       loading: "Uploading document... This might take a few seconds.",
       success: "Form fields auto-filled successfully!",
-      error: "Failed to extract data. Please fill out manually.",
+      error: (err) =>
+        err.message || "Failed to extract data. Please fill out manually.",
     });
   };
 
