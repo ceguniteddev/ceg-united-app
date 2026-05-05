@@ -107,6 +107,7 @@ export const GET = withAuth(async (request: NextRequest) => {
           firstName: app.user?.firstName || "",
           lastName: app.user?.lastName || "",
           businessName: app.businessName || "Unknown Business",
+          email: app.user?.email || "",
           monthlyRevenue: app.annualBusinessRevenue
             ? app.annualBusinessRevenue / 12
             : 0,

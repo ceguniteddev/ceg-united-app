@@ -2,7 +2,6 @@
 
 import { Bot, Loader2, AlertCircle } from "lucide-react";
 import { ProgressStepper } from "@/components/income-funding/ProgressStepper";
-import { DemoToolbar } from "@/components/income-funding/DemoToolbar";
 import { PreApprovalView } from "@/components/income-funding/PreApprovalView";
 import { DocumentCollectionView } from "@/components/income-funding/DocumentCollectionView";
 import { SubmittedView } from "@/components/income-funding/SubmittedView";
@@ -10,7 +9,6 @@ import { OffersView } from "@/components/income-funding/OffersView";
 import { AcceptanceView } from "@/components/income-funding/AcceptanceView";
 import { CompleteView } from "@/components/income-funding/CompleteView";
 import { useIncomeFundingState } from "@/hooks/useIncomeFundingState";
-import { mockUser } from "@/lib/income-funding-mock";
 import Link from "next/link";
 
 export default function IncomeFunding() {

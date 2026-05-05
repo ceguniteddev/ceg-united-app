@@ -135,6 +135,7 @@ export interface AdminClient {
   lastName: string;
   businessName: string;
   monthlyRevenue: number;
+  email: string;
   grade: RiskGrade;
   preApprovedAmount: number;
   status: DealStatus;
