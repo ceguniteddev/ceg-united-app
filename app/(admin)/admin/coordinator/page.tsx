@@ -137,9 +137,43 @@ function AdminCoordinator() {
 
       if (!res.ok) throw new Error("Failed to update status");
 
+      // Send email to client
+      if (selected.email) {
+        const emailRes = await fetch("/api/send-email-with-attachments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: selected.email,
+            subject: "Your Funding Offers Are Ready",
+            content: `
+              <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #0179FE;">Great news, ${selected.firstName}!</h2>
+                <p style="font-size: 16px; line-height: 1.5;">Your income-based funding application has been reviewed, and your offers are now ready to be viewed.</p>
+                <p style="font-size: 16px; line-height: 1.5;">Please log in to your CEG United dashboard to review and select the best offer for your business.</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://www.cegunited.com"}" style="display: inline-block; background-color: #0179FE; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 6px; font-size: 16px; font-weight: 600;">
+                    Log in to Dashboard
+                  </a>
+                </div>
+
+                <p style="font-size: 14px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                  Best regards,<br/><strong>CEG United LLC</strong>
+                </p>
+              </div>
+            `,
+            userId: selected.uid,
+          }),
+        });
+
+        if (!emailRes.ok) {
+          console.error("Failed to send notification email");
+        }
+      }
+
       updateClient(selectedId, (c) => ({ ...c, status: "offers-ready" }));
       toast.success(
-        `${selected.firstName} notified — offers are now visible to the client.`,
+        `${selected.firstName} notified - offers are now visible to the client.`,
       );
     } catch (error) {
       toast.error("Error notifying client");

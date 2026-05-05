@@ -1,14 +1,5 @@
 import { useState } from "react";
-import {
-  Eye,
-  Mail,
-  Send,
-  FileText,
-  Building,
-  Receipt,
-  IdCard,
-  Landmark,
-} from "lucide-react";
+import { Mail, Send } from "lucide-react";
 import { GradeBadge } from "@/components/income-funding/GradeBadge";
 import { DealOfferForm } from "./DealOfferForm";
 import { ExistingOffersList } from "./ExistingOffersList";
@@ -27,99 +18,15 @@ import {
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
 import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { DocumentUploadCard } from "@/components/income-funding/DocumentUploadCard";
 
 interface ClientDetailProps {
   client: AdminClient;
   onAddOffer: (offer: DealOffer) => void;
   onDeleteOffer: (id: string) => void;
   onNotify: () => void;
-}
-
-const docIconMap = {
-  ein: FileText,
-  articles: Building,
-  voidedCheck: Receipt,
-  id: IdCard,
-  bankStatements: Landmark,
-};
-
-function DocumentTile({
-  doc,
-  onView,
-}: {
-  doc: DocumentRecord;
-  onView: (url: string, title: string, contentType?: string) => void;
-}) {
-  const Icon = docIconMap[doc.key];
-  const isDone = doc.status === "uploaded" || doc.status === "synced";
-
-  if (isDone && doc.files && doc.files.length > 0) {
-    return (
-      <div className="bg-white rounded-xl border border-gray-100 shadow-card p-3 flex flex-col gap-2">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="w-6 h-6 rounded flex items-center justify-center bg-emerald-50 text-emerald-600">
-            <Icon className="w-3.5 h-3.5" />
-          </div>
-          <div className="text-xs font-semibold text-gray-900 truncate">
-            {doc.title}
-          </div>
-        </div>
-        {doc.files.map((file, idx) => (
-          <div
-            key={idx}
-            className="flex items-center justify-between gap-2 text-[11px] bg-gray-50 rounded-lg p-2 border border-gray-100"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="text-gray-700 truncate">{file.fileName}</div>
-              <div className="text-gray-400">{file.fileSize}</div>
-            </div>
-            {file.signedUrl && (
-              <button
-                onClick={() =>
-                  onView(file.signedUrl!, file.fileName, file.contentType)
-                }
-                className="p-1.5 rounded-md text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition cursor-pointer shrink-0"
-                title="View"
-              >
-                <Eye className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-card p-3 flex items-center gap-3">
-      <div
-        className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-          isDone ? "bg-emerald-50 text-emerald-600" : "bg-gray-50 text-gray-400"
-        }`}
-      >
-        <Icon className="w-4 h-4" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-xs font-semibold text-gray-900 truncate">
-          {doc.title}
-        </div>
-        <div className="text-[11px] text-gray-500 truncate">
-          {isDone ? doc.fileName || "Provided" : "Not uploaded"}
-        </div>
-      </div>
-      {isDone && doc.signedUrl && (
-        <button
-          onClick={() =>
-            onView(doc.signedUrl!, doc.fileName || doc.title, doc.contentType)
-          }
-          className="p-1.5 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition cursor-pointer"
-          title="View"
-        >
-          <Eye className="w-3.5 h-3.5" />
-        </button>
-      )}
-    </div>
-  );
 }
 
 export function ClientDetail({
@@ -134,10 +41,63 @@ export function ClientDetail({
     contentType?: string;
   } | null>(null);
   const [editingOffer, setEditingOffer] = useState<DealOffer | null>(null);
+  const [uploadingState, setUploadingState] = useState<Record<string, boolean>>(
+    {},
+  );
+  const queryClient = useQueryClient();
 
   const handleSaveOffer = (offer: DealOffer) => {
     onAddOffer(offer);
     setEditingOffer(null);
+  };
+
+  const handleUpload = async (
+    key: DocumentRecord["key"],
+    file: File,
+    fileName: string,
+    fileSize: string,
+  ) => {
+    if (!client.uid) return;
+
+    setUploadingState((prev) => ({ ...prev, [key]: true }));
+
+    // Map key to DocumentType ID
+    let documentTypeId = "OTHER";
+    if (key === "ein") documentTypeId = "EIN_LETTER";
+    else if (key === "articles") documentTypeId = "ARTICLES_OF_ORGANIZATION";
+    else if (key === "id") documentTypeId = "DRIVERS_LICENSE";
+    else if (key === "bankStatements") documentTypeId = "BANK_STATEMENTS";
+    else if (key === "voidedCheck") documentTypeId = "VOIDED_CHECK";
+
+    const formData = new FormData();
+    formData.append("userId", client.uid);
+    if (documentTypeId !== "OTHER") {
+      formData.append("documentType", documentTypeId);
+    }
+    formData.append("files", file);
+
+    try {
+      const response = await fetch(`/api/user/${client.uid}/documents`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || "Upload failed");
+      }
+
+      queryClient.invalidateQueries({
+        queryKey: ["GET_ADMIN_INCOME_FUNDING"],
+      });
+
+      toast.success("Document uploaded successfully");
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Failed to upload document");
+    } finally {
+      setUploadingState((prev) => ({ ...prev, [key]: false }));
+    }
   };
 
   return (
@@ -181,10 +141,6 @@ export function ClientDetail({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition cursor-pointer">
-              <Mail className="w-3.5 h-3.5" />
-              Email
-            </button>
             <button
               onClick={onNotify}
               className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs px-3 py-2 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer"
@@ -241,9 +197,11 @@ export function ClientDetail({
             {client.documents && client.documents.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {client.documents.map((d) => (
-                  <DocumentTile
+                  <DocumentUploadCard
                     key={d.key}
                     doc={d}
+                    onUpload={handleUpload}
+                    isUploading={uploadingState[d.key]}
                     onView={(url, title, contentType) =>
                       setPreviewDoc({ url, title, contentType })
                     }
