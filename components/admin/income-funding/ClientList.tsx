@@ -76,10 +76,15 @@ export function ClientList({ clients, selectedId, onSelect }: ClientListProps) {
             <li key={c.uid}>
               <button
                 onClick={() => onSelect(c.uid)}
-                className={`w-full text-left px-4 py-3 border-b border-gray-50 transition ${
-                  isActive ? "bg-brand-50/60" : "hover:bg-gray-50"
+                className={`w-full text-left px-4 py-3 border-b transition relative ${
+                  isActive
+                    ? "bg-brand-50 border-brand-200 z-10 shadow-sm"
+                    : "border-gray-50 hover:bg-gray-50"
                 }`}
               >
+                {isActive && (
+                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-brand-600 rounded-r-md" />
+                )}
                 <div className="flex items-start gap-3">
                   <GradeBadge grade={c.grade} size="sm" />
                   <div className="flex-1 min-w-0">

@@ -39,6 +39,7 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
   };
 
   // Map real deal inputs to stat cards if available
+  const computationFromBackend = realDeal?.businessIncomeComputation || {};
   const u = realDeal
     ? {
         monthlyDeposits: realDeal.annualBusinessRevenue
@@ -53,9 +54,9 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
         averageDailyBalance:
           realDeal.avgDailyBankBalance ||
           deal.underwritingInput.averageDailyBalance,
-        endingBalance: deal.underwritingInput.endingBalance, // Not explicitly in ApplyFunding
-        nsfCount: deal.underwritingInput.nsfCount, // Not explicitly in ApplyFunding
-        negativeDays: deal.underwritingInput.negativeDays, // Not explicitly in ApplyFunding
+        endingBalance: computationFromBackend.endingBalance || 0,
+        nsfCount: computationFromBackend.nsfCount || 0,
+        negativeDays: computationFromBackend.negativeDays || 0,
       }
     : deal.underwritingInput;
 
@@ -171,7 +172,11 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
             icon={Wallet}
             label="Avg. Daily Balance"
             value={formatUSD(u.averageDailyBalance)}
-            hint={`Ending balance ${formatUSD(u.endingBalance)}`}
+            hint={
+              u.endingBalance > 0
+                ? `Ending balance ${formatUSD(u.endingBalance)}`
+                : "\u00A0"
+            }
           />
         </div>
         <div className="animate-fade-in-up stagger-5">

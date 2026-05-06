@@ -22,7 +22,6 @@ import {
   useUserDocumentMutation,
   useUserDocumentsQuery,
 } from "@/hooks/document";
-import { useAuth } from "@/provider/AuthContext";
 import UploadFile from "@/components/UploadFileV2";
 import {
   CheckCircle2,

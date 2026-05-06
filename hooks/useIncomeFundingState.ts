@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from "react";
-import { mockDeal } from "@/lib/income-funding-mock";
 import type {
   DealOffer,
   DealStatus,
@@ -12,15 +11,77 @@ import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 import { toast } from "sonner";
 import { useConfettiStore } from "@/hooks/use-confetti-store";
 
+const defaultEmptyDeal: IncomeFundingDeal = {
+  id: "default",
+  status: "prequalified",
+  underwritingInput: {
+    monthlyDeposits: 0,
+    endingBalance: 0,
+    averageDailyBalance: 0,
+    negativeDays: 0,
+    nsfCount: 0,
+    timeInBusinessMonths: 0,
+    industryType: "",
+    creditScore: 0,
+  },
+  underwritingResult: {
+    grade: "C",
+    maxFundingAmount: 0,
+    multiplier: 0,
+    baseMultiple: 0,
+    percentage: 0,
+    rationale: "Pending calculation",
+  },
+  documents: [
+    {
+      key: "ein",
+      title: "EIN / SS4 Letter",
+      description: "Official IRS confirmation of EIN.",
+      required: true,
+      status: "required",
+    },
+    {
+      key: "articles",
+      title: "Articles of Organization",
+      description: "State filed business documents.",
+      required: true,
+      status: "required",
+    },
+    {
+      key: "voidedCheck",
+      title: "Voided Check",
+      description: "Must match business name and account.",
+      required: true,
+      status: "required",
+    },
+    {
+      key: "id",
+      title: "Driver's License",
+      description: "Valid government-issued ID.",
+      required: true,
+      status: "required",
+    },
+    {
+      key: "bankStatements",
+      title: "Bank Statements",
+      description: "Last 4 months of business bank statements.",
+      required: true,
+      status: "required",
+    },
+  ],
+  offers: [],
+  coordinatorId: "",
+};
+
 // ============================================
 // State Machine Hook for Income-Based Funding
 // ============================================
-// In production, replace useState(mockDeal) with a Firestore subscription:
+// In production, replace useState(defaultEmptyDeal) with a Firestore subscription:
 //   const [deal] = useDocument(doc(db, `users/${uid}/income-funding-deals/${dealId}`))
 // and persist setDeal* calls back to Firestore.
 
 export function useIncomeFundingState() {
-  const [deal, setDeal] = useState<IncomeFundingDeal>(mockDeal);
+  const [deal, setDeal] = useState<IncomeFundingDeal>(defaultEmptyDeal);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   const { userDocuments } = useUserDocumentsQuery({ userId: user?.uid || "" });
@@ -96,6 +157,10 @@ export function useIncomeFundingState() {
             averageDailyBalance:
               (realDeal as any).avgDailyBankBalance ||
               d.underwritingInput.averageDailyBalance,
+            negativeDays:
+              computation?.negativeDaysCount ??
+              d.underwritingInput.negativeDays,
+            nsfCount: computation?.nsfCount ?? d.underwritingInput.nsfCount,
           };
         }
       }
@@ -361,7 +426,7 @@ export function useIncomeFundingState() {
 
   const reset = useCallback(() => {
     setDeal({
-      ...mockDeal,
+      ...defaultEmptyDeal,
       status: "prequalified",
       selectedOfferId: undefined,
     });

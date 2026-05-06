@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Send } from "lucide-react";
+import { Mail, Send, Calculator, Loader2, X, Check } from "lucide-react";
 import { GradeBadge } from "@/components/income-funding/GradeBadge";
 import { DealOfferForm } from "./DealOfferForm";
 import { ExistingOffersList } from "./ExistingOffersList";
@@ -15,6 +15,17 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
 import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,11 +55,40 @@ export function ClientDetail({
   const [uploadingState, setUploadingState] = useState<Record<string, boolean>>(
     {},
   );
+  const [isCalculating, setIsCalculating] = useState(false);
   const queryClient = useQueryClient();
 
   const handleSaveOffer = (offer: DealOffer) => {
     onAddOffer(offer);
     setEditingOffer(null);
+  };
+
+  const handleCalculateIncome = async () => {
+    if (!client.uid || !client.referenceNumber) return;
+
+    try {
+      setIsCalculating(true);
+      const response = await fetch(
+        `/api/user/${client.uid}/funding-application/${client.referenceNumber}/calculate-income`,
+        {
+          method: "POST",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to calculate business income.");
+      }
+
+      toast.success("Business income pre-approval calculated successfully!");
+
+      queryClient.invalidateQueries({
+        queryKey: ["GET_ADMIN_INCOME_FUNDING"],
+      });
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred.");
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
   const handleUpload = async (
@@ -141,6 +181,47 @@ export function ClientDetail({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  disabled={isCalculating}
+                  className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs px-3 py-2 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer"
+                >
+                  {isCalculating ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Calculator className="w-3.5 h-3.5" />
+                  )}
+                  {isCalculating ? "Calculating..." : "Calculate Income"}
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Calculate Income Pre-Approval
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to run the automated AI income
+                    computation? This will analyze the submitted documents and
+                    automatically generate pre-approval offers based on the
+                    client's risk profile.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="inline-flex items-center gap-1.5">
+                    <X className="w-3.5 h-3.5" />
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleCalculateIncome}
+                    className="inline-flex items-center gap-1.5"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    Proceed
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <button
               onClick={onNotify}
               className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs px-3 py-2 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer"
