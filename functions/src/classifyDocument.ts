@@ -3,6 +3,11 @@ import * as logger from "firebase-functions/logger";
 import { GoogleGenAI } from "@google/genai";
 import { defineSecret } from "firebase-functions/params";
 import * as Busboy from "busboy";
+import * as admin from "firebase-admin";
+
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 // Define the secrets (Create these with the EXACT same names in both staging and prod projects)
 const adminAccessKey = defineSecret("ADMIN_ACCESS_KEY");
@@ -51,7 +56,11 @@ You can only classify the document into one of the following exact \`document_id
   "addressStreet": "string",
   "addressCity": "string",
   "addressState": "string",
-  "addressPostal": "string"
+  "addressPostal": "string",
+  "avgMonthlyCreditCardSales": "number",
+  "avgDailyBankBalance": "number",
+  "dateFrom": "YYYY-MM-DD",
+  "dateTo": "YYYY-MM-DD"
 }
 
 4. "PAYSTUBS": Paystubs (Proof of income/pay).
@@ -192,6 +201,7 @@ You can only classify the document into one of the following exact \`document_id
 {
   "document_id": "string",
   "confidence_score": 0.95,
+  "suggested_file_name":"string",
   "reasoning": "Brief explanation of classification.",
   "extracted_data": {
     // Populate the relevant keys based on the schema for the classified document_id.
@@ -319,7 +329,7 @@ export const classifyDocument = onRequest(
 
         const textResponse = result.text || "{}";
 
-        let extractedData = {};
+        let extractedData: any = {};
         try {
           extractedData = JSON.parse(textResponse);
         } catch (parseError) {
@@ -330,6 +340,44 @@ export const classifyDocument = onRequest(
             error: "Failed to parse JSON response from document classifier.",
           });
           return;
+        }
+
+        try {
+          const bucket = admin.storage().bucket();
+          const ext =
+            fileMimeType === "application/pdf"
+              ? "pdf"
+              : fileMimeType.split("/")[1] || "bin";
+
+          let finalFileName =
+            extractedData.suggested_file_name || `document_${Date.now()}`;
+          if (!finalFileName.includes(".")) {
+            finalFileName += `.${ext}`;
+          }
+
+          const tempStoragePath = `temp_documents/${Date.now()}_${finalFileName}`;
+          const fileRef = bucket.file(tempStoragePath);
+
+          await fileRef.save(fileBuffer, {
+            metadata: {
+              contentType: fileMimeType,
+            },
+          });
+
+          // Inject storage info so n8n can pass it to /api/register
+          extractedData.fileInfo = {
+            name: finalFileName,
+            size: fileBuffer.length,
+            type: fileMimeType,
+            storagePath: tempStoragePath,
+          };
+        } catch (storageError: any) {
+          logger.error(
+            "Failed to upload document to temp storage",
+            storageError,
+          );
+          // Non-fatal, but we should inform the user
+          extractedData.fileInfoError = storageError.message;
         }
 
         res.status(200).json({ data: extractedData });
