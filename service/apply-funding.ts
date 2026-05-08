@@ -62,12 +62,30 @@ export const applyFunding = async ({
     if (bankStatements && bankStatements.length > 0) {
       for (const doc of bankStatements) {
         try {
-          // Extract base64 data (remove data:application/pdf;base64, prefix)
-          const base64Data = doc.base64.split(",")[1];
-          const buffer = Buffer.from(base64Data, "base64");
+          let buffer: Buffer;
+          if (doc.storagePath) {
+            const bucket = storageAdmin();
+            const [fileBuffer] = await bucket.file(doc.storagePath).download();
+            buffer = fileBuffer;
+            // Clean up temp file
+            bucket
+              .file(doc.storagePath)
+              .delete()
+              .catch(() => {});
+          } else if (doc.base64) {
+            // Extract base64 data (remove data:application/pdf;base64, prefix if exists)
+            const base64Data = doc.base64.includes(",")
+              ? doc.base64.split(",")[1]
+              : doc.base64;
+            buffer = Buffer.from(base64Data, "base64");
+          } else {
+            continue;
+          }
 
           // Create a File object from the buffer
-          const file = new File([buffer], doc.name, { type: doc.type });
+          const file = new File([new Uint8Array(buffer)], doc.name, {
+            type: doc.type,
+          });
 
           // Use uploadDocument service function
           await uploadDocument(value.userId!, file, "BANK_STATEMENTS", {
@@ -86,12 +104,29 @@ export const applyFunding = async ({
     if (driverLicenseDocuments && driverLicenseDocuments.length > 0) {
       for (const doc of driverLicenseDocuments) {
         try {
-          // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix)
-          const base64Data = doc.base64.split(",")[1];
-          const buffer = Buffer.from(base64Data, "base64");
+          let buffer: Buffer;
+          if (doc.storagePath) {
+            const bucket = storageAdmin();
+            const [fileBuffer] = await bucket.file(doc.storagePath).download();
+            buffer = fileBuffer;
+            bucket
+              .file(doc.storagePath)
+              .delete()
+              .catch(() => {});
+          } else if (doc.base64) {
+            // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix if exists)
+            const base64Data = doc.base64.includes(",")
+              ? doc.base64.split(",")[1]
+              : doc.base64;
+            buffer = Buffer.from(base64Data, "base64");
+          } else {
+            continue;
+          }
 
           // Create a File object from the buffer
-          const file = new File([buffer], doc.name, { type: doc.type });
+          const file = new File([new Uint8Array(buffer)], doc.name, {
+            type: doc.type,
+          });
 
           // Use uploadDocument service function
           await uploadDocument(value.userId!, file, "DRIVERS_LICENSE", {
@@ -531,12 +566,29 @@ export const updateApplyFunding = async ({
     if (bankStatements && bankStatements.length > 0) {
       for (const doc of bankStatements) {
         try {
-          // Extract base64 data (remove data:application/pdf;base64, prefix)
-          const base64Data = doc.base64.split(",")[1];
-          const buffer = Buffer.from(base64Data, "base64");
+          let buffer: Buffer;
+          if (doc.storagePath) {
+            const bucket = storageAdmin();
+            const [fileBuffer] = await bucket.file(doc.storagePath).download();
+            buffer = fileBuffer;
+            bucket
+              .file(doc.storagePath)
+              .delete()
+              .catch(() => {});
+          } else if (doc.base64) {
+            // Extract base64 data (remove data:application/pdf;base64, prefix if exists)
+            const base64Data = doc.base64.includes(",")
+              ? doc.base64.split(",")[1]
+              : doc.base64;
+            buffer = Buffer.from(base64Data, "base64");
+          } else {
+            continue;
+          }
 
           // Create a File object from the buffer
-          const file = new File([buffer], doc.name, { type: doc.type });
+          const file = new File([new Uint8Array(buffer)], doc.name, {
+            type: doc.type,
+          });
 
           // Use uploadDocument service function
           await uploadDocument(value.userId!, file, "BANK_STATEMENTS", {
@@ -555,12 +607,29 @@ export const updateApplyFunding = async ({
     if (driverLicenseDocuments && driverLicenseDocuments.length > 0) {
       for (const doc of driverLicenseDocuments) {
         try {
-          // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix)
-          const base64Data = doc.base64.split(",")[1];
-          const buffer = Buffer.from(base64Data, "base64");
+          let buffer: Buffer;
+          if (doc.storagePath) {
+            const bucket = storageAdmin();
+            const [fileBuffer] = await bucket.file(doc.storagePath).download();
+            buffer = fileBuffer;
+            bucket
+              .file(doc.storagePath)
+              .delete()
+              .catch(() => {});
+          } else if (doc.base64) {
+            // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix if exists)
+            const base64Data = doc.base64.includes(",")
+              ? doc.base64.split(",")[1]
+              : doc.base64;
+            buffer = Buffer.from(base64Data, "base64");
+          } else {
+            continue;
+          }
 
           // Create a File object from the buffer
-          const file = new File([buffer], doc.name, { type: doc.type });
+          const file = new File([new Uint8Array(buffer)], doc.name, {
+            type: doc.type,
+          });
 
           // Use uploadDocument service function
           await uploadDocument(value.userId!, file, "DRIVERS_LICENSE", {

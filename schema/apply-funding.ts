@@ -232,14 +232,15 @@ export const applyFundingSchema = z
     creditKarmaUsername: z.string().optional(),
     creditKarmaPassword: z.string().optional(),
 
-    // Document uploads (stored as base64 strings for persistence)
+    // Document uploads (stored as base64 strings or temporary storage paths for persistence)
     bankStatements: z
       .array(
         z.object({
           name: z.string(),
           size: z.number(),
           type: z.string(),
-          base64: z.string(),
+          base64: z.string().optional(),
+          storagePath: z.string().optional(),
         }),
       )
       .optional(),
@@ -249,7 +250,8 @@ export const applyFundingSchema = z
           name: z.string(),
           size: z.number(),
           type: z.string(),
-          base64: z.string(),
+          base64: z.string().optional(),
+          storagePath: z.string().optional(),
         }),
       )
       .optional(),
@@ -259,7 +261,8 @@ export const applyFundingSchema = z
           name: z.string(),
           size: z.number(),
           type: z.string(),
-          base64: z.string(),
+          base64: z.string().optional(),
+          storagePath: z.string().optional(),
         }),
       )
       .optional(),
