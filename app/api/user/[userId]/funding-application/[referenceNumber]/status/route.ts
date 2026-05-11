@@ -6,7 +6,7 @@ import {
   getApplyFundingByReferenceNumber,
 } from "@/service/apply-funding";
 import { saveFeeAgreementToPDF } from "@/service/fee-agreement-pdf";
-import { getBrokerageById } from "@/service/brokerage";
+import { getBankById } from "@/service/bank-management";
 import { getUserById } from "@/service/user";
 import { sendTriggerEmail } from "@/service/trigger-email";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
@@ -96,12 +96,11 @@ export const PUT = withAuth(
 
             // 1. Try to get the specific brokerage email from the offer
             if (acceptedOffer.brokerageId) {
-              const brokerage = await getBrokerageById(
-                acceptedOffer.brokerageId,
-              );
-              if (brokerage && brokerage.email) {
-                emailTo = brokerage.email;
-                companyOrBrokerName = brokerage.companyName;
+              const brokerage = await getBankById(acceptedOffer.brokerageId);
+              const brokerageEmail = brokerage?.contacts?.[0]?.email;
+              if (brokerage && brokerageEmail) {
+                emailTo = brokerageEmail;
+                companyOrBrokerName = brokerage.bankName;
               }
             }
 

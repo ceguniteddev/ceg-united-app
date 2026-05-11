@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { formatUSD } from "@/lib/underwriting";
-import type { DealOffer } from "@/lib/income-funding-types";
+import type { DealOffer } from "@/types/income-funding-types";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -297,8 +297,54 @@ export function AcceptanceView({
           </p>
         </div>
 
+        {/* Important Instruction for MCA */}
+        {offer.dealType === "MCA" && (
+          <div className="mt-6 bg-red-50 border-2 border-red-200 rounded-xl p-5 shadow-sm">
+            <h3 className="text-red-800 font-bold text-base mb-3 flex items-center gap-2 uppercase tracking-wide">
+              <span className="bg-red-200 text-red-700 w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">
+                !
+              </span>
+              Critical Funding Call Instructions
+            </h3>
+            <div className="text-red-900 text-sm leading-relaxed space-y-3 font-medium">
+              <p>
+                When the lender calls you for a funding call, you{" "}
+                <strong className="font-extrabold text-red-950 underline decoration-red-300 underline-offset-4">
+                  must speak positively
+                </strong>{" "}
+                about your business. Do not mention any negative things.
+              </p>
+              <p>
+                Remember, these funds are for{" "}
+                <strong className="font-extrabold text-red-950">
+                  working capital only
+                </strong>
+                . If they ask if you need more money, that is a{" "}
+                <strong className="font-extrabold text-red-950">
+                  TRICK QUESTION
+                </strong>
+                . You must say:{" "}
+                <em className="bg-red-100 px-1 py-0.5 rounded font-bold">
+                  "No, I only need the amount you are funding me."
+                </em>
+              </p>
+              <p>
+                If you are taking multiple offers from other lenders,{" "}
+                <strong className="font-extrabold text-red-950 underline decoration-red-300 underline-offset-4">
+                  do not mention that
+                </strong>
+                .
+              </p>
+              <p>
+                Also, do not talk unless they ask you. Keep your answers short
+                and simple.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Checkbox */}
-        <label className="mt-5 flex items-start gap-3 cursor-pointer group">
+        <label className="mt-6 flex items-start gap-3 cursor-pointer group">
           <input
             type="checkbox"
             checked={agreed}

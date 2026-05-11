@@ -156,11 +156,11 @@ export const adminSidebarLinks = [
     route: "/admin/brokers",
     label: "Brokers",
   },
-  {
-    imgURL: "/icons/building-2.svg",
-    route: "/admin/brokerages",
-    label: "Brokerages",
-  },
+  // {
+  //   imgURL: "/icons/building-2.svg",
+  //   route: "/admin/brokerages",
+  //   label: "Brokerages",
+  // },
   // {
   //   imgURL: "/icons/credit-card.svg",
   //   route: "/admin/funding-products",

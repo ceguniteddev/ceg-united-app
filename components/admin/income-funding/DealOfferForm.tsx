@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Plus, Save, UploadIcon, X, FileText } from "lucide-react";
-import type { DealOffer, DealOfferDocument } from "@/lib/income-funding-types";
+import type {
+  DealOffer,
+  DealOfferDocument,
+} from "@/types/income-funding-types";
 import { factorRateOf, formatUSD } from "@/lib/underwriting";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +17,8 @@ import {
 } from "@/components/ui/form";
 import { CustomFormField } from "@/components/CustomFormField";
 import { useQuery } from "@tanstack/react-query";
-import { Brokerage } from "@/schema/brokerage";
+import { BankManagement } from "@/schema/bank-management";
+import { useBankManagementQuery } from "@/hooks/admin/bank-management";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { ApprovalLikelihood } from "@/lib/income-funding-types";
+import type { ApprovalLikelihood } from "@/types/income-funding-types";
 import {
   Dropzone,
   DropzoneContent,
@@ -157,14 +161,8 @@ export function DealOfferForm({
 
   const [isUploading, setIsUploading] = useState(false);
 
-  const { data: brokerages = [] } = useQuery<Brokerage[]>({
-    queryKey: ["brokerages"],
-    queryFn: async () => {
-      const res = await fetch("/api/admin/brokerages");
-      if (!res.ok) throw new Error("Failed to fetch brokerages");
-      return res.json();
-    },
-  });
+  const { banks: allBanks = [] } = useBankManagementQuery();
+  const brokerages = allBanks.filter((b) => b.isBrokerage);
 
   const form = useForm<DealOfferFormValues>({
     resolver: zodResolver(dealOfferSchema) as any,
@@ -355,7 +353,7 @@ export function DealOfferForm({
     const actualBrokerageId =
       values.brokerageId === "none" ? undefined : values.brokerageId;
     const brokerageName =
-      brokerages.find((b) => b.id === actualBrokerageId)?.companyName || "";
+      brokerages.find((b) => b.id === actualBrokerageId)?.bankName || "";
 
     onSave({
       id: initialData?.id || `offer_${Date.now()}`,
@@ -443,7 +441,7 @@ export function DealOfferForm({
               { value: "none", label: "Select Brokerage" },
               ...brokerages.map((b) => ({
                 value: b.id || "none",
-                label: b.companyName,
+                label: b.bankName,
               })),
             ]}
           />
@@ -758,7 +756,7 @@ export function DealOfferForm({
                     (pendingValues.brokerageId === "none"
                       ? undefined
                       : pendingValues.brokerageId),
-                )?.companyName || "None"}
+                )?.bankName || "None"}
               </div>
               <div>
                 <span className="font-semibold block text-xs text-gray-500 uppercase tracking-wide">

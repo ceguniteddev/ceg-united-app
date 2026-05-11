@@ -8,7 +8,7 @@ import {
   Send,
 } from "lucide-react";
 import { mockCoordinator } from "@/lib/income-funding-mock";
-import type { IncomeFundingDeal } from "@/lib/income-funding-types";
+import type { IncomeFundingDeal } from "@/types/income-funding-types";
 
 interface SubmittedViewProps {
   deal: IncomeFundingDeal;

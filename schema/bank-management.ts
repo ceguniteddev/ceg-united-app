@@ -11,6 +11,7 @@ export const bankManagementSchema = z.object({
   bankName: z.string().min(1, "Bank Name is required"),
   website: z.url("Invalid URL").optional().or(z.literal("")),
   contacts: z.array(contactSchema),
+  isBrokerage: z.boolean().optional(),
 });
 
 export type BankManagement = z.infer<typeof bankManagementSchema>;

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { AdminClient } from "@/lib/income-funding-types";
+import { AdminClient } from "@/types/income-funding-types";
 
 export const useAdminIncomeFunding = () => {
   const {

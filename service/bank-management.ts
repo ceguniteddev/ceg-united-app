@@ -24,6 +24,15 @@ export const getBanks = async () => {
   })) as BankManagement[];
 };
 
+export const getBankById = async (
+  id: string,
+): Promise<BankManagement | null> => {
+  const db = firestoreAdmin();
+  const doc = await db.collection(BANK_MANAGEMENT_COLLECTION).doc(id).get();
+  if (!doc.exists) return null;
+  return { id: doc.id, ...doc.data() } as BankManagement;
+};
+
 export const updateBank = async (id: string, data: Partial<BankManagement>) => {
   const db = firestoreAdmin();
   // Don't update the ID field itself

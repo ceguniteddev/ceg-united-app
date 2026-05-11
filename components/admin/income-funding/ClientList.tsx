@@ -2,7 +2,7 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 import { GradeBadge } from "@/components/income-funding/GradeBadge";
 import { formatUSD } from "@/lib/underwriting";
-import type { AdminClient, DealStatus } from "@/lib/income-funding-types";
+import type { AdminClient, DealStatus } from "@/types/income-funding-types";
 
 interface ClientListProps {
   clients: AdminClient[];

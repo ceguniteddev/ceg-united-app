@@ -11,7 +11,7 @@ import {
   X,
   Eye,
 } from "lucide-react";
-import type { DocumentRecord } from "@/lib/income-funding-types";
+import type { DocumentRecord } from "@/types/income-funding-types";
 
 interface DocumentUploadCardProps {
   doc: DocumentRecord;

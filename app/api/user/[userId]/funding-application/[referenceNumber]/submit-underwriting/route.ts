@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { badRequest, internalServerError } from "@/app/api/helpers";
 import { withAuth } from "@/lib/api-validation";
 import { updateApplicationStatus } from "@/service/apply-funding";
-import { getBrokerages } from "@/service/brokerage";
+import { getBanks } from "@/service/bank-management";
 import { sendTriggerEmail } from "@/service/trigger-email";
 import { EmailJobs } from "@/schema/trigger-email";
 import { getUserById, getUserDocuments } from "@/service/user";
@@ -34,10 +34,13 @@ export const POST = withAuth(
       await updateApplicationStatus(referenceNumber, "Sent to Brokerage");
 
       // 2. Fetch all brokerages
-      const brokerages = await getBrokerages();
+      const banks = await getBanks();
+      const brokerages = banks.filter((bank) => bank.isBrokerage);
 
       if (brokerages.length > 0) {
-        const brokerageEmails = brokerages.map((b) => b.email).filter(Boolean);
+        const brokerageEmails = brokerages
+          .flatMap((b) => b.contacts?.map((c) => c.email))
+          .filter(Boolean);
 
         // 3. Send email to brokerages
         if (brokerageEmails.length > 0) {
@@ -83,12 +86,13 @@ export const POST = withAuth(
 
           await sendTriggerEmail({
             to: brokerageEmails,
+            replyTo: process.env.OFFER_EMAIL || "offer@cegunited.com",
             message: {
               subject,
               html: htmlContent,
               attachments: attachments.length > 0 ? attachments : undefined,
             },
-            job: EmailJobs.GENERAL,
+            job: EmailJobs.OFFER,
           });
         }
       }

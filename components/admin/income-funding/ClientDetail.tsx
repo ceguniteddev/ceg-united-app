@@ -7,7 +7,7 @@ import type {
   AdminClient,
   DealOffer,
   DocumentRecord,
-} from "@/lib/income-funding-types";
+} from "@/types/income-funding-types";
 import { formatUSD } from "@/lib/underwriting";
 import {
   Sheet,
