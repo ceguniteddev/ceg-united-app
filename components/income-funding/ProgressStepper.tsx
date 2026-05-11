@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import type { DealStatus } from "@/lib/income-funding-types";
+import type { DealStatus } from "@/types/income-funding-types";
 
 interface ProgressStepperProps {
   status: DealStatus;

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { ClientList } from "@/components/admin/income-funding/ClientList";
 import { ClientDetail } from "@/components/admin/income-funding/ClientDetail";
-import type { AdminClient, DealOffer } from "@/lib/income-funding-types";
+import type { AdminClient, DealOffer } from "@/types/income-funding-types";
 import { withAdminGuard } from "@/components/wrapper";
 import { useAdminIncomeFunding } from "@/hooks/admin/income-funding";
 import Spinner from "@/components/Spinner";

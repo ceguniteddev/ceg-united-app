@@ -12,7 +12,7 @@ import type {
   LoanCoordinator,
   UnderwritingInput,
   UserProfile,
-} from "./income-funding-types";
+} from "../types/income-funding-types";
 
 // -------- The signed-in client --------
 export const mockUser: UserProfile = {

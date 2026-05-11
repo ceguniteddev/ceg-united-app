@@ -86,12 +86,13 @@ export const POST = withAuth(
 
           await sendTriggerEmail({
             to: brokerageEmails,
+            replyTo: process.env.OFFER_EMAIL || "offer@cegunited.com",
             message: {
               subject,
               html: htmlContent,
               attachments: attachments.length > 0 ? attachments : undefined,
             },
-            job: EmailJobs.GENERAL,
+            job: EmailJobs.OFFER,
           });
         }
       }

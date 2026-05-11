@@ -1,39 +1,53 @@
-import { Check, FileText, FileSignature, Banknote, ArrowRight, Mail } from 'lucide-react'
-import { OfferCard } from './OfferCard'
-import { formatUSD } from '@/lib/underwriting'
-import type { DealOffer, IncomeFundingDeal } from '@/lib/income-funding-types'
+import {
+  Check,
+  FileText,
+  FileSignature,
+  Banknote,
+  ArrowRight,
+  Mail,
+} from "lucide-react";
+import { OfferCard } from "./OfferCard";
+import { formatUSD } from "@/lib/underwriting";
+import type {
+  DealOffer,
+  IncomeFundingDeal,
+} from "@/types/income-funding-types";
 
 interface CompleteViewProps {
-  deal: IncomeFundingDeal
-  offer: DealOffer
-  onReturn: () => void
+  deal: IncomeFundingDeal;
+  offer: DealOffer;
+  onReturn: () => void;
 }
 
-const FEE_PERCENTAGE = 0.05
+const FEE_PERCENTAGE = 0.05;
 
 const nextSteps = [
   {
     icon: FileText,
-    title: 'Lender sends contracts',
-    desc: 'Expect final loan documents in your email within 24 hours.',
-    eta: '24 h',
+    title: "Lender sends contracts",
+    desc: "Expect final loan documents in your email within 24 hours.",
+    eta: "24 h",
   },
   {
     icon: FileSignature,
-    title: 'Sign final documents',
+    title: "Sign final documents",
     desc: "E-sign the lender's funding agreement once it arrives.",
-    eta: '1–2 days',
+    eta: "1–2 days",
   },
   {
     icon: Banknote,
-    title: 'Funds wired to your account',
-    desc: 'Lender wires funds to the bank account on your voided check.',
-    eta: '1–3 business days',
+    title: "Funds wired to your account",
+    desc: "Lender wires funds to the bank account on your voided check.",
+    eta: "1–3 business days",
   },
-]
+];
 
-export function CompleteView({ deal: _deal, offer, onReturn }: CompleteViewProps) {
-  const fee = Math.round(offer.fundingAmount * FEE_PERCENTAGE)
+export function CompleteView({
+  deal: _deal,
+  offer,
+  onReturn,
+}: CompleteViewProps) {
+  const fee = Math.round(offer.fundingAmount * FEE_PERCENTAGE);
 
   return (
     <div className="space-y-6">
@@ -51,8 +65,11 @@ export function CompleteView({ deal: _deal, offer, onReturn }: CompleteViewProps
             Your deal has been submitted
           </h1>
           <p className="mt-2 text-sm md:text-base text-gray-500 max-w-md mx-auto">
-            Please check your email for final contracts from{' '}
-            <span className="font-semibold text-gray-700">{offer.lenderName}</span>.
+            Please check your email for final contracts from{" "}
+            <span className="font-semibold text-gray-700">
+              {offer.lenderName}
+            </span>
+            .
           </p>
 
           <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-100 text-amber-700 text-xs font-semibold">
@@ -101,7 +118,7 @@ export function CompleteView({ deal: _deal, offer, onReturn }: CompleteViewProps
         </h2>
         <ol className="space-y-3">
           {nextSteps.map((step, i) => {
-            const Icon = step.icon
+            const Icon = step.icon;
             return (
               <li
                 key={step.title}
@@ -123,7 +140,7 @@ export function CompleteView({ deal: _deal, offer, onReturn }: CompleteViewProps
                   <p className="mt-0.5 text-xs text-gray-500">{step.desc}</p>
                 </div>
               </li>
-            )
+            );
           })}
         </ol>
       </div>
@@ -138,5 +155,5 @@ export function CompleteView({ deal: _deal, offer, onReturn }: CompleteViewProps
         </button>
       </div>
     </div>
-  )
+  );
 }

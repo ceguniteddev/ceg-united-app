@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Pencil, Trash2, FileText } from "lucide-react";
-import type { DealOffer, DealOfferDocument } from "@/lib/income-funding-types";
+import type {
+  DealOffer,
+  DealOfferDocument,
+} from "@/types/income-funding-types";
 import { formatUSD } from "@/lib/underwriting";
 import { ConfirmButton } from "@/components/Confirmation";
 import {

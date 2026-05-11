@@ -1,5 +1,8 @@
 import { CheckCircle2, Clock, Repeat, TrendingUp, X } from "lucide-react";
-import type { ApprovalLikelihood, DealOffer } from "@/lib/income-funding-types";
+import type {
+  ApprovalLikelihood,
+  DealOffer,
+} from "@/types/income-funding-types";
 import { formatUSD } from "@/lib/underwriting";
 import {
   AlertDialog,

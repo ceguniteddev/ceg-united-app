@@ -3,7 +3,10 @@ import { Sparkles, Award } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { GradeBadge } from "./GradeBadge";
 import { formatUSD } from "@/lib/underwriting";
-import type { DealOffer, IncomeFundingDeal } from "@/lib/income-funding-types";
+import type {
+  DealOffer,
+  IncomeFundingDeal,
+} from "@/types/income-funding-types";
 
 interface OffersViewProps {
   deal: IncomeFundingDeal;

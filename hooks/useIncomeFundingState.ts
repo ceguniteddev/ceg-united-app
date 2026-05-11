@@ -4,7 +4,7 @@ import type {
   DealStatus,
   DocumentRecord,
   IncomeFundingDeal,
-} from "@/lib/income-funding-types";
+} from "@/types/income-funding-types";
 import { useUserDocumentsQuery } from "@/hooks/document";
 import { useAuth } from "@/provider/AuthContext";
 import { useGetUserApplyFunding } from "@/hooks/apply-funding";

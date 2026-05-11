@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Plus, Save, UploadIcon, X, FileText } from "lucide-react";
-import type { DealOffer, DealOfferDocument } from "@/lib/income-funding-types";
+import type {
+  DealOffer,
+  DealOfferDocument,
+} from "@/types/income-funding-types";
 import { factorRateOf, formatUSD } from "@/lib/underwriting";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { ApprovalLikelihood } from "@/lib/income-funding-types";
+import type { ApprovalLikelihood } from "@/types/income-funding-types";
 import {
   Dropzone,
   DropzoneContent,

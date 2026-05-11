@@ -1,25 +1,29 @@
-import { useState } from 'react'
-import { RotateCcw, X, Wrench } from 'lucide-react'
-import type { DealStatus } from '@/lib/income-funding-types'
+import { useState } from "react";
+import { RotateCcw, X, Wrench } from "lucide-react";
+import type { DealStatus } from "@/types/income-funding-types";
 
 interface DemoToolbarProps {
-  status: DealStatus
-  onSetStatus: (s: DealStatus) => void
-  onReset: () => void
+  status: DealStatus;
+  onSetStatus: (s: DealStatus) => void;
+  onReset: () => void;
 }
 
 const states: { key: DealStatus; label: string }[] = [
-  { key: 'prequalified', label: 'Prequalified' },
-  { key: 'collecting-documents', label: 'Documents' },
-  { key: 'under-review', label: 'Submitted' },
-  { key: 'offers-ready', label: 'Offers' },
-  { key: 'accepting', label: 'Accepting' },
-  { key: 'complete', label: 'Complete' },
-]
+  { key: "prequalified", label: "Prequalified" },
+  { key: "collecting-documents", label: "Documents" },
+  { key: "under-review", label: "Submitted" },
+  { key: "offers-ready", label: "Offers" },
+  { key: "accepting", label: "Accepting" },
+  { key: "complete", label: "Complete" },
+];
 
-export function DemoToolbar({ status, onSetStatus, onReset }: DemoToolbarProps) {
-  const [dismissed, setDismissed] = useState(false)
-  if (dismissed) return null
+export function DemoToolbar({
+  status,
+  onSetStatus,
+  onReset,
+}: DemoToolbarProps) {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
 
   return (
     <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white text-xs">
@@ -35,8 +39,8 @@ export function DemoToolbar({ status, onSetStatus, onReset }: DemoToolbarProps) 
               onClick={() => onSetStatus(s.key)}
               className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
                 status === s.key
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-white/5 text-gray-200 hover:bg-white/10'
+                  ? "bg-brand-600 text-white"
+                  : "bg-white/5 text-gray-200 hover:bg-white/10"
               }`}
             >
               {s.label}
@@ -62,5 +66,5 @@ export function DemoToolbar({ status, onSetStatus, onReset }: DemoToolbarProps) 
         </div>
       </div>
     </div>
-  )
+  );
 }

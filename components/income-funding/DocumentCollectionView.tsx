@@ -4,7 +4,7 @@ import { DocumentUploadCard } from "./DocumentUploadCard";
 import type {
   DocumentRecord,
   IncomeFundingDeal,
-} from "@/lib/income-funding-types";
+} from "@/types/income-funding-types";
 import { useAuth } from "@/provider/AuthContext";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";

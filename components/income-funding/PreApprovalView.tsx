@@ -12,7 +12,7 @@ import { AnimatedCounter } from "./AnimatedCounter";
 import { StatCard } from "./StatCard";
 import { GradeBadge } from "./GradeBadge";
 import { formatUSD } from "@/lib/underwriting";
-import type { IncomeFundingDeal } from "@/lib/income-funding-types";
+import type { IncomeFundingDeal } from "@/types/income-funding-types";
 import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 import { ApplyFunding } from "@/schema/apply-funding";
 
