@@ -76,6 +76,8 @@ import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 
 const columnHelper = createColumnHelper<BankManagementType>();
 
+import { Badge } from "@/components/ui/badge";
+
 const BankManagement = () => {
   const { banks, isLoading } = useBankManagementQuery();
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -107,7 +109,16 @@ const BankManagement = () => {
         header: ({ column }) => (
           <SortableHeader column={column} title="Bank Name" />
         ),
-        cell: (info) => <div className="font-medium">{info.getValue()}</div>,
+        cell: (info) => (
+          <div className="font-medium flex flex-col items-start gap-1">
+            {info.row.original.isBrokerage && (
+              <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-300">
+                Brokerage
+              </Badge>
+            )}
+            {info.getValue()}
+          </div>
+        ),
       }),
       columnHelper.accessor("website", {
         header: ({ column }) => (
@@ -304,8 +315,13 @@ const BankManagement = () => {
               <Card key={bank.id} className="overflow-hidden">
                 <CardHeader className="bg-muted/30 p-4 pb-2">
                   <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg font-bold break-words">
+                    <div className="flex flex-col gap-1 items-start">
+                      <CardTitle className="text-lg font-bold break-words flex flex-col gap-1 items-start">
+                        {bank.isBrokerage && (
+                          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-300">
+                            Brokerage
+                          </Badge>
+                        )}
                         {bank.website ? (
                           <a
                             href={bank.website}
@@ -462,6 +478,8 @@ const ActionMenu = ({
   );
 };
 
+import { CustomFormCheckbox } from "@/components/CustomFormCheckbox";
+
 const BankForm = ({
   initialData,
   onClose,
@@ -478,6 +496,7 @@ const BankForm = ({
       bankName: "",
       website: "",
       contacts: [],
+      isBrokerage: false,
     },
   });
 
@@ -492,6 +511,7 @@ const BankForm = ({
         bankName: "",
         website: "",
         contacts: [],
+        isBrokerage: false,
       },
     );
   }, [initialData, form]);
@@ -510,6 +530,11 @@ const BankForm = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <CustomFormCheckbox
+          name="isBrokerage"
+          label="Set as Brokerage"
+          className="bg-blue-50 border-blue-200 text-blue-900"
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <CustomFormField
             name="bankName"
