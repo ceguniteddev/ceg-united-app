@@ -36,7 +36,7 @@ interface AuthContextType {
   signIn: (
     token: string | null,
     email: string,
-    password: string
+    password: string,
   ) => Promise<void>;
   logOut: () => Promise<void>;
   resetPassword: (token: string | null, email: string) => Promise<void>;
@@ -81,9 +81,11 @@ export function AuthProvider({
   }, []);
 
   const logOut = useCallback(async () => {
-    await Promise.all([await logoutSession(), await authFirebase.signOut()]);
-    router.push("/");
+    // 1. Cancel active queries and clear cache immediately to prevent 401s during logout
+    await queryClient.cancelQueries({ predicate: () => true });
+    queryClient.clear();
 
+    // 2. Optimistically clear user state
     setUser(null);
     setRole(null);
     setIsAdmin(false);
@@ -91,8 +93,15 @@ export function AuthProvider({
     setIsOnboarded(false);
     setUserData(null);
 
-    await queryClient.cancelQueries({ predicate: () => true });
-    queryClient.clear();
+    // 3. Perform backend sign out
+    try {
+      await Promise.all([logoutSession(), authFirebase.signOut()]);
+    } catch (error) {
+      console.error("Error during backend logout:", error);
+    }
+
+    // 4. Navigate to home
+    router.push("/");
   }, [router, queryClient]);
 
   useEffect(() => {
@@ -121,7 +130,7 @@ export function AuthProvider({
         } finally {
           setLoading(false);
         }
-      }
+      },
     );
     return () => unsubscribe();
   }, [loadAndSetUserData]);
@@ -194,7 +203,7 @@ export function AuthProvider({
         const { user: firebaseUser } = await signInWithEmailAndPassword(
           authFirebase,
           email,
-          password
+          password,
         );
 
         if (!firebaseUser?.emailVerified) {
@@ -206,7 +215,7 @@ export function AuthProvider({
 
         if (userData.activeStatus === "InActive") {
           throw new AppError(
-            "Your account has been deactivated. Please contact contact@cegunited.com."
+            "Your account has been deactivated. Please contact contact@cegunited.com.",
           );
         }
 
@@ -243,7 +252,7 @@ export function AuthProvider({
         setIsLoggingIn(false); // Reset login flag
       }
     },
-    [loadAndSetUserData, queryClient, router]
+    [loadAndSetUserData, queryClient, router],
   );
 
   const resetPassword = useCallback(
@@ -253,7 +262,7 @@ export function AuthProvider({
 
       const captchaData = await createEnterpriseAssessment(
         token,
-        "forgot_password"
+        "forgot_password",
       );
       if (!captchaData || captchaData.score < 0.5) {
         throw new AppError("Captcha verification failed. Please try again.");
@@ -275,7 +284,7 @@ export function AuthProvider({
         throw new Error("Unable to send reset link. Please try again.");
       }
     },
-    []
+    [],
   );
 
   const authContextValue = useMemo(
@@ -302,7 +311,7 @@ export function AuthProvider({
       loading,
       isOnboarded,
       resetPassword,
-    ]
+    ],
   );
 
   return (
