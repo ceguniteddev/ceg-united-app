@@ -328,17 +328,6 @@ export function AcceptanceView({
                   "No, I only need the amount you are funding me."
                 </em>
               </p>
-              <p>
-                If you are taking multiple offers from other lenders,{" "}
-                <strong className="font-extrabold text-red-950 underline decoration-red-300 underline-offset-4">
-                  do not mention that
-                </strong>
-                .
-              </p>
-              <p>
-                Also, do not talk unless they ask you. Keep your answers short
-                and simple.
-              </p>
             </div>
           </div>
         )}
