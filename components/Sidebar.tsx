@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import Footer from "./Footer";
 // import PlaidLink from "./PlaidLink";
 import { useAuth } from "@/provider/AuthContext";
+import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 // import PlaidIncomeLinkBank from "./PlaidLinkIncomeBank";
 // import PlaidIncomeLinkPayroll from "./PlaidLinkIncomePayroll";
 // import { useEffect } from "react";
@@ -21,6 +22,7 @@ import { isPlaidProductionReady } from "@/lib/plaid";
 
 const Sidebar = () => {
   const { user, isOnboarded, userData } = useAuth();
+  const { appliedFunding } = useGetUserApplyFunding();
   const pathname = usePathname();
   // const { updateOnboarding } = useUpdateUserOnboardingMutation();
   // useEffect(() => {
@@ -81,6 +83,22 @@ const Sidebar = () => {
         </Link>
         {sidebarLinks
           .filter((item) => {
+            // Income Funding logic
+            const hasIncomeBasedFunding = appliedFunding?.some((app) =>
+              app.fundingProducts?.includes("Business Income Based Funding"),
+            );
+
+            // if (item.route === "/client/my-funding" && hasIncomeBasedFunding) {
+            //   return false; // Hide generic map if they have income funding
+            // }
+
+            if (
+              item.route === "/client/income-funding" &&
+              !hasIncomeBasedFunding
+            ) {
+              return false; // Hide income funding if they don't have it
+            }
+
             // If Plaid is not ready, filter out (remove) the "My Accounts" link
             if (!isPlaidProdReady && item.route === "/client/my-accounts") {
               return false;

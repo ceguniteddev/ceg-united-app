@@ -112,7 +112,7 @@ export const generatePdf = onRequest(
       res.set("Content-Type", "application/pdf");
       res.set(
         "Content-Disposition",
-        `attachment; filename="${(title || "letter").replace(/\s+/g, "_")}.pdf"`
+        `attachment; filename="${(title || "letter").replace(/\s+/g, "_")}.pdf"`,
       );
       res.send(pdfBuffer);
     } catch (error: any) {
@@ -124,5 +124,7 @@ export const generatePdf = onRequest(
         .status(500)
         .json({ error: "Failed to generate PDF", details: error.message });
     }
-  }
+  },
 );
+
+export * from "./classifyDocument";

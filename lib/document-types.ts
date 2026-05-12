@@ -14,6 +14,7 @@ import {
   ReceiptText,
   ShieldAlert,
   CreditCard,
+  BadgeDollarSign,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -155,5 +156,23 @@ export const DOCUMENT_TYPES: DocumentType[] = [
     icon: Lightbulb,
     category: "business",
     required: false, // Optional
+  },
+  {
+    id: "VOIDED_CHECK",
+    title: "Voided Check",
+    description:
+      "Upload a voided business check to verify your bank account for funding.",
+    icon: ReceiptText,
+    category: "business",
+    required: false,
+  },
+  {
+    id: "OFFER_DOCUMENT",
+    title: "Offer Document",
+    description:
+      "Upload the offer document for your funding request.",
+    icon: BadgeDollarSign,
+    category: "business",
+    required: false,
   },
 ];

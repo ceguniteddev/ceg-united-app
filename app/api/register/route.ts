@@ -2,7 +2,11 @@ import { badRequest, internalServerError, notAllowed } from "@/app/api/helpers";
 import AppError from "@/error/AppError";
 import { createEnterpriseAssessment } from "@/lib/captcha/captcha";
 import { User } from "@/schema/registration";
-import { consumeClientInvitationToken, registerUser, verifyClientInvitationToken } from "@/service/user";
+import {
+  consumeClientInvitationToken,
+  registerUser,
+  verifyClientInvitationToken,
+} from "@/service/user";
 import { NextRequest, NextResponse } from "next/server";
 
 export const POST = async (req: NextRequest) => {
@@ -10,11 +14,22 @@ export const POST = async (req: NextRequest) => {
     return notAllowed();
   }
 
+  const adminAccessKey =
+    req.headers.get("ADMIN_ACCESS_KEY") || req.headers.get("admin-access-key");
+  const isAdmin = adminAccessKey === process.env.ADMIN_ACCESS_KEY;
+
   const body = await req.json();
-  const { token, step1Data, step2Data, values, invitationToken, invitationType } = body;
+  const {
+    token,
+    step1Data,
+    step2Data,
+    values,
+    invitationToken,
+    invitationType,
+  } = body;
 
   try {
-    if (!token) {
+    if (!token && !isAdmin) {
       return badRequest({ errors: "Missing token" });
     }
 
@@ -23,7 +38,9 @@ export const POST = async (req: NextRequest) => {
       return badRequest({ errors: "Missing registration data" });
     }
 
-    await createEnterpriseAssessment(token, "registration");
+    if (!isAdmin) {
+      await createEnterpriseAssessment(token, "registration");
+    }
 
     let brokerId: string | undefined;
     let brokerName: string | undefined;
@@ -58,8 +75,8 @@ export const POST = async (req: NextRequest) => {
       });
     } else {
       // Fallback to old single-step registration
-      await registerUser({ 
-        user: values, 
+      await registerUser({
+        user: values,
         registrationType: "Self",
         brokerId,
         brokerName,

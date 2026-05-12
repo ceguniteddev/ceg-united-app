@@ -1,0 +1,70 @@
+import { useState } from "react";
+import { RotateCcw, X, Wrench } from "lucide-react";
+import type { DealStatus } from "@/types/income-funding-types";
+
+interface DemoToolbarProps {
+  status: DealStatus;
+  onSetStatus: (s: DealStatus) => void;
+  onReset: () => void;
+}
+
+const states: { key: DealStatus; label: string }[] = [
+  { key: "prequalified", label: "Prequalified" },
+  { key: "collecting-documents", label: "Documents" },
+  { key: "under-review", label: "Submitted" },
+  { key: "offers-ready", label: "Offers" },
+  { key: "accepting", label: "Accepting" },
+  { key: "complete", label: "Complete" },
+];
+
+export function DemoToolbar({
+  status,
+  onSetStatus,
+  onReset,
+}: DemoToolbarProps) {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
+
+  return (
+    <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white text-xs">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-2 flex items-center gap-2 sm:gap-3 flex-wrap">
+        <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-semibold text-gray-300 shrink-0">
+          <Wrench className="w-3.5 h-3.5" />
+          Demo State
+        </div>
+        <div className="flex items-center gap-1 flex-wrap">
+          {states.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => onSetStatus(s.key)}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                status === s.key
+                  ? "bg-brand-600 text-white"
+                  : "bg-white/5 text-gray-200 hover:bg-white/10"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          <button
+            onClick={onReset}
+            className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-gray-300 hover:text-white hover:bg-white/10 transition"
+            title="Reset demo"
+          >
+            <RotateCcw className="w-3 h-3" />
+            Reset
+          </button>
+          <button
+            onClick={() => setDismissed(true)}
+            className="p-1 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition"
+            aria-label="Dismiss demo toolbar"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

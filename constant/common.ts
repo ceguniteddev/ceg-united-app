@@ -74,6 +74,11 @@ export const sidebarLinks = [
     label: "My Funding",
   },
   {
+    imgURL: "/icons/money-send.svg",
+    route: "/client/income-funding",
+    label: "Income Funding",
+  },
+  {
     imgURL: "/icons/file-chart-column.svg",
     route: "/client/my-analysis",
     label: "My Analysis",
@@ -152,6 +157,11 @@ export const adminSidebarLinks = [
     label: "Brokers",
   },
   // {
+  //   imgURL: "/icons/building-2.svg",
+  //   route: "/admin/brokerages",
+  //   label: "Brokerages",
+  // },
+  // {
   //   imgURL: "/icons/credit-card.svg",
   //   route: "/admin/funding-products",
   //   label: "Products",
@@ -170,6 +180,11 @@ export const adminSidebarLinks = [
     imgURL: "/icons/money-send.svg",
     route: "/admin/funding-application",
     label: "Funding Applications",
+  },
+  {
+    imgURL: "/icons/money-send.svg",
+    route: "/admin/coordinator",
+    label: "Loan Coordinator",
   },
   {
     imgURL: "/icons/chart-no-axes-combined.svg",

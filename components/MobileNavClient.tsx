@@ -17,10 +17,12 @@ import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
 import { isPlaidProductionReady } from "@/lib/plaid";
+import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 
 const MobileNavClient = () => {
   const { user, userData } = useAuth();
+  const { appliedFunding } = useGetUserApplyFunding();
   const pathname = usePathname();
   // const { denefitsContract } = useGetDenefitsContractsByUserId(user?.uid || "");
   const isPlaidProdReady = isPlaidProductionReady();
@@ -62,6 +64,27 @@ const MobileNavClient = () => {
             <nav className="flex-1 flex flex-col px-4 overflow-y-auto">
               {sidebarLinks
                 .filter((item) => {
+                  // Income Funding logic
+                  const hasIncomeBasedFunding = appliedFunding?.some((app) =>
+                    app.fundingProducts?.includes(
+                      "Business Income Based Funding",
+                    ),
+                  );
+
+                  if (
+                    item.route === "/client/my-funding" &&
+                    hasIncomeBasedFunding
+                  ) {
+                    return false; // Hide generic map if they have income funding
+                  }
+
+                  if (
+                    item.route === "/client/income-funding" &&
+                    !hasIncomeBasedFunding
+                  ) {
+                    return false; // Hide income funding if they don't have it
+                  }
+
                   if (
                     !isPlaidProdReady &&
                     item.route === "/client/my-accounts"
@@ -105,7 +128,7 @@ const MobileNavClient = () => {
                         href={item.route}
                         className={cn(
                           "flex gap-3 items-center py-1 px-4 rounded-lg mb-2",
-                          { "bg-bank-gradient": isActive }
+                          { "bg-bank-gradient": isActive },
                         )}
                       >
                         <div className="relative size-6">

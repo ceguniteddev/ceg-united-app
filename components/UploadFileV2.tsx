@@ -23,6 +23,15 @@ const UploadFile = ({ userId, documentType }: UploadFileProps) => {
   const handleDrop = useCallback(
     async (droppedFiles: File[]) => {
       if (!droppedFiles || droppedFiles.length === 0) return;
+
+      const validFiles = droppedFiles.filter(
+        (f) => f.type === "application/pdf" || f.type.startsWith("image/"),
+      );
+
+      if (validFiles.length === 0) {
+        return;
+      }
+
       setIsLoading(true);
 
       const formData = new FormData();
@@ -33,7 +42,7 @@ const UploadFile = ({ userId, documentType }: UploadFileProps) => {
       }
 
       // Append all dropped files to the form data
-      droppedFiles.forEach((file) => {
+      validFiles.forEach((file) => {
         formData.append("files", file);
       });
 
@@ -59,15 +68,15 @@ const UploadFile = ({ userId, documentType }: UploadFileProps) => {
         setIsLoading(false);
       }
     },
-    [userId, documentType, queryClient]
+    [userId, documentType, queryClient],
   );
 
   const title = documentType
     ? `Upload: ${documentType.title}`
     : "Upload Other Document";
   const description = documentType
-    ? documentType.description
-    : "Upload any additional documents required for your application.";
+    ? `${documentType.description} (PDF or Image only)`
+    : "Upload any additional documents required for your application. (PDF or Image only)";
 
   return (
     <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 mb-8">
@@ -78,6 +87,10 @@ const UploadFile = ({ userId, documentType }: UploadFileProps) => {
         className="cursor-pointer"
         onDrop={handleDrop}
         disabled={isLoading}
+        accept={{
+          "application/pdf": [".pdf"],
+          "image/*": [".png", ".jpg", ".jpeg", ".gif"],
+        }}
       >
         <DropzoneEmptyState />
         <DropzoneContent />

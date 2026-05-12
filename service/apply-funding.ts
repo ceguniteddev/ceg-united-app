@@ -26,6 +26,7 @@ import { noteSchema, NoteSchema } from "@/schema/notes";
 import { getUserById } from "./user";
 import { RegistrationType } from "@/schema/users";
 import { uploadDocument } from "./documents";
+import { calculateBusinessIncomePreApproved } from "./n8n";
 
 export const applyFunding = async ({
   value,
@@ -61,12 +62,30 @@ export const applyFunding = async ({
     if (bankStatements && bankStatements.length > 0) {
       for (const doc of bankStatements) {
         try {
-          // Extract base64 data (remove data:application/pdf;base64, prefix)
-          const base64Data = doc.base64.split(",")[1];
-          const buffer = Buffer.from(base64Data, "base64");
+          let buffer: Buffer;
+          if (doc.storagePath) {
+            const bucket = storageAdmin();
+            const [fileBuffer] = await bucket.file(doc.storagePath).download();
+            buffer = fileBuffer;
+            // Clean up temp file
+            bucket
+              .file(doc.storagePath)
+              .delete()
+              .catch(() => {});
+          } else if (doc.base64) {
+            // Extract base64 data (remove data:application/pdf;base64, prefix if exists)
+            const base64Data = doc.base64.includes(",")
+              ? doc.base64.split(",")[1]
+              : doc.base64;
+            buffer = Buffer.from(base64Data, "base64");
+          } else {
+            continue;
+          }
 
           // Create a File object from the buffer
-          const file = new File([buffer], doc.name, { type: doc.type });
+          const file = new File([new Uint8Array(buffer)], doc.name, {
+            type: doc.type,
+          });
 
           // Use uploadDocument service function
           await uploadDocument(value.userId!, file, "BANK_STATEMENTS", {
@@ -85,12 +104,29 @@ export const applyFunding = async ({
     if (driverLicenseDocuments && driverLicenseDocuments.length > 0) {
       for (const doc of driverLicenseDocuments) {
         try {
-          // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix)
-          const base64Data = doc.base64.split(",")[1];
-          const buffer = Buffer.from(base64Data, "base64");
+          let buffer: Buffer;
+          if (doc.storagePath) {
+            const bucket = storageAdmin();
+            const [fileBuffer] = await bucket.file(doc.storagePath).download();
+            buffer = fileBuffer;
+            bucket
+              .file(doc.storagePath)
+              .delete()
+              .catch(() => {});
+          } else if (doc.base64) {
+            // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix if exists)
+            const base64Data = doc.base64.includes(",")
+              ? doc.base64.split(",")[1]
+              : doc.base64;
+            buffer = Buffer.from(base64Data, "base64");
+          } else {
+            continue;
+          }
 
           // Create a File object from the buffer
-          const file = new File([buffer], doc.name, { type: doc.type });
+          const file = new File([new Uint8Array(buffer)], doc.name, {
+            type: doc.type,
+          });
 
           // Use uploadDocument service function
           await uploadDocument(value.userId!, file, "DRIVERS_LICENSE", {
@@ -132,6 +168,18 @@ export const applyFunding = async ({
         referenceNumber,
         value.businessId,
       );
+    }
+  }
+
+  // add a checking if fundingProducts include "Business Income Based Funding"
+  if (value.fundingProducts?.includes("Business Income Based Funding")) {
+    try {
+      await calculateBusinessIncomePreApproved({
+        userId: value.userId!,
+        referenceNumber,
+      });
+    } catch (error) {
+      console.error("Error calculating business income pre-approved:", error);
     }
   }
 
@@ -358,7 +406,13 @@ export const updateApplicationStatus = async (
 
   const db = firestoreAdmin();
   const appRef = db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber);
-  await appRef.update({ status, approveOrDecline: approveOrDeclineValue });
+
+  const updateData: any = { status };
+  if (approveOrDeclineValue !== undefined) {
+    updateData.approveOrDecline = approveOrDeclineValue;
+  }
+
+  await appRef.update(updateData);
 };
 
 export const addFundApplicationNotes = async ({
@@ -512,12 +566,29 @@ export const updateApplyFunding = async ({
     if (bankStatements && bankStatements.length > 0) {
       for (const doc of bankStatements) {
         try {
-          // Extract base64 data (remove data:application/pdf;base64, prefix)
-          const base64Data = doc.base64.split(",")[1];
-          const buffer = Buffer.from(base64Data, "base64");
+          let buffer: Buffer;
+          if (doc.storagePath) {
+            const bucket = storageAdmin();
+            const [fileBuffer] = await bucket.file(doc.storagePath).download();
+            buffer = fileBuffer;
+            bucket
+              .file(doc.storagePath)
+              .delete()
+              .catch(() => {});
+          } else if (doc.base64) {
+            // Extract base64 data (remove data:application/pdf;base64, prefix if exists)
+            const base64Data = doc.base64.includes(",")
+              ? doc.base64.split(",")[1]
+              : doc.base64;
+            buffer = Buffer.from(base64Data, "base64");
+          } else {
+            continue;
+          }
 
           // Create a File object from the buffer
-          const file = new File([buffer], doc.name, { type: doc.type });
+          const file = new File([new Uint8Array(buffer)], doc.name, {
+            type: doc.type,
+          });
 
           // Use uploadDocument service function
           await uploadDocument(value.userId!, file, "BANK_STATEMENTS", {
@@ -536,12 +607,29 @@ export const updateApplyFunding = async ({
     if (driverLicenseDocuments && driverLicenseDocuments.length > 0) {
       for (const doc of driverLicenseDocuments) {
         try {
-          // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix)
-          const base64Data = doc.base64.split(",")[1];
-          const buffer = Buffer.from(base64Data, "base64");
+          let buffer: Buffer;
+          if (doc.storagePath) {
+            const bucket = storageAdmin();
+            const [fileBuffer] = await bucket.file(doc.storagePath).download();
+            buffer = fileBuffer;
+            bucket
+              .file(doc.storagePath)
+              .delete()
+              .catch(() => {});
+          } else if (doc.base64) {
+            // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix if exists)
+            const base64Data = doc.base64.includes(",")
+              ? doc.base64.split(",")[1]
+              : doc.base64;
+            buffer = Buffer.from(base64Data, "base64");
+          } else {
+            continue;
+          }
 
           // Create a File object from the buffer
-          const file = new File([buffer], doc.name, { type: doc.type });
+          const file = new File([new Uint8Array(buffer)], doc.name, {
+            type: doc.type,
+          });
 
           // Use uploadDocument service function
           await uploadDocument(value.userId!, file, "DRIVERS_LICENSE", {
@@ -556,4 +644,42 @@ export const updateApplyFunding = async ({
       }
     }
   }
+};
+
+export const saveBusinessIncomeComputation = async (
+  referenceNumber: string,
+  userId: string,
+  computationData: any,
+) => {
+  if (!referenceNumber) {
+    throw new AppError("Reference number is required.");
+  }
+  if (!userId) {
+    throw new AppError("User ID is required.");
+  }
+
+  const db = firestoreAdmin();
+  const docRef = db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber);
+
+  const doc = await docRef.get();
+  if (!doc.exists) {
+    throw new AppError("Funding application not found.");
+  }
+
+  const data = doc.data();
+  if (data?.userId !== userId) {
+    throw new AppError("Unauthorized access to funding application.");
+  }
+
+  await docRef.set(
+    {
+      businessIncomeComputation: {
+        ...computationData,
+        createdAt: new Date().toISOString(),
+      },
+    },
+    { merge: true },
+  );
+
+  return { success: true };
 };

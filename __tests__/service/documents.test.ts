@@ -69,11 +69,15 @@ describe("service/documents", () => {
       const result = await uploadDocument("user-1", file, "PASSPORT");
 
       expect(mockFile).toHaveBeenCalledWith(
-        "documents/user-1/PASSPORT_passport.pdf",
+        expect.stringMatching(
+          /^documents\/user-1\/PASSPORT_\d+_passport\.pdf$/,
+        ),
       );
       expect(result).toEqual({
         originalFilename: "passport.pdf",
-        gcsPath: "documents/user-1/PASSPORT_passport.pdf",
+        gcsPath: expect.stringMatching(
+          /^documents\/user-1\/PASSPORT_\d+_passport\.pdf$/,
+        ),
         size: 10,
         contentType: "application/pdf",
       });
@@ -146,7 +150,9 @@ describe("service/documents", () => {
 
       expect(result).toMatchObject({
         originalFilename: "report.pdf",
-        gcsPath: "documents/user-42/REPORT_report.pdf",
+        gcsPath: expect.stringMatching(
+          /^documents\/user-42\/REPORT_\d+_report\.pdf$/,
+        ),
         size: 10,
         contentType: "application/pdf",
       });

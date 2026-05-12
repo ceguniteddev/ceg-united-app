@@ -594,7 +594,7 @@ export const FundingApplicationDocument = ({ application, user }: Props) => {
                 {application.businessPropertyType || "—"}
               </Text>
             </View>
-            <View style={styles.columnThird}>
+            {/* <View style={styles.columnThird}>
               <Text style={styles.label}>Landlord Name</Text>
               <Text style={styles.value}>
                 {application.landlordName || "—"}
@@ -611,7 +611,7 @@ export const FundingApplicationDocument = ({ application, user }: Props) => {
               <Text style={styles.value}>
                 {currency(application.monthlyPayment)}
               </Text>
-            </View>
+            </View> */}
             <View style={styles.columnThird}>
               <Text style={styles.label}>Seasonal Business?</Text>
               <Text style={styles.value}>

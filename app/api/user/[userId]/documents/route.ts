@@ -9,7 +9,7 @@ import AppError from "@/error/AppError";
 export const POST = withAuth(
   async (
     request: NextRequest,
-    { params }: { params?: Promise<{ userId: string; businessId: string }> }
+    { params }: { params?: Promise<{ userId: string; businessId: string }> },
   ) => {
     try {
       const formData = await request.formData();
@@ -19,6 +19,7 @@ export const POST = withAuth(
       // Use `getAll` to retrieve all files associated with the "files" key
       const files = formData.getAll("files") as File[];
       const documentType = formData.get("documentType") as string | null;
+      const referenceNumber = formData.get("referenceNumber") as string | null;
 
       // --- Validation ---
       if (!userId) {
@@ -39,9 +40,18 @@ export const POST = withAuth(
 
       // --- MODIFICATION: Upload all files concurrently ---
       // Create an array of upload promises
-      const uploadPromises = files.map((file) =>
-        uploadDocument(userId, file, documentType)
-      );
+      const uploadPromises = files.map((file) => {
+        const metadata: Record<string, string> = {
+          documentType: documentType || "OTHER",
+          uploadedAt: new Date().toISOString(),
+        };
+
+        if (referenceNumber) {
+          metadata.referenceNumber = referenceNumber;
+        }
+
+        return uploadDocument(userId, file, documentType, metadata);
+      });
 
       // Wait for all promises to resolve
       const uploadedFilesData = await Promise.all(uploadPromises);
@@ -51,19 +61,19 @@ export const POST = withAuth(
           message: "Files uploaded successfully!",
           data: uploadedFilesData, // The data is now an array of uploaded file info
         },
-        { status: 201 }
+        { status: 201 },
       );
     } catch (error) {
       console.error("Error handling file upload:", error);
       return internalServerError();
     }
-  }
+  },
 );
 
 export const GET = withAuth(
   async (
     req: NextRequest,
-    { params }: { params?: Promise<{ userId: string }> }
+    { params }: { params?: Promise<{ userId: string }> },
   ) => {
     const { userId } = (await params) ?? {};
     if (!userId) {
@@ -81,5 +91,5 @@ export const GET = withAuth(
       console.log("err", err);
       return internalServerError();
     }
-  }
+  },
 );
