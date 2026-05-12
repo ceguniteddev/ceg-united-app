@@ -152,6 +152,9 @@ export function ClientDetail({
                 {client.firstName} {client.lastName}
               </div>
               <div className="text-sm text-gray-500">{client.businessName}</div>
+              <div className="text-xs font-mono text-gray-400 mt-0.5">
+                {client.referenceNumber}
+              </div>
               <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                 <span>
                   <span className="font-semibold text-gray-700">
