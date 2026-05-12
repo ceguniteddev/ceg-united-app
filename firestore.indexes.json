@@ -455,6 +455,25 @@
       "density": "SPARSE_ALL"
     },
     {
+      "collectionGroup": "funding-submission-documents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "emailMessageId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
       "collectionGroup": "plaid-link-token",
       "queryScope": "COLLECTION",
       "fields": [
