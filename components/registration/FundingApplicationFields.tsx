@@ -36,6 +36,7 @@ import {
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
 import { FileText, Upload, Sparkles, Loader2 } from "lucide-react";
+import { getCaptchaTokenRegistration } from "@/lib/captcha";
 
 const isMarried: DropdownOption[] = [
   { value: "Yes", label: "Yes" },
@@ -465,21 +466,30 @@ export function FundingApplicationFields({
 
     const autoFillPromise = (async () => {
       try {
+        const captchaToken = await getCaptchaTokenRegistration("ocr");
+        if (!captchaToken) {
+          throw new Error("Could not verify CAPTCHA. Please try again.");
+        }
+
         const response = await fetch("/api/ocr", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ documents: allDocs }),
+          body: JSON.stringify({ documents: allDocs, captchaToken }),
         });
 
+        const errorData = await response.json().catch(() => ({}));
+
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(
-            errorData.error ||
-              "Failed to process documents. Please fill out manually.",
-          );
+          // Check for different error structures from the API
+          const message = Array.isArray(errorData.errors)
+            ? errorData.errors.join(", ")
+            : errorData.details ||
+              errorData.error ||
+              "An unknown error occurred.";
+          throw new Error(message);
         }
 
-        const { data } = await response.json();
+        const { data } = errorData;
 
         if (data.personal) {
           if (data.personal.addressStreet)
@@ -753,7 +763,7 @@ export function FundingApplicationFields({
                   </div>
                 ) : (
                   <Dropzone
-                    maxFiles={2}
+                    maxFiles={1}
                     accept={{
                       "application/pdf": [".pdf"],
                       "image/*": [".png", ".jpg", ".jpeg", ".gif"],
@@ -1327,7 +1337,7 @@ export function FundingApplicationFields({
                   </div>
                 ) : (
                   <Dropzone
-                    maxFiles={2}
+                    maxFiles={1}
                     accept={{
                       "application/pdf": [".pdf"],
                       "image/*": [".png", ".jpg", ".jpeg", ".gif"],
@@ -1684,7 +1694,7 @@ export function FundingApplicationFields({
                     </div>
                   )}
                   <Dropzone
-                    maxFiles={10}
+                    maxFiles={1}
                     accept={{
                       "application/pdf": [".pdf"],
                     }}
@@ -1765,7 +1775,7 @@ export function FundingApplicationFields({
                 </div>
               )}
               <Dropzone
-                maxFiles={10}
+                maxFiles={1}
                 accept={{
                   "application/pdf": [".pdf"],
                   "image/*": [".png", ".jpg", ".jpeg", ".gif"],
