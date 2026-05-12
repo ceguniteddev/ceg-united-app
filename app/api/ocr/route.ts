@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { badRequest, internalServerError } from "@/app/api/helpers";
+import { badRequest, forbidden, internalServerError } from "@/app/api/helpers";
 import { GoogleGenAI } from "@google/genai";
+import { createEnterpriseAssessment } from "@/lib/captcha/captcha";
+import AppError from "@/error/AppError";
 
 // Simple in-memory rate limiting to prevent spamming
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
@@ -12,6 +14,15 @@ export const POST = async (
   { params }: { params?: Promise<{ userId?: string }> },
 ) => {
   try {
+    // 4. Origin and Referer Checking
+    const origin = request.headers.get("origin");
+    if (process.env.NODE_ENV === "production") {
+      const allowedOrigins = [process.env.NEXT_PUBLIC_APP_URL];
+      if (origin && !allowedOrigins.includes(origin)) {
+        return forbidden("Unauthorized origin");
+      }
+    }
+
     // 1. Rate Limiting Check (by IP)
     const ip = request.headers.get("x-forwarded-for") || "unknown";
     const now = Date.now();
@@ -33,10 +44,28 @@ export const POST = async (
       rateLimitMap.set(ip, { count: 1, lastReset: now });
     }
 
-    const { documents } = await request.json();
+    const { documents, captchaToken } = await request.json();
+
+    // 1. CAPTCHA validation
+    if (!captchaToken) {
+      return badRequest({ errors: "CAPTCHA token is required" });
+    }
+    await createEnterpriseAssessment(captchaToken, "ocr");
 
     if (!documents || !Array.isArray(documents) || documents.length === 0) {
       return badRequest({ errors: "Documents array is required" });
+    }
+
+    // 3. Payload and File Size Limits
+    if (documents.length > 3) {
+      return badRequest({ errors: "Maximum 3 documents allowed" });
+    }
+
+    const MAX_BASE64_LENGTH = 5 * 1024 * 1024 * 1.33; // Approx 5MB in base64
+    for (const doc of documents) {
+      if (doc.base64.length > MAX_BASE64_LENGTH) {
+        return badRequest({ errors: "File size exceeds the 5MB limit" });
+      }
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -69,9 +98,9 @@ export const POST = async (
     });
 
     const prompt = `
-    You are an expert OCR and data extraction AI. 
+    You are an expert OCR and data extraction AI.
     Analyze the provided document(s) (Driver's License and/or EIN Letter/Bank Statements).
-    Extract the following information and return it strictly as a JSON object matching this structure. 
+    Extract the following information and return it strictly as a JSON object matching this structure.
     If a field is not found or cannot be determined, leave it as an empty string "" or null.
     Do NOT return markdown formatting like \`\`\`json. Just return the raw JSON object.
 
@@ -137,8 +166,13 @@ export const POST = async (
     return NextResponse.json({ data: extractedData }, { status: 200 });
   } catch (error: any) {
     console.error("OCR Extraction Error:", error);
+    // If it's an AppError, use its message, otherwise use a generic message.
+    const errorMessage =
+      error instanceof AppError
+        ? error.message
+        : "An unexpected error occurred during OCR processing.";
     return NextResponse.json(
-      { error: "Internal Server Error", details: error.message },
+      { error: "Failed to Process Documents", details: errorMessage },
       { status: 500 },
     );
   }
