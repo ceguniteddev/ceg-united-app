@@ -195,6 +195,7 @@ export const registerUser = async ({
       businessId: businessId, // Set the businessId from created business
       appliedDate: fundingData.appliedDate || new Date(),
       status: fundingData.status || "New",
+      analysisStatus: fundingData.analysisStatus || "In Progress",
     };
 
     const result = await applyFunding({
@@ -274,7 +275,7 @@ export const registerUser = async ({
   });
 
   const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email/${verificationToken}`;
-  logInfo("Generated email verification link:", { verificationLink });
+  // logInfo("Generated email verification link:", { verificationLink });
 
   let requestBody = "";
   if (registrationType === "Broker" && brokerName) {

@@ -5,6 +5,8 @@ import {
   useRefreshAnalysisData,
   useSaveToDocuments,
 } from "@/hooks/admin/funding-application/analysis";
+import { useGetApplyFundingByReferenceNumber } from "@/hooks/apply-funding";
+import EmptyState from "../EmptyState";
 // import dynamic from "next/dynamic";
 import React, { useCallback } from "react";
 import { useDebouncedCallback } from "use-debounce";
@@ -27,6 +29,7 @@ import {
   DollarSign,
   FileDown,
   HandshakeIcon,
+  Loader2,
   Loader2Icon,
   Mail,
   RefreshCcw,
@@ -49,8 +52,21 @@ const AnalysisView = ({ referenceNumber }: Props) => {
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
   const { updateAnalysis } = useAnalysisMutation();
   const { isAdmin, role, userData } = useAuth();
+  const { appliedFunding } = useGetApplyFundingByReferenceNumber({
+    referenceNumber,
+  });
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
+
+  if (appliedFunding?.analysisStatus === "In Progress") {
+    return (
+      <EmptyState
+        title="Analysis in Progress"
+        description="Your funding analysis is currently being processed. Please check back later."
+        icon={<Loader2 className="h-10 w-10 animate-spin" />}
+      />
+    );
+  }
 
   if (!analysisData || analysisData?.length === 0) {
     return (
