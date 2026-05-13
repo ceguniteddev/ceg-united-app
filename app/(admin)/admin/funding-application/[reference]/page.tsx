@@ -1,15 +1,13 @@
 "use client";
 import ClientDocuments from "@/components/ClientDocuments";
-import AdminApproveDeclineApplication from "@/components/funding/AdminApproveDeclineApplication";
 import AdminMappedFunds from "@/components/funding/AdminMappedFunds";
 import FundingApplicationView from "@/components/funding/AdminViewApplicationForm";
 import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
 import AnalysisView from "@/components/funding/AnalysisView";
 import FundApplicationNotesV2 from "@/components/notes/FundApplicationNotesV2";
 import ClientData from "@/app/(admin)/admin/clients/view";
-// import SendEmail from "@/components/SendEmail";
 import Spinner from "@/components/Spinner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -32,9 +30,7 @@ import LetterForm from "@/components/letter-stream/form";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { useUserQuery } from "@/hooks/user";
 import { UserWithId } from "@/schema/registration";
-import AdminFundingList from "@/components/funding/admin-funding-list";
 import { useGetClientApplyFunding } from "@/hooks/apply-funding";
-import { RowActions } from "@/app/(admin)/admin/funding-application/_components/RowActions";
 import { ApplyFundingWithUser } from "@/schema/apply-funding";
 
 const AdminViewApplication = () => {
@@ -53,14 +49,6 @@ const AdminViewApplication = () => {
   const { userData, isLoading: isUserLoading } = useUserQuery(userId);
   const { appliedFunding, isLoading: isFundingLoading } =
     useGetClientApplyFunding(userId);
-
-  const appliedFundingWithUser: ApplyFundingWithUser[] | undefined =
-    useMemo(() => {
-      return appliedFunding?.map((item) => ({
-        ...item,
-        user: userData,
-      }));
-    }, [appliedFunding, userData]);
 
   const hasLearningMaterialsAccess = useMemo(() => {
     return userData?.isPremiumClient;

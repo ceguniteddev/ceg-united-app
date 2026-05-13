@@ -82,7 +82,7 @@ export const useRefreshAnalysisData = () => {
         `/api/funding-application/${referenceNumber}/analysis/refresh`,
         {
           method: "POST",
-        }
+        },
       );
 
       if (!response.ok) {
@@ -90,9 +90,6 @@ export const useRefreshAnalysisData = () => {
         console.error("Error refreshing Analysis data:", data);
         throw new AppError("Failed to refresh Analysis data.");
       }
-    },
-    onSuccess: (data, _variable) => {
-      toast.success("Analysis data refreshed successfully.");
     },
 
     onError: (error: any) => {
@@ -119,7 +116,7 @@ export const useEmailClientAnalysisData = () => {
         `/api/funding-application/${referenceNumber}/analysis/send-client`,
         {
           method: "POST",
-        }
+        },
       );
 
       if (!response.ok) {
@@ -157,7 +154,7 @@ export const useSaveToDocuments = () => {
         `/api/funding-application/${referenceNumber}/save-to-documents`,
         {
           method: "POST",
-        }
+        },
       );
 
       if (!response.ok) {

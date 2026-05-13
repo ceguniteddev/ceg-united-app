@@ -95,13 +95,19 @@ export const deleteAnalysis = async (
 };
 
 export const refreshAnalysis = async (referenceNumber: string) => {
-  console.log("refreshAnalysis", { referenceNumber });
+  logInfo("refreshAnalysis", { referenceNumber });
 
   // 1. Fetch initial application data
   const data = await getApplyFundingByReferenceNumber({ referenceNumber });
   if (!data) {
     throw new AppError("Funding application not found.");
   }
+
+  // Set analysisStatus to In Progress
+  const db = firestoreAdmin();
+  await db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber).update({
+    analysisStatus: "In Progress",
+  });
 
   // 2. Fetch existing analysis and mapped products
   const analysisData = await getAnalysis(referenceNumber);

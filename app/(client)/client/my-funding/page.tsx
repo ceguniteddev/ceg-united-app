@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import Spinner from "@/components/Spinner";
-import { Bot } from "lucide-react";
 
 const ApplyFundingPage = () => {
   const { user } = useAuth();

@@ -5,9 +5,13 @@ import {
   useRefreshAnalysisData,
   useSaveToDocuments,
 } from "@/hooks/admin/funding-application/analysis";
-// import dynamic from "next/dynamic";
+import { useGetApplyFundingByReferenceNumber } from "@/hooks/apply-funding";
+import {
+  useUserDocumentMutation,
+  useUserDocumentsQuery,
+} from "@/hooks/document";
+import EmptyState from "../EmptyState";
 import React, { useCallback } from "react";
-import { useDebouncedCallback } from "use-debounce";
 import Spinner from "../Spinner";
 import { Button } from "../ui/button";
 import {
@@ -24,19 +28,32 @@ import {
 import { toast } from "sonner";
 import IconMenu from "../icon-menu";
 import {
-  DollarSign,
   FileDown,
   HandshakeIcon,
+  Loader2,
   Loader2Icon,
   Mail,
   RefreshCcw,
-  ShoppingCart,
   XIcon,
+  CreditCard,
+  FileIcon,
+  Trash2,
+  Eye,
 } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
+import Image from "next/image";
 import { useAuth } from "@/provider/AuthContext";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import PricingPlansGrid from "@/components/funding/PricingPlansGrid";
+import { DOCUMENT_TYPES } from "@/lib/document-types";
+import UploadFile from "@/components/UploadFileV2";
 
 // const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -49,8 +66,21 @@ const AnalysisView = ({ referenceNumber }: Props) => {
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
   const { updateAnalysis } = useAnalysisMutation();
   const { isAdmin, role, userData } = useAuth();
+  const { appliedFunding } = useGetApplyFundingByReferenceNumber({
+    referenceNumber,
+  });
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
+  console.log("Analysis data:", appliedFunding);
+  if (appliedFunding?.analysisStatus === "In Progress") {
+    return (
+      <EmptyState
+        title="Analysis in Progress"
+        description="Your funding analysis is currently being processed. Please check back later."
+        icon={<Loader2 className="h-10 w-10 animate-spin" />}
+      />
+    );
+  }
 
   if (!analysisData || analysisData?.length === 0) {
     return (
@@ -75,12 +105,14 @@ const AnalysisView = ({ referenceNumber }: Props) => {
             </div>
           </>
         )}
-        {role === "Client" && !userData?.isPremiumClient && (
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            {/* <SaveToDocumentsButton referenceNumber={referenceNumber} /> */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          {appliedFunding?.userId && (
+            <UploadBankStatementsButton userId={appliedFunding.userId} />
+          )}
+          {role === "Client" && !userData?.isPremiumClient && (
             <PricingDetailsButton referenceNumber={referenceNumber} />
-          </div>
-        )}
+          )}
+        </div>
       </div>
       <Card className="w-full border-none shadow-none sm:border-solid sm:border sm:shadow-sm bg-transparent sm:bg-card">
         <CardContent className="p-0 sm:p-6 space-y-4 sm:space-y-8">
@@ -275,13 +307,12 @@ const RefreshAnalysisData = ({
   const { isUpdating, refreshAnalysisData } = useRefreshAnalysisData();
 
   const handleRefreshAnalysisData = useCallback(async () => {
-    try {
-      await refreshAnalysisData({ referenceNumber });
-      setRefreshConfirmationOpen(false);
-    } catch (error) {
-      console.error("Error refreshing Analysis data:", error);
-      toast.error("Failed to refresh Analysis data. Please try again.");
-    }
+    setRefreshConfirmationOpen(false);
+    toast.promise(refreshAnalysisData({ referenceNumber }), {
+      loading: "Refreshing analysis data...",
+      success: "Analysis data refreshed successfully.",
+      error: "Failed to refresh Analysis data. Please try again.",
+    });
   }, [refreshAnalysisData, referenceNumber]);
 
   return (
@@ -489,6 +520,152 @@ const AnalysisDetailsView = ({
 
   // For Admin/Broker, show editable Editor
   // return <Editor content={content} onContentChange={handleSetContent} />;
+};
+
+const UploadBankStatementsButton = ({ userId }: { userId?: string }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [previewDoc, setPreviewDoc] = React.useState<any>(null);
+  const { userDocuments } = useUserDocumentsQuery({ userId: userId || "" });
+  const { deleteDocument, isDeleting } = useUserDocumentMutation();
+
+  const bankStatementsDocType = DOCUMENT_TYPES.find(
+    (dt) => dt.id === "BANK_STATEMENTS",
+  );
+
+  const bankStatements = React.useMemo(() => {
+    if (!userDocuments) return [];
+    return userDocuments.filter(
+      (doc: any) =>
+        doc.metadata?.documentType === "BANK_STATEMENTS" ||
+        doc.name?.includes("BANK_STATEMENTS"),
+    );
+  }, [userDocuments]);
+
+  if (!userId) return null;
+
+  return (
+    <>
+      <Button
+        size={"lg"}
+        className="cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white w-full sm:w-auto h-10 sm:h-9 shadow-lg shadow-blue-500/50 hover:scale-105 transition-all duration-300 font-bold border-0"
+        onClick={() => setIsOpen(true)}
+      >
+        <IconMenu
+          icon={<CreditCard className="h-5 w-5" />}
+          text="Upload Bank Statements"
+        />
+      </Button>
+
+      <ResponsiveDialog
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        title="Upload Bank Statements"
+        description="Please upload your recent bank statements."
+        className="max-w-[90vw] sm:max-w-2xl"
+      >
+        <div className="p-4 space-y-6">
+          <UploadFile userId={userId} documentType={bankStatementsDocType} />
+
+          {bankStatements.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-gray-900">
+                Uploaded Statements
+              </h4>
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                {bankStatements.map((doc: any, index: number) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg shadow-sm hover:border-blue-200 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden flex-1">
+                      <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0">
+                        <FileIcon className="w-4 h-4" />
+                      </div>
+                      <span
+                        className="text-sm font-medium text-gray-700 truncate"
+                        title={doc.name}
+                      >
+                        {doc.name.split("/").pop()}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 ml-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-500 hover:text-blue-600 hover:bg-blue-50 h-8 w-8 p-0"
+                        onClick={() => setPreviewDoc(doc)}
+                        title="View Document"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                        onClick={async () => {
+                          if (
+                            confirm(
+                              "Are you sure you want to delete this document?",
+                            )
+                          ) {
+                            await deleteDocument({ path: doc.path });
+                          }
+                        }}
+                        disabled={isDeleting}
+                        title="Delete Document"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </ResponsiveDialog>
+
+      {/* Preview Sheet */}
+      <Sheet
+        open={!!previewDoc}
+        onOpenChange={(open) => !open && setPreviewDoc(null)}
+      >
+        <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0">
+          <SheetHeader className="p-4 pb-2 border-b flex-shrink-0">
+            <SheetTitle className="text-sm break-words text-left leading-snug">
+              {previewDoc && previewDoc.name.split("/").pop()}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-hidden p-2">
+            {previewDoc?.contentType?.startsWith("image/") ? (
+              <ImageZoom>
+                <Image
+                  src={previewDoc.signedUrl}
+                  alt={previewDoc.name}
+                  className="w-full h-full object-contain"
+                  width={800}
+                  height={600}
+                  unoptimized
+                />
+              </ImageZoom>
+            ) : previewDoc?.contentType === "application/pdf" ? (
+              <iframe
+                src={`${previewDoc.signedUrl}#toolbar=1&view=FitH`}
+                title={previewDoc.name}
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-sm text-muted-foreground">
+                  Preview unavailable for this file type
+                </p>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
+  );
 };
 
 export default AnalysisView;

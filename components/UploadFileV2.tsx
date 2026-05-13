@@ -8,6 +8,7 @@ import {
 import { GET_USER_DOCUMENTS } from "@/constant/react-query-keys";
 import { DocumentType } from "@/lib/document-types";
 import { useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 import React, { useCallback, useState } from "react";
 
 // The component now needs to know what it's uploading
@@ -79,7 +80,15 @@ const UploadFile = ({ userId, documentType }: UploadFileProps) => {
     : "Upload any additional documents required for your application. (PDF or Image only)";
 
   return (
-    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 mb-8">
+    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 mb-8 relative">
+      {isLoading && (
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
+          <span className="text-sm font-medium text-gray-700">
+            Uploading Document...
+          </span>
+        </div>
+      )}
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
       <p className="text-sm text-gray-500 mb-4">{description}</p>
       <Dropzone
