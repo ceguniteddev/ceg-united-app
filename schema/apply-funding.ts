@@ -270,6 +270,7 @@ export const applyFundingSchema = z
     consentConfirmPrivacy: z.boolean(),
     // Application method selection (Specialist vs Online)
     applicationMethod: ClientApplicationMethodEnum.optional(),
+    analysisStatus: z.enum(["In Progress", "Completed"]).optional(),
   })
   .superRefine((data, ctx) => {
     // Define the exclusion condition for clarity

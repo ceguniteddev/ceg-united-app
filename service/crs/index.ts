@@ -305,8 +305,8 @@ export const fundAnalysis = async ({
   });
 
   // Add delay before returning to allow N8N workflow to process
-  console.log("Waiting 2 minutes for funding analysis to complete...");
-  await new Promise((resolve) => setTimeout(resolve, 120000));
+  // console.log("Waiting 2 minutes for funding analysis to complete...");
+  // await new Promise((resolve) => setTimeout(resolve, 120000));
 };
 
 export const sendClientFundingApplicationCongratsMessage = async ({
