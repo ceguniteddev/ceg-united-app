@@ -57,7 +57,7 @@ const AnalysisView = ({ referenceNumber }: Props) => {
   });
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
-
+  console.log("Analysis data:", appliedFunding);
   if (appliedFunding?.analysisStatus === "In Progress") {
     return (
       <EmptyState
@@ -291,13 +291,12 @@ const RefreshAnalysisData = ({
   const { isUpdating, refreshAnalysisData } = useRefreshAnalysisData();
 
   const handleRefreshAnalysisData = useCallback(async () => {
-    try {
-      await refreshAnalysisData({ referenceNumber });
-      setRefreshConfirmationOpen(false);
-    } catch (error) {
-      console.error("Error refreshing Analysis data:", error);
-      toast.error("Failed to refresh Analysis data. Please try again.");
-    }
+    setRefreshConfirmationOpen(false);
+    toast.promise(refreshAnalysisData({ referenceNumber }), {
+      loading: "Refreshing analysis data...",
+      success: "Analysis data refreshed successfully.",
+      error: "Failed to refresh Analysis data. Please try again.",
+    });
   }, [refreshAnalysisData, referenceNumber]);
 
   return (
