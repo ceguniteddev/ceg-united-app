@@ -75,6 +75,17 @@ export const getUser = async (email: string): Promise<User | null> => {
       .update({ registrationDate: userData.registrationDate });
   }
 
+  const may15Cutoff = new Date("2026-05-15T00:00:00Z");
+  if (
+    userData.isOnboarded === undefined ||
+    (userData.isOnboarded === false &&
+      userData.registrationDate &&
+      new Date(userData.registrationDate).getTime() < may15Cutoff.getTime())
+  ) {
+    userData.isOnboarded = true;
+    await collectionRef.doc(userDoc.id).update({ isOnboarded: true });
+  }
+
   return userData;
 };
 
@@ -99,6 +110,17 @@ export const getUserById = async (id: string): Promise<UserWithId | null> => {
     } catch (err) {
       console.error("Failed to fetch user creation time from auth:", err);
     }
+  }
+
+  const may15Cutoff = new Date("2026-05-15T00:00:00Z");
+  if (
+    userData.isOnboarded === undefined ||
+    (userData.isOnboarded === false &&
+      userData.registrationDate &&
+      new Date(userData.registrationDate).getTime() < may15Cutoff.getTime())
+  ) {
+    userData.isOnboarded = true;
+    await docRef.update({ isOnboarded: true });
   }
 
   // If this is a client, fetch broker information
@@ -645,6 +667,8 @@ export const getUsers = async ({
 
   const users: UserWithId[] = [];
   const missingDateIds: string[] = [];
+  const missingOnboardedIds: string[] = [];
+  const may15Cutoff = new Date("2026-05-15T00:00:00Z");
 
   querySnapshot.forEach((doc) => {
     const data = doc.data();
@@ -652,34 +676,60 @@ export const getUsers = async ({
     if (!user.registrationDate) {
       missingDateIds.push(doc.id);
     }
+
+    // Check if missing OR if false and before cutoff
+    if (
+      user.isOnboarded === undefined ||
+      (user.isOnboarded === false &&
+        user.registrationDate &&
+        new Date(user.registrationDate).getTime() < may15Cutoff.getTime())
+    ) {
+      missingOnboardedIds.push(doc.id);
+      user.isOnboarded = true;
+    }
     users.push(user);
   });
 
-  if (missingDateIds.length > 0) {
+  if (missingDateIds.length > 0 || missingOnboardedIds.length > 0) {
     try {
-      const identifiers = missingDateIds.map((uid) => ({ uid }));
       const batchWrites = db.batch();
 
-      for (let i = 0; i < identifiers.length; i += 100) {
-        const batch = identifiers.slice(i, i + 100);
-        const authUsers = await authenticationAdmin().getUsers(batch);
-        authUsers.users.forEach((authUser) => {
-          const userIndex = users.findIndex((u) => u.id === authUser.uid);
-          if (userIndex !== -1) {
-            const creationDate = new Date(authUser.metadata.creationTime);
-            users[userIndex].registrationDate = creationDate;
+      if (missingDateIds.length > 0) {
+        const identifiers = missingDateIds.map((uid) => ({ uid }));
+        for (let i = 0; i < identifiers.length; i += 100) {
+          const batch = identifiers.slice(i, i + 100);
+          const authUsers = await authenticationAdmin().getUsers(batch);
+          authUsers.users.forEach((authUser) => {
+            const userIndex = users.findIndex((u) => u.id === authUser.uid);
+            if (userIndex !== -1) {
+              const creationDate = new Date(authUser.metadata.creationTime);
+              users[userIndex].registrationDate = creationDate;
 
-            const docRef = collectionRef.doc(authUser.uid);
-            batchWrites.update(docRef, { registrationDate: creationDate });
-          }
+              const docRef = collectionRef.doc(authUser.uid);
+              batchWrites.update(docRef, { registrationDate: creationDate });
+
+              if (
+                users[userIndex].isOnboarded === false &&
+                creationDate.getTime() < may15Cutoff.getTime()
+              ) {
+                users[userIndex].isOnboarded = true;
+                batchWrites.update(docRef, { isOnboarded: true });
+              }
+            }
+          });
+        }
+      }
+
+      if (missingOnboardedIds.length > 0) {
+        missingOnboardedIds.forEach((uid) => {
+          const docRef = collectionRef.doc(uid);
+          batchWrites.update(docRef, { isOnboarded: true });
         });
       }
+
       await batchWrites.commit();
     } catch (err) {
-      console.error(
-        "Failed to fetch missing registration dates from auth:",
-        err,
-      );
+      console.error("Failed to update missing properties for users:", err);
     }
   }
 
