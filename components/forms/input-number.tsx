@@ -1,26 +1,26 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { forwardRef, useCallback, useEffect, useState, useRef } from "react"
-import { NumericFormat, NumericFormatProps } from "react-number-format"
-import { Input } from "../ui/input"
+import { forwardRef, useCallback, useEffect, useState, useRef } from "react";
+import { NumericFormat, NumericFormatProps } from "react-number-format";
+import { Input } from "../ui/input";
 
-import { useDebouncedCallback } from "use-debounce"
+import { useDebouncedCallback } from "use-debounce";
 
 export interface NumberInputProps extends Omit<
   NumericFormatProps,
   "value" | "onValueChange"
 > {
-  stepper?: number
-  thousandSeparator?: string
-  placeholder?: string
-  defaultValue?: number
-  min?: number
-  max?: number
-  value?: number // Controlled value
-  suffix?: string
-  prefix?: string
-  onValueChange?: (value: number | undefined) => void
-  fixedDecimalScale?: boolean
-  decimalScale?: number
+  stepper?: number;
+  thousandSeparator?: string;
+  placeholder?: string;
+  defaultValue?: number;
+  min?: number;
+  max?: number;
+  value?: number; // Controlled value
+  suffix?: string;
+  prefix?: string;
+  onValueChange?: (value: number | undefined) => void;
+  fixedDecimalScale?: boolean;
+  decimalScale?: number;
 }
 
 export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
@@ -40,98 +40,106 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
       value: controlledValue,
       ...props
     },
-    ref
+    ref,
   ) => {
-    const internalRef = useRef<HTMLInputElement>(null) // Create an internal ref
+    const internalRef = useRef<HTMLInputElement>(null); // Create an internal ref
 
     const setRefs = useCallback(
       (node: HTMLInputElement | null) => {
-        internalRef.current = node
+        internalRef.current = node;
         if (typeof ref === "function") {
-          ref(node)
+          ref(node);
         } else if (ref) {
-          ref.current = node
+          ref.current = node;
         }
       },
-      [ref]
-    )
+      [ref],
+    );
 
     const [value, setValue] = useState<number | undefined>(
-      controlledValue ?? defaultValue
-    )
+      controlledValue ?? defaultValue,
+    );
 
     const handleIncrement = useCallback(() => {
       setValue((prev) =>
         prev === undefined
           ? (stepper ?? 1)
-          : Math.min(prev + (stepper ?? 1), max)
-      )
-    }, [stepper, max])
+          : Math.min(prev + (stepper ?? 1), max),
+      );
+    }, [stepper, max]);
 
     const handleDecrement = useCallback(() => {
       setValue((prev) =>
         prev === undefined
           ? -(stepper ?? 1)
-          : Math.max(prev - (stepper ?? 1), min)
-      )
-    }, [stepper, min])
+          : Math.max(prev - (stepper ?? 1), min),
+      );
+    }, [stepper, min]);
 
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
         if (document.activeElement === internalRef.current) {
           if (e.key === "ArrowUp") {
-            handleIncrement()
+            handleIncrement();
           } else if (e.key === "ArrowDown") {
-            handleDecrement()
+            handleDecrement();
           }
         }
-      }
+      };
 
-      window.addEventListener("keydown", handleKeyDown)
+      window.addEventListener("keydown", handleKeyDown);
 
       return () => {
-        window.removeEventListener("keydown", handleKeyDown)
-      }
-    }, [handleIncrement, handleDecrement])
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }, [handleIncrement, handleDecrement]);
 
     useEffect(() => {
       if (controlledValue !== undefined) {
-        setValue(controlledValue)
+        setValue(controlledValue);
       }
-    }, [controlledValue])
+    }, [controlledValue]);
 
     const debouncedSave = useDebouncedCallback(
       (values: { value: string; floatValue: number | undefined }) => {
         const newValue =
-          values.floatValue === undefined ? undefined : values.floatValue
-        setValue(newValue)
+          values.floatValue === undefined ? undefined : values.floatValue;
+        setValue(newValue);
         if (onValueChange) {
-          onValueChange(newValue)
+          onValueChange(newValue);
         }
       },
-      200
-    )
+      200,
+    );
 
     const handleChange = (values: {
-      value: string
-      floatValue: number | undefined
+      value: string;
+      floatValue: number | undefined;
     }) => {
-      debouncedSave(values)
-    }
+      debouncedSave(values);
+    };
 
     const handleBlur = () => {
       if (value !== undefined) {
         if (value < min) {
-          setValue(min)
-          if (internalRef.current) internalRef.current.value = String(min)
-          if (onValueChange) onValueChange(min)
+          setValue(min);
+          if (internalRef.current) internalRef.current.value = String(min);
+          if (onValueChange) onValueChange(min);
         } else if (value > max) {
-          setValue(max)
-          if (internalRef.current) internalRef.current.value = String(max)
-          if (onValueChange) onValueChange(max)
+          setValue(max);
+          if (internalRef.current) internalRef.current.value = String(max);
+          if (onValueChange) onValueChange(max);
         }
       }
-    }
+    };
+
+    const isAllowed = (values: { floatValue: number | undefined }) => {
+      const { floatValue } = values;
+      if (floatValue === undefined) return true;
+      if (max !== undefined && max !== Infinity && floatValue > max)
+        return false;
+      return true;
+    };
 
     return (
       <div className="flex items-center">
@@ -144,6 +152,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
           allowNegative={min < 0}
           valueIsNumericString
           onBlur={handleBlur}
+          isAllowed={isAllowed}
           max={max}
           min={min}
           suffix={suffix}
@@ -155,7 +164,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
           {...props}
         />
       </div>
-    )
-  }
-)
-NumberInput.displayName = "NumberInput"
+    );
+  },
+);
+NumberInput.displayName = "NumberInput";

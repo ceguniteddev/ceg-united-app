@@ -56,6 +56,7 @@ export function NewMultiStepRegistrationForm({
     defaultValues: {
       ...documentUploadData,
       fundingType: fundingData.fundingType, // Pass context for conditional validation
+      interestedProduct: fundingData.interestedProduct,
     },
   });
 
@@ -102,6 +103,10 @@ export function NewMultiStepRegistrationForm({
     if (isValid) {
       updateFundingData(formStep3.getValues());
       formStep4.setValue("fundingType", formStep3.getValues().fundingType);
+      formStep4.setValue(
+        "interestedProduct",
+        formStep3.getValues().interestedProduct,
+      );
       setStep(4);
     } else {
       toast.error("Please fill all required fields");
@@ -110,16 +115,20 @@ export function NewMultiStepRegistrationForm({
 
   const checkDocumentsUploaded = () => {
     const docs = formStep4.watch();
-    const fundingType = docs.fundingType;
+    const interestedProduct = docs.interestedProduct;
     const isBusiness =
-      fundingType === "Business Income Based Funding" ||
-      fundingType === "Business Credit Based Funding";
-    const isPersonal = fundingType === "Personal";
+      interestedProduct === "Business Funding" ||
+      interestedProduct === "Personal & Business Funding";
+    const isPersonal =
+      interestedProduct === "Personal Funding" ||
+      interestedProduct === "Personal & Business Funding";
 
     if (isBusiness) {
       if (!docs.businessDocs?.driverLicense?.uploaded) return false;
       if (!docs.businessDocs?.bankStatements?.uploaded) return false;
-    } else if (isPersonal) {
+    }
+
+    if (isPersonal) {
       const empType = docs.employmentType;
       if (empType === "W2 Employed") {
         if (!docs.personalW2Docs?.driverLicense?.uploaded) return false;
@@ -141,11 +150,13 @@ export function NewMultiStepRegistrationForm({
   const handleFinalSubmit = async () => {
     // Validate custom documents before triggering
     const docs = formStep4.getValues();
-    const fundingType = docs.fundingType;
+    const interestedProduct = docs.interestedProduct;
     const isBusiness =
-      fundingType === "Business Income Based Funding" ||
-      fundingType === "Business Credit Based Funding";
-    const isPersonal = fundingType === "Personal";
+      interestedProduct === "Business Funding" ||
+      interestedProduct === "Personal & Business Funding";
+    const isPersonal =
+      interestedProduct === "Personal Funding" ||
+      interestedProduct === "Personal & Business Funding";
 
     if (isBusiness) {
       if (!docs.businessDocs?.driverLicense?.uploaded) {
@@ -161,7 +172,9 @@ export function NewMultiStepRegistrationForm({
         });
         return;
       }
-    } else if (isPersonal) {
+    }
+
+    if (isPersonal) {
       const empType = docs.employmentType;
       if (empType === "W2 Employed") {
         if (!docs.personalW2Docs?.driverLicense?.uploaded) {

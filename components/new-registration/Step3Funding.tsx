@@ -5,19 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomFormField } from "@/components/CustomFormField";
 import {
   FUNDING_PRODUCTS_BY_CATEGORY,
-  FundingProductEnumType,
   FundingProductTypeEnum,
 } from "@/schema/apply-funding";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { Checkbox } from "../ui/checkbox";
 
 export function Step3Funding() {
   const { watch, setValue, getValues } = useFormContext();
   const interestedProduct = watch("interestedProduct");
 
-  const [interestedProductSelected, setInterestedProductSelected] = useState<
-    FundingProductEnumType | undefined
-  >(undefined);
+  const interestedProductSelected = FundingProductTypeEnum.find(
+    (product) => product.value === interestedProduct,
+  );
 
   const showBusinessName =
     interestedProduct === "Business Funding" ||
@@ -29,7 +28,6 @@ export function Step3Funding() {
         (product) => product.value === value,
       );
       if (selectedProduct) {
-        setInterestedProductSelected(selectedProduct);
         setValue("fundingType", selectedProduct.type, {
           shouldValidate: true,
           shouldDirty: true,

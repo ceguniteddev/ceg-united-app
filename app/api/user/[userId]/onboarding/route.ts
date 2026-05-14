@@ -33,9 +33,10 @@ export const POST = withAuth(
       businessDetailsSchema.parse(body.business);
       fundingPageSchema.parse(body.funding);
 
-      // Check document schema - we need to inject the fundingType for validation to work correctly
+      // Check document schema - we need to inject the interestedProduct for validation to work correctly
       documentUploadSchema.parse({
         ...body.documents,
+        interestedProduct: body.funding.interestedProduct,
         fundingType: body.funding.fundingType,
       });
 
@@ -44,6 +45,8 @@ export const POST = withAuth(
       // We need to map the onboarding data to an ApplyFunding object
       const fundingDataToSave: any = {
         userId: userId,
+        interestedProduct: body.funding.interestedProduct,
+        fundingProducts: body.funding.fundingProducts || [],
         fundingType: body.funding.fundingType,
         appliedDate: new Date().toISOString(),
         status: "New",

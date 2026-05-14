@@ -207,13 +207,15 @@ const DocumentList = ({
 export function Step4DocumentUpload() {
   const { watch, setValue, control, getValues } = useFormContext();
   const { user } = useAuth();
-  const fundingType = watch("fundingType");
+  const interestedProduct = watch("interestedProduct");
   const employmentType = watch("employmentType");
 
   const isBusiness =
-    fundingType === "Business Income Based Funding" ||
-    fundingType === "Business Credit Based Funding";
-  const isPersonal = fundingType === "Personal";
+    interestedProduct === "Business Funding" ||
+    interestedProduct === "Personal & Business Funding";
+  const isPersonal =
+    interestedProduct === "Personal Funding" ||
+    interestedProduct === "Personal & Business Funding";
 
   const handleSmartAutoFill = async (files: File[], addressPrefix: string) => {
     try {

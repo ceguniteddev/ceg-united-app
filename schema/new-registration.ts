@@ -52,13 +52,17 @@ export type BusinessDetailsForm = z.infer<typeof businessDetailsSchema>;
 
 export const fundingPageSchema = z
   .object({
+    interestedProduct: z
+      .string()
+      .min(1, { message: "Please select funding category" }),
     fundingType: z.string().min(1, { message: "Please select funding type" }),
+    fundingProducts: z.array(z.string()).optional(),
     businessName: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     if (
-      (data.fundingType === "Business Income Based Funding" ||
-        data.fundingType === "Business Credit Based Funding") &&
+      (data.interestedProduct === "Business Funding" ||
+        data.interestedProduct === "Personal & Business Funding") &&
       !data.businessName
     ) {
       ctx.addIssue({
@@ -110,17 +114,17 @@ export const documentUploadPersonalSelfEmployedSchema =
 
 export const documentUploadSchema = z
   .object({
-    fundingType: z.string(),
+    interestedProduct: z.string().optional(),
+    fundingType: z.string().optional(),
     employmentType: z.enum(["W2 Employed", "Self Employed"]).optional(),
-    businessDocs: documentUploadBusinessSchema.optional(),
-    personalW2Docs: documentUploadPersonalW2Schema.optional(),
-    personalSelfEmployedDocs:
-      documentUploadPersonalSelfEmployedSchema.optional(),
+    businessDocs: z.any().optional(),
+    personalW2Docs: z.any().optional(),
+    personalSelfEmployedDocs: z.any().optional(),
   })
   .superRefine((data, ctx) => {
     if (
-      data.fundingType === "Business Income Based Funding" ||
-      data.fundingType === "Business Credit Based Funding"
+      data.interestedProduct === "Business Funding" ||
+      data.interestedProduct === "Personal & Business Funding"
     ) {
       const result = documentUploadBusinessSchema.safeParse(data.businessDocs);
       if (!result.success) {
@@ -128,7 +132,12 @@ export const documentUploadSchema = z
           ctx.addIssue({ ...issue, path: ["businessDocs", ...issue.path] });
         });
       }
-    } else if (data.fundingType === "Personal") {
+    }
+
+    if (
+      data.interestedProduct === "Personal Funding" ||
+      data.interestedProduct === "Personal & Business Funding"
+    ) {
       if (!data.employmentType) {
         ctx.addIssue({
           code: "custom",
