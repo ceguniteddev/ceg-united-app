@@ -66,7 +66,16 @@ export const getUser = async (email: string): Promise<User | null> => {
   const userDoc = querySnapshot.docs[0];
   const user = userDoc.data();
 
-  return { id: userDoc.id, ...normalizeAllDates(user) } as User;
+  const userData = { id: userDoc.id, ...normalizeAllDates(user) } as User;
+
+  if (!userData.registrationDate) {
+    userData.registrationDate = new Date(userRecord.metadata.creationTime);
+    await collectionRef
+      .doc(userDoc.id)
+      .update({ registrationDate: userData.registrationDate });
+  }
+
+  return userData;
 };
 
 export const getUserById = async (id: string): Promise<UserWithId | null> => {
@@ -81,6 +90,16 @@ export const getUserById = async (id: string): Promise<UserWithId | null> => {
   const userDoc = docSnapshot;
   const user = userDoc.data();
   const userData = { id: userDoc.id, ...normalizeAllDates(user) } as UserWithId;
+
+  if (!userData.registrationDate) {
+    try {
+      const authUser = await authenticationAdmin().getUser(id);
+      userData.registrationDate = new Date(authUser.metadata.creationTime);
+      await docRef.update({ registrationDate: userData.registrationDate });
+    } catch (err) {
+      console.error("Failed to fetch user creation time from auth:", err);
+    }
+  }
 
   // If this is a client, fetch broker information
   if (userData.role === "Client") {
@@ -625,10 +644,44 @@ export const getUsers = async ({
   }
 
   const users: UserWithId[] = [];
+  const missingDateIds: string[] = [];
+
   querySnapshot.forEach((doc) => {
     const data = doc.data();
-    users.push({ id: doc.id, ...normalizeAllDates(data) } as UserWithId);
+    const user = { id: doc.id, ...normalizeAllDates(data) } as UserWithId;
+    if (!user.registrationDate) {
+      missingDateIds.push(doc.id);
+    }
+    users.push(user);
   });
+
+  if (missingDateIds.length > 0) {
+    try {
+      const identifiers = missingDateIds.map((uid) => ({ uid }));
+      const batchWrites = db.batch();
+
+      for (let i = 0; i < identifiers.length; i += 100) {
+        const batch = identifiers.slice(i, i + 100);
+        const authUsers = await authenticationAdmin().getUsers(batch);
+        authUsers.users.forEach((authUser) => {
+          const userIndex = users.findIndex((u) => u.id === authUser.uid);
+          if (userIndex !== -1) {
+            const creationDate = new Date(authUser.metadata.creationTime);
+            users[userIndex].registrationDate = creationDate;
+
+            const docRef = collectionRef.doc(authUser.uid);
+            batchWrites.update(docRef, { registrationDate: creationDate });
+          }
+        });
+      }
+      await batchWrites.commit();
+    } catch (err) {
+      console.error(
+        "Failed to fetch missing registration dates from auth:",
+        err,
+      );
+    }
+  }
 
   // If getting clients, fetch broker mappings
   if (role === "Client") {

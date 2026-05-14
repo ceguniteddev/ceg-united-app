@@ -70,7 +70,7 @@ const DocumentList = ({
 }: {
   userId: string;
   documentType?: DocumentType;
-  onDocumentStateChange?: (uploaded: boolean) => void;
+  onDocumentStateChange?: (count: number) => void;
 }) => {
   const { userDocuments, isLoading } = useUserDocumentsQuery({ userId });
   const { deleteDocument, isDeleting } = useUserDocumentMutation();
@@ -90,7 +90,7 @@ const DocumentList = ({
   // Sync form state when documents are fetched or deleted
   React.useEffect(() => {
     if (!isLoading && onDocumentStateChange) {
-      onDocumentStateChange(matchedDocs.length > 0);
+      onDocumentStateChange(matchedDocs.length);
     }
   }, [matchedDocs.length, isLoading, onDocumentStateChange]);
 
@@ -293,11 +293,15 @@ export function Step4DocumentUpload() {
   };
 
   const handleUploadComplete = (fieldName: string, files?: File[]) => {
+    const currentVal = getValues(fieldName);
+    const existingCount = currentVal?.count || 0;
+    const newFilesCount = files ? files.length : 1;
+
     setValue(
       fieldName,
       {
         uploaded: true,
-        files: files ? files.map((f) => f.name) : ["uploaded-file"],
+        count: existingCount + newFilesCount,
       },
       { shouldValidate: true, shouldDirty: true },
     );
@@ -309,14 +313,14 @@ export function Step4DocumentUpload() {
   };
 
   const handleDocumentStateChange = React.useCallback(
-    (fieldName: string, uploaded: boolean) => {
+    (fieldName: string, count: number) => {
       const currentVal = getValues(fieldName);
-      if (!currentVal || currentVal.uploaded !== uploaded) {
+      if (!currentVal || currentVal.count !== count) {
         setValue(
           fieldName,
           {
-            uploaded: uploaded,
-            files: uploaded ? ["uploaded-file"] : [],
+            uploaded: count > 0,
+            count: count,
           },
           { shouldValidate: true, shouldDirty: true },
         );

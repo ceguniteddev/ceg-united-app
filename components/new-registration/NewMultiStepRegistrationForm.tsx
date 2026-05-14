@@ -18,7 +18,9 @@ import {
 } from "@/schema/new-registration";
 import { toast } from "sonner";
 import IconMenu from "@/components/icon-menu";
-import { ChevronLeft, ChevronRight, Save } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, Loader2 } from "lucide-react";
+import { useAuth } from "@/provider/AuthContext";
+import { useUpdateUserProfileMutation } from "@/hooks/user";
 
 interface NewMultiStepRegistrationFormProps {
   onFinalSubmit: (data: any) => Promise<void>;
@@ -27,6 +29,11 @@ interface NewMultiStepRegistrationFormProps {
 export function NewMultiStepRegistrationForm({
   onFinalSubmit,
 }: NewMultiStepRegistrationFormProps) {
+  const { user } = useAuth();
+  const { updateUserProfile, isUpdating } = useUpdateUserProfileMutation({
+    userId: user?.uid || "",
+  });
+
   const {
     currentStep,
     setStep,
@@ -39,6 +46,8 @@ export function NewMultiStepRegistrationForm({
   } = useNewRegistrationStore();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isAnyActionPending = isSubmitting || isUpdating;
 
   // We use separate forms for validation at each step
   const formStep2 = useForm<any>({
@@ -91,7 +100,15 @@ export function NewMultiStepRegistrationForm({
   const handleNextStep2 = async () => {
     const isValid = await formStep2.trigger();
     if (isValid) {
-      updateBusinessDetailsData(formStep2.getValues());
+      const data = formStep2.getValues();
+      updateBusinessDetailsData(data);
+      if (user?.uid) {
+        try {
+          await updateUserProfile({ businessDetails: data });
+        } catch (error) {
+          console.error("Failed to update user profile:", error);
+        }
+      }
       setStep(3);
     } else {
       toast.error("Please fill all required fields");
@@ -101,12 +118,17 @@ export function NewMultiStepRegistrationForm({
   const handleNextStep3 = async () => {
     const isValid = await formStep3.trigger();
     if (isValid) {
-      updateFundingData(formStep3.getValues());
-      formStep4.setValue("fundingType", formStep3.getValues().fundingType);
-      formStep4.setValue(
-        "interestedProduct",
-        formStep3.getValues().interestedProduct,
-      );
+      const data = formStep3.getValues();
+      updateFundingData(data);
+      formStep4.setValue("fundingType", data.fundingType);
+      formStep4.setValue("interestedProduct", data.interestedProduct);
+      if (user?.uid) {
+        try {
+          await updateUserProfile({ fundingDetails: data });
+        } catch (error) {
+          console.error("Failed to update user profile:", error);
+        }
+      }
       setStep(4);
     } else {
       toast.error("Please fill all required fields");
@@ -124,19 +146,41 @@ export function NewMultiStepRegistrationForm({
       interestedProduct === "Personal & Business Funding";
 
     if (isBusiness) {
-      if (!docs.businessDocs?.driverLicense?.uploaded) return false;
-      if (!docs.businessDocs?.bankStatements?.uploaded) return false;
+      if (
+        !docs.businessDocs?.driverLicense?.uploaded ||
+        (docs.businessDocs?.driverLicense?.count || 0) < 1
+      )
+        return false;
+      if (
+        !docs.businessDocs?.bankStatements?.uploaded ||
+        (docs.businessDocs?.bankStatements?.count || 0) < 4
+      )
+        return false;
     }
 
     if (isPersonal) {
       const empType = docs.employmentType;
       if (empType === "W2 Employed") {
-        if (!docs.personalW2Docs?.driverLicense?.uploaded) return false;
-        if (!docs.personalW2Docs?.paystubs?.uploaded) return false;
-      } else if (empType === "Self Employed") {
-        if (!docs.personalSelfEmployedDocs?.bankStatements?.uploaded)
+        if (
+          !docs.personalW2Docs?.driverLicense?.uploaded ||
+          (docs.personalW2Docs?.driverLicense?.count || 0) < 1
+        )
           return false;
-        if (!docs.personalSelfEmployedDocs?.driverLicense?.uploaded)
+        if (
+          !docs.personalW2Docs?.paystubs?.uploaded ||
+          (docs.personalW2Docs?.paystubs?.count || 0) < 2
+        )
+          return false;
+      } else if (empType === "Self Employed") {
+        if (
+          !docs.personalSelfEmployedDocs?.bankStatements?.uploaded ||
+          (docs.personalSelfEmployedDocs?.bankStatements?.count || 0) < 3
+        )
+          return false;
+        if (
+          !docs.personalSelfEmployedDocs?.driverLicense?.uploaded ||
+          (docs.personalSelfEmployedDocs?.driverLicense?.count || 0) < 1
+        )
           return false;
       } else {
         return false;
@@ -159,16 +203,22 @@ export function NewMultiStepRegistrationForm({
       interestedProduct === "Personal & Business Funding";
 
     if (isBusiness) {
-      if (!docs.businessDocs?.driverLicense?.uploaded) {
+      if (
+        !docs.businessDocs?.driverLicense?.uploaded ||
+        (docs.businessDocs?.driverLicense?.count || 0) < 1
+      ) {
         toast.warning("Driver's license is required", {
           description: "Please upload your Driver's License to proceed.",
         });
         return;
       }
-      if (!docs.businessDocs?.bankStatements?.uploaded) {
+      if (
+        !docs.businessDocs?.bankStatements?.uploaded ||
+        (docs.businessDocs?.bankStatements?.count || 0) < 4
+      ) {
         toast.warning("Bank statements are required", {
           description:
-            "Please upload your 4 months of Bank Statements to proceed.",
+            "Please upload at least 4 months of Bank Statements to proceed.",
         });
         return;
       }
@@ -177,28 +227,39 @@ export function NewMultiStepRegistrationForm({
     if (isPersonal) {
       const empType = docs.employmentType;
       if (empType === "W2 Employed") {
-        if (!docs.personalW2Docs?.driverLicense?.uploaded) {
+        if (
+          !docs.personalW2Docs?.driverLicense?.uploaded ||
+          (docs.personalW2Docs?.driverLicense?.count || 0) < 1
+        ) {
           toast.warning("Driver's license is required", {
             description: "Please upload your Driver's License to proceed.",
           });
           return;
         }
-        if (!docs.personalW2Docs?.paystubs?.uploaded) {
+        if (
+          !docs.personalW2Docs?.paystubs?.uploaded ||
+          (docs.personalW2Docs?.paystubs?.count || 0) < 2
+        ) {
           toast.warning("Paystubs are required", {
-            description:
-              "Please upload your Last 2 Recent Paystubs to proceed.",
+            description: "Please upload at least 2 recent Paystubs to proceed.",
           });
           return;
         }
       } else if (empType === "Self Employed") {
-        if (!docs.personalSelfEmployedDocs?.bankStatements?.uploaded) {
+        if (
+          !docs.personalSelfEmployedDocs?.bankStatements?.uploaded ||
+          (docs.personalSelfEmployedDocs?.bankStatements?.count || 0) < 3
+        ) {
           toast.warning("Bank statements are required", {
             description:
-              "Please upload your 3 Months Bank Statements to proceed.",
+              "Please upload at least 3 months of Bank Statements to proceed.",
           });
           return;
         }
-        if (!docs.personalSelfEmployedDocs?.driverLicense?.uploaded) {
+        if (
+          !docs.personalSelfEmployedDocs?.driverLicense?.uploaded ||
+          (docs.personalSelfEmployedDocs?.driverLicense?.count || 0) < 1
+        ) {
           toast.warning("Driver's license is required", {
             description: "Please upload your Driver's License to proceed.",
           });
@@ -280,12 +341,19 @@ export function NewMultiStepRegistrationForm({
               <Button
                 onClick={handleNextStep2}
                 size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base px-8 transition-colors"
+                disabled={isAnyActionPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base px-8 transition-colors disabled:opacity-50"
               >
                 <IconMenu
-                  text="Next"
+                  text={isUpdating ? "Saving..." : "Next"}
                   iconLocation="right"
-                  icon={<ChevronRight className="ml-2 h-5 w-5" />}
+                  icon={
+                    isUpdating ? (
+                      <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+                    ) : (
+                      <ChevronRight className="ml-2 h-5 w-5" />
+                    )
+                  }
                 />
               </Button>
             </div>
@@ -304,12 +372,19 @@ export function NewMultiStepRegistrationForm({
               <Button
                 onClick={handleNextStep3}
                 size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base px-8 transition-colors"
+                disabled={isAnyActionPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base px-8 transition-colors disabled:opacity-50"
               >
                 <IconMenu
-                  text="Next"
+                  text={isUpdating ? "Saving..." : "Next"}
                   iconLocation="right"
-                  icon={<ChevronRight className="ml-2 h-5 w-5" />}
+                  icon={
+                    isUpdating ? (
+                      <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+                    ) : (
+                      <ChevronRight className="ml-2 h-5 w-5" />
+                    )
+                  }
                 />
               </Button>
             </div>
