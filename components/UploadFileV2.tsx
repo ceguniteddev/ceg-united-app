@@ -15,9 +15,18 @@ import React, { useCallback, useState } from "react";
 type UploadFileProps = {
   userId: string;
   documentType?: DocumentType;
+  onUploadComplete?: (files: File[]) => void;
+  titleOverride?: string;
+  descriptionOverride?: string;
 };
 
-const UploadFile = ({ userId, documentType }: UploadFileProps) => {
+const UploadFile = ({
+  userId,
+  documentType,
+  onUploadComplete,
+  titleOverride,
+  descriptionOverride,
+}: UploadFileProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
 
@@ -63,21 +72,27 @@ const UploadFile = ({ userId, documentType }: UploadFileProps) => {
         queryClient.invalidateQueries({
           queryKey: [GET_USER_DOCUMENTS, userId],
         });
+
+        if (onUploadComplete) {
+          onUploadComplete(validFiles);
+        }
       } catch (error: any) {
         console.error(error);
       } finally {
         setIsLoading(false);
       }
     },
-    [userId, documentType, queryClient],
+    [userId, documentType, queryClient, onUploadComplete],
   );
 
-  const title = documentType
-    ? `Upload: ${documentType.title}`
-    : "Upload Other Document";
-  const description = documentType
-    ? `${documentType.description} (PDF or Image only)`
-    : "Upload any additional documents required for your application. (PDF or Image only)";
+  const title =
+    titleOverride ||
+    (documentType ? `Upload: ${documentType.title}` : "Upload Other Document");
+  const description =
+    descriptionOverride ||
+    (documentType
+      ? `${documentType.description} (PDF or Image only)`
+      : "Upload any additional documents required for your application. (PDF or Image only)");
 
   return (
     <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 mb-8 relative">

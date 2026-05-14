@@ -587,22 +587,8 @@ const getNewRegistrationBody = (value: User) => {
                 ${value.phoneNumber}
             </td>
         </tr>
-        <tr>
-            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; width: 150px; color: #555555; background-color: #f9f9f9;">
-                Birthdate
-            </th>
-            <td style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; color: #333333;">
-                ${format(value.birthdate, "MMM d, yyyy")}
-            </td>
-        </tr>
-        <tr>
-            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; width: 150px; color: #555555; background-color: #f9f9f9;">
-                Gender
-            </th>
-            <td style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; color: #333333;">
-                ${value.gender}
-            </td>
-        </tr>
+        
+        
     </table>
 </div>
   `;

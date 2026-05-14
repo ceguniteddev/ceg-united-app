@@ -105,6 +105,8 @@ export async function proxy(req: NextRequest) {
     if (!sessionCookie?.email) throw new Error("Invalid session");
     const user = await getUserById(sessionCookie.uid);
     role = (user?.role as any) ?? "Client";
+    // We get isOnboarded so we can conditionally route clients
+    var isOnboarded = user?.isOnboarded ?? false;
   } catch {
     // Bad token/session: clear cookie and kick to "/"
     const res = NextResponse.redirect(new URL("/", origin));
@@ -124,6 +126,7 @@ export async function proxy(req: NextRequest) {
     let dest = CLIENT_HOME;
     if (role === "Broker") dest = BROKER_HOME;
     else if (role !== "Client") dest = ADMIN_HOME;
+    else if (!isOnboarded) dest = "/onboarding"; // Route to onboarding if client is not onboarded
     return NextResponse.redirect(new URL(dest, origin));
   }
 
@@ -140,6 +143,16 @@ export async function proxy(req: NextRequest) {
       return NextResponse.redirect(new URL(CLIENT_HOME, origin));
     }
     if (isBrokerRoute(pathname)) {
+      return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+    }
+
+    // Force onboarding if not onboarded and trying to access client area
+    if (!isOnboarded && isClientRoute(pathname)) {
+      return NextResponse.redirect(new URL("/onboarding", origin));
+    }
+
+    // Redirect to home if they are onboarded and try to go to onboarding
+    if (isOnboarded && pathname === "/onboarding") {
       return NextResponse.redirect(new URL(CLIENT_HOME, origin));
     }
   }
@@ -173,6 +186,7 @@ export const config = {
     "/", // root (we fan out to role home)
     "/register", // public page
     "/verify-email/:path*", // email verification page
+    "/onboarding", // onboarding flow
     // "/my-funding/:path*",
     // "/my-accounts/:path*",
     // "/my-business/:path*",

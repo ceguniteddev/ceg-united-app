@@ -27,6 +27,7 @@ import { getUserById } from "./user";
 import { RegistrationType } from "@/schema/users";
 import { uploadDocument } from "./documents";
 import { calculateBusinessIncomePreApproved } from "./n8n";
+import { log } from "node:console";
 
 export const applyFunding = async ({
   value,
@@ -144,15 +145,16 @@ export const applyFunding = async ({
 
   // we do not generate CRS report when client is registering themselves,
   // only for broker/admin created clients
-  if (registrationType === "Self") {
-    logInfo("Skipping CRS report generation for self-registered user.");
-    return { referenceNumber };
-  }
+  // if (registrationType === "Self") {
+  //   logInfo("Skipping CRS report generation for self-registered user.");
+  //   return { referenceNumber };
+  // }
 
   // check if user alreay has generated CRS report
   const data = await getCRSReport(value.userId!);
 
   if (!data || data.length === 0) {
+    logInfo("Generating new CRS report for user:", { userId: value.userId });
     await generateCRSReport({
       userId: value.userId!,
       referenceNumber,

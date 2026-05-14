@@ -292,6 +292,10 @@ export const fundAnalysis = async ({
   referenceNumber: string;
   userId: string;
 }) => {
+  logInfo("Sending funding application for analysis...", {
+    referenceNumber,
+    userId,
+  });
   await fetch(`${process.env.n8n_HOST}/${await getFundingAnalysis()}`, {
     method: "POST",
     headers: {
