@@ -5,6 +5,7 @@ import {
   USER_COLLECTION,
   USER_FUNDING_APPLICATION,
   USER_FUNDING_APPLICATION_CONGRATS,
+  BUSINESS_DETAIL_COLLECTION,
 } from "@/constant/collection-name";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import AppError from "@/error/AppError";
@@ -26,7 +27,6 @@ import { cookies, headers } from "next/headers";
 import { FieldPath } from "firebase-admin/firestore";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { applyFunding } from "./apply-funding";
-import { recordBusiness } from "./business";
 import * as crypto from "node:crypto";
 import {
   sendClientFundingApplicationAuditAnalysis,
@@ -207,11 +207,11 @@ export const registerUser = async ({
   let businessId: string | undefined;
   let referenceNumber: string | undefined;
   if (fundingData?.businessName && fundingData.businessName.trim().length > 0) {
-    const businessData: Business = {
+    const businessData = {
       userId: userId,
       businessName: fundingData.businessName,
       businessStreetAddress: fundingData.businessStreetAddress ?? "",
-      businessStreetHouseNumber: fundingData.businessStreetHouseNumber,
+      businessStreetHouseNumber: fundingData.businessStreetHouseNumber ?? "",
       businessCityAddress: fundingData.businessCityAddress ?? "",
       businessStateAddress: fundingData.businessStateAddress ?? "",
       businessPostalAddress: fundingData.businessPostalAddress ?? "",
@@ -219,13 +219,16 @@ export const registerUser = async ({
         fundingData.employerIdentificationNumber ?? "",
       businessPhoneNumber: fundingData.businessPhoneNumber ?? "",
       businessEmail: fundingData.businessEmail ?? "",
-      businessWebsite: fundingData.businessWebsite,
-      socialMedia: fundingData.socialMedia,
+      businessWebsite: fundingData.businessWebsite ?? "",
+      socialMedia: fundingData.socialMedia || [],
+      createdAt: new Date(),
     };
 
-    // Record business and get the ID
-    const businessDocRef = await recordBusiness(businessData);
-    businessId = businessDocRef;
+    // Record business directly to bypass strict validation (since it's partial at this stage)
+    const businessDocRef = await db
+      .collection(BUSINESS_DETAIL_COLLECTION)
+      .add(businessData);
+    businessId = businessDocRef.id;
   }
 
   // Create funding application if fundingData is provided

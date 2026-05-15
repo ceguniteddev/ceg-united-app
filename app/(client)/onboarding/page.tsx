@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { NewMultiStepRegistrationForm } from "@/components/new-registration/NewMultiStepRegistrationForm";
+import { OnboardingForm } from "@/components/new-registration/OnboardingForm";
 import { useNewRegistrationStore } from "@/store/new-registration-store";
 import { useAuth } from "@/provider/AuthContext";
 import Spinner from "@/components/Spinner";
@@ -15,8 +15,6 @@ export default function OnboardingPage() {
   const handleFinalSubmit = async (data: any) => {
     try {
       if (!user) throw new Error("Not authenticated");
-
-      // console.log("Submitting onboarding data:", data);
 
       const response = await fetch(`/api/user/${user.uid}/onboarding`, {
         method: "POST",
@@ -52,7 +50,7 @@ export default function OnboardingPage() {
   return (
     <div className="p-3 sm:p-4 md:p-6 min-h-screen">
       <div className="w-full max-w-[95vw] sm:max-w-[900px] lg:max-w-[1000px] mx-auto">
-        <NewMultiStepRegistrationForm onFinalSubmit={handleFinalSubmit} />
+        <OnboardingForm onFinalSubmit={handleFinalSubmit} />
       </div>
     </div>
   );

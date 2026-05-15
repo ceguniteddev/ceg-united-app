@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { authSchema } from "@/schema/new-registration";
+import {
+  authSchema,
+  businessDetailsSchema,
+  fundingPageSchema,
+} from "@/schema/new-registration";
 import { registerUser } from "@/service/user";
 import { User } from "@/schema/registration";
 
@@ -14,8 +18,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validate the auth payload
+    // Validate payloads
     const parsedAuth = authSchema.parse(body.auth);
+    let parsedBusiness = null;
+    if (body.business) {
+      parsedBusiness = businessDetailsSchema.parse(body.business);
+    }
+    let parsedFunding = null;
+    if (body.funding) {
+      parsedFunding = fundingPageSchema.parse(body.funding);
+    }
 
     // Call service to register the user
     await registerUser({
@@ -24,7 +36,9 @@ export async function POST(req: Request) {
         role: "Client",
         consentConfirmTerms: true,
         consentConfirmPrivacy: true,
-      } as User,
+        businessDetails: parsedBusiness,
+        fundingDetails: parsedFunding,
+      } as any as User,
       registrationType: "Self",
     });
 

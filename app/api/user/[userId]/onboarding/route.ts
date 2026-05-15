@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  businessDetailsSchema,
-  fundingPageSchema,
-  documentUploadSchema,
-} from "@/schema/new-registration";
+import { documentUploadSchema } from "@/schema/new-registration";
 import { authenticateRequest, withAuth } from "@/lib/api-validation";
-import { DecodedIdToken } from "firebase-admin/auth";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { badRequest } from "@/app/api/helpers";
-import { USER_COLLECTION } from "@/constant/collection-name";
+import {
+  USER_COLLECTION,
+  USER_FUNDING_APPLICATION,
+  BUSINESS_DETAIL_COLLECTION,
+} from "@/constant/collection-name";
 
 export const POST = withAuth(
   async (
@@ -22,54 +21,59 @@ export const POST = withAuth(
     try {
       const body = await req.json();
 
-      if (!body.business || !body.funding || !body.documents) {
+      if (!body.documents) {
         return NextResponse.json(
           { error: "Incomplete application data" },
           { status: 400 },
         );
       }
 
-      // You can parse schemas again here to double check security.
-      businessDetailsSchema.parse(body.business);
-      fundingPageSchema.parse(body.funding);
+      const db = firestoreAdmin();
+      const userDocRef = db.collection(USER_COLLECTION).doc(userId);
+      const userDoc = await userDocRef.get();
+      const userData = userDoc.data();
 
-      // Check document schema - we need to inject the interestedProduct for validation to work correctly
+      if (!userData) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      // Check document schema - we inject the interestedProduct for validation to work correctly
       documentUploadSchema.parse({
         ...body.documents,
-        interestedProduct: body.funding.interestedProduct,
-        fundingType: body.funding.fundingType,
+        interestedProduct: userData.fundingDetails?.interestedProduct,
+        fundingType: userData.fundingDetails?.fundingType,
       });
 
-      const db = firestoreAdmin();
+      const docs = body.documents;
 
-      // We need to map the onboarding data to an ApplyFunding object
+      // We map the onboarding data to create the ApplyFunding object
       const fundingDataToSave: any = {
         userId: userId,
-        interestedProduct: body.funding.interestedProduct,
-        fundingProducts: body.funding.fundingProducts || [],
-        fundingType: body.funding.fundingType,
+        interestedProduct: userData.fundingDetails?.interestedProduct || "",
+        fundingProducts: userData.fundingDetails?.fundingProducts || [],
+        fundingType: userData.fundingDetails?.fundingType || "",
         appliedDate: new Date().toISOString(),
         status: "New",
         analysisStatus: "In Progress",
       };
 
-      if (body.funding.businessName) {
-        fundingDataToSave.businessName = body.funding.businessName;
+      if (userData.fundingDetails?.businessName) {
+        fundingDataToSave.businessName = userData.fundingDetails.businessName;
       }
 
       // Map business metrics
-      if (body.business.monthlyDeposit) {
-        fundingDataToSave.monthlyDeposit = body.business.monthlyDeposit;
+      if (userData.businessDetails?.monthlyDeposit) {
+        fundingDataToSave.monthlyDeposit =
+          userData.businessDetails.monthlyDeposit;
       }
-      if (body.business.timeInBusiness) {
-        fundingDataToSave.timeInBusiness = body.business.timeInBusiness;
+      if (userData.businessDetails?.timeInBusiness) {
+        fundingDataToSave.timeInBusiness =
+          userData.businessDetails.timeInBusiness;
       }
-      if (body.business.creditScore) {
-        fundingDataToSave.creditScore = body.business.creditScore;
+      if (userData.businessDetails?.creditScore) {
+        fundingDataToSave.creditScore = userData.businessDetails.creditScore;
       }
 
-      // Map address/SSN/EIN from documents step
-      const docs = body.documents;
       if (docs) {
         if (docs.businessDocs) {
           fundingDataToSave.employerIdentificationNumber =
@@ -80,7 +84,6 @@ export const POST = withAuth(
           fundingDataToSave.addressCity = docs.businessDocs.addressCity;
           fundingDataToSave.addressState = docs.businessDocs.addressState;
           fundingDataToSave.addressPostal = docs.businessDocs.addressPostal;
-          // Note: The files are already uploaded by UploadFileV2 to GCS!
         } else if (docs.personalW2Docs) {
           fundingDataToSave.ssn = docs.personalW2Docs.ssn;
           fundingDataToSave.addressStreet = docs.personalW2Docs.addressStreet;
@@ -111,10 +114,6 @@ export const POST = withAuth(
         fundingDataToSave.businessName &&
         fundingDataToSave.businessName.trim().length > 0
       ) {
-        const userDoc = await db.collection("users").doc(userId).get();
-        const userData = userDoc.data();
-
-        const { recordBusiness } = await import("@/service/business");
         const businessData = {
           userId: userId,
           businessName: fundingDataToSave.businessName,
@@ -127,14 +126,17 @@ export const POST = withAuth(
             fundingDataToSave.employerIdentificationNumber || "",
           businessPhoneNumber: userData?.phoneNumber || "000-000-0000",
           businessEmail: userData?.email || "unknown@example.com",
+          createdAt: new Date(),
         };
 
-        businessId = await recordBusiness(businessData);
+        const businessDocRef = await db
+          .collection(BUSINESS_DETAIL_COLLECTION)
+          .add(businessData);
+        businessId = businessDocRef.id;
         fundingDataToSave.businessId = businessId;
       }
 
       // Trigger applyFunding to create app record, and run CRS/Analysis
-      // We pass the mapped data
       const { applyFunding } = await import("@/service/apply-funding");
       const referenceNumber = await applyFunding({
         value: fundingDataToSave,
@@ -147,10 +149,9 @@ export const POST = withAuth(
       );
 
       // Mark the user as onboarded in Firestore
-      await db.collection(USER_COLLECTION).doc(userId).set(
+      await userDocRef.set(
         {
           isOnboarded: true,
-          businessDetails: body.business, // Keep metrics on the user profile
         },
         { merge: true },
       );
