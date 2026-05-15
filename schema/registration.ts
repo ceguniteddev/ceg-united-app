@@ -50,8 +50,6 @@ export const registrationSchema = z.object({
   lastName: z.string().min(1, { error: "Required" }),
   email: z.email().min(1, { error: "Required" }),
   password: passwordSchema.optional().or(z.literal("")),
-  // birthdate: dateOfBirthSchema,
-  // gender: GenderEnum,
   phoneNumber: z.string().min(1, { error: "Required" }),
   role: ROLESEnum.optional(),
   isOnboarded: z.boolean().optional(),
@@ -83,17 +81,6 @@ export const registrationSchema = z.object({
   // Temporary onboarding storage
   businessDetails: z.any().optional(),
   fundingDetails: z.any().optional(),
-
-  // addressStreet: z.string().min(1, { error: "Required" }),
-  // houseNumber: z.string().optional(),
-  // addressCity: z.string().min(1, { error: "Required" }),
-  // addressState: z.string().min(1, { error: "Required" }),
-  // addressPostal: z.string().min(1, { error: "Required" }),
-
-  // payPerMonth: z.coerce.number<number>().optional(),
-  // employmentPayPerMonth: z.coerce
-  //   .number<number>({ error: "Required" })
-  //   .min(1, { message: "Required" }),
 });
 
 export const UserFundMapStatus = z.enum(["New", "Processing"]);

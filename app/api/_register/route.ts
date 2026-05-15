@@ -76,7 +76,7 @@ export const POST = async (req: NextRequest) => {
     } else {
       // Fallback to old single-step registration
       await registerUser({
-        user: values,
+        user: values as User,
         registrationType: "Self",
         brokerId,
         brokerName,

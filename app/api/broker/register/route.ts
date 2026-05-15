@@ -40,8 +40,6 @@ export const POST = async (request: NextRequest) => {
       email,
       password,
       phoneNumber,
-      birthdate: new Date(),
-      gender: "Other",
       ssn: "",
       role: "Broker",
       isOnboarded: false,
