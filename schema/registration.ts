@@ -80,6 +80,10 @@ export const registrationSchema = z.object({
   consentConfirmTerms: z.boolean().optional(),
   consentConfirmPrivacy: z.boolean().optional(),
 
+  // Temporary onboarding storage
+  businessDetails: z.any().optional(),
+  fundingDetails: z.any().optional(),
+
   // addressStreet: z.string().min(1, { error: "Required" }),
   // houseNumber: z.string().optional(),
   // addressCity: z.string().min(1, { error: "Required" }),

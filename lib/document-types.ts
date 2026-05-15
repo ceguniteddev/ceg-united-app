@@ -48,10 +48,18 @@ export const DOCUMENT_TYPES: DocumentType[] = [
   },
   {
     id: "BANK_STATEMENTS",
-    title: "Bank Statements",
-    description: "Upload your most recent month's bank statements.",
+    title: "Business Bank Statements",
+    description: "Upload your most recent month's business bank statements.",
     icon: CreditCard,
     category: "universal",
+    required: true,
+  },
+  {
+    id: "PERSONAL_BANK_STATEMENTS",
+    title: "Personal Bank Statements",
+    description: "Upload your most recent month's personal bank statements.",
+    icon: CreditCard,
+    category: "personal",
     required: true,
   },
   {

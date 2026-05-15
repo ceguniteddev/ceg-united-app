@@ -8,6 +8,8 @@ import {
   USER_FUNDING_APPLICATION,
   BUSINESS_DETAIL_COLLECTION,
 } from "@/constant/collection-name";
+import { normalizeAllDates } from "@/lib/date-parser";
+import { FieldValue } from "firebase-admin/firestore";
 
 export const POST = withAuth(
   async (
@@ -30,12 +32,17 @@ export const POST = withAuth(
 
       const db = firestoreAdmin();
       const userDocRef = db.collection(USER_COLLECTION).doc(userId);
-      const userDoc = await userDocRef.get();
-      const userData = userDoc.data();
+      const docSnapshot = await userDocRef.get();
 
-      if (!userData) {
+      if (!docSnapshot.exists)
         return NextResponse.json({ error: "User not found" }, { status: 404 });
-      }
+
+      const userDoc = docSnapshot;
+      const user = userDoc.data();
+      const userData = {
+        id: userDoc.id,
+        ...normalizeAllDates(user),
+      };
 
       // Check document schema - we inject the interestedProduct for validation to work correctly
       documentUploadSchema.parse({
@@ -75,36 +82,25 @@ export const POST = withAuth(
       }
 
       if (docs) {
+        // Universal Fields
+        if (docs.ssn) fundingDataToSave.ssn = docs.ssn;
+        if (docs.addressStreet)
+          fundingDataToSave.addressStreet = docs.addressStreet;
+        if (docs.houseNumber) fundingDataToSave.houseNumber = docs.houseNumber;
+        if (docs.addressCity) fundingDataToSave.addressCity = docs.addressCity;
+        if (docs.addressState)
+          fundingDataToSave.addressState = docs.addressState;
+        if (docs.addressPostal)
+          fundingDataToSave.addressPostal = docs.addressPostal;
+
+        if (docs.employmentType) {
+          fundingDataToSave.employmentStatus = docs.employmentType;
+        }
+
         if (docs.businessDocs) {
           fundingDataToSave.employerIdentificationNumber =
             docs.businessDocs.ein;
-          fundingDataToSave.ssn = docs.businessDocs.ssn;
-          fundingDataToSave.addressStreet = docs.businessDocs.addressStreet;
-          fundingDataToSave.houseNumber = docs.businessDocs.houseNumber;
-          fundingDataToSave.addressCity = docs.businessDocs.addressCity;
-          fundingDataToSave.addressState = docs.businessDocs.addressState;
-          fundingDataToSave.addressPostal = docs.businessDocs.addressPostal;
-        } else if (docs.personalW2Docs) {
-          fundingDataToSave.ssn = docs.personalW2Docs.ssn;
-          fundingDataToSave.addressStreet = docs.personalW2Docs.addressStreet;
-          fundingDataToSave.houseNumber = docs.personalW2Docs.houseNumber;
-          fundingDataToSave.addressCity = docs.personalW2Docs.addressCity;
-          fundingDataToSave.addressState = docs.personalW2Docs.addressState;
-          fundingDataToSave.addressPostal = docs.personalW2Docs.addressPostal;
-          fundingDataToSave.employmentStatus = "W2 Employed";
-        } else if (docs.personalSelfEmployedDocs) {
-          fundingDataToSave.ssn = docs.personalSelfEmployedDocs.ssn;
-          fundingDataToSave.addressStreet =
-            docs.personalSelfEmployedDocs.addressStreet;
-          fundingDataToSave.houseNumber =
-            docs.personalSelfEmployedDocs.houseNumber;
-          fundingDataToSave.addressCity =
-            docs.personalSelfEmployedDocs.addressCity;
-          fundingDataToSave.addressState =
-            docs.personalSelfEmployedDocs.addressState;
-          fundingDataToSave.addressPostal =
-            docs.personalSelfEmployedDocs.addressPostal;
-          fundingDataToSave.employmentStatus = "Self Employed";
+          // Note: The files are already uploaded by UploadFileV2 to GCS!
         }
       }
 
@@ -138,23 +134,17 @@ export const POST = withAuth(
 
       // Trigger applyFunding to create app record, and run CRS/Analysis
       const { applyFunding } = await import("@/service/apply-funding");
-      const referenceNumber = await applyFunding({
+      await applyFunding({
         value: fundingDataToSave,
         registrationType: "Self",
       });
 
-      console.log(
-        "Onboarding application submitted with reference number:",
-        referenceNumber,
-      );
-
-      // Mark the user as onboarded in Firestore
-      await userDocRef.set(
-        {
-          isOnboarded: true,
-        },
-        { merge: true },
-      );
+      // Mark the user as onboarded in Firestore and remove temporary data
+      await userDocRef.update({
+        isOnboarded: true,
+        businessDetails: FieldValue.delete(),
+        fundingDetails: FieldValue.delete(),
+      });
 
       return NextResponse.json(
         { success: true, message: "Onboarding submitted successfully" },

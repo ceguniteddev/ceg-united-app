@@ -75,96 +75,105 @@ export const fundingPageSchema = z
 
 export type FundingPageForm = z.infer<typeof fundingPageSchema>;
 
-const documentUploadBaseSchema = z.object({
-  ssn: z.string({ message: "Required" }).min(9, { message: "SSN is required" }),
-  addressStreet: z
-    .string({ message: "Required" })
-    .min(1, { message: "Required" }),
-  houseNumber: z.string().optional(),
-  addressCity: z
-    .string({ message: "Required" })
-    .min(1, { message: "Required" }),
-  addressState: z
-    .string({ message: "Required" })
-    .min(1, { message: "Required" }),
-  addressPostal: z
-    .string({ message: "Required" })
-    .min(1, { message: "Required" }),
-});
-
-export const documentUploadBusinessSchema = documentUploadBaseSchema.extend({
-  driverLicense: z.any().optional(), // In reality, an array of files or base64 strings
-  bankStatements: z.any().optional(),
-  ein: z.string().min(1, { message: "EIN is required" }),
-  // authorizationWaiver: z.boolean().refine((val) => val === true, {
-  //   message: "You must accept the authorization waiver",
-  // }),
-});
-
-export const documentUploadPersonalW2Schema = documentUploadBaseSchema.extend({
-  driverLicense: z.any().optional(),
-  paystubs: z.any().optional(),
-});
-
-export const documentUploadPersonalSelfEmployedSchema =
-  documentUploadBaseSchema.extend({
-    driverLicense: z.any().optional(),
-    bankStatements: z.any().optional(),
-  });
-
 export const documentUploadSchema = z
   .object({
     interestedProduct: z.string().optional(),
     fundingType: z.string().optional(),
     employmentType: z.enum(["W2 Employed", "Self Employed"]).optional(),
-    businessDocs: z.any().optional(),
-    personalW2Docs: z.any().optional(),
-    personalSelfEmployedDocs: z.any().optional(),
+
+    // Universal Identity Fields
+    ssn: z.string({ message: "Required" }).optional(),
+    addressStreet: z.string({ message: "Required" }).optional(),
+    houseNumber: z.string().optional(),
+    addressCity: z.string({ message: "Required" }).optional(),
+    addressState: z.string({ message: "Required" }).optional(),
+    addressPostal: z.string({ message: "Required" }).optional(),
+    driverLicense: z.any().optional(),
+
+    // Business specific
+    businessDocs: z
+      .object({
+        bankStatements: z.any().optional(),
+        ein: z.string().optional(),
+      })
+      .optional(),
+
+    // Personal specific
+    personalDocs: z
+      .object({
+        paystubs: z.any().optional(),
+        bankStatements: z.any().optional(),
+      })
+      .optional(),
   })
   .superRefine((data, ctx) => {
-    if (
+    const isBusiness =
       data.interestedProduct === "Business Funding" ||
-      data.interestedProduct === "Personal & Business Funding"
-    ) {
-      const result = documentUploadBusinessSchema.safeParse(data.businessDocs);
-      if (!result.success) {
-        result.error.issues.forEach((issue) => {
-          ctx.addIssue({ ...issue, path: ["businessDocs", ...issue.path] });
+      data.interestedProduct === "Personal & Business Funding";
+    const isPersonal =
+      data.interestedProduct === "Personal Funding" ||
+      data.interestedProduct === "Personal & Business Funding";
+
+    // Validate Universal Fields if either is selected
+    if (isBusiness || isPersonal) {
+      if (!data.ssn || data.ssn.length < 9) {
+        ctx.addIssue({
+          code: "custom",
+          message: "SSN is required",
+          path: ["ssn"],
+        });
+      }
+      if (!data.addressStreet || data.addressStreet.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["addressStreet"],
+        });
+      }
+      if (!data.addressCity || data.addressCity.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["addressCity"],
+        });
+      }
+      if (!data.addressState || data.addressState.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["addressState"],
+        });
+      }
+      if (!data.addressPostal || data.addressPostal.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Required",
+          path: ["addressPostal"],
+        });
+      }
+      // Driver's License validation is handled at the component level checking `count`
+    }
+
+    if (isBusiness) {
+      if (
+        !data.businessDocs?.ein ||
+        data.businessDocs.ein.trim().length === 0
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "EIN is required",
+          path: ["businessDocs", "ein"],
         });
       }
     }
 
-    if (
-      data.interestedProduct === "Personal Funding" ||
-      data.interestedProduct === "Personal & Business Funding"
-    ) {
+    if (isPersonal) {
       if (!data.employmentType) {
         ctx.addIssue({
           code: "custom",
           message: "Employment type is required for personal funding",
           path: ["employmentType"],
         });
-      } else if (data.employmentType === "W2 Employed") {
-        const result = documentUploadPersonalW2Schema.safeParse(
-          data.personalW2Docs,
-        );
-        if (!result.success) {
-          result.error.issues.forEach((issue) => {
-            ctx.addIssue({ ...issue, path: ["personalW2Docs", ...issue.path] });
-          });
-        }
-      } else if (data.employmentType === "Self Employed") {
-        const result = documentUploadPersonalSelfEmployedSchema.safeParse(
-          data.personalSelfEmployedDocs,
-        );
-        if (!result.success) {
-          result.error.issues.forEach((issue) => {
-            ctx.addIssue({
-              ...issue,
-              path: ["personalSelfEmployedDocs", ...issue.path],
-            });
-          });
-        }
       }
     }
   });

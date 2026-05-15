@@ -28,7 +28,7 @@ export function Step2BusinessDetails() {
             decimalScale={0}
             fixedDecimalScale={false}
             min={10000}
-            max={5000000}
+            max={1000000}
           />
           <div className="pt-2 px-1">
             <Controller
@@ -43,7 +43,7 @@ export function Step2BusinessDetails() {
                   ]}
                   onValueChange={(vals) => field.onChange(vals[0])}
                   min={10000}
-                  max={5000000}
+                  max={1000000}
                   step={10000}
                   className="py-4 cursor-pointer"
                 />
@@ -51,7 +51,7 @@ export function Step2BusinessDetails() {
             />
             <div className="flex justify-between text-xs font-medium text-slate-400 mt-1">
               <span>$10,000</span>
-              <span>$5,000,000+</span>
+              <span>$1,000,000+</span>
             </div>
           </div>
         </div>

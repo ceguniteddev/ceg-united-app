@@ -249,7 +249,7 @@ export function Step4DocumentUpload() {
       if (data.personal) {
         if (data.personal.addressStreet)
           setValue(
-            `${addressPrefix}.addressStreet`,
+            addressPrefix ? `${addressPrefix}.addressStreet` : "addressStreet",
             data.personal.addressStreet,
             {
               shouldDirty: true,
@@ -257,13 +257,17 @@ export function Step4DocumentUpload() {
             },
           );
         if (data.personal.addressCity)
-          setValue(`${addressPrefix}.addressCity`, data.personal.addressCity, {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
+          setValue(
+            addressPrefix ? `${addressPrefix}.addressCity` : "addressCity",
+            data.personal.addressCity,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
         if (data.personal.addressState)
           setValue(
-            `${addressPrefix}.addressState`,
+            addressPrefix ? `${addressPrefix}.addressState` : "addressState",
             data.personal.addressState,
             {
               shouldDirty: true,
@@ -272,7 +276,7 @@ export function Step4DocumentUpload() {
           );
         if (data.personal.addressPostal)
           setValue(
-            `${addressPrefix}.addressPostal`,
+            addressPrefix ? `${addressPrefix}.addressPostal` : "addressPostal",
             data.personal.addressPostal,
             {
               shouldDirty: true,
@@ -307,7 +311,10 @@ export function Step4DocumentUpload() {
     );
 
     if (files && files.length > 0 && fieldName.includes("driverLicense")) {
-      const addressPrefix = fieldName.split(".")[0];
+      // If the fieldName is nested (e.g., "businessDocs.driverLicense"), extract the prefix.
+      // Otherwise, if it's at the root (e.g., "driverLicense"), the prefix is empty.
+      const parts = fieldName.split(".");
+      const addressPrefix = parts.length > 1 ? parts[0] : "";
       handleSmartAutoFill(files, addressPrefix);
     }
   };
@@ -345,35 +352,90 @@ export function Step4DocumentUpload() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* UNIVERSAL IDENTITY & ADDRESS */}
+        {(isBusiness || isPersonal) && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
+            <h3 className="text-lg font-semibold">Identity & Address</h3>
+
+            <div className="space-y-2">
+              <UploadFile
+                userId={user?.uid || ""}
+                documentType={driversLicenseType}
+                titleOverride="Upload Driver's License"
+                descriptionOverride="Upload a clear image or PDF of your Driver's License."
+                onUploadComplete={(files) =>
+                  handleUploadComplete("driverLicense", files)
+                }
+              />
+              <DocumentList
+                userId={user?.uid || ""}
+                documentType={driversLicenseType}
+                onDocumentStateChange={(uploaded) =>
+                  handleDocumentStateChange("driverLicense", uploaded)
+                }
+              />
+            </div>
+
+            <FormSSNInput
+              control={control}
+              name="ssn"
+              label="SSN"
+              required
+              placeholder="XXX-XX-XXXX"
+            />
+
+            <div className="space-y-4 pt-2">
+              <h4 className="text-sm font-semibold text-gray-700">
+                Personal Address
+              </h4>
+              <FormInput
+                control={control}
+                name="addressStreet"
+                label="Street Address"
+                placeholder="123 Main St"
+                required
+              />
+              <FormInput
+                control={control}
+                name="houseNumber"
+                label="Apt/Suite/Unit (Optional)"
+                placeholder="Apt 4B"
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <FormInput
+                  control={control}
+                  name="addressCity"
+                  label="City"
+                  placeholder="New York"
+                  required
+                />
+                <FormSelect
+                  control={control}
+                  name="addressState"
+                  label="State"
+                  placeholder="Select a state"
+                  options={US_STATES}
+                  required
+                />
+                <FormInput
+                  control={control}
+                  name="addressPostal"
+                  label="Zip Code"
+                  placeholder="10001"
+                  required
+                />
+              </div>
+            </div>
+            <Separator className="my-6" />
+          </div>
+        )}
+
         {/* BUSINESS FUNDING DOCUMENTS */}
         {isBusiness && (
           <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
             <h3 className="text-lg font-semibold">Business Requirements</h3>
 
             <div className="space-y-4">
-              {/* Driver's License Upload */}
-              <div className="space-y-2">
-                <UploadFile
-                  userId={user?.uid || ""}
-                  documentType={driversLicenseType}
-                  titleOverride="Upload Driver's License"
-                  descriptionOverride="Upload a clear image or PDF of your Driver's License."
-                  onUploadComplete={(files) =>
-                    handleUploadComplete("businessDocs.driverLicense", files)
-                  }
-                />
-                <DocumentList
-                  userId={user?.uid || ""}
-                  documentType={driversLicenseType}
-                  onDocumentStateChange={(uploaded) =>
-                    handleDocumentStateChange(
-                      "businessDocs.driverLicense",
-                      uploaded,
-                    )
-                  }
-                />
-              </div>
-
               {/* 4 Months Bank Statements */}
               <div className="space-y-2">
                 <UploadFile
@@ -398,67 +460,21 @@ export function Step4DocumentUpload() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <CustomFormField
+                {/* <CustomFormField
                   name="businessDocs.ein"
                   label="EIN (Number)"
                   placeholder="Enter your EIN"
-                />
-
-                <FormSSNInput
-                  control={control}
-                  name="businessDocs.ssn"
-                  label="SSN"
-                  placeholder="XXX-XX-XXXX"
-                />
-              </div>
-
-              <div className="space-y-4 pt-2">
-                <h4 className="text-sm font-semibold text-gray-700">
-                  Personal Address
-                </h4>
+                /> */}
                 <FormInput
                   control={control}
-                  name="businessDocs.addressStreet"
-                  label="Street Address"
-                  placeholder="123 Main St"
+                  name="businessDocs.ein"
+                  label="EIN (Number)"
+                  placeholder="Enter your EIN"
+                  required
                 />
-                <FormInput
-                  control={control}
-                  name="businessDocs.houseNumber"
-                  label="Apt/Suite/Unit (Optional)"
-                  placeholder="Apt 4B"
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <FormInput
-                    control={control}
-                    name="businessDocs.addressCity"
-                    label="City"
-                    placeholder="New York"
-                  />
-                  <FormSelect
-                    control={control}
-                    name="businessDocs.addressState"
-                    label="State"
-                    placeholder="Select a state"
-                    options={US_STATES}
-                  />
-                  <FormInput
-                    control={control}
-                    name="businessDocs.addressPostal"
-                    label="Zip Code"
-                    placeholder="10001"
-                  />
-                </div>
               </div>
-
-              {/* <Separator className="my-4" /> */}
-
-              {/* <CustomFormField
-                type="checkbox"
-                name="businessDocs.authorizationWaiver"
-                label="I agree to the Authorization Waiver"
-              /> */}
             </div>
+            {isPersonal && <Separator className="my-6" />}
           </div>
         )}
 
@@ -467,15 +483,16 @@ export function Step4DocumentUpload() {
           <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
             <h3 className="text-lg font-semibold">Personal Requirements</h3>
 
-            <CustomFormField
+            <FormSelect
+              control={control}
               name="employmentType"
               label="Employment Status"
-              type="select"
+              placeholder="Select employment status"
               options={[
                 { value: "W2 Employed", label: "W2 Employed" },
                 { value: "Self Employed", label: "Self Employed" },
               ]}
-              placeholder="Select employment status"
+              required
             />
 
             {employmentType === "W2 Employed" && (
@@ -483,36 +500,11 @@ export function Step4DocumentUpload() {
                 <div className="space-y-2">
                   <UploadFile
                     userId={user?.uid || ""}
-                    documentType={driversLicenseType}
-                    titleOverride="Upload Driver's License"
-                    descriptionOverride="Click to upload your Driver's License."
-                    onUploadComplete={(files) =>
-                      handleUploadComplete(
-                        "personalW2Docs.driverLicense",
-                        files,
-                      )
-                    }
-                  />
-                  <DocumentList
-                    userId={user?.uid || ""}
-                    documentType={driversLicenseType}
-                    onDocumentStateChange={(uploaded) =>
-                      handleDocumentStateChange(
-                        "personalW2Docs.driverLicense",
-                        uploaded,
-                      )
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <UploadFile
-                    userId={user?.uid || ""}
                     documentType={paystubsType}
                     titleOverride="Last 2 Recent Paystubs"
                     descriptionOverride="Click to upload your paystubs."
                     onUploadComplete={(files) =>
-                      handleUploadComplete("personalW2Docs.paystubs", files)
+                      handleUploadComplete("personalDocs.paystubs", files)
                     }
                   />
                   <DocumentList
@@ -520,57 +512,11 @@ export function Step4DocumentUpload() {
                     documentType={paystubsType}
                     onDocumentStateChange={(uploaded) =>
                       handleDocumentStateChange(
-                        "personalW2Docs.paystubs",
+                        "personalDocs.paystubs",
                         uploaded,
                       )
                     }
                   />
-                </div>
-
-                <FormSSNInput
-                  control={control}
-                  name="personalW2Docs.ssn"
-                  label="SSN"
-                  placeholder="XXX-XX-XXXX"
-                />
-
-                <div className="space-y-4 pt-2">
-                  <h4 className="text-sm font-semibold text-gray-700">
-                    Personal Address
-                  </h4>
-                  <FormInput
-                    control={control}
-                    name="personalW2Docs.addressStreet"
-                    label="Street Address"
-                    placeholder="123 Main St"
-                  />
-                  <FormInput
-                    control={control}
-                    name="personalW2Docs.houseNumber"
-                    label="Apt/Suite/Unit (Optional)"
-                    placeholder="Apt 4B"
-                  />
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <FormInput
-                      control={control}
-                      name="personalW2Docs.addressCity"
-                      label="City"
-                      placeholder="New York"
-                    />
-                    <FormSelect
-                      control={control}
-                      name="personalW2Docs.addressState"
-                      label="State"
-                      placeholder="Select a state"
-                      options={US_STATES}
-                    />
-                    <FormInput
-                      control={control}
-                      name="personalW2Docs.addressPostal"
-                      label="Zip Code"
-                      placeholder="10001"
-                    />
-                  </div>
                 </div>
               </div>
             )}
@@ -580,97 +526,27 @@ export function Step4DocumentUpload() {
                 <div className="space-y-2">
                   <UploadFile
                     userId={user?.uid || ""}
-                    documentType={bankStatementsType}
+                    documentType={DOCUMENT_TYPES.find(
+                      (dt) => dt.id === "PERSONAL_BANK_STATEMENTS",
+                    )}
                     titleOverride="3 Months Bank Statements"
-                    descriptionOverride="Click to upload your recent bank statements."
+                    descriptionOverride="Click to upload your recent personal bank statements."
                     onUploadComplete={(files) =>
-                      handleUploadComplete(
-                        "personalSelfEmployedDocs.bankStatements",
-                        files,
-                      )
+                      handleUploadComplete("personalDocs.bankStatements", files)
                     }
                   />
                   <DocumentList
                     userId={user?.uid || ""}
-                    documentType={bankStatementsType}
+                    documentType={DOCUMENT_TYPES.find(
+                      (dt) => dt.id === "PERSONAL_BANK_STATEMENTS",
+                    )}
                     onDocumentStateChange={(uploaded) =>
                       handleDocumentStateChange(
-                        "personalSelfEmployedDocs.bankStatements",
+                        "personalDocs.bankStatements",
                         uploaded,
                       )
                     }
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <UploadFile
-                    userId={user?.uid || ""}
-                    documentType={driversLicenseType}
-                    titleOverride="Upload Driver's License"
-                    descriptionOverride="Click to upload your Driver's License."
-                    onUploadComplete={(files) =>
-                      handleUploadComplete(
-                        "personalSelfEmployedDocs.driverLicense",
-                        files,
-                      )
-                    }
-                  />
-                  <DocumentList
-                    userId={user?.uid || ""}
-                    documentType={driversLicenseType}
-                    onDocumentStateChange={(uploaded) =>
-                      handleDocumentStateChange(
-                        "personalSelfEmployedDocs.driverLicense",
-                        uploaded,
-                      )
-                    }
-                  />
-                </div>
-
-                <FormSSNInput
-                  control={control}
-                  name="personalSelfEmployedDocs.ssn"
-                  label="SSN"
-                  placeholder="XXX-XX-XXXX"
-                />
-
-                <div className="space-y-4 pt-2">
-                  <h4 className="text-sm font-semibold text-gray-700">
-                    Personal Address
-                  </h4>
-                  <FormInput
-                    control={control}
-                    name="personalSelfEmployedDocs.addressStreet"
-                    label="Street Address"
-                    placeholder="123 Main St"
-                  />
-                  <FormInput
-                    control={control}
-                    name="personalSelfEmployedDocs.houseNumber"
-                    label="Apt/Suite/Unit (Optional)"
-                    placeholder="Apt 4B"
-                  />
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <FormInput
-                      control={control}
-                      name="personalSelfEmployedDocs.addressCity"
-                      label="City"
-                      placeholder="New York"
-                    />
-                    <FormSelect
-                      control={control}
-                      name="personalSelfEmployedDocs.addressState"
-                      label="State"
-                      placeholder="Select a state"
-                      options={US_STATES}
-                    />
-                    <FormInput
-                      control={control}
-                      name="personalSelfEmployedDocs.addressPostal"
-                      label="Zip Code"
-                      placeholder="10001"
-                    />
-                  </div>
                 </div>
               </div>
             )}
