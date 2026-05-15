@@ -3,6 +3,7 @@ import { passwordSchema } from "./registration";
 
 export const authSchema = z.object({
   firstName: z.string().min(1, { message: "First name is required" }),
+  middleName: z.string().optional(),
   lastName: z.string().min(1, { message: "Last name is required" }),
   phoneNumber: z
     .string()

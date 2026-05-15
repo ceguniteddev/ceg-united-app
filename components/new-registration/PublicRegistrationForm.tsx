@@ -56,6 +56,7 @@ export function PublicRegistrationForm() {
     resolver: zodResolver(authSchema),
     defaultValues: {
       firstName: authData.firstName || "",
+      middleName: authData.middleName || "",
       lastName: authData.lastName || "",
       phoneNumber: authData.phoneNumber || "",
       email: authData.email || "",
@@ -262,6 +263,16 @@ export function PublicRegistrationForm() {
                     {authData.firstName}
                   </span>
                 </div>
+                {authData.middleName && (
+                  <div>
+                    <span className="text-gray-500 font-medium">
+                      Middle Name:
+                    </span>{" "}
+                    <span className="font-medium text-gray-900">
+                      {authData.middleName}
+                    </span>
+                  </div>
+                )}
                 <div>
                   <span className="text-gray-500 font-medium">Last Name:</span>{" "}
                   <span className="font-medium text-gray-900">

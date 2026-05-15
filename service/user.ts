@@ -287,7 +287,7 @@ export const registerUser = async ({
     uid: userId,
     email: user.email,
     password: user.password,
-    displayName: `${user.firstName} ${user.lastName}`,
+    displayName: `${user.firstName} ${user.middleName ? user.middleName + " " : ""}${user.lastName}`,
     disabled: false,
     emailVerified: false,
   });
@@ -298,7 +298,7 @@ export const registerUser = async ({
       clientId: userId,
       brokerId,
       brokerName: brokerName || "",
-      clientName: `${user.firstName} ${user.lastName}`,
+      clientName: `${user.firstName} ${user.middleName ? user.middleName + " " : ""}${user.lastName}`,
       clientEmail: user.email,
     });
   }
@@ -324,7 +324,7 @@ export const registerUser = async ({
   let requestBody = "";
   if (registrationType === "Broker" && brokerName) {
     requestBody = getBrokerInvitationToClientBody({
-      clientName: `${user.firstName} ${user.lastName}`,
+      clientName: `${user.firstName} ${user.middleName ? user.middleName + " " : ""}${user.lastName}`,
       email: user.email,
       temporaryPassword: user.password!,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
@@ -333,7 +333,7 @@ export const registerUser = async ({
     });
   } else if (registrationType === "Admin") {
     requestBody = getAdminInvitationToClientBody({
-      clientName: `${user.firstName} ${user.lastName}`,
+      clientName: `${user.firstName} ${user.middleName ? user.middleName + " " : ""}${user.lastName}`,
       email: user.email,
       temporaryPassword: user.password!,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
@@ -357,7 +357,7 @@ export const registerUser = async ({
   await sendTriggerEmail({
     to: process.env.NEW_REGISTRATION_EMAIL_NOTIF!,
     message: {
-      subject: `New Registration - ${user.firstName} ${user.lastName}`,
+      subject: `New Registration - ${user.firstName} ${user.middleName ? user.middleName + " " : ""}${user.lastName}`,
       html: registrationBody,
     },
     job: EmailJobs.NEW_REGISTRATION,
@@ -612,7 +612,7 @@ const getNewRegistrationBody = (value: User) => {
                 Full Name
             </th>
             <td style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; color: #333333;">
-                ${value.firstName} ${value.lastName}
+                ${value.firstName} ${value.middleName ? value.middleName + " " : ""}${value.lastName}
             </td>
         </tr>
         <tr>

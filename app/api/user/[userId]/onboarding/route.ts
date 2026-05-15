@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { documentUploadSchema } from "@/schema/new-registration";
-import { authenticateRequest, withAuth } from "@/lib/api-validation";
+import { withAuth } from "@/lib/api-validation";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { badRequest } from "@/app/api/helpers";
 import {
   USER_COLLECTION,
-  USER_FUNDING_APPLICATION,
   BUSINESS_DETAIL_COLLECTION,
 } from "@/constant/collection-name";
 import { normalizeAllDates } from "@/lib/date-parser";
@@ -132,18 +131,24 @@ export const POST = withAuth(
         fundingDataToSave.businessId = businessId;
       }
 
+      // Mark the user as onboarded in Firestore and remove temporary data
+      const userUpdates: any = {
+        isOnboarded: true,
+        businessDetails: FieldValue.delete(),
+        fundingDetails: FieldValue.delete(),
+      };
+
+      if (fundingDataToSave.ssn) {
+        userUpdates.ssn = fundingDataToSave.ssn;
+      }
+
+      await userDocRef.update(userUpdates);
+
       // Trigger applyFunding to create app record, and run CRS/Analysis
       const { applyFunding } = await import("@/service/apply-funding");
       await applyFunding({
         value: fundingDataToSave,
         registrationType: "Self",
-      });
-
-      // Mark the user as onboarded in Firestore and remove temporary data
-      await userDocRef.update({
-        isOnboarded: true,
-        businessDetails: FieldValue.delete(),
-        fundingDetails: FieldValue.delete(),
       });
 
       return NextResponse.json(

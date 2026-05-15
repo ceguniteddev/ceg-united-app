@@ -34,8 +34,10 @@ export async function POST(req: Request) {
       user: {
         ...parsedAuth,
         role: "Client",
+        isBrokerInvite: false,
         consentConfirmTerms: true,
         consentConfirmPrivacy: true,
+        isPremiumClient: false,
         businessDetails: parsedBusiness,
         fundingDetails: parsedFunding,
       } as any as User,

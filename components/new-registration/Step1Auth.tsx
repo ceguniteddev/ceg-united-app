@@ -34,6 +34,12 @@ export function Step1Auth() {
           />
           <FormInput
             control={form.control}
+            name="middleName"
+            label="Middle Name"
+            placeholder="(Optional)"
+          />
+          <FormInput
+            control={form.control}
             name="lastName"
             label="Last Name"
             placeholder="Doe"

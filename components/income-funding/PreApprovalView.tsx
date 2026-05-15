@@ -89,7 +89,7 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
             <CheckCircle2 className="w-7 h-7 md:w-8 md:h-8 text-emerald-500 shrink-0" />
             Congratulations, you've been pre-approved
           </h1>
-          <p className="mt-2 text-sm md:text-base text-gray-500 max-w-xl">
+          <p className="mt-2 text-sm md:text-base text-gray-500 max-w-full">
             Based on your business cash flow and credit profile, you are
             pre-qualified for up to:
           </p>
@@ -126,7 +126,7 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
             icon={TrendingUp}
             label="Monthly Revenue"
             value={formatUSD(u.monthlyDeposits)}
-            badge={{ text: "Plaid synced", tone: "info" }}
+            // badge={{ text: "Plaid synced", tone: "info" }}
             hint="Avg. of last 4 months"
           />
         </div>
