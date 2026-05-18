@@ -41,6 +41,8 @@ export function PublicRegistrationForm() {
     documentUploadData,
     updateDocumentUploadData,
     resetRegistration,
+    leadId,
+    setLeadId,
   } = useNewRegistrationStore();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -120,8 +122,44 @@ export function PublicRegistrationForm() {
   const handleNextStep1 = async () => {
     const isValid = await formStep1.trigger();
     if (isValid) {
-      updateAuthData(formStep1.getValues());
-      setStep(2);
+      const authData = formStep1.getValues();
+      updateAuthData(authData);
+
+      try {
+        const encodedData = btoa(JSON.stringify(authData));
+
+        if (leadId) {
+          // If we already have a leadId, just update the existing lead
+          const response = await fetch("/api/leads", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ leadId, data: encodedData }),
+          });
+
+          if (response.ok) {
+            setStep(2);
+          } else {
+            toast.error("Could not save progress. Please try again.");
+          }
+        } else {
+          // If no leadId exists, create a new lead
+          const response = await fetch("/api/leads", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ authData: encodedData }),
+          });
+
+          if (response.ok) {
+            const { leadId: newLeadId } = await response.json();
+            setLeadId(newLeadId);
+            setStep(2);
+          } else {
+            toast.error("Could not save progress. Please try again.");
+          }
+        }
+      } catch (error) {
+        toast.error("An error occurred. Please try again.");
+      }
     } else {
       toast.error("Please fill all required fields correctly");
     }
@@ -130,8 +168,37 @@ export function PublicRegistrationForm() {
   const handleNextStep2 = async () => {
     const isValid = await formStep2.trigger();
     if (isValid) {
-      updateBusinessDetailsData(formStep2.getValues());
-      setStep(3);
+      const businessData = formStep2.getValues();
+
+      // Conditional cleanup logic for business details
+      if (businessData.fundingType === FundingType.Personal) {
+        businessData.timeInBusiness = null;
+        businessData.businessName = null;
+        businessData.ein = null;
+        businessData.businessIndustry = null;
+      } else if (businessData.fundingType === FundingType.Business) {
+        businessData.creditScore = null;
+        businessData.employmentType = null;
+      }
+
+      updateBusinessDetailsData(businessData);
+
+      try {
+        const encodedData = btoa(JSON.stringify(businessData));
+        const response = await fetch("/api/leads", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ leadId, data: encodedData }),
+        });
+
+        if (response.ok) {
+          setStep(3);
+        } else {
+          toast.error("Could not save progress. Please try again.");
+        }
+      } catch (error) {
+        toast.error("An error occurred. Please try again.");
+      }
     } else {
       toast.error("Please fill all required fields");
     }
@@ -140,10 +207,33 @@ export function PublicRegistrationForm() {
   const handleReview = async () => {
     const isValid = await formStep3.trigger();
     if (isValid) {
-      updateDocumentUploadData(formStep3.getValues());
+      const documentsData = formStep3.getValues();
+      updateDocumentUploadData(documentsData);
       setShowConfirmModal(true);
     } else {
-      toast.error("Please provide all required documents");
+      const errors = formStep3.formState.errors;
+      const errorMessages: string[] = [];
+
+      const collectErrors = (errObj: any) => {
+        if (!errObj) return;
+        if (errObj.message && typeof errObj.message === "string") {
+          errorMessages.push(errObj.message);
+        } else if (typeof errObj === "object") {
+          for (const key in errObj) {
+            collectErrors(errObj[key]);
+          }
+        }
+      };
+
+      collectErrors(errors);
+
+      if (errorMessages.length > 0) {
+        // Deduplicate messages in case of multiple issues
+        const uniqueMessages = Array.from(new Set(errorMessages));
+        toast.error(`Missing Documents: ${uniqueMessages.join(" | ")}`);
+      } else {
+        toast.error("Please provide all required documents");
+      }
     }
   };
 
@@ -159,10 +249,29 @@ export function PublicRegistrationForm() {
       updateBusinessDetailsData(latestBusinessData);
       updateDocumentUploadData(latestDocumentData);
 
+      // 1. Upload documents to Firebase Storage and update lead
+      toast.info("Uploading documents...", { duration: 3000 });
+      const uploadResponse = await fetch("/api/leads/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId,
+          documents: latestDocumentData,
+        }),
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload documents");
+      }
+
+      const { documents: uploadedDocuments } = await uploadResponse.json();
+
+      // 2. Finalize registration
+      toast.info("Finalizing registration...", { duration: 3000 });
       const finalData = {
         auth: latestAuthData,
         business: latestBusinessData,
-        documents: latestDocumentData,
+        documents: uploadedDocuments,
       };
 
       const response = await fetch("/api/register", {
@@ -196,11 +305,17 @@ export function PublicRegistrationForm() {
 
       {currentStep === 1 && (
         <Form {...formStep1}>
-          <div className="space-y-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleNextStep1();
+            }}
+            className="space-y-6"
+          >
             <Step1Auth />
             <div className="flex justify-end">
               <Button
-                onClick={handleNextStep1}
+                type="submit"
                 size="lg"
                 className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base py-6 transition-colors"
               >
@@ -211,20 +326,31 @@ export function PublicRegistrationForm() {
                 />
               </Button>
             </div>
-          </div>
+          </form>
         </Form>
       )}
 
       {currentStep === 2 && (
         <Form {...formStep2}>
-          <div className="space-y-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleNextStep2();
+            }}
+            className="space-y-6"
+          >
             <Step2BusinessDetails />
             <div className="flex justify-between gap-4">
-              <Button variant="outline" onClick={() => setStep(1)} size="lg">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep(1)}
+                size="lg"
+              >
                 <ChevronLeft className="mr-2 h-4 w-4" /> Back
               </Button>
               <Button
-                onClick={handleNextStep2}
+                type="submit"
                 size="lg"
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base px-8 transition-colors"
               >
@@ -235,16 +361,23 @@ export function PublicRegistrationForm() {
                 />
               </Button>
             </div>
-          </div>
+          </form>
         </Form>
       )}
 
       {currentStep === 3 && (
         <Form {...formStep3}>
-          <div className="space-y-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleReview();
+            }}
+            className="space-y-6"
+          >
             <Step3Funding />
             <div className="flex justify-between gap-4">
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => setStep(2)}
                 size="lg"
@@ -253,7 +386,7 @@ export function PublicRegistrationForm() {
                 <ChevronLeft className="mr-2 h-4 w-4" /> Back
               </Button>
               <Button
-                onClick={handleReview}
+                type="submit"
                 size="lg"
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base px-8 transition-colors disabled:opacity-50"
                 disabled={isSubmitting}
@@ -265,7 +398,7 @@ export function PublicRegistrationForm() {
                 />
               </Button>
             </div>
-          </div>
+          </form>
         </Form>
       )}
 

@@ -32,12 +32,14 @@ export function Step1Auth() {
             label="First Name"
             placeholder="John"
             required
+            autoComplete="given-name"
           />
           <FormInput
             control={form.control}
             name="middleName"
             label="Middle Name"
             placeholder="(Optional)"
+            autoComplete="additional-name"
           />
           <FormInput
             control={form.control}
@@ -45,6 +47,7 @@ export function Step1Auth() {
             label="Last Name"
             placeholder="Doe"
             required
+            autoComplete="family-name"
           />
         </div>
 
@@ -69,6 +72,7 @@ export function Step1Auth() {
           type="email"
           placeholder="john@example.com"
           required
+          autoComplete="email"
         />
         <FormInput
           control={form.control}
@@ -77,6 +81,7 @@ export function Step1Auth() {
           type="password"
           placeholder="••••••••"
           required
+          autoComplete="new-password"
         />
         <PasswordStrength password={password ?? ""} />
 

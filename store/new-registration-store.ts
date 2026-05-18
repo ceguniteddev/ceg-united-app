@@ -9,12 +9,14 @@ import {
 
 interface NewRegistrationState {
   currentStep: number;
+  leadId: string | null;
   authData: Partial<AuthForm>;
   businessDetailsData: Partial<BusinessDetailsForm>;
   fundingData: Partial<FundingPageForm>;
   documentUploadData: Partial<DocumentUploadForm>;
 
   setStep: (step: number) => void;
+  setLeadId: (id: string | null) => void;
   updateAuthData: (data: Partial<AuthForm>) => void;
   updateBusinessDetailsData: (data: Partial<BusinessDetailsForm>) => void;
   updateFundingData: (data: Partial<FundingPageForm>) => void;
@@ -24,6 +26,7 @@ interface NewRegistrationState {
 
 const initialState = {
   currentStep: 1,
+  leadId: null,
   authData: {},
   businessDetailsData: {},
   fundingData: {},
@@ -36,6 +39,7 @@ export const useNewRegistrationStore = create<NewRegistrationState>()(
       ...initialState,
 
       setStep: (step) => set({ currentStep: step }),
+      setLeadId: (id) => set({ leadId: id }),
 
       updateAuthData: (data) =>
         set((state) => ({ authData: { ...state.authData, ...data } })),

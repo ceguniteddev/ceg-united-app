@@ -31,13 +31,13 @@ export enum FundingType {
 export const businessDetailsSchema = z
   .object({
     fundingAmount: z.coerce.number<number>().optional(),
-    fundingType: z.nativeEnum(FundingType).or(z.literal("")).optional(),
-    creditScore: z.coerce.number<number>().optional(),
-    employmentType: z.enum(["W2", "Self-employed", ""]).optional(),
-    timeInBusiness: z.string().optional(),
-    businessIndustry: z.string().optional(),
-    businessName: z.string().optional(),
-    ein: z.string().optional(),
+    fundingType: z.enum(FundingType).or(z.literal("")).nullable().optional(),
+    creditScore: z.coerce.number<number>().nullable().optional(),
+    employmentType: z.enum(["W2", "Self-employed", ""]).nullable().optional(),
+    timeInBusiness: z.string().nullable().optional(),
+    businessIndustry: z.string().nullable().optional(),
+    businessName: z.string().nullable().optional(),
+    ein: z.string().nullable().optional(),
   })
   .superRefine((data, ctx) => {
     if (!data.fundingAmount || data.fundingAmount <= 0) {
@@ -62,6 +62,7 @@ export const businessDetailsSchema = z
     ) {
       if (
         data.creditScore === undefined ||
+        data.creditScore === null ||
         data.creditScore < 400 ||
         data.creditScore > 900
       ) {
@@ -144,8 +145,8 @@ export type FundingPageForm = z.infer<typeof fundingPageSchema>;
 
 export const documentUploadSchema = z
   .object({
-    fundingType: z.string().optional(),
-    employmentType: z.enum(["W2", "Self-employed", ""]).optional(),
+    fundingType: z.string().nullable().optional(),
+    employmentType: z.enum(["W2", "Self-employed", ""]).nullable().optional(),
 
     driverLicense: z.any().optional(),
 

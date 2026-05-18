@@ -12,6 +12,7 @@ const PUBLIC_ROUTES = new Set<string>([
   "/verify-email",
   "/api/auth/login",
   "/api/register",
+  "/api/leads",
   "/api/auth/verify-session",
   "/api/auth/verify-email",
   "/api/auth/validate-invitation",
