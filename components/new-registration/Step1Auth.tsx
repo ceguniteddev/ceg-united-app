@@ -6,6 +6,7 @@ import { FormPhoneInput } from "@/components/forms/form-phone-input";
 import { PasswordStrength } from "@/components/PasswordStrength";
 import { useFormContext, useWatch } from "react-hook-form";
 import Link from "next/link";
+import { FormSSNInput } from "../forms/form-ssn-input";
 
 export function Step1Auth() {
   const form = useFormContext();
@@ -46,6 +47,13 @@ export function Step1Auth() {
             required
           />
         </div>
+
+        <FormSSNInput
+          control={form.control}
+          name="ssn"
+          label="Social Security Number"
+          required
+        />
 
         <FormPhoneInput
           control={form.control}

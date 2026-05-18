@@ -58,6 +58,10 @@ export const useNewRegistrationStore = create<NewRegistrationState>()(
     {
       name: "new-registration-storage",
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) =>
+        Object.fromEntries(
+          Object.entries(state).filter(([key]) => key !== "documentUploadData"),
+        ),
     },
   ),
 );

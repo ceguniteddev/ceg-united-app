@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { useNewRegistrationStore } from "@/store/new-registration-store";
 import { Step1Auth } from "./Step1Auth";
 import { Step2BusinessDetails } from "./Step2BusinessDetails";
-import { Step3Funding } from "./Step3Funding";
+import { Step3Funding } from "./Step3FundingDocuments";
 import { ProgressBar } from "@/components/registration/ProgressBar";
 import {
   authSchema,
   businessDetailsSchema,
-  fundingPageSchema,
+  documentUploadSchema,
+  FundingType,
 } from "@/schema/new-registration";
 import { toast } from "sonner";
 import IconMenu from "@/components/icon-menu";
@@ -37,8 +38,8 @@ export function PublicRegistrationForm() {
     updateAuthData,
     businessDetailsData,
     updateBusinessDetailsData,
-    fundingData,
-    updateFundingData,
+    documentUploadData,
+    updateDocumentUploadData,
     resetRegistration,
   } = useNewRegistrationStore();
 
@@ -58,6 +59,7 @@ export function PublicRegistrationForm() {
       firstName: authData.firstName || "",
       middleName: authData.middleName || "",
       lastName: authData.lastName || "",
+      ssn: authData.ssn || "",
       phoneNumber: authData.phoneNumber || "",
       email: authData.email || "",
       password: authData.password || "",
@@ -70,9 +72,26 @@ export function PublicRegistrationForm() {
   });
 
   const formStep3 = useForm<any>({
-    resolver: zodResolver(fundingPageSchema),
-    defaultValues: fundingData,
+    resolver: zodResolver(documentUploadSchema),
+    defaultValues: {
+      ...documentUploadData,
+      fundingType: businessDetailsData.fundingType,
+      employmentType: businessDetailsData.employmentType,
+    },
   });
+
+  // Sync business details to formStep3 when moving to step 3
+  useEffect(() => {
+    if (currentStep === 3) {
+      formStep3.setValue("fundingType", businessDetailsData.fundingType);
+      formStep3.setValue("employmentType", businessDetailsData.employmentType);
+    }
+  }, [
+    currentStep,
+    businessDetailsData.fundingType,
+    businessDetailsData.employmentType,
+    formStep3,
+  ]);
 
   // Auto-save form 1, 2, 3 to store on change
   useEffect(() => {
@@ -91,10 +110,10 @@ export function PublicRegistrationForm() {
 
   useEffect(() => {
     const subscription = formStep3.watch((value) => {
-      updateFundingData(value);
+      updateDocumentUploadData(value);
     });
     return () => subscription.unsubscribe();
-  }, [formStep3.watch, updateFundingData]);
+  }, [formStep3.watch, updateDocumentUploadData]);
 
   const progress = Math.floor(Math.min(((currentStep - 1) / 3) * 100, 100));
 
@@ -121,21 +140,29 @@ export function PublicRegistrationForm() {
   const handleReview = async () => {
     const isValid = await formStep3.trigger();
     if (isValid) {
-      updateFundingData(formStep3.getValues());
+      updateDocumentUploadData(formStep3.getValues());
       setShowConfirmModal(true);
     } else {
-      toast.error("Please provide all required funding information");
+      toast.error("Please provide all required documents");
     }
   };
 
   const executeFinalSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const store = useNewRegistrationStore.getState();
+      // Ensure we have the absolute latest data from all forms
+      const latestAuthData = formStep1.getValues();
+      const latestBusinessData = formStep2.getValues();
+      const latestDocumentData = formStep3.getValues();
+
+      updateAuthData(latestAuthData);
+      updateBusinessDetailsData(latestBusinessData);
+      updateDocumentUploadData(latestDocumentData);
+
       const finalData = {
-        auth: store.authData,
-        business: store.businessDetailsData,
-        funding: store.fundingData,
+        auth: latestAuthData,
+        business: latestBusinessData,
+        documents: latestDocumentData,
       };
 
       const response = await fetch("/api/register", {
@@ -280,6 +307,12 @@ export function PublicRegistrationForm() {
                   </span>
                 </div>
                 <div>
+                  <span className="text-gray-500 font-medium">SSN:</span>{" "}
+                  <span className="font-medium text-gray-900">
+                    {authData.ssn}
+                  </span>
+                </div>
+                <div>
                   <span className="text-gray-500 font-medium">Email:</span>{" "}
                   <span className="font-medium text-gray-900">
                     {authData.email}
@@ -296,72 +329,140 @@ export function PublicRegistrationForm() {
 
             <div>
               <h3 className="font-semibold text-lg border-b pb-2 mb-3">
-                Business Details
+                Funding Details
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
                 <div>
                   <span className="text-gray-500 font-medium">
-                    Monthly Deposit:
+                    Funding Amount:
                   </span>{" "}
                   <span className="font-medium text-gray-900">
-                    ${businessDetailsData.monthlyDeposit?.toLocaleString()}
+                    ${businessDetailsData.fundingAmount?.toLocaleString()}
                   </span>
                 </div>
                 <div>
                   <span className="text-gray-500 font-medium">
-                    Time in Business:
+                    Funding Type:
                   </span>{" "}
                   <span className="font-medium text-gray-900">
-                    {businessDetailsData.timeInBusiness}
+                    {businessDetailsData.fundingType}
                   </span>
                 </div>
-                <div>
-                  <span className="text-gray-500 font-medium">
-                    Est. Credit Score:
-                  </span>{" "}
-                  <span className="font-medium text-gray-900">
-                    {businessDetailsData.creditScore}
-                  </span>
-                </div>
+                {(businessDetailsData.fundingType === FundingType.Personal ||
+                  businessDetailsData.fundingType === FundingType.Both) && (
+                  <>
+                    <div>
+                      <span className="text-gray-500 font-medium">
+                        Est. Credit Score:
+                      </span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {businessDetailsData.creditScore}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-medium">
+                        Employment Type:
+                      </span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {businessDetailsData.employmentType}
+                      </span>
+                    </div>
+                  </>
+                )}
+                {(businessDetailsData.fundingType === FundingType.Business ||
+                  businessDetailsData.fundingType === FundingType.Both) && (
+                  <>
+                    <div>
+                      <span className="text-gray-500 font-medium">
+                        Business Name:
+                      </span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {businessDetailsData.businessName}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-medium">EIN:</span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {businessDetailsData.ein}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-medium">
+                        Time in Business:
+                      </span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {businessDetailsData.timeInBusiness}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-medium">
+                        Business Industry:
+                      </span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {businessDetailsData.businessIndustry}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
             <div>
               <h3 className="font-semibold text-lg border-b pb-2 mb-3">
-                Funding Needs
+                Documents Provided
               </h3>
               <div className="grid grid-cols-1 gap-y-2 text-sm">
                 <div>
                   <span className="text-gray-500 font-medium">
-                    Type of Funding:
+                    Driver's License:
                   </span>{" "}
                   <span className="font-medium text-gray-900">
-                    {fundingData.interestedProduct}
+                    {documentUploadData.driverLicense?.uploaded ? "Yes" : "No"}
                   </span>
                 </div>
-                {fundingData.businessName && (
+                {(businessDetailsData.fundingType === FundingType.Personal ||
+                  businessDetailsData.fundingType === FundingType.Both) && (
+                  <>
+                    {businessDetailsData.employmentType === "W2" && (
+                      <div>
+                        <span className="text-gray-500 font-medium">
+                          Paystubs:
+                        </span>{" "}
+                        <span className="font-medium text-gray-900">
+                          {documentUploadData.personalDocs?.paystubs?.uploaded
+                            ? "Yes"
+                            : "No"}
+                        </span>
+                      </div>
+                    )}
+                    {businessDetailsData.employmentType === "Self-employed" && (
+                      <div>
+                        <span className="text-gray-500 font-medium">
+                          Bank Statements (Personal):
+                        </span>{" "}
+                        <span className="font-medium text-gray-900">
+                          {documentUploadData.personalDocs?.bankStatements
+                            ?.uploaded
+                            ? "Yes"
+                            : "No"}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
+                {(businessDetailsData.fundingType === FundingType.Business ||
+                  businessDetailsData.fundingType === FundingType.Both) && (
                   <div>
                     <span className="text-gray-500 font-medium">
-                      Business Name:
+                      Bank Statements (Business):
                     </span>{" "}
                     <span className="font-medium text-gray-900">
-                      {fundingData.businessName}
+                      {documentUploadData.businessDocs?.bankStatements?.uploaded
+                        ? "Yes"
+                        : "No"}
                     </span>
                   </div>
                 )}
-                {fundingData.fundingProducts &&
-                  fundingData.fundingProducts.length > 0 && (
-                    <div>
-                      <span className="text-gray-500 font-medium">
-                        Interested Products:
-                      </span>
-                      <ul className="list-disc list-inside ml-5 mt-1 font-medium text-gray-900">
-                        {fundingData.fundingProducts.map((p: any) => (
-                          <li key={p}>{p}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
               </div>
             </div>
           </div>

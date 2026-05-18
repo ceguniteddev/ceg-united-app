@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useNewRegistrationStore } from "@/store/new-registration-store";
 import { Step1Welcome } from "./Step1Welcome";
 import { Step2BusinessDetails } from "./Step2BusinessDetails";
-import { Step3Funding } from "./Step3Funding";
+import { Step3Funding } from "./Step3FundingDocuments";
 import { Step4DocumentUpload } from "./Step4DocumentUpload";
 import { ProgressBar } from "@/components/registration/ProgressBar";
 import {
