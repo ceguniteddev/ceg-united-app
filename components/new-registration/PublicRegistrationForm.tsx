@@ -304,6 +304,7 @@ export function PublicRegistrationForm() {
       // 2. Finalize registration
       toast.info("Finalizing registration...", { duration: 3000 });
       const finalData = {
+        leadId,
         auth: latestAuthData,
         business: latestBusinessData,
         documents: uploadedDocuments,

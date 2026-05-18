@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
-import {
-  authSchema,
-  businessDetailsSchema,
-  fundingPageSchema,
-} from "@/schema/new-registration";
+import { authSchema } from "@/schema/new-registration";
 import { registerUser } from "@/service/user";
 import { User } from "@/schema/registration";
+import { firestoreAdmin } from "@/lib/fireabase-admin";
 
 export async function POST(req: Request) {
   try {
@@ -20,14 +17,6 @@ export async function POST(req: Request) {
 
     // Validate payloads
     const parsedAuth = authSchema.parse(body.auth);
-    let parsedBusiness = null;
-    if (body.business) {
-      parsedBusiness = businessDetailsSchema.parse(body.business);
-    }
-    let parsedFunding = null;
-    if (body.funding) {
-      parsedFunding = fundingPageSchema.parse(body.funding);
-    }
 
     // Call service to register the user
     await registerUser({
@@ -35,14 +24,16 @@ export async function POST(req: Request) {
         ...parsedAuth,
         role: "Client",
         isBrokerInvite: false,
-        consentConfirmTerms: true,
-        consentConfirmPrivacy: true,
         isPremiumClient: false,
-        // businessDetails: parsedBusiness,
-        // fundingDetails: parsedFunding,
       } as any as User,
       registrationType: "Self",
     });
+
+    // Delete the lead document if leadId is provided
+    if (body.leadId) {
+      const db = firestoreAdmin();
+      await db.collection("user-leads").doc(body.leadId).delete();
+    }
 
     return NextResponse.json(
       { success: true, message: "Registration successful" },
