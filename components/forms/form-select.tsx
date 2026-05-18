@@ -1,38 +1,39 @@
-"use client"
+"use client";
 
-import { ReactNode } from "react"
-import { Control, Controller, FieldPath, FieldValues } from "react-hook-form"
+import { ReactNode } from "react";
+import { Control, Controller, FieldPath, FieldValues } from "react-hook-form";
 import {
   Field,
   FieldContent,
   FieldError,
   FieldLabel,
-} from "@/components/ui/field"
+} from "@/components/ui/field";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 export interface SelectOption {
-  value: string
-  label: ReactNode
+  value: string;
+  label: ReactNode;
 }
 
 interface FormSelectProps<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > {
-  control: Control<TFieldValues>
-  name: TName
-  label: string
-  options: SelectOption[]
-  placeholder?: string
-  id?: string
-  required?: boolean
-  disabled?: boolean
+  control: Control<TFieldValues>;
+  name: TName;
+  label: string;
+  options: SelectOption[];
+  placeholder?: string;
+  id?: string;
+  required?: boolean;
+  disabled?: boolean;
 }
 
 export function FormSelect<
@@ -67,13 +68,13 @@ export function FormSelect<
               key={field.value ?? "empty"}
             >
               <SelectTrigger
-                className="w-full"
                 value={field.value}
                 id={id || name}
                 aria-invalid={fieldState.invalid}
                 onReset={() => {
-                  field.onChange("")
+                  field.onChange("");
                 }}
+                className={cn(`w-full`, fieldState?.error && "border-red-500")}
               >
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
@@ -90,5 +91,5 @@ export function FormSelect<
         </Field>
       )}
     />
-  )
+  );
 }
