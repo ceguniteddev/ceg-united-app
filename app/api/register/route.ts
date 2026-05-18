@@ -60,6 +60,7 @@ export async function POST(req: Request) {
                 type: f.type,
                 storagePath: f.url ? f.url : undefined, // the service downloads it via storagePath
                 url: f.url,
+                base64: f.base64,
               }));
           }
 
@@ -82,6 +83,7 @@ export async function POST(req: Request) {
                 type: f.type,
                 storagePath: f.url ? f.url : undefined,
                 url: f.url,
+                base64: f.base64,
                 docType: f.docType,
               }));
             }
@@ -95,6 +97,7 @@ export async function POST(req: Request) {
                 type: f.type,
                 storagePath: f.url ? f.url : undefined,
                 url: f.url,
+                base64: f.base64,
               }));
           }
         }

@@ -17,6 +17,7 @@ import { Timestamp, Query } from "firebase-admin/firestore";
 import * as crypto from "node:crypto";
 import {
   fundAnalysis,
+  fundAnalysisNewRegistrationFlow,
   generateCRSReport,
   generateCRSReportBusiness,
   getCRSBusinessProfile,
@@ -228,7 +229,10 @@ export const applyFunding = async ({
     }
   }
 
-  await fundAnalysis({ referenceNumber, userId: value.userId! });
+  await fundAnalysisNewRegistrationFlow({
+    referenceNumber,
+    userId: value.userId!,
+  });
 
   return { referenceNumber };
 };
