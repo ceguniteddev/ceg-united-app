@@ -18,6 +18,16 @@ export const authSchema = z.object({
     ),
   email: z.email({ message: "Invalid email address" }),
   password: passwordSchema.optional().or(z.literal("")),
+  consentConfirmTerms: z
+    .boolean({ message: "You must accept the terms and conditions" })
+    .refine((val) => val === true, {
+      message: "You must accept the terms and conditions",
+    }),
+  consentConfirmPrivacy: z
+    .boolean({ message: "You must accept the privacy policy" })
+    .refine((val) => val === true, {
+      message: "You must accept the privacy policy",
+    }),
 });
 
 export type AuthForm = z.infer<typeof authSchema>;

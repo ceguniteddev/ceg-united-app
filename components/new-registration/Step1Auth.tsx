@@ -7,6 +7,8 @@ import { PasswordStrength } from "@/components/PasswordStrength";
 import { useFormContext, useWatch } from "react-hook-form";
 import Link from "next/link";
 import { FormSSNInput } from "../forms/form-ssn-input";
+import { FormCheckbox } from "../forms/form-checkbox";
+import { Label } from "../ui/label";
 
 export function Step1Auth() {
   const form = useFormContext();
@@ -84,6 +86,52 @@ export function Step1Auth() {
           autoComplete="new-password"
         />
         <PasswordStrength password={password ?? ""} />
+
+        <div className="mt-4 pt-2 border-t">
+          <FormCheckbox
+            control={form.control}
+            name="consentConfirmTerms"
+            label={
+              <div className="grid gap-2">
+                <Label
+                  htmlFor="terms-1"
+                  className="cursor-pointer"
+                  // onClick={() => setIsConsentModalOpen(true)}
+                  onClick={() =>
+                    window.open("https://www.cegunited.com/terms", "_blank")
+                  }
+                >
+                  Accept Authorization & Disclosure Agreement
+                </Label>
+                <div className="text-muted-foreground text-sm">
+                  By clicking this checkbox, you agree to the Authorization &
+                  Disclosure Agreement.
+                </div>
+              </div>
+            }
+          />
+          <FormCheckbox
+            control={form.control}
+            name="consentConfirmPrivacy"
+            label={
+              <div className="grid gap-1">
+                <Label
+                  htmlFor="terms-2"
+                  className="cursor-pointer"
+                  // onClick={() => setIsConsentPrivacyModalOpen(true)}
+                  onClick={() =>
+                    window.open("https://www.cegunited.com/privacy", "_blank")
+                  }
+                >
+                  Accept Privacy Policy
+                </Label>
+                <div className="text-muted-foreground text-sm">
+                  By clicking this checkbox, you agree to the Privacy Policy.
+                </div>
+              </div>
+            }
+          />
+        </div>
 
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">

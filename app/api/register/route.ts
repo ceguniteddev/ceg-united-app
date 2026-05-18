@@ -38,8 +38,8 @@ export async function POST(req: Request) {
         consentConfirmTerms: true,
         consentConfirmPrivacy: true,
         isPremiumClient: false,
-        businessDetails: parsedBusiness,
-        fundingDetails: parsedFunding,
+        // businessDetails: parsedBusiness,
+        // fundingDetails: parsedFunding,
       } as any as User,
       registrationType: "Self",
     });

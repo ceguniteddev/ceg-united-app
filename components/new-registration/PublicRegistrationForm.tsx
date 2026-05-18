@@ -47,13 +47,22 @@ export function PublicRegistrationForm() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(useNewRegistrationStore.persist.hasHydrated());
+    const unsub = useNewRegistrationStore.persist.onFinishHydration(() =>
+      setIsHydrated(true),
+    );
+    return () => unsub();
+  }, []);
 
   // If they were on onboarding steps (4+), reset to 1
   useEffect(() => {
-    if (currentStep > 3) {
+    if (isHydrated && currentStep > 3) {
       setStep(1);
     }
-  }, [currentStep, setStep]);
+  }, [currentStep, setStep, isHydrated]);
 
   const formStep1 = useForm<any>({
     resolver: zodResolver(authSchema),
@@ -65,6 +74,8 @@ export function PublicRegistrationForm() {
       phoneNumber: authData.phoneNumber || "",
       email: authData.email || "",
       password: authData.password || "",
+      consentConfirmTerms: authData.consentConfirmTerms || undefined,
+      consentConfirmPrivacy: authData.consentConfirmPrivacy || undefined,
     },
   });
 
@@ -81,6 +92,30 @@ export function PublicRegistrationForm() {
       employmentType: businessDetailsData.employmentType,
     },
   });
+
+  // Hydrate forms once mounted
+  useEffect(() => {
+    if (isHydrated) {
+      formStep1.reset({
+        firstName: authData.firstName || "",
+        middleName: authData.middleName || "",
+        lastName: authData.lastName || "",
+        ssn: authData.ssn || "",
+        phoneNumber: authData.phoneNumber || "",
+        email: authData.email || "",
+        password: authData.password || "",
+        consentConfirmTerms: authData.consentConfirmTerms || undefined,
+        consentConfirmPrivacy: authData.consentConfirmPrivacy || undefined,
+      });
+      formStep2.reset(businessDetailsData);
+      formStep3.reset({
+        ...documentUploadData,
+        fundingType: businessDetailsData.fundingType,
+        employmentType: businessDetailsData.employmentType,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHydrated]);
 
   // Sync business details to formStep3 when moving to step 3
   useEffect(() => {
@@ -317,7 +352,11 @@ export function PublicRegistrationForm() {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base py-6 transition-colors"
+                disabled={
+                  !formStep1.watch("consentConfirmTerms") ||
+                  !formStep1.watch("consentConfirmPrivacy")
+                }
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base py-6 transition-colors disabled:opacity-50"
               >
                 <IconMenu
                   text="Next"
