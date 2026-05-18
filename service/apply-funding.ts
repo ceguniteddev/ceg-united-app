@@ -27,7 +27,6 @@ import { getUserById } from "./user";
 import { RegistrationType } from "@/schema/users";
 import { uploadDocument } from "./documents";
 import { calculateBusinessIncomePreApproved } from "./n8n";
-import { log } from "node:console";
 
 export const applyFunding = async ({
   value,
@@ -88,10 +87,16 @@ export const applyFunding = async ({
             type: doc.type,
           });
 
+          // Determine the correct document type based on funding type or explicit docType
+          const isPersonal = value.fundingType === "Personal";
+          const documentType =
+            (doc as any).docType ||
+            (isPersonal ? "PERSONAL_BANK_STATEMENTS" : "BANK_STATEMENTS");
+
           // Use uploadDocument service function
-          await uploadDocument(value.userId!, file, "BANK_STATEMENTS", {
+          await uploadDocument(value.userId!, file, documentType, {
             referenceNumber,
-            documentType: "BANK_STATEMENTS",
+            documentType: documentType,
             uploadedAt: new Date().toISOString(),
           });
         } catch (error) {
@@ -141,6 +146,43 @@ export const applyFunding = async ({
         }
       }
     }
+
+    // Upload paystubs
+    if ((value as any).paystubs && (value as any).paystubs.length > 0) {
+      for (const doc of (value as any).paystubs) {
+        try {
+          let buffer: Buffer;
+          if (doc.storagePath) {
+            const bucket = storageAdmin();
+            const [fileBuffer] = await bucket.file(doc.storagePath).download();
+            buffer = fileBuffer;
+            bucket
+              .file(doc.storagePath)
+              .delete()
+              .catch(() => {});
+          } else if (doc.base64) {
+            const base64Data = doc.base64.includes(",")
+              ? doc.base64.split(",")[1]
+              : doc.base64;
+            buffer = Buffer.from(base64Data, "base64");
+          } else {
+            continue;
+          }
+
+          const file = new File([new Uint8Array(buffer)], doc.name, {
+            type: doc.type,
+          });
+
+          await uploadDocument(value.userId!, file, "PAYSTUBS", {
+            referenceNumber,
+            documentType: "PAYSTUBS",
+            uploadedAt: new Date().toISOString(),
+          });
+        } catch (error) {
+          console.error("Error uploading paystubs:", error);
+        }
+      }
+    }
   }
 
   // we do not generate CRS report when client is registering themselves,
@@ -151,30 +193,31 @@ export const applyFunding = async ({
   // }
 
   // check if user alreay has generated CRS report
-  const data = await getCRSReport(value.userId!);
+  // 5-19-2026: pull crs report once client is premium.
+  // const crsData = await getCRSReport(value.userId!);
 
-  if (!data || data.length === 0) {
-    logInfo("Generating new CRS report for user:", { userId: value.userId });
-    await generateCRSReport({
-      userId: value.userId!,
-      referenceNumber,
-      bureaus: { equifax: true, experian: true, transunion: true },
-    });
-  }
+  // if (!crsData || crsData.length === 0) {
+  //   logInfo("Generating new CRS report for user:", { userId: value.userId });
+  //   await generateCRSReport({
+  //     userId: value.userId!,
+  //     referenceNumber,
+  //     bureaus: { equifax: true, experian: true, transunion: true },
+  //   });
+  // }
 
-  if (userData.isPremiumClient === true && value.businessId) {
-    const businessData = await getCRSBusinessProfile(value.businessId);
-    if (!businessData) {
-      await generateCRSReportBusiness(
-        value.userId!,
-        referenceNumber,
-        value.businessId,
-      );
-    }
-  }
+  // if (userData.isPremiumClient === true && value.businessId) {
+  //   const businessData = await getCRSBusinessProfile(value.businessId);
+  //   if (!businessData) {
+  //     await generateCRSReportBusiness(
+  //       value.userId!,
+  //       referenceNumber,
+  //       value.businessId,
+  //     );
+  //   }
+  // }
 
   // add a checking if fundingProducts include "Business Income Based Funding"
-  if (value.fundingProducts?.includes("Business Income Based Funding")) {
+  if (value.businessId) {
     try {
       await calculateBusinessIncomePreApproved({
         userId: value.userId!,

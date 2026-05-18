@@ -11,6 +11,7 @@ import {
   deleteCRSReportN8N,
   generateCRSReportN8N,
   getFundingAnalysis,
+  getFundingAnalysisNewRegistrationFlow,
   sendClientAnalysisN8N,
   sendClientCongratsMessageN8N,
 } from "@/lib/n8n";
@@ -172,6 +173,13 @@ export const generateCRSReport = async ({
   personalInfo?: CRSPersonalInfo;
   addressInfo?: CRSAddressInfo;
 }) => {
+  // check if the user is premium client before allowing to generate CRS report
+  const user = await getUserById(userId);
+  if (!user) throw new Error("User not found.");
+  if (!user.isPremiumClient) {
+    throw new Error("Only premium clients can generate CRS reports.");
+  }
+
   await fetch(`${process.env.n8n_HOST}/${await generateCRSReportN8N()}`, {
     method: "POST",
     headers: {
@@ -198,6 +206,12 @@ export const generateCRSReportBusiness = async (
   referenceNumber: string,
   businessId: string,
 ) => {
+  const user = await getUserById(userId);
+  if (!user) throw new Error("User not found.");
+  if (!user.isPremiumClient) {
+    throw new Error("Only premium clients can generate CRS reports.");
+  }
+
   await fetch(`${process.env.n8n_HOST}/${await generateCRSReportN8N()}`, {
     method: "POST",
     headers: {
@@ -283,6 +297,30 @@ export const refreshCRSData = async ({
       }),
     );
   }
+};
+
+export const fundAnalysisNewRegistrationFlow = async ({
+  referenceNumber,
+  userId,
+}: {
+  referenceNumber: string;
+  userId: string;
+}) => {
+  logInfo("Sending funding application for analysis...", {
+    referenceNumber,
+    userId,
+  });
+  await fetch(`${process.env.n8n_HOST}/${await getFundingAnalysisNewRegistrationFlow()}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      referenceNumber,
+      userId,
+    }),
+  });
 };
 
 export const fundAnalysis = async ({

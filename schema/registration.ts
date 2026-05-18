@@ -81,6 +81,7 @@ export const registrationSchema = z.object({
   // Temporary onboarding storage
   businessDetails: z.any().optional(),
   fundingDetails: z.any().optional(),
+  leadId: z.string().optional(),
 });
 
 export const UserFundMapStatus = z.enum(["New", "Processing"]);

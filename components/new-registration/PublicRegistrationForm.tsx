@@ -273,8 +273,10 @@ export function PublicRegistrationForm() {
   };
 
   const executeFinalSubmit = async () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
-    try {
+
+    const submitPromise = async () => {
       // Ensure we have the absolute latest data from all forms
       const latestAuthData = formStep1.getValues();
       const latestBusinessData = formStep2.getValues();
@@ -284,30 +286,11 @@ export function PublicRegistrationForm() {
       updateBusinessDetailsData(latestBusinessData);
       updateDocumentUploadData(latestDocumentData);
 
-      // 1. Upload documents to Firebase Storage and update lead
-      toast.info("Uploading documents...", { duration: 3000 });
-      const uploadResponse = await fetch("/api/leads/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          leadId,
-          documents: latestDocumentData,
-        }),
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error("Failed to upload documents");
-      }
-
-      const { documents: uploadedDocuments } = await uploadResponse.json();
-
-      // 2. Finalize registration
-      toast.info("Finalizing registration...", { duration: 3000 });
       const finalData = {
         leadId,
         auth: latestAuthData,
         business: latestBusinessData,
-        documents: uploadedDocuments,
+        documents: latestDocumentData,
       };
 
       const response = await fetch("/api/register", {
@@ -321,18 +304,23 @@ export function PublicRegistrationForm() {
         throw new Error(result.error || "Registration failed");
       }
 
-      toast.success(
-        "Registration successful! Please check your email to verify your account.",
-      );
-      resetRegistration();
-      setShowConfirmModal(false);
-      router.push("/");
-    } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || "Registration failed. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+      return response;
+    };
+
+    toast.promise(submitPromise(), {
+      loading: "Processing registration...",
+      success: () => {
+        resetRegistration();
+        setShowConfirmModal(false);
+        router.push("/");
+        return "Registration successful! Please check your email to verify your account.";
+      },
+      error: (err) => {
+        console.error(err);
+        setIsSubmitting(false);
+        return err.message || "Registration failed. Please try again.";
+      },
+    });
   };
 
   return (
