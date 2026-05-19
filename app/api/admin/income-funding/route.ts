@@ -96,8 +96,8 @@ export const GET = withAuth(async (request: NextRequest) => {
 
         // Map status
         let status = "prequalified";
-        if (app.status === "Processing" || app.status === "Sent to Brokerage")
-          status = "under-review";
+        if (app.status === "Processing") status = "collecting-documents";
+        if (app.status === "Sent to Brokerage") status = "under-review";
         if (app.status === "Pre-Approved") status = "offers-ready";
         if (app.status === "Approved") status = "complete";
 

@@ -1,3 +1,4 @@
+import { useRouter } from "next/navigation";
 import {
   Upload,
   Building,
@@ -11,6 +12,7 @@ export interface NextStep {
   label: string;
   completed: boolean;
   icon: "upload" | "building" | "send";
+  href?: string;
 }
 
 const iconMap: Record<string, typeof Upload> = {
@@ -20,6 +22,8 @@ const iconMap: Record<string, typeof Upload> = {
 };
 
 export function NextStepsPanel({ steps }: { steps: NextStep[] }) {
+  const router = useRouter();
+
   return (
     <div className="card-hover rounded-xl border border-gray-100 bg-white p-5 animate-scaleIn stagger-4">
       <div className="flex items-center gap-2 mb-4">
@@ -35,6 +39,11 @@ export function NextStepsPanel({ steps }: { steps: NextStep[] }) {
           return (
             <button
               key={step.id}
+              onClick={() => {
+                if (!step.completed && step.href) {
+                  router.push(step.href);
+                }
+              }}
               className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors group text-left"
             >
               <Icon

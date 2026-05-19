@@ -16,7 +16,7 @@ const statusLabels: Record<DealStatus, { label: string; classes: string }> = {
     classes: "bg-blue-50 text-blue-700 border-blue-100",
   },
   "collecting-documents": {
-    label: "Documents",
+    label: "Collecting Documents",
     classes: "bg-gray-50 text-gray-700 border-gray-200",
   },
   "under-review": {

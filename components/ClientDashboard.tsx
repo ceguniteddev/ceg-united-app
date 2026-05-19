@@ -127,6 +127,7 @@ export interface ClientData {
   approvedFunds?: ApprovedBankFormData[] | null;
   businessesWithCrsData: BusinessWithCRSData[];
   getPlaidCompleteData: PlaidCompleteRow[] | null;
+  userDocuments?: any[];
 }
 
 // --- 2. YOUR HELPER FUNCTIONS (NOW FULLY TYPED) ---

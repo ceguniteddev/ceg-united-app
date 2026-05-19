@@ -245,28 +245,38 @@ export function transformClientDataToDashboard(
   }));
 
   // 6. Next Steps (hardcoded for now - TODO: integrate with user onboarding state)
-  const hasPlaid = (getPlaidCompleteData?.length || 0) > 0;
-  const hasBusiness = businessesWithCrsData.length > 0;
-  const hasApplied = (fundingApplications?.length || 0) > 0;
+
+  const hasBankStatements =
+    clientData.userDocuments?.some(
+      (doc) =>
+        doc.name.includes("PERSONAL_BANK_STATEMENTS") ||
+        doc.name.includes("BANK_STATEMENTS"),
+    ) || false;
+
+  let hasBusiness = businessesWithCrsData.length > 0;
+  let hasApplied = (fundingApplications?.length || 0) > 0;
 
   const nextSteps: NextStep[] = [
     {
       id: "step-1",
       label: "Upload bank statements",
-      completed: hasPlaid,
+      completed: hasBankStatements,
       icon: "upload",
+      href: !hasBankStatements ? "/client/my-documents" : undefined,
     },
     {
       id: "step-2",
       label: "Add business EIN",
       completed: hasBusiness,
       icon: "building",
+      href: !hasBusiness ? "/client/my-business" : undefined,
     },
     {
       id: "step-3",
       label: "Apply to matched lenders",
       completed: hasApplied,
       icon: "send",
+      href: !hasApplied ? "/client/income-funding" : undefined,
     },
   ];
 
