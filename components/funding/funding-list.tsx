@@ -588,7 +588,7 @@ const ActionCell = ({ row }: { row: any }) => {
         <Button
           type="button"
           variant="outline"
-          disabled={!isDenefitsPaid && !userData?.isPremiumClient}
+          disabled={!userData?.isPremiumClient}
           className="group bg-blue-500 hover:bg-blue-600 text-white cursor-pointer flex-1 lg:flex-none transition-all"
           onClick={() => handleApproveClickCapture()}
         >
