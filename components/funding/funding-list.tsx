@@ -84,7 +84,7 @@ const baseColumns: ColumnDef<BankFormData>[] = [
             size="sm"
           />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">
+            <p className="text-sm font-semibold text-gray-900 whitespace-normal break-words max-w-[250px] md:max-w-[300px] xl:max-w-[400px]">
               {data.bankName}
             </p>
             {data.clientApplicationStatus === "Funded" && data.fundedAmount && (
@@ -585,34 +585,51 @@ const ActionCell = ({ row }: { row: any }) => {
   return (
     <>
       <div className="flex gap-2 w-full lg:w-auto">
-        <Button
-          type="button"
-          variant="outline"
-          disabled={!userData?.isPremiumClient}
-          className="group bg-blue-500 hover:bg-blue-600 text-white cursor-pointer flex-1 lg:flex-none transition-all"
-          onClick={() => handleApproveClickCapture()}
-        >
-          <IconMenu
-            icon={
-              <SendIcon className="h-4 w-4 transition-all group-hover:fill-white group-hover:stroke-[1.5]" />
-            }
-            text="Apply"
-          />
-        </Button>
+        {userData?.isPremiumClient ? (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              className="group bg-blue-500 hover:bg-blue-600 text-white cursor-pointer flex-1 lg:flex-none transition-all"
+              onClick={() => handleApproveClickCapture()}
+            >
+              <IconMenu
+                icon={
+                  <SendIcon className="h-4 w-4 transition-all group-hover:fill-white group-hover:stroke-[1.5]" />
+                }
+                text="Apply"
+              />
+            </Button>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="group border-gray-300 hover:border-gray-400 hover:bg-gray-50 flex-1 lg:flex-none transition-all"
-          onClick={() => setSkipDialogOpen(true)}
-        >
-          <IconMenu
-            icon={
-              <XCircle className="h-4 w-4 text-gray-600 transition-all group-hover:text-gray-700" />
-            }
-            text="Skip"
-          />
-        </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="group border-gray-300 hover:border-gray-400 hover:bg-gray-50 flex-1 lg:flex-none transition-all"
+              onClick={() => setSkipDialogOpen(true)}
+            >
+              <IconMenu
+                icon={
+                  <XCircle className="h-4 w-4 text-gray-600 transition-all group-hover:text-gray-700" />
+                }
+                text="Skip"
+              />
+            </Button>
+          </>
+        ) : (
+          <Button
+            type="button"
+            className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold cursor-pointer flex-1 lg:flex-none transition-all border-none shadow-md hover:shadow-lg"
+            onClick={() => handleApproveClickCapture()}
+          >
+            <span className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-out -skew-x-12 -translate-x-full" />
+            <IconMenu
+              icon={
+                <CircleDollarSign className="h-4 w-4 transition-all group-hover:scale-110" />
+              }
+              text="Unlock to Apply"
+            />
+          </Button>
+        )}
 
         <ResponsiveDialog
           isOpen={isSkipDialogOpen}

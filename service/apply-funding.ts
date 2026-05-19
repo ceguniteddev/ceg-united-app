@@ -29,40 +29,22 @@ import { RegistrationType } from "@/schema/users";
 import { uploadDocument } from "./documents";
 import { calculateBusinessIncomePreApproved } from "./n8n";
 
-export const applyFunding = async ({
-  value,
-  registrationType,
+export const processAndUploadDocuments = async ({
+  userId,
+  referenceNumber,
+  bankStatements,
+  driverLicenseDocuments,
+  paystubs,
+  fundingType,
 }: {
-  value: ApplyFunding;
-  registrationType?: RegistrationType;
-}): Promise<{ referenceNumber: string }> => {
-  const userData = await getUserById(value.userId!);
-  if (!userData) {
-    throw new AppError("User not found");
-  }
-
-  // logInfo("applyFunding::userData", userData);
-  // logInfo("applyFunding::registrationType", { registrationType });
-
-  const db = firestoreAdmin();
-
-  const collectionRef = db.collection(USER_FUNDING_APPLICATION);
-
-  const { id: referenceNumber } = await createReferenceId();
-
-  // Exclude document arrays from Firestore save (they should be uploaded to storage separately)
-  const {
-    bankStatements,
-    driverLicenseDocuments,
-    paystubs,
-    ...fundingDataToSave
-  } = value as any;
-
-  const docRef = collectionRef.doc(referenceNumber);
-  await docRef.set({ ...fundingDataToSave });
-
-  // Upload documents to Firebase Storage
-  if (bankStatements || driverLicenseDocuments) {
+  userId: string;
+  referenceNumber: string;
+  bankStatements?: any[];
+  driverLicenseDocuments?: any[];
+  paystubs?: any[];
+  fundingType?: string;
+}) => {
+  if (bankStatements || driverLicenseDocuments || paystubs) {
     // Upload bank statements
     if (bankStatements && bankStatements.length > 0) {
       for (const doc of bankStatements) {
@@ -93,13 +75,13 @@ export const applyFunding = async ({
           });
 
           // Determine the correct document type based on funding type or explicit docType
-          const isPersonal = value.fundingType === "Personal";
+          const isPersonal = fundingType === "Personal";
           const documentType =
             (doc as any).docType ||
             (isPersonal ? "PERSONAL_BANK_STATEMENTS" : "BANK_STATEMENTS");
 
           // Use uploadDocument service function
-          await uploadDocument(value.userId!, file, documentType, {
+          await uploadDocument(userId, file, documentType, {
             referenceNumber,
             documentType: documentType,
             uploadedAt: new Date().toISOString(),
@@ -140,7 +122,7 @@ export const applyFunding = async ({
           });
 
           // Use uploadDocument service function
-          await uploadDocument(value.userId!, file, "DRIVERS_LICENSE", {
+          await uploadDocument(userId, file, "DRIVERS_LICENSE", {
             referenceNumber,
             documentType: "DRIVERS_LICENSE",
             uploadedAt: new Date().toISOString(),
@@ -153,8 +135,8 @@ export const applyFunding = async ({
     }
 
     // Upload paystubs
-    if ((value as any).paystubs && (value as any).paystubs.length > 0) {
-      for (const doc of (value as any).paystubs) {
+    if (paystubs && paystubs.length > 0) {
+      for (const doc of paystubs) {
         try {
           let buffer: Buffer;
           if (doc.storagePath) {
@@ -178,7 +160,7 @@ export const applyFunding = async ({
             type: doc.type,
           });
 
-          await uploadDocument(value.userId!, file, "PAYSTUBS", {
+          await uploadDocument(userId, file, "PAYSTUBS", {
             referenceNumber,
             documentType: "PAYSTUBS",
             uploadedAt: new Date().toISOString(),
@@ -189,37 +171,48 @@ export const applyFunding = async ({
       }
     }
   }
+};
 
-  // we do not generate CRS report when client is registering themselves,
-  // only for broker/admin created clients
-  // if (registrationType === "Self") {
-  //   logInfo("Skipping CRS report generation for self-registered user.");
-  //   return { referenceNumber };
-  // }
+export const applyFunding = async ({
+  value,
+  registrationType,
+}: {
+  value: ApplyFunding;
+  registrationType?: RegistrationType;
+}): Promise<{ referenceNumber: string }> => {
+  const userData = await getUserById(value.userId!);
+  if (!userData) {
+    throw new AppError("User not found");
+  }
 
-  // check if user alreay has generated CRS report
-  // 5-19-2026: pull crs report once client is premium.
-  // const crsData = await getCRSReport(value.userId!);
+  // logInfo("applyFunding::userData", userData);
+  // logInfo("applyFunding::registrationType", { registrationType });
 
-  // if (!crsData || crsData.length === 0) {
-  //   logInfo("Generating new CRS report for user:", { userId: value.userId });
-  //   await generateCRSReport({
-  //     userId: value.userId!,
-  //     referenceNumber,
-  //     bureaus: { equifax: true, experian: true, transunion: true },
-  //   });
-  // }
+  const db = firestoreAdmin();
 
-  // if (userData.isPremiumClient === true && value.businessId) {
-  //   const businessData = await getCRSBusinessProfile(value.businessId);
-  //   if (!businessData) {
-  //     await generateCRSReportBusiness(
-  //       value.userId!,
-  //       referenceNumber,
-  //       value.businessId,
-  //     );
-  //   }
-  // }
+  const collectionRef = db.collection(USER_FUNDING_APPLICATION);
+
+  const { id: referenceNumber } = await createReferenceId();
+
+  // Exclude document arrays from Firestore save (they should be uploaded to storage separately)
+  const {
+    bankStatements,
+    driverLicenseDocuments,
+    paystubs,
+    ...fundingDataToSave
+  } = value as any;
+
+  const docRef = collectionRef.doc(referenceNumber);
+  await docRef.set({ ...fundingDataToSave });
+
+  await processAndUploadDocuments({
+    userId: value.userId!,
+    referenceNumber,
+    bankStatements,
+    driverLicenseDocuments,
+    paystubs: (value as any).paystubs,
+    fundingType: value.fundingType,
+  });
 
   // add a checking if fundingProducts include "Business Income Based Funding"
   if (value.businessId) {
@@ -233,11 +226,45 @@ export const applyFunding = async ({
     }
   }
 
+  // we do not generate CRS report when client is registering themselves,
+  // only for broker/admin created clients
+  if (registrationType === "Self") {
+    logInfo("Skipping CRS report generation for self-registered user.");
+    return { referenceNumber };
+  }
+
+  // check if user alreay has generated CRS report
+  // 5-19-2026: pull crs report once client is premium.
+
+  const crsData = await getCRSReport(value.userId!);
+
+  if (userData.isPremiumClient === true && (!crsData || crsData.length === 0)) {
+    logInfo("Generating new CRS report for user:", { userId: value.userId });
+    await generateCRSReport({
+      userId: value.userId!,
+      referenceNumber,
+      bureaus: { equifax: true, experian: true, transunion: true },
+    });
+  }
+
+  if (userData.isPremiumClient === true && value.businessId) {
+    const businessData = await getCRSBusinessProfile(value.businessId);
+    if (!businessData) {
+      await generateCRSReportBusiness(
+        value.userId!,
+        referenceNumber,
+        value.businessId,
+      );
+    }
+  }
+
   // we don't run funding analysis when registration as the CRS data are not pulled
-  // await fundAnalysis({
-  //   referenceNumber,
-  //   userId: value.userId!,
-  // });
+  if (userData.isPremiumClient === true) {
+    await fundAnalysis({
+      referenceNumber,
+      userId: value.userId!,
+    });
+  }
 
   return { referenceNumber };
 };
@@ -618,90 +645,14 @@ export const updateApplyFunding = async ({
 
   await docRef.set({ ...fundingDataToSave }, { merge: true });
 
-  // Upload documents to Firebase Storage
-  if (bankStatements || driverLicenseDocuments) {
-    // Upload bank statements
-    if (bankStatements && bankStatements.length > 0) {
-      for (const doc of bankStatements) {
-        try {
-          let buffer: Buffer;
-          if (doc.storagePath) {
-            const bucket = storageAdmin();
-            const [fileBuffer] = await bucket.file(doc.storagePath).download();
-            buffer = fileBuffer;
-            bucket
-              .file(doc.storagePath)
-              .delete()
-              .catch(() => {});
-          } else if (doc.base64) {
-            // Extract base64 data (remove data:application/pdf;base64, prefix if exists)
-            const base64Data = doc.base64.includes(",")
-              ? doc.base64.split(",")[1]
-              : doc.base64;
-            buffer = Buffer.from(base64Data, "base64");
-          } else {
-            continue;
-          }
-
-          // Create a File object from the buffer
-          const file = new File([new Uint8Array(buffer)], doc.name, {
-            type: doc.type,
-          });
-
-          // Use uploadDocument service function
-          await uploadDocument(value.userId!, file, "BANK_STATEMENTS", {
-            referenceNumber: value.referenceNumber!,
-            documentType: "BANK_STATEMENTS",
-            uploadedAt: new Date().toISOString(),
-          });
-        } catch (error) {
-          console.error("Error uploading bank statement:", error);
-          // Continue with other documents even if one fails
-        }
-      }
-    }
-
-    // Upload driver licenses
-    if (driverLicenseDocuments && driverLicenseDocuments.length > 0) {
-      for (const doc of driverLicenseDocuments) {
-        try {
-          let buffer: Buffer;
-          if (doc.storagePath) {
-            const bucket = storageAdmin();
-            const [fileBuffer] = await bucket.file(doc.storagePath).download();
-            buffer = fileBuffer;
-            bucket
-              .file(doc.storagePath)
-              .delete()
-              .catch(() => {});
-          } else if (doc.base64) {
-            // Extract base64 data (remove data:image/... or data:application/pdf;base64, prefix if exists)
-            const base64Data = doc.base64.includes(",")
-              ? doc.base64.split(",")[1]
-              : doc.base64;
-            buffer = Buffer.from(base64Data, "base64");
-          } else {
-            continue;
-          }
-
-          // Create a File object from the buffer
-          const file = new File([new Uint8Array(buffer)], doc.name, {
-            type: doc.type,
-          });
-
-          // Use uploadDocument service function
-          await uploadDocument(value.userId!, file, "DRIVERS_LICENSE", {
-            referenceNumber: value.referenceNumber!,
-            documentType: "DRIVERS_LICENSE",
-            uploadedAt: new Date().toISOString(),
-          });
-        } catch (error) {
-          console.error("Error uploading driver license:", error);
-          // Continue with other documents even if one fails
-        }
-      }
-    }
-  }
+  await processAndUploadDocuments({
+    userId: value.userId!,
+    referenceNumber: value.referenceNumber,
+    bankStatements,
+    driverLicenseDocuments,
+    paystubs: (value as any).paystubs,
+    fundingType: value.fundingType,
+  });
 };
 
 export const saveBusinessIncomeComputation = async (

@@ -9,8 +9,10 @@ import {
   fundAnalysis,
   generateCRSReport,
   getCRSReport,
+  requestMapBankProductsN8nNewRegistration,
   sendClientFundingApplicationAuditAnalysis,
   sendClientFundingApplicationCongratsMessage,
+  sendClientFundingApplicationCongratsMessageNewRegistration,
 } from "./crs";
 import { RegistrationType } from "@/schema/users";
 import { logInfo } from "@/lib/logger";
@@ -70,7 +72,7 @@ export const generateEmailVerificationToken = async ({
  * Verify email token and update user authentication
  */
 export const verifyEmailToken = async (
-  token: string
+  token: string,
 ): Promise<{ success: boolean; message: string; email?: string }> => {
   const db = firestoreAdmin();
   const authAdmin = authenticationAdmin();
@@ -83,7 +85,7 @@ export const verifyEmailToken = async (
 
     if (!tokenDoc.exists) {
       logInfo(
-        "Invalid verification link. Please request a new verification email."
+        "Invalid verification link. Please request a new verification email.",
       );
       return {
         success: false,
@@ -112,7 +114,7 @@ export const verifyEmailToken = async (
     const expiresAt = tokenData.expiresAt.toDate();
     if (now > expiresAt) {
       logInfo(
-        "Verification link has expired. Please request a new verification email."
+        "Verification link has expired. Please request a new verification email.",
       );
       return {
         success: false,
@@ -133,39 +135,44 @@ export const verifyEmailToken = async (
     });
 
     // Trigger CRS and Funding Analysis if referenceNumber exists
-    if (tokenData.referenceNumber && tokenData.registrationType === "Self") {
+    if (tokenData.referenceNumber) {
       console.log("Triggering CRS and Funding Analysis for:", {
         userId: tokenData.userId,
         referenceNumber: tokenData.referenceNumber,
       });
 
       try {
-        const data = await getCRSReport(tokenData.userId);
+        // const data = await getCRSReport(tokenData.userId);
 
-        if (!data || data.length === 0) {
-          await generateCRSReport({
-            userId: tokenData.userId,
-            referenceNumber: tokenData.referenceNumber,
-            bureaus: { equifax: true, experian: true, transunion: true },
-          });
-        }
+        // if (!data || data.length === 0) {
+        //   await generateCRSReport({
+        //     userId: tokenData.userId,
+        //     referenceNumber: tokenData.referenceNumber,
+        //     bureaus: { equifax: true, experian: true, transunion: true },
+        //   });
+        // }
 
-        await fundAnalysis({
-          referenceNumber: tokenData.referenceNumber,
-          userId: tokenData.userId,
-        });
+        // await fundAnalysis({
+        //   referenceNumber: tokenData.referenceNumber,
+        //   userId: tokenData.userId,
+        // });
 
         // Send Client Congrats Message
-        await sendClientFundingApplicationCongratsMessage({
+        await sendClientFundingApplicationCongratsMessageNewRegistration({
+          userId: tokenData.userId,
+          referenceNumber: tokenData.referenceNumber,
+        });
+
+        await requestMapBankProductsN8nNewRegistration({
           userId: tokenData.userId,
           referenceNumber: tokenData.referenceNumber,
         });
 
         // Send Client Audit Analysis
-        await sendClientFundingApplicationAuditAnalysis({
-          userId: tokenData.userId,
-          referenceNumber: tokenData.referenceNumber,
-        });
+        // await sendClientFundingApplicationAuditAnalysis({
+        //   userId: tokenData.userId,
+        //   referenceNumber: tokenData.referenceNumber,
+        // });
 
         console.log("Successfully triggered analysis for verified user");
       } catch (analysisError) {
@@ -183,7 +190,7 @@ export const verifyEmailToken = async (
   } catch (error) {
     console.error("Error verifying email token:", error);
     throw new AppError(
-      "An error occurred while verifying your email. Please try again later."
+      "An error occurred while verifying your email. Please try again later.",
     );
   }
 };
@@ -192,7 +199,7 @@ export const verifyEmailToken = async (
  * Get verification status by token
  */
 export const getVerificationTokenStatus = async (
-  token: string
+  token: string,
 ): Promise<{
   exists: boolean;
   verified: boolean;

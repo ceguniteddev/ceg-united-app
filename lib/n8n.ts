@@ -6,7 +6,9 @@ export const getFundingAnalysis = async () =>
   isProd() ? "funding-analysis-prod" : "funding-analysis";
 
 export const getFundingAnalysisNewRegistrationFlow = async () =>
-  isProd() ? "funding-analysis-new-registration-flow-prod" : "funding-analysis-new-registration-flow";
+  isProd()
+    ? "funding-analysis-new-registration-flow-prod"
+    : "funding-analysis-new-registration-flow";
 
 export const deleteFundingAnalysis = async () =>
   isProd() ? "delete-funding-analysis-prod" : "delete-funding-analysis";
@@ -39,8 +41,16 @@ export const sendClientCongratsMessageN8N = async () =>
     ? "send-client-congrats-message-prod"
     : "send-client-congrats-message";
 
+export const sendClientCongratsMessageN8NNewRegistration = async () =>
+  isProd()
+    ? "send-client-congrats-message-new-registration-prod"
+    : "send-client-congrats-message-new-registration";
+
 export const mapBankProductsN8n = async () =>
   isProd() ? "bank-product-mapping-prod" : "bank-product-mapping";
+
+export const mapBankProductsN8nNewRegistration = async () =>
+  isProd() ? "bank-product-mapping-new-registration-prod" : "bank-product-mapping-new-registration";
 
 export const sendClientServiceAgreementN8N = async () =>
   isProd()

@@ -12,8 +12,10 @@ import {
   generateCRSReportN8N,
   getFundingAnalysis,
   getFundingAnalysisNewRegistrationFlow,
+  mapBankProductsN8nNewRegistration,
   sendClientAnalysisN8N,
   sendClientCongratsMessageN8N,
+  sendClientCongratsMessageN8NNewRegistration,
 } from "@/lib/n8n";
 import { Business } from "@/schema";
 import { getBusiness } from "@/service/business";
@@ -364,6 +366,60 @@ export const sendClientFundingApplicationCongratsMessage = async ({
   });
   await fetch(
     `${process.env.n8n_HOST}/${await sendClientCongratsMessageN8N()}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+      },
+      body: JSON.stringify({
+        referenceNumber,
+        userId,
+      }),
+    },
+  );
+};
+
+export const sendClientFundingApplicationCongratsMessageNewRegistration = async ({
+  referenceNumber,
+  userId,
+}: {
+  referenceNumber: string;
+  userId: string;
+}) => {
+  logInfo("Sending client congrats message new registration...", {
+    referenceNumber,
+    userId,
+  });
+  await fetch(
+    `${process.env.n8n_HOST}/${await sendClientCongratsMessageN8NNewRegistration()}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+      },
+      body: JSON.stringify({
+        referenceNumber,
+        userId,
+      }),
+    },
+  );
+};
+
+export const requestMapBankProductsN8nNewRegistration = async ({
+  referenceNumber,
+  userId,
+}: {
+  referenceNumber: string;
+  userId: string;
+}) => {
+  logInfo("Sending bank product mapping request for new registration...", {
+    referenceNumber,
+    userId,
+  });
+  await fetch(
+    `${process.env.n8n_HOST}/${await mapBankProductsN8nNewRegistration()}`,
     {
       method: "POST",
       headers: {

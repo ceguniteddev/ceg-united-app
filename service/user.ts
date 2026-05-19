@@ -250,35 +250,24 @@ export const registerUser = async ({
     referenceNumber = result.referenceNumber;
     logInfo("Funding application created", { referenceNumber });
 
-    // Store referenceNumber for later use in email verification
-    if (
-      user.role === "Client" &&
-      referenceNumber &&
-      registrationType === "Self"
-    ) {
-      // We'll pass referenceNumber to the verification token
-      // Analysis will be triggered AFTER email verification
-      fundingData.referenceNumber = referenceNumber;
-    }
+    // if (
+    //   user.role === "Client" &&
+    //   referenceNumber &&
+    //   registrationType !== "Self"
+    // ) {
+    //   // For non-self registrations (Broker/Admin), trigger analysis immediately
+    //   // Send Client Congrats Message
+    //   await sendClientFundingApplicationCongratsMessage({
+    //     userId: userId,
+    //     referenceNumber: referenceNumber!,
+    //   });
 
-    if (
-      user.role === "Client" &&
-      referenceNumber &&
-      registrationType !== "Self"
-    ) {
-      // For non-self registrations (Broker/Admin), trigger analysis immediately
-      // Send Client Congrats Message
-      await sendClientFundingApplicationCongratsMessage({
-        userId: userId,
-        referenceNumber,
-      });
-
-      // Send Client Audit Analysis
-      await sendClientFundingApplicationAuditAnalysis({
-        userId: userId,
-        referenceNumber,
-      });
-    }
+    //   // Send Client Audit Analysis
+    //   await sendClientFundingApplicationAuditAnalysis({
+    //     userId: userId,
+    //     referenceNumber: referenceNumber!,
+    //   });
+    // }
   }
 
   const authAdmin = authenticationAdmin();

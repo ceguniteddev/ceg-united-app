@@ -152,6 +152,11 @@ export const adminSidebarLinks = [
     label: "Clients",
   },
   {
+    imgURL: "/icons/user-round-plus.svg",
+    route: "/admin/leads",
+    label: "Leads",
+  },
+  {
     imgURL: "/icons/handshake.svg",
     route: "/admin/brokers",
     label: "Brokers",
