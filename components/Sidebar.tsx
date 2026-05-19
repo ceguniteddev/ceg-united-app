@@ -17,6 +17,7 @@ import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 // import { useUpdateUserOnboardingMutation } from "@/hooks/user";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
 import { isPlaidProductionReady } from "@/lib/plaid";
+import { LockIcon } from "lucide-react";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 // import { useEffect, useState } from "react";
 
@@ -136,16 +137,14 @@ const Sidebar = () => {
             const isActive =
               pathname === item.route || pathname.startsWith(`${item.route}/`);
 
-            return (
-              <Link
-                href={item.route}
-                key={item.label}
-                className={cn(
-                  "flex gap-2 md:gap-3 items-center py-1 md:p-1 2xl:p-1 rounded-lg justify-start",
-                  { "bg-bank-gradient": isActive },
-                )}
-              >
-                <div className="relative size-5 md:size-6">
+            const isLocked =
+              (!userData || !userData.isPremiumClient) &&
+              (item.route === "/client/my-analysis" ||
+                item.route === "/client/my-credit");
+
+            const content = (
+              <>
+                <div className="relative size-5 md:size-6 flex-shrink-0">
                   <Image
                     src={item.imgURL}
                     alt={item.label}
@@ -155,13 +154,55 @@ const Sidebar = () => {
                     })}
                   />
                 </div>
-                <p
-                  className={cn("text-16 font-semibold text-black-2", {
-                    "!text-white": isActive,
-                  })}
+                <div className="flex items-center justify-between flex-1 pr-2">
+                  <p
+                    className={cn("text-16 font-semibold text-black-2", {
+                      "!text-white": isActive,
+                    })}
+                  >
+                    {item.label}
+                  </p>
+                  {isLocked && (
+                    <button
+                      type="button"
+                      className="cursor-pointer hover:bg-gray-200/50 p-1 rounded-full transition-colors"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        // TODO: Route to payment screen
+                        console.log("Route to payment screen");
+                      }}
+                    >
+                      <LockIcon className="w-4 h-4 text-gray-500 opacity-80 hover:opacity-100 hover:text-blue-500" />
+                    </button>
+                  )}
+                </div>
+              </>
+            );
+
+            if (isLocked) {
+              return (
+                <div
+                  key={item.label}
+                  className={cn(
+                    "flex gap-2 md:gap-3 items-center py-1 md:p-1 2xl:p-1 rounded-lg justify-start opacity-70",
+                    { "bg-bank-gradient": isActive },
+                  )}
                 >
-                  {item.label}
-                </p>
+                  {content}
+                </div>
+              );
+            }
+
+            return (
+              <Link
+                href={item.route}
+                key={item.label}
+                className={cn(
+                  "flex gap-2 md:gap-3 items-center py-1 md:p-1 2xl:p-1 rounded-lg justify-start",
+                  { "bg-bank-gradient": isActive },
+                )}
+              >
+                {content}
               </Link>
             );
           })}

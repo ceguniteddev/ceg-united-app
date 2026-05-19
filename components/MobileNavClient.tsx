@@ -18,6 +18,7 @@ import { useAuth } from "@/provider/AuthContext";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
 import { isPlaidProductionReady } from "@/lib/plaid";
 import { useGetUserApplyFunding } from "@/hooks/apply-funding";
+import { LockIcon } from "lucide-react";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 
 const MobileNavClient = () => {
@@ -122,6 +123,63 @@ const MobileNavClient = () => {
                     pathname === item.route ||
                     pathname.startsWith(`${item.route}/`);
 
+                  const isLocked =
+                    (!userData || !userData.isPremiumClient) &&
+                    (item.route === "/client/my-analysis" ||
+                      item.route === "/client/my-credit");
+
+                  const content = (
+                    <>
+                      <div className="relative size-6 flex-shrink-0">
+                        <Image
+                          src={item.imgURL}
+                          alt={item.label}
+                          fill
+                          className={cn({
+                            "brightness-[3] invert-0": isActive,
+                          })}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between flex-1 pr-2">
+                        <p
+                          className={cn("text-16 font-semibold text-black-2", {
+                            "text-white": isActive,
+                          })}
+                        >
+                          {item.label}
+                        </p>
+                        {isLocked && (
+                          <button
+                            type="button"
+                            className="cursor-pointer hover:bg-gray-200/50 p-1 rounded-full transition-colors"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              // TODO: Route to payment screen
+                              console.log("Route to payment screen");
+                            }}
+                          >
+                            <LockIcon className="w-4 h-4 text-gray-500 opacity-80 hover:opacity-100 hover:text-blue-500" />
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  );
+
+                  if (isLocked) {
+                    return (
+                      <div
+                        key={item.route}
+                        className={cn(
+                          "flex gap-3 items-center py-1 px-4 rounded-lg mb-2 opacity-70",
+                          { "bg-bank-gradient": isActive },
+                        )}
+                      >
+                        {content}
+                      </div>
+                    );
+                  }
+
                   return (
                     <SheetClose asChild key={item.route}>
                       <Link
@@ -131,23 +189,7 @@ const MobileNavClient = () => {
                           { "bg-bank-gradient": isActive },
                         )}
                       >
-                        <div className="relative size-6">
-                          <Image
-                            src={item.imgURL}
-                            alt={item.label}
-                            fill
-                            className={cn({
-                              "brightness-[3] invert-0": isActive,
-                            })}
-                          />
-                        </div>
-                        <p
-                          className={cn("text-16 font-semibold text-black-2", {
-                            "text-white": isActive,
-                          })}
-                        >
-                          {item.label}
-                        </p>
+                        {content}
                       </Link>
                     </SheetClose>
                   );

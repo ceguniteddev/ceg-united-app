@@ -101,12 +101,14 @@ export async function proxy(req: NextRequest) {
 
   // 4) Token present → verify + find role
   let role: "Admin" | "IT" | "Staff" | "Client" | "Broker" | null = null;
+  let isPremiumClient = false;
 
   try {
     // Use the already verified session instead of verifying again
     if (!sessionCookie?.email) throw new Error("Invalid session");
     const user = await getUserById(sessionCookie.uid);
     role = (user?.role as any) ?? "Client";
+    isPremiumClient = user?.isPremiumClient ?? false;
     // We get isOnboarded so we can conditionally route clients
     var isOnboarded = true; // user?.isOnboarded ?? false;
   } catch {
@@ -145,6 +147,14 @@ export async function proxy(req: NextRequest) {
       return NextResponse.redirect(new URL(CLIENT_HOME, origin));
     }
     if (isBrokerRoute(pathname)) {
+      return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+    }
+
+    if (
+      !isPremiumClient &&
+      (pathname.startsWith("/client/my-analysis") ||
+        pathname.startsWith("/client/my-credit"))
+    ) {
       return NextResponse.redirect(new URL(CLIENT_HOME, origin));
     }
 
