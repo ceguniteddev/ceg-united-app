@@ -152,7 +152,7 @@ export default function BusinessDetailPage({ params }: Props) {
 
   return (
     <section className="home">
-      <div className="home-content mb-16 sm:mb-0">
+      <div className="home-content pb-8 sm:pb-0">
         {/* Back Link */}
         <Link
           href="/client/my-business"
