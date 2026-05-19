@@ -43,7 +43,7 @@ export default function OnboardingPage() {
   }
 
   if (!user) {
-    router.push("/login");
+    router.push("/");
     return null;
   }
 

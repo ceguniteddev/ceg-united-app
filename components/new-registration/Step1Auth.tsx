@@ -137,7 +137,7 @@ export function Step1Auth() {
           <p className="text-sm text-gray-600">
             Already have an account?{" "}
             <Link
-              href="/login"
+              href="/"
               className="text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-all"
             >
               Log in

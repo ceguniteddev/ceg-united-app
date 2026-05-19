@@ -1,6 +1,31 @@
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import bcrypt from "bcryptjs";
 import * as admin from "firebase-admin";
+import { NextRequest, NextResponse } from "next/server";
+import { withAuth } from "@/lib/api-validation";
+
+export const GET = withAuth(async (req: NextRequest) => {
+  try {
+    const db = firestoreAdmin();
+    const snapshot = await db
+      .collection("user-leads")
+      .orderBy("createdAt", "desc")
+      .get();
+
+    const leads = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return NextResponse.json(leads, { status: 200 });
+  } catch (error) {
+    console.error("Error fetching leads:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch leads" },
+      { status: 500 },
+    );
+  }
+});
 
 export async function POST(req: Request) {
   try {

@@ -86,7 +86,7 @@ const AnalysisView = ({ referenceNumber }: Props) => {
     return (
       <div className="flex flex-col sm:flex-row justify-between gap-3 p-4">
         <div className="text-sm sm:text-base">No analysis found.</div>
-        <RefreshAnalysisData referenceNumber={referenceNumber} />
+        {isAdmin && <RefreshAnalysisData referenceNumber={referenceNumber} />}
       </div>
     );
   }

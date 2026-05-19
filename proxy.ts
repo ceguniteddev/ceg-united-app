@@ -108,7 +108,7 @@ export async function proxy(req: NextRequest) {
     const user = await getUserById(sessionCookie.uid);
     role = (user?.role as any) ?? "Client";
     // We get isOnboarded so we can conditionally route clients
-    var isOnboarded = user?.isOnboarded ?? false;
+    var isOnboarded = true; // user?.isOnboarded ?? false;
   } catch {
     // Bad token/session: clear cookie and kick to "/"
     const res = NextResponse.redirect(new URL("/", origin));

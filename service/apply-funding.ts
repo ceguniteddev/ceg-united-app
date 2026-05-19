@@ -51,8 +51,12 @@ export const applyFunding = async ({
   const { id: referenceNumber } = await createReferenceId();
 
   // Exclude document arrays from Firestore save (they should be uploaded to storage separately)
-  const { bankStatements, driverLicenseDocuments, ...fundingDataToSave } =
-    value;
+  const {
+    bankStatements,
+    driverLicenseDocuments,
+    paystubs,
+    ...fundingDataToSave
+  } = value as any;
 
   const docRef = collectionRef.doc(referenceNumber);
   await docRef.set({ ...fundingDataToSave });
@@ -229,10 +233,11 @@ export const applyFunding = async ({
     }
   }
 
-  await fundAnalysisNewRegistrationFlow({
-    referenceNumber,
-    userId: value.userId!,
-  });
+  // we don't run funding analysis when registration as the CRS data are not pulled
+  // await fundAnalysis({
+  //   referenceNumber,
+  //   userId: value.userId!,
+  // });
 
   return { referenceNumber };
 };
@@ -604,8 +609,12 @@ export const updateApplyFunding = async ({
   }
 
   // Exclude document arrays from Firestore save (they should be uploaded to storage separately)
-  const { bankStatements, driverLicenseDocuments, ...fundingDataToSave } =
-    value;
+  const {
+    bankStatements,
+    driverLicenseDocuments,
+    paystubs,
+    ...fundingDataToSave
+  } = value as any;
 
   await docRef.set({ ...fundingDataToSave }, { merge: true });
 

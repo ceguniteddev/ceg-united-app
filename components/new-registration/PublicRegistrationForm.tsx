@@ -140,7 +140,17 @@ export function PublicRegistrationForm() {
 
   useEffect(() => {
     const subscription = formStep2.watch((value) => {
-      updateBusinessDetailsData(value);
+      const businessData = { ...value };
+      if (businessData.fundingType === FundingType.Personal) {
+        businessData.timeInBusiness = null;
+        businessData.businessName = null;
+        businessData.ein = null;
+        businessData.businessIndustry = null;
+      } else if (businessData.fundingType === FundingType.Business) {
+        businessData.creditScore = null;
+        businessData.employmentType = null;
+      }
+      updateBusinessDetailsData(businessData);
     });
     return () => subscription.unsubscribe();
   }, [formStep2.watch, updateBusinessDetailsData]);
@@ -279,7 +289,18 @@ export function PublicRegistrationForm() {
     const submitPromise = async () => {
       // Ensure we have the absolute latest data from all forms
       const latestAuthData = formStep1.getValues();
-      const latestBusinessData = formStep2.getValues();
+      const latestBusinessData = { ...formStep2.getValues() };
+
+      if (latestBusinessData.fundingType === FundingType.Personal) {
+        latestBusinessData.timeInBusiness = null;
+        latestBusinessData.businessName = null;
+        latestBusinessData.ein = null;
+        latestBusinessData.businessIndustry = null;
+      } else if (latestBusinessData.fundingType === FundingType.Business) {
+        latestBusinessData.creditScore = null;
+        latestBusinessData.employmentType = null;
+      }
+
       const latestDocumentData = formStep3.getValues();
 
       updateAuthData(latestAuthData);
