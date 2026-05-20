@@ -203,6 +203,9 @@ export const registerUser = async ({
   const userId = docRef.id;
   const data = (await docRef.get()).data();
 
+
+  
+
   // Create business record first if business data exists
   let businessId: string | undefined;
   let referenceNumber: string | undefined;

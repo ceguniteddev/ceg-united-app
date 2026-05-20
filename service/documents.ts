@@ -65,12 +65,17 @@ const getClientIP = async (): Promise<string> => {
  * @param customMetadata - Optional custom metadata to attach to the file.
  * @returns A promise that resolves to the details of the uploaded file.
  */
-export const uploadDocument = async (
-  userId: string,
-  file: File,
-  documentType: string | null, // <-- Now optional
-  customMetadata?: Record<string, string>, // <-- Optional metadata parameter
-): Promise<UploadedFileData> => {
+export const uploadDocument = async ({
+  userId,
+  file,
+  documentType,
+  customMetadata,
+}: {
+  userId: string;
+  file: File;
+  documentType: string | null; // <-- Now optional
+  customMetadata?: Record<string, string>; // <-- Optional metadata parameter}
+}): Promise<UploadedFileData> => {
   const bucket = storageAdmin();
   const userDocumentPrefix = `documents/${userId}/`;
   let newFilename: string;
@@ -150,6 +155,7 @@ export const uploadDocument = async (
           await db.collection(USER_DOCUMENTS_COLLECTION).add({
             ...extractedData,
             userId,
+            documentType,
             uploadDate: new Date().toISOString(),
             originalGcsPath: path,
           });

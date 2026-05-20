@@ -81,10 +81,15 @@ export const processAndUploadDocuments = async ({
             (isPersonal ? "PERSONAL_BANK_STATEMENTS" : "BANK_STATEMENTS");
 
           // Use uploadDocument service function
-          await uploadDocument(userId, file, documentType, {
-            referenceNumber,
-            documentType: documentType,
-            uploadedAt: new Date().toISOString(),
+          await uploadDocument({
+            userId,
+            file,
+            documentType,
+            customMetadata: {
+              referenceNumber,
+              documentType: documentType,
+              uploadedAt: new Date().toISOString(),
+            },
           });
         } catch (error) {
           console.error("Error uploading bank statement:", error);
@@ -122,10 +127,15 @@ export const processAndUploadDocuments = async ({
           });
 
           // Use uploadDocument service function
-          await uploadDocument(userId, file, "DRIVERS_LICENSE", {
-            referenceNumber,
+          await uploadDocument({
+            userId,
+            file,
             documentType: "DRIVERS_LICENSE",
-            uploadedAt: new Date().toISOString(),
+            customMetadata: {
+              referenceNumber,
+              documentType: "DRIVERS_LICENSE",
+              uploadedAt: new Date().toISOString(),
+            },
           });
         } catch (error) {
           console.error("Error uploading driver license:", error);
@@ -160,10 +170,15 @@ export const processAndUploadDocuments = async ({
             type: doc.type,
           });
 
-          await uploadDocument(userId, file, "PAYSTUBS", {
-            referenceNumber,
+          await uploadDocument({
+            userId,
+            file,
             documentType: "PAYSTUBS",
-            uploadedAt: new Date().toISOString(),
+            customMetadata: {
+              referenceNumber,
+              documentType: "PAYSTUBS",
+              uploadedAt: new Date().toISOString(),
+            },
           });
         } catch (error) {
           console.error("Error uploading paystubs:", error);

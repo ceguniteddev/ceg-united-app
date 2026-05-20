@@ -39,10 +39,15 @@ export const saveApplicationToPDF = async (
       type: "application/pdf",
     });
 
-    const result = await uploadDocument(userId, file, "FUNDING_APPLICATION", {
-      referenceNumber,
+    const result = await uploadDocument({
+      userId,
+      file,
       documentType: "FUNDING_APPLICATION",
-      generatedAt: new Date().toISOString(),
+      customMetadata: {
+        referenceNumber,
+        documentType: "FUNDING_APPLICATION",
+        generatedAt: new Date().toISOString(),
+      },
     });
 
     return result;
