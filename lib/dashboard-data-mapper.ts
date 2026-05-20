@@ -247,11 +247,13 @@ export function transformClientDataToDashboard(
   // 6. Next Steps (hardcoded for now - TODO: integrate with user onboarding state)
 
   const hasBankStatements =
+    (getPlaidCompleteData?.length || 0) > 0 ||
     clientData.userDocuments?.some(
       (doc) =>
         doc.name.includes("PERSONAL_BANK_STATEMENTS") ||
         doc.name.includes("BANK_STATEMENTS"),
-    ) || false;
+    ) ||
+    false;
 
   let hasBusiness = businessesWithCrsData.length > 0;
   let hasApplied = (fundingApplications?.length || 0) > 0;
