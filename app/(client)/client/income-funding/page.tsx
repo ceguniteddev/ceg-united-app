@@ -74,9 +74,9 @@ export default function IncomeFunding() {
   const selectedOffer =
     deal.offers.find((o) => o.id === deal.selectedOfferId) || deal.offers[0];
 
-  const hasMissingComputation =
+  let hasMissingComputation =
     realDeal && !(realDeal as any).businessIncomeComputation;
-
+  hasMissingComputation = true;
   const renderView = () => {
     if (
       hasMissingComputation &&
@@ -114,6 +114,7 @@ export default function IncomeFunding() {
         return (
           <PreApprovalView
             deal={deal}
+            realDeal={realDeal}
             onContinue={() => setStatus("collecting-documents")}
           />
         );

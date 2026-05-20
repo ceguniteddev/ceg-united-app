@@ -13,20 +13,18 @@ import { StatCard } from "./StatCard";
 import { GradeBadge } from "./GradeBadge";
 import { formatUSD } from "@/lib/underwriting";
 import type { IncomeFundingDeal } from "@/types/income-funding-types";
-import { useGetUserApplyFunding } from "@/hooks/apply-funding";
-import { ApplyFunding } from "@/schema/apply-funding";
 
 interface PreApprovalViewProps {
   deal: IncomeFundingDeal;
+  realDeal: any;
   onContinue: () => void;
 }
 
-export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
-  const { appliedFunding } = useGetUserApplyFunding();
-  const realDeal = appliedFunding?.find((app) =>
-    app.fundingProducts?.includes("Business Income Based Funding"),
-  ) as ApplyFunding & { businessIncomeComputation?: any };
-
+export function PreApprovalView({
+  deal,
+  realDeal,
+  onContinue,
+}: PreApprovalViewProps) {
   // Fallback to mock data if real data is not available yet
   const computation = realDeal?.businessIncomeComputation || {
     assignedGrade: deal.underwritingResult.grade,
@@ -42,23 +40,30 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
   const computationFromBackend = realDeal?.businessIncomeComputation || {};
   const u = realDeal
     ? {
-        monthlyDeposits: realDeal.annualBusinessRevenue
-          ? realDeal.annualBusinessRevenue / 12
-          : deal.underwritingInput.monthlyDeposits,
+        monthlyDeposits:
+          computationFromBackend.monthlyBusinessRevenue ||
+          (realDeal.annualBusinessRevenue
+            ? realDeal.annualBusinessRevenue / 12
+            : deal.underwritingInput.monthlyDeposits),
         timeInBusinessMonths: realDeal.dateOfIncorporation
           ? Math.floor(
               (Date.now() - new Date(realDeal.dateOfIncorporation).getTime()) /
                 (1000 * 60 * 60 * 24 * 30),
             )
           : deal.underwritingInput.timeInBusinessMonths,
+        timeInBusinessStr: computationFromBackend.timeInBusiness,
         averageDailyBalance:
+          computationFromBackend.avgDailyBankBalance ||
           realDeal.avgDailyBankBalance ||
           deal.underwritingInput.averageDailyBalance,
         endingBalance: computationFromBackend.endingBalance || 0,
         nsfCount: computationFromBackend.nsfCount || 0,
         negativeDays: computationFromBackend.negativeDays || 0,
       }
-    : deal.underwritingInput;
+    : {
+        ...deal.underwritingInput,
+        timeInBusinessStr: undefined as string | undefined,
+      };
 
   if (!computation.isEligible) {
     return (
@@ -158,13 +163,18 @@ export function PreApprovalView({ deal, onContinue }: PreApprovalViewProps) {
           <StatCard
             icon={Calendar}
             label="Time in Business"
-            value={`${u.timeInBusinessMonths} months`}
-            hint={`Founded ${new Date(
-              Date.now() - u.timeInBusinessMonths * 30 * 24 * 60 * 60 * 1000,
-            ).toLocaleDateString("en-US", {
-              month: "short",
-              year: "numeric",
-            })}`}
+            value={u.timeInBusinessStr || `${u.timeInBusinessMonths} months`}
+            hint={
+              u.timeInBusinessStr
+                ? "Based on analysis"
+                : `Founded ${new Date(
+                    Date.now() -
+                      u.timeInBusinessMonths * 30 * 24 * 60 * 60 * 1000,
+                  ).toLocaleDateString("en-US", {
+                    month: "short",
+                    year: "numeric",
+                  })}`
+            }
           />
         </div>
         <div className="animate-fade-in-up stagger-4">
