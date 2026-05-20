@@ -221,6 +221,11 @@ export const adminSidebarLinks = [
     route: "/admin/mail",
     label: "Mail",
   },
+  {
+    imgURL: "/icons/dollar-circle.svg",
+    route: "/admin/fee-settings",
+    label: "Fee Settings",
+  },
 ];
 
 export const brokerSidebarLinks = [
