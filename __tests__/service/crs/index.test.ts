@@ -305,6 +305,13 @@ describe("service/crs/index", () => {
 
   // ── generateCRSReport ─────────────────────────────────────────────────────
   describe("generateCRSReport", () => {
+    beforeEach(() => {
+      vi.mocked(getUserById).mockResolvedValue({
+        id: "u1",
+        isPremiumClient: true,
+      } as any);
+    });
+
     it("calls fetch to n8n webhook URL with correct payload", async () => {
       const promise = generateCRSReport({
         userId: "u1",

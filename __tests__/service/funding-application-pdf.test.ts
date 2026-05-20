@@ -79,12 +79,12 @@ describe("saveApplicationToPDF", () => {
     const result = await saveApplicationToPDF("REF-001", "user-1");
 
     expect(renderToBuffer).toHaveBeenCalled();
-    expect(uploadDocument).toHaveBeenCalledWith(
-      "user-1",
-      expect.any(File),
-      "FUNDING_APPLICATION",
-      expect.objectContaining({ referenceNumber: "REF-001" }),
-    );
+    expect(uploadDocument).toHaveBeenCalledWith({
+      userId: "user-1",
+      file: expect.any(File),
+      documentType: "FUNDING_APPLICATION",
+      customMetadata: expect.objectContaining({ referenceNumber: "REF-001" }),
+    });
     expect(result).toEqual(mockUploadResult);
   });
 });
