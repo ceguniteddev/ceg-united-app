@@ -205,6 +205,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: CLASSIFY_BASE_URL
+    value: https://classifydocument-mzpl6qo65q-uc.a.run.app
+    availability:
+      - BUILD
+      - RUNTIME
 
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
