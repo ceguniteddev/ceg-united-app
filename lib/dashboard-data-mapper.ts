@@ -184,38 +184,44 @@ export function transformClientDataToDashboard(
             : "Needs Improvement",
   };
 
-  // 4. Financial Snapshot - Calculate from Plaid data
-  const allTransactions =
-    getPlaidCompleteData?.flatMap((d) => d.transaction || []) || [];
-  const oneMonthAgo = new Date();
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-  const monthlyDeposits = allTransactions
-    .filter((t: any) => new Date(t.date) >= oneMonthAgo && t.amount < 0)
-    .reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+  // 4. Financial Snapshot - Calculate from fundingApplications
+  const incomeApps =
+    fundingApplications?.filter((app) =>
+      app.fundingProducts?.includes("Business Income Based Funding"),
+    ) || [];
 
-  const allBalances =
-    getPlaidCompleteData?.flatMap((d) => d.balance || []) || [];
-  const personalAccountsBalances = allBalances.filter(
-    (b: any) => b.type === "depository",
-  );
-  const avgBalance =
-    personalAccountsBalances.length > 0
-      ? personalAccountsBalances.reduce(
-          (sum: number, b: any) => sum + (b.balances?.current || 0),
-          0,
-        ) / personalAccountsBalances.length
-      : 0;
+  const latestIncomeApp = incomeApps.sort(
+    (a, b) =>
+      new Date(b.appliedDate || 0).getTime() -
+      new Date(a.appliedDate || 0).getTime(),
+  )[0];
 
-  const allBankIncome =
-    getPlaidCompleteData?.flatMap((d) => d.bank_income || []) || [];
-  const monthlyIncomes = allBankIncome
-    .flatMap((bi: any) => bi.bank_income_summary?.historical_summary || [])
-    .map((summary: any) => summary.total_amount);
-  const verifiedIncome =
-    monthlyIncomes.length > 0
-      ? monthlyIncomes.reduce((a: number, b: number) => a + b, 0) /
-        monthlyIncomes.length
-      : 0;
+  let monthlyDeposits = 0;
+  let avgBalance = 0;
+  let verifiedIncome = 0;
+
+  if (latestIncomeApp) {
+    const computation =
+      (latestIncomeApp as any).businessIncomeComputation || {};
+
+    monthlyDeposits =
+      computation.monthlyBusinessRevenue ||
+      (latestIncomeApp.annualBusinessRevenue
+        ? latestIncomeApp.annualBusinessRevenue / 12
+        : 0) ||
+      computation.monthlyDeposits ||
+      0;
+
+    avgBalance =
+      computation.avgDailyBankBalance ||
+      latestIncomeApp.avgDailyBankBalance ||
+      0;
+
+    verifiedIncome =
+      computation.estimatedApprovalAmount ||
+      computation.preApprovedAmount ||
+      monthlyDeposits;
+  }
 
   const financialSnapshot: FinancialSnapshot = {
     monthlyDeposits: Math.round(monthlyDeposits),
