@@ -55,10 +55,11 @@ const MobileNavClient = () => {
               className="cursor-pointer flex items-center justify-center py-6"
             >
               <Image
-                src="/icons/logo.svg"
-                width={64}
-                height={64}
-                alt={process.env.NEXT_PUBLIC_APP_NAME as string}
+                src="/icon.png"
+                alt="Logo"
+                width={548}
+                height={455}
+                className="h-20 w-auto object-contain"
               />
             </Link>
 
@@ -206,10 +207,11 @@ const MobileNavClient = () => {
 
       <Link href="/client/home" className="flex items-center">
         <Image
-          src="/icons/logo.svg"
-          width={40}
-          height={40}
-          alt={process.env.NEXT_PUBLIC_APP_NAME as string}
+          src="/icon.png"
+          alt="Logo"
+          width={548}
+          height={455}
+          className="h-20 w-auto object-contain"
         />
       </Link>
     </div>

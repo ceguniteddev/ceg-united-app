@@ -72,11 +72,11 @@ const Sidebar = () => {
           className="mb-6 cursor-pointer flex items-center gap-2 xl:justify-center"
         >
           <Image
-            src="/icons/logo.svg"
-            width={64}
-            height={64}
-            alt={process.env.NEXT_PUBLIC_APP_NAME as string}
-            className="w-12 h-12 md:w-14 md:h-14 xl:w-16 xl:h-16"
+            src="/icon.png"
+            alt="Logo"
+            width={548}
+            height={455}
+            className="h-20 w-auto object-contain"
           />
           <h1 className="sidebar-logo xl:hidden">
             {process.env.NEXT_PUBLIC_APP_NAME as string}
