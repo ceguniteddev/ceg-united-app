@@ -5,7 +5,6 @@ import { storageAdmin, firestoreAdmin } from "@/lib/fireabase-admin";
 import { UploadedFileData } from "@/schema";
 import { headers } from "next/headers";
 import { getCurrentUser } from "./user";
-import { USER_DOCUMENTS_COLLECTION } from "@/constant/collection-name";
 
 // The shape of the returned data remains the same
 
@@ -125,55 +124,6 @@ export const uploadDocument = async ({
       },
     },
   });
-
-  // Call Document Classification API
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const classifyUrl =
-      process.env.CLASSIFY_BASE_URL ||
-      "https://classifydocument-ffuzmpuyia-uc.a.run.app";
-    const apiKey = process.env.ADMIN_ACCESS_KEY || "";
-
-    if (apiKey) {
-      // console.log("Calling classification API...");
-      const classifyResponse = await fetch(classifyUrl, {
-        method: "POST",
-        headers: {
-          "x-ceg-api-key": apiKey,
-        },
-        body: formData,
-      });
-
-      if (classifyResponse.ok) {
-        const responseData = await classifyResponse.json();
-        const extractedData = responseData.data;
-
-        if (extractedData) {
-          const db = firestoreAdmin();
-          await db.collection(USER_DOCUMENTS_COLLECTION).add({
-            ...extractedData,
-            userId,
-            documentType,
-            uploadDate: new Date().toISOString(),
-            originalGcsPath: path,
-          });
-          // console.log("Successfully classified and saved document data.");
-        }
-      } else {
-        console.error(
-          "Classification API failed:",
-          classifyResponse.status,
-          await classifyResponse.text(),
-        );
-      }
-    } else {
-      console.warn("ADMIN_ACCESS_KEY not found, skipping classification.");
-    }
-  } catch (err) {
-    console.error("Error during document classification:", err);
-  }
 
   // console.log(`Successfully uploaded ${path}`);
 
