@@ -329,7 +329,10 @@ export const ClientDashboard = ({
                   <CreditScoreSkeleton />
                 </div>
               ) : (
-                <CreditScoresSection scores={dashboardData.creditScores} />
+                <CreditScoresSection
+                  scores={dashboardData.creditScores}
+                  isPremium={clientData?.userData?.isPremiumClient}
+                />
               )}
 
               {/* My Businesses grid */}
