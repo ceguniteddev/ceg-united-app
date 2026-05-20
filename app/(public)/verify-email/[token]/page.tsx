@@ -100,10 +100,10 @@ export default function VerifyEmailPage() {
         <div className="flex justify-center mb-6">
           <Image
             src="/icon.png"
-            alt={process.env.NEXT_PUBLIC_APP_NAME as string}
-            width={80}
-            height={80}
-            className="sm:w-[100px] sm:h-[100px]"
+            alt="Logo"
+            width={548}
+            height={455}
+            className="h-20 w-auto object-contain"
           />
         </div>
 

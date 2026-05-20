@@ -11,10 +11,10 @@ export default function NewRegistrationPage() {
       <div className="flex justify-center items-center mb-6 sm:mb-8">
         <Image
           src="/icon.png"
-          alt={(process.env.NEXT_PUBLIC_APP_NAME as string) || "CEG United"}
-          width={80}
-          height={80}
-          className="sm:w-[80px] sm:h-[60px]"
+          alt="Logo"
+          width={548}
+          height={455}
+          className="h-20 w-auto object-contain"
         />
       </div>
       <Suspense fallback={<Spinner />}>
