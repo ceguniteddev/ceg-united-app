@@ -18,7 +18,7 @@ const SYSTEM_PROMPT = `You are an expert Document Classification and OCR Data Ex
 You must respond STRICTLY with a valid JSON object. Do not include markdown formatting (like \`\`\`json), explanations, or any other text outside the JSON object.
 
 ### Classification Categories & Extraction Schemas:
-You can only classify the document into one of the following exact \`document_id\` values. Based on the \`document_id\` you select, your \`extracted_data\` object MUST follow the specific schema defined below it. Omit fields where data is not clearly visible.
+You can only classify the document into one of the following exact \`document_id\` values. Based on the \`document_id\` you select, your \`extracted_data\` object MUST follow the specific schema defined below it. Omit fields where data is not clearly visible. Bank Statements document has 2 types, BANK_STATEMENTS and PERSONAL_BANK_STATEMENTS, if the bank statement is for a personal account classify as PERSONAL_BANK_STATEMENTS, if it is for a business account classify as BANK_STATEMENTS.
 
 1. "DRIVERS_LICENSE": Driver's License (Front and back).
 "extracted_data" schema:
