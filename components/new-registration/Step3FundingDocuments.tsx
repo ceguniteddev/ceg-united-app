@@ -77,13 +77,21 @@ const PublicFileUpload = ({
   onUploadComplete,
   titleOverride,
   descriptionOverride,
+  maxFiles = 4,
 }: {
   documentType?: DocumentType;
   onUploadComplete?: (
-    files: { name: string; size: number; type: string; base64: string }[],
+    files: {
+      name: string;
+      size: number;
+      type: string;
+      base64: string;
+      docType?: string;
+    }[],
   ) => void;
   titleOverride?: string;
   descriptionOverride?: string;
+  maxFiles?: number;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -113,6 +121,7 @@ const PublicFileUpload = ({
           size: file.size,
           type: file.type,
           base64: await fileToBase64(file),
+          docType: documentType?.id,
         })),
       );
 
@@ -148,7 +157,7 @@ const PublicFileUpload = ({
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
       <p className="text-sm text-gray-500 mb-4">{description}</p>
       <Dropzone
-        maxFiles={4}
+        maxFiles={maxFiles}
         className="cursor-pointer"
         onDrop={handleDrop}
         disabled={isLoading}
@@ -343,6 +352,7 @@ export function Step3Funding() {
               onUploadComplete={(files) =>
                 handleUploadComplete("driverLicense", files)
               }
+              maxFiles={2}
             />
             <LocalDocumentList
               fieldName="driverLicense"
@@ -364,6 +374,7 @@ export function Step3Funding() {
                   onUploadComplete={(files) =>
                     handleUploadComplete("personalDocs.paystubs", files)
                   }
+                  maxFiles={2}
                 />
                 <LocalDocumentList
                   fieldName="personalDocs.paystubs"
@@ -382,6 +393,7 @@ export function Step3Funding() {
                   onUploadComplete={(files) =>
                     handleUploadComplete("personalDocs.bankStatements", files)
                   }
+                  maxFiles={3}
                 />
                 <LocalDocumentList
                   fieldName="personalDocs.bankStatements"
@@ -406,6 +418,7 @@ export function Step3Funding() {
                 onUploadComplete={(files) =>
                   handleUploadComplete("businessDocs.bankStatements", files)
                 }
+                maxFiles={4}
               />
               <LocalDocumentList
                 fieldName="businessDocs.bankStatements"
