@@ -20,6 +20,11 @@ export interface DashboardData {
   businesses: Business[];
   nextSteps: NextStep[];
   applicationStatus: ApplicationStatus;
+  creditAnalysis?: {
+    issues: string[];
+    negatives: string[];
+    derogatory: string[];
+  };
 }
 
 function detectBureau(
@@ -305,6 +310,23 @@ export function transformClientDataToDashboard(
     declined,
   };
 
+  // 8. Credit Analysis (Issues)
+  const issuesDoc = crsReportData?.find((d) => d.id === "issues") as any;
+  const reportIssues = issuesDoc?.report?.[0]?.issues ?? [];
+  const reportNegatives = issuesDoc?.report?.[0]?.negatives ?? [];
+  const reportDerogatory = issuesDoc?.report?.[0]?.degoretory ?? [];
+
+  const creditAnalysis =
+    reportIssues.length > 0 ||
+    reportNegatives.length > 0 ||
+    reportDerogatory.length > 0
+      ? {
+          issues: reportIssues,
+          negatives: reportNegatives,
+          derogatory: reportDerogatory,
+        }
+      : undefined;
+
   return {
     fundingMetrics,
     creditScores,
@@ -313,5 +335,6 @@ export function transformClientDataToDashboard(
     businesses,
     nextSteps,
     applicationStatus,
+    creditAnalysis,
   };
 }
