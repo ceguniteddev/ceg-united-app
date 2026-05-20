@@ -19,6 +19,7 @@ import {
   BanknoteX,
   CircleDollarSign,
   Loader2Icon,
+  LockIcon,
   SendIcon,
   XCircle,
 } from "lucide-react";
@@ -624,7 +625,7 @@ const ActionCell = ({ row }: { row: any }) => {
             <span className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-out -skew-x-12 -translate-x-full" />
             <IconMenu
               icon={
-                <CircleDollarSign className="h-4 w-4 transition-all group-hover:scale-110" />
+                <LockIcon className="h-4 w-4 transition-all group-hover:scale-110" />
               }
               text="Unlock to Apply"
             />

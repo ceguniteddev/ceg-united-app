@@ -553,14 +553,16 @@ export const ClientDashboard = ({
                 Congratulations!
               </AlertDialogTitle>
             </div>
-            <div className="text-xs sm:text-sm text-muted-foreground">
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: currentCongratsMessage?.message || "",
-                }}
-                className="[&_p]:mb-2 sm:[&_p]:mb-3 [&_ul]:mb-2 sm:[&_ul]:mb-3 [&_ul]:ml-4 sm:[&_ul]:ml-5 [&_ul]:list-disc [&_li]:mb-1 [&_strong]:font-semibold [&_br]:block"
-              />
-            </div>
+            <AlertDialogDescription asChild>
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: currentCongratsMessage?.message || "",
+                  }}
+                  className="[&_p]:mb-2 sm:[&_p]:mb-3 [&_ul]:mb-2 sm:[&_ul]:mb-3 [&_ul]:ml-4 sm:[&_ul]:ml-5 [&_ul]:list-disc [&_li]:mb-1 [&_strong]:font-semibold [&_br]:block"
+                />
+              </div>
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2 justify-between">
             <AlertDialogAction
