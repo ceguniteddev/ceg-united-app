@@ -80,7 +80,7 @@ const defaultEmptyDeal: IncomeFundingDeal = {
 //   const [deal] = useDocument(doc(db, `users/${uid}/income-funding-deals/${dealId}`))
 // and persist setDeal* calls back to Firestore.
 
-export function useIncomeFundingState() {
+export function useIncomeFundingState(selectedReference?: string) {
   const [deal, setDeal] = useState<IncomeFundingDeal>(defaultEmptyDeal);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
@@ -89,10 +89,16 @@ export function useIncomeFundingState() {
     useGetUserApplyFunding();
   const { onOpen: triggerConfetti } = useConfettiStore();
 
-  // Find the real deal reference number
-  const realDeal = appliedFunding?.find((app) =>
+  // Find the real deal reference number based on selectedReference or the first one
+  const incomeFundingApps = appliedFunding?.filter((app) =>
     app.fundingProducts?.includes("Business Income Based Funding"),
   );
+
+  const realDeal = selectedReference
+    ? incomeFundingApps?.find(
+        (app) => app.referenceNumber === selectedReference,
+      )
+    : incomeFundingApps?.[0];
   const referenceNumber = realDeal?.referenceNumber;
 
   // Sync with actual user documents and deal status uploaded to Firebase
@@ -466,6 +472,7 @@ export function useIncomeFundingState() {
   return {
     deal,
     realDeal,
+    incomeFundingApps,
     isLoadingApplications,
     setStatus,
     setDocuments,
