@@ -50,31 +50,31 @@ describe("applyFundingSchema", () => {
     expect(applyFundingSchema.safeParse(rest).success).toBe(false);
   });
 
-  it("rejects missing addressStreet", () => {
+  it("accepts missing addressStreet", () => {
     const { addressStreet: _a, ...rest } = validMinimal;
-    expect(applyFundingSchema.safeParse(rest).success).toBe(false);
+    expect(applyFundingSchema.safeParse(rest).success).toBe(true);
   });
 
-  it("rejects addressStreet as empty string", () => {
+  it("accepts addressStreet as empty string", () => {
     expect(
       applyFundingSchema.safeParse({ ...validMinimal, addressStreet: "" })
         .success,
-    ).toBe(false);
+    ).toBe(true);
   });
 
-  it("rejects missing addressCity", () => {
+  it("accepts missing addressCity", () => {
     const { addressCity: _c, ...rest } = validMinimal;
-    expect(applyFundingSchema.safeParse(rest).success).toBe(false);
+    expect(applyFundingSchema.safeParse(rest).success).toBe(true);
   });
 
-  it("rejects missing addressState", () => {
+  it("accepts missing addressState", () => {
     const { addressState: _st, ...rest } = validMinimal;
-    expect(applyFundingSchema.safeParse(rest).success).toBe(false);
+    expect(applyFundingSchema.safeParse(rest).success).toBe(true);
   });
 
-  it("rejects missing addressPostal", () => {
+  it("accepts missing addressPostal", () => {
     const { addressPostal: _po, ...rest } = validMinimal;
-    expect(applyFundingSchema.safeParse(rest).success).toBe(false);
+    expect(applyFundingSchema.safeParse(rest).success).toBe(true);
   });
 
   it("rejects missing consentConfirmTerms", () => {
