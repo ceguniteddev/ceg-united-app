@@ -39,6 +39,7 @@ const mockDb: any = {
 const mockFetch = vi.fn().mockResolvedValue({ ok: true });
 vi.stubGlobal("fetch", mockFetch);
 process.env.n8n_HOST = "https://n8n.example.com";
+process.env.WHOP_API_KEY = "test";
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 vi.mock("@/lib/fireabase-admin", () => ({
@@ -56,7 +57,18 @@ vi.mock("@/lib/n8n", () => ({
   sendClientCongratsMessageN8N: vi.fn().mockResolvedValue("webhook-5"),
 }));
 vi.mock("@/service/user", () => ({ getUserById: vi.fn() }));
+vi.mock("@/service/whop", () => ({
+  createCRSReportCheckoutConfig: vi.fn(),
+}));
+vi.mock("@/service/fee-settings", () => ({ getFeeSettings: vi.fn() }));
 vi.mock("@/service/business", () => ({ getBusiness: vi.fn() }));
+vi.mock("@/service/fee-settings", () => ({ getFeeSettings: vi.fn() }));
+vi.mock("@/service/whop", () => ({
+  createCRSReportCheckoutConfig: vi.fn().mockResolvedValue({
+    checkoutId: "test-checkout-id",
+    url: "https://whop.com/checkout/test",
+  }),
+}));
 
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
 import {
