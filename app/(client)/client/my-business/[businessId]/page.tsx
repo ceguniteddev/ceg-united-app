@@ -2,7 +2,15 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, MoreHorizontal, PencilIcon, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  MoreHorizontal,
+  PencilIcon,
+  Trash2,
+  ReceiptIcon,
+  Loader2,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/provider/AuthContext";
 import Spinner from "@/components/Spinner";
 import {
@@ -28,6 +36,10 @@ import {
 import { Button } from "@/components/ui/button";
 import IconMenu from "@/components/icon-menu";
 import DeleteConfirmation from "@/components/delete-confirmation";
+import { initiateCRSReportCheckout } from "@/service/crs";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { WhopCheckoutEmbed } from "@whop/checkout/react";
 
 interface Props {
   params: Promise<{ businessId: string }>;
@@ -69,6 +81,10 @@ export default function BusinessDetailPage({ params }: Props) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
 
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [checkoutMetadata, setCheckoutMetadata] = useState<any>(null);
+
   if (!user || isLoading) {
     return <Spinner displayText="Loading business…" />;
   }
@@ -103,6 +119,41 @@ export default function BusinessDetailPage({ params }: Props) {
       router.push("/client/my-business");
     } catch (error) {
       console.error("Failed to delete business:", error);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    try {
+      setIsGenerating(true);
+      const res = await initiateCRSReportCheckout({
+        userId: user!.uid,
+        reportType: "business",
+        businessId,
+      });
+
+      if ("checkoutId" in res && res.checkoutId && "url" in res && res.url) {
+        setCheckoutMetadata({
+          reportType: "business",
+          businessId,
+          referenceNumber:
+            "metadata" in res
+              ? (res as any).metadata?.referenceNumber
+              : undefined,
+        });
+        setCheckoutId(res.checkoutId);
+      } else if ("success" in res && res.success) {
+        toast.success(
+          "Credit report generation has started. Please wait a few moments for the new data to appear.",
+        );
+      }
+    } catch (error: any) {
+      console.error("Failed to initiate CRS report checkout:", error);
+      toast.error(
+        error.message ||
+          "Failed to generate credit report. Please contact support.",
+      );
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -196,42 +247,80 @@ export default function BusinessDetailPage({ params }: Props) {
               </div>
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="p-2 h-auto hover:bg-gray-100 rounded-lg"
-                >
-                  <MoreHorizontal className="w-5 h-5 text-gray-400" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleGenerateReport}
+                disabled={isGenerating}
+                className="hidden sm:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Pulling Credit Report...
+                  </>
+                ) : (
+                  <>
+                    <ReceiptIcon className="w-4 h-4" />
+                    Pull Credit Report
+                  </>
+                )}
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="w-full justify-start cursor-pointer"
-                    onClick={handleEdit}
+                    className="p-2 h-auto hover:bg-gray-100 rounded-lg"
+                  >
+                    <MoreHorizontal className="w-5 h-5 text-gray-400" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="sm:hidden cursor-pointer"
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      handleGenerateReport();
+                    }}
                   >
                     <IconMenu
-                      text="Edit Business"
-                      icon={<PencilIcon className="h-4 w-4" />}
+                      text={isGenerating ? "Pulling..." : "Pull Credit Report"}
+                      icon={
+                        isGenerating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ReceiptIcon className="h-4 w-4" />
+                        )
+                      }
                     />
-                  </Button>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start cursor-pointer text-red-600 hover:text-red-700"
-                    onClick={() => setIsDeleteOpen(true)}
-                  >
-                    <IconMenu
-                      text="Delete Business"
-                      icon={<Trash2 className="h-4 w-4" />}
-                    />
-                  </Button>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start cursor-pointer"
+                      onClick={handleEdit}
+                    >
+                      <IconMenu
+                        text="Edit Business"
+                        icon={<PencilIcon className="h-4 w-4" />}
+                      />
+                    </Button>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start cursor-pointer text-red-600 hover:text-red-700"
+                      onClick={() => setIsDeleteOpen(true)}
+                    >
+                      <IconMenu
+                        text="Delete Business"
+                        icon={<Trash2 className="h-4 w-4" />}
+                      />
+                    </Button>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
@@ -276,6 +365,77 @@ export default function BusinessDetailPage({ params }: Props) {
           />
         </div>
       </ResponsiveDialog>
+
+      {/* Checkout Modal */}
+      <Dialog
+        open={!!checkoutId}
+        onOpenChange={(open) => !open && setCheckoutId(null)}
+      >
+        <DialogContent
+          className="w-[95vw] sm:max-w-[600px] md:max-w-[700px] p-0 overflow-hidden bg-transparent border-none shadow-none"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogTitle className="sr-only">Complete Your Purchase</DialogTitle>
+          {checkoutId && (
+            <div className="bg-white rounded-xl shadow-2xl overflow-y-auto w-full max-h-[90vh] md:max-h-[85vh] relative">
+              <button
+                onClick={() => setCheckoutId(null)}
+                className="absolute top-3 right-3 p-2 bg-gray-100 hover:bg-gray-200 rounded-full z-50 transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4 text-gray-600" />
+              </button>
+              <WhopCheckoutEmbed
+                sessionId={checkoutId}
+                prefill={{
+                  email: user?.email || undefined,
+                  address: {
+                    country: "US",
+                  },
+                }}
+                onComplete={async (planId, receiptId) => {
+                  try {
+                    const response = await fetch(
+                      `/api/user/${user.uid}/crs/purchase`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          planId,
+                          receiptId,
+                          checkoutId,
+                          metadata: checkoutMetadata,
+                        }),
+                      },
+                    );
+
+                    if (!response.ok) {
+                      throw new Error("Failed to trigger report generation");
+                    }
+
+                    toast.success(
+                      "Payment successful! Generating your business credit report...",
+                    );
+                    setCheckoutId(null);
+                    setCheckoutMetadata(null);
+                  } catch (error) {
+                    console.error(error);
+                    toast.error(
+                      "Payment succeeded but report generation failed. Please contact support.",
+                    );
+                    setCheckoutId(null);
+                  }
+                }}
+                fallback={
+                  <div className="flex items-center justify-center h-full min-h-[400px]">
+                    <Spinner displayText="Loading secure checkout..." />
+                  </div>
+                }
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
