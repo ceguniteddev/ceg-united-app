@@ -1521,87 +1521,173 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
             </p>
           </div>
         ) : (
-          <ScrollArea type="always" className="w-full min-w-0">
-            <div className="min-w-full inline-block align-middle">
-              <table className="min-w-full text-xs">
-                <thead className="bg-gray-50 border-b border-gray-100">
-                  <tr>
-                    {[
-                      "Bureau",
-                      "Creditor",
-                      "Acct #",
-                      "Status",
-                      "Late 30/60/90",
-                      "Balance",
-                      "Last Activity",
-                    ].map((h) => (
-                      <th
-                        key={h}
-                        className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-gray-500"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {negItems.map((t, i) => (
-                    <tr
-                      key={`${t.sourceType}-${t.accountIdentifier}-${i}`}
-                      className="border-t border-gray-50 hover:bg-red-50/30 transition-colors"
-                    >
-                      <td className="px-3 py-2.5 whitespace-nowrap">
-                        <span
-                          className={cn(
-                            "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                            bureauColors[
-                              bureauLabel(t.sourceType) as
-                                | "Experian"
-                                | "Equifax"
-                                | "TransUnion"
-                            ]?.bg ?? "bg-gray-100",
-                            bureauColors[
-                              bureauLabel(t.sourceType) as
-                                | "Experian"
-                                | "Equifax"
-                                | "TransUnion"
-                            ]?.text ?? "text-gray-600",
-                          )}
-                        >
-                          {bureauLabel(t.sourceType)}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 font-medium text-gray-900">
+          <>
+            {/* Mobile View: Card Layout */}
+            <div className="md:hidden divide-y divide-gray-50">
+              {negItems.map((t, i) => (
+                <div
+                  key={`${t.sourceType}-${t.accountIdentifier}-${i}`}
+                  className="p-4 space-y-3 bg-white hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">
                         {t.creditorName || "—"}
-                      </td>
-                      <td className="px-3 py-2.5 font-mono text-gray-500">
+                      </p>
+                      <p className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">
                         {maskId(t.accountIdentifier)}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className="text-red-600 font-semibold">
-                          {t.accountStatusType || "—"}
-                          {t.derogatoryDataIndicator ? " · Derog." : ""}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 font-mono text-red-600 font-semibold">
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        "flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase",
+                        bureauColors[
+                          bureauLabel(t.sourceType) as
+                            | "Experian"
+                            | "Equifax"
+                            | "TransUnion"
+                        ]?.bg ?? "bg-gray-100",
+                        bureauColors[
+                          bureauLabel(t.sourceType) as
+                            | "Experian"
+                            | "Equifax"
+                            | "TransUnion"
+                        ]?.text ?? "text-gray-600",
+                      )}
+                    >
+                      {bureauLabel(t.sourceType)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                        Status
+                      </p>
+                      <p className="text-red-600 font-semibold">
+                        {t.accountStatusType || "—"}
+                        {t.derogatoryDataIndicator ? " · Derog." : ""}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                        Late 30/60/90
+                      </p>
+                      <p className="font-mono text-red-600 font-semibold">
                         {toNum(t._30DayLates)}/{toNum(t._60DayLates)}/
                         {toNum(t._90DayLates)}
-                      </td>
-                      <td className="px-3 py-2.5 font-medium">
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                        Balance
+                      </p>
+                      <p className="font-medium text-gray-900">
                         {fmtCurrency(toNum(t.currentBalanceAmount))}
-                      </td>
-                      <td className="px-3 py-2.5 text-gray-500">
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                        Last Activity
+                      </p>
+                      <p className="text-gray-700">
                         {t.lastActivityDate
                           ? new Date(t.lastActivityDate).toLocaleDateString()
                           : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <ScrollBar orientation="horizontal" className="w-full" />
-          </ScrollArea>
+
+            {/* Desktop View: Table Layout */}
+            <div className="hidden md:block">
+              <ScrollArea type="always" className="w-full min-w-0">
+                <div className="min-w-full inline-block align-middle">
+                  <table className="min-w-full text-xs">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                      <tr>
+                        {[
+                          "Bureau",
+                          "Creditor",
+                          "Acct #",
+                          "Status",
+                          "Late 30/60/90",
+                          "Balance",
+                          "Last Activity",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-gray-500"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {negItems.map((t, i) => (
+                        <tr
+                          key={`${t.sourceType}-${t.accountIdentifier}-${i}`}
+                          className="border-t border-gray-50 hover:bg-red-50/30 transition-colors"
+                        >
+                          <td className="px-3 py-2.5 whitespace-nowrap">
+                            <span
+                              className={cn(
+                                "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase",
+                                bureauColors[
+                                  bureauLabel(t.sourceType) as
+                                    | "Experian"
+                                    | "Equifax"
+                                    | "TransUnion"
+                                ]?.bg ?? "bg-gray-100",
+                                bureauColors[
+                                  bureauLabel(t.sourceType) as
+                                    | "Experian"
+                                    | "Equifax"
+                                    | "TransUnion"
+                                ]?.text ?? "text-gray-600",
+                              )}
+                            >
+                              {bureauLabel(t.sourceType)}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 font-medium text-gray-900">
+                            {t.creditorName || "—"}
+                          </td>
+                          <td className="px-3 py-2.5 font-mono text-gray-500">
+                            {maskId(t.accountIdentifier)}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <span className="text-red-600 font-semibold">
+                              {t.accountStatusType || "—"}
+                              {t.derogatoryDataIndicator ? " · Derog." : ""}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 font-mono text-red-600 font-semibold">
+                            {toNum(t._30DayLates)}/{toNum(t._60DayLates)}/
+                            {toNum(t._90DayLates)}
+                          </td>
+                          <td className="px-3 py-2.5 font-medium">
+                            {fmtCurrency(toNum(t.currentBalanceAmount))}
+                          </td>
+                          <td className="px-3 py-2.5 text-gray-500">
+                            {t.lastActivityDate
+                              ? new Date(
+                                  t.lastActivityDate,
+                                ).toLocaleDateString()
+                              : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <ScrollBar orientation="horizontal" className="w-full" />
+              </ScrollArea>
+            </div>
+          </>
         )}
       </Card>
 
