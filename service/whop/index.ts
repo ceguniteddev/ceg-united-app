@@ -23,6 +23,8 @@ import { currency } from "@/lib/utils";
 const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID;
 const productId = process.env.WHOP_PRODUCT_ID;
 const tradelineProductId = process.env.WHOP_TRADELINE_PRODUCT_ID;
+const generateCRSReportProductId =
+  process.env.WHOP_GENERATE_CRS_REPORT_PRODUCT_ID;
 
 const WHOP_FULL_PAYMENT_AMOUNT =
   process.env.NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT || "15000";
@@ -216,6 +218,93 @@ export const createWhopCheckoutConfig = async ({
           error.message || "Unknown error"
         }`,
       ),
+    );
+    throw error;
+  }
+};
+
+/**
+ * Creates a checkout configuration for CRS reports with a specified fee.
+ */
+export const createCRSReportCheckoutConfig = async ({
+  userId,
+  paymentKey,
+  feeAmount,
+  metadata = {},
+}: {
+  userId: string;
+  paymentKey: "CreditReportFee" | "BusinessCreditReportFee";
+  feeAmount: number;
+  metadata?: Record<string, any>;
+}): Promise<{
+  checkoutId: string;
+  url: string;
+}> => {
+  if (!whopSdk) {
+    throw new Error("Whop SDK is not initialized. Check API Key.");
+  }
+
+  if (!WHOP_COMPANY_ID || !generateCRSReportProductId) {
+    throw new Error("Server configuration error for Whop.");
+  }
+
+  try {
+    const user = await getUserById(userId);
+    if (!user) throw new Error("User not found");
+
+    const planDetails: CheckoutConfigurationCreateParams.CreateCheckoutSessionInputModePaymentWithPlan.Plan =
+      {
+        company_id: WHOP_COMPANY_ID,
+        currency: "usd" as const,
+        initial_price: feeAmount, // Whop expects cents
+        plan_type: "one_time" as const,
+        product_id: generateCRSReportProductId,
+        visibility: "hidden" as const,
+        payment_method_configuration: {
+          enabled: ["card", "apple_pay", "google_pay"],
+          disabled: ["crypto", "splitit", "cashapp", "paypal"],
+          include_platform_defaults: false,
+        },
+      };
+
+    const checkoutConfig = await whopSdk.checkoutConfigurations.create({
+      plan: planDetails,
+      metadata: {
+        userId: userId,
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        ...metadata,
+      },
+    });
+
+    if (!checkoutConfig.id) {
+      throw new Error("Failed to create checkout link for CRS report.");
+    }
+
+    const checkoutId = checkoutConfig.id;
+
+    // Save checkout details to Firestore
+    const checkoutDoc = {
+      userId,
+      checkoutId,
+      url: checkoutConfig.purchase_url,
+      createdAt: new Date(),
+      initialPrice: planDetails.initial_price,
+      planType: planDetails.plan_type,
+      productId: planDetails.product_id,
+      status: "created",
+      paymentKey,
+      ...checkoutConfig,
+    };
+
+    await firestoreAdmin()
+      .collection(WHOP_CHECKOUTS_COLLECTION)
+      .add(checkoutDoc);
+
+    return { checkoutId, url: checkoutConfig.purchase_url };
+  } catch (error: any) {
+    logError(
+      new Error(`createCRSReportCheckoutConfig error: ${error.message}`),
     );
     throw error;
   }

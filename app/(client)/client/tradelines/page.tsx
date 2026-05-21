@@ -635,7 +635,7 @@ function TradelinesPage() {
                 totalPrice={checkoutData.totalPrice}
                 prefillEmail={user?.email || ""}
                 userId={user?.uid || ""}
-                onPaymentComplete={handlePaymentComplete}
+                onPaymentCompleteAction={handlePaymentComplete}
               />
             )}
           </div>
