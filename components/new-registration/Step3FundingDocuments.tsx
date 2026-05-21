@@ -17,6 +17,7 @@ import {
 import { FundingType } from "@/schema/new-registration";
 import { useNewRegistrationStore } from "@/store/new-registration-store";
 import { toast } from "sonner";
+import { getCaptchaTokenRegistration } from "@/lib/captcha";
 import {
   Dropzone,
   DropzoneContent,
@@ -309,7 +310,7 @@ export function Step3Funding() {
   const isPersonal =
     fundingType === FundingType.Personal || fundingType === FundingType.Both;
 
-  const handleUploadComplete = (fieldName: string, newFiles: any[]) => {
+  const handleUploadComplete = async (fieldName: string, newFiles: any[]) => {
     const currentVal = getValues(fieldName);
     const existingFiles = currentVal?.files || [];
     const allFiles = [...existingFiles, ...newFiles];
@@ -323,6 +324,79 @@ export function Step3Funding() {
       },
       { shouldValidate: true, shouldDirty: true },
     );
+
+    if (fieldName === "driverLicense" && allFiles.length > 0) {
+      extractDriverLicenseData(allFiles);
+    }
+  };
+
+  const extractDriverLicenseData = async (files: any[]) => {
+    try {
+      toast.info("Extracting data from driver's license...", {
+        id: "ocr-toast",
+      });
+      const captchaToken = await getCaptchaTokenRegistration("ocr");
+      if (!captchaToken) {
+        throw new Error("Could not verify CAPTCHA");
+      }
+
+      const response = await fetch("/api/ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documents: files, captchaToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to extract data");
+      }
+
+      const { data } = await response.json();
+      if (data?.personal) {
+        const { updateAuthData } = useNewRegistrationStore.getState();
+
+        const newData: any = {};
+        if (data.personal.addressStreet)
+          newData.addressStreet = data.personal.addressStreet;
+        if (data.personal.addressCity)
+          newData.addressCity = data.personal.addressCity;
+        if (data.personal.addressState)
+          newData.addressState = data.personal.addressState;
+        if (data.personal.addressPostal)
+          newData.addressPostal = data.personal.addressPostal;
+
+        // Let's only update fields that were actually found
+        if (Object.keys(newData).length > 0) {
+          updateAuthData(newData);
+
+          // Instantly sync the newly extracted address to the user-lead collection
+          const { leadId, authData } = useNewRegistrationStore.getState();
+          if (leadId) {
+            try {
+              const updatedAuthData = { ...authData, ...newData };
+              const encodedData = btoa(JSON.stringify(updatedAuthData));
+              await fetch("/api/leads", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ leadId, data: encodedData }),
+              });
+            } catch (syncErr) {
+              console.error("Failed to sync OCR data to lead", syncErr);
+            }
+          }
+        }
+
+        toast.success("Driver's license data extracted successfully", {
+          id: "ocr-toast",
+        });
+      } else {
+        toast.dismiss("ocr-toast");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to extract data from driver's license", {
+        id: "ocr-toast",
+      });
+    }
   };
 
   const driversLicenseType = DOCUMENT_TYPES.find(

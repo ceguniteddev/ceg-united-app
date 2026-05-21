@@ -287,8 +287,16 @@ export function PublicRegistrationForm() {
     setIsSubmitting(true);
 
     const submitPromise = async () => {
-      // Ensure we have the absolute latest data from all forms
-      const latestAuthData = formStep1.getValues();
+      // Use the store's data which contains both form inputs AND any OCR updates
+      const storeState = useNewRegistrationStore.getState();
+
+      // We must merge formStep1 with the store, because OCR might have added address fields
+      // but formStep1.getValues() won't have them if they weren't rendered.
+      // Alternatively, the store already has the latest from watch() + OCR.
+      const latestAuthData = {
+        ...formStep1.getValues(),
+        ...storeState.authData,
+      };
       const latestBusinessData = { ...formStep2.getValues() };
 
       if (latestBusinessData.fundingType === FundingType.Personal) {
@@ -506,6 +514,17 @@ export function PublicRegistrationForm() {
                     {authData.phoneNumber}
                   </span>
                 </div>
+                {authData.addressStreet && (
+                  <div className="col-span-1 sm:col-span-2">
+                    <span className="text-gray-500 font-medium">Address:</span>{" "}
+                    <span className="font-medium text-gray-900 block">
+                      {authData.addressStreet}
+                      <br />
+                      {authData.addressCity}, {authData.addressState}{" "}
+                      {authData.addressPostal}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 

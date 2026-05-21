@@ -91,11 +91,11 @@ export const applyFundingSchema = z
 
     // legalResidentOther: z.string().optional(),
     // motherMaidenName: z.string().min(1, { error: "Required" }),
-    addressStreet: z.string().min(1, { error: "Required" }),
+    addressStreet: z.string().optional(),
     houseNumber: z.string().optional(),
-    addressCity: z.string().min(1, { error: "Required" }),
-    addressState: z.string().min(1, { error: "Required" }),
-    addressPostal: z.string().min(1, { error: "Required" }),
+    addressCity: z.string().optional(),
+    addressState: z.string().optional(),
+    addressPostal: z.string().optional(),
 
     moveInCurrentAddress: z.coerce
       .date<Date>({ error: "Require Date" })

@@ -28,6 +28,10 @@ export const authSchema = z.object({
     .refine((val) => val === true, {
       message: "You must accept the privacy policy",
     }),
+  addressStreet: z.string().optional(),
+  addressCity: z.string().optional(),
+  addressState: z.string().optional(),
+  addressPostal: z.string().optional(),
 });
 
 export type AuthForm = z.infer<typeof authSchema>;

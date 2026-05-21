@@ -203,9 +203,6 @@ export const registerUser = async ({
   const userId = docRef.id;
   const data = (await docRef.get()).data();
 
-
-  
-
   // Create business record first if business data exists
   let businessId: string | undefined;
   let referenceNumber: string | undefined;
@@ -243,6 +240,10 @@ export const registerUser = async ({
       appliedDate: fundingData.appliedDate || new Date(),
       status: fundingData.status || "New",
       analysisStatus: fundingData.analysisStatus || "In Progress",
+      addressCity: user.addressCity,
+      addressState: user.addressState,
+      addressPostal: user.addressPostal,
+      addressStreet: user.addressStreet,
     };
 
     const result = await applyFunding({

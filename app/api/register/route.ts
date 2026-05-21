@@ -3,9 +3,7 @@ import { authSchema } from "@/schema/new-registration";
 import { registerUser } from "@/service/user";
 import { User } from "@/schema/registration";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
-import { logInfo } from "@/lib/logger";
 import { FUNDING_PRODUCTS_BY_CATEGORY } from "@/schema/apply-funding";
-import { log } from "console";
 
 function mapFundingData(body: any) {
   if (!body.business || !body.business.fundingType) {
@@ -152,8 +150,13 @@ export async function POST(req: Request) {
     // Update the lead document status if leadId is provided
     if (body.leadId) {
       const db = firestoreAdmin();
+
+      // We also update the lead with the latest auth data since OCR on step 3 might have added address info
+      const finalAuthDataForLead = btoa(JSON.stringify(parsedAuth));
+
       await db.collection("user-leads").doc(body.leadId).update({
         status: "Registered",
+        data: finalAuthDataForLead,
         updatedAt: new Date().toISOString(),
       });
     }
