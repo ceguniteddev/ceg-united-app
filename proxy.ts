@@ -26,6 +26,30 @@ const CLIENT_HOME = "/client/home";
 const ADMIN_HOME = "/admin/home";
 const BROKER_HOME = "/broker/home";
 
+const CLIENT_ALLOWED_API_PREFIXES = [
+  "/api/pdf/generate",
+  "/api/whop/checkout",
+  "/api/special-deals",
+  "/api/pricing",
+  "/api/contact/schedule",
+  "/api/funding-application",
+  "/api/auth/refresh-session",
+  "/api/ocr",
+];
+
+function isAllowedClientApiRoute(pathname: string, uid: string) {
+  if (isPublic(pathname)) return true;
+
+  // A client can access their own /api/user/[uid]/... routes
+  if (pathname.startsWith(`/api/user/${uid}`)) return true;
+  if (pathname.startsWith(`/api/crs/${uid}`)) return true;
+
+  // Check against other allowed prefixes
+  return CLIENT_ALLOWED_API_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix),
+  );
+}
+
 function isPublic(pathname: string) {
   // allow exact public pages and their subpaths (if you add any)
   if (PUBLIC_ROUTES.has(pathname)) return true;
@@ -43,15 +67,15 @@ function isPublic(pathname: string) {
 }
 
 function isAdminRoute(pathname: string) {
-  return pathname.startsWith("/admin");
+  return pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
 }
 
 function isClientRoute(pathname: string) {
-  return pathname.startsWith("/client");
+  return pathname.startsWith("/client") || pathname.startsWith("/api/client");
 }
 
 function isBrokerRoute(pathname: string) {
-  return pathname.startsWith("/broker");
+  return pathname.startsWith("/broker") || pathname.startsWith("/api/broker");
 }
 
 export async function proxy(req: NextRequest) {
@@ -59,18 +83,54 @@ export async function proxy(req: NextRequest) {
 
   const token = req.cookies.get(FIREBASE_TOKEN_NAME)?.value;
 
-  // 1) API first: short-circuit and only 401 if truly unauthenticated
+  // 1) API first: Handle non-session token authentication (system-to-system, external APIs)
   if (pathname.startsWith("/api/")) {
     const xIdToken = req.headers.get("x-id-token");
     const adminAccessKey = req.headers.get("ADMIN_ACCESS_KEY");
     const authHeader = req.headers.get("Authorization");
     console.log("API ", pathname);
-    if (xIdToken || adminAccessKey || token || authHeader || isPublic(pathname))
+
+    // If using external tokens, bypass proxy role checks (withAuth will handle them)
+    if (xIdToken || adminAccessKey || authHeader || isPublic(pathname))
       return NextResponse.next();
 
     if (!token && !pathname.includes("webhook"))
       return NextResponse.json("Unauthorized", { status: 401 });
-    // Optionally verify here if your API routes need auth in middleware
+
+    // If using a session cookie (token), fetch role and validate
+    if (token) {
+      try {
+        const sessionCookie = await verifySession(token);
+        if (!sessionCookie || !sessionCookie.email)
+          throw new Error("Invalid session");
+
+        const user = await getUserById(sessionCookie.uid);
+        const role = (user?.role as any) ?? "Client";
+
+        // Block Clients from accessing Admin APIs and Broker APIs
+        // And ensure they only access allowed client APIs
+        if (role === "Client") {
+          if (!isAllowedClientApiRoute(pathname, sessionCookie.uid)) {
+            return NextResponse.json("Unauthorized: Access denied", {
+              status: 403,
+            });
+          }
+
+          if (isAdminRoute(pathname) || isBrokerRoute(pathname)) {
+            const url = req.nextUrl.clone();
+            url.pathname = "/";
+            return NextResponse.redirect(url);
+          }
+        }
+
+        return NextResponse.next();
+      } catch (error) {
+        return NextResponse.json("Unauthorized: Invalid session", {
+          status: 401,
+        });
+      }
+    }
+
     return NextResponse.next();
   }
 

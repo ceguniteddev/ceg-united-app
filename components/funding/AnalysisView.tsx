@@ -71,7 +71,7 @@ const AnalysisView = ({ referenceNumber }: Props) => {
   });
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
-  console.log("Analysis data:", appliedFunding);
+  // console.log("Analysis data:", appliedFunding);
   if (appliedFunding?.analysisStatus === "In Progress") {
     return (
       <EmptyState
