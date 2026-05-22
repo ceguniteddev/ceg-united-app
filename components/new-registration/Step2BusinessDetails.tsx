@@ -22,14 +22,14 @@ export function Step2BusinessDetails() {
     fundingType === FundingType.Business || fundingType === FundingType.Both;
 
   return (
-    <Card className="bg-slate-100 border-slate-200">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className="bg-white border-blue-100 shadow-md">
+      <CardHeader className="border-b border-blue-50 bg-blue-50/50 flex items-center justify-center p-6">
+        <CardTitle className="text-center text-2xl font-bold text-blue-900 flex items-center gap-2">
           <span>💼</span> Funding Details
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <CardContent className="space-y-6 pt-6">
+        <div className="space-y-4 rounded-lg border border-blue-100 bg-white p-4 shadow-sm">
           <FormNumberInput
             control={form.control}
             name="fundingAmount"
@@ -83,102 +83,155 @@ export function Step2BusinessDetails() {
         />
 
         {showPersonal && (
-          <div className="space-y-6">
-            <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <FormNumberInput
-                control={form.control}
-                name="creditScore"
-                required
-                label="Estimated Credit Score"
-                placeholder="700"
-                min={400}
-                max={900}
-                thousandSeparator=""
-                decimalScale={0}
-                fixedDecimalScale={false}
-              />
-              <div className="pt-2 px-1">
-                <Controller
+          <Card className="border-blue-100 shadow-sm overflow-hidden">
+            <CardHeader className="bg-blue-50/30 border-b border-blue-50 p-4">
+              <CardTitle className="text-lg font-semibold text-blue-900">
+                Personal Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              <div className="space-y-4 rounded-lg border border-blue-100 bg-white p-4 shadow-sm">
+                <FormNumberInput
                   control={form.control}
                   name="creditScore"
-                  render={({ field }) => (
-                    <Slider
-                      value={[
-                        typeof field.value === "number"
-                          ? Math.max(400, field.value)
-                          : 400,
-                      ]}
-                      onValueChange={(vals) => field.onChange(vals[0])}
-                      min={400}
-                      max={900}
-                      step={5}
-                      className="py-4 cursor-pointer"
-                    />
-                  )}
+                  required
+                  label="Estimated Credit Score"
+                  placeholder="700"
+                  min={400}
+                  max={900}
+                  thousandSeparator=""
+                  decimalScale={0}
+                  fixedDecimalScale={false}
                 />
-                <div className="flex justify-between text-xs font-medium text-slate-400 mt-1">
-                  <span>400</span>
-                  <span>900</span>
+                <div className="pt-2 px-1">
+                  <Controller
+                    control={form.control}
+                    name="creditScore"
+                    render={({ field }) => (
+                      <Slider
+                        value={[
+                          typeof field.value === "number"
+                            ? Math.max(400, field.value)
+                            : 400,
+                        ]}
+                        onValueChange={(vals) => field.onChange(vals[0])}
+                        min={400}
+                        max={900}
+                        step={5}
+                        className="py-4 cursor-pointer"
+                      />
+                    )}
+                  />
+                  <div className="flex justify-between text-xs font-medium text-slate-400 mt-1">
+                    <span>400</span>
+                    <span>900</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <FormSelect
-              control={form.control}
-              name="employmentType"
-              label="Employment type"
-              required
-              options={[
-                { value: "W2", label: "W2" },
-                { value: "Self-employed", label: "Self-employed" },
-              ]}
-              placeholder="Select employment type"
-            />
-          </div>
+              <FormSelect
+                control={form.control}
+                name="employmentType"
+                label="Employment type"
+                required
+                options={[
+                  { value: "W2", label: "W2" },
+                  { value: "Self-employed", label: "Self-employed" },
+                ]}
+                placeholder="Select employment type"
+              />
+            </CardContent>
+          </Card>
         )}
 
         {showBusiness && (
-          <div className="space-y-6">
-            <FormSelect
-              control={form.control}
-              name="timeInBusiness"
-              label="How long have you been in business?"
-              required
-              options={[
-                { value: "1-6M", label: "1-6 Months" },
-                { value: "6-12M", label: "6-12 Months" },
-                { value: "1-2yrs", label: "1-2 Years" },
-                { value: "2yrs+", label: "2+ Years" },
-              ]}
-              placeholder="Select time in business"
-            />
+          <Card className="border-blue-100 shadow-sm overflow-hidden">
+            <CardHeader className="bg-blue-50/30 border-b border-blue-50 p-4">
+              <CardTitle className="text-lg font-semibold text-blue-900">
+                Business Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              <div className="space-y-4 rounded-lg border border-blue-100 bg-white p-4 shadow-sm">
+                <FormNumberInput
+                  control={form.control}
+                  name="businessCreditScore"
+                  required
+                  label="Business Estimated Credit Score"
+                  placeholder="700"
+                  min={400}
+                  max={900}
+                  thousandSeparator=""
+                  decimalScale={0}
+                  fixedDecimalScale={false}
+                />
+                <div className="pt-2 px-1">
+                  <Controller
+                    control={form.control}
+                    name="businessCreditScore"
+                    render={({ field }) => (
+                      <Slider
+                        value={[
+                          typeof field.value === "number"
+                            ? Math.max(400, field.value)
+                            : 400,
+                        ]}
+                        onValueChange={(vals) => field.onChange(vals[0])}
+                        min={400}
+                        max={900}
+                        step={5}
+                        className="py-4 cursor-pointer"
+                      />
+                    )}
+                  />
+                  <div className="flex justify-between text-xs font-medium text-slate-400 mt-1">
+                    <span>400</span>
+                    <span>900</span>
+                  </div>
+                </div>
+              </div>
 
-            <FormInput
-              control={form.control}
-              name="businessName"
-              label="Business Name"
-              type="text"
-              required
-              placeholder="e.g. Acme Corp"
-            />
+              <FormSelect
+                control={form.control}
+                name="timeInBusiness"
+                label="How long have you been in business?"
+                required
+                options={[
+                  { value: "1-6M", label: "1-6 Months" },
+                  { value: "6-12M", label: "6-12 Months" },
+                  { value: "1-2yrs", label: "1-2 Years" },
+                  { value: "2yrs+", label: "2+ Years" },
+                ]}
+                placeholder="Select time in business"
+              />
 
-            <FormEINInput
-              control={form.control}
-              name="ein"
-              label="EIN Number"
-              required
-              placeholder="e.g. 12-3456789"
-            />
+              <FormInput
+                control={form.control}
+                name="businessName"
+                label="Business Name"
+                type="text"
+                required
+                placeholder="e.g. Acme Corp"
+              />
 
-            <FormInput
-              control={form.control}
-              name="businessIndustry"
-              label="What does your business do?"
-              type="text"
-              required
-              placeholder="e.g. Retail, Construction, Consulting..."
-            />
-          </div>
+              <FormEINInput
+                control={form.control}
+                name="ein"
+                label="EIN Number"
+                required
+                placeholder="e.g. 12-3456789"
+              />
+
+              <FormInput
+                control={form.control}
+                name="businessIndustry"
+                label="What does your business do?"
+                type="text"
+                required
+                placeholder="e.g. Retail, Construction, Consulting..."
+              />
+            </CardContent>
+          </Card>
         )}
       </CardContent>
     </Card>

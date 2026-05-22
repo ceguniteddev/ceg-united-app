@@ -47,6 +47,7 @@ export const businessDetailsSchema = z
     fundingAmount: z.coerce.number<number>().optional(),
     fundingType: z.enum(FundingType).or(z.literal("")).nullable().optional(),
     creditScore: z.coerce.number<number>().nullable().optional(),
+    businessCreditScore: z.coerce.number<number>().nullable().optional(),
     employmentType: z.enum(["W2", "Self-employed", ""]).nullable().optional(),
     timeInBusiness: z.string().nullable().optional(),
     businessIndustry: z.string().nullable().optional(),
@@ -99,6 +100,18 @@ export const businessDetailsSchema = z
       data.fundingType === FundingType.Business ||
       data.fundingType === FundingType.Both
     ) {
+      if (
+        data.businessCreditScore === undefined ||
+        data.businessCreditScore === null ||
+        data.businessCreditScore < 400 ||
+        data.businessCreditScore > 900
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Credit score must be between 400 and 900",
+          path: ["businessCreditScore"],
+        });
+      }
       if (!data.timeInBusiness) {
         ctx.addIssue({
           code: "custom",

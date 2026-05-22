@@ -20,13 +20,13 @@ export function Step1Auth() {
   });
 
   return (
-    <Card className="bg-slate-100 border-slate-200">
-      <CardHeader>
-        <CardTitle className="text-center text-2xl font-bold">
+    <Card className="bg-white border-blue-100 shadow-md">
+      <CardHeader className="border-b border-blue-50 bg-blue-50/50 flex items-center justify-center p-6">
+        <CardTitle className="text-center text-2xl font-bold text-blue-900 ">
           Create an Account
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <FormInput
             control={form.control}
@@ -87,7 +87,7 @@ export function Step1Auth() {
         />
         <PasswordStrength password={password ?? ""} />
 
-        <div className="mt-4 pt-2 border-t">
+        <div className="mt-4 pt-4 border-t border-blue-50">
           <FormCheckbox
             control={form.control}
             name="consentConfirmTerms"
@@ -133,12 +133,12 @@ export function Step1Auth() {
           />
         </div>
 
-        <div className="text-center mt-6">
-          <p className="text-sm text-gray-600">
+        <div className="mt-8 -mx-6 -mb-6 p-6 border-t border-blue-100 bg-blue-50/50 text-center rounded-b-xl">
+          <p className="text-sm text-slate-700 font-medium">
             Already have an account?{" "}
             <Link
               href="/"
-              className="text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-all"
+              className="text-blue-700 hover:text-blue-900 font-bold hover:underline transition-all"
             >
               Log in
             </Link>

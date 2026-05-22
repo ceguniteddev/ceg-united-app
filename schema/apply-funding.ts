@@ -197,7 +197,8 @@ export const applyFundingSchema = z
     // personalEmailAddress: z.string().optional(),
     // dateOfBirth: z.coerce.date<Date>({ error: "Require Date" }).optional(),
     // socialSecurityNumber: z.string().optional(),
-    // ficoCreditScore: z.coerce.number<number>().optional(),
+    ficoCreditScore: z.coerce.number<number>().optional(),
+    businessCreditScore: z.coerce.number<number>().optional(),
     whoReferredYou: z.string().optional(),
 
     // Auto Loan Fields

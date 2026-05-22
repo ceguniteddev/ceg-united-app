@@ -44,6 +44,7 @@ function mapFundingData(body: any) {
     employerIdentificationNumber: body.business.ein,
     industryField: body.business.businessIndustry,
     ficoCreditScore: body.business.creditScore,
+    businessCreditScore: body.business.businessCreditScore,
     appliedDate: new Date(),
     status: "New",
     analysisStatus: "Completed",

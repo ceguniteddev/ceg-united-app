@@ -73,12 +73,12 @@ const MobileNavClient = () => {
                     ),
                   );
 
-                  if (
-                    item.route === "/client/my-funding" &&
-                    hasIncomeBasedFunding
-                  ) {
-                    return false; // Hide generic map if they have income funding
-                  }
+                  // if (
+                  //   item.route === "/client/my-funding" &&
+                  //   hasIncomeBasedFunding
+                  // ) {
+                  //   return false; // Hide generic map if they have income funding
+                  // }
 
                   if (
                     item.route === "/client/income-funding" &&

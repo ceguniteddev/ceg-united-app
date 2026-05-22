@@ -18,7 +18,15 @@ import {
 } from "@/schema/new-registration";
 import { toast } from "sonner";
 import IconMenu from "@/components/icon-menu";
-import { ChevronLeft, ChevronRight, UserPlus, Loader2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  UserPlus,
+  Loader2,
+  CheckCircle,
+  CircleCheck,
+  CircleCheckBigIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -48,6 +56,17 @@ export function PublicRegistrationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState<
+    "idle" | "submitting" | "success"
+  >("idle");
+  const [loadingStep, setLoadingStep] = useState(0);
+
+  const loadingSteps = [
+    "Saving personal information...",
+    "Securing business details...",
+    "Uploading documents...",
+    "Finalizing registration...",
+  ];
 
   useEffect(() => {
     setIsHydrated(useNewRegistrationStore.persist.hasHydrated());
@@ -146,6 +165,7 @@ export function PublicRegistrationForm() {
         businessData.businessName = null;
         businessData.ein = null;
         businessData.businessIndustry = null;
+        businessData.businessCreditScore = null;
       } else if (businessData.fundingType === FundingType.Business) {
         businessData.creditScore = null;
         businessData.employmentType = null;
@@ -221,6 +241,7 @@ export function PublicRegistrationForm() {
         businessData.businessName = null;
         businessData.ein = null;
         businessData.businessIndustry = null;
+        businessData.businessCreditScore = null;
       } else if (businessData.fundingType === FundingType.Business) {
         businessData.creditScore = null;
         businessData.employmentType = null;
@@ -285,8 +306,19 @@ export function PublicRegistrationForm() {
   const executeFinalSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    setSubmissionStatus("submitting");
+    setLoadingStep(0);
 
-    const submitPromise = async () => {
+    const interval = setInterval(() => {
+      setLoadingStep((prev) => {
+        if (prev < loadingSteps.length - 1) {
+          return prev + 1;
+        }
+        return prev;
+      });
+    }, 4000);
+
+    try {
       // Use the store's data which contains both form inputs AND any OCR updates
       const storeState = useNewRegistrationStore.getState();
 
@@ -304,6 +336,7 @@ export function PublicRegistrationForm() {
         latestBusinessData.businessName = null;
         latestBusinessData.ein = null;
         latestBusinessData.businessIndustry = null;
+        latestBusinessData.businessCreditScore = null;
       } else if (latestBusinessData.fundingType === FundingType.Business) {
         latestBusinessData.creditScore = null;
         latestBusinessData.employmentType = null;
@@ -333,23 +366,16 @@ export function PublicRegistrationForm() {
         throw new Error(result.error || "Registration failed");
       }
 
-      return response;
-    };
-
-    toast.promise(submitPromise(), {
-      loading: "Processing registration...",
-      success: () => {
-        resetRegistration();
-        setShowConfirmModal(false);
-        router.push("/");
-        return "Registration successful! Please check your email to verify your account.";
-      },
-      error: (err) => {
-        console.error(err);
-        setIsSubmitting(false);
-        return err.message || "Registration failed. Please try again.";
-      },
-    });
+      clearInterval(interval);
+      setSubmissionStatus("success");
+      resetRegistration();
+    } catch (error: any) {
+      clearInterval(interval);
+      console.error(error);
+      setIsSubmitting(false);
+      setSubmissionStatus("idle");
+      toast.error(error.message || "Registration failed. Please try again.");
+    }
   };
 
   return (
@@ -459,240 +485,320 @@ export function PublicRegistrationForm() {
         </Form>
       )}
 
-      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+      <Dialog
+        open={showConfirmModal}
+        onOpenChange={(open) => {
+          if (submissionStatus === "idle") {
+            setShowConfirmModal(open);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Review Your Information</DialogTitle>
-            <DialogDescription>
-              Please verify the details you entered before submitting.
-            </DialogDescription>
-          </DialogHeader>
+          {submissionStatus === "idle" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Review Your Information</DialogTitle>
+                <DialogDescription>
+                  Please verify the details you entered before submitting.
+                </DialogDescription>
+              </DialogHeader>
 
-          <div className="space-y-6 py-4">
-            <div>
-              <h3 className="font-semibold text-lg border-b pb-2 mb-3">
-                Personal Information
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
+              <div className="space-y-6 py-4">
                 <div>
-                  <span className="text-gray-500 font-medium">First Name:</span>{" "}
-                  <span className="font-medium text-gray-900">
-                    {authData.firstName}
-                  </span>
-                </div>
-                {authData.middleName && (
-                  <div>
-                    <span className="text-gray-500 font-medium">
-                      Middle Name:
-                    </span>{" "}
-                    <span className="font-medium text-gray-900">
-                      {authData.middleName}
-                    </span>
-                  </div>
-                )}
-                <div>
-                  <span className="text-gray-500 font-medium">Last Name:</span>{" "}
-                  <span className="font-medium text-gray-900">
-                    {authData.lastName}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500 font-medium">SSN:</span>{" "}
-                  <span className="font-medium text-gray-900">
-                    {authData.ssn}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500 font-medium">Email:</span>{" "}
-                  <span className="font-medium text-gray-900">
-                    {authData.email}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500 font-medium">Phone:</span>{" "}
-                  <span className="font-medium text-gray-900">
-                    {authData.phoneNumber}
-                  </span>
-                </div>
-                {authData.addressStreet && (
-                  <div className="col-span-1 sm:col-span-2">
-                    <span className="text-gray-500 font-medium">Address:</span>{" "}
-                    <span className="font-medium text-gray-900 block">
-                      {authData.addressStreet}
-                      <br />
-                      {authData.addressCity}, {authData.addressState}{" "}
-                      {authData.addressPostal}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-lg border-b pb-2 mb-3">
-                Funding Details
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                <div>
-                  <span className="text-gray-500 font-medium">
-                    Funding Amount:
-                  </span>{" "}
-                  <span className="font-medium text-gray-900">
-                    ${businessDetailsData.fundingAmount?.toLocaleString()}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500 font-medium">
-                    Funding Type:
-                  </span>{" "}
-                  <span className="font-medium text-gray-900">
-                    {businessDetailsData.fundingType}
-                  </span>
-                </div>
-                {(businessDetailsData.fundingType === FundingType.Personal ||
-                  businessDetailsData.fundingType === FundingType.Both) && (
-                  <>
+                  <h3 className="font-semibold text-lg border-b pb-2 mb-3">
+                    Personal Information
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
                     <div>
                       <span className="text-gray-500 font-medium">
-                        Est. Credit Score:
+                        First Name:
                       </span>{" "}
                       <span className="font-medium text-gray-900">
-                        {businessDetailsData.creditScore}
+                        {authData.firstName}
                       </span>
                     </div>
-                    <div>
-                      <span className="text-gray-500 font-medium">
-                        Employment Type:
-                      </span>{" "}
-                      <span className="font-medium text-gray-900">
-                        {businessDetailsData.employmentType}
-                      </span>
-                    </div>
-                  </>
-                )}
-                {(businessDetailsData.fundingType === FundingType.Business ||
-                  businessDetailsData.fundingType === FundingType.Both) && (
-                  <>
-                    <div>
-                      <span className="text-gray-500 font-medium">
-                        Business Name:
-                      </span>{" "}
-                      <span className="font-medium text-gray-900">
-                        {businessDetailsData.businessName}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 font-medium">EIN:</span>{" "}
-                      <span className="font-medium text-gray-900">
-                        {businessDetailsData.ein}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 font-medium">
-                        Time in Business:
-                      </span>{" "}
-                      <span className="font-medium text-gray-900">
-                        {businessDetailsData.timeInBusiness}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 font-medium">
-                        Business Industry:
-                      </span>{" "}
-                      <span className="font-medium text-gray-900">
-                        {businessDetailsData.businessIndustry}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-lg border-b pb-2 mb-3">
-                Documents Provided
-              </h3>
-              <div className="grid grid-cols-1 gap-y-2 text-sm">
-                <div>
-                  <span className="text-gray-500 font-medium">
-                    Driver's License:
-                  </span>{" "}
-                  <span className="font-medium text-gray-900">
-                    {documentUploadData.driverLicense?.uploaded ? "Yes" : "No"}
-                  </span>
-                </div>
-                {(businessDetailsData.fundingType === FundingType.Personal ||
-                  businessDetailsData.fundingType === FundingType.Both) && (
-                  <>
-                    {businessDetailsData.employmentType === "W2" && (
+                    {authData.middleName && (
                       <div>
                         <span className="text-gray-500 font-medium">
-                          Paystubs:
+                          Middle Name:
                         </span>{" "}
                         <span className="font-medium text-gray-900">
-                          {documentUploadData.personalDocs?.paystubs?.uploaded
-                            ? "Yes"
-                            : "No"}
+                          {authData.middleName}
                         </span>
                       </div>
                     )}
-                    {businessDetailsData.employmentType === "Self-employed" && (
+                    <div>
+                      <span className="text-gray-500 font-medium">
+                        Last Name:
+                      </span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {authData.lastName}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-medium">SSN:</span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {authData.ssn}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-medium">Email:</span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {authData.email}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-medium">Phone:</span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {authData.phoneNumber}
+                      </span>
+                    </div>
+                    {authData.addressStreet && (
+                      <div className="col-span-1 sm:col-span-2">
+                        <span className="text-gray-500 font-medium">
+                          Address:
+                        </span>{" "}
+                        <span className="font-medium text-gray-900 block">
+                          {authData.addressStreet}
+                          <br />
+                          {authData.addressCity}, {authData.addressState}{" "}
+                          {authData.addressPostal}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-lg border-b pb-2 mb-3">
+                    Funding Details
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
+                    <div>
+                      <span className="text-gray-500 font-medium">
+                        Funding Amount:
+                      </span>{" "}
+                      <span className="font-medium text-gray-900">
+                        ${businessDetailsData.fundingAmount?.toLocaleString()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-medium">
+                        Funding Type:
+                      </span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {businessDetailsData.fundingType}
+                      </span>
+                    </div>
+                    {(businessDetailsData.fundingType ===
+                      FundingType.Personal ||
+                      businessDetailsData.fundingType === FundingType.Both) && (
+                      <>
+                        <div>
+                          <span className="text-gray-500 font-medium">
+                            Est. Credit Score (Personal):
+                          </span>{" "}
+                          <span className="font-medium text-gray-900">
+                            {businessDetailsData.creditScore}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 font-medium">
+                            Employment Type:
+                          </span>{" "}
+                          <span className="font-medium text-gray-900">
+                            {businessDetailsData.employmentType}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {(businessDetailsData.fundingType ===
+                      FundingType.Business ||
+                      businessDetailsData.fundingType === FundingType.Both) && (
+                      <>
+                        <div>
+                          <span className="text-gray-500 font-medium">
+                            Est. Credit Score (Business):
+                          </span>{" "}
+                          <span className="font-medium text-gray-900">
+                            {businessDetailsData.businessCreditScore}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 font-medium">
+                            Business Name:
+                          </span>{" "}
+                          <span className="font-medium text-gray-900">
+                            {businessDetailsData.businessName}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 font-medium">
+                            EIN:
+                          </span>{" "}
+                          <span className="font-medium text-gray-900">
+                            {businessDetailsData.ein}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 font-medium">
+                            Time in Business:
+                          </span>{" "}
+                          <span className="font-medium text-gray-900">
+                            {businessDetailsData.timeInBusiness}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 font-medium">
+                            Business Industry:
+                          </span>{" "}
+                          <span className="font-medium text-gray-900">
+                            {businessDetailsData.businessIndustry}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-lg border-b pb-2 mb-3">
+                    Documents Provided
+                  </h3>
+                  <div className="grid grid-cols-1 gap-y-2 text-sm">
+                    <div>
+                      <span className="text-gray-500 font-medium">
+                        Driver's License:
+                      </span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {documentUploadData.driverLicense?.uploaded
+                          ? "Yes"
+                          : "No"}
+                      </span>
+                    </div>
+                    {(businessDetailsData.fundingType ===
+                      FundingType.Personal ||
+                      businessDetailsData.fundingType === FundingType.Both) && (
+                      <>
+                        {businessDetailsData.employmentType === "W2" && (
+                          <div>
+                            <span className="text-gray-500 font-medium">
+                              Paystubs:
+                            </span>{" "}
+                            <span className="font-medium text-gray-900">
+                              {documentUploadData.personalDocs?.paystubs
+                                ?.uploaded
+                                ? "Yes"
+                                : "No"}
+                            </span>
+                          </div>
+                        )}
+                        {businessDetailsData.employmentType ===
+                          "Self-employed" && (
+                          <div>
+                            <span className="text-gray-500 font-medium">
+                              Bank Statements (Personal):
+                            </span>{" "}
+                            <span className="font-medium text-gray-900">
+                              {documentUploadData.personalDocs?.bankStatements
+                                ?.uploaded
+                                ? "Yes"
+                                : "No"}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {(businessDetailsData.fundingType ===
+                      FundingType.Business ||
+                      businessDetailsData.fundingType === FundingType.Both) && (
                       <div>
                         <span className="text-gray-500 font-medium">
-                          Bank Statements (Personal):
+                          Bank Statements (Business):
                         </span>{" "}
                         <span className="font-medium text-gray-900">
-                          {documentUploadData.personalDocs?.bankStatements
+                          {documentUploadData.businessDocs?.bankStatements
                             ?.uploaded
                             ? "Yes"
                             : "No"}
                         </span>
                       </div>
                     )}
-                  </>
-                )}
-                {(businessDetailsData.fundingType === FundingType.Business ||
-                  businessDetailsData.fundingType === FundingType.Both) && (
-                  <div>
-                    <span className="text-gray-500 font-medium">
-                      Bank Statements (Business):
-                    </span>{" "}
-                    <span className="font-medium text-gray-900">
-                      {documentUploadData.businessDocs?.bankStatements?.uploaded
-                        ? "Yes"
-                        : "No"}
-                    </span>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-          </div>
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowConfirmModal(false)}
-              disabled={isSubmitting}
-            >
-              Back to Edit
-            </Button>
-            <Button
-              onClick={executeFinalSubmit}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={isSubmitting}
-            >
-              <IconMenu
-                text={isSubmitting ? "Creating account..." : "Confirm & Join!"}
-                icon={
-                  isSubmitting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <UserPlus className="mr-2 h-4 w-4" />
-                  )
-                }
-              />
-            </Button>
-          </DialogFooter>
+              <DialogFooter className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowConfirmModal(false)}
+                  disabled={isSubmitting}
+                >
+                  Back to Edit
+                </Button>
+                <Button
+                  onClick={executeFinalSubmit}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={isSubmitting}
+                >
+                  <IconMenu
+                    text={"Confirm & Join!"}
+                    icon={<UserPlus className="mr-2 h-4 w-4" />}
+                  />
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+
+          {submissionStatus === "submitting" && (
+            <div className="flex flex-col items-center justify-center py-8 w-full mx-auto">
+              <Loader2 className="h-12 w-12 animate-spin text-blue-500 mb-6" />
+              <h3 className="text-xl font-semibold text-gray-800 mb-2 text-center">
+                Processing Registration
+              </h3>
+              <p className="text-gray-500 text-sm text-center mb-8 animate-pulse min-h-[1.5rem] font-medium">
+                {loadingSteps[loadingStep]}
+              </p>
+              <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out shadow-sm"
+                  style={{
+                    width: `${Math.min(((loadingStep + 1) / loadingSteps.length) * 100, 95)}%`,
+                  }}
+                ></div>
+              </div>
+              <p className="text-xs text-gray-400 mt-2 text-center">
+                This may take a moment...
+              </p>
+            </div>
+          )}
+
+          {submissionStatus === "success" && (
+            <div className="flex flex-col items-center justify-center py-8 w-full mx-auto text-center">
+              <div className="bg-blue-100 rounded-full p-4 mb-4">
+                <CheckCircle className="h-16 w-16 text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-semibold text-blue-700 mb-4">
+                Thank You!
+              </h3>
+              <p className="text-gray-700 text-lg mb-8 max-w-md">
+                Your registration was successful. Please check your email and
+                verify your email address to continue.
+              </p>
+              <Button
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  router.push("/");
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg w-full max-w-xs"
+              >
+                <IconMenu
+                  text="OK"
+                  icon={<CircleCheckBigIcon className="h-4 w-4" />}
+                />
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
