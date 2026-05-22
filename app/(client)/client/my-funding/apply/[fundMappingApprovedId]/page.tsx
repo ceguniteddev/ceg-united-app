@@ -168,10 +168,11 @@ export default function FundingApplyPage() {
             <span className="font-semibold text-gray-900">
               {lender.bankName}
             </span>{" "}
-            has been securely recorded in our system.
+            has been securely recorded in our system. A team member will reach
+            out to schedule the appointment with the banker.
           </p>
 
-          <div className="bg-blue-50/50 rounded-xl p-6 sm:p-8 max-w-2xl mx-auto border border-blue-100 mb-8 text-left">
+          {/* <div className="bg-blue-50/50 rounded-xl p-6 sm:p-8 max-w-2xl mx-auto border border-blue-100 mb-8 text-left">
             <h3 className="font-semibold text-gray-900 mb-5 text-lg border-b border-blue-100 pb-3">
               Next Steps
             </h3>
@@ -185,8 +186,9 @@ export default function FundingApplyPage() {
                     Check Your Email
                   </p>
                   <p className="text-gray-600 text-sm mt-1 leading-relaxed">
-                    We've sent your complete application data to your registered
-                    email address for your records.
+                    Please check your inbox periodically for updates. We've sent
+                    your complete application data to your registered email
+                    address for your records.
                   </p>
                 </div>
               </li>
@@ -199,17 +201,19 @@ export default function FundingApplyPage() {
                     Watch for a WhatsApp Message
                   </p>
                   <p className="text-gray-600 text-sm mt-1 leading-relaxed">
-                    Our funding specialist will reach out via WhatsApp shortly
-                    to provide further assistance with completing your online
-                    application securely.
+                    A team member will reach out via WhatsApp shortly to
+                    schedule the appointment with the banker and provide further
+                    assistance.
                   </p>
                 </div>
               </li>
             </ul>
-          </div>
+          </div> */}
 
           <Button
-            onClick={() => router.push("/client/my-funding")}
+            onClick={() => {
+              window.location.href = "/client/my-funding";
+            }}
             size="lg"
             className="bg-brand-600 hover:bg-brand-700 text-white px-10 py-6 text-base shadow-md hover:shadow-lg transition-all"
           >
