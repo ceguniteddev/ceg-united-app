@@ -20,6 +20,7 @@ import Image from "next/image";
 
 interface DocumentCollectionViewProps {
   deal: IncomeFundingDeal;
+  realDeal?: any;
   onUpload: (
     key: DocumentRecord["key"],
     fileName: string,
@@ -31,6 +32,7 @@ interface DocumentCollectionViewProps {
 
 export function DocumentCollectionView({
   deal,
+  realDeal,
   onUpload,
   onSubmit,
   isSubmitting = false,
@@ -46,12 +48,28 @@ export function DocumentCollectionView({
     contentType?: string;
   } | null>(null);
 
-  const requiredDocs = deal.documents.filter((d) => d.required);
+  const displayDocuments = deal.documents.map((doc) => {
+    if (doc.key === "ein" && realDeal?.employerIdentificationNumber) {
+      return {
+        ...doc,
+        required: false, // Skip validation
+        providedValue: realDeal.employerIdentificationNumber,
+      };
+    }
+    return doc;
+  });
+
+  const requiredDocs = displayDocuments.filter((d) => d.required);
   const allRequiredDone = requiredDocs.every(
     (d) => d.status === "uploaded" || d.status === "synced",
   );
-  const totalDone = deal.documents.filter(
-    (d) => d.status === "uploaded" || d.status === "synced",
+
+  // Count EIN as "done" if provided, even if not uploaded
+  const totalDone = displayDocuments.filter(
+    (d) =>
+      d.status === "uploaded" ||
+      d.status === "synced" ||
+      (d.key === "ein" && realDeal?.employerIdentificationNumber),
   ).length;
 
   const handleUpload = async (
@@ -129,23 +147,25 @@ export function DocumentCollectionView({
         <div className="mt-5">
           <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
             <span>
-              {totalDone} of {deal.documents.length} documents ready
+              {totalDone} of {displayDocuments.length} documents ready
             </span>
             <span className="font-semibold text-gray-700">
-              {Math.round((totalDone / deal.documents.length) * 100)}%
+              {Math.round((totalDone / displayDocuments.length) * 100)}%
             </span>
           </div>
           <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-brand-500 to-brand-600 transition-all duration-500"
-              style={{ width: `${(totalDone / deal.documents.length) * 100}%` }}
+              style={{
+                width: `${(totalDone / displayDocuments.length) * 100}%`,
+              }}
             />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {deal.documents.map((doc, i) => (
+        {displayDocuments.map((doc, i) => (
           <div
             key={doc.key}
             className={`animate-fade-in-up stagger-${Math.min(i + 1, 8)}`}

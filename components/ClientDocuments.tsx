@@ -622,7 +622,7 @@ function ClientDocumentsInner({ userId }: { userId: string }) {
               </SelectTrigger>
               <SelectContent
                 className="max-h-[70vh] overflow-y-auto"
-                position="item-aligned"
+                position="popper"
               >
                 <SelectItem value="ALL" className="py-3">
                   <div className="flex items-center gap-2 w-full">

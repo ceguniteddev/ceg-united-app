@@ -44,7 +44,7 @@ const defaultEmptyDeal: IncomeFundingDeal = {
       key: "articles",
       title: "Articles of Organization",
       description: "State filed business documents.",
-      required: true,
+      required: false,
       status: "required",
     },
     {
@@ -174,9 +174,15 @@ export function useIncomeFundingState(selectedReference?: string) {
       // If we are initially in prequalified, but documents exist, we might want to stay in collecting-documents.
       // But let's only overwrite if backend has a higher status.
 
-      let updatedDocs = d.documents;
+      let updatedDocs = d.documents.map((doc, i) => ({
+        ...doc,
+        required: defaultEmptyDeal.documents[i].required,
+        title: defaultEmptyDeal.documents[i].title,
+        description: defaultEmptyDeal.documents[i].description,
+      }));
+
       if (userDocuments && userDocuments.length > 0) {
-        updatedDocs = d.documents.map((doc) => {
+        updatedDocs = updatedDocs.map((doc) => {
           let documentTypeId = "OTHER";
           if (doc.key === "ein") documentTypeId = "EIN_LETTER";
           else if (doc.key === "articles")
@@ -214,7 +220,11 @@ export function useIncomeFundingState(selectedReference?: string) {
       }
 
       const isDocsDifferent = updatedDocs.some(
-        (uDoc, i) => uDoc.status !== d.documents[i].status,
+        (uDoc, i) =>
+          uDoc.status !== d.documents[i].status ||
+          uDoc.required !== d.documents[i].required ||
+          uDoc.title !== d.documents[i].title ||
+          uDoc.description !== d.documents[i].description,
       );
 
       if (

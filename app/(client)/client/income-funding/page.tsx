@@ -121,6 +121,7 @@ export default function IncomeFunding() {
         return (
           <DocumentCollectionView
             deal={deal}
+            realDeal={realDeal}
             onUpload={uploadDocument}
             onSubmit={submitForUnderwriting}
             isSubmitting={isSubmitting}

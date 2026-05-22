@@ -126,6 +126,11 @@ export function DocumentUploadCard({
           <p className="mt-1 text-xs text-gray-500 line-clamp-2">
             {doc.description}
           </p>
+          {(doc as any).providedValue && (
+            <div className="mt-2 inline-flex bg-emerald-50 border border-emerald-100 px-2 py-1 rounded text-xs font-mono font-bold text-emerald-700">
+              Provided: {(doc as any).providedValue}
+            </div>
+          )}
 
           {isDone ? (
             <div className="mt-3 flex flex-col gap-2">
