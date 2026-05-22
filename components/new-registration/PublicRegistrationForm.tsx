@@ -169,6 +169,8 @@ export function PublicRegistrationForm() {
       } else if (businessData.fundingType === FundingType.Business) {
         businessData.creditScore = null;
         businessData.employmentType = null;
+      } else if (businessData.fundingType === FundingType.Both) {
+        businessData.businessCreditScore = null;
       }
       updateBusinessDetailsData(businessData);
     });
@@ -245,6 +247,8 @@ export function PublicRegistrationForm() {
       } else if (businessData.fundingType === FundingType.Business) {
         businessData.creditScore = null;
         businessData.employmentType = null;
+      } else if (businessData.fundingType === FundingType.Both) {
+        businessData.businessCreditScore = null;
       }
 
       updateBusinessDetailsData(businessData);
@@ -340,6 +344,8 @@ export function PublicRegistrationForm() {
       } else if (latestBusinessData.fundingType === FundingType.Business) {
         latestBusinessData.creditScore = null;
         latestBusinessData.employmentType = null;
+      } else if (latestBusinessData.fundingType === FundingType.Both) {
+        latestBusinessData.businessCreditScore = null;
       }
 
       const latestDocumentData = formStep3.getValues();

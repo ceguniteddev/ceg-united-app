@@ -100,17 +100,19 @@ export const businessDetailsSchema = z
       data.fundingType === FundingType.Business ||
       data.fundingType === FundingType.Both
     ) {
-      if (
-        data.businessCreditScore === undefined ||
-        data.businessCreditScore === null ||
-        data.businessCreditScore < 400 ||
-        data.businessCreditScore > 900
-      ) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Credit score must be between 400 and 900",
-          path: ["businessCreditScore"],
-        });
+      if (data.fundingType === FundingType.Business) {
+        if (
+          data.businessCreditScore === undefined ||
+          data.businessCreditScore === null ||
+          data.businessCreditScore < 400 ||
+          data.businessCreditScore > 900
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Credit score must be between 400 and 900",
+            path: ["businessCreditScore"],
+          });
+        }
       }
       if (!data.timeInBusiness) {
         ctx.addIssue({

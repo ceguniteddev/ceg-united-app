@@ -43,8 +43,12 @@ function mapFundingData(body: any) {
     businessName: body.business.businessName,
     employerIdentificationNumber: body.business.ein,
     industryField: body.business.businessIndustry,
-    ficoCreditScore: body.business.creditScore,
-    businessCreditScore: body.business.businessCreditScore,
+    ficoCreditScore:
+      mappedType === "Personal" || mappedType === "Personal And Business"
+        ? body.business.creditScore
+        : undefined,
+    businessCreditScore:
+      mappedType === "Business" ? body.business.businessCreditScore : undefined,
     appliedDate: new Date(),
     status: "New",
     analysisStatus: "Completed",

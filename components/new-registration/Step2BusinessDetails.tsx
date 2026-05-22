@@ -152,44 +152,46 @@ export function Step2BusinessDetails() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
-              <div className="space-y-4 rounded-lg border border-blue-100 bg-white p-4 shadow-sm">
-                <FormNumberInput
-                  control={form.control}
-                  name="businessCreditScore"
-                  required
-                  label="Business Estimated Credit Score"
-                  placeholder="700"
-                  min={400}
-                  max={900}
-                  thousandSeparator=""
-                  decimalScale={0}
-                  fixedDecimalScale={false}
-                />
-                <div className="pt-2 px-1">
-                  <Controller
+              {fundingType !== FundingType.Both && (
+                <div className="space-y-4 rounded-lg border border-blue-100 bg-white p-4 shadow-sm">
+                  <FormNumberInput
                     control={form.control}
                     name="businessCreditScore"
-                    render={({ field }) => (
-                      <Slider
-                        value={[
-                          typeof field.value === "number"
-                            ? Math.max(400, field.value)
-                            : 400,
-                        ]}
-                        onValueChange={(vals) => field.onChange(vals[0])}
-                        min={400}
-                        max={900}
-                        step={5}
-                        className="py-4 cursor-pointer"
-                      />
-                    )}
+                    required
+                    label="Business Estimated Credit Score"
+                    placeholder="700"
+                    min={400}
+                    max={900}
+                    thousandSeparator=""
+                    decimalScale={0}
+                    fixedDecimalScale={false}
                   />
-                  <div className="flex justify-between text-xs font-medium text-slate-400 mt-1">
-                    <span>400</span>
-                    <span>900</span>
+                  <div className="pt-2 px-1">
+                    <Controller
+                      control={form.control}
+                      name="businessCreditScore"
+                      render={({ field }) => (
+                        <Slider
+                          value={[
+                            typeof field.value === "number"
+                              ? Math.max(400, field.value)
+                              : 400,
+                          ]}
+                          onValueChange={(vals) => field.onChange(vals[0])}
+                          min={400}
+                          max={900}
+                          step={5}
+                          className="py-4 cursor-pointer"
+                        />
+                      )}
+                    />
+                    <div className="flex justify-between text-xs font-medium text-slate-400 mt-1">
+                      <span>400</span>
+                      <span>900</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <FormSelect
                 control={form.control}
