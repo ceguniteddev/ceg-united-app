@@ -24,6 +24,7 @@ import { CreditReportTab } from "../_components/tabs/CreditReportTab";
 import { FinanceAuditTab } from "../_components/tabs/FinanceAuditTab";
 import { TradelineSuggestionsTab } from "../_components/tabs/TradelineSuggestionsTab";
 import { FundabilityAuditTab } from "../_components/tabs/FundabilityAuditTab";
+import { ConfirmButton } from "@/components/Confirmation";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import ClientBusinessManagement from "@/components/ClientBusinessManagement";
 import { Business } from "@/schema";
@@ -40,6 +41,7 @@ import { initiateCRSReportCheckout } from "@/service/crs";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { WhopCheckoutEmbed } from "@whop/checkout/react";
+import { useFeeSettings } from "@/hooks/fee-settings";
 
 interface Props {
   params: Promise<{ businessId: string }>;
@@ -79,11 +81,15 @@ export default function BusinessDetailPage({ params }: Props) {
   const [activeTab, setActiveTab] = useState<BusinessTab>("overview");
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
   const [checkoutMetadata, setCheckoutMetadata] = useState<any>(null);
+
+  const { data: feeSettings } = useFeeSettings();
+  const reportFee = feeSettings?.businessCreditReportFee || 0;
 
   if (!user || isLoading) {
     return <Spinner displayText="Loading business…" />;
@@ -141,10 +147,12 @@ export default function BusinessDetailPage({ params }: Props) {
               : undefined,
         });
         setCheckoutId(res.checkoutId);
+        setIsConfirmOpen(false);
       } else if ("success" in res && res.success) {
         toast.success(
           "Credit report generation has started. Please wait a few moments for the new data to appear.",
         );
+        setIsConfirmOpen(false);
       }
     } catch (error: any) {
       console.error("Failed to initiate CRS report checkout:", error);
@@ -249,7 +257,7 @@ export default function BusinessDetailPage({ params }: Props) {
 
             <div className="flex items-center gap-3">
               <Button
-                onClick={handleGenerateReport}
+                onClick={() => setIsConfirmOpen(true)}
                 disabled={isGenerating}
                 className="hidden sm:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors"
               >
@@ -280,7 +288,7 @@ export default function BusinessDetailPage({ params }: Props) {
                     className="sm:hidden cursor-pointer"
                     onSelect={(e) => {
                       e.preventDefault();
-                      handleGenerateReport();
+                      setIsConfirmOpen(true);
                     }}
                   >
                     <IconMenu
@@ -365,6 +373,29 @@ export default function BusinessDetailPage({ params }: Props) {
           />
         </div>
       </ResponsiveDialog>
+
+      <ConfirmButton
+        open={isConfirmOpen}
+        onOpenChange={setIsConfirmOpen}
+        showTrigger={false}
+        onConfirm={handleGenerateReport}
+        isLoading={isGenerating}
+        description={
+          <div className="space-y-3 mt-2 text-sm text-gray-600">
+            <p>Pulling a new business credit report requires a one-time fee.</p>
+            <ul className="list-disc pl-5 font-medium text-gray-800">
+              <li>Fee ${reportFee.toFixed(2)}.</li>
+            </ul>
+            <p>
+              You will be redirected to our secure payment portal to complete
+              your purchase before the report is generated.
+            </p>
+          </div>
+        }
+        confirmLabel="Proceed to Payment"
+        classNameAction="bg-blue-600 hover:bg-blue-700 text-white"
+        title="Pull New Credit Report"
+      />
 
       {/* Checkout Modal */}
       <Dialog

@@ -67,6 +67,8 @@ import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { User, UserWithId } from "@/schema/registration";
+import { ConfirmButton } from "@/components/Confirmation";
+import { useFeeSettings } from "@/hooks/fee-settings";
 
 ChartJS.register(
   CategoryScale,
@@ -962,9 +964,12 @@ type Props = {
 const ClientCreditReport = ({ userId, isAdminView, userData }: Props) => {
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
   const [checkoutMetadata, setCheckoutMetadata] = useState<any>(null);
   const { crsReport, isLoading } = useClientCRSReportQuery({ userId });
+  const { data: feeSettings } = useFeeSettings();
+  const reportFee = feeSettings?.creditReportFee || 49;
 
   // Group reports by createdAt timestamp (only for bureau reports)
   const reportsByTimestamp = useMemo(() => {
@@ -1033,10 +1038,12 @@ const ClientCreditReport = ({ userId, isAdminView, userData }: Props) => {
               : undefined,
         });
         setCheckoutId(res.checkoutId);
+        setIsConfirmOpen(false);
       } else if ("success" in res && res.success) {
         toast.success(
           "Credit report generation has started. Please wait a few moments for the new data to appear.",
         );
+        setIsConfirmOpen(false);
         // The data will refresh automatically if using real-time listener or we can trigger a refetch here.
       }
     } catch (error: any) {
@@ -1224,23 +1231,47 @@ const ClientCreditReport = ({ userId, isAdminView, userData }: Props) => {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3">
-            <button
-              onClick={handleGenerateReport}
+            <ConfirmButton
+              open={isConfirmOpen}
+              onOpenChange={setIsConfirmOpen}
+              onConfirm={handleGenerateReport}
+              isLoading={isGenerating}
               disabled={isGenerating}
-              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors w-full sm:w-auto justify-center"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Pulling Credit Report...
-                </>
-              ) : (
-                <>
-                  <ReceiptIcon className="w-4 h-4" />
-                  Pull Credit Report
-                </>
-              )}
-            </button>
+              description={
+                <div className="space-y-3 mt-2 text-sm text-gray-600">
+                  <p>Pulling a new credit report requires a one-time fee.</p>
+                  <ul className="list-disc pl-5 font-medium text-gray-800 text-left">
+                    <li>Fee ${reportFee.toFixed(2)}.</li>
+                  </ul>
+                  <p>
+                    You will be redirected to our secure payment portal to
+                    complete your purchase before the report is generated.
+                  </p>
+                </div>
+              }
+              confirmLabel="Proceed to Payment"
+              classNameAction="bg-blue-600 hover:bg-blue-700 text-white"
+              title="Pull New Credit Report"
+              trigger={
+                <button
+                  onClick={() => setIsConfirmOpen(true)}
+                  disabled={isGenerating}
+                  className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors w-full sm:w-auto justify-center"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Pulling Credit Report...
+                    </>
+                  ) : (
+                    <>
+                      <ReceiptIcon className="w-4 h-4" />
+                      Pull Credit Report
+                    </>
+                  )}
+                </button>
+              }
+            />
 
             {timestamps.length > 1 && (
               <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">

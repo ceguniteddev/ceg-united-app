@@ -17,8 +17,8 @@ export const getFeeSettings = async (): Promise<FeeSettings> => {
     .get();
   const data = doc.data();
   return {
-    creditReportFee: data?.creditReportFee ?? 0,
-    businessCreditReportFee: data?.businessCreditReportFee ?? 0,
+    creditReportFee: data?.creditReportFee ?? 49,
+    businessCreditReportFee: data?.businessCreditReportFee ?? 100,
   };
 };
 
