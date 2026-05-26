@@ -229,16 +229,13 @@ export const applyFunding = async ({
     fundingType: value.fundingType,
   });
 
-  // add a checking if fundingProducts include "Business Income Based Funding"
-  if (value.businessId) {
-    try {
-      await calculateBusinessIncomePreApproved({
-        userId: value.userId!,
-        referenceNumber,
-      });
-    } catch (error) {
-      console.error("Error calculating business income pre-approved:", error);
-    }
+  try {
+    await calculateBusinessIncomePreApproved({
+      userId: value.userId!,
+      referenceNumber,
+    });
+  } catch (error) {
+    console.error("Error calculating business income pre-approved:", error);
   }
 
   // we do not generate CRS report when client is registering themselves,

@@ -16,7 +16,7 @@ import { usePathname } from "next/navigation";
 import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
-import { isPlaidProductionReady } from "@/lib/plaid";
+// import { isPlaidProductionReady } from "@/lib/plaid";
 import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 import { LockIcon } from "lucide-react";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
@@ -26,7 +26,7 @@ const MobileNavClient = () => {
   const { appliedFunding } = useGetUserApplyFunding();
   const pathname = usePathname();
   // const { denefitsContract } = useGetDenefitsContractsByUserId(user?.uid || "");
-  const isPlaidProdReady = isPlaidProductionReady();
+  // const isPlaidProdReady = isPlaidProductionReady();
 
   if (!user) return null;
 
@@ -67,11 +67,11 @@ const MobileNavClient = () => {
               {sidebarLinks
                 .filter((item) => {
                   // Income Funding logic
-                  const hasIncomeBasedFunding = appliedFunding?.some((app) =>
-                    app.fundingProducts?.includes(
-                      "Business Income Based Funding",
-                    ),
-                  );
+                  // const hasIncomeBasedFunding = appliedFunding?.some((app) =>
+                  //   app.fundingProducts?.includes(
+                  //     "Business Income Based Funding",
+                  //   ),
+                  // );
 
                   // if (
                   //   item.route === "/client/my-funding" &&
@@ -80,19 +80,20 @@ const MobileNavClient = () => {
                   //   return false; // Hide generic map if they have income funding
                   // }
 
-                  if (
-                    item.route === "/client/income-funding" &&
-                    !hasIncomeBasedFunding
-                  ) {
-                    return false; // Hide income funding if they don't have it
-                  }
+                  // if (
+                  //   item.route === "/client/income-funding" &&
+                  //   !hasIncomeBasedFunding
+                  // ) {
+                  //   return false; // Hide income funding if they don't have it
+                  // }
 
-                  if (
-                    !isPlaidProdReady &&
-                    item.route === "/client/my-accounts"
-                  ) {
-                    return false;
-                  }
+                  // if (
+                  //   !isPlaidProdReady &&
+                  //   item.route === "/client/my-accounts"
+                  // ) {
+                  //   return false;
+                  // }
+
                   if (
                     item.route === "/client/my-learning" &&
                     (!userData || !userData.isPremiumClient)

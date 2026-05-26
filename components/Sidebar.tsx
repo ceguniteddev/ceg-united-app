@@ -16,7 +16,7 @@ import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 // import { driver } from "driver.js";
 // import { useUpdateUserOnboardingMutation } from "@/hooks/user";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
-import { isPlaidProductionReady } from "@/lib/plaid";
+// import { isPlaidProductionReady } from "@/lib/plaid";
 import { LockIcon } from "lucide-react";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 // import { useEffect, useState } from "react";
@@ -61,7 +61,7 @@ const Sidebar = () => {
 
   //   if (user && !isOnboarded) driverObj.drive();
   // }, [user, isOnboarded, updateOnboarding]);
-  const isPlaidProdReady = isPlaidProductionReady();
+  // const isPlaidProdReady = isPlaidProductionReady();
   if (!user) return null;
 
   return (
@@ -85,25 +85,25 @@ const Sidebar = () => {
         {sidebarLinks
           .filter((item) => {
             // Income Funding logic
-            const hasIncomeBasedFunding = appliedFunding?.some((app) =>
-              app.fundingProducts?.includes("Business Income Based Funding"),
-            );
+            // const hasIncomeBasedFunding = appliedFunding?.some((app) =>
+            //   app.fundingProducts?.includes("Business Income Based Funding"),
+            // );
 
             // if (item.route === "/client/my-funding" && hasIncomeBasedFunding) {
             //   return false; // Hide generic map if they have income funding
             // }
 
-            if (
-              item.route === "/client/income-funding" &&
-              !hasIncomeBasedFunding
-            ) {
-              return false; // Hide income funding if they don't have it
-            }
+            // if (
+            //   item.route === "/client/income-funding" &&
+            //   !hasIncomeBasedFunding
+            // ) {
+            //   return false; // Hide income funding if they don't have it
+            // }
 
             // If Plaid is not ready, filter out (remove) the "My Accounts" link
-            if (!isPlaidProdReady && item.route === "/client/my-accounts") {
-              return false;
-            }
+            // if (!isPlaidProdReady && item.route === "/client/my-accounts") {
+            //   return false;
+            // }
 
             // If user hasn't paid denefits contract, filter out "My Learning" link
             if (
