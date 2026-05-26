@@ -56,6 +56,12 @@ export function DocumentCollectionView({
         providedValue: realDeal.employerIdentificationNumber,
       };
     }
+    if (doc.key === "articles") {
+      return {
+        ...doc,
+        required: false, // Make Articles of Organization strictly optional
+      };
+    }
     return doc;
   });
 

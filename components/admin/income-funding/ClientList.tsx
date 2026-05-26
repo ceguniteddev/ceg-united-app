@@ -101,7 +101,7 @@ export function ClientList({ clients, selectedId, onSelect }: ClientListProps) {
                         {status.label}
                       </span>
                       <span className="text-[11px] font-mono font-semibold text-gray-700">
-                        {formatUSD(c.preApprovedAmount)}
+                        {formatUSD(typeof c.preApprovedAmount === 'object' && c.preApprovedAmount !== null ? (c.preApprovedAmount as any).amount : c.preApprovedAmount)}
                       </span>
                     </div>
                   </div>

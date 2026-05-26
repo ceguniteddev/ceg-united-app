@@ -43,7 +43,7 @@ const defaultEmptyDeal: IncomeFundingDeal = {
     {
       key: "articles",
       title: "Articles of Organization",
-      description: "State filed business documents.",
+      description: "State filed business documents (Optional).",
       required: false,
       status: "required",
     },
