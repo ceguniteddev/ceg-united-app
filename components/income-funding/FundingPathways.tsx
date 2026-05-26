@@ -61,6 +61,8 @@ interface FundingPathwaysProps {
   onBack?: () => void;
   /** Fires every time the selection changes (useful for analytics). */
   onSelect?: (pathway: FundingPathway) => void;
+  /** The currently selected pathway ID from parent state, if any */
+  selectedPathwayId?: string;
 }
 
 // -------------------------- Icons (inline SVG, currentColor) --------------------------
@@ -198,8 +200,9 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
   onContinue,
   onBack,
   onSelect,
+  selectedPathwayId,
 }) => {
-  const [selectedId, setSelectedId] = useState<PathwayId | null>("income_based");
+  const [selectedId, setSelectedId] = useState<PathwayId | null>(selectedPathwayId as PathwayId || "income_based");
   const selected = pathways.find((p) => p.id === selectedId) || null;
 
   const computationFromBackend = realDeal?.businessIncomeComputation || {};

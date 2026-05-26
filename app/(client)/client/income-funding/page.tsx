@@ -122,6 +122,7 @@ export default function IncomeFunding() {
                 setStatus("collecting-documents");
                 setShowPathways(false);
               }}
+              selectedPathwayId={selectedPathwayId}
               onBack={() => setShowPathways(false)}
             />
           );

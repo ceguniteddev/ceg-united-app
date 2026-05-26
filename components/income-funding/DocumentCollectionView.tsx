@@ -53,7 +53,9 @@ export function DocumentCollectionView({
   } | null>(null);
 
   const displayDocuments = deal.documents.filter(doc => {
-    // If personal pathway is selected, hide the business-specific documents completely
+    // If credit-based pathway is selected (personal or business), we actually don't NEED them, 
+    // but we can ask to upload IF they want to fine-tune.
+    // However, if the user explicitly requested we remove "business-specific" for personal:
     if (selectedPathwayId === "personal_credit_card" || selectedPathwayId === "personal_loan") {
       if (doc.key === "ein" || doc.key === "articles" || doc.key === "voidedCheck") {
         return false;
@@ -63,15 +65,48 @@ export function DocumentCollectionView({
   }).map((doc) => {
     let required = doc.required;
     
+    // For ALL credit-based products, documents are NOT required.
+    const isCreditProduct = 
+      selectedPathwayId === "credit_card_stacking" ||
+      selectedPathwayId === "business_loc" ||
+      selectedPathwayId === "personal_loan" ||
+      selectedPathwayId === "personal_credit_card";
+
+    if (isCreditProduct) {
+      required = false;
+    }
+
     // Adjust visibility based on the selected pathway
     if (selectedPathwayId === "personal_credit_card" || selectedPathwayId === "personal_loan") {
       if (doc.key === "bankStatements") {
         return {
           ...doc,
-          title: "Personal Bank Statements",
-          description: "Last 4 months of personal bank statements.",
+          required: false, // Override to optional
+          title: "Personal Bank Statements (Optional)",
+          description: "Not required, but uploading recent statements (within 30 days) can help fine-tune your real approval amount.",
           documentTypeId: "PERSONAL_BANK_STATEMENTS",
         };
+      }
+    } else if (isCreditProduct) {
+      if (doc.key === "bankStatements") {
+         return {
+          ...doc,
+          required: false, // Override to optional
+          title: "Business Bank Statements (Optional)",
+          description: "Not required, but uploading recent statements (within 30 days) can help fine-tune your real approval amount.",
+         };
+      }
+    }
+
+    if (isCreditProduct) {
+      if (doc.key === "ein") {
+         return { ...doc, required: false, description: "Not required for credit-based funding." };
+      }
+      if (doc.key === "voidedCheck") {
+         return { ...doc, required: false, description: "Not required until time of funding." };
+      }
+      if (doc.key === "id") {
+         return { ...doc, required: false, description: "Not required for initial credit review." };
       }
     }
 
@@ -88,7 +123,11 @@ export function DocumentCollectionView({
         required: false, // Make Articles of Organization strictly optional
       };
     }
-    return doc;
+
+    return {
+      ...doc,
+      required,
+    };
   });
 
   const requiredDocs = displayDocuments.filter((d) => d.required);
