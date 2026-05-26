@@ -26,18 +26,35 @@ export function PreApprovalView({
   onContinue,
 }: PreApprovalViewProps) {
   // Fallback to mock data if real data is not available yet
-  const computation = realDeal?.businessIncomeComputation || {
-    assignedGrade: deal.underwritingResult.grade,
+  const computationFromBackend = realDeal?.businessIncomeComputation || {};
+  
+  // Handle both old flat structure and new nested structure
+  const estimatedAmountValue = 
+    typeof computationFromBackend.estimatedApprovalAmount === 'object' && computationFromBackend.estimatedApprovalAmount !== null
+      ? computationFromBackend.estimatedApprovalAmount.amount
+      : (computationFromBackend.estimatedApprovalAmount || deal.underwritingResult.maxFundingAmount);
+      
+  const calcSteps = 
+    typeof computationFromBackend.estimatedApprovalAmount === 'object' && computationFromBackend.estimatedApprovalAmount !== null
+      ? computationFromBackend.estimatedApprovalAmount.calculationSteps
+      : (computationFromBackend.calculationSteps || `${deal.underwritingResult.baseMultiple} × ${Math.round(deal.underwritingResult.percentage * 100)}% × ${formatUSD(deal.underwritingInput.monthlyDeposits)} = ${formatUSD(deal.underwritingResult.maxFundingAmount)}`);
+      
+  const rationaleText = 
+    typeof computationFromBackend.estimatedApprovalAmount === 'object' && computationFromBackend.estimatedApprovalAmount !== null
+      ? computationFromBackend.estimatedApprovalAmount.rationale
+      : (computationFromBackend.rationale || deal.underwritingResult.rationale);
+
+  const computation = {
+    assignedGrade: computationFromBackend.assignedGrade || deal.underwritingResult.grade,
     multiplierUsed:
-      deal.underwritingResult.baseMultiple * deal.underwritingResult.percentage,
-    estimatedApprovalAmount: deal.underwritingResult.maxFundingAmount,
-    calculationSteps: `${deal.underwritingResult.baseMultiple} × ${Math.round(deal.underwritingResult.percentage * 100)}% × ${formatUSD(deal.underwritingInput.monthlyDeposits)} = ${formatUSD(deal.underwritingResult.maxFundingAmount)}`,
-    rationale: deal.underwritingResult.rationale,
-    isEligible: true,
+      computationFromBackend.multiplierUsed || (deal.underwritingResult.baseMultiple * deal.underwritingResult.percentage),
+    estimatedApprovalAmount: estimatedAmountValue,
+    calculationSteps: calcSteps,
+    rationale: rationaleText,
+    isEligible: computationFromBackend.isEligible ?? true,
   };
 
   // Map real deal inputs to stat cards if available
-  const computationFromBackend = realDeal?.businessIncomeComputation || {};
   const u = realDeal
     ? {
         monthlyDeposits:
@@ -112,7 +129,7 @@ export function PreApprovalView({
           <div className="mt-6 flex flex-wrap gap-3">
             <button
               onClick={onContinue}
-              className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all"
+              className="cursor-pointer inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all"
             >
               Continue to Submit Your File
               <ArrowRight className="w-4 h-4" />

@@ -8,6 +8,7 @@ import { SubmittedView } from "@/components/income-funding/SubmittedView";
 import { OffersView } from "@/components/income-funding/OffersView";
 import { AcceptanceView } from "@/components/income-funding/AcceptanceView";
 import { CompleteView } from "@/components/income-funding/CompleteView";
+import FundingPathways from "@/components/income-funding/FundingPathways";
 import { useIncomeFundingState } from "@/hooks/useIncomeFundingState";
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
@@ -22,6 +23,7 @@ import {
 
 export default function IncomeFunding() {
   const [selectedReference, setSelectedReference] = useState<string>("");
+  const [showPathways, setShowPathways] = useState(false);
 
   const {
     deal,
@@ -110,11 +112,23 @@ export default function IncomeFunding() {
 
     switch (deal.status) {
       case "prequalified":
+        if (showPathways) {
+          return (
+            <FundingPathways
+              realDeal={realDeal}
+              onContinue={() => {
+                setStatus("collecting-documents");
+                setShowPathways(false);
+              }}
+              onBack={() => setShowPathways(false)}
+            />
+          );
+        }
         return (
           <PreApprovalView
             deal={deal}
             realDeal={realDeal}
-            onContinue={() => setStatus("collecting-documents")}
+            onContinue={() => setShowPathways(true)}
           />
         );
       case "collecting-documents":
