@@ -54,12 +54,18 @@ export const GET = withAuth(async (request: NextRequest) => {
           {
             key: "bankStatements",
             type: "BANK_STATEMENTS",
-            title: "Bank Statements",
+            title: "Business Bank Statements",
+            required: true,
+          },
+          {
+            key: "personalBankStatements",
+            type: "PERSONAL_BANK_STATEMENTS",
+            title: "Personal Bank Statements",
             required: true,
           },
         ];
 
-        const documents = requiredDocsKeys.map((def) => {
+        let documents = requiredDocsKeys.map((def) => {
           const matchingDocs = userDocs.filter((d: any) => {
             const rawName = d.name.split("/").pop() || "";
             return rawName.startsWith(def.type + "_");
@@ -94,6 +100,32 @@ export const GET = withAuth(async (request: NextRequest) => {
           };
         });
 
+        // Combine Bank Statements correctly depending on what they uploaded
+        const bankStatementDocs = documents.filter(d => d.key === "bankStatements" || d.key === "personalBankStatements");
+        const hasPersonalBankStatements = bankStatementDocs.find(d => d.key === "personalBankStatements")?.status === "uploaded";
+        const hasBusinessBankStatements = bankStatementDocs.find(d => d.key === "bankStatements")?.status === "uploaded";
+        
+        let finalDocuments = documents;
+        
+        if (hasPersonalBankStatements && !hasBusinessBankStatements) {
+          // They chose a personal path, hide the business ones
+          finalDocuments = finalDocuments.filter(d => 
+            d.key !== "bankStatements" && 
+            d.key !== "ein" && 
+            d.key !== "articles" && 
+            d.key !== "voidedCheck"
+          );
+          // Re-key it so the UI handles it cleanly like it expects
+          const personalBankDoc = finalDocuments.find(d => d.key === "personalBankStatements");
+          if (personalBankDoc) personalBankDoc.key = "bankStatements" as any;
+        } else if (hasBusinessBankStatements && !hasPersonalBankStatements) {
+          // Normal business path
+          finalDocuments = finalDocuments.filter(d => d.key !== "personalBankStatements");
+        } else {
+           // Fallback if neither or both (default to business showing)
+           finalDocuments = finalDocuments.filter(d => d.key !== "personalBankStatements");
+        }
+
         // Map status
         let status = "prequalified";
         if (app.status === "Processing") status = "collecting-documents";
@@ -117,7 +149,7 @@ export const GET = withAuth(async (request: NextRequest) => {
           status,
           backendStatus: app.status,
           submittedAt: app.appliedDate,
-          documents,
+          documents: finalDocuments,
           offers: (app as any).offers || [],
           underwritingInput: {
             monthlyDeposits: app.annualBusinessRevenue

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Lock, ShieldCheck } from "lucide-react";
+import { ArrowRight, ArrowLeft, Lock, ShieldCheck } from "lucide-react";
 import { DocumentUploadCard } from "./DocumentUploadCard";
 import type {
   DocumentRecord,
@@ -27,7 +27,9 @@ interface DocumentCollectionViewProps {
     fileSize: string,
   ) => void;
   onSubmit: () => void;
+  onBack?: () => void;
   isSubmitting?: boolean;
+  selectedPathwayId?: string;
 }
 
 export function DocumentCollectionView({
@@ -35,7 +37,9 @@ export function DocumentCollectionView({
   realDeal,
   onUpload,
   onSubmit,
+  onBack,
   isSubmitting = false,
+  selectedPathwayId = "income_based",
 }: DocumentCollectionViewProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -48,7 +52,29 @@ export function DocumentCollectionView({
     contentType?: string;
   } | null>(null);
 
-  const displayDocuments = deal.documents.map((doc) => {
+  const displayDocuments = deal.documents.filter(doc => {
+    // If personal pathway is selected, hide the business-specific documents completely
+    if (selectedPathwayId === "personal_credit_card" || selectedPathwayId === "personal_loan") {
+      if (doc.key === "ein" || doc.key === "articles" || doc.key === "voidedCheck") {
+        return false;
+      }
+    }
+    return true;
+  }).map((doc) => {
+    let required = doc.required;
+    
+    // Adjust visibility based on the selected pathway
+    if (selectedPathwayId === "personal_credit_card" || selectedPathwayId === "personal_loan") {
+      if (doc.key === "bankStatements") {
+        return {
+          ...doc,
+          title: "Personal Bank Statements",
+          description: "Last 4 months of personal bank statements.",
+          documentTypeId: "PERSONAL_BANK_STATEMENTS",
+        };
+      }
+    }
+
     if (doc.key === "ein" && realDeal?.employerIdentificationNumber) {
       return {
         ...doc,
@@ -93,8 +119,13 @@ export function DocumentCollectionView({
     if (key === "ein") documentTypeId = "EIN_LETTER";
     else if (key === "articles") documentTypeId = "ARTICLES_OF_ORGANIZATION";
     else if (key === "id") documentTypeId = "DRIVERS_LICENSE";
-    else if (key === "bankStatements") documentTypeId = "BANK_STATEMENTS";
-    else if (key === "voidedCheck") documentTypeId = "VOIDED_CHECK";
+    else if (key === "bankStatements") {
+      documentTypeId =
+        selectedPathwayId === "personal_credit_card" ||
+        selectedPathwayId === "personal_loan"
+          ? "PERSONAL_BANK_STATEMENTS"
+          : "BANK_STATEMENTS";
+    } else if (key === "voidedCheck") documentTypeId = "VOIDED_CHECK";
 
     const formData = new FormData();
     formData.append("userId", user.uid);
@@ -189,22 +220,34 @@ export function DocumentCollectionView({
       </div>
 
       {/* Submit footer */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5 md:p-6 flex items-center justify-between gap-4 flex-wrap animate-fade-in-up">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 animate-fade-in-up">
         <div className="flex items-center gap-3">
-          <Lock className="w-5 h-5 text-gray-400" />
+          <Lock className="w-5 h-5 text-gray-400 shrink-0" />
           <p className="text-xs text-gray-500 max-w-md">
             By submitting, you confirm the uploaded documents are accurate. Your
             file is sent to a CEG underwriter for review.
           </p>
         </div>
-        <button
-          disabled={!allRequiredDone || isSubmitting}
-          onClick={onSubmit}
-          className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer"
-        >
-          {isSubmitting ? "Submitting..." : "Submit for Underwriting"}
-          <ArrowRight className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
+          {onBack && (
+            <button
+              onClick={onBack}
+              disabled={isSubmitting}
+              className="w-full md:w-auto inline-flex justify-center items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-5 py-3 rounded-xl shadow-sm transition-all cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+          )}
+          <button
+            disabled={!allRequiredDone || isSubmitting}
+            onClick={onSubmit}
+            className="w-full md:w-auto inline-flex justify-center items-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer"
+          >
+            {isSubmitting ? "Submitting..." : "Submit for Underwriting"}
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Preview Sheet */}

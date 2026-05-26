@@ -199,7 +199,7 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
   onBack,
   onSelect,
 }) => {
-  const [selectedId, setSelectedId] = useState<PathwayId | null>(null);
+  const [selectedId, setSelectedId] = useState<PathwayId | null>("income_based");
   const selected = pathways.find((p) => p.id === selectedId) || null;
 
   const computationFromBackend = realDeal?.businessIncomeComputation || {};

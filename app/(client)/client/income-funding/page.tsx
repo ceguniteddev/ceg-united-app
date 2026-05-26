@@ -24,6 +24,7 @@ import {
 export default function IncomeFunding() {
   const [selectedReference, setSelectedReference] = useState<string>("");
   const [showPathways, setShowPathways] = useState(false);
+  const [selectedPathwayId, setSelectedPathwayId] = useState<string>("income_based");
 
   const {
     deal,
@@ -116,7 +117,8 @@ export default function IncomeFunding() {
           return (
             <FundingPathways
               realDeal={realDeal}
-              onContinue={() => {
+              onContinue={(pathway) => {
+                setSelectedPathwayId(pathway.id);
                 setStatus("collecting-documents");
                 setShowPathways(false);
               }}
@@ -138,7 +140,12 @@ export default function IncomeFunding() {
             realDeal={realDeal}
             onUpload={uploadDocument}
             onSubmit={submitForUnderwriting}
+            onBack={() => {
+              setStatus("prequalified");
+              setShowPathways(true);
+            }}
             isSubmitting={isSubmitting}
+            selectedPathwayId={selectedPathwayId}
           />
         );
       case "under-review":

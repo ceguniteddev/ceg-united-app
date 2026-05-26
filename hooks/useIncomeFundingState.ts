@@ -188,8 +188,14 @@ export function useIncomeFundingState(selectedReference?: string) {
           else if (doc.key === "articles")
             documentTypeId = "ARTICLES_OF_ORGANIZATION";
           else if (doc.key === "id") documentTypeId = "DRIVERS_LICENSE";
-          else if (doc.key === "bankStatements")
-            documentTypeId = "BANK_STATEMENTS";
+          else if (doc.key === "bankStatements") {
+            // We don't have the selected pathway in the hook scope directly, 
+            // so we'll check for either bank statement type existing in user docs
+            const hasPersonal = userDocuments.some((apiDoc: any) => 
+              (apiDoc.name.split("/").pop() || "").startsWith("PERSONAL_BANK_STATEMENTS_")
+            );
+            documentTypeId = hasPersonal ? "PERSONAL_BANK_STATEMENTS" : "BANK_STATEMENTS";
+          }
           else if (doc.key === "voidedCheck") documentTypeId = "VOIDED_CHECK";
 
           const matchingApiDocs = userDocuments.filter((apiDoc: any) => {

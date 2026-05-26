@@ -293,6 +293,8 @@ export function ClientDetail({
                     providedValue = client.ein;
                   }
 
+                  // Just in case it's a personal pathway, title might differ, but the backend doesn't currently tell us which pathway they selected to filter by here. We'll leave the title default.
+
                   const docDisplay = {
                     ...d,
                     required: isRequired,
