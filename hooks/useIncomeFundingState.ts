@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type {
   DealOffer,
   DealStatus,
@@ -84,6 +85,7 @@ export function useIncomeFundingState(selectedReference?: string) {
   const [deal, setDeal] = useState<IncomeFundingDeal>(defaultEmptyDeal);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { userDocuments } = useUserDocumentsQuery({ userId: user?.uid || "" });
   const { appliedFunding, isLoading: isLoadingApplications } =
     useGetUserApplyFunding();
@@ -116,7 +118,17 @@ export function useIncomeFundingState(selectedReference?: string) {
 
       if (realDeal) {
         if (realDeal.status === "Sent to Brokerage") {
-          nextStatus = "under-review";
+          // If the user is currently working on an application (collecting-documents) or just submitted (under-review), keep their current local state.
+          // Otherwise (e.g., when revisiting the page initially at "prequalified"), keep it as "prequalified"
+          // so they have the option to select other pathways (credit_card_stacking, business_loc, etc).
+          if (
+            d.status === "under-review" ||
+            d.status === "collecting-documents"
+          ) {
+            nextStatus = d.status;
+          } else {
+            nextStatus = "prequalified";
+          }
         } else if (
           realDeal.status === "Pre-Approved" ||
           realDeal.status === "Offer Accepted"
@@ -289,37 +301,47 @@ export function useIncomeFundingState(selectedReference?: string) {
     [],
   );
 
-  const submitForUnderwriting = useCallback(async () => {
-    if (!user?.uid || !referenceNumber) {
-      toast.error("Unable to find funding application record.");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      const response = await fetch(
-        `/api/user/${user.uid}/funding-application/${referenceNumber}/submit-underwriting`,
-        {
-          method: "POST",
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to submit to underwriting.");
+  const submitForUnderwriting = useCallback(
+    async (pathwayId?: string) => {
+      if (!user?.uid || !referenceNumber) {
+        toast.error("Unable to find funding application record.");
+        return;
       }
 
-      setDeal((d) => ({
-        ...d,
-        status: "under-review",
-        submittedAt: new Date().toISOString(),
-      }));
-      toast.success("Successfully submitted for underwriting!");
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [user?.uid, referenceNumber]);
+      try {
+        setIsSubmitting(true);
+        const response = await fetch(
+          `/api/user/${user.uid}/funding-application/${referenceNumber}/submit-underwriting`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pathwayId: pathwayId || "income_based" }),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to submit to underwriting.");
+        }
+
+        setDeal((d) => ({
+          ...d,
+          status: "under-review",
+          submittedAt: new Date().toISOString(),
+        }));
+
+        queryClient.invalidateQueries({
+          queryKey: ["GET_USER_APPLY_FUNDING", user?.uid],
+        });
+
+        toast.success("Successfully submitted for underwriting!");
+      } catch (error: any) {
+        toast.error(error.message || "An error occurred.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [user?.uid, referenceNumber, queryClient],
+  );
 
   const skipOffer = useCallback(
     async (offerId: string) => {

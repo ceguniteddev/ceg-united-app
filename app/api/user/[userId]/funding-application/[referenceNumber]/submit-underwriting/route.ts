@@ -31,7 +31,15 @@ export const POST = withAuth(
       }
 
       // 1. Update application status to under-review
-      await updateApplicationStatus(referenceNumber, "Sent to Brokerage");
+      const body = await request.json().catch(() => ({}));
+      const pathwayId = body.pathwayId;
+
+      await updateApplicationStatus(
+        referenceNumber,
+        "Sent to Brokerage",
+        undefined,
+        pathwayId,
+      );
 
       // 2. Fetch all brokerages
       const banks = await getBanks();

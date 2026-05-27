@@ -120,7 +120,22 @@ export default function IncomeFunding() {
               realDeal={realDeal}
               onContinue={(pathway) => {
                 setSelectedPathwayId(pathway.id);
-                setStatus("collecting-documents");
+                const appliedPathways =
+                  (realDeal as any)?.appliedPathways || [];
+                if (appliedPathways.includes(pathway.id)) {
+                  let nextStatus = "under-review";
+                  if (
+                    realDeal?.status === "Pre-Approved" ||
+                    realDeal?.status === "Offer Accepted"
+                  ) {
+                    nextStatus = "offers-ready";
+                  } else if (realDeal?.status === "Approved") {
+                    nextStatus = "complete";
+                  }
+                  setStatus(nextStatus as any);
+                } else {
+                  setStatus("collecting-documents");
+                }
                 setShowPathways(false);
               }}
               selectedPathwayId={selectedPathwayId}
@@ -141,7 +156,7 @@ export default function IncomeFunding() {
             deal={deal}
             realDeal={realDeal}
             onUpload={uploadDocument}
-            onSubmit={submitForUnderwriting}
+            onSubmit={() => submitForUnderwriting(selectedPathwayId)}
             onBack={() => {
               setStatus("prequalified");
               setShowPathways(true);

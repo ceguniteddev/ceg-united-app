@@ -491,8 +491,9 @@ export const updateApplicationStatus = async (
   referenceNumber: string,
   status: FundingApplicationSatus,
   approveOrDeclineValue?: FundingApplicationApproveDecline,
+  pathwayId?: string,
 ) => {
-  logInfo("updateApplicationStatus", { referenceNumber, status });
+  logInfo("updateApplicationStatus", { referenceNumber, status, pathwayId });
 
   const data = await getApplyFundingByReferenceNumber({ referenceNumber });
   if (!data) throw new AppError("Funding application not found.");
@@ -503,6 +504,12 @@ export const updateApplicationStatus = async (
   const updateData: any = { status };
   if (approveOrDeclineValue !== undefined) {
     updateData.approveOrDecline = approveOrDeclineValue;
+  }
+
+  if (pathwayId) {
+    // We add the pathwayId to appliedPathways array, using FieldValue.arrayUnion
+    const { FieldValue } = require("firebase-admin/firestore");
+    updateData.appliedPathways = FieldValue.arrayUnion(pathwayId);
   }
 
   await appRef.update(updateData);

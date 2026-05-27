@@ -37,12 +37,12 @@ export type PathwayId =
 export interface FundingPathway {
   id: PathwayId;
   title: string;
-  maxAmount: number;            // dollars, e.g. 300000
-  tagline: string;              // one-line "what is it"
-  bestFor: string;              // who it's best for
-  fundingTime: string;          // "24–72 hours"
-  pullType: string;             // "No hard pull" | "Soft pull first" | etc.
-  badge?: string;               // optional "Most popular" / "Fastest" / etc.
+  maxAmount: number; // dollars, e.g. 300000
+  tagline: string; // one-line "what is it"
+  bestFor: string; // who it's best for
+  fundingTime: string; // "24–72 hours"
+  pullType: string; // "No hard pull" | "Soft pull first" | etc.
+  badge?: string; // optional "Most popular" / "Fastest" / etc.
   Icon: React.FC<{ className?: string }>;
   /** Route the user is sent to when they pick this pathway + click Continue. */
   route: string;
@@ -68,30 +68,58 @@ interface FundingPathwaysProps {
 // -------------------------- Icons (inline SVG, currentColor) --------------------------
 
 const IconCashflow: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}
-       strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.75}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
     <path d="M3 6h18M3 12h18M3 18h12" />
     <path d="M17 16l3 2-3 2" />
   </svg>
 );
 const IconCard: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}
-       strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.75}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
     <rect x="2.5" y="5.5" width="19" height="13" rx="2.5" />
     <path d="M2.5 10h19M6 15.5h4" />
   </svg>
 );
 const IconBank: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}
-       strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.75}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
     <path d="M3 10l9-6 9 6" />
     <path d="M5 10v8M9 10v8M15 10v8M19 10v8" />
     <path d="M3 19h18" />
   </svg>
 );
 const IconUser: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}
-       strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.75}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
     <circle cx="12" cy="8" r="3.75" />
     <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
   </svg>
@@ -99,26 +127,54 @@ const IconUser: React.FC<{ className?: string }> = ({ className }) => (
 
 // Sparkle icon for the "Pre-approval complete" chip
 const IconSparkle: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}
-       strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.75}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
     <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
   </svg>
 );
 const IconArrowRight: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-       strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
     <path d="M5 12h14M13 5l7 7-7 7" />
   </svg>
 );
 const IconArrowLeft: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-       strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
     <path d="M19 12H5M11 19l-7-7 7-7" />
   </svg>
 );
 const IconCheck: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25}
-       strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.25}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
     <path d="M4.5 12.5l5 5L20 7" />
   </svg>
 );
@@ -202,46 +258,71 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
   onSelect,
   selectedPathwayId,
 }) => {
-  const [selectedId, setSelectedId] = useState<PathwayId | null>(selectedPathwayId as PathwayId || "income_based");
+  const [selectedId, setSelectedId] = useState<PathwayId | null>(
+    (selectedPathwayId as PathwayId) || "income_based",
+  );
   const selected = pathways.find((p) => p.id === selectedId) || null;
 
   const computationFromBackend = realDeal?.businessIncomeComputation || {};
 
   // Extract dynamically calculated maximums from backend data
-  const getAmountFromBackend = (pathwayId: PathwayId, defaultAmount: number) => {
+  const getAmountFromBackend = (
+    pathwayId: PathwayId,
+    defaultAmount: number,
+  ) => {
     switch (pathwayId) {
       case "income_based":
-        return typeof computationFromBackend.estimatedApprovalAmount === 'object' && computationFromBackend.estimatedApprovalAmount !== null
+        return typeof computationFromBackend.estimatedApprovalAmount ===
+          "object" && computationFromBackend.estimatedApprovalAmount !== null
           ? computationFromBackend.estimatedApprovalAmount.amount
           : (computationFromBackend.estimatedApprovalAmount ?? defaultAmount);
       case "credit_card_stacking":
-        return typeof computationFromBackend.businessCreditCardStackingEstimatedApprovalAmount === 'object' && computationFromBackend.businessCreditCardStackingEstimatedApprovalAmount !== null
-          ? computationFromBackend.businessCreditCardStackingEstimatedApprovalAmount.amount
-          : (computationFromBackend.businessCreditCardStackingEstimatedApprovalAmount ?? defaultAmount);
+        return typeof computationFromBackend.businessCreditCardStackingEstimatedApprovalAmount ===
+          "object" &&
+          computationFromBackend.businessCreditCardStackingEstimatedApprovalAmount !==
+            null
+          ? computationFromBackend
+              .businessCreditCardStackingEstimatedApprovalAmount.amount
+          : (computationFromBackend.businessCreditCardStackingEstimatedApprovalAmount ??
+              defaultAmount);
       case "business_loc":
-        return typeof computationFromBackend.businessLineOfCreditEstimatedApprovalAmount === 'object' && computationFromBackend.businessLineOfCreditEstimatedApprovalAmount !== null
-          ? computationFromBackend.businessLineOfCreditEstimatedApprovalAmount.amount
-          : (computationFromBackend.businessLineOfCreditEstimatedApprovalAmount ?? defaultAmount);
+        return typeof computationFromBackend.businessLineOfCreditEstimatedApprovalAmount ===
+          "object" &&
+          computationFromBackend.businessLineOfCreditEstimatedApprovalAmount !==
+            null
+          ? computationFromBackend.businessLineOfCreditEstimatedApprovalAmount
+              .amount
+          : (computationFromBackend.businessLineOfCreditEstimatedApprovalAmount ??
+              defaultAmount);
       case "personal_loan":
-        return typeof computationFromBackend.personalLoanEstimatedApprovalAmount === 'object' && computationFromBackend.personalLoanEstimatedApprovalAmount !== null
+        return typeof computationFromBackend.personalLoanEstimatedApprovalAmount ===
+          "object" &&
+          computationFromBackend.personalLoanEstimatedApprovalAmount !== null
           ? computationFromBackend.personalLoanEstimatedApprovalAmount.amount
-          : (computationFromBackend.personalLoanEstimatedApprovalAmount ?? defaultAmount);
+          : (computationFromBackend.personalLoanEstimatedApprovalAmount ??
+              defaultAmount);
       case "personal_credit_card":
-        return typeof computationFromBackend.personalCreditCardEstimatedApprovalAmount === 'object' && computationFromBackend.personalCreditCardEstimatedApprovalAmount !== null
-          ? computationFromBackend.personalCreditCardEstimatedApprovalAmount.amount
-          : (computationFromBackend.personalCreditCardEstimatedApprovalAmount ?? defaultAmount);
+        return typeof computationFromBackend.personalCreditCardEstimatedApprovalAmount ===
+          "object" &&
+          computationFromBackend.personalCreditCardEstimatedApprovalAmount !==
+            null
+          ? computationFromBackend.personalCreditCardEstimatedApprovalAmount
+              .amount
+          : (computationFromBackend.personalCreditCardEstimatedApprovalAmount ??
+              defaultAmount);
       default:
         return defaultAmount;
     }
   };
 
   // Map over the pathways to inject the updated amounts
-  const dynamicPathways = pathways.map(p => ({
+  const dynamicPathways = pathways.map((p) => ({
     ...p,
-    maxAmount: getAmountFromBackend(p.id, p.maxAmount)
+    maxAmount: getAmountFromBackend(p.id, p.maxAmount),
   }));
 
-  const dynamicSelected = dynamicPathways.find((p) => p.id === selectedId) || null;
+  const dynamicSelected =
+    dynamicPathways.find((p) => p.id === selectedId) || null;
 
   const handleSelect = (p: FundingPathway) => {
     setSelectedId(p.id);
@@ -279,17 +360,25 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
         {/* Headline */}
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-            {clientFirstName ? `${clientFirstName}, c` : "C"}hoose your funding path
+            {clientFirstName ? `${clientFirstName}, c` : "C"}hoose your funding
+            path
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-base text-slate-600">
             You've been pre-approved across{" "}
-            <span className="font-semibold text-slate-900">{pathways.length} funding categories</span>.
-            Select the one you'd like to pursue first — you can always come back for the others.
+            <span className="font-semibold text-slate-900">
+              {pathways.length} funding categories
+            </span>
+            . Select the one you'd like to pursue first — you can always come
+            back for the others.
           </p>
         </div>
 
         {/* Pathway cards */}
-        <ul role="radiogroup" aria-label="Funding pathway options" className="mt-8 space-y-3">
+        <ul
+          role="radiogroup"
+          aria-label="Funding pathway options"
+          className="mt-8 space-y-3"
+        >
           {dynamicPathways.map((p) => {
             const isSelected = selectedId === p.id;
             return (
@@ -323,7 +412,9 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                   <span
                     className={[
                       "flex h-12 w-12 flex-none items-center justify-center rounded-xl",
-                      isSelected ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700",
+                      isSelected
+                        ? "bg-blue-600 text-white"
+                        : "bg-slate-100 text-slate-700",
                     ].join(" ")}
                   >
                     <p.Icon className="h-6 w-6" />
@@ -335,24 +426,34 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                       <h3 className="text-base font-semibold text-slate-900 sm:text-lg">
                         {p.title}
                       </h3>
-                      {p.badge && (
+                      {realDeal?.appliedPathways?.includes(p.id) ? (
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                          Applied
+                        </span>
+                      ) : p.badge ? (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
                           {p.badge}
                         </span>
-                      )}
+                      ) : null}
                     </div>
                     <p className="mt-0.5 text-sm text-slate-600">{p.tagline}</p>
                     <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1 text-xs text-slate-500 sm:grid-cols-3">
                       <div>
-                        <dt className="font-medium text-slate-400 uppercase tracking-wide">Best for</dt>
+                        <dt className="font-medium text-slate-400 uppercase tracking-wide">
+                          Best for
+                        </dt>
                         <dd className="text-slate-700">{p.bestFor}</dd>
                       </div>
                       <div>
-                        <dt className="font-medium text-slate-400 uppercase tracking-wide">Funding time</dt>
+                        <dt className="font-medium text-slate-400 uppercase tracking-wide">
+                          Funding time
+                        </dt>
                         <dd className="text-slate-700">{p.fundingTime}</dd>
                       </div>
                       <div>
-                        <dt className="font-medium text-slate-400 uppercase tracking-wide">Credit check</dt>
+                        <dt className="font-medium text-slate-400 uppercase tracking-wide">
+                          Credit check
+                        </dt>
                         <dd className="text-slate-700">{p.pullType}</dd>
                       </div>
                     </dl>
@@ -368,11 +469,15 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                         "font-mono text-2xl font-bold leading-none sm:text-3xl",
                         isSelected ? "text-blue-700" : "text-slate-900",
                       ].join(" ")}
-                      style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}
+                      style={{
+                        fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                      }}
                     >
                       {formatMoney(p.maxAmount)}
                     </span>
-                    <span className="mt-1 text-[11px] text-slate-500">{formatMoneyFull(p.maxAmount)}</span>
+                    <span className="mt-1 text-[11px] text-slate-500">
+                      {formatMoneyFull(p.maxAmount)}
+                    </span>
                   </div>
                 </button>
               </li>
@@ -394,8 +499,12 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
             <>
               <span>
                 <span className="font-medium text-slate-500">Selected:</span>{" "}
-                <span className="font-semibold text-slate-900">{dynamicSelected.title}</span>{" "}
-                <span className="text-slate-500">· up to {formatMoneyFull(dynamicSelected.maxAmount)}</span>
+                <span className="font-semibold text-slate-900">
+                  {dynamicSelected.title}
+                </span>{" "}
+                <span className="text-slate-500">
+                  · up to {formatMoneyFull(dynamicSelected.maxAmount)}
+                </span>
               </span>
               <button
                 type="button"
@@ -438,7 +547,8 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
 
         {/* Reassurance footer */}
         <p className="mt-6 text-center text-xs text-slate-500">
-          Pre-approval valid for 30 days · No hard credit pull required to view offers
+          Pre-approval valid for 30 days · No hard credit pull required to view
+          offers
         </p>
       </div>
     </div>
