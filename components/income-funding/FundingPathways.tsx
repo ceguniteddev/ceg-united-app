@@ -426,7 +426,9 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                       <h3 className="text-base font-semibold text-slate-900 sm:text-lg">
                         {p.title}
                       </h3>
-                      {realDeal?.appliedPathways?.includes(p.id) ? (
+                      {realDeal?.appliedPathways?.some(
+                        (ap: any) => ap.pathwayId === p.id,
+                      ) ? (
                         <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
                           Applied
                         </span>

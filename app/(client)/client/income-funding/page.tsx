@@ -1,7 +1,7 @@
 "use client";
 
 import { Bot, Loader2, AlertCircle } from "lucide-react";
-import { ProgressStepper } from "@/components/income-funding/ProgressStepper";
+// import { ProgressStepper } from "@/components/income-funding/ProgressStepper";
 import { PreApprovalView } from "@/components/income-funding/PreApprovalView";
 import { DocumentCollectionView } from "@/components/income-funding/DocumentCollectionView";
 import { SubmittedView } from "@/components/income-funding/SubmittedView";
@@ -122,16 +122,31 @@ export default function IncomeFunding() {
                 setSelectedPathwayId(pathway.id);
                 const appliedPathways =
                   (realDeal as any)?.appliedPathways || [];
-                if (appliedPathways.includes(pathway.id)) {
+                const appliedPathway = appliedPathways.find(
+                  (p: any) => p.pathwayId === pathway.id,
+                );
+
+                if (appliedPathway) {
                   let nextStatus = "under-review";
+                  const pathwayStatus = appliedPathway.status;
+                  const globalStatus = realDeal?.status;
+
                   if (
-                    realDeal?.status === "Pre-Approved" ||
-                    realDeal?.status === "Offer Accepted"
+                    globalStatus === "Pre-Approved" ||
+                    globalStatus === "Offer Accepted" ||
+                    pathwayStatus === "Pre-Approved" ||
+                    pathwayStatus === "Offer Accepted"
                   ) {
                     nextStatus = "offers-ready";
-                  } else if (realDeal?.status === "Approved") {
+                  } else if (
+                    globalStatus === "Approved" ||
+                    pathwayStatus === "Approved"
+                  ) {
                     nextStatus = "complete";
+                  } else {
+                    nextStatus = "under-review";
                   }
+
                   setStatus(nextStatus as any);
                 } else {
                   setStatus("collecting-documents");

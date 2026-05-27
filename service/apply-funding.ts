@@ -507,9 +507,18 @@ export const updateApplicationStatus = async (
   }
 
   if (pathwayId) {
-    // We add the pathwayId to appliedPathways array, using FieldValue.arrayUnion
-    const { FieldValue } = require("firebase-admin/firestore");
-    updateData.appliedPathways = FieldValue.arrayUnion(pathwayId);
+    const existingPathways = data.appliedPathways || [];
+    const index = existingPathways.findIndex(
+      (p: any) => p.pathwayId === pathwayId,
+    );
+
+    if (index > -1) {
+      existingPathways[index].status = status;
+    } else {
+      existingPathways.push({ pathwayId, status });
+    }
+
+    updateData.appliedPathways = existingPathways;
   }
 
   await appRef.update(updateData);

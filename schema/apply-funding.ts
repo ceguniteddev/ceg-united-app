@@ -272,7 +272,14 @@ export const applyFundingSchema = z
     // Application method selection (Specialist vs Online)
     applicationMethod: ClientApplicationMethodEnum.optional(),
     analysisStatus: z.enum(["In Progress", "Completed"]).optional(),
-    appliedPathways: z.array(z.string()).optional(),
+    appliedPathways: z
+      .array(
+        z.object({
+          pathwayId: z.string(),
+          status: z.string(),
+        }),
+      )
+      .optional(),
   })
   .superRefine((data, ctx) => {
     // Define the exclusion condition for clarity
