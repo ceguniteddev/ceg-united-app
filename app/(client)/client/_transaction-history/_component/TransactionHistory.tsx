@@ -1,13 +1,16 @@
 "use client";
 import HeaderBox from "@/components/HeaderBox";
 import Spinner from "@/components/Spinner";
-import { useGetPlaidAccounts, useGetPlaidItemAccountByUserId } from "@/hooks/plaid";
+import {
+  useGetPlaidAccounts,
+  useGetPlaidItemAccountByUserId,
+} from "@/hooks/plaid";
 import { formatAmount } from "@/lib/utils";
 import { useAuth } from "@/provider/AuthContext";
 import React, { useCallback } from "react";
 import NoBankLinked from "@/components/NoBankLinked";
 import AccountList from "./AccountList";
-import TransactionTable from "../../my-accounts/_components/TransactionTable";
+import TransactionTable from "../../_my-accounts/_components/TransactionTable";
 
 const TransactionHistory = () => {
   const { plaidAccounts, isLoading } = useGetPlaidAccounts();
@@ -37,20 +40,30 @@ const TransactionHistory = () => {
   return (
     <div className="transactions">
       <div className="transactions-header">
-        <HeaderBox title="Transaction History" subtext="See your bank details and transactions." />
+        <HeaderBox
+          title="Transaction History"
+          subtext="See your bank details and transactions."
+        />
       </div>
 
       <div className="flex flex-row items-center space-x-4">
         <h2 className="text-18 font-bold text-black">Select account</h2>
-        <AccountList data={plaidAccounts.data} handleAccountChange={handleAccountChange} />
+        <AccountList
+          data={plaidAccounts.data}
+          handleAccountChange={handleAccountChange}
+        />
       </div>
 
       {plaidItemAccounts ? (
         <div className="space-y-6">
           <div className="transactions-account">
             <div className="flex flex-col gap-2">
-              <h2 className="text-18 font-bold text-white">{plaidItemAccounts?.data[0].name}</h2>
-              <p className="text-14 text-blue-25">{plaidItemAccounts?.data[0].officialName}</p>
+              <h2 className="text-18 font-bold text-white">
+                {plaidItemAccounts?.data[0].name}
+              </h2>
+              <p className="text-14 text-blue-25">
+                {plaidItemAccounts?.data[0].officialName}
+              </p>
               <p className="text-14 font-semibold tracking-[1.1px] text-white">
                 ●●●● ●●●● ●●●● {plaidItemAccounts?.data[0].mask}
               </p>
@@ -75,7 +88,11 @@ const TransactionHistory = () => {
           </section>
         </div>
       ) : (
-        <div>{isPlaidItemAccountsLoading && <Spinner displayText="Loading transactions..." />}</div>
+        <div>
+          {isPlaidItemAccountsLoading && (
+            <Spinner displayText="Loading transactions..." />
+          )}
+        </div>
       )}
     </div>
   );

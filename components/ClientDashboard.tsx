@@ -249,7 +249,7 @@ export const ClientDashboard = ({
   }, [currentCongratsMessage, markAsReadMutation]);
 
   const viewAuditReport = useCallback(() => {
-    router.push("/client/my-funding");
+    router.push("/client/income-funding");
   }, [router]);
 
   // useEffect(() => {

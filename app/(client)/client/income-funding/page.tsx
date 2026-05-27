@@ -24,7 +24,8 @@ import {
 export default function IncomeFunding() {
   const [selectedReference, setSelectedReference] = useState<string>("");
   const [showPathways, setShowPathways] = useState(false);
-  const [selectedPathwayId, setSelectedPathwayId] = useState<string>("income_based");
+  const [selectedPathwayId, setSelectedPathwayId] =
+    useState<string>("income_based");
 
   const {
     deal,
@@ -221,9 +222,9 @@ export default function IncomeFunding() {
           {/* Page heading */}
           <div className="mb-5 animate-fade-in-up flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-600">
+              {/* <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-600">
                 Income-Based Funding
-              </div>
+              </div> */}
               <h1 className="text-xl font-bold text-gray-900 mt-0.5">
                 My Funding
               </h1>
@@ -264,9 +265,9 @@ export default function IncomeFunding() {
           </div>
 
           {/* Progress Stepper */}
-          <div className="mb-6 bg-white rounded-2xl border border-gray-100 shadow-card p-4 sm:p-5 animate-fade-in-up stagger-1">
+          {/* <div className="mb-6 bg-white rounded-2xl border border-gray-100 shadow-card p-4 sm:p-5 animate-fade-in-up stagger-1">
             <ProgressStepper status={deal.status} />
-          </div>
+          </div> */}
 
           {/* Active view */}
           <div key={deal.status} className="animate-fade-in">

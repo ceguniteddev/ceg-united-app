@@ -90,9 +90,11 @@ export function useIncomeFundingState(selectedReference?: string) {
   const { onOpen: triggerConfetti } = useConfettiStore();
 
   // Find the real deal reference number based on selectedReference or the first one
-  const incomeFundingApps = appliedFunding?.filter((app) =>
-    app.fundingProducts?.includes("Business Income Based Funding"),
-  );
+  // const incomeFundingApps = appliedFunding?.filter((app) =>
+  //   app.fundingProducts?.includes("Business Income Based Funding"),
+  // );
+
+  const incomeFundingApps = appliedFunding;
 
   const realDeal = selectedReference
     ? incomeFundingApps?.find(
@@ -189,14 +191,17 @@ export function useIncomeFundingState(selectedReference?: string) {
             documentTypeId = "ARTICLES_OF_ORGANIZATION";
           else if (doc.key === "id") documentTypeId = "DRIVERS_LICENSE";
           else if (doc.key === "bankStatements") {
-            // We don't have the selected pathway in the hook scope directly, 
+            // We don't have the selected pathway in the hook scope directly,
             // so we'll check for either bank statement type existing in user docs
-            const hasPersonal = userDocuments.some((apiDoc: any) => 
-              (apiDoc.name.split("/").pop() || "").startsWith("PERSONAL_BANK_STATEMENTS_")
+            const hasPersonal = userDocuments.some((apiDoc: any) =>
+              (apiDoc.name.split("/").pop() || "").startsWith(
+                "PERSONAL_BANK_STATEMENTS_",
+              ),
             );
-            documentTypeId = hasPersonal ? "PERSONAL_BANK_STATEMENTS" : "BANK_STATEMENTS";
-          }
-          else if (doc.key === "voidedCheck") documentTypeId = "VOIDED_CHECK";
+            documentTypeId = hasPersonal
+              ? "PERSONAL_BANK_STATEMENTS"
+              : "BANK_STATEMENTS";
+          } else if (doc.key === "voidedCheck") documentTypeId = "VOIDED_CHECK";
 
           const matchingApiDocs = userDocuments.filter((apiDoc: any) => {
             const rawName = apiDoc.name.split("/").pop() || "";
