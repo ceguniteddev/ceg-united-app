@@ -481,13 +481,16 @@ export const sendClientFundingApplicationCongratsMessageNewRegistration =
 export const requestMapBankProductsN8nNewRegistration = async ({
   referenceNumber,
   userId,
+  selectedPathwayId,
 }: {
   referenceNumber: string;
   userId: string;
+  selectedPathwayId: string;
 }) => {
   logInfo("Sending bank product mapping request for new registration...", {
     referenceNumber,
     userId,
+    selectedPathwayId,
   });
   await fetch(
     `${process.env.n8n_HOST}/${await mapBankProductsN8nNewRegistration()}`,
@@ -500,6 +503,7 @@ export const requestMapBankProductsN8nNewRegistration = async ({
       body: JSON.stringify({
         referenceNumber,
         userId,
+        selectedPathwayId,
       }),
     },
   );

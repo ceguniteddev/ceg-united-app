@@ -13,7 +13,6 @@ import type { IncomeFundingDeal } from "@/types/income-funding-types";
 
 interface SubmittedViewProps {
   deal: IncomeFundingDeal;
-  onBack?: () => void;
 }
 
 const timelineSteps = [
@@ -43,7 +42,7 @@ const timelineSteps = [
   },
 ];
 
-export function SubmittedView({ deal: _deal, onBack }: SubmittedViewProps) {
+export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
   return (
     <div className="space-y-6">
       {/* Status hero */}

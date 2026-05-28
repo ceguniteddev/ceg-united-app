@@ -155,7 +155,6 @@ export default function IncomeFunding() {
                 setShowPathways(false);
               }}
               selectedPathwayId={selectedPathwayId}
-              onBack={() => setShowPathways(false)}
             />
           );
         }
@@ -173,24 +172,12 @@ export default function IncomeFunding() {
             realDeal={realDeal}
             onUpload={uploadDocument}
             onSubmit={() => submitForUnderwriting(selectedPathwayId)}
-            onBack={() => {
-              setStatus("prequalified");
-              setShowPathways(true);
-            }}
             isSubmitting={isSubmitting}
             selectedPathwayId={selectedPathwayId}
           />
         );
       case "under-review":
-        return (
-          <SubmittedView
-            deal={deal}
-            onBack={() => {
-              setStatus("prequalified");
-              setShowPathways(true);
-            }}
-          />
-        );
+        return <SubmittedView deal={deal} />;
       case "offers-ready":
         if (selectedPathwayId !== "income_based") {
           return (

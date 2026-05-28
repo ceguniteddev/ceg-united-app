@@ -17,6 +17,17 @@ import {
 } from "@/components/ui/sheet";
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
 import Image from "next/image";
+import { requestMapBankProductsN8nNewRegistration } from "@/service/crs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface DocumentCollectionViewProps {
   deal: IncomeFundingDeal;
@@ -27,7 +38,6 @@ interface DocumentCollectionViewProps {
     fileSize: string,
   ) => void;
   onSubmit: () => void;
-  onBack?: () => void;
   isSubmitting?: boolean;
   selectedPathwayId?: string;
 }
@@ -37,7 +47,6 @@ export function DocumentCollectionView({
   realDeal,
   onUpload,
   onSubmit,
-  onBack,
   isSubmitting = false,
   selectedPathwayId = "income_based",
 }: DocumentCollectionViewProps) {
@@ -51,6 +60,7 @@ export function DocumentCollectionView({
     title: string;
     contentType?: string;
   } | null>(null);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
 
   const displayDocuments = deal.documents
     .filter((doc) => {
@@ -227,6 +237,31 @@ export function DocumentCollectionView({
     }
   };
 
+  const handleSubmit = async () => {
+    if (
+      selectedPathwayId !== "income_based" &&
+      user?.uid &&
+      realDeal?.referenceNumber
+    ) {
+      try {
+        await requestMapBankProductsN8nNewRegistration({
+          userId: user.uid,
+          referenceNumber: realDeal.referenceNumber,
+          selectedPathwayId,
+        });
+        toast.success("Application submitted successfully!");
+      } catch (error) {
+        console.error("Failed to map bank products:", error);
+        toast.error(
+          "There was an issue processing your submission, but your documents were saved.",
+        );
+      }
+    } else {
+      toast.success("Application submitted successfully!");
+    }
+    onSubmit();
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-6 md:p-7 animate-fade-in-up">
@@ -297,7 +332,7 @@ export function DocumentCollectionView({
         <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
           <button
             disabled={!allRequiredDone || isSubmitting}
-            onClick={onSubmit}
+            onClick={() => setIsAlertOpen(true)}
             className="w-full md:w-auto inline-flex justify-center items-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer"
           >
             {isSubmitting ? "Submitting..." : "Submit for Underwriting"}
@@ -305,6 +340,36 @@ export function DocumentCollectionView({
           </button>
         </div>
       </div>
+
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit Application?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to submit your application for underwriting?
+              Please confirm that all uploaded documents are accurate and
+              complete.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                setIsAlertOpen(false);
+                handleSubmit();
+              }}
+              disabled={isSubmitting}
+              className="bg-brand-600 hover:bg-brand-700 inline-flex items-center gap-2"
+            >
+              Confirm Submission
+              <ArrowRight className="w-4 h-4" />
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Preview Sheet */}
       <Sheet

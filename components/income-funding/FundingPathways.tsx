@@ -57,8 +57,6 @@ interface FundingPathwaysProps {
   clientFirstName?: string;
   /** Callback when user clicks Continue. Receives the selected pathway. */
   onContinue?: (pathway: FundingPathway) => void;
-  /** Callback when user clicks Back. */
-  onBack?: () => void;
   /** Fires every time the selection changes (useful for analytics). */
   onSelect?: (pathway: FundingPathway) => void;
   /** The currently selected pathway ID from parent state, if any */
@@ -254,7 +252,6 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
   realDeal,
   clientFirstName,
   onContinue,
-  onBack,
   onSelect,
   selectedPathwayId,
 }) => {
