@@ -10,6 +10,7 @@ import { AcceptanceView } from "@/components/income-funding/AcceptanceView";
 import { CompleteView } from "@/components/income-funding/CompleteView";
 import FundingPathways from "@/components/income-funding/FundingPathways";
 import { useIncomeFundingState } from "@/hooks/useIncomeFundingState";
+import { FundingBankProducts } from "../my-funding/_funding/ApplyFundingList";
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
@@ -181,8 +182,33 @@ export default function IncomeFunding() {
           />
         );
       case "under-review":
-        return <SubmittedView deal={deal} />;
+        return (
+          <SubmittedView
+            deal={deal}
+            onBack={() => {
+              setStatus("prequalified");
+              setShowPathways(true);
+            }}
+          />
+        );
       case "offers-ready":
+        if (selectedPathwayId !== "income_based") {
+          return (
+            <div className="space-y-6 animate-fade-in-up">
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Available Offers
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Review and select from your approved funding products.
+                </p>
+              </div>
+              <section className="flex w-full flex-col gap-6">
+                <FundingBankProducts selectedReference={selectedReference} />
+              </section>
+            </div>
+          );
+        }
         return (
           <OffersView deal={deal} onSelect={selectOffer} onSkip={skipOffer} />
         );

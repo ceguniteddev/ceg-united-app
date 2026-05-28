@@ -52,83 +52,110 @@ export function DocumentCollectionView({
     contentType?: string;
   } | null>(null);
 
-  const displayDocuments = deal.documents.filter(doc => {
-    // If credit-based pathway is selected (personal or business), we actually don't NEED them, 
-    // but we can ask to upload IF they want to fine-tune.
-    // However, if the user explicitly requested we remove "business-specific" for personal:
-    if (selectedPathwayId === "personal_credit_card" || selectedPathwayId === "personal_loan") {
-      if (doc.key === "ein" || doc.key === "articles" || doc.key === "voidedCheck") {
-        return false;
+  const displayDocuments = deal.documents
+    .filter((doc) => {
+      // If credit-based pathway is selected (personal or business), we actually don't NEED them,
+      // but we can ask to upload IF they want to fine-tune.
+      // However, if the user explicitly requested we remove "business-specific" for personal:
+      if (
+        selectedPathwayId === "personal_credit_card" ||
+        selectedPathwayId === "personal_loan"
+      ) {
+        if (
+          doc.key === "ein" ||
+          doc.key === "articles" ||
+          doc.key === "voidedCheck"
+        ) {
+          return false;
+        }
       }
-    }
-    return true;
-  }).map((doc) => {
-    let required = doc.required;
-    
-    // For ALL credit-based products, documents are NOT required.
-    const isCreditProduct = 
-      selectedPathwayId === "credit_card_stacking" ||
-      selectedPathwayId === "business_loc" ||
-      selectedPathwayId === "personal_loan" ||
-      selectedPathwayId === "personal_credit_card";
+      return true;
+    })
+    .map((doc) => {
+      let required = doc.required;
 
-    if (isCreditProduct) {
-      required = false;
-    }
+      // For ALL credit-based products, documents are NOT required.
+      const isCreditProduct =
+        selectedPathwayId === "credit_card_stacking" ||
+        selectedPathwayId === "business_loc" ||
+        selectedPathwayId === "personal_loan" ||
+        selectedPathwayId === "personal_credit_card";
 
-    // Adjust visibility based on the selected pathway
-    if (selectedPathwayId === "personal_credit_card" || selectedPathwayId === "personal_loan") {
-      if (doc.key === "bankStatements") {
+      if (isCreditProduct) {
+        required = false;
+      }
+
+      // Adjust visibility based on the selected pathway
+      if (
+        selectedPathwayId === "personal_credit_card" ||
+        selectedPathwayId === "personal_loan"
+      ) {
+        if (doc.key === "bankStatements") {
+          return {
+            ...doc,
+            required: false, // Override to optional
+            title: "Personal Bank Statements (Optional)",
+            description:
+              "Not required, but uploading recent statements (within 30 days) can help fine-tune your real approval amount.",
+            documentTypeId: "PERSONAL_BANK_STATEMENTS",
+          };
+        }
+      } else if (isCreditProduct) {
+        if (doc.key === "bankStatements") {
+          return {
+            ...doc,
+            required: false, // Override to optional
+            title: "Business Bank Statements (Optional)",
+            description:
+              "Not required, but uploading recent statements (within 30 days) can help fine-tune your real approval amount.",
+          };
+        }
+      }
+
+      if (doc.key === "ein" && realDeal?.employerIdentificationNumber) {
         return {
           ...doc,
-          required: false, // Override to optional
-          title: "Personal Bank Statements (Optional)",
-          description: "Not required, but uploading recent statements (within 30 days) can help fine-tune your real approval amount.",
-          documentTypeId: "PERSONAL_BANK_STATEMENTS",
+          required: false, // Skip validation
+          providedValue: realDeal.employerIdentificationNumber,
+          description: "Your EIN was successfully retrieved from your profile.",
         };
       }
-    } else if (isCreditProduct) {
-      if (doc.key === "bankStatements") {
-         return {
+
+      if (isCreditProduct) {
+        if (doc.key === "ein") {
+          return {
+            ...doc,
+            required: false,
+            description: "Not required for credit-based funding.",
+          };
+        }
+        if (doc.key === "voidedCheck") {
+          return {
+            ...doc,
+            required: false,
+            description: "Not required until time of funding.",
+          };
+        }
+        if (doc.key === "id") {
+          return {
+            ...doc,
+            required: false,
+            description: "Not required for initial credit review.",
+          };
+        }
+      }
+      if (doc.key === "articles") {
+        return {
           ...doc,
-          required: false, // Override to optional
-          title: "Business Bank Statements (Optional)",
-          description: "Not required, but uploading recent statements (within 30 days) can help fine-tune your real approval amount.",
-         };
+          required: false, // Make Articles of Organization strictly optional
+        };
       }
-    }
 
-    if (isCreditProduct) {
-      if (doc.key === "ein") {
-         return { ...doc, required: false, description: "Not required for credit-based funding." };
-      }
-      if (doc.key === "voidedCheck") {
-         return { ...doc, required: false, description: "Not required until time of funding." };
-      }
-      if (doc.key === "id") {
-         return { ...doc, required: false, description: "Not required for initial credit review." };
-      }
-    }
-
-    if (doc.key === "ein" && realDeal?.employerIdentificationNumber) {
       return {
         ...doc,
-        required: false, // Skip validation
-        providedValue: realDeal.employerIdentificationNumber,
+        required,
       };
-    }
-    if (doc.key === "articles") {
-      return {
-        ...doc,
-        required: false, // Make Articles of Organization strictly optional
-      };
-    }
-
-    return {
-      ...doc,
-      required,
-    };
-  });
+    });
 
   const requiredDocs = displayDocuments.filter((d) => d.required);
   const allRequiredDone = requiredDocs.every(

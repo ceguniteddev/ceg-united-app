@@ -6,12 +6,14 @@ import {
   MessageSquare,
   Phone,
   Send,
+  ArrowLeft,
 } from "lucide-react";
 import { mockCoordinator } from "@/lib/income-funding-mock";
 import type { IncomeFundingDeal } from "@/types/income-funding-types";
 
 interface SubmittedViewProps {
   deal: IncomeFundingDeal;
+  onBack?: () => void;
 }
 
 const timelineSteps = [
@@ -41,9 +43,20 @@ const timelineSteps = [
   },
 ];
 
-export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
+export function SubmittedView({ deal: _deal, onBack }: SubmittedViewProps) {
   return (
     <div className="space-y-6">
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="cursor-pointer inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors animate-fade-in-up"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to pathways
+        </button>
+      )}
+
       {/* Status hero */}
       <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-100 shadow-card p-6 md:p-8 animate-fade-in-up">
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-100/40 rounded-full blur-3xl pointer-events-none" />
