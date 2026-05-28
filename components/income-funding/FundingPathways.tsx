@@ -333,27 +333,7 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-emerald-50/40 px-4 py-8 sm:px-6 lg:px-8">
-      {/* Progress bar (decorative — keep parity with prior screens) */}
-      <div className="mx-auto mb-6 max-w-3xl">
-        <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-slate-500">
-          <span className="text-emerald-600">● Pre-Qualified</span>
-          <span className="text-slate-400">─── Submitted ───</span>
-          <span className="text-slate-400">Ready</span>
-        </div>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
-          <div className="h-full w-1/3 rounded-full bg-emerald-500" />
-        </div>
-      </div>
-
       <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-10">
-        {/* Pre-approval complete chip */}
-        <div className="mb-6 flex justify-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
-            <IconSparkle className="h-4 w-4" />
-            Pre-approval complete
-          </span>
-        </div>
-
         {/* Headline */}
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">

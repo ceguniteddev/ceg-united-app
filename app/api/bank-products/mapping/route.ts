@@ -1,7 +1,7 @@
 import { badRequest, getMessage, internalServerError } from "@/app/api/helpers";
 import AppError from "@/error/AppError";
 import { withAuth } from "@/lib/api-validation";
-import { updateApplicationStatus } from "@/service/apply-funding";
+import { updatePathwayStatus } from "@/service/apply-funding";
 import { recordFundMappingAnalysis } from "@/service/bank-products";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
@@ -47,12 +47,11 @@ export const POST = withAuth(async (req: NextRequest) => {
       selectedPathwayId,
     });
 
-    // await updateApplicationStatus({
-    //   referenceNumber,
-    //   status: "Pre-Approved",
-    //   approveOrDeclineValue: undefined,
-    //   pathwayId: selectedPathwayId,
-    // });
+    await updatePathwayStatus({
+      referenceNumber,
+      pathwayId: selectedPathwayId,
+      status: "Pre-Approved",
+    });
 
     return NextResponse.json({ message: "ok" }, { status: 200 });
   } catch (err) {

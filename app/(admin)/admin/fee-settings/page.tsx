@@ -18,6 +18,14 @@ import { FormNumberInput } from "@/components/forms/form-number-input";
 interface FeeSettingsFormData {
   creditReportFee: number;
   businessCreditReportFee: number;
+  tierStarterPrice: number;
+  tierProPrice: number;
+  tierExecutivePrice: number;
+  creditModuleProAddonPrice: number;
+  earlyRefreshFee: number;
+  personalUnlimitedUnlockFee: number;
+  businessUnlimitedUnlockFee: number;
+  sbaUnlimitedUnlockFee: number;
 }
 
 export default function FeeSettingsPage() {
@@ -26,8 +34,16 @@ export default function FeeSettingsPage() {
 
   const { control, handleSubmit, reset } = useForm<FeeSettingsFormData>({
     defaultValues: {
-      creditReportFee: 0,
-      businessCreditReportFee: 0,
+      creditReportFee: 49,
+      businessCreditReportFee: 100,
+      tierStarterPrice: 297,
+      tierProPrice: 397,
+      tierExecutivePrice: 697,
+      creditModuleProAddonPrice: 197,
+      earlyRefreshFee: 99,
+      personalUnlimitedUnlockFee: 999,
+      businessUnlimitedUnlockFee: 999,
+      sbaUnlimitedUnlockFee: 999,
     },
   });
 
@@ -36,12 +52,43 @@ export default function FeeSettingsPage() {
     control,
     name: "businessCreditReportFee",
   });
+  const tierStarterPriceValue = useWatch({ control, name: "tierStarterPrice" });
+  const tierProPriceValue = useWatch({ control, name: "tierProPrice" });
+  const tierExecutivePriceValue = useWatch({
+    control,
+    name: "tierExecutivePrice",
+  });
+  const creditModuleProAddonPriceValue = useWatch({
+    control,
+    name: "creditModuleProAddonPrice",
+  });
+  const earlyRefreshFeeValue = useWatch({ control, name: "earlyRefreshFee" });
+  const personalUnlimitedUnlockFeeValue = useWatch({
+    control,
+    name: "personalUnlimitedUnlockFee",
+  });
+  const businessUnlimitedUnlockFeeValue = useWatch({
+    control,
+    name: "businessUnlimitedUnlockFee",
+  });
+  const sbaUnlimitedUnlockFeeValue = useWatch({
+    control,
+    name: "sbaUnlimitedUnlockFee",
+  });
 
   useEffect(() => {
     if (feeSettings) {
       reset({
         creditReportFee: feeSettings.creditReportFee,
         businessCreditReportFee: feeSettings.businessCreditReportFee,
+        tierStarterPrice: feeSettings.tierStarterPrice,
+        tierProPrice: feeSettings.tierProPrice,
+        tierExecutivePrice: feeSettings.tierExecutivePrice,
+        creditModuleProAddonPrice: feeSettings.creditModuleProAddonPrice,
+        earlyRefreshFee: feeSettings.earlyRefreshFee,
+        personalUnlimitedUnlockFee: feeSettings.personalUnlimitedUnlockFee,
+        businessUnlimitedUnlockFee: feeSettings.businessUnlimitedUnlockFee,
+        sbaUnlimitedUnlockFee: feeSettings.sbaUnlimitedUnlockFee,
       });
     }
   }, [feeSettings, reset]);
@@ -51,6 +98,14 @@ export default function FeeSettingsPage() {
       await updateFeeSettings({
         creditReportFee: Number(data.creditReportFee),
         businessCreditReportFee: Number(data.businessCreditReportFee),
+        tierStarterPrice: Number(data.tierStarterPrice),
+        tierProPrice: Number(data.tierProPrice),
+        tierExecutivePrice: Number(data.tierExecutivePrice),
+        creditModuleProAddonPrice: Number(data.creditModuleProAddonPrice),
+        earlyRefreshFee: Number(data.earlyRefreshFee),
+        personalUnlimitedUnlockFee: Number(data.personalUnlimitedUnlockFee),
+        businessUnlimitedUnlockFee: Number(data.businessUnlimitedUnlockFee),
+        sbaUnlimitedUnlockFee: Number(data.sbaUnlimitedUnlockFee),
       });
       toast.success("Fee settings updated successfully");
     } catch (error) {
@@ -87,60 +142,177 @@ export default function FeeSettingsPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
               </div>
             ) : (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1">
-                    <FormNumberInput
-                      control={control}
-                      name="creditReportFee"
-                      label="Generate Credit Report Fee"
-                      prefix="$"
-                      decimalScale={2}
-                      fixedDecimalScale={true}
-                      min={0}
-                      placeholder="0.00"
-                    />
-                    <p className="text-[0.8rem] text-slate-500 mt-1">
-                      The amount charged to clients for generating a personal
-                      credit report.
-                    </p>
-                    {feeSettings &&
-                      Number(creditReportFeeValue) !==
-                        feeSettings.creditReportFee && (
-                        <p className="text-[0.8rem] text-amber-600 mt-1">
-                          Previous fee:{" "}
-                          <span className="font-semibold">
-                            ${feeSettings.creditReportFee.toFixed(2)}
-                          </span>
-                        </p>
-                      )}
-                  </div>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">
+                    Credit Report Fees
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                      <FormNumberInput
+                        control={control}
+                        name="creditReportFee"
+                        label="Generate Credit Report Fee"
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                        min={0}
+                        placeholder="0.00"
+                      />
+                      <p className="text-[0.8rem] text-slate-500 mt-1">
+                        The amount charged to clients for generating a personal
+                        credit report.
+                      </p>
+                      {feeSettings &&
+                        Number(creditReportFeeValue) !==
+                          feeSettings.creditReportFee && (
+                          <p className="text-[0.8rem] text-amber-600 mt-1">
+                            Previous fee:{" "}
+                            <span className="font-semibold">
+                              ${feeSettings.creditReportFee.toFixed(2)}
+                            </span>
+                          </p>
+                        )}
+                    </div>
 
-                  <div className="space-y-1">
-                    <FormNumberInput
-                      control={control}
-                      name="businessCreditReportFee"
-                      label="Generate Business Credit Report Fee"
-                      prefix="$"
-                      decimalScale={2}
-                      fixedDecimalScale={true}
-                      min={0}
-                      placeholder="0.00"
-                    />
-                    <p className="text-[0.8rem] text-slate-500 mt-1">
-                      The amount charged to clients for generating a business
-                      credit report.
-                    </p>
-                    {feeSettings &&
-                      Number(businessCreditReportFeeValue) !==
-                        feeSettings.businessCreditReportFee && (
-                        <p className="text-[0.8rem] text-amber-600 mt-1">
-                          Previous fee:{" "}
-                          <span className="font-semibold">
-                            ${feeSettings.businessCreditReportFee.toFixed(2)}
-                          </span>
-                        </p>
-                      )}
+                    <div className="space-y-1">
+                      <FormNumberInput
+                        control={control}
+                        name="businessCreditReportFee"
+                        label="Generate Business Credit Report Fee"
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                        min={0}
+                        placeholder="0.00"
+                      />
+                      <p className="text-[0.8rem] text-slate-500 mt-1">
+                        The amount charged to clients for generating a business
+                        credit report.
+                      </p>
+                      {feeSettings &&
+                        Number(businessCreditReportFeeValue) !==
+                          feeSettings.businessCreditReportFee && (
+                          <p className="text-[0.8rem] text-amber-600 mt-1">
+                            Previous fee:{" "}
+                            <span className="font-semibold">
+                              ${feeSettings.businessCreditReportFee.toFixed(2)}
+                            </span>
+                          </p>
+                        )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">
+                    Membership Tiers (Monthly)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-1">
+                      <FormNumberInput
+                        control={control}
+                        name="tierStarterPrice"
+                        label="CEG BRAIN STARTER"
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                        min={0}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <FormNumberInput
+                        control={control}
+                        name="tierProPrice"
+                        label="CEG BRAIN PRO"
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                        min={0}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <FormNumberInput
+                        control={control}
+                        name="tierExecutivePrice"
+                        label="CEG BRAIN EXECUTIVE"
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                        min={0}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">
+                    Add-ons & Refresh Fees
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                      <FormNumberInput
+                        control={control}
+                        name="creditModuleProAddonPrice"
+                        label="Credit Module Pro Add-on (Monthly)"
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                        min={0}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <FormNumberInput
+                        control={control}
+                        name="earlyRefreshFee"
+                        label="Early Refresh Fee"
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                        min={0}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">
+                    One-Time Unlocks
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-1">
+                      <FormNumberInput
+                        control={control}
+                        name="personalUnlimitedUnlockFee"
+                        label="Personal Unlimited"
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                        min={0}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <FormNumberInput
+                        control={control}
+                        name="businessUnlimitedUnlockFee"
+                        label="Business Unlimited"
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                        min={0}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <FormNumberInput
+                        control={control}
+                        name="sbaUnlimitedUnlockFee"
+                        label="SBA / Commercial Unlimited"
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                        min={0}
+                      />
+                    </div>
                   </div>
                 </div>
 

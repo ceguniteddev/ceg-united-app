@@ -7,6 +7,14 @@ const CONFIG_DOC_ID = "fee-settings";
 export interface FeeSettings {
   creditReportFee: number;
   businessCreditReportFee: number;
+  tierStarterPrice: number;
+  tierProPrice: number;
+  tierExecutivePrice: number;
+  creditModuleProAddonPrice: number;
+  earlyRefreshFee: number;
+  personalUnlimitedUnlockFee: number;
+  businessUnlimitedUnlockFee: number;
+  sbaUnlimitedUnlockFee: number;
 }
 
 export const getFeeSettings = async (): Promise<FeeSettings> => {
@@ -19,6 +27,14 @@ export const getFeeSettings = async (): Promise<FeeSettings> => {
   return {
     creditReportFee: data?.creditReportFee ?? 49,
     businessCreditReportFee: data?.businessCreditReportFee ?? 100,
+    tierStarterPrice: data?.tierStarterPrice ?? 297,
+    tierProPrice: data?.tierProPrice ?? 397,
+    tierExecutivePrice: data?.tierExecutivePrice ?? 697,
+    creditModuleProAddonPrice: data?.creditModuleProAddonPrice ?? 197,
+    earlyRefreshFee: data?.earlyRefreshFee ?? 99,
+    personalUnlimitedUnlockFee: data?.personalUnlimitedUnlockFee ?? 999,
+    businessUnlimitedUnlockFee: data?.businessUnlimitedUnlockFee ?? 999,
+    sbaUnlimitedUnlockFee: data?.sbaUnlimitedUnlockFee ?? 999,
   };
 };
 

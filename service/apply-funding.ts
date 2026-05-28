@@ -529,6 +529,37 @@ export const updateApplicationStatus = async ({
   await appRef.update(updateData);
 };
 
+export const updatePathwayStatus = async ({
+  referenceNumber,
+  pathwayId,
+  status,
+}: {
+  referenceNumber: string;
+  pathwayId: string;
+  status: FundingApplicationSatus;
+}) => {
+  logInfo("updatePathwayStatus", { referenceNumber, pathwayId, status });
+
+  const data = await getApplyFundingByReferenceNumber({ referenceNumber });
+  if (!data) throw new AppError("Funding application not found.");
+
+  const db = firestoreAdmin();
+  const appRef = db.collection(USER_FUNDING_APPLICATION).doc(referenceNumber);
+
+  const existingPathways = data.appliedPathways || [];
+  const index = existingPathways.findIndex(
+    (p: any) => p.pathwayId === pathwayId,
+  );
+
+  if (index > -1) {
+    existingPathways[index].status = status;
+  } else {
+    existingPathways.push({ pathwayId, status });
+  }
+
+  await appRef.update({ appliedPathways: existingPathways });
+};
+
 export const addFundApplicationNotes = async ({
   referenceNumber,
   notes,
