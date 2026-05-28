@@ -974,6 +974,7 @@ export const getFundMappingAnalysisDetails = async ({
           userId: bankProductId.userId,
           applicationUrl, // Add applicationUrl to top level
           approvalOdds: overallApprovalOdds, // Add calculated approval odds
+          pathwayId: bankProductId.pathwayId || pathwayId,
         });
       }
     }
@@ -1188,6 +1189,7 @@ export const getAutoServedClientFunds = async ({
           userId: r.userId || userId,
           applicationUrl,
           approvalOdds: overallApprovalOdds,
+          pathwayId: r.pathwayId || pathwayId,
         });
       }
     }

@@ -22,11 +22,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { useSearchParams } from "next/navigation";
+
 export default function IncomeFunding() {
+  const searchParams = useSearchParams();
+  const initialPathwayId = searchParams.get("pathwayId") || "income_based";
+
   const [selectedReference, setSelectedReference] = useState<string>("");
   const [showPathways, setShowPathways] = useState(false);
   const [selectedPathwayId, setSelectedPathwayId] =
-    useState<string>("income_based");
+    useState<string>(initialPathwayId);
 
   const {
     deal,

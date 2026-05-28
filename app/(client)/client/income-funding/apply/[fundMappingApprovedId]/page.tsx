@@ -144,7 +144,7 @@ export default function FundingApplyPage() {
             The funding application you're looking for doesn't exist or has been
             removed.
           </p>
-          <Button onClick={() => router.push("/client/income-funding")}>
+          <Button onClick={() => router.push(`/client/income-funding`)}>
             <ArrowLeft className="size-4 mr-2" />
             Back to Funding
           </Button>
@@ -212,7 +212,7 @@ export default function FundingApplyPage() {
 
           <Button
             onClick={() => {
-              window.location.href = "/client/income-funding";
+              window.location.href = `/client/income-funding${lender.pathwayId ? `?pathwayId=${lender.pathwayId}` : ""}`;
             }}
             size="lg"
             className="bg-brand-600 hover:bg-brand-700 text-white px-10 py-6 text-base shadow-md hover:shadow-lg transition-all"
@@ -228,7 +228,11 @@ export default function FundingApplyPage() {
     <div className="max-w-[1400px] mx-auto px-6 py-6">
       {/* Back button */}
       <button
-        onClick={() => router.push("/client/income-funding")}
+        onClick={() =>
+          router.push(
+            `/client/income-funding${lender.pathwayId ? `?pathwayId=${lender.pathwayId}` : ""}`,
+          )
+        }
         className="cursor-pointer inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 font-medium mb-4 transition-colors"
       >
         <ArrowLeft className="size-4" />
