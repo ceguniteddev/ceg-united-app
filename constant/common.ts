@@ -257,6 +257,11 @@ export const settingsSidebar = [
     route: "/settings/personal",
     label: "Personal",
   },
+  {
+    imgURL: "/icons/credit-card.svg",
+    route: "/settings/membership",
+    label: "Membership",
+  },
 ];
 
 export const settingsSidebarAdmin = [
@@ -264,6 +269,11 @@ export const settingsSidebarAdmin = [
     imgURL: "/icons/circle-user-round.svg",
     route: "/settings/personal",
     label: "Personal",
+  },
+  {
+    imgURL: "/icons/credit-card.svg",
+    route: "/settings/membership",
+    label: "Membership",
   },
   // {
   //   imgURL: "/icons/circle-user-round.svg",

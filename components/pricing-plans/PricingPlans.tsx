@@ -7,7 +7,7 @@ import { useFeeSettings } from "@/hooks/fee-settings";
 import { cn } from "@/lib/utils";
 
 interface PricingPlansProps {
-  onSelectPlan?: (planId: string) => void;
+  onSelectPlan?: (planId: string, amount: number) => void;
   isLoading?: boolean;
 }
 
@@ -128,7 +128,7 @@ export function PricingPlans({
                 </span>
               </div>
               <Button
-                onClick={() => onSelectPlan?.(tier.id)}
+                onClick={() => onSelectPlan?.(tier.id, tier.price)}
                 disabled={isLoading || isLoadingSettings}
                 className={cn(
                   "mt-8 w-full h-12 text-md font-semibold transition-colors",

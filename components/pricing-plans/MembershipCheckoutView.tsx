@@ -5,32 +5,52 @@ import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { toast } from "sonner";
 import Spinner from "@/components/Spinner";
 
+import { activateUserMembership } from "@/service/membership";
+
 type MembershipCheckoutViewProps = {
   checkoutId: string;
+  userId: string;
+  tierId: string;
+  amount: number;
   prefillEmail?: string;
   onPaymentCompleteAction?: () => void;
 };
 
 export const MembershipCheckoutView = ({
   checkoutId,
+  userId,
+  tierId,
+  amount,
   prefillEmail,
   onPaymentCompleteAction,
 }: MembershipCheckoutViewProps) => {
   const [isRecording, setIsRecording] = useState(false);
 
-  const handleComplete = (plan_id: string, receipt_id?: string) => {
+  const handleComplete = async (plan_id: string, receipt_id?: string) => {
     if (isRecording) return; // Prevent duplicate calls
 
     setIsRecording(true);
 
-    // Normally we would have an API call here to verify the purchase,
-    // but Whop webhooks can handle the fulfillment on the backend.
-    // We just need to close the modal and maybe refresh the page.
-    setTimeout(() => {
-      setIsRecording(false);
+    try {
+      await activateUserMembership({
+        userId,
+        tier: tierId,
+        planId: plan_id,
+        receiptId: receipt_id,
+        amount,
+        checkoutId: receipt_id || checkoutId,
+      });
+
       toast.success("Payment successful! Your membership is being activated.");
       onPaymentCompleteAction?.();
-    }, 1500);
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        "There was an error verifying your payment. Please contact support.",
+      );
+    } finally {
+      setIsRecording(false);
+    }
   };
 
   return (

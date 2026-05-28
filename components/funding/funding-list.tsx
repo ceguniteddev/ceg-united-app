@@ -558,6 +558,10 @@ const ActionCell = ({ row }: { row: any }) => {
   const [checkoutId, setCheckoutId] = React.useState<string | null>(null);
   const [isCheckoutSheetOpen, setCheckoutSheetOpen] = React.useState(false);
   const [isCreatingCheckout, setIsCreatingCheckout] = React.useState(false);
+  const [selectedPlan, setSelectedPlan] = React.useState<{
+    id: string;
+    amount: number;
+  } | null>(null);
   const { userData } = useAuth();
 
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
@@ -596,7 +600,7 @@ const ActionCell = ({ row }: { row: any }) => {
     formSkip.reset();
   };
 
-  const handleSelectPlan = async (planId: string) => {
+  const handleSelectPlan = async (planId: string, amount: number) => {
     if (!row.original.userId) return;
     try {
       setIsCreatingCheckout(true);
@@ -605,6 +609,7 @@ const ActionCell = ({ row }: { row: any }) => {
         planId: planId as any,
       });
       setCheckoutId(res.checkoutId);
+      setSelectedPlan({ id: planId, amount });
       setPricingModalOpen(false);
       setCheckoutSheetOpen(true);
     } catch (err: any) {
@@ -689,12 +694,16 @@ const ActionCell = ({ row }: { row: any }) => {
               </SheetTitle>
             </SheetHeader>
             <div className="flex-1 overflow-y-auto">
-              {checkoutId && (
+              {checkoutId && selectedPlan && (
                 <MembershipCheckoutView
                   checkoutId={checkoutId}
+                  userId={row.original.userId}
+                  tierId={selectedPlan.id}
+                  amount={selectedPlan.amount}
                   prefillEmail={userData?.email || ""}
                   onPaymentCompleteAction={() => {
                     setCheckoutSheetOpen(false);
+                    router.refresh();
                   }}
                 />
               )}
