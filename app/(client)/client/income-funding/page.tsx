@@ -23,8 +23,24 @@ import {
 } from "@/components/ui/select";
 
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function IncomeFunding() {
+export default function IncomeFundingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center h-full w-full p-10">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-4" />
+          <p className="text-sm text-gray-500 font-medium">Loading...</p>
+        </div>
+      }
+    >
+      <IncomeFundingContent />
+    </Suspense>
+  );
+}
+
+export function IncomeFundingContent() {
   const searchParams = useSearchParams();
   const initialPathwayId = searchParams.get("pathwayId") || "income_based";
 
