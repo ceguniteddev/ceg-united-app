@@ -43,7 +43,7 @@ export default function IncomeFunding() {
     isSubmitting,
     isCalculating,
     calculateIncomePreApproval,
-  } = useIncomeFundingState(selectedReference);
+  } = useIncomeFundingState(selectedReference, selectedPathwayId);
 
   const referenceOptions = useMemo(() => {
     if (!incomeFundingApps || incomeFundingApps.length === 0) return [];
@@ -132,17 +132,14 @@ export default function IncomeFunding() {
                   const pathwayStatus = appliedPathway.status;
                   const globalStatus = realDeal?.status;
 
+                  const relevantStatus = pathwayStatus || globalStatus;
+
                   if (
-                    globalStatus === "Pre-Approved" ||
-                    globalStatus === "Offer Accepted" ||
-                    pathwayStatus === "Pre-Approved" ||
-                    pathwayStatus === "Offer Accepted"
+                    relevantStatus === "Pre-Approved" ||
+                    relevantStatus === "Offer Accepted"
                   ) {
                     nextStatus = "offers-ready";
-                  } else if (
-                    globalStatus === "Approved" ||
-                    pathwayStatus === "Approved"
-                  ) {
+                  } else if (relevantStatus === "Approved") {
                     nextStatus = "complete";
                   } else {
                     nextStatus = "under-review";
@@ -191,13 +188,22 @@ export default function IncomeFunding() {
                 </p>
               </div>
               <section className="flex w-full flex-col gap-6">
-                <FundingBankProducts selectedReference={selectedReference} />
+                <FundingBankProducts
+                  selectedReference={selectedReference}
+                  selectedPathwayId={selectedPathwayId}
+                />
               </section>
             </div>
           );
         }
         return (
-          <OffersView deal={deal} onSelect={selectOffer} onSkip={skipOffer} />
+          <OffersView
+            deal={deal}
+            realDeal={realDeal}
+            selectedPathwayId={selectedPathwayId}
+            onSelect={selectOffer}
+            onSkip={skipOffer}
+          />
         );
       case "accepting":
         return (

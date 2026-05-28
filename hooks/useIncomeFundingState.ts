@@ -81,7 +81,10 @@ const defaultEmptyDeal: IncomeFundingDeal = {
 //   const [deal] = useDocument(doc(db, `users/${uid}/income-funding-deals/${dealId}`))
 // and persist setDeal* calls back to Firestore.
 
-export function useIncomeFundingState(selectedReference?: string) {
+export function useIncomeFundingState(
+  selectedReference?: string,
+  selectedPathwayId: string = "income_based",
+) {
   const [deal, setDeal] = useState<IncomeFundingDeal>(defaultEmptyDeal);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
@@ -117,7 +120,17 @@ export function useIncomeFundingState(selectedReference?: string) {
       let nextUnderwritingInput = d.underwritingInput;
 
       if (realDeal) {
-        if (realDeal.status === "Sent to Brokerage") {
+        const appliedPathways = (realDeal as any)?.appliedPathways || [];
+        const appliedPathway = appliedPathways.find(
+          (p: any) => p.pathwayId === selectedPathwayId,
+        );
+        const pathwayStatus = appliedPathway?.status;
+        const globalStatus = realDeal.status;
+
+        // Base status on pathway status, falling back to global status
+        const relevantStatus = pathwayStatus || globalStatus;
+
+        if (relevantStatus === "Sent to Brokerage") {
           // If the user is currently working on an application (collecting-documents) or just submitted (under-review), keep their current local state.
           // Otherwise (e.g., when revisiting the page initially at "prequalified"), keep it as "prequalified"
           // so they have the option to select other pathways (credit_card_stacking, business_loc, etc).
@@ -130,11 +143,11 @@ export function useIncomeFundingState(selectedReference?: string) {
             nextStatus = "prequalified";
           }
         } else if (
-          realDeal.status === "Pre-Approved" ||
-          realDeal.status === "Offer Accepted"
+          relevantStatus === "Pre-Approved" ||
+          relevantStatus === "Offer Accepted"
         ) {
           nextStatus = "offers-ready";
-        } else if (realDeal.status === "Approved") {
+        } else if (relevantStatus === "Approved") {
           nextStatus = "complete";
         }
 
@@ -156,7 +169,10 @@ export function useIncomeFundingState(selectedReference?: string) {
               d.underwritingResult.grade) as any,
             maxFundingAmount:
               computation?.preApprovedAmount ||
-              computation?.estimatedApprovalAmount ||
+              (typeof computation?.estimatedApprovalAmount === "object" &&
+              computation?.estimatedApprovalAmount !== null
+                ? computation.estimatedApprovalAmount.amount
+                : computation?.estimatedApprovalAmount) ||
               d.underwritingResult.maxFundingAmount,
             rationale: computation?.rationale || d.underwritingResult.rationale,
           };
@@ -165,7 +181,8 @@ export function useIncomeFundingState(selectedReference?: string) {
             ...d.underwritingInput,
             monthlyDeposits: (realDeal as any).annualBusinessRevenue
               ? (realDeal as any).annualBusinessRevenue / 12
-              : computation?.monthlyDeposits ||
+              : computation?.monthlyBusinessRevenue ||
+                computation?.monthlyDeposits ||
                 d.underwritingInput.monthlyDeposits,
             timeInBusinessMonths: (realDeal as any).dateOfIncorporation
               ? Math.floor(
@@ -277,6 +294,7 @@ export function useIncomeFundingState(selectedReference?: string) {
     (realDeal as any)?.offers,
     (realDeal as any)?.selectedOfferId,
     (realDeal as any)?.businessIncomeComputation,
+    selectedPathwayId,
   ]);
 
   const setStatus = useCallback((status: DealStatus) => {

@@ -12,14 +12,18 @@ import { Card, CardContent } from "@/components/ui/card";
 
 type Props = {
   selectedReference: string;
+  selectedPathwayId: string;
 };
 
-export const FundingBankProducts = ({ selectedReference }: Props) => {
+export const FundingBankProducts = ({
+  selectedReference,
+  selectedPathwayId,
+}: Props) => {
   const { user } = useAuth();
 
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
     userId: user?.uid,
-    referenceNumber: selectedReference,
+    referenceNumber: selectedPathwayId || selectedReference,
   });
 
   // Filter mapped funds by selected reference number

@@ -47,12 +47,12 @@ export const POST = withAuth(async (req: NextRequest) => {
       selectedPathwayId,
     });
 
-    await updateApplicationStatus({
-      referenceNumber,
-      status: "Sent to Brokerage",
-      approveOrDeclineValue: undefined,
-      pathwayId: selectedPathwayId,
-    });
+    // await updateApplicationStatus({
+    //   referenceNumber,
+    //   status: "Pre-Approved",
+    //   approveOrDeclineValue: undefined,
+    //   pathwayId: selectedPathwayId,
+    // });
 
     return NextResponse.json({ message: "ok" }, { status: 200 });
   } catch (err) {
