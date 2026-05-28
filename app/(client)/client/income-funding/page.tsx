@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, AlertCircle, Bot, Loader2 } from "lucide-react";
 // import { ProgressStepper } from "@/components/income-funding/ProgressStepper";
 import { PreApprovalView } from "@/components/income-funding/PreApprovalView";
 import { DocumentCollectionView } from "@/components/income-funding/DocumentCollectionView";
@@ -324,6 +324,37 @@ export default function IncomeFunding() {
           {/* <div className="mb-6 bg-white rounded-2xl border border-gray-100 shadow-card p-4 sm:p-5 animate-fade-in-up stagger-1">
             <ProgressStepper status={deal.status} />
           </div> */}
+
+          {/* Back button container - conditionally rendered */}
+          {(deal.status === "collecting-documents" ||
+            deal.status === "under-review" ||
+            (deal.status === "offers-ready" &&
+              selectedPathwayId !== "income_based")) && (
+            <div className="mb-4 animate-fade-in-up">
+              <button
+                onClick={() => {
+                  setStatus("prequalified");
+                  setShowPathways(true);
+                }}
+                className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to pathways
+              </button>
+            </div>
+          )}
+
+          {deal.status === "prequalified" && showPathways && (
+            <div className="mb-4 animate-fade-in-up">
+              <button
+                onClick={() => setShowPathways(false)}
+                className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to pre-approval
+              </button>
+            </div>
+          )}
 
           {/* Active view */}
           <div key={deal.status} className="animate-fade-in">

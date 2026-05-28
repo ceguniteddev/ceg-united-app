@@ -522,15 +522,7 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
         </div>
 
         {/* Footer actions */}
-        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <button
-            type="button"
-            onClick={onBack}
-            className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-          >
-            <IconArrowLeft className="h-4 w-4" />
-            Back
-          </button>
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
           <button
             type="button"
             disabled={!dynamicSelected}

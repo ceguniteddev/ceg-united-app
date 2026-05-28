@@ -295,16 +295,6 @@ export function DocumentCollectionView({
           </p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
-          {onBack && (
-            <button
-              onClick={onBack}
-              disabled={isSubmitting}
-              className="w-full md:w-auto inline-flex justify-center items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-5 py-3 rounded-xl shadow-sm transition-all cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-          )}
           <button
             disabled={!allRequiredDone || isSubmitting}
             onClick={onSubmit}
