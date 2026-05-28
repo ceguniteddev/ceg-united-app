@@ -19,12 +19,19 @@ import { randomUUID } from "crypto";
 import { sendTriggerEmail } from "../trigger-email";
 import { EmailJobs } from "@/schema/trigger-email";
 import { currency } from "@/lib/utils";
+import { getFeeSettings } from "../fee-settings";
 
 const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID;
 const productId = process.env.WHOP_PRODUCT_ID;
 const tradelineProductId = process.env.WHOP_TRADELINE_PRODUCT_ID;
 const generateCRSReportProductId =
   process.env.WHOP_GENERATE_CRS_REPORT_PRODUCT_ID;
+
+const WHOP_PRICING_PLAN_STARTER_ID = process.env.WHOP_PRICING_PLAN_STARTER_ID;
+const WHOP_PRICING_PLAN_PRO_ID = process.env.WHOP_PRICING_PLAN_PRO_ID;
+const WHOP_PRICING_PLAN_EXECUTIVE_ID =
+  process.env.WHOP_PRICING_PLAN_EXECUTIVE_ID;
+const WHOP_CREDIT_MODULE_PRO_ID = process.env.WHOP_CREDIT_MODULE_PRO_ID;
 
 const WHOP_FULL_PAYMENT_AMOUNT =
   process.env.NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT || "15000";
@@ -71,12 +78,6 @@ export const createWhopCheckoutConfig = async ({
   checkoutId: string;
   url: string;
 }> => {
-  // console.log("createWhopCheckoutConfig called with:", {
-  //   userId,
-  //   referenceNumber,
-  //   paymentKey,
-  // });
-
   if (!whopSdk) {
     logError(new Error("Whop SDK is not initialized. Check API Key."));
     throw new Error("Server configuration error.");
@@ -156,11 +157,6 @@ export const createWhopCheckoutConfig = async ({
         plan_type: "one_time" as const,
         product_id: productIdToUse!,
         visibility: "hidden" as const,
-        // payment_method_configuration: {
-        //   enabled: ["card", "paypal"],
-        //   disabled: ["apple_pay", "google_pay"],
-        //   include_platform_defaults: false,
-        // },
       };
 
     const checkoutConfig = await whopSdk.checkoutConfigurations.create({
@@ -171,8 +167,6 @@ export const createWhopCheckoutConfig = async ({
         name: `${user.firstName} ${user.lastName}`,
       },
     });
-
-    // console.log("Whop checkoutConfig:", checkoutConfig);
 
     if (!checkoutConfig.id) {
       logError(
@@ -185,15 +179,12 @@ export const createWhopCheckoutConfig = async ({
     const checkoutId = checkoutConfig.id;
 
     // Save checkout details to Firestore
-
     const checkoutDoc = {
       userId,
-      // referenceNumber,
       checkoutId,
       url: checkoutConfig.purchase_url,
       createdAt: new Date(),
       initialPrice: planDetails.initial_price,
-      // currency: planDetails.currency,
       planType: planDetails.plan_type,
       productId: planDetails.product_id,
       status: "created", // Initial status
@@ -204,12 +195,7 @@ export const createWhopCheckoutConfig = async ({
     await firestoreAdmin()
       .collection(WHOP_CHECKOUTS_COLLECTION)
       .add(checkoutDoc);
-    // logInfo(
-    //   "Successfully saved whop checkout config to firestore",
-    //   checkoutDoc,
-    // );
 
-    // logInfo("createWhopCheckoutConfig (SDK) success", { checkoutId });
     return { checkoutId, url: checkoutConfig.purchase_url };
   } catch (error: any) {
     logError(
@@ -218,6 +204,117 @@ export const createWhopCheckoutConfig = async ({
           error.message || "Unknown error"
         }`,
       ),
+    );
+    throw error;
+  }
+};
+
+export const createMembershipCheckoutConfig = async ({
+  userId,
+  planId,
+  isAddon = false,
+}: {
+  userId: string;
+  planId: "tier_starter" | "tier_pro" | "tier_executive" | "credit_module_pro";
+  isAddon?: boolean;
+}): Promise<{
+  checkoutId: string;
+  url: string;
+}> => {
+  if (!whopSdk) {
+    throw new Error("Whop SDK is not initialized. Check API Key.");
+  }
+
+  if (!WHOP_COMPANY_ID || !productId) {
+    throw new Error("Payment Server configuration error.");
+  }
+
+  try {
+    const user = await getUserById(userId);
+    if (!user) throw new Error("User not found");
+
+    const feeSettings = await getFeeSettings();
+
+    let amount = 0;
+    let targetProductId = productId;
+
+    if (planId === "tier_starter") {
+      amount = feeSettings.tierStarterPrice;
+      targetProductId = WHOP_PRICING_PLAN_STARTER_ID || productId;
+    } else if (planId === "tier_pro") {
+      amount = feeSettings.tierProPrice;
+      targetProductId = WHOP_PRICING_PLAN_PRO_ID || productId;
+    } else if (planId === "tier_executive") {
+      amount = feeSettings.tierExecutivePrice;
+      targetProductId = WHOP_PRICING_PLAN_EXECUTIVE_ID || productId;
+    }
+    // else if (planId === "credit_module_pro") {
+    //   amount = feeSettings.creditModuleProAddonPrice;
+    //   targetProductId = WHOP_CREDIT_MODULE_PRO_ID || productId;
+    // }
+
+    if (!targetProductId) {
+      throw new Error(
+        "Server configuration error: Missing Product ID for the selected plan.",
+      );
+    }
+
+    // We cast to any to bypass exact string literal checks for plan_type if 'subscription' is valid in reality but not the typings, or we can use "one_time"
+    const planDetails: CheckoutConfigurationCreateParams.CreateCheckoutSessionInputModePaymentWithPlan.Plan =
+      {
+        company_id: WHOP_COMPANY_ID,
+        currency: "usd" as const,
+        // initial_price: amount, // Whop expects cents
+        renewal_price: amount,
+        billing_period: 30, // Whop expects this in DAYS (30 days = monthly)
+        plan_type: "renewal" as const,
+        product_id: targetProductId,
+        visibility: "hidden" as const,
+        // payment_method_configuration: {
+        //   enabled: ["card", "apple_pay", "google_pay"],
+        //   disabled: ["crypto", "splitit", "cashapp", "paypal"],
+        //   include_platform_defaults: false,
+        // },
+      };
+
+    const checkoutConfig = await whopSdk.checkoutConfigurations.create({
+      plan: planDetails,
+      metadata: {
+        userId: userId,
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        planId,
+        isAddon: isAddon ? "true" : "false",
+      },
+    });
+
+    if (!checkoutConfig.id) {
+      throw new Error("Failed to create checkout link for Membership.");
+    }
+
+    const checkoutId = checkoutConfig.id;
+
+    const checkoutDoc = {
+      userId,
+      checkoutId,
+      url: checkoutConfig.purchase_url,
+      createdAt: new Date(),
+      initialPrice: planDetails.initial_price,
+      planType: planDetails.plan_type,
+      productId: planDetails.product_id,
+      status: "created",
+      paymentKey: planId,
+      ...checkoutConfig,
+    };
+
+    await firestoreAdmin()
+      .collection(WHOP_CHECKOUTS_COLLECTION)
+      .add(checkoutDoc);
+
+    return { checkoutId, url: checkoutConfig.purchase_url };
+  } catch (error: any) {
+    logError(
+      new Error(`createMembershipCheckoutConfig error: ${error.message}`),
     );
     throw error;
   }
@@ -245,7 +342,7 @@ export const createCRSReportCheckoutConfig = async ({
   }
 
   if (!WHOP_COMPANY_ID || !generateCRSReportProductId) {
-    throw new Error("Server configuration error for Whop.");
+    throw new Error("Payment Server configuration error.");
   }
 
   try {

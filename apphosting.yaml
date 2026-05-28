@@ -155,6 +155,21 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: WHOP_PRICING_PLAN_STARTER_ID
+    value: prod_fV5gCPjKwe067
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_PRICING_PLAN_PRO_ID
+    value: prod_oJhxhteiZonAQ
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_PRICING_PLAN_EXECUTIVE_ID
+    value: prod_0mb3w3BVfhYYQ
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: WHOP_BASE_URL
     value: https://api.whop.com/api/v1
     availability:

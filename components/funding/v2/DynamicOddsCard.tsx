@@ -95,7 +95,7 @@ export function DynamicOddsCard({
   const hasProducts = lender.products && lender.products.length > 0;
 
   const buttonText =
-    method === "specialist" ? "Request Banker Contact" : "Apply Now";
+    method === "specialist" ? "Conect me with Banker" : "Apply Now";
   const buttonSubtext =
     method === "specialist"
       ? `A ${lender.bankName} specialist will contact you within 1-2 business days.`

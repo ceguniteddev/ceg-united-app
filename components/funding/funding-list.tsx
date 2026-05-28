@@ -57,6 +57,17 @@ import { LenderLogo } from "./v2/LenderLogo";
 import { CheckCircle2 } from "lucide-react";
 import IconMenu from "../icon-menu";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
+import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
+
+import { toast } from "sonner";
+import { createMembershipCheckoutConfig } from "@/service/whop";
+import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 const baseColumns: ColumnDef<BankFormData>[] = [
   {
@@ -543,6 +554,10 @@ const ActionCell = ({ row }: { row: any }) => {
   const router = useRouter();
   const [isDenefitsPaid, setIsDenefitsPaid] = React.useState(false);
   const [isSkipDialogOpen, setSkipDialogOpen] = React.useState(false);
+  const [isPricingModalOpen, setPricingModalOpen] = React.useState(false);
+  const [checkoutId, setCheckoutId] = React.useState<string | null>(null);
+  const [isCheckoutSheetOpen, setCheckoutSheetOpen] = React.useState(false);
+  const [isCreatingCheckout, setIsCreatingCheckout] = React.useState(false);
   const { userData } = useAuth();
 
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
@@ -579,6 +594,24 @@ const ActionCell = ({ row }: { row: any }) => {
     });
     setSkipDialogOpen(false);
     formSkip.reset();
+  };
+
+  const handleSelectPlan = async (planId: string) => {
+    if (!row.original.userId) return;
+    try {
+      setIsCreatingCheckout(true);
+      const res = await createMembershipCheckoutConfig({
+        userId: row.original.userId,
+        planId: planId as any,
+      });
+      setCheckoutId(res.checkoutId);
+      setPricingModalOpen(false);
+      setCheckoutSheetOpen(true);
+    } catch (err: any) {
+      toast.error("Failed to start checkout: " + err.message);
+    } finally {
+      setIsCreatingCheckout(false);
+    }
   };
 
   if (row.original.clientApplicationStatus !== "Not Applied") return null;
@@ -620,7 +653,7 @@ const ActionCell = ({ row }: { row: any }) => {
           <Button
             type="button"
             className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold cursor-pointer flex-1 lg:flex-none transition-all border-none shadow-md hover:shadow-lg"
-            onClick={() => handleApproveClickCapture()}
+            onClick={() => setPricingModalOpen(true)}
           >
             <span className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-out -skew-x-12 -translate-x-full" />
             <IconMenu
@@ -631,6 +664,43 @@ const ActionCell = ({ row }: { row: any }) => {
             />
           </Button>
         )}
+
+        <ResponsiveDialog
+          isOpen={isPricingModalOpen}
+          setIsOpen={setPricingModalOpen}
+          title="Upgrade to Apply"
+          description=""
+          className="sm:max-w-[90vw] md:max-w-6xl max-h-[90vh] overflow-y-auto p-0 border-0"
+        >
+          <PricingPlans
+            isLoading={isCreatingCheckout}
+            onSelectPlan={handleSelectPlan}
+          />
+        </ResponsiveDialog>
+
+        <Sheet open={isCheckoutSheetOpen} onOpenChange={setCheckoutSheetOpen}>
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden"
+          >
+            <SheetHeader className="px-6 py-4 border-b border-gray-200">
+              <SheetTitle className="text-xl font-bold">
+                Secure Checkout
+              </SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto">
+              {checkoutId && (
+                <MembershipCheckoutView
+                  checkoutId={checkoutId}
+                  prefillEmail={userData?.email || ""}
+                  onPaymentCompleteAction={() => {
+                    setCheckoutSheetOpen(false);
+                  }}
+                />
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
 
         <ResponsiveDialog
           isOpen={isSkipDialogOpen}
