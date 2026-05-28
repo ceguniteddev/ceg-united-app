@@ -851,13 +851,23 @@ export const getFundMappingAnalysisDetails = async ({
 
   if (!bankProductIds) return null;
 
-  // Fetch client funding application data for approval odds calculation
-  const clientFundingData = referenceNumber
+  // We will fetch client funding data inside the loop if referenceNumber wasn't globally provided,
+  // or use the global one if it was.
+  const globalClientFundingData = referenceNumber
     ? await getApplyFundingByReferenceNumber({ referenceNumber })
     : null;
 
   const result: ApprovedBankFormData[] = [];
   for (const bankProductId of bankProductIds) {
+    const currentRefNumber = referenceNumber || bankProductId.referenceNumber;
+    const clientFundingData =
+      globalClientFundingData ||
+      (currentRefNumber
+        ? await getApplyFundingByReferenceNumber({
+            referenceNumber: currentRefNumber,
+          })
+        : null);
+
     // Check if this is a manual entry or has a valid bankProductId
     if (bankProductId.isManualEntry || !bankProductId.bankProductId) {
       // For manual entries, construct a valid ApprovedBankFormData object

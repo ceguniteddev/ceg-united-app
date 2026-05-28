@@ -68,11 +68,11 @@ export const sidebarLinks = [
     route: "/client/home",
     label: "Home",
   },
-  {
-    imgURL: "/icons/money-send.svg",
-    route: "/client/my-funding",
-    label: "My Funding",
-  },
+  // {
+  //   imgURL: "/icons/money-send.svg",
+  //   route: "/client/my-funding",
+  //   label: "My Funding",
+  // },
   {
     imgURL: "/icons/money-send.svg",
     route: "/client/income-funding",

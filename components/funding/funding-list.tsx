@@ -567,7 +567,7 @@ const ActionCell = ({ row }: { row: any }) => {
 
   const handleApproveClickCapture = () => {
     router.push(
-      `/client/my-funding/apply/${row.original.fundMappingApprovedId}`,
+      `/client/income-funding/apply/${row.original.fundMappingApprovedId}`,
     );
   };
 
