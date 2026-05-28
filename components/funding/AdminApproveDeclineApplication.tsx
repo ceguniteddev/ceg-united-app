@@ -47,12 +47,17 @@ export default function AdminApproveDeclineApplication({
     },
   });
 
-  const [busyStatus, setBusyStatus] = React.useState<FundingApplicationStatus | null>(null);
+  const [busyStatus, setBusyStatus] =
+    React.useState<FundingApplicationStatus | null>(null);
 
   const doUpdate = async (status: FundingApplicationStatus) => {
     try {
       setBusyStatus(status);
-      await updateApplicationStatus(referenceNumber, status, form.getValues());
+      await updateApplicationStatus({
+        referenceNumber,
+        status,
+        approveOrDeclineValue: form.getValues(),
+      });
       onStatusChange?.(status);
       if (status === "Declined") toast.error("Funding application declined.");
       else toast.success("Funding application approved!.");
@@ -65,7 +70,9 @@ export default function AdminApproveDeclineApplication({
   };
 
   // Intercept clicks on Approve to validate BEFORE opening the Confirm dialog.
-  const handleApproveClickCapture: React.MouseEventHandler<HTMLSpanElement> = async (e) => {
+  const handleApproveClickCapture: React.MouseEventHandler<
+    HTMLSpanElement
+  > = async (e) => {
     const ok = await form.trigger(); // runs Zod validation and shows errors if any
     if (!ok) {
       // Block the ConfirmButton from opening its dialog
@@ -88,10 +95,18 @@ export default function AdminApproveDeclineApplication({
           <form onSubmit={(e) => e.preventDefault()}>
             <fieldset disabled={form.formState.isSubmitting}>
               {/* Amount Approved */}
-              <CustomFormField type="number" name="amountApprove" label="Amount to Approve" />
+              <CustomFormField
+                type="number"
+                name="amountApprove"
+                label="Amount to Approve"
+              />
 
               {/* Remarks (optional) */}
-              <CustomFormField type="textarea" name="remarks" label="Remarks (optional)" />
+              <CustomFormField
+                type="textarea"
+                name="remarks"
+                label="Remarks (optional)"
+              />
 
               {/* Actions */}
               <div className="mt-6 flex items-center justify-between gap-3">
@@ -121,7 +136,9 @@ export default function AdminApproveDeclineApplication({
                     onConfirm={() => doUpdate("Approved")}
                     className="bg-green-600 hover:bg-green-700"
                     classNameAction="bg-green-600 hover:bg-green-700"
-                    isLoading={form.formState.isSubmitting || busyStatus !== null}
+                    isLoading={
+                      form.formState.isSubmitting || busyStatus !== null
+                    }
                   />
                 </span>
               </div>

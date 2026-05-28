@@ -58,17 +58,17 @@ const AdminViewApplication = () => {
     return !!userData?.letterFeatureEnabled;
   }, [userData]);
 
-  useEffect(() => {
-    const updateStatus = async () => {
-      if (formData?.status === "New") {
-        await updateApplicationStatus(
-          formData.referenceNumber ?? "",
-          "Processing",
-        );
-      }
-    };
-    updateStatus();
-  }, [formData]);
+  // useEffect(() => {
+  //   const updateStatus = async () => {
+  //     if (formData?.status === "New") {
+  //       await updateApplicationStatus({
+  //         referenceNumber: formData.referenceNumber ?? "",
+  //         status: "Processing",
+  //       });
+  //     }
+  //   };
+  //   updateStatus();
+  // }, [formData]);
 
   const tabOptions = useMemo(() => {
     const options = [
@@ -77,7 +77,7 @@ const AdminViewApplication = () => {
       { value: "client-profile", label: "Client Profile" },
       { value: "documents", label: "Documents" },
       { value: "analysis", label: "Analysis" },
-      { value: "fund-mapping", label: "Fund Mapping" },
+      // { value: "fund-mapping", label: "Fund Mapping" },
       { value: "notes", label: "Notes" },
       { value: "credit-report", label: "Credit Report" },
       { value: "business", label: "Business" },
@@ -185,12 +185,12 @@ const AdminViewApplication = () => {
         <TabsContent value="personal-information" className="w-full">
           {userData && <ClientData user={userData as UserWithId} />}
         </TabsContent>
-        <TabsContent value="fund-mapping" className="w-full">
+        {/* <TabsContent value="fund-mapping" className="w-full">
           <AdminMappedFunds
             referenceNumber={formData?.referenceNumber ?? ""}
             userId={formData?.userId ?? ""}
           />
-        </TabsContent>
+        </TabsContent> */}
         <TabsContent value="notes" className="w-full">
           <FundApplicationNotesV2
             applicationReferenceNumber={formData?.referenceNumber ?? ""}
@@ -221,7 +221,11 @@ const AdminViewApplication = () => {
         </TabsContent>
 
         <TabsContent value="credit-report" className="w-full">
-          <ClientCreditReport userId={userId} isAdminView userData={userData as UserWithId} />
+          <ClientCreditReport
+            userId={userId}
+            isAdminView
+            userData={userData as UserWithId}
+          />
         </TabsContent>
 
         <TabsContent value="business" className="w-full">

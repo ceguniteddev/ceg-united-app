@@ -163,10 +163,10 @@ export const verifyEmailToken = async (
           referenceNumber: tokenData.referenceNumber,
         });
 
-        await requestMapBankProductsN8nNewRegistration({
-          userId: tokenData.userId,
-          referenceNumber: tokenData.referenceNumber,
-        });
+        // await requestMapBankProductsN8nNewRegistration({
+        //   userId: tokenData.userId,
+        //   referenceNumber: tokenData.referenceNumber,
+        // });
 
         // Send Client Audit Analysis
         // await sendClientFundingApplicationAuditAnalysis({

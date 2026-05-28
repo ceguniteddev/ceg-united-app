@@ -479,12 +479,19 @@ export const updateBankProduct = async (id: string, values: BankFormData) => {
   await collectionRef.set(values);
 };
 
-export const recordFundMappingAnalysis = async (
-  userId: string,
-  referenceNumber: string,
-  ids: { id: string }[],
-  append: boolean = false,
-) => {
+export const recordFundMappingAnalysis = async ({
+  userId,
+  referenceNumber,
+  ids,
+  append,
+  selectedPathwayId,
+}: {
+  userId: string;
+  referenceNumber: string;
+  ids: { id: string }[];
+  append: boolean;
+  selectedPathwayId?: string;
+}) => {
   if (!userId) throw new NotFoundError("User ID is required.");
   if (!referenceNumber)
     throw new NotFoundError("Reference number is required.");
@@ -536,11 +543,12 @@ export const recordFundMappingAnalysis = async (
   }
 
   const db = firestoreAdmin();
+  const docId = selectedPathwayId || referenceNumber;
   const collectionRef = db
     .collection(
       `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`,
     )
-    .doc(referenceNumber);
+    .doc(docId);
 
   if (append) {
     logInfo("recordFundMappingAnalysis - append mode", { referenceNumber });
@@ -571,6 +579,7 @@ export const recordFundMappingAnalysis = async (
     await collectionRef.set({
       bank_products: combinedBankProducts,
       userId,
+      ...(selectedPathwayId && { selectedPathwayId }),
       createdAt: existingDoc.exists
         ? existingDoc.data()?.createdAt
         : Timestamp.now(),
@@ -588,6 +597,7 @@ export const recordFundMappingAnalysis = async (
     const dataToSave = {
       bank_products: validIds,
       userId,
+      ...(selectedPathwayId && { selectedPathwayId }),
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     };
@@ -1231,7 +1241,7 @@ export const approveMappedFund = async ({
       });
     }
 
-    await updateApplicationStatus(referenceNumber, "Pre-Approved");
+    await updateApplicationStatus({ referenceNumber, status: "Pre-Approved" });
 
     return { success: true };
   } catch (error: any) {
@@ -1292,7 +1302,7 @@ export const cancelMappedFund = async ({
     const snapshot = await docRef.get();
     if (snapshot.exists) {
       await docRef.delete();
-      await updateApplicationStatus(referenceNumber, "Processing");
+      await updateApplicationStatus({ referenceNumber, status: "Processing" });
     }
 
     return { success: true };

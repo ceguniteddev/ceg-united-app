@@ -234,7 +234,10 @@ describe("service/apply-funding", () => {
       mockGet.mockResolvedValue({ exists: false });
 
       await expect(
-        updateApplicationStatus("ref1", "Processing"),
+        updateApplicationStatus({
+          referenceNumber: "ref1",
+          status: "Processing",
+        }),
       ).rejects.toThrow("Funding application not found.");
     });
 
@@ -245,7 +248,10 @@ describe("service/apply-funding", () => {
         data: () => ({ userId: "u1", status: "New" }),
       });
 
-      await updateApplicationStatus("ref1", "Processing");
+      await updateApplicationStatus({
+        referenceNumber: "ref1",
+        status: "Processing",
+      });
 
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({ status: "Processing" }),
@@ -259,9 +265,11 @@ describe("service/apply-funding", () => {
         data: () => ({ userId: "u1", status: "New" }),
       });
 
-      await updateApplicationStatus("ref1", "Approved", {
-        reason: "Good credit",
-      } as any);
+      await updateApplicationStatus({
+        referenceNumber: "ref1",
+        status: "Approved",
+        approveOrDeclineValue: { reason: "Good credit" } as any,
+      });
 
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({

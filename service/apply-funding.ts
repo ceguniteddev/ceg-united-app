@@ -487,12 +487,17 @@ function randomString(length: number) {
   return out;
 }
 
-export const updateApplicationStatus = async (
-  referenceNumber: string,
-  status: FundingApplicationSatus,
-  approveOrDeclineValue?: FundingApplicationApproveDecline,
-  pathwayId?: string,
-) => {
+export const updateApplicationStatus = async ({
+  referenceNumber,
+  status,
+  approveOrDeclineValue,
+  pathwayId,
+}: {
+  referenceNumber: string;
+  status: FundingApplicationSatus;
+  approveOrDeclineValue?: FundingApplicationApproveDecline;
+  pathwayId?: string;
+}) => {
   logInfo("updateApplicationStatus", { referenceNumber, status, pathwayId });
 
   const data = await getApplyFundingByReferenceNumber({ referenceNumber });

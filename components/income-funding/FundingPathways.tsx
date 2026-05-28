@@ -29,8 +29,8 @@ import React, { useState } from "react";
 
 export type PathwayId =
   | "income_based"
-  | "credit_card_stacking"
-  | "business_loc"
+  | "business_credit_card_stacking"
+  | "business_lines_of_credit"
   | "personal_loan"
   | "personal_credit_card";
 
@@ -193,7 +193,7 @@ const DEFAULT_PATHWAYS: FundingPathway[] = [
     route: "/funding/income-based/offers",
   },
   {
-    id: "credit_card_stacking",
+    id: "business_credit_card_stacking",
     title: "Business Credit Card Stacking",
     maxAmount: 200_000,
     tagline: "0% intro APR business cards stacked for maximum capital",
@@ -204,7 +204,7 @@ const DEFAULT_PATHWAYS: FundingPathway[] = [
     route: "/funding/credit-card-stacking/offers",
   },
   {
-    id: "business_loc",
+    id: "business_lines_of_credit",
     title: "Business Lines of Credit",
     maxAmount: 300_000,
     tagline: "Revolving credit you draw on as needed",
@@ -273,7 +273,7 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
           "object" && computationFromBackend.estimatedApprovalAmount !== null
           ? computationFromBackend.estimatedApprovalAmount.amount
           : (computationFromBackend.estimatedApprovalAmount ?? defaultAmount);
-      case "credit_card_stacking":
+      case "business_credit_card_stacking":
         return typeof computationFromBackend.businessCreditCardStackingEstimatedApprovalAmount ===
           "object" &&
           computationFromBackend.businessCreditCardStackingEstimatedApprovalAmount !==
@@ -282,7 +282,7 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
               .businessCreditCardStackingEstimatedApprovalAmount.amount
           : (computationFromBackend.businessCreditCardStackingEstimatedApprovalAmount ??
               defaultAmount);
-      case "business_loc":
+      case "business_lines_of_credit":
         return typeof computationFromBackend.businessLineOfCreditEstimatedApprovalAmount ===
           "object" &&
           computationFromBackend.businessLineOfCreditEstimatedApprovalAmount !==

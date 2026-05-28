@@ -34,12 +34,12 @@ export const POST = withAuth(
       const body = await request.json().catch(() => ({}));
       const pathwayId = body.pathwayId;
 
-      await updateApplicationStatus(
+      await updateApplicationStatus({
         referenceNumber,
-        "Sent to Brokerage",
-        undefined,
+        status: "Sent to Brokerage",
+        approveOrDeclineValue: undefined,
         pathwayId,
-      );
+      });
 
       // 2. Fetch all brokerages
       const banks = await getBanks();

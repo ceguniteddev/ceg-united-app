@@ -244,9 +244,6 @@ describe("service/email-verification", () => {
       expect(
         vi.mocked(sendClientFundingApplicationCongratsMessageNewRegistration),
       ).toHaveBeenCalled();
-      expect(
-        vi.mocked(requestMapBankProductsN8nNewRegistration),
-      ).toHaveBeenCalled();
     });
   });
 

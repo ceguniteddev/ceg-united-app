@@ -1,6 +1,7 @@
 import { badRequest, getMessage, internalServerError } from "@/app/api/helpers";
 import AppError from "@/error/AppError";
 import { withAuth } from "@/lib/api-validation";
+import { updateApplicationStatus } from "@/service/apply-funding";
 import { recordFundMappingAnalysis } from "@/service/bank-products";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
@@ -19,6 +20,7 @@ const requestBodySchema = z
       })
       .min(1, { error: "Required" }),
     append: z.boolean().optional().default(false),
+    selectedPathwayId: z.string(),
   })
   .strict();
 
@@ -34,9 +36,23 @@ export const POST = withAuth(async (req: NextRequest) => {
     return badRequest({ errors: message });
   }
   try {
-    const { ids, userId, referenceNumber, append } = parsedBody.data;
+    const { ids, userId, referenceNumber, append, selectedPathwayId } =
+      parsedBody.data;
 
-    await recordFundMappingAnalysis(userId, referenceNumber, ids, append);
+    await recordFundMappingAnalysis({
+      userId,
+      referenceNumber,
+      ids,
+      append,
+      selectedPathwayId,
+    });
+
+    await updateApplicationStatus({
+      referenceNumber,
+      status: "Sent to Brokerage",
+      approveOrDeclineValue: undefined,
+      pathwayId: selectedPathwayId,
+    });
 
     return NextResponse.json({ message: "ok" }, { status: 200 });
   } catch (err) {
