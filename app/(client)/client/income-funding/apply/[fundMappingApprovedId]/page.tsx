@@ -212,7 +212,7 @@ export default function FundingApplyPage() {
 
           <Button
             onClick={() => {
-              window.location.href = "/client/my-funding";
+              window.location.href = "/client/income-funding";
             }}
             size="lg"
             className="bg-brand-600 hover:bg-brand-700 text-white px-10 py-6 text-base shadow-md hover:shadow-lg transition-all"
