@@ -23,7 +23,8 @@ export const FundingBankProducts = ({
 
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
     userId: user?.uid,
-    referenceNumber: selectedPathwayId || selectedReference,
+    referenceNumber: selectedReference,
+    pathwayId: selectedPathwayId,
   });
 
   // Filter mapped funds by selected reference number

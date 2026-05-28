@@ -704,18 +704,31 @@ export const updateClientApplicationStatus = async ({
 
 //   return userIds;
 // };
-export const getFundMappingAnalysis = async (referenceNumber: string) => {
+export const getFundMappingAnalysis = async (
+  referenceNumber: string,
+  pathwayId?: string,
+) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(
     `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`,
   );
-  // console.log(referenceNumber);
-  const doc = await collectionRef.get();
-  const bankProductIds = doc.docs.map((doc) => ({
-    bank_products: doc.data().bank_products,
+
+  let docs = [];
+  if (pathwayId) {
+    const docSnapshot = await collectionRef.doc(pathwayId).get();
+    if (docSnapshot.exists) {
+      docs.push(docSnapshot);
+    }
+  } else {
+    const querySnapshot = await collectionRef.get();
+    docs = querySnapshot.docs;
+  }
+
+  const bankProductIds = docs.map((doc) => ({
+    bank_products: doc.data()?.bank_products || [],
   }));
   // console.log("bankProductIds", JSON.stringify(bankProductIds));
-  if (!bankProductIds) return null;
+  if (!bankProductIds || bankProductIds.length === 0) return null;
 
   const result: BankFormData[] = [];
   for (const bankProductId of bankProductIds) {
@@ -779,11 +792,13 @@ export const getFundMappingAnalysisDetails = async ({
   clientApplicationStatus,
   referenceNumber,
   bankProductId,
+  pathwayId,
 }: {
   userId?: string;
   clientApplicationStatus?: ClientApplicationStatus[];
   referenceNumber?: string;
   bankProductId?: string;
+  pathwayId?: string;
 }) => {
   const db = firestoreAdmin();
 
@@ -817,6 +832,10 @@ export const getFundMappingAnalysisDetails = async ({
       "==",
       bankProductId,
     );
+  }
+
+  if (pathwayId) {
+    collectionGroupRef = collectionGroupRef.where("pathwayId", "==", pathwayId);
   }
 
   const doc = await collectionGroupRef.get();
@@ -956,9 +975,11 @@ export const getFundMappingAnalysisDetails = async ({
 export const getAutoServedClientFunds = async ({
   userId,
   referenceNumber,
+  pathwayId,
 }: {
   userId: string;
   referenceNumber: string;
+  pathwayId?: string;
 }): Promise<ApprovedBankFormData[]> => {
   const MONTHLY_CAP_STATUSES: ClientApplicationStatus[] = [
     "Pending",
@@ -969,15 +990,26 @@ export const getAutoServedClientFunds = async ({
   const MONTHLY_CAP = 8;
 
   // 1. Read full queue
-  const queue = (await getFundMappingAnalysis(referenceNumber)) ?? [];
+  // If pathwayId is provided, get the specific pathway's mapped funds. Otherwise, just use referenceNumber (which might actually be the pathway ID due to previous logic, so let's handle that).
+  const docId = pathwayId || referenceNumber;
+  const queue =
+    (await getFundMappingAnalysis(referenceNumber, pathwayId)) ?? [];
 
   // 2. Read existing tracking records directly from Firestore
   const db = firestoreAdmin();
-  const approvedCollectionRef = db.collection(
+  const baseApprovedCollectionRef = db.collection(
     `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
   );
-  const approvedSnapshot = await approvedCollectionRef.get();
-  const existingDocs = approvedSnapshot.docs.map((d) => ({
+  let approvedQuery: any = baseApprovedCollectionRef;
+  if (pathwayId) {
+    approvedQuery = baseApprovedCollectionRef.where(
+      "pathwayId",
+      "==",
+      pathwayId,
+    );
+  }
+  const approvedSnapshot = await approvedQuery.get();
+  const existingDocs = approvedSnapshot.docs.map((d: any) => ({
     id: d.id,
     ...normalizeAllDates(d.data()),
   })) as (ApprovedBankFormData & { autoServed?: boolean; createdAt?: any })[];
@@ -1021,14 +1053,14 @@ export const getAutoServedClientFunds = async ({
 
     for (const bank of banksToServe) {
       // Race condition guard: check if a doc with this bankProductId already exists
-      const existing = await approvedCollectionRef
+      const existing = await approvedQuery
         .where("bankProductId", "==", bank.id)
         .limit(1)
         .get();
 
       if (!existing.empty) continue;
 
-      await approvedCollectionRef.add({
+      await baseApprovedCollectionRef.add({
         bankProductId: bank.id,
         products: bank.products, // ALL products from the bank
         createdAt: Timestamp.now(),
@@ -1036,13 +1068,14 @@ export const getAutoServedClientFunds = async ({
         userId,
         referenceNumber,
         autoServed: true,
+        ...(pathwayId && { pathwayId }),
       });
     }
   }
 
   // 7. Build return data — re-read all fund-mapping-approved records
-  const refreshedSnapshot = await approvedCollectionRef.get();
-  const refreshedDocs = refreshedSnapshot.docs.map((d) => ({
+  const refreshedSnapshot = await approvedQuery.get();
+  const refreshedDocs = refreshedSnapshot.docs.map((d: any) => ({
     id: d.id,
     ...normalizeAllDates(d.data()),
   }));

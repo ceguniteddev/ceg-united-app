@@ -774,10 +774,12 @@ export const useClientMappedFundingDetailsQuery = ({
   userId,
   clientApplicationStatus,
   referenceNumber,
+  pathwayId,
 }: {
   userId?: string;
   clientApplicationStatus?: ClientApplicationStatus[];
   referenceNumber?: string;
+  pathwayId?: string;
 }) => {
   const { user } = useAuth();
 
@@ -793,6 +795,7 @@ export const useClientMappedFundingDetailsQuery = ({
       userId,
       clientApplicationStatus,
       referenceNumber,
+      pathwayId,
     ],
     enabled: !!user,
     queryFn: async () => {
@@ -802,6 +805,10 @@ export const useClientMappedFundingDetailsQuery = ({
 
       if (userId) {
         queryParams.append("userId", userId);
+      }
+
+      if (pathwayId) {
+        queryParams.append("pathwayId", pathwayId);
       }
 
       // Use auto-serve endpoint when referenceNumber is available (client funding page)
