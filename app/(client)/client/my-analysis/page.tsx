@@ -102,7 +102,10 @@ const MyAnalysisPage = () => {
         )}
 
         <section className="flex w-full flex-col gap-6">
-          <FundingAnalysis selectedReference={selectedReference} />
+          <FundingAnalysis
+            selectedReference={selectedReference}
+            selectedPathwayId={""}
+          />
         </section>
       </div>
     </section>
