@@ -4,7 +4,7 @@ import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { USER_COLLECTION } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { logInfo } from "@/lib/logger";
-import { generateCRSReport } from "@/service/crs";
+import { fundAnalysis, generateCRSReport } from "@/service/crs";
 import { getApplyFunding } from "./apply-funding";
 
 export interface UserMembership {
@@ -63,11 +63,8 @@ export const activateUserMembership = async ({
     throw new AppError("Missing reference number");
   }
 
-
-  // Automatically trigger CRS report generation upon activation
+  // Automatically trigger CRS report generation and then Funding Analysis upon activation
   try {
-    
-    // const referenceNumber = `crs-mem-${Date.now()}`;
     logInfo("Triggering CRS report on membership activation", {
       userId,
       referenceNumber,
@@ -78,9 +75,20 @@ export const activateUserMembership = async ({
       bureaus: { equifax: true, experian: true, transunion: true },
       bypassPremiumCheck: true,
     });
+
+    // We trigger the funding analysis here immediately after the CRS report succeeds,
+    // because the analysis usually requires the newly pulled credit report data.
+    logInfo("Triggering Funding Analysis on membership activation", {
+      userId,
+      referenceNumber,
+    });
+    await fundAnalysis({
+      referenceNumber,
+      userId,
+    });
   } catch (error) {
     console.error(
-      "Failed to generate CRS report on membership activation:",
+      "Failed to generate CRS report or Funding Analysis on membership activation:",
       error,
     );
     // We don't throw the error here so that the membership activation itself still succeeds

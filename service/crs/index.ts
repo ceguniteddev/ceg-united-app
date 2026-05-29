@@ -402,21 +402,26 @@ export const fundAnalysis = async ({
   referenceNumber: string;
   userId: string;
 }) => {
+  const url = await getFundingAnalysisNewRegistrationFlow();  
   logInfo("Sending funding application for analysis...", {
     referenceNumber,
     userId,
+    url,
   });
-  await fetch(`${process.env.n8n_HOST}/${await getFundingAnalysis()}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+  await fetch(
+    `${process.env.n8n_HOST}/${await getFundingAnalysisNewRegistrationFlow()}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+      },
+      body: JSON.stringify({
+        referenceNumber,
+        userId,
+      }),
     },
-    body: JSON.stringify({
-      referenceNumber,
-      userId,
-    }),
-  });
+  );
 
   // Add delay before returning to allow N8N workflow to process
   // console.log("Waiting 2 minutes for funding analysis to complete...");
