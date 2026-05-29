@@ -8,8 +8,6 @@ const baseClientData = {
   firstName: "Jane",
   lastName: "Doe",
   email: "jane.doe@example.com",
-  birthdate: pastDate,
-  gender: "Female" as const,
   phoneNumber: "555-867-5309",
   ssn: "123-45-6789",
   registrationType: "client" as const,
@@ -20,14 +18,6 @@ describe("clientApplicationSchema", () => {
   it("accepts valid client registration data", () => {
     const result = clientApplicationSchema.safeParse(baseClientData);
     expect(result.success).toBe(true);
-  });
-
-  it("rejects future birthdate", () => {
-    const result = clientApplicationSchema.safeParse({
-      ...baseClientData,
-      birthdate: futureDate,
-    });
-    expect(result.success).toBe(false);
   });
 
   it("requires password when registrationType is client", () => {
@@ -76,15 +66,6 @@ describe("clientApplicationSchema", () => {
     ).toBe(false);
   });
 
-  it("rejects invalid gender", () => {
-    expect(
-      clientApplicationSchema.safeParse({
-        ...baseClientData,
-        gender: "Unknown",
-      }).success,
-    ).toBe(false);
-  });
-
   it("rejects missing phoneNumber", () => {
     const { phoneNumber: _, ...rest } = baseClientData;
     expect(clientApplicationSchema.safeParse(rest).success).toBe(false);
@@ -97,15 +78,5 @@ describe("clientApplicationSchema", () => {
         ssn: "123456789",
       }).success,
     ).toBe(false);
-  });
-
-  it("accepts valid birthdate exactly today (boundary)", () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const result = clientApplicationSchema.safeParse({
-      ...baseClientData,
-      birthdate: today,
-    });
-    expect(result.success).toBe(true);
   });
 });

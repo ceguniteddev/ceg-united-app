@@ -39,6 +39,7 @@ const mockDb: any = {
 const mockFetch = vi.fn().mockResolvedValue({ ok: true });
 vi.stubGlobal("fetch", mockFetch);
 process.env.n8n_HOST = "https://n8n.example.com";
+process.env.WHOP_API_KEY = "test";
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 vi.mock("@/lib/fireabase-admin", () => ({
@@ -52,11 +53,25 @@ vi.mock("@/lib/n8n", () => ({
   generateCRSReportN8N: vi.fn().mockResolvedValue("webhook-1"),
   deleteCRSReportN8N: vi.fn().mockResolvedValue("webhook-2"),
   getFundingAnalysis: vi.fn().mockResolvedValue("webhook-3"),
+  // getFundingAnalysisNewRegistrationFlow: vi.fn().mockResolvedValue("webhook-3"),
   sendClientAnalysisN8N: vi.fn().mockResolvedValue("webhook-4"),
   sendClientCongratsMessageN8N: vi.fn().mockResolvedValue("webhook-5"),
+  mapBankProductsN8nNewRegistration: vi.fn(),
+  sendClientCongratsMessageN8NNewRegistration: vi.fn(),
 }));
 vi.mock("@/service/user", () => ({ getUserById: vi.fn() }));
+vi.mock("@/service/whop", () => ({
+  createCRSReportCheckoutConfig: vi.fn(),
+}));
+vi.mock("@/service/fee-settings", () => ({ getFeeSettings: vi.fn() }));
 vi.mock("@/service/business", () => ({ getBusiness: vi.fn() }));
+vi.mock("@/service/fee-settings", () => ({ getFeeSettings: vi.fn() }));
+vi.mock("@/service/whop", () => ({
+  createCRSReportCheckoutConfig: vi.fn().mockResolvedValue({
+    checkoutId: "test-checkout-id",
+    url: "https://whop.com/checkout/test",
+  }),
+}));
 
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
 import {
@@ -305,6 +320,13 @@ describe("service/crs/index", () => {
 
   // ── generateCRSReport ─────────────────────────────────────────────────────
   describe("generateCRSReport", () => {
+    beforeEach(() => {
+      vi.mocked(getUserById).mockResolvedValue({
+        id: "u1",
+        isPremiumClient: true,
+      } as any);
+    });
+
     it("calls fetch to n8n webhook URL with correct payload", async () => {
       const promise = generateCRSReport({
         userId: "u1",

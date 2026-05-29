@@ -73,6 +73,13 @@ import { Input } from "@/components/ui/input";
 import SortableHeader from "../SortableHeader";
 import { DataTablePagination } from "../funding/pagination";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const columnHelper = createColumnHelper<BankManagementType>();
 
@@ -88,6 +95,9 @@ const BankManagement = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "brokerage" | "bank">(
+    "all",
+  );
 
   const { deleteBank, isDeleting } = useBankManagementMutation();
 
@@ -102,6 +112,13 @@ const BankManagement = () => {
       setDeletingBankId(null);
     }
   };
+
+  const filteredBanks = React.useMemo(() => {
+    if (!banks) return [];
+    if (filterType === "brokerage") return banks.filter((b) => b.isBrokerage);
+    if (filterType === "bank") return banks.filter((b) => !b.isBrokerage);
+    return banks;
+  }, [banks, filterType]);
 
   const columns = React.useMemo<ColumnDef<BankManagementType, any>[]>(
     () => [
@@ -206,7 +223,7 @@ const BankManagement = () => {
   const [rowSelection, setRowSelection] = React.useState({});
 
   const table = useReactTable({
-    data: banks || [],
+    data: filteredBanks,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -234,12 +251,27 @@ const BankManagement = () => {
         Bank Management
       </h2>
       <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center justify-between">
-        <Input
-          placeholder="Filter"
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="w-full sm:max-w-sm h-10 sm:h-11"
-        />
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-center">
+          <Input
+            placeholder="Search..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="w-full sm:max-w-[200px] h-10 sm:h-11"
+          />
+          <Select
+            value={filterType}
+            onValueChange={(val: any) => setFilterType(val)}
+          >
+            <SelectTrigger className="w-full sm:w-[150px] h-10 sm:h-11 bg-white">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="brokerage">Brokerages</SelectItem>
+              <SelectItem value="bank">Banks</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Button
           onClick={() => {
             setEditingBank(null);

@@ -20,6 +20,11 @@ export interface DashboardData {
   businesses: Business[];
   nextSteps: NextStep[];
   applicationStatus: ApplicationStatus;
+  creditAnalysis?: {
+    issues: string[];
+    negatives: string[];
+    derogatory: string[];
+  };
 }
 
 function detectBureau(
@@ -179,38 +184,44 @@ export function transformClientDataToDashboard(
             : "Needs Improvement",
   };
 
-  // 4. Financial Snapshot - Calculate from Plaid data
-  const allTransactions =
-    getPlaidCompleteData?.flatMap((d) => d.transaction || []) || [];
-  const oneMonthAgo = new Date();
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-  const monthlyDeposits = allTransactions
-    .filter((t: any) => new Date(t.date) >= oneMonthAgo && t.amount < 0)
-    .reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+  // 4. Financial Snapshot - Calculate from fundingApplications
+  const incomeApps =
+    fundingApplications?.filter((app) =>
+      app.fundingProducts?.includes("Business Income Based Funding"),
+    ) || [];
 
-  const allBalances =
-    getPlaidCompleteData?.flatMap((d) => d.balance || []) || [];
-  const personalAccountsBalances = allBalances.filter(
-    (b: any) => b.type === "depository",
-  );
-  const avgBalance =
-    personalAccountsBalances.length > 0
-      ? personalAccountsBalances.reduce(
-          (sum: number, b: any) => sum + (b.balances?.current || 0),
-          0,
-        ) / personalAccountsBalances.length
-      : 0;
+  const latestIncomeApp = incomeApps.sort(
+    (a, b) =>
+      new Date(b.appliedDate || 0).getTime() -
+      new Date(a.appliedDate || 0).getTime(),
+  )[0];
 
-  const allBankIncome =
-    getPlaidCompleteData?.flatMap((d) => d.bank_income || []) || [];
-  const monthlyIncomes = allBankIncome
-    .flatMap((bi: any) => bi.bank_income_summary?.historical_summary || [])
-    .map((summary: any) => summary.total_amount);
-  const verifiedIncome =
-    monthlyIncomes.length > 0
-      ? monthlyIncomes.reduce((a: number, b: number) => a + b, 0) /
-        monthlyIncomes.length
-      : 0;
+  let monthlyDeposits = 0;
+  let avgBalance = 0;
+  let verifiedIncome = 0;
+
+  if (latestIncomeApp) {
+    const computation =
+      (latestIncomeApp as any).businessIncomeComputation || {};
+
+    monthlyDeposits =
+      computation.monthlyBusinessRevenue ||
+      (latestIncomeApp.annualBusinessRevenue
+        ? latestIncomeApp.annualBusinessRevenue / 12
+        : 0) ||
+      computation.monthlyDeposits ||
+      0;
+
+    avgBalance =
+      computation.avgDailyBankBalance ||
+      latestIncomeApp.avgDailyBankBalance ||
+      0;
+
+    verifiedIncome =
+      computation.estimatedApprovalAmount ||
+      computation.preApprovedAmount ||
+      monthlyDeposits;
+  }
 
   const financialSnapshot: FinancialSnapshot = {
     monthlyDeposits: Math.round(monthlyDeposits),
@@ -245,28 +256,40 @@ export function transformClientDataToDashboard(
   }));
 
   // 6. Next Steps (hardcoded for now - TODO: integrate with user onboarding state)
-  const hasPlaid = (getPlaidCompleteData?.length || 0) > 0;
-  const hasBusiness = businessesWithCrsData.length > 0;
-  const hasApplied = (fundingApplications?.length || 0) > 0;
+
+  const hasBankStatements =
+    (getPlaidCompleteData?.length || 0) > 0 ||
+    clientData.userDocuments?.some(
+      (doc) =>
+        doc.name.includes("PERSONAL_BANK_STATEMENTS") ||
+        doc.name.includes("BANK_STATEMENTS"),
+    ) ||
+    false;
+
+  let hasBusiness = businessesWithCrsData.length > 0;
+  let hasApplied = (fundingApplications?.length || 0) > 0;
 
   const nextSteps: NextStep[] = [
     {
       id: "step-1",
       label: "Upload bank statements",
-      completed: hasPlaid,
+      completed: hasBankStatements,
       icon: "upload",
+      href: !hasBankStatements ? "/client/my-documents" : undefined,
     },
     {
       id: "step-2",
       label: "Add business EIN",
       completed: hasBusiness,
       icon: "building",
+      href: !hasBusiness ? "/client/my-business" : undefined,
     },
     {
       id: "step-3",
       label: "Apply to matched lenders",
       completed: hasApplied,
       icon: "send",
+      href: !hasApplied ? "/client/income-funding" : undefined,
     },
   ];
 
@@ -293,6 +316,23 @@ export function transformClientDataToDashboard(
     declined,
   };
 
+  // 8. Credit Analysis (Issues)
+  const issuesDoc = crsReportData?.find((d) => d.id === "issues") as any;
+  const reportIssues = issuesDoc?.report?.[0]?.issues ?? [];
+  const reportNegatives = issuesDoc?.report?.[0]?.negatives ?? [];
+  const reportDerogatory = issuesDoc?.report?.[0]?.degoretory ?? [];
+
+  const creditAnalysis =
+    reportIssues.length > 0 ||
+    reportNegatives.length > 0 ||
+    reportDerogatory.length > 0
+      ? {
+          issues: reportIssues,
+          negatives: reportNegatives,
+          derogatory: reportDerogatory,
+        }
+      : undefined;
+
   return {
     fundingMetrics,
     creditScores,
@@ -301,5 +341,6 @@ export function transformClientDataToDashboard(
     businesses,
     nextSteps,
     applicationStatus,
+    creditAnalysis,
   };
 }

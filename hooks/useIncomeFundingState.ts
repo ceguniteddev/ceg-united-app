@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type {
   DealOffer,
   DealStatus,
@@ -43,8 +44,8 @@ const defaultEmptyDeal: IncomeFundingDeal = {
     {
       key: "articles",
       title: "Articles of Organization",
-      description: "State filed business documents.",
-      required: true,
+      description: "State filed business documents (Optional).",
+      required: false,
       status: "required",
     },
     {
@@ -80,19 +81,31 @@ const defaultEmptyDeal: IncomeFundingDeal = {
 //   const [deal] = useDocument(doc(db, `users/${uid}/income-funding-deals/${dealId}`))
 // and persist setDeal* calls back to Firestore.
 
-export function useIncomeFundingState() {
+export function useIncomeFundingState(
+  selectedReference?: string,
+  selectedPathwayId: string = "income_based",
+) {
   const [deal, setDeal] = useState<IncomeFundingDeal>(defaultEmptyDeal);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { userDocuments } = useUserDocumentsQuery({ userId: user?.uid || "" });
   const { appliedFunding, isLoading: isLoadingApplications } =
     useGetUserApplyFunding();
   const { onOpen: triggerConfetti } = useConfettiStore();
 
-  // Find the real deal reference number
-  const realDeal = appliedFunding?.find((app) =>
-    app.fundingProducts?.includes("Business Income Based Funding"),
-  );
+  // Find the real deal reference number based on selectedReference or the first one
+  // const incomeFundingApps = appliedFunding?.filter((app) =>
+  //   app.fundingProducts?.includes("Business Income Based Funding"),
+  // );
+
+  const incomeFundingApps = appliedFunding;
+
+  const realDeal = selectedReference
+    ? incomeFundingApps?.find(
+        (app) => app.referenceNumber === selectedReference,
+      )
+    : incomeFundingApps?.[0];
   const referenceNumber = realDeal?.referenceNumber;
 
   // Sync with actual user documents and deal status uploaded to Firebase
@@ -107,14 +120,34 @@ export function useIncomeFundingState() {
       let nextUnderwritingInput = d.underwritingInput;
 
       if (realDeal) {
-        if (realDeal.status === "Sent to Brokerage") {
-          nextStatus = "under-review";
+        const appliedPathways = (realDeal as any)?.appliedPathways || [];
+        const appliedPathway = appliedPathways.find(
+          (p: any) => p.pathwayId === selectedPathwayId,
+        );
+        const pathwayStatus = appliedPathway?.status;
+        const globalStatus = realDeal.status;
+
+        // Base status on pathway status, falling back to global status
+        const relevantStatus = pathwayStatus || globalStatus;
+
+        if (relevantStatus === "Sent to Brokerage") {
+          // If the user is currently working on an application (collecting-documents) or just submitted (under-review), keep their current local state.
+          // Otherwise (e.g., when revisiting the page initially at "prequalified"), keep it as "prequalified"
+          // so they have the option to select other pathways (credit_card_stacking, business_loc, etc).
+          if (
+            d.status === "under-review" ||
+            d.status === "collecting-documents"
+          ) {
+            nextStatus = d.status;
+          } else {
+            nextStatus = "prequalified";
+          }
         } else if (
-          realDeal.status === "Pre-Approved" ||
-          realDeal.status === "Offer Accepted"
+          relevantStatus === "Pre-Approved" ||
+          relevantStatus === "Offer Accepted"
         ) {
           nextStatus = "offers-ready";
-        } else if (realDeal.status === "Approved") {
+        } else if (relevantStatus === "Approved") {
           nextStatus = "complete";
         }
 
@@ -136,7 +169,10 @@ export function useIncomeFundingState() {
               d.underwritingResult.grade) as any,
             maxFundingAmount:
               computation?.preApprovedAmount ||
-              computation?.estimatedApprovalAmount ||
+              (typeof computation?.estimatedApprovalAmount === "object" &&
+              computation?.estimatedApprovalAmount !== null
+                ? computation.estimatedApprovalAmount.amount
+                : computation?.estimatedApprovalAmount) ||
               d.underwritingResult.maxFundingAmount,
             rationale: computation?.rationale || d.underwritingResult.rationale,
           };
@@ -145,7 +181,8 @@ export function useIncomeFundingState() {
             ...d.underwritingInput,
             monthlyDeposits: (realDeal as any).annualBusinessRevenue
               ? (realDeal as any).annualBusinessRevenue / 12
-              : computation?.monthlyDeposits ||
+              : computation?.monthlyBusinessRevenue ||
+                computation?.monthlyDeposits ||
                 d.underwritingInput.monthlyDeposits,
             timeInBusinessMonths: (realDeal as any).dateOfIncorporation
               ? Math.floor(
@@ -168,17 +205,32 @@ export function useIncomeFundingState() {
       // If we are initially in prequalified, but documents exist, we might want to stay in collecting-documents.
       // But let's only overwrite if backend has a higher status.
 
-      let updatedDocs = d.documents;
+      let updatedDocs = d.documents.map((doc, i) => ({
+        ...doc,
+        required: defaultEmptyDeal.documents[i].required,
+        title: defaultEmptyDeal.documents[i].title,
+        description: defaultEmptyDeal.documents[i].description,
+      }));
+
       if (userDocuments && userDocuments.length > 0) {
-        updatedDocs = d.documents.map((doc) => {
+        updatedDocs = updatedDocs.map((doc) => {
           let documentTypeId = "OTHER";
           if (doc.key === "ein") documentTypeId = "EIN_LETTER";
           else if (doc.key === "articles")
             documentTypeId = "ARTICLES_OF_ORGANIZATION";
           else if (doc.key === "id") documentTypeId = "DRIVERS_LICENSE";
-          else if (doc.key === "bankStatements")
-            documentTypeId = "BANK_STATEMENTS";
-          else if (doc.key === "voidedCheck") documentTypeId = "VOIDED_CHECK";
+          else if (doc.key === "bankStatements") {
+            // We don't have the selected pathway in the hook scope directly,
+            // so we'll check for either bank statement type existing in user docs
+            const hasPersonal = userDocuments.some((apiDoc: any) =>
+              (apiDoc.name.split("/").pop() || "").startsWith(
+                "PERSONAL_BANK_STATEMENTS_",
+              ),
+            );
+            documentTypeId = hasPersonal
+              ? "PERSONAL_BANK_STATEMENTS"
+              : "BANK_STATEMENTS";
+          } else if (doc.key === "voidedCheck") documentTypeId = "VOIDED_CHECK";
 
           const matchingApiDocs = userDocuments.filter((apiDoc: any) => {
             const rawName = apiDoc.name.split("/").pop() || "";
@@ -208,7 +260,11 @@ export function useIncomeFundingState() {
       }
 
       const isDocsDifferent = updatedDocs.some(
-        (uDoc, i) => uDoc.status !== d.documents[i].status,
+        (uDoc, i) =>
+          uDoc.status !== d.documents[i].status ||
+          uDoc.required !== d.documents[i].required ||
+          uDoc.title !== d.documents[i].title ||
+          uDoc.description !== d.documents[i].description,
       );
 
       if (
@@ -238,6 +294,7 @@ export function useIncomeFundingState() {
     (realDeal as any)?.offers,
     (realDeal as any)?.selectedOfferId,
     (realDeal as any)?.businessIncomeComputation,
+    selectedPathwayId,
   ]);
 
   const setStatus = useCallback((status: DealStatus) => {
@@ -262,37 +319,47 @@ export function useIncomeFundingState() {
     [],
   );
 
-  const submitForUnderwriting = useCallback(async () => {
-    if (!user?.uid || !referenceNumber) {
-      toast.error("Unable to find funding application record.");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      const response = await fetch(
-        `/api/user/${user.uid}/funding-application/${referenceNumber}/submit-underwriting`,
-        {
-          method: "POST",
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to submit to underwriting.");
+  const submitForUnderwriting = useCallback(
+    async (pathwayId?: string) => {
+      if (!user?.uid || !referenceNumber) {
+        toast.error("Unable to find funding application record.");
+        return;
       }
 
-      setDeal((d) => ({
-        ...d,
-        status: "under-review",
-        submittedAt: new Date().toISOString(),
-      }));
-      toast.success("Successfully submitted for underwriting!");
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [user?.uid, referenceNumber]);
+      try {
+        setIsSubmitting(true);
+        const response = await fetch(
+          `/api/user/${user.uid}/funding-application/${referenceNumber}/submit-underwriting`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pathwayId: pathwayId || "income_based" }),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to submit to underwriting.");
+        }
+
+        setDeal((d) => ({
+          ...d,
+          status: "under-review",
+          submittedAt: new Date().toISOString(),
+        }));
+
+        queryClient.invalidateQueries({
+          queryKey: ["GET_USER_APPLY_FUNDING", user?.uid],
+        });
+
+        toast.success("Successfully submitted for underwriting!");
+      } catch (error: any) {
+        toast.error(error.message || "An error occurred.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [user?.uid, referenceNumber, queryClient],
+  );
 
   const skipOffer = useCallback(
     async (offerId: string) => {
@@ -466,6 +533,7 @@ export function useIncomeFundingState() {
   return {
     deal,
     realDeal,
+    incomeFundingApps,
     isLoadingApplications,
     setStatus,
     setDocuments,

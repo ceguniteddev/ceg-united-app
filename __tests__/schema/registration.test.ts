@@ -118,8 +118,6 @@ describe("registrationSchema", () => {
     firstName: "Jane",
     lastName: "Doe",
     email: "jane@example.com",
-    birthdate: new Date("1990-01-15"),
-    gender: "Female" as const,
     phoneNumber: "555-123-4567",
     ssn: "234-56-7890",
   };
@@ -150,15 +148,6 @@ describe("registrationSchema", () => {
   it("should reject an invalid SSN", () => {
     expect(
       registrationSchema.safeParse({ ...validRegistration, ssn: "000-00-0000" })
-        .success,
-    ).toBe(false);
-  });
-
-  it("should reject a future birthdate", () => {
-    const future = new Date();
-    future.setFullYear(future.getFullYear() + 1);
-    expect(
-      registrationSchema.safeParse({ ...validRegistration, birthdate: future })
         .success,
     ).toBe(false);
   });

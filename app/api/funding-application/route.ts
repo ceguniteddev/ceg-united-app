@@ -10,6 +10,7 @@ const querySchema = z.object({
   // Your existing Zod schema for the array is correct
   clientApplicationStatus: ClientApplicationStatusEnum.array().optional(),
   referenceNumber: z.string().optional(),
+  pathwayId: z.string().optional(),
 });
 
 export const GET = withAuth(async (request: NextRequest) => {
@@ -19,6 +20,7 @@ export const GET = withAuth(async (request: NextRequest) => {
   const queryToValidate = {
     userId: searchParams.get("userId") ?? undefined,
     referenceNumber: searchParams.get("referenceNumber") ?? undefined,
+    pathwayId: searchParams.get("pathwayId") ?? undefined,
     // Use .getAll() to correctly capture all values for the array key
     clientApplicationStatus: searchParams.getAll("clientApplicationStatus"),
   };
@@ -32,13 +34,15 @@ export const GET = withAuth(async (request: NextRequest) => {
   }
 
   // query.data is now correctly typed and validated
-  const { userId, clientApplicationStatus, referenceNumber } = query.data;
+  const { userId, clientApplicationStatus, referenceNumber, pathwayId } =
+    query.data;
 
   try {
     const data = await getFundMappingAnalysisDetails({
       userId,
       clientApplicationStatus,
       referenceNumber,
+      pathwayId,
     });
     return NextResponse.json(data, { status: 200 });
   } catch (error: any) {

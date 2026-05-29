@@ -137,10 +137,11 @@ export interface AdminClient {
   monthlyRevenue: number;
   email: string;
   grade: RiskGrade;
-  preApprovedAmount: number;
+  preApprovedAmount: number | { amount: number; calculationSteps?: string; rationale?: string; stipulations?: string[] };
   status: DealStatus;
   backendStatus?: string;
   submittedAt: string;
   documents: DocumentRecord[];
   offers: DealOffer[];
+  ein?: string;
 }

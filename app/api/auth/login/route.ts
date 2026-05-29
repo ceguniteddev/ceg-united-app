@@ -33,21 +33,21 @@ export async function POST(request: NextRequest) {
     if (!email || !password) {
       return NextResponse.json(
         { message: "Email and password are required." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const userCredential = await signInWithEmailAndPassword(
       authFirebase,
       email,
-      password
+      password,
     );
     const firebaseUser = userCredential.user;
 
     if (!firebaseUser.emailVerified) {
       return NextResponse.json(
         { message: "Please verify your email before signing in." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -66,8 +66,9 @@ export async function POST(request: NextRequest) {
         email: firebaseUser.email,
         name: firebaseUser.displayName,
         emailVerified: firebaseUser.emailVerified,
+        isOnboarded: userData.isOnboarded,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Login API Error:", error);
@@ -79,13 +80,13 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { message: "Invalid email or password." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     return NextResponse.json(
       { message: "An internal server error occurred." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

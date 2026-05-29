@@ -1,5 +1,5 @@
 import { withAuth } from "@/lib/api-validation";
-import { recordFundMappingAnalysis } from "@/service/bank-products";
+// import { recordFundMappingAnalysis } from "@/service/bank-products";
 import { badRequest, internalServerError, notFound } from "@/app/api/helpers";
 import { NextResponse } from "next/server";
 import { mapBankProductsN8n } from "@/lib/n8n";

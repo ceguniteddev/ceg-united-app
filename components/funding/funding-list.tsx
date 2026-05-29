@@ -19,6 +19,7 @@ import {
   BanknoteX,
   CircleDollarSign,
   Loader2Icon,
+  LockIcon,
   SendIcon,
   XCircle,
 } from "lucide-react";
@@ -56,6 +57,17 @@ import { LenderLogo } from "./v2/LenderLogo";
 import { CheckCircle2 } from "lucide-react";
 import IconMenu from "../icon-menu";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
+import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
+
+import { toast } from "sonner";
+import { createMembershipCheckoutConfig } from "@/service/whop";
+import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 const baseColumns: ColumnDef<BankFormData>[] = [
   {
@@ -84,7 +96,7 @@ const baseColumns: ColumnDef<BankFormData>[] = [
             size="sm"
           />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">
+            <p className="text-sm font-semibold text-gray-900 whitespace-normal break-words max-w-[250px] md:max-w-[300px] xl:max-w-[400px]">
               {data.bankName}
             </p>
             {data.clientApplicationStatus === "Funded" && data.fundedAmount && (
@@ -542,6 +554,14 @@ const ActionCell = ({ row }: { row: any }) => {
   const router = useRouter();
   const [isDenefitsPaid, setIsDenefitsPaid] = React.useState(false);
   const [isSkipDialogOpen, setSkipDialogOpen] = React.useState(false);
+  const [isPricingModalOpen, setPricingModalOpen] = React.useState(false);
+  const [checkoutId, setCheckoutId] = React.useState<string | null>(null);
+  const [isCheckoutSheetOpen, setCheckoutSheetOpen] = React.useState(false);
+  const [isCreatingCheckout, setIsCreatingCheckout] = React.useState(false);
+  const [selectedPlan, setSelectedPlan] = React.useState<{
+    id: string;
+    amount: number;
+  } | null>(null);
   const { userData } = useAuth();
 
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
@@ -566,7 +586,7 @@ const ActionCell = ({ row }: { row: any }) => {
 
   const handleApproveClickCapture = () => {
     router.push(
-      `/client/my-funding/apply/${row.original.fundMappingApprovedId}`,
+      `/client/income-funding/apply/${row.original.fundMappingApprovedId}`,
     );
   };
 
@@ -580,39 +600,116 @@ const ActionCell = ({ row }: { row: any }) => {
     formSkip.reset();
   };
 
+  const handleSelectPlan = async (planId: string, amount: number) => {
+    if (!row.original.userId) return;
+    try {
+      setIsCreatingCheckout(true);
+      const res = await createMembershipCheckoutConfig({
+        userId: row.original.userId,
+        planId: planId as any,
+      });
+      setCheckoutId(res.checkoutId);
+      setSelectedPlan({ id: planId, amount });
+      setPricingModalOpen(false);
+      setCheckoutSheetOpen(true);
+    } catch (err: any) {
+      toast.error("Failed to start checkout: " + err.message);
+    } finally {
+      setIsCreatingCheckout(false);
+    }
+  };
+
   if (row.original.clientApplicationStatus !== "Not Applied") return null;
 
   return (
     <>
       <div className="flex gap-2 w-full lg:w-auto">
-        <Button
-          type="button"
-          variant="outline"
-          disabled={!isDenefitsPaid && !userData?.isPremiumClient}
-          className="group bg-blue-500 hover:bg-blue-600 text-white cursor-pointer flex-1 lg:flex-none transition-all"
-          onClick={() => handleApproveClickCapture()}
-        >
-          <IconMenu
-            icon={
-              <SendIcon className="h-4 w-4 transition-all group-hover:fill-white group-hover:stroke-[1.5]" />
-            }
-            text="Apply"
-          />
-        </Button>
+        {userData?.isPremiumClient ? (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              className="group bg-blue-500 hover:bg-blue-600 text-white cursor-pointer flex-1 lg:flex-none transition-all"
+              onClick={() => handleApproveClickCapture()}
+            >
+              <IconMenu
+                icon={
+                  <SendIcon className="h-4 w-4 transition-all group-hover:fill-white group-hover:stroke-[1.5]" />
+                }
+                text="Apply"
+              />
+            </Button>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="group border-gray-300 hover:border-gray-400 hover:bg-gray-50 flex-1 lg:flex-none transition-all"
-          onClick={() => setSkipDialogOpen(true)}
+            <Button
+              type="button"
+              variant="outline"
+              className="group border-gray-300 hover:border-gray-400 hover:bg-gray-50 flex-1 lg:flex-none transition-all"
+              onClick={() => setSkipDialogOpen(true)}
+            >
+              <IconMenu
+                icon={
+                  <XCircle className="h-4 w-4 text-gray-600 transition-all group-hover:text-gray-700" />
+                }
+                text="Skip"
+              />
+            </Button>
+          </>
+        ) : (
+          <Button
+            type="button"
+            className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold cursor-pointer flex-1 lg:flex-none transition-all border-none shadow-md hover:shadow-lg"
+            onClick={() => setPricingModalOpen(true)}
+          >
+            <span className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-out -skew-x-12 -translate-x-full" />
+            <IconMenu
+              icon={
+                <LockIcon className="h-4 w-4 transition-all group-hover:scale-110" />
+              }
+              text="Unlock to Apply"
+            />
+          </Button>
+        )}
+
+        <ResponsiveDialog
+          isOpen={isPricingModalOpen}
+          setIsOpen={setPricingModalOpen}
+          title="Upgrade to Apply"
+          description=""
+          className="sm:max-w-[90vw] md:max-w-6xl max-h-[90vh] overflow-y-auto p-0 border-0"
         >
-          <IconMenu
-            icon={
-              <XCircle className="h-4 w-4 text-gray-600 transition-all group-hover:text-gray-700" />
-            }
-            text="Skip"
+          <PricingPlans
+            isLoading={isCreatingCheckout}
+            onSelectPlan={handleSelectPlan}
           />
-        </Button>
+        </ResponsiveDialog>
+
+        <Sheet open={isCheckoutSheetOpen} onOpenChange={setCheckoutSheetOpen}>
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden"
+          >
+            <SheetHeader className="px-6 py-4 border-b border-gray-200">
+              <SheetTitle className="text-xl font-bold">
+                Secure Checkout
+              </SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto">
+              {checkoutId && selectedPlan && (
+                <MembershipCheckoutView
+                  checkoutId={checkoutId}
+                  userId={row.original.userId}
+                  tierId={selectedPlan.id}
+                  amount={selectedPlan.amount}
+                  prefillEmail={userData?.email || ""}
+                  onPaymentCompleteAction={() => {
+                    setCheckoutSheetOpen(false);
+                    router.refresh();
+                  }}
+                />
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
 
         <ResponsiveDialog
           isOpen={isSkipDialogOpen}

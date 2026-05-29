@@ -1,5 +1,5 @@
 "use server";
-import { getUserById, getUsers } from "./user";
+import { getUserById, getUsers, getUserDocuments } from "./user";
 import { getApplyFunding, getFundingApplications } from "./apply-funding";
 import { getBusiness } from "./business";
 import {
@@ -213,6 +213,7 @@ export const getClientStatistics = async (userId: string) => {
   );
 
   const getPlaidCompleteData = await getPlaidCompleteDataForUser(userId);
+  const userDocuments = await getUserDocuments({ userId });
 
   return {
     userData,
@@ -221,5 +222,6 @@ export const getClientStatistics = async (userId: string) => {
     approvedFunds,
     businessesWithCrsData,
     getPlaidCompleteData,
+    userDocuments,
   };
 };

@@ -166,7 +166,7 @@ export function ClientDetail({
                   <span className="font-semibold text-gray-700">
                     Pre-approved:
                   </span>{" "}
-                  {formatUSD(client.preApprovedAmount)}
+                  {formatUSD(typeof client.preApprovedAmount === 'object' && client.preApprovedAmount !== null ? (client.preApprovedAmount as any).amount : client.preApprovedAmount)}
                 </span>
                 <span>
                   <span className="font-semibold text-gray-700">
@@ -280,17 +280,38 @@ export function ClientDetail({
             </h3>
             {client.documents && client.documents.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                {client.documents.map((d) => (
-                  <DocumentUploadCard
-                    key={d.key}
-                    doc={d}
-                    onUpload={handleUpload}
-                    isUploading={uploadingState[d.key]}
-                    onView={(url, title, contentType) =>
-                      setPreviewDoc({ url, title, contentType })
-                    }
-                  />
-                ))}
+                {client.documents.map((d) => {
+                  let isRequired = d.required;
+                  let providedValue = undefined;
+                  
+                  if (d.key === "articles") {
+                    isRequired = false;
+                  }
+                  
+                  if (d.key === "ein" && client.ein) {
+                    isRequired = false;
+                    providedValue = client.ein;
+                  }
+
+                  // Just in case it's a personal pathway, title might differ, but the backend doesn't currently tell us which pathway they selected to filter by here. We'll leave the title default.
+
+                  const docDisplay = {
+                    ...d,
+                    required: isRequired,
+                    providedValue,
+                  };
+                  return (
+                    <DocumentUploadCard
+                      key={docDisplay.key}
+                      doc={docDisplay}
+                      onUpload={handleUpload}
+                      isUploading={uploadingState[docDisplay.key]}
+                      onView={(url, title, contentType) =>
+                        setPreviewDoc({ url, title, contentType })
+                      }
+                    />
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-gray-500 text-center py-6 border border-dashed border-gray-200 rounded-xl">

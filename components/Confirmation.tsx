@@ -18,7 +18,7 @@ import { Loader2Icon } from "lucide-react";
 type ConfirmButtonProps = {
   label?: string; // optional when using custom trigger
   confirmLabel?: string;
-  description: string;
+  description: React.ReactNode;
   variant?: "default" | "destructive" | "outline" | "secondary";
   size?: "sm" | "default" | "lg";
   icon?: React.ReactNode;
@@ -33,6 +33,7 @@ type ConfirmButtonProps = {
   showTrigger?: boolean; // NEW: allow no trigger (controlled mode)
   open?: boolean; // NEW: controlled open
   onOpenChange?: (open: boolean) => void; // NEW: controlled open change
+  title?: string; // NEW: allow custom title
 };
 
 export const ConfirmButton = ({
@@ -53,6 +54,7 @@ export const ConfirmButton = ({
   showTrigger = true,
   open,
   onOpenChange,
+  title = "Are you sure?",
 }: ConfirmButtonProps) => {
   const isBusy = isLoading || disabled;
 
@@ -73,16 +75,27 @@ export const ConfirmButton = ({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      {showTrigger && <AlertDialogTrigger asChild>{triggerNode}</AlertDialogTrigger>}
+      {showTrigger && (
+        <AlertDialogTrigger asChild>{triggerNode}</AlertDialogTrigger>
+      )}
 
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          {typeof description === "string" ? (
+            <AlertDialogDescription>{description}</AlertDialogDescription>
+          ) : (
+            <AlertDialogDescription asChild>
+              <div>{description}</div>
+            </AlertDialogDescription>
+          )}
         </AlertDialogHeader>
 
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isBusy} className={cn("cursor-pointer", classNameCancel)}>
+          <AlertDialogCancel
+            disabled={isBusy}
+            className={cn("cursor-pointer", classNameCancel)}
+          >
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction

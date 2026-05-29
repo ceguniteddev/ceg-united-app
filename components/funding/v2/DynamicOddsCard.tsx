@@ -95,7 +95,7 @@ export function DynamicOddsCard({
   const hasProducts = lender.products && lender.products.length > 0;
 
   const buttonText =
-    method === "specialist" ? "Request Banker Contact" : "Apply Now";
+    method === "specialist" ? "Conect me with Banker" : "Apply Now";
   const buttonSubtext =
     method === "specialist"
       ? `A ${lender.bankName} specialist will contact you within 1-2 business days.`
@@ -119,21 +119,6 @@ export function DynamicOddsCard({
             </div>
           </div>
         </div>
-        <button className="text-gray-400 hover:text-gray-600">
-          <svg
-            className="size-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-            />
-          </svg>
-        </button>
       </div>
 
       {/* Your Approval Odds */}

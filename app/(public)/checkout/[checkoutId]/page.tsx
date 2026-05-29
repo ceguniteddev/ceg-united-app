@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { getWhopCheckoutDetailByCheckoutId } from "@/service/whop";
 import { WhopCheckoutView } from "@/components/funding/WhopCheckoutView";
+import { Metadata } from "next";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Complete Your Purchase - CEG United",
 };
 

@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Bot } from "lucide-react";
+import {
+  ArrowLeft,
+  Bot,
+  CheckCircle2,
+  Mail,
+  MessageSquare,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { SelectedLenderCard } from "@/components/funding/v2/SelectedLenderCard";
@@ -12,7 +18,6 @@ import {
 } from "@/components/funding/v2/MethodSelectionCard";
 import { InstructionSteps } from "@/components/funding/v2/InstructionSteps";
 import { DynamicOddsCard } from "@/components/funding/v2/DynamicOddsCard";
-import { RedirectStateCard } from "@/components/funding/v2/RedirectStateCard";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
 import { useApprovedMappedFundsMutation } from "@/hooks/admin/funding-application/fund-mapping";
 import { useAuth } from "@/provider/AuthContext";
@@ -22,19 +27,19 @@ import type { ApprovedBankFormData } from "@/schema/bank-products";
 // Instruction steps for online application
 const onlineSteps = [
   {
-    title: "Visit Bank Website",
+    title: "Application Data Preparation",
     description:
-      "You're being directed to the bank's secure website to complete your application.",
+      "We securely package your application data instead of submitting sensitive data directly to the bank.",
   },
   {
-    title: "Pre-Filled Application",
+    title: "Check Email & WhatsApp",
     description:
-      "Your information will be automatically pre-filled into the bank application form for convenience.",
+      "You will receive your application data via email and WhatsApp messages for your records.",
   },
   {
-    title: "Review & Submit",
+    title: "Guided Online Application",
     description:
-      "Review your details, provide any additional required information, and submit your application online.",
+      "A funding specialist will provide assistance to help you complete your online application securely.",
   },
 ];
 
@@ -68,7 +73,7 @@ export default function FundingApplyPage() {
   const { user } = useAuth();
   const fundMappingApprovedId = params.fundMappingApprovedId as string;
 
-  const [showRedirect, setShowRedirect] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
     userId: user?.uid,
@@ -117,13 +122,7 @@ export default function FundingApplyPage() {
       applicationMethod: method, // Pass the selected method
     });
 
-    if (isOnline) {
-      // Show redirect modal for online applications
-      setShowRedirect(true);
-    } else {
-      // For specialist, just navigate back with success message
-      router.push("/client/my-funding");
-    }
+    setIsSubmitted(true);
   };
 
   if (isLoading) {
@@ -142,12 +141,83 @@ export default function FundingApplyPage() {
             Lender Not Found
           </h1>
           <p className="text-gray-600 mb-6">
-            The funding application you&apos;re looking for doesn&apos;t exist
-            or has been removed.
+            The funding application you're looking for doesn't exist or has been
+            removed.
           </p>
           <Button onClick={() => router.push("/client/my-funding")}>
             <ArrowLeft className="size-4 mr-2" />
             Back to Funding
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isSubmitted) {
+    return (
+      <div className="max-w-[1400px] mx-auto px-6 py-12">
+        <div className="bg-white rounded-2xl border border-emerald-100 shadow-lg p-8 sm:p-12 text-center animate-fade-in-up max-w-3xl mx-auto">
+          <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle2 className="size-10" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+            Application Registered Successfully!
+          </h1>
+          <p className="text-gray-600 text-lg mb-8 leading-relaxed">
+            Your application for funding with{" "}
+            <span className="font-semibold text-gray-900">
+              {lender.bankName}
+            </span>{" "}
+            has been securely recorded in our system. A team member will reach
+            out to schedule the appointment with the banker.
+          </p>
+
+          {/* <div className="bg-blue-50/50 rounded-xl p-6 sm:p-8 max-w-2xl mx-auto border border-blue-100 mb-8 text-left">
+            <h3 className="font-semibold text-gray-900 mb-5 text-lg border-b border-blue-100 pb-3">
+              Next Steps
+            </h3>
+            <ul className="space-y-6">
+              <li className="flex gap-4">
+                <div className="flex-shrink-0 mt-0.5 bg-blue-100 p-2.5 rounded-lg text-blue-700 h-fit">
+                  <Mail className="size-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 text-base">
+                    Check Your Email
+                  </p>
+                  <p className="text-gray-600 text-sm mt-1 leading-relaxed">
+                    Please check your inbox periodically for updates. We've sent
+                    your complete application data to your registered email
+                    address for your records.
+                  </p>
+                </div>
+              </li>
+              <li className="flex gap-4">
+                <div className="flex-shrink-0 mt-0.5 bg-green-100 p-2.5 rounded-lg text-green-700 h-fit">
+                  <MessageSquare className="size-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 text-base">
+                    Watch for a WhatsApp Message
+                  </p>
+                  <p className="text-gray-600 text-sm mt-1 leading-relaxed">
+                    A team member will reach out via WhatsApp shortly to
+                    schedule the appointment with the banker and provide further
+                    assistance.
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </div> */}
+
+          <Button
+            onClick={() => {
+              window.location.href = "/client/my-funding";
+            }}
+            size="lg"
+            className="bg-brand-600 hover:bg-brand-700 text-white px-10 py-6 text-base shadow-md hover:shadow-lg transition-all"
+          >
+            Return to Dashboard
           </Button>
         </div>
       </div>
@@ -168,10 +238,10 @@ export default function FundingApplyPage() {
       {/* Page heading */}
       <div className="mb-6 animate-fade-in-up">
         <h1 className="text-xl font-bold text-gray-900">
-          You&apos;ve Started Your Application
+          You've Started Your Application
         </h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          Next, choose how you&apos;d like to apply for funding from{" "}
+          Next, choose how you'd like to apply for funding from{" "}
           {lender.bankName}.
         </p>
       </div>
@@ -212,20 +282,6 @@ export default function FundingApplyPage() {
           isLoading={isApplying}
         />
       </div>
-
-      {/* Floating assistant button */}
-      <button className="fixed bottom-6 right-6 size-12 bg-brand-600 text-white rounded-full shadow-lg hover:bg-brand-700 hover:shadow-xl transition-all flex items-center justify-center z-30">
-        <Bot className="size-5" />
-      </button>
-
-      {/* Redirect overlay */}
-      {showRedirect && (
-        <RedirectStateCard
-          lenderName={lender.bankName}
-          applicationUrl={lender.applicationUrl}
-          onBack={() => setShowRedirect(false)}
-        />
-      )}
     </div>
   );
 }

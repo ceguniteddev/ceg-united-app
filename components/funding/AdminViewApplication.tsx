@@ -22,17 +22,17 @@ type Props = {
 };
 
 const AdminViewApplication = ({ formSetOpen, formData }: Props) => {
-  useEffect(() => {
-    const updateStatus = async () => {
-      if (formData?.status === "New") {
-        await updateApplicationStatus(
-          formData.referenceNumber ?? "",
-          "Processing"
-        );
-      }
-    };
-    updateStatus();
-  }, [formData]);
+  // useEffect(() => {
+  //   const updateStatus = async () => {
+  //     if (formData?.status === "New") {
+  //       await updateApplicationStatus({
+  //         referenceNumber: formData.referenceNumber ?? "",
+  //         status: "Processing",
+  //       });
+  //     }
+  //   };
+  //   updateStatus();
+  // }, [formData]);
 
   return (
     <Tabs
@@ -44,19 +44,19 @@ const AdminViewApplication = ({ formSetOpen, formData }: Props) => {
         <TabsTrigger value="user-profile">User Profile</TabsTrigger>
         <TabsTrigger value="documents">Documents</TabsTrigger>
         <TabsTrigger value="analysis">Analysis</TabsTrigger>
-        <TabsTrigger value="fund-mapping">Fund Mapping</TabsTrigger>
+        {/* <TabsTrigger value="fund-mapping">Fund Mapping</TabsTrigger> */}
         <TabsTrigger value="notes">Notes</TabsTrigger>
         {/* <TabsTrigger value="approve-decline">
           Approve/Decline Application
         </TabsTrigger> */}
         {/* <TabsTrigger value="email">Email</TabsTrigger> */}
       </TabsList>
-      <TabsContent value="fund-mapping" className="w-full">
+      {/* <TabsContent value="fund-mapping" className="w-full">
         <AdminMappedFunds
           referenceNumber={formData?.referenceNumber ?? ""}
           userId={formData?.userId ?? ""}
         />
-      </TabsContent>
+      </TabsContent> */}
       <TabsContent value="notes" className="w-full">
         <FundApplicationNotesV2
           applicationReferenceNumber={formData?.referenceNumber ?? ""}

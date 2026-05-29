@@ -42,9 +42,6 @@ export function AddClientModal({
     if (savedDraft && Object.keys(savedDraft).length > 0) {
       // Ensure dates are converted back to Date objects if they were serialized as strings
       const restored = { ...savedDraft };
-      if (typeof restored.birthdate === "string") {
-        restored.birthdate = new Date(restored.birthdate);
-      }
       if (typeof restored.registrationDate === "string") {
         restored.registrationDate = new Date(restored.registrationDate);
       }
@@ -67,9 +64,6 @@ export function AddClientModal({
     if (savedDraft && Object.keys(savedDraft).length > 0 && !isDirty) {
       const restored = { ...savedDraft };
       // Handle date restoration
-      if (restored.birthdate && typeof restored.birthdate === "string") {
-        restored.birthdate = new Date(restored.birthdate);
-      }
       if (
         restored.registrationDate &&
         typeof restored.registrationDate === "string"
@@ -97,7 +91,7 @@ export function AddClientModal({
         // Only save if values have changed since last save
         if (formValuesStr !== lastSavedRef.current) {
           const hasValues = Object.values(formValues).some(
-            (val) => val !== "" && val !== undefined && val !== null
+            (val) => val !== "" && val !== undefined && val !== null,
           );
           if (hasValues) {
             updateApplication(user.uid, formValues);
@@ -170,23 +164,6 @@ export function AddClientModal({
                       label="* Phone Number"
                     />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <CustomFormField
-                      name={"birthdate"}
-                      type="date-picker"
-                      placeholder=""
-                      label="* Birthdate"
-                      dateAfterHidden={new Date()}
-                    />
-                    <CustomFormField
-                      name={"gender"}
-                      type="select"
-                      placeholder=" "
-                      label="* Gender"
-                      options={genderTypes()}
-                    />
-                  </div>
-
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <CustomFormField
                       name={"addressStreet"}

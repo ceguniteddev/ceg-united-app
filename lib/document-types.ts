@@ -48,15 +48,23 @@ export const DOCUMENT_TYPES: DocumentType[] = [
   },
   {
     id: "BANK_STATEMENTS",
-    title: "Bank Statements",
-    description: "Upload your most recent month's bank statements.",
+    title: "Business Bank Statements",
+    description: "Upload your most recent month's business bank statements.",
     icon: CreditCard,
     category: "universal",
     required: true,
   },
   {
+    id: "PERSONAL_BANK_STATEMENTS",
+    title: "Personal Bank Statements",
+    description: "Upload your most recent month's personal bank statements.",
+    icon: CreditCard,
+    category: "personal",
+    required: true,
+  },
+  {
     id: "PAYSTUBS",
-    title: "Paystubs (1 Month)",
+    title: "Paystubs ",
     description: "Upload your most recent month's worth.",
     icon: ReceiptText,
     category: "personal",
@@ -169,8 +177,7 @@ export const DOCUMENT_TYPES: DocumentType[] = [
   {
     id: "OFFER_DOCUMENT",
     title: "Offer Document",
-    description:
-      "Upload the offer document for your funding request.",
+    description: "Upload the offer document for your funding request.",
     icon: BadgeDollarSign,
     category: "business",
     required: false,

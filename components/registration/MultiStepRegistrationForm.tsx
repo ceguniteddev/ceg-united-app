@@ -85,9 +85,6 @@ export function MultiStepRegistrationForm({
   const defaultValuesStep1 = useMemo(() => {
     if (savedDraft?.step1 && Object.keys(savedDraft.step1).length > 0) {
       const restored = { ...savedDraft.step1 };
-      if (typeof restored.birthdate === "string") {
-        restored.birthdate = new Date(restored.birthdate);
-      }
       if (typeof restored.registrationDate === "string") {
         restored.registrationDate = new Date(restored.registrationDate);
       }
@@ -161,9 +158,6 @@ export function MultiStepRegistrationForm({
       !isDirty1
     ) {
       const restored = { ...savedDraft.step1 };
-      if (restored.birthdate && typeof restored.birthdate === "string") {
-        restored.birthdate = new Date(restored.birthdate);
-      }
       if (
         restored.registrationDate &&
         typeof restored.registrationDate === "string"

@@ -6,8 +6,9 @@ import {
   MessageSquare,
   Phone,
   Send,
+  ArrowLeft,
 } from "lucide-react";
-import { mockCoordinator } from "@/lib/income-funding-mock";
+// import { mockCoordinator } from "@/lib/income-funding-mock";
 import type { IncomeFundingDeal } from "@/types/income-funding-types";
 
 interface SubmittedViewProps {

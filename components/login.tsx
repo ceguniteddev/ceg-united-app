@@ -54,9 +54,9 @@ export default function LoginPage() {
           <Image
             src="/icon.png"
             alt="Logo"
-            width={80}
-            height={80}
-            className="object-contain"
+            width={548}
+            height={455}
+            className="h-20 w-auto object-contain"
           />
         </div>
         <h2 className="text-xl sm:text-2xl font-bold text-center mb-6 text-gray-700">

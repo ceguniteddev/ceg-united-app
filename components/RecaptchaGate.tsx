@@ -6,7 +6,11 @@ import { useEffect, useState } from "react";
 export default function RecaptchaGate() {
   const pathname = usePathname();
   const [scriptKey, setScriptKey] = useState(0);
-  const shouldLoad = pathname === "/register" || pathname === "/" || pathname === "/client/my-funding";
+  const shouldLoad =
+    pathname === "/register" ||
+    pathname === "/" ||
+    pathname === "/client/my-funding" ||
+    pathname === "/onboarding";
 
   useEffect(() => {
     if (shouldLoad) {

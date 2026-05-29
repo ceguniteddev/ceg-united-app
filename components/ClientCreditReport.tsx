@@ -32,10 +32,12 @@ import {
   CreditCard,
   FileCheck,
   Info,
+  ReceiptIcon,
   Search,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import React, { useMemo, useState } from "react";
@@ -58,6 +60,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { initiateCRSReportCheckout } from "@/service/crs";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { WhopCheckoutEmbed } from "@whop/checkout/react";
+import { User, UserWithId } from "@/schema/registration";
+import { ConfirmButton } from "@/components/Confirmation";
+import { useFeeSettings } from "@/hooks/fee-settings";
 
 ChartJS.register(
   CategoryScale,
@@ -946,11 +957,19 @@ const BureauSection: React.FC<{
 type Props = {
   userId: string;
   isAdminView?: boolean;
+  userData?: UserWithId;
 };
 
 // --- Main Page ---
-const ClientCreditReport = ({ userId, isAdminView }: Props) => {
+const ClientCreditReport = ({ userId, isAdminView, userData }: Props) => {
+  const router = useRouter();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [checkoutMetadata, setCheckoutMetadata] = useState<any>(null);
   const { crsReport, isLoading } = useClientCRSReportQuery({ userId });
+  const { data: feeSettings } = useFeeSettings();
+  const reportFee = feeSettings?.creditReportFee || 49;
 
   // Group reports by createdAt timestamp (only for bureau reports)
   const reportsByTimestamp = useMemo(() => {
@@ -1001,6 +1020,42 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
       setSelectedTimestamp(timestamps[0]);
     }
   }, [timestamps, selectedTimestamp]);
+
+  const handleGenerateReport = async () => {
+    try {
+      setIsGenerating(true);
+      const res = await initiateCRSReportCheckout({
+        userId,
+        reportType: "personal",
+      });
+
+      if (res.checkoutId && res.url) {
+        setCheckoutMetadata({
+          reportType: "personal",
+          referenceNumber:
+            "metadata" in res
+              ? (res as any).metadata?.referenceNumber
+              : undefined,
+        });
+        setCheckoutId(res.checkoutId);
+        setIsConfirmOpen(false);
+      } else if ("success" in res && res.success) {
+        toast.success(
+          "Credit report generation has started. Please wait a few moments for the new data to appear.",
+        );
+        setIsConfirmOpen(false);
+        // The data will refresh automatically if using real-time listener or we can trigger a refetch here.
+      }
+    } catch (error: any) {
+      console.error("Failed to initiate CRS report checkout:", error);
+      toast.error(
+        error.message ||
+          "Failed to generate credit report. Please contact support.",
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   // Get reports for selected timestamp
   const selectedReports = useMemo(
@@ -1174,32 +1229,77 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
               </p>
             )}
           </div>
-          {timestamps.length > 1 && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
-              <label className="text-sm text-gray-600 whitespace-nowrap font-medium">
-                Report Date:
-              </label>
-              <Select
-                value={selectedTimestamp}
-                onValueChange={setSelectedTimestamp}
-              >
-                <SelectTrigger className="w-full sm:w-[240px] border-gray-200">
-                  <SelectValue placeholder="Select report date" />
-                </SelectTrigger>
-                <SelectContent>
-                  {timestamps.map((timestamp) => (
-                    <SelectItem key={timestamp} value={timestamp}>
-                      {new Date(timestamp).toLocaleString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <ConfirmButton
+              open={isConfirmOpen}
+              onOpenChange={setIsConfirmOpen}
+              onConfirm={handleGenerateReport}
+              isLoading={isGenerating}
+              disabled={isGenerating}
+              description={
+                <div className="space-y-3 mt-2 text-sm text-gray-600">
+                  <p>Pulling a new credit report requires a one-time fee.</p>
+                  <ul className="list-disc pl-5 font-medium text-gray-800 text-left">
+                    <li>Fee ${reportFee.toFixed(2)}.</li>
+                  </ul>
+                  <p>
+                    You will be redirected to our secure payment portal to
+                    complete your purchase before the report is generated.
+                  </p>
+                </div>
+              }
+              confirmLabel="Proceed to Payment"
+              classNameAction="bg-blue-600 hover:bg-blue-700 text-white"
+              title="Pull New Credit Report"
+              trigger={
+                <button
+                  onClick={() => setIsConfirmOpen(true)}
+                  disabled={isGenerating}
+                  className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors w-full sm:w-auto justify-center"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Pulling Credit Report...
+                    </>
+                  ) : (
+                    <>
+                      <ReceiptIcon className="w-4 h-4" />
+                      Pull Credit Report
+                    </>
+                  )}
+                </button>
+              }
+            />
+
+            {timestamps.length > 1 && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                <label className="text-sm text-gray-600 whitespace-nowrap font-medium">
+                  Report Date:
+                </label>
+                <Select
+                  value={selectedTimestamp}
+                  onValueChange={setSelectedTimestamp}
+                >
+                  <SelectTrigger className="w-full sm:w-[240px] border-gray-200">
+                    <SelectValue placeholder="Select report date" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timestamps.map((timestamp) => (
+                      <SelectItem key={timestamp} value={timestamp}>
+                        {new Date(timestamp).toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -1722,6 +1822,77 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         Note: When multiple docs per bureau exist for the same date, the newest
         is used.
       </p>
+
+      {/* Checkout Modal */}
+      <Dialog
+        open={!!checkoutId}
+        onOpenChange={(open) => !open && setCheckoutId(null)}
+      >
+        <DialogContent
+          className="w-[95vw] sm:max-w-[600px] md:max-w-[700px] p-0 overflow-hidden bg-transparent border-none shadow-none"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogTitle className="sr-only">Complete Your Purchase</DialogTitle>
+          {checkoutId && (
+            <div className="bg-white rounded-xl shadow-2xl overflow-y-auto w-full max-h-[90vh] md:max-h-[85vh] relative">
+              <button
+                onClick={() => setCheckoutId(null)}
+                className="cursor-pointer absolute top-3 right-3 p-2 bg-gray-100 hover:bg-gray-200 rounded-full z-50 transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4 text-gray-600" />
+              </button>
+              <WhopCheckoutEmbed
+                sessionId={checkoutId}
+                prefill={{
+                  email: userData?.email,
+                  address: {
+                    country: "US",
+                  },
+                }}
+                onComplete={async (planId, receiptId) => {
+                  try {
+                    const response = await fetch(
+                      `/api/user/${userId}/crs/purchase`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          planId,
+                          receiptId,
+                          checkoutId,
+                          metadata: checkoutMetadata,
+                        }),
+                      },
+                    );
+
+                    if (!response.ok) {
+                      throw new Error("Failed to trigger report generation");
+                    }
+
+                    toast.success(
+                      "Payment successful! Generating your credit report...",
+                    );
+                    setCheckoutId(null);
+                    setCheckoutMetadata(null);
+                  } catch (error) {
+                    console.error(error);
+                    toast.error(
+                      "Payment succeeded but report generation failed. Please contact support.",
+                    );
+                    setCheckoutId(null);
+                  }
+                }}
+                fallback={
+                  <div className="flex items-center justify-center h-full">
+                    <Spinner displayText="Loading secure checkout..." />
+                  </div>
+                }
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

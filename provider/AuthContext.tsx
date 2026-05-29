@@ -240,7 +240,11 @@ export function AuthProvider({
         } else if (nextRole === "Broker") {
           router.push("/broker/home");
         } else {
-          router.push("/client/home");
+          if (!userData.isOnboarded) {
+            router.push("/onboarding");
+          } else {
+            router.push("/client/home");
+          }
         }
       } catch (error) {
         if (error instanceof AppError) throw error;

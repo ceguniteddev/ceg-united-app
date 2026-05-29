@@ -50,7 +50,12 @@ export const POST = withAuth(
           metadata.referenceNumber = referenceNumber;
         }
 
-        return uploadDocument(userId, file, documentType, metadata);
+        return uploadDocument({
+          userId,
+          file,
+          documentType,
+          customMetadata: metadata,
+        });
       });
 
       // Wait for all promises to resolve

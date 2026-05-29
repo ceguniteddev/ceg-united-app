@@ -66,12 +66,12 @@ describe("saveAnalysisToPDF", () => {
     const result = await saveAnalysisToPDF("REF-001", "user-1");
 
     expect(renderToBuffer).toHaveBeenCalled();
-    expect(uploadDocument).toHaveBeenCalledWith(
-      "user-1",
-      expect.any(File),
-      "FUNDING_ANALYSIS",
-      expect.objectContaining({ referenceNumber: "REF-001" }),
-    );
+    expect(uploadDocument).toHaveBeenCalledWith({
+      userId: "user-1",
+      file: expect.any(File),
+      documentType: "FUNDING_ANALYSIS",
+      customMetadata: expect.objectContaining({ referenceNumber: "REF-001" }),
+    });
     expect(result).toEqual({
       gcsPath: "users/user-1/FUNDING_ANALYSIS/REF-001.pdf",
       filename: "REF-001.pdf",

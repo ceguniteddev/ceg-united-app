@@ -68,11 +68,11 @@ export const sidebarLinks = [
     route: "/client/home",
     label: "Home",
   },
-  {
-    imgURL: "/icons/money-send.svg",
-    route: "/client/my-funding",
-    label: "My Funding",
-  },
+  // {
+  //   imgURL: "/icons/money-send.svg",
+  //   route: "/client/my-funding",
+  //   label: "My Funding",
+  // },
   {
     imgURL: "/icons/money-send.svg",
     route: "/client/income-funding",
@@ -81,7 +81,7 @@ export const sidebarLinks = [
   {
     imgURL: "/icons/file-chart-column.svg",
     route: "/client/my-analysis",
-    label: "My Analysis",
+    label: "My Funding Analysis",
   },
   {
     imgURL: "/icons/credit-card.svg",
@@ -152,6 +152,11 @@ export const adminSidebarLinks = [
     label: "Clients",
   },
   {
+    imgURL: "/icons/user-round-plus.svg",
+    route: "/admin/leads",
+    label: "Leads",
+  },
+  {
     imgURL: "/icons/handshake.svg",
     route: "/admin/brokers",
     label: "Brokers",
@@ -216,6 +221,11 @@ export const adminSidebarLinks = [
     route: "/admin/mail",
     label: "Mail",
   },
+  {
+    imgURL: "/icons/dollar-circle.svg",
+    route: "/admin/fee-settings",
+    label: "Fee Settings",
+  },
 ];
 
 export const brokerSidebarLinks = [
@@ -247,6 +257,11 @@ export const settingsSidebar = [
     route: "/settings/personal",
     label: "Personal",
   },
+  {
+    imgURL: "/icons/credit-card.svg",
+    route: "/settings/membership",
+    label: "Membership",
+  },
 ];
 
 export const settingsSidebarAdmin = [
@@ -254,6 +269,11 @@ export const settingsSidebarAdmin = [
     imgURL: "/icons/circle-user-round.svg",
     route: "/settings/personal",
     label: "Personal",
+  },
+  {
+    imgURL: "/icons/credit-card.svg",
+    route: "/settings/membership",
+    label: "Membership",
   },
   // {
   //   imgURL: "/icons/circle-user-round.svg",

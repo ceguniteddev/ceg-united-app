@@ -64,7 +64,6 @@ import { CustomFormField } from "@/components/CustomFormField";
 import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { genderTypes } from "@/schema";
 import { registrationSchema } from "@/schema/registration";
 import { sendPaymentLink } from "@/service/whop";
 import { cn } from "@/lib/utils";
@@ -135,11 +134,6 @@ const ClientData = ({
               <Info label="Email" value={user.email} />
               <Info label="Phone" value={user.phoneNumber} />
 
-              <Info
-                label="Birthdate"
-                value={format(user.birthdate, "MMM d, yyyy")}
-              />
-              <Info label="Gender" value={user.gender || "—"} />
               {!isBrokerView && (
                 <Info label="Broker" value={user.brokerName || ""} />
               )}
@@ -1012,8 +1006,6 @@ const EditClientModal = ({
       middleName: user.middleName || "",
       lastName: user.lastName || "",
       phoneNumber: user.phoneNumber || "",
-      birthdate: user.birthdate ? new Date(user.birthdate) : undefined,
-      gender: user.gender || "",
       ssn: user.ssn || "",
     },
   });
@@ -1087,25 +1079,11 @@ const EditClientModal = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <CustomFormField
                 name="phoneNumber"
                 label="* Phone Number"
                 placeholder=""
-              />
-              <CustomFormField
-                name="birthdate"
-                type="date-picker"
-                label="* Birthdate"
-                placeholder=""
-                dateAfterHidden={new Date()}
-              />
-              <CustomFormField
-                name="gender"
-                type="select"
-                label="* Gender"
-                placeholder=" "
-                options={genderTypes()}
               />
             </div>
 

@@ -32,15 +32,28 @@ const MobileNav = () => {
           />
         </SheetTrigger>
         <SheetContent side="left" className="border-none bg-white" title="">
-          <Link href="/" className="cursor-pointer flex items-center gap-1 px-4">
-            <Image src="/icons/logo.svg" width={34} height={34} alt="Horizon logo" />
-            <h1 className="text-26 font-ibm-plex-serif font-bold text-black-1">Horizon</h1>
+          <Link
+            href="/"
+            className="cursor-pointer flex items-center gap-1 px-4"
+          >
+            <Image
+              src="/icon.png"
+              alt="Logo"
+              width={548}
+              height={455}
+              className="h-20 w-auto object-contain"
+            />
+            <h1 className="text-26 font-ibm-plex-serif font-bold text-black-1">
+              Horizon
+            </h1>
           </Link>
           <div className="mobilenav-sheet">
             <SheetClose asChild>
               <nav className="flex h-full flex-col gap-6 pt-16 text-white">
                 {sidebarLinks.map((item) => {
-                  const isActive = pathname === item.route || pathname.startsWith(`${item.route}/`);
+                  const isActive =
+                    pathname === item.route ||
+                    pathname.startsWith(`${item.route}/`);
 
                   return (
                     <SheetClose asChild key={item.route}>

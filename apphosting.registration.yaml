@@ -1,0 +1,270 @@
+# Settings for Backend (on Cloud Run).
+# See https://firebase.google.com/docs/app-hosting/configure#cloud-run
+runConfig:
+  minInstances: 0
+  maxInstances: 1
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 2048
+# Environment variables and secrets.
+env:
+  # Configure environment variables.
+  # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
+  - variable: FIREBASE_PROJECT_ID
+    value: cegunitedllc
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FIREBASE_DB_NAME
+    value: ceg-united-db-staging
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FIREBASE_STORAGE_NAME
+    value: gs://cegunitedllc.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: ENVIRONMENT
+    value: staging
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_ENVIRONMENT
+    value: staging
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_APP_NAME
+    value: CEG United LLC
+    availability:
+      - RUNTIME
+      - BUILD
+  - variable: PLAID_ENV
+    value: sandbox
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: PLAID_PRODUCTS
+    value: auth,assets
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: REQUIRED_IF_SUPPORTED
+    value: identity,transactions,liabilities,investments
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: PLAID_COUNTRY_CODES
+    value: US
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    value: 6LehUrMrAAAAAOtQ4f5x9JzYeLnxKnGE6P-9lQ9N
+    availability:
+      - BUILD
+      - RUNTIME
+  # - variable: EMAIL_USER
+  #   value: noreply@cegunited.com
+  #   availability:
+  #     - BUILD
+  #     - RUNTIME
+  - variable: n8n_HOST
+    value: https://n8n.srv967756.hstgr.cloud/webhook
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_CALENDLY_URL
+    value: https://calendly.com/cegunited-info/30min
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: PLAID_REDIRECT_URI
+    value: https://staging.cegunited.com/redirect
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: IS_PLAID_PRODUCTION_READY
+    value: true
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_DENEFITS_URL
+    value: https://request.denefits.com/finance-panel?product_code=pc_4088bda98bce&auth_token=7554e0188f4b64b5119474d4e620c092
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_DENEFITS_AUDIT_URL
+    value: https://request.denefits.com/finance-panel?product_code=pc_4d730efb606d&auth_token=7554e0188f4b64b5119474d4e620c092
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_DENEFITS_INTELLIGENCE_URL
+    value: https://request.denefits.com/finance-panel?product_code=pc_f2b95d331837&auth_token=7554e0188f4b64b5119474d4e620c092
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_DENEFITS_ACCELERATOR_URL
+    value: https://request.denefits.com/finance-panel?product_code=pc_645a97adac6d&auth_token=7554e0188f4b64b5119474d4e620c092
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FANBASIS_URL
+    value: https://www.fanbasis.com/agency-checkout/Cegunited/lOOnM
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: MUX_TOKEN_ID
+    value: adf511d4-30c2-453d-ab7d-1676069ab4ae
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEW_REGISTRATION_EMAIL_NOTIF
+    value: ceguniteddev@gmail.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_APP_URL
+    value: https://ceg-united-app-registration--cegunitedllc.us-east4.hosted.app
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: PDF_GENERATION_URL
+    value: https://generatepdf-ffuzmpuyia-uc.a.run.app
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_COMPANY_ID
+    value: biz_CEGVfTydxqFwgI
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_PRODUCT_ID
+    value: prod_Nx8k4DHCfXq8g
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_GENERATE_CRS_REPORT_PRODUCT_ID
+    value: prod_4fUciRne9Fa7z
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_TRADELINE_PRODUCT_ID
+    value: prod_8qoWdnNh7w7PF
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_PRICING_PLAN_STARTER_ID
+    value: prod_fV5gCPjKwe067
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_PRICING_PLAN_PRO_ID
+    value: prod_oJhxhteiZonAQ
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_PRICING_PLAN_EXECUTIVE_ID
+    value: prod_0mb3w3BVfhYYQ
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_BASE_URL
+    value: https://api.whop.com/api/v1
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT
+    value: 2500
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_FINANCING_AMOUNT
+    value: 2500
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_AUDIT_FULL_AMOUNT
+    value: 2000
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_INTELLIGENCE_FULL_AMOUNT
+    value: 5000
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_ACCELERATOR_FULL_AMOUNT
+    value: 15000
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_AUDIT_DOWNPAYMENT_AMOUNT
+    value: 750
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_INTELLIGENCE_DOWNPAYMENT_AMOUNT
+    value: 1000
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_ACCELERATOR_DOWNPAYMENT_AMOUNT
+    value: 5000
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WC_CONSUMER_KEY
+    value: ck_ea997ec7a404f79481d6e57a9b1d22bfe1278371
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: OFFER_EMAIL
+    value: offer@cegunited.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: CLASSIFY_BASE_URL
+    value: https://classifydocument-ffuzmpuyia-uc.a.run.app
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # Grant access to secrets in Cloud Secret Manager.
+  # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
+  - variable: FIREBASE_CLIENT_EMAIL
+    secret: FIREBASE_CLIENT_EMAIL
+  - variable: FIREBASE_PRIVATE_KEY
+    secret: FIREBASE_PRIVATE_KEY
+  - variable: ADMIN_ACCESS_KEY
+    secret: ADMIN_ACCESS_KEY_STAGING
+  - variable: PLAID_CLIENT_ID
+    secret: PLAID_CLIENT_ID
+  - variable: PLAID_SECRET
+    secret: PLAID_SECRET_STAGING
+  # - variable: RECAPTCHA_SECRET_KEY
+  #   secret: RECAPTCHA_SECRET_KEY_STAGING
+  # - variable: EMAIL_PASSWORD
+  #   secret: EMAIL_PASSWORD
+  - variable: ENCRYPTION_KEY
+    secret: ENCRYPTION_KEY
+  - variable: FIREBASE_PRIVATE_KEY_BASE64
+    secret: FIREBASE_PRIVATE_KEY_BASE64
+  - variable: MUX_TOKEN_SECRET
+    secret: MUX_TOKEN_SECRET
+  - variable: PDF_API_KEY
+    secret: PDF_API_KEY_STAGING
+  - variable: WHOP_API_KEY
+    secret: WHOP_API_KEY_STAGING
+  - variable: WHOP_WEBHOOK_SECRET
+    secret: WHOP_WEBHOOK_SECRET_STAGING
+  - variable: WC_CONSUMER_SECRET
+    secret: WC_CONSUMER_SECRET
+  - variable: GEMINI_MODEL
+    value: gemini-3.1-flash-lite-preview
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY_STAGING
