@@ -4,65 +4,63 @@ import { sidebarLinks } from "@/constant/common";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Footer from "./Footer";
-// import PlaidLink from "./PlaidLink";
 import { useAuth } from "@/provider/AuthContext";
 import { useGetUserApplyFunding } from "@/hooks/apply-funding";
-// import PlaidIncomeLinkBank from "./PlaidLinkIncomeBank";
-// import PlaidIncomeLinkPayroll from "./PlaidLinkIncomePayroll";
-// import { useEffect } from "react";
-
-// import { driver } from "driver.js";
-// import { useUpdateUserOnboardingMutation } from "@/hooks/user";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
-// import { isPlaidProductionReady } from "@/lib/plaid";
 import { LockIcon } from "lucide-react";
-// import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
-// import { useEffect, useState } from "react";
+import React, { useState } from "react";
+
+// Pricing / Checkout imports
+import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
+import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { createMembershipCheckoutConfig } from "@/service/whop";
+import { toast } from "sonner";
 
 const Sidebar = () => {
   const { user, isOnboarded, userData } = useAuth();
   const { appliedFunding } = useGetUserApplyFunding();
   const pathname = usePathname();
-  // const { updateOnboarding } = useUpdateUserOnboardingMutation();
-  // useEffect(() => {
-  //   const driverObj = driver({
-  //     // onCloseClick: () => console.log("onCloseClick"),
-  //     onDestroyed: async () => await updateOnboarding(),
-  //     steps: [
-  //       {
-  //         element: "#plaid-link-button",
-  //         popover: {
-  //           title: "Link your bank account",
-  //           description: "Link your bank account to get started.",
-  //         },
-  //       },
-  //       {
-  //         element: "#plaid-link-income-bank-button",
-  //         popover: {
-  //           title: "Verify your bank income",
-  //           description: "Verify your bank income to get started.",
-  //         },
-  //       },
-  //       {
-  //         element: "#plaid-link-income-payroll-button",
-  //         popover: {
-  //           title: "Verify your payroll income",
-  //           description: "Verify your payroll income to get started.",
-  //         },
-  //       },
-  //     ],
-  //   });
+  const router = useRouter();
 
-  // const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
-  //   user?.uid || ""
-  // );
+  // Pricing / Checkout state
+  const [isPricingModalOpen, setPricingModalOpen] = useState(false);
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [isCheckoutSheetOpen, setCheckoutSheetOpen] = useState(false);
+  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<{
+    id: string;
+    amount: number;
+  } | null>(null);
 
-  //   if (user && !isOnboarded) driverObj.drive();
-  // }, [user, isOnboarded, updateOnboarding]);
-  // const isPlaidProdReady = isPlaidProductionReady();
   if (!user) return null;
+
+  const handleSelectPlan = async (planId: string, amount: number) => {
+    if (!userData?.id) return;
+    try {
+      setIsCreatingCheckout(true);
+      const res = await createMembershipCheckoutConfig({
+        userId: userData.id,
+        planId: planId as any,
+      });
+      setCheckoutId(res.checkoutId);
+      setSelectedPlan({ id: planId, amount });
+      setPricingModalOpen(false);
+      setCheckoutSheetOpen(true);
+    } catch (err: any) {
+      toast.error("Failed to start checkout: " + err.message);
+    } finally {
+      setIsCreatingCheckout(false);
+    }
+  };
 
   return (
     <aside className="sidebar max-md:hidden">
@@ -84,28 +82,6 @@ const Sidebar = () => {
         </Link>
         {sidebarLinks
           .filter((item) => {
-            // Income Funding logic
-            // const hasIncomeBasedFunding = appliedFunding?.some((app) =>
-            //   app.fundingProducts?.includes("Business Income Based Funding"),
-            // );
-
-            // if (item.route === "/client/my-funding" && hasIncomeBasedFunding) {
-            //   return false; // Hide generic map if they have income funding
-            // }
-
-            // if (
-            //   item.route === "/client/income-funding" &&
-            //   !hasIncomeBasedFunding
-            // ) {
-            //   return false; // Hide income funding if they don't have it
-            // }
-
-            // If Plaid is not ready, filter out (remove) the "My Accounts" link
-            // if (!isPlaidProdReady && item.route === "/client/my-accounts") {
-            //   return false;
-            // }
-
-            // If user hasn't paid denefits contract, filter out "My Learning" link
             if (
               item.route === "/client/my-learning" &&
               (!userData || !userData.isPremiumClient)
@@ -113,7 +89,6 @@ const Sidebar = () => {
               return false;
             }
 
-            // Filter out "Letter Stream" if user has no letter features enabled
             if (item.route === "/client/letter-stream") {
               const hasAnyLetterFeature =
                 userData?.letterFeatureEnabled ||
@@ -130,7 +105,6 @@ const Sidebar = () => {
               }
             }
 
-            // Otherwise, keep the item in the array
             return true;
           })
           .map((item) => {
@@ -165,11 +139,12 @@ const Sidebar = () => {
                   {isLocked && (
                     <button
                       type="button"
+                      title="This feature is locked. Please upgrade to access."
                       className="cursor-pointer hover:bg-gray-200/50 p-1 rounded-full transition-colors"
                       onClick={(e) => {
                         e.preventDefault();
-                        // TODO: Route to payment screen
-                        console.log("Route to payment screen");
+                        e.stopPropagation();
+                        setPricingModalOpen(true);
                       }}
                     >
                       <LockIcon className="w-4 h-4 text-gray-500 opacity-80 hover:opacity-100 hover:text-blue-500" />
@@ -184,9 +159,10 @@ const Sidebar = () => {
                 <div
                   key={item.label}
                   className={cn(
-                    "flex gap-2 md:gap-3 items-center py-1 md:p-1 2xl:p-1 rounded-lg justify-start opacity-70",
+                    "flex gap-2 md:gap-3 items-center py-1 md:p-1 2xl:p-1 rounded-lg justify-start opacity-70 cursor-pointer",
                     { "bg-bank-gradient": isActive },
                   )}
+                  onClick={() => setPricingModalOpen(true)}
                 >
                   {content}
                 </div>
@@ -211,6 +187,47 @@ const Sidebar = () => {
         <WhatsNewAccordion />
         <Footer />
       </div>
+
+      <ResponsiveDialog
+        isOpen={isPricingModalOpen}
+        setIsOpen={setPricingModalOpen}
+        title="Upgrade to Access Feature"
+        description=""
+        className="sm:max-w-[90vw] md:max-w-6xl max-h-[90vh] overflow-y-auto p-0 border-0"
+      >
+        <PricingPlans
+          isLoading={isCreatingCheckout}
+          onSelectPlan={handleSelectPlan}
+        />
+      </ResponsiveDialog>
+
+      <Sheet open={isCheckoutSheetOpen} onOpenChange={setCheckoutSheetOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden"
+        >
+          <SheetHeader className="px-6 py-4 border-b border-gray-200">
+            <SheetTitle className="text-xl font-bold">
+              Secure Checkout
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            {checkoutId && selectedPlan && userData && (
+              <MembershipCheckoutView
+                checkoutId={checkoutId}
+                userId={userData.id!}
+                tierId={selectedPlan.id}
+                amount={selectedPlan.amount}
+                prefillEmail={userData.email || ""}
+                onPaymentCompleteAction={() => {
+                  setCheckoutSheetOpen(false);
+                  router.refresh();
+                }}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </aside>
   );
 };

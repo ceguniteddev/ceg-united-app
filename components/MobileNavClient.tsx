@@ -12,23 +12,63 @@ import { sidebarLinks } from "@/constant/common";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
-// import { isPlaidProductionReady } from "@/lib/plaid";
 import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 import { LockIcon } from "lucide-react";
-// import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+import React, { useState } from "react";
+
+// Pricing / Checkout imports
+import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
+import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
+import {
+  Sheet as PricingSheet,
+  SheetContent as PricingSheetContent,
+  SheetHeader as PricingSheetHeader,
+  SheetTitle as PricingSheetTitle,
+} from "@/components/ui/sheet";
+import { createMembershipCheckoutConfig } from "@/service/whop";
+import { toast } from "sonner";
 
 const MobileNavClient = () => {
   const { user, userData } = useAuth();
   const { appliedFunding } = useGetUserApplyFunding();
   const pathname = usePathname();
-  // const { denefitsContract } = useGetDenefitsContractsByUserId(user?.uid || "");
-  // const isPlaidProdReady = isPlaidProductionReady();
+  const router = useRouter();
+
+  // Pricing / Checkout state
+  const [isPricingModalOpen, setPricingModalOpen] = useState(false);
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [isCheckoutSheetOpen, setCheckoutSheetOpen] = useState(false);
+  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<{
+    id: string;
+    amount: number;
+  } | null>(null);
 
   if (!user) return null;
+
+  const handleSelectPlan = async (planId: string, amount: number) => {
+    if (!userData?.id) return;
+    try {
+      setIsCreatingCheckout(true);
+      const res = await createMembershipCheckoutConfig({
+        userId: userData.id,
+        planId: planId as any,
+      });
+      setCheckoutId(res.checkoutId);
+      setSelectedPlan({ id: planId, amount });
+      setPricingModalOpen(false);
+      setCheckoutSheetOpen(true);
+    } catch (err: any) {
+      toast.error("Failed to start checkout: " + err.message);
+    } finally {
+      setIsCreatingCheckout(false);
+    }
+  };
 
   return (
     <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
@@ -66,34 +106,6 @@ const MobileNavClient = () => {
             <nav className="flex-1 flex flex-col px-4 overflow-y-auto">
               {sidebarLinks
                 .filter((item) => {
-                  // Income Funding logic
-                  // const hasIncomeBasedFunding = appliedFunding?.some((app) =>
-                  //   app.fundingProducts?.includes(
-                  //     "Business Income Based Funding",
-                  //   ),
-                  // );
-
-                  // if (
-                  //   item.route === "/client/my-funding" &&
-                  //   hasIncomeBasedFunding
-                  // ) {
-                  //   return false; // Hide generic map if they have income funding
-                  // }
-
-                  // if (
-                  //   item.route === "/client/income-funding" &&
-                  //   !hasIncomeBasedFunding
-                  // ) {
-                  //   return false; // Hide income funding if they don't have it
-                  // }
-
-                  // if (
-                  //   !isPlaidProdReady &&
-                  //   item.route === "/client/my-accounts"
-                  // ) {
-                  //   return false;
-                  // }
-
                   if (
                     item.route === "/client/my-learning" &&
                     (!userData || !userData.isPremiumClient)
@@ -157,8 +169,7 @@ const MobileNavClient = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              // TODO: Route to payment screen
-                              console.log("Route to payment screen");
+                              setPricingModalOpen(true);
                             }}
                           >
                             <LockIcon className="w-4 h-4 text-gray-500 opacity-80 hover:opacity-100 hover:text-blue-500" />
@@ -173,9 +184,10 @@ const MobileNavClient = () => {
                       <div
                         key={item.route}
                         className={cn(
-                          "flex gap-3 items-center py-1 px-4 rounded-lg mb-2 opacity-70",
+                          "flex gap-3 items-center py-1 px-4 rounded-lg mb-2 opacity-70 cursor-pointer",
                           { "bg-bank-gradient": isActive },
                         )}
+                        onClick={() => setPricingModalOpen(true)}
                       >
                         {content}
                       </div>
@@ -215,6 +227,50 @@ const MobileNavClient = () => {
           className="h-20 w-auto object-contain"
         />
       </Link>
+
+      <ResponsiveDialog
+        isOpen={isPricingModalOpen}
+        setIsOpen={setPricingModalOpen}
+        title="Upgrade to Access Feature"
+        description=""
+        className="sm:max-w-[90vw] md:max-w-6xl max-h-[90vh] overflow-y-auto p-0 border-0 z-[100]"
+      >
+        <PricingPlans
+          isLoading={isCreatingCheckout}
+          onSelectPlan={handleSelectPlan}
+        />
+      </ResponsiveDialog>
+
+      <PricingSheet
+        open={isCheckoutSheetOpen}
+        onOpenChange={setCheckoutSheetOpen}
+      >
+        <PricingSheetContent
+          side="right"
+          className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden z-[100]"
+        >
+          <PricingSheetHeader className="px-6 py-4 border-b border-gray-200">
+            <PricingSheetTitle className="text-xl font-bold">
+              Secure Checkout
+            </PricingSheetTitle>
+          </PricingSheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            {checkoutId && selectedPlan && userData && (
+              <MembershipCheckoutView
+                checkoutId={checkoutId}
+                userId={userData.id!}
+                tierId={selectedPlan.id}
+                amount={selectedPlan.amount}
+                prefillEmail={userData.email || ""}
+                onPaymentCompleteAction={() => {
+                  setCheckoutSheetOpen(false);
+                  router.refresh();
+                }}
+              />
+            )}
+          </div>
+        </PricingSheetContent>
+      </PricingSheet>
     </div>
   );
 };

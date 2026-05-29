@@ -1,6 +1,23 @@
+"use client";
+
+import React, { useState } from "react";
 import { useCountUp } from "@/hooks/useCountUp";
 import Image from "next/image";
 import { Lock } from "lucide-react";
+
+import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
+import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { useAuth } from "@/provider/AuthContext";
+import { createMembershipCheckoutConfig } from "@/service/whop";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export interface CreditScore {
   bureau: "experian" | "equifax" | "transunion";
@@ -57,10 +74,12 @@ function CreditScoreCard({
   score,
   index,
   isPremium,
+  onUpgradeClick,
 }: {
   score: CreditScore;
   index: number;
   isPremium?: boolean;
+  onUpgradeClick?: () => void;
 }) {
   const value = useCountUp(score.score, 1200);
   const bureau = bureauConfig[score.bureau];
@@ -123,11 +142,14 @@ function CreditScoreCard({
       </div>
 
       {!isPremium && (
-        <div className="absolute inset-0 top-[60px] flex items-center justify-center bg-white/40 z-10">
-          <div className="flex flex-col items-center p-2 rounded-lg bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm">
+        <div
+          className="absolute inset-0 top-[60px] flex items-center justify-center bg-white/40 z-10 cursor-pointer"
+          onClick={onUpgradeClick}
+        >
+          <div className="flex flex-col items-center p-2 rounded-lg bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm hover:bg-white transition-colors">
             <Lock className="w-5 h-5 text-gray-500 mb-1" />
             <span className="text-xs font-medium text-gray-700">
-              Premium Only
+              Upgrade to view
             </span>
           </div>
         </div>
@@ -143,16 +165,91 @@ export function CreditScoresSection({
   scores: CreditScore[];
   isPremium?: boolean;
 }) {
+  const [isPricingModalOpen, setPricingModalOpen] = useState(false);
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [isCheckoutSheetOpen, setCheckoutSheetOpen] = useState(false);
+  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<{
+    id: string;
+    amount: number;
+  } | null>(null);
+
+  const { userData } = useAuth();
+  const router = useRouter();
+
+  const handleSelectPlan = async (planId: string, amount: number) => {
+    if (!userData?.id) return;
+    try {
+      setIsCreatingCheckout(true);
+      const res = await createMembershipCheckoutConfig({
+        userId: userData.id,
+        planId: planId as any,
+      });
+      setCheckoutId(res.checkoutId);
+      setSelectedPlan({ id: planId, amount });
+      setPricingModalOpen(false);
+      setCheckoutSheetOpen(true);
+    } catch (err: any) {
+      toast.error("Failed to start checkout: " + err.message);
+    } finally {
+      setIsCreatingCheckout(false);
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {scores.map((s, i) => (
-        <CreditScoreCard
-          key={s.bureau}
-          score={s}
-          index={i}
-          isPremium={isPremium}
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {scores.map((s, i) => (
+          <CreditScoreCard
+            key={s.bureau}
+            score={s}
+            index={i}
+            isPremium={isPremium}
+            onUpgradeClick={() => setPricingModalOpen(true)}
+          />
+        ))}
+      </div>
+
+      <ResponsiveDialog
+        isOpen={isPricingModalOpen}
+        setIsOpen={setPricingModalOpen}
+        title="Upgrade to View Credit Scores"
+        description=""
+        className="sm:max-w-[90vw] md:max-w-6xl max-h-[90vh] overflow-y-auto p-0 border-0"
+      >
+        <PricingPlans
+          isLoading={isCreatingCheckout}
+          onSelectPlan={handleSelectPlan}
         />
-      ))}
-    </div>
+      </ResponsiveDialog>
+
+      <Sheet open={isCheckoutSheetOpen} onOpenChange={setCheckoutSheetOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden"
+        >
+          <SheetHeader className="px-6 py-4 border-b border-gray-200">
+            <SheetTitle className="text-xl font-bold">
+              Secure Checkout
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            {checkoutId && selectedPlan && userData && (
+              <MembershipCheckoutView
+                checkoutId={checkoutId}
+                userId={userData.id}
+                tierId={selectedPlan.id}
+                amount={selectedPlan.amount}
+                prefillEmail={userData.email || ""}
+                onPaymentCompleteAction={() => {
+                  setCheckoutSheetOpen(false);
+                  router.refresh();
+                }}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
