@@ -60,7 +60,7 @@ vi.mock("@/service/crs", () => ({
 vi.mock("@/lib/n8n", () => ({
   deleteFundingAnalysis: vi.fn(),
   sendClientAnalysisN8N: vi.fn(),
-  getFundingAnalysisNewRegistrationFlow: vi.fn(),
+  // getFundingAnalysisNewRegistrationFlow: vi.fn(),
   mapBankProductsN8nNewRegistration: vi.fn(),
   sendClientCongratsMessageN8NNewRegistration: vi.fn(),
 }));

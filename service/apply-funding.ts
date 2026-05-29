@@ -17,7 +17,7 @@ import { Timestamp, Query } from "firebase-admin/firestore";
 import * as crypto from "node:crypto";
 import {
   fundAnalysis,
-  fundAnalysisNewRegistrationFlow,
+  // fundAnalysisNewRegistrationFlow,
   generateCRSReport,
   generateCRSReportBusiness,
   getCRSBusinessProfile,

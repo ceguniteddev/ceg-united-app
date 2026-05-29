@@ -140,7 +140,7 @@ vi.mock("@/service/crs", () => ({
 
 vi.mock("@/lib/n8n", () => ({
   createAsanaTaskForLender: vi.fn().mockResolvedValue("webhook-id" as any),
-  getFundingAnalysisNewRegistrationFlow: vi.fn(),
+  // getFundingAnalysisNewRegistrationFlow: vi.fn(),
   mapBankProductsN8nNewRegistration: vi.fn(),
   sendClientCongratsMessageN8NNewRegistration: vi.fn(),
 }));

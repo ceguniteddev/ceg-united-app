@@ -5,10 +5,10 @@ const isProd = () => process.env.ENVIRONMENT === "production";
 export const getFundingAnalysis = async () =>
   isProd() ? "funding-analysis-prod" : "funding-analysis";
 
-export const getFundingAnalysisNewRegistrationFlow = async () =>
-  isProd()
-    ? "funding-analysis-new-registration-flow-prod"
-    : "funding-analysis-new-registration-flow";
+// export const getFundingAnalysisNewRegistrationFlow = async () =>
+//   isProd()
+//     ? "funding-analysis-new-registration-flow-prod"
+//     : "funding-analysis-new-registration-flow";
 
 export const deleteFundingAnalysis = async () =>
   isProd() ? "delete-funding-analysis-prod" : "delete-funding-analysis";

@@ -11,7 +11,7 @@ import {
   deleteCRSReportN8N,
   generateCRSReportN8N,
   getFundingAnalysis,
-  getFundingAnalysisNewRegistrationFlow,
+  // getFundingAnalysisNewRegistrationFlow,
   mapBankProductsN8nNewRegistration,
   sendClientAnalysisN8N,
   sendClientCongratsMessageN8N,
@@ -368,32 +368,32 @@ export const refreshCRSData = async ({
   }
 };
 
-export const fundAnalysisNewRegistrationFlow = async ({
-  referenceNumber,
-  userId,
-}: {
-  referenceNumber: string;
-  userId: string;
-}) => {
-  logInfo("Sending funding application for analysis...", {
-    referenceNumber,
-    userId,
-  });
-  await fetch(
-    `${process.env.n8n_HOST}/${await getFundingAnalysisNewRegistrationFlow()}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-      },
-      body: JSON.stringify({
-        referenceNumber,
-        userId,
-      }),
-    },
-  );
-};
+// export const fundAnalysisNewRegistrationFlow = async ({
+//   referenceNumber,
+//   userId,
+// }: {
+//   referenceNumber: string;
+//   userId: string;
+// }) => {
+//   logInfo("Sending funding application for analysis...", {
+//     referenceNumber,
+//     userId,
+//   });
+//   await fetch(
+//     `${process.env.n8n_HOST}/${await getFundingAnalysisNewRegistrationFlow()}`,
+//     {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//         ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+//       },
+//       body: JSON.stringify({
+//         referenceNumber,
+//         userId,
+//       }),
+//     },
+//   );
+// };
 
 export const fundAnalysis = async ({
   referenceNumber,
@@ -402,26 +402,23 @@ export const fundAnalysis = async ({
   referenceNumber: string;
   userId: string;
 }) => {
-  const url = await getFundingAnalysisNewRegistrationFlow();  
+  const url = await getFundingAnalysis();
   logInfo("Sending funding application for analysis...", {
     referenceNumber,
     userId,
     url,
   });
-  await fetch(
-    `${process.env.n8n_HOST}/${await getFundingAnalysisNewRegistrationFlow()}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
-      },
-      body: JSON.stringify({
-        referenceNumber,
-        userId,
-      }),
+  await fetch(`${process.env.n8n_HOST}/${url}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
     },
-  );
+    body: JSON.stringify({
+      referenceNumber,
+      userId,
+    }),
+  });
 
   // Add delay before returning to allow N8N workflow to process
   // console.log("Waiting 2 minutes for funding analysis to complete...");
