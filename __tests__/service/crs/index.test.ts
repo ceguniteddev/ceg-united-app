@@ -53,8 +53,11 @@ vi.mock("@/lib/n8n", () => ({
   generateCRSReportN8N: vi.fn().mockResolvedValue("webhook-1"),
   deleteCRSReportN8N: vi.fn().mockResolvedValue("webhook-2"),
   getFundingAnalysis: vi.fn().mockResolvedValue("webhook-3"),
+  getFundingAnalysisNewRegistrationFlow: vi.fn().mockResolvedValue("webhook-3"),
   sendClientAnalysisN8N: vi.fn().mockResolvedValue("webhook-4"),
   sendClientCongratsMessageN8N: vi.fn().mockResolvedValue("webhook-5"),
+  mapBankProductsN8nNewRegistration: vi.fn(),
+  sendClientCongratsMessageN8NNewRegistration: vi.fn(),
 }));
 vi.mock("@/service/user", () => ({ getUserById: vi.fn() }));
 vi.mock("@/service/whop", () => ({

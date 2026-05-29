@@ -60,6 +60,9 @@ vi.mock("@/service/crs", () => ({
 vi.mock("@/lib/n8n", () => ({
   deleteFundingAnalysis: vi.fn(),
   sendClientAnalysisN8N: vi.fn(),
+  getFundingAnalysisNewRegistrationFlow: vi.fn(),
+  mapBankProductsN8nNewRegistration: vi.fn(),
+  sendClientCongratsMessageN8NNewRegistration: vi.fn(),
 }));
 
 vi.mock("firebase-admin/firestore", () => ({
@@ -415,7 +418,9 @@ describe("service/analysis", () => {
         id: "u1",
         email: "u@t.com",
       } as any);
-      vi.mocked(sendClientAnalysisN8N).mockResolvedValue("webhook-url");
+      vi.mocked(sendClientAnalysisN8N).mockResolvedValue(
+        "send-client-analysis",
+      );
       await sendClientAnalysisData("REF");
       expect(mockFetch).toHaveBeenCalled();
     });
