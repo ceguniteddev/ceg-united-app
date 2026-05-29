@@ -1,3 +1,4 @@
+"use client";
 // FundingPathways.tsx
 // CEG United — Funding Pathways Selection Page
 //
@@ -24,6 +25,15 @@
 // Author: Built for Julian (CEG United) — May 22, 2026
 
 import React, { useState } from "react";
+import { useAuth } from "@/provider/AuthContext";
+import { useMembership } from "@/hooks/membership";
+import { LockIcon } from "lucide-react";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
+import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
+import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
+import { createMembershipCheckoutConfig } from "@/service/whop";
+import { toast } from "sonner";
 
 // -------------------------- Types --------------------------
 
@@ -255,12 +265,59 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
   onSelect,
   selectedPathwayId,
 }) => {
+  const { user, userData } = useAuth();
+  const { data: membership, refetch: refetchMembership } = useMembership();
+
+  const [isPricingModalOpen, setPricingModalOpen] = useState(false);
+  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  const [isCheckoutSheetOpen, setCheckoutSheetOpen] = useState(false);
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<{
+    id: string;
+    amount: number;
+  } | null>(null);
+
   const [selectedId, setSelectedId] = useState<PathwayId | null>(
     (selectedPathwayId as PathwayId) || "income_based",
   );
-  const selected = pathways.find((p) => p.id === selectedId) || null;
 
   const computationFromBackend = realDeal?.businessIncomeComputation || {};
+
+  // Calculate tier limit
+  const tierId = membership?.status === "active" ? membership?.tier : null;
+  const allowedCategoriesCount =
+    tierId === "tier_starter"
+      ? 1
+      : tierId === "tier_pro"
+        ? 2
+        : tierId === "tier_executive"
+          ? 99
+          : 0;
+
+  // Calculate applied categories
+  const uniqueAppliedPathwayIds = new Set(
+    (realDeal?.appliedPathways || []).map((p: any) => p.pathwayId),
+  );
+  const appliedCount = uniqueAppliedPathwayIds.size;
+
+  const handleSelectPlan = async (planId: string, amount: number) => {
+    if (!user?.uid) return;
+    try {
+      setIsCreatingCheckout(true);
+      const res = await createMembershipCheckoutConfig({
+        userId: user.uid,
+        planId: planId as any,
+      });
+      setCheckoutId(res.checkoutId);
+      setSelectedPlan({ id: planId, amount });
+      setPricingModalOpen(false);
+      setCheckoutSheetOpen(true);
+    } catch (err: any) {
+      toast.error("Failed to start checkout: " + err.message);
+    } finally {
+      setIsCreatingCheckout(false);
+    }
+  };
 
   // Extract dynamically calculated maximums from backend data
   const getAmountFromBackend = (
@@ -322,6 +379,11 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
     dynamicPathways.find((p) => p.id === selectedId) || null;
 
   const handleSelect = (p: FundingPathway) => {
+    const isAlreadyApplied = uniqueAppliedPathwayIds.has(p.id);
+    if (!isAlreadyApplied && appliedCount >= allowedCategoriesCount) {
+      setPricingModalOpen(true);
+      return;
+    }
     setSelectedId(p.id);
     onSelect?.(p);
   };
@@ -366,7 +428,7 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                   aria-checked={isSelected}
                   onClick={() => handleSelect(p)}
                   className={[
-                    "group relative flex w-full items-stretch gap-4 rounded-2xl border p-5 text-left transition-all sm:gap-5 sm:p-6",
+                    "group relative flex w-full items-stretch gap-4 rounded-2xl border p-5 text-left transition-all sm:gap-5 sm:p-6 overflow-hidden",
                     isSelected
                       ? "border-blue-600 bg-blue-50/60 shadow-[0_0_0_3px_rgba(37,99,235,0.12)]"
                       : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm",
@@ -408,6 +470,11 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                       ) ? (
                         <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
                           Applied
+                        </span>
+                      ) : !uniqueAppliedPathwayIds.has(p.id) &&
+                        appliedCount >= allowedCategoriesCount ? (
+                        <span className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-0.5 text-[11px] font-bold tracking-wide inline-flex items-center gap-1.5 shadow-sm hover:from-blue-700 hover:to-indigo-700 transition-all uppercase">
+                          <LockIcon className="h-3 w-3 text-blue-200" /> Upgrade
                         </span>
                       ) : p.badge ? (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
@@ -522,6 +589,43 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
           offers
         </p>
       </div>
+
+      <ResponsiveDialog
+        isOpen={isPricingModalOpen}
+        setIsOpen={setPricingModalOpen}
+        title="Upgrade to Access More Categories"
+        description=""
+        className="sm:max-w-[90vw] md:max-w-6xl max-h-[90vh] overflow-y-auto p-0 border-0"
+      >
+        <PricingPlans
+          isLoading={isCreatingCheckout}
+          onSelectPlan={handleSelectPlan}
+        />
+      </ResponsiveDialog>
+
+      <Sheet open={isCheckoutSheetOpen} onOpenChange={setCheckoutSheetOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden"
+        >
+          <SheetHeader className="px-6 py-4 border-b border-gray-200"></SheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            {checkoutId && user && selectedPlan && (
+              <MembershipCheckoutView
+                checkoutId={checkoutId}
+                userId={user.uid}
+                tierId={selectedPlan.id}
+                amount={selectedPlan.amount}
+                prefillEmail={userData?.email}
+                onPaymentCompleteAction={() => {
+                  setCheckoutSheetOpen(false);
+                  refetchMembership();
+                }}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

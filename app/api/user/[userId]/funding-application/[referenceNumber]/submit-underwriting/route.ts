@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { badRequest, internalServerError } from "@/app/api/helpers";
 import { withAuth } from "@/lib/api-validation";
-import { updateApplicationStatus } from "@/service/apply-funding";
+import { updatePathwayStatus } from "@/service/apply-funding";
 import { getBanks } from "@/service/bank-management";
 import { sendTriggerEmail } from "@/service/trigger-email";
 import { EmailJobs } from "@/schema/trigger-email";
@@ -34,12 +34,13 @@ export const POST = withAuth(
       const body = await request.json().catch(() => ({}));
       const pathwayId = body.pathwayId;
 
-      // await updateApplicationStatus({
-      //   referenceNumber,
-      //   status: "Sent to Brokerage",
-      //   approveOrDeclineValue: undefined,
-      //   pathwayId,
-      // });
+      if (pathwayId) {
+        await updatePathwayStatus({
+          referenceNumber,
+          pathwayId,
+          status: "Sent to Brokerage",
+        });
+      }
 
       // 2. Fetch all brokerages
       const banks = await getBanks();

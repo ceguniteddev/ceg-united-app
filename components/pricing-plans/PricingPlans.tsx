@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
-import { Check, X, Shield, ArrowRight } from "lucide-react";
+import { Check, X, Shield, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFeeSettings } from "@/hooks/fee-settings";
 import { cn } from "@/lib/utils";
+import { useMembership } from "@/hooks/membership";
 
 interface PricingPlansProps {
   onSelectPlan?: (planId: string, amount: number) => void;
@@ -16,6 +17,9 @@ export function PricingPlans({
   isLoading = false,
 }: PricingPlansProps) {
   const { data: feeSettings, isLoading: isLoadingSettings } = useFeeSettings();
+  const { data: membership } = useMembership();
+
+  const activeTierId = membership?.status === "active" ? membership.tier : null;
 
   const tiers = [
     {
@@ -103,18 +107,26 @@ export function PricingPlans({
             key={tier.id}
             className={cn(
               "relative flex flex-col h-full rounded-2xl bg-white shadow-lg border transition-all duration-200 hover:shadow-xl",
-              tier.highlight
-                ? "border-blue-600 ring-2 ring-blue-600 ring-opacity-50 scale-105 z-10"
-                : "border-slate-200",
+              activeTierId === tier.id
+                ? "border-emerald-500 ring-2 ring-emerald-500 ring-opacity-50 scale-105 z-20"
+                : tier.highlight
+                  ? "border-blue-600 ring-2 ring-blue-600 ring-opacity-50 scale-105 z-10"
+                  : "border-slate-200",
             )}
           >
-            {tier.badge && (
+            {activeTierId === tier.id ? (
+              <div className="absolute top-0 inset-x-0 flex justify-center -mt-4">
+                <span className="bg-emerald-500 text-white text-xs font-bold px-4 py-1.5 uppercase tracking-wider rounded-full shadow-md flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Current Plan
+                </span>
+              </div>
+            ) : tier.badge ? (
               <div className="absolute top-0 inset-x-0 flex justify-center -mt-4">
                 <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 uppercase tracking-wider rounded-full shadow-sm">
                   {tier.badge}
                 </span>
               </div>
-            )}
+            ) : null}
 
             <div className="p-8 border-b border-slate-100">
               <h3 className="text-xl font-bold text-slate-900">{tier.name}</h3>
@@ -129,16 +141,22 @@ export function PricingPlans({
               </div>
               <Button
                 onClick={() => onSelectPlan?.(tier.id, tier.price)}
-                disabled={isLoading || isLoadingSettings}
+                disabled={
+                  isLoading || isLoadingSettings || activeTierId === tier.id
+                }
                 className={cn(
                   "mt-8 w-full h-12 text-md font-semibold transition-colors",
-                  tier.highlight
-                    ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg"
-                    : "bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200",
+                  activeTierId === tier.id
+                    ? "bg-emerald-500 hover:bg-emerald-600 text-white opacity-100 disabled:opacity-100 cursor-default shadow-md"
+                    : tier.highlight
+                      ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200",
                 )}
               >
-                {tier.cta}
-                <ArrowRight className="ml-2 w-4 h-4" />
+                {activeTierId === tier.id ? "Current Plan" : tier.cta}
+                {activeTierId !== tier.id && (
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                )}
               </Button>
             </div>
 
