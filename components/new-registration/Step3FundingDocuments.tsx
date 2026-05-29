@@ -4,7 +4,7 @@ import { useFormContext } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DOCUMENT_TYPES, DocumentType } from "@/lib/document-types";
 import { Button } from "@/components/ui/button";
-import { Trash2Icon, Loader2, FileText } from "lucide-react";
+import { Trash2Icon, Loader2, FileText, InfoIcon } from "lucide-react";
 import React, { useState } from "react";
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
 import Image from "next/image";
@@ -23,6 +23,7 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
+import { CustomFormField } from "@/components/CustomFormField";
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -299,7 +300,8 @@ const LocalDocumentList = ({
 
 export function Step3Funding() {
   const { watch, setValue, getValues } = useFormContext();
-  const { businessDetailsData } = useNewRegistrationStore();
+  const { businessDetailsData, authData, updateAuthData } =
+    useNewRegistrationStore();
 
   const fundingType = watch("fundingType") || businessDetailsData.fundingType;
   const employmentType =
@@ -309,6 +311,40 @@ export function Step3Funding() {
     fundingType === FundingType.Business || fundingType === FundingType.Both;
   const isPersonal =
     fundingType === FundingType.Personal || fundingType === FundingType.Both;
+
+  // Sync address fields to the store when user edits them
+  const addressStreet = watch("addressStreet");
+  const addressCity = watch("addressCity");
+  const addressState = watch("addressState");
+  const addressPostal = watch("addressPostal");
+
+  React.useEffect(() => {
+    if (
+      addressStreet !== undefined ||
+      addressCity !== undefined ||
+      addressState !== undefined ||
+      addressPostal !== undefined
+    ) {
+      updateAuthData({
+        ...(addressStreet !== undefined && { addressStreet }),
+        ...(addressCity !== undefined && { addressCity }),
+        ...(addressState !== undefined && { addressState }),
+        ...(addressPostal !== undefined && { addressPostal }),
+      });
+    }
+  }, [addressStreet, addressCity, addressState, addressPostal, updateAuthData]);
+
+  // Set initial values from store if not already set (e.g. going back/forth)
+  React.useEffect(() => {
+    if (authData.addressStreet && !getValues("addressStreet"))
+      setValue("addressStreet", authData.addressStreet);
+    if (authData.addressCity && !getValues("addressCity"))
+      setValue("addressCity", authData.addressCity);
+    if (authData.addressState && !getValues("addressState"))
+      setValue("addressState", authData.addressState);
+    if (authData.addressPostal && !getValues("addressPostal"))
+      setValue("addressPostal", authData.addressPostal);
+  }, []);
 
   const handleUploadComplete = async (fieldName: string, newFiles: any[]) => {
     const currentVal = getValues(fieldName);
@@ -366,6 +402,11 @@ export function Step3Funding() {
 
         // Let's only update fields that were actually found
         if (Object.keys(newData).length > 0) {
+          // Update react-hook-form values so UI reflects the changes immediately
+          Object.entries(newData).forEach(([key, value]) => {
+            setValue(key, value, { shouldValidate: true, shouldDirty: true });
+          });
+
           updateAuthData(newData);
 
           // Instantly sync the newly extracted address to the user-lead collection
@@ -418,7 +459,7 @@ export function Step3Funding() {
         {/* DRIVERS LICENSE (FOR ALL) */}
         <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 border border-slate-200 bg-white p-4 rounded-lg shadow-sm">
           <h3 className="text-lg font-semibold">Identity</h3>
-          <div className="space-y-2">
+          <div className="space-y-4">
             <PublicFileUpload
               documentType={driversLicenseType}
               titleOverride="Upload Driver's License"
@@ -432,6 +473,51 @@ export function Step3Funding() {
               fieldName="driverLicense"
               documentType={driversLicenseType}
             />
+
+            <div className="mt-8 border border-blue-200 bg-blue-50/60 rounded-xl p-5 shadow-sm">
+              <div className="flex items-start gap-3 mb-5">
+                <div className="mt-0.5 bg-blue-100 p-1.5 rounded-full text-blue-700 flex-shrink-0">
+                  <InfoIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-blue-900 mb-1">
+                    Verify Your Address for Credit Report
+                  </h4>
+                  <p className="text-sm text-blue-800/90 leading-relaxed">
+                    This address will auto-populate once you upload your
+                    Driver&apos;s License.{" "}
+                    <strong>
+                      Please carefully review and correct any errors.
+                    </strong>{" "}
+                    We use this address to pull your credit report, so accuracy
+                    is critical to process your funding application
+                    successfully.
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-5 rounded-lg border border-blue-100 shadow-sm">
+                <CustomFormField
+                  name="addressStreet"
+                  label="Street Address"
+                  placeholder="123 Main St"
+                />
+                <CustomFormField
+                  name="addressCity"
+                  label="City"
+                  placeholder="New York"
+                />
+                <CustomFormField
+                  name="addressState"
+                  label="State"
+                  placeholder="NY"
+                />
+                <CustomFormField
+                  name="addressPostal"
+                  label="Zip / Postal Code"
+                  placeholder="10001"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
