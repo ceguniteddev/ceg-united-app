@@ -69,7 +69,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
-const baseColumns: ColumnDef<BankFormData>[] = [
+const getBaseColumns = (isPremiumClient: boolean): ColumnDef<BankFormData>[] => [
   {
     accessorKey: "referenceNumber",
     id: "referenceNumber",
@@ -86,18 +86,19 @@ const baseColumns: ColumnDef<BankFormData>[] = [
     ),
     cell: ({ row }) => {
       const data = row.original as ApprovedBankFormData;
+      const displayBankName = isPremiumClient ? data.bankName : `Bank ${row.index + 1}`;
 
       return (
         <div className="flex items-center gap-3">
           <LenderLogo
-            initial={data.logoInitial || data.bankName.trim()[0]}
+            initial={isPremiumClient ? (data.logoInitial || data.bankName.trim()[0]) : "B"}
             bgClass={data.logoBg || "bg-blue-100"}
             colorClass={data.logoColor || "text-blue-600"}
             size="sm"
           />
           <div className="min-w-0">
             <p className="text-sm font-semibold text-gray-900 whitespace-normal break-words max-w-[250px] md:max-w-[300px] xl:max-w-[400px]">
-              {data.bankName}
+              {displayBankName}
             </p>
             {data.clientApplicationStatus === "Funded" && data.fundedAmount && (
               <div className="flex items-center gap-1.5 mt-0.5">
@@ -225,6 +226,9 @@ type Props = {
 };
 
 const FundingList = ({ appliedFunding, isAdminView }: Props) => {
+  const { userData } = useAuth();
+  const isPremiumClient = !!userData?.isPremiumClient || !!isAdminView;
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
@@ -250,7 +254,8 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
       ) || false;
 
     // 2. Filter the base columns based on all conditions.
-    return baseColumns.filter((column) => {
+    const baseCols = getBaseColumns(isPremiumClient);
+    return baseCols.filter((column) => {
       // Hide clientActions for admins
       if (isAdminView && column.id === "clientActions") {
         return false;
@@ -287,7 +292,7 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
       // If none of the above conditions are met, keep the column
       return true;
     });
-  }, [isAdminView, appliedFunding]);
+  }, [isAdminView, appliedFunding, isPremiumClient]);
 
   const table = useReactTable({
     data: appliedFunding || [],
@@ -415,7 +420,10 @@ const FundingCard = ({
   isAdminView?: boolean;
   appliedFunding: ApprovedBankFormData[] | undefined;
 }) => {
+  const { userData } = useAuth();
+  const isPremiumClient = !!userData?.isPremiumClient || !!isAdminView;
   const data = row.original;
+  const displayBankName = isPremiumClient ? data.bankName : `Bank ${row.index + 1}`;
 
   const showApprovedFields =
     appliedFunding?.some(
@@ -440,14 +448,14 @@ const FundingCard = ({
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3 flex-1">
           <LenderLogo
-            initial={data.logoInitial || data.bankName.trim()[0]}
+            initial={isPremiumClient ? (data.logoInitial || data.bankName.trim()[0]) : "B"}
             bgClass={data.logoBg || "bg-blue-100"}
             colorClass={data.logoColor || "text-blue-600"}
             size="md"
           />
           <div>
             <p className="text-xs text-gray-500">Bank Name</p>
-            <p className="font-semibold">{data.bankName}</p>
+            <p className="font-semibold">{displayBankName}</p>
             {data.clientApplicationStatus === "Funded" && data.fundedAmount && (
               <div className="flex items-center gap-1.5 mt-0.5">
                 <CheckCircle2 className="size-3.5 text-blue-500" />
