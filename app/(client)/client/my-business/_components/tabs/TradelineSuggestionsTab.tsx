@@ -37,9 +37,9 @@ export function TradelineSuggestionsTab() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center text-gray-400">
           <Zap className="w-8 h-8 mx-auto mb-2 opacity-40" />
           <p className="text-sm">No tradeline deals available right now.</p>
-          <p className="text-xs mt-1">
+          {/* <p className="text-xs mt-1">
             Complete your business profile to receive personalized suggestions.
-          </p>
+          </p> */}
         </div>
       </div>
     );

@@ -10,6 +10,7 @@ import {
   ReceiptIcon,
   Loader2,
   X,
+  LockIcon,
 } from "lucide-react";
 import { useAuth } from "@/provider/AuthContext";
 import Spinner from "@/components/Spinner";
@@ -43,6 +44,17 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { useFeeSettings } from "@/hooks/fee-settings";
 
+// Pricing / Checkout imports
+import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
+import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { createMembershipCheckoutConfig } from "@/service/whop";
+
 interface Props {
   params: Promise<{ businessId: string }>;
 }
@@ -59,7 +71,7 @@ function getInitials(name: string) {
 export default function BusinessDetailPage({ params }: Props) {
   const { businessId } = use(params);
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
   const { business, isLoading } = useBusinessByIdQuery(
     user?.uid ?? "",
     businessId,
@@ -84,9 +96,22 @@ export default function BusinessDetailPage({ params }: Props) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
 
+  // CRS Report Checkout State
   const [isGenerating, setIsGenerating] = useState(false);
-  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [crsCheckoutId, setCrsCheckoutId] = useState<string | null>(null);
   const [checkoutMetadata, setCheckoutMetadata] = useState<any>(null);
+
+  // Membership Checkout State
+  const [isPricingModalOpen, setPricingModalOpen] = useState(false);
+  const [membershipCheckoutId, setMembershipCheckoutId] = useState<
+    string | null
+  >(null);
+  const [isMembershipSheetOpen, setMembershipSheetOpen] = useState(false);
+  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<{
+    id: string;
+    amount: number;
+  } | null>(null);
 
   const { data: feeSettings } = useFeeSettings();
   const reportFee = feeSettings?.businessCreditReportFee || 0;
@@ -146,7 +171,7 @@ export default function BusinessDetailPage({ params }: Props) {
               ? (res as any).metadata?.referenceNumber
               : undefined,
         });
-        setCheckoutId(res.checkoutId);
+        setCrsCheckoutId(res.checkoutId);
         setIsConfirmOpen(false);
       } else if ("success" in res && res.success) {
         toast.success(
@@ -164,6 +189,27 @@ export default function BusinessDetailPage({ params }: Props) {
       setIsGenerating(false);
     }
   };
+
+  const handleSelectPlan = async (planId: string, amount: number) => {
+    if (!userData?.id) return;
+    try {
+      setIsCreatingCheckout(true);
+      const res = await createMembershipCheckoutConfig({
+        userId: userData.id,
+        planId: planId as any,
+      });
+      setMembershipCheckoutId(res.checkoutId);
+      setSelectedPlan({ id: planId, amount });
+      setPricingModalOpen(false);
+      setMembershipSheetOpen(true);
+    } catch (err: any) {
+      toast.error("Failed to start checkout: " + err.message);
+    } finally {
+      setIsCreatingCheckout(false);
+    }
+  };
+
+  const isPremium = userData?.isPremiumClient === true;
 
   const renderTab = () => {
     switch (activeTab) {
@@ -256,23 +302,39 @@ export default function BusinessDetailPage({ params }: Props) {
             </div>
 
             <div className="flex items-center gap-3">
-              <Button
-                onClick={() => setIsConfirmOpen(true)}
-                disabled={isGenerating}
-                className="hidden sm:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Pulling Credit Report...
-                  </>
-                ) : (
-                  <>
-                    <ReceiptIcon className="w-4 h-4" />
-                    Pull Credit Report
-                  </>
-                )}
-              </Button>
+              {isPremium ? (
+                <Button
+                  onClick={() => setIsConfirmOpen(true)}
+                  disabled={isGenerating}
+                  className="hidden sm:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Pulling Credit Report...
+                    </>
+                  ) : (
+                    <>
+                      <ReceiptIcon className="w-4 h-4" />
+                      Pull Credit Report
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={() => setPricingModalOpen(true)}
+                  className="hidden sm:flex items-center gap-2 group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold cursor-pointer transition-all border-none shadow-md hover:shadow-lg"
+                >
+                  <span className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-out -skew-x-12 -translate-x-full" />
+                  <IconMenu
+                    icon={
+                      <LockIcon className="h-4 w-4 transition-all group-hover:scale-110" />
+                    }
+                    text="Upgrade to pull Business Credit"
+                  />
+                </Button>
+              )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -284,24 +346,41 @@ export default function BusinessDetailPage({ params }: Props) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    className="sm:hidden cursor-pointer"
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      setIsConfirmOpen(true);
-                    }}
-                  >
-                    <IconMenu
-                      text={isGenerating ? "Pulling..." : "Pull Credit Report"}
-                      icon={
-                        isGenerating ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <ReceiptIcon className="h-4 w-4" />
-                        )
-                      }
-                    />
-                  </DropdownMenuItem>
+                  {isPremium ? (
+                    <DropdownMenuItem
+                      className="sm:hidden cursor-pointer"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setIsConfirmOpen(true);
+                      }}
+                    >
+                      <IconMenu
+                        text={
+                          isGenerating ? "Pulling..." : "Pull Credit Report"
+                        }
+                        icon={
+                          isGenerating ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <ReceiptIcon className="h-4 w-4" />
+                          )
+                        }
+                      />
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem
+                      className="sm:hidden cursor-pointer"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setPricingModalOpen(true);
+                      }}
+                    >
+                      <IconMenu
+                        text="Upgrade"
+                        icon={<LockIcon className="h-4 w-4" />}
+                      />
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Button
                       variant="ghost"
@@ -374,6 +453,7 @@ export default function BusinessDetailPage({ params }: Props) {
         </div>
       </ResponsiveDialog>
 
+      {/* Pull CRS Report Modal */}
       <ConfirmButton
         open={isConfirmOpen}
         onOpenChange={setIsConfirmOpen}
@@ -397,27 +477,70 @@ export default function BusinessDetailPage({ params }: Props) {
         title="Pull New Credit Report"
       />
 
-      {/* Checkout Modal */}
+      {/* Membership Pricing Modal */}
+      <ResponsiveDialog
+        isOpen={isPricingModalOpen}
+        setIsOpen={setPricingModalOpen}
+        title="Upgrade to Access Feature"
+        description=""
+        className="sm:max-w-[90vw] md:max-w-6xl max-h-[90vh] overflow-y-auto p-0 border-0 z-[100]"
+      >
+        <PricingPlans
+          isLoading={isCreatingCheckout}
+          onSelectPlan={handleSelectPlan}
+        />
+      </ResponsiveDialog>
+
+      {/* Membership Checkout Sheet */}
+      <Sheet open={isMembershipSheetOpen} onOpenChange={setMembershipSheetOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden z-[100]"
+        >
+          <SheetHeader className="px-6 py-4 border-b border-gray-200">
+            <SheetTitle className="text-xl font-bold">
+              Secure Checkout
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            {membershipCheckoutId && selectedPlan && userData && (
+              <MembershipCheckoutView
+                checkoutId={membershipCheckoutId}
+                userId={userData.id!}
+                tierId={selectedPlan.id}
+                amount={selectedPlan.amount}
+                prefillEmail={userData.email || ""}
+                onPaymentCompleteAction={() => {
+                  setMembershipSheetOpen(false);
+                  router.refresh();
+                }}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* One-time CRS Report Checkout Modal */}
       <Dialog
-        open={!!checkoutId}
-        onOpenChange={(open) => !open && setCheckoutId(null)}
+        open={!!crsCheckoutId}
+        onOpenChange={(open) => !open && setCrsCheckoutId(null)}
       >
         <DialogContent
           className="w-[95vw] sm:max-w-[600px] md:max-w-[700px] p-0 overflow-hidden bg-transparent border-none shadow-none"
           onInteractOutside={(e) => e.preventDefault()}
         >
           <DialogTitle className="sr-only">Complete Your Purchase</DialogTitle>
-          {checkoutId && (
+          {crsCheckoutId && (
             <div className="bg-white rounded-xl shadow-2xl overflow-y-auto w-full max-h-[90vh] md:max-h-[85vh] relative">
               <button
-                onClick={() => setCheckoutId(null)}
+                onClick={() => setCrsCheckoutId(null)}
                 className="absolute top-3 right-3 p-2 bg-gray-100 hover:bg-gray-200 rounded-full z-50 transition-colors"
                 aria-label="Close"
               >
                 <X className="w-4 h-4 text-gray-600" />
               </button>
               <WhopCheckoutEmbed
-                sessionId={checkoutId}
+                sessionId={crsCheckoutId}
                 prefill={{
                   email: user?.email || undefined,
                   address: {
@@ -434,7 +557,7 @@ export default function BusinessDetailPage({ params }: Props) {
                         body: JSON.stringify({
                           planId,
                           receiptId,
-                          checkoutId,
+                          checkoutId: crsCheckoutId,
                           metadata: checkoutMetadata,
                         }),
                       },
@@ -447,14 +570,14 @@ export default function BusinessDetailPage({ params }: Props) {
                     toast.success(
                       "Payment successful! Generating your business credit report...",
                     );
-                    setCheckoutId(null);
+                    setCrsCheckoutId(null);
                     setCheckoutMetadata(null);
                   } catch (error) {
                     console.error(error);
                     toast.error(
                       "Payment succeeded but report generation failed. Please contact support.",
                     );
-                    setCheckoutId(null);
+                    setCrsCheckoutId(null);
                   }
                 }}
                 fallback={
