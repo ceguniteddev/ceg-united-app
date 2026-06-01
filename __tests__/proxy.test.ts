@@ -1,11 +1,14 @@
 import { vi, describe, beforeEach, it, expect, Mock } from "vitest";
+
+// Mock server-only BEFORE imports
+vi.mock("server-only", () => {
+  return {};
+});
+
 import { NextRequest, NextResponse } from "next/server";
 import { proxy } from "@/proxy";
 import { verifySession } from "@/lib/session";
 import { getUserById } from "@/service/user";
-
-// Mock dependencies
-vi.mock("server-only", () => ({}));
 
 vi.mock("@/lib/session", () => ({
   verifySession: vi.fn(),
