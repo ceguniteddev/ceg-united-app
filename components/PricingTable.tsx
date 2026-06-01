@@ -5,10 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SaveIcon, Loader2Icon } from "lucide-react";
-import {
-  useMarkupPercentage,
-  useSetMarkupPercentage,
-} from "@/hooks/tradelines";
+import { useSystemConfig, useUpdateSystemConfig } from "@/hooks/system-config";
 import {
   useReactTable,
   getCoreRowModel,
@@ -65,14 +62,14 @@ export default function PricingTable() {
     { id: "price", desc: false },
   ]);
 
-  const { markupPercentage, isLoading: isLoadingMarkup } =
-    useMarkupPercentage();
-  const { saveMarkup, isPending } = useSetMarkupPercentage();
-  const [markupInput, setMarkupInput] = useState<number>(0);
+  const { config, isLoading: isLoadingMarkup } = useSystemConfig();
+  const markupPercentage = config?.markupPercentage ?? 0;
+  // const { saveConfig, isPending } = useUpdateSystemConfig();
+  // const [markupInput, setMarkupInput] = useState<number>(0);
 
-  useEffect(() => {
-    setMarkupInput(markupPercentage);
-  }, [markupPercentage]);
+  // useEffect(() => {
+  //   setMarkupInput(markupPercentage);
+  // }, [markupPercentage]);
 
   useEffect(() => {
     fetch("/api/pricing")
@@ -194,34 +191,6 @@ export default function PricingTable() {
     <div className="container mx-auto px-4 py-6 space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <h2 className="text-2xl font-bold tracking-tight">Pricing Table</h2>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-          <label className="text-sm font-medium whitespace-nowrap">
-            Mark-up Percentage:
-          </label>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <NumberInput
-              className="w-14"
-              value={markupInput}
-              onChange={(e) => setMarkupInput(Number(e.target.value))}
-              disabled={isLoadingMarkup || isPending}
-              allowNegative={false}
-              min={1}
-            />
-            <span className="text-sm font-medium">%</span>
-            <Button
-              size="sm"
-              onClick={() => saveMarkup(markupInput)}
-              disabled={isLoadingMarkup || isPending}
-            >
-              {isPending ? (
-                <Loader2Icon className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <SaveIcon className="h-4 w-4 mr-2" />
-              )}
-              Save
-            </Button>
-          </div>
-        </div>
       </div>
       {loading && <Spinner displayText="Loading data..." />}
       {error && <p className="text-center text-red-600">Error: {error}</p>}

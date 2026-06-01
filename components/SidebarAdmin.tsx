@@ -66,7 +66,7 @@ const SidebarAdmin = () => {
       <SidebarContent>
         {adminSidebarLinks.map((group) => (
           <Collapsible
-            defaultOpen
+            defaultOpen={false}
             key={group.group}
             className="group/collapsible"
           >

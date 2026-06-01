@@ -42,11 +42,11 @@ import {
   mockBusinessCreditBuilders,
 } from "@/lib/tradelineMockData";
 import {
-  useMarkupPercentage,
   useUserRecentTradelines,
   useUserTradelines,
   USER_ALL_TRADELINES_KEY,
 } from "@/hooks/tradelines";
+import { useSystemConfig } from "@/hooks/system-config";
 import { useActiveSpecialDeals } from "@/hooks/special-deals";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -158,7 +158,8 @@ function TradelinesPage() {
   } | null>(null);
 
   // Fetch data
-  const { markupPercentage } = useMarkupPercentage();
+  const { config } = useSystemConfig();
+  const markupPercentage = config?.markupPercentage ?? 0;
   const { recentTradelines, refetch: refetchRecent } = useUserRecentTradelines(
     user?.uid,
   );

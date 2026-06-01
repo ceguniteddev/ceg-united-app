@@ -152,6 +152,7 @@ import {
   CircleDollarSign,
   MessageSquare,
   LucideIcon,
+  Settings,
 } from "lucide-react";
 
 export type AdminSidebarGroup = {
@@ -262,6 +263,17 @@ export const adminSidebarLinks: AdminSidebarGroup[] = [
         imgURL: "/icons/book-open-text.svg",
         route: "/admin/educational-materials",
         label: "Educational Materials",
+      },
+    ],
+  },
+  {
+    group: "System Settings",
+    icon: Settings,
+    links: [
+      {
+        imgURL: "/icons/settings.svg",
+        route: "/admin/system-config",
+        label: "System Config",
       },
     ],
   },

@@ -1,8 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
-  useMarkupPercentage,
-  useSetMarkupPercentage,
   useUserRecentTradelines,
   useUserTradelines,
   useAllPurchasedTradelines,
@@ -17,8 +15,6 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/service/tradelines", () => ({
-  getMarkupPercentage: vi.fn(),
-  setMarkupPercentage: vi.fn(),
   getUserRecentTradelines: vi.fn(),
   getUserTradelines: vi.fn(),
   getAllPurchasedTradelines: vi.fn(),
@@ -27,8 +23,6 @@ vi.mock("@/service/tradelines", () => ({
 }));
 
 import {
-  getMarkupPercentage,
-  setMarkupPercentage,
   getUserRecentTradelines,
   getUserTradelines,
   getAllPurchasedTradelines,
@@ -39,69 +33,6 @@ import {
 describe("tradelines hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  describe("useMarkupPercentage", () => {
-    it("should fetch markup percentage", async () => {
-      (getMarkupPercentage as any).mockResolvedValueOnce(15);
-
-      const { result } = renderHook(() => useMarkupPercentage(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.markupPercentage).toBe(15);
-    });
-
-    it("should default to 0 when no data", async () => {
-      (getMarkupPercentage as any).mockResolvedValueOnce(undefined);
-
-      const { result } = renderHook(() => useMarkupPercentage(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.markupPercentage).toBe(0);
-    });
-  });
-
-  describe("useSetMarkupPercentage", () => {
-    it("should save markup percentage", async () => {
-      (setMarkupPercentage as any).mockResolvedValueOnce(undefined);
-
-      const { result } = renderHook(() => useSetMarkupPercentage(), {
-        wrapper: createWrapper(),
-      });
-
-      await result.current.saveMarkup(20);
-
-      expect(setMarkupPercentage).toHaveBeenCalledWith(20);
-      expect(toast.success).toHaveBeenCalledWith("Markup percentage saved.");
-    });
-
-    it("should handle save failure", async () => {
-      (setMarkupPercentage as any).mockRejectedValueOnce(new Error("Failed"));
-
-      const { result } = renderHook(() => useSetMarkupPercentage(), {
-        wrapper: createWrapper(),
-      });
-
-      try {
-        await result.current.saveMarkup(20);
-      } catch (e) {
-        // expected
-      }
-
-      expect(toast.error).toHaveBeenCalledWith(
-        "Failed to save markup percentage.",
-      );
-    });
   });
 
   describe("useUserRecentTradelines", () => {

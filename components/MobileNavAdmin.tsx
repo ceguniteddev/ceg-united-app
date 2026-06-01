@@ -76,7 +76,7 @@ const MobileNavAdmin = () => {
             <nav className="flex-1 flex flex-col px-2 overflow-y-auto">
               {adminSidebarLinks.map((group) => (
                 <Collapsible
-                  defaultOpen
+                  defaultOpen={false}
                   key={group.group}
                   className="group/collapsible mb-2"
                 >
