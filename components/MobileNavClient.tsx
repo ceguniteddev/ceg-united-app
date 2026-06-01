@@ -15,6 +15,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
+import { useMembership } from "@/hooks/membership";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
 import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 import { LockIcon } from "lucide-react";
@@ -43,6 +44,7 @@ const MobileNavClient = () => {
   const { user, userData } = useAuth();
   const { appliedFunding } = useGetUserApplyFunding();
   const { data: addons = [] } = useAddons();
+  const { data: membership } = useMembership();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -140,14 +142,14 @@ const MobileNavClient = () => {
                 .filter((item) => {
                   if (
                     item.route === "/client/my-learning" &&
-                    (!userData || !userData.isPremiumClient)
+                    (!userData || membership?.status !== "active")
                   ) {
                     return false;
                   }
 
                   if (
                     item.route === "/client/credit-repair" &&
-                    (!userData || !userData.isPremiumClient)
+                    (!userData || membership?.status !== "active")
                   ) {
                     return false;
                   }
@@ -177,7 +179,7 @@ const MobileNavClient = () => {
                     pathname.startsWith(`${item.route}/`);
 
                   const isLocked =
-                    ((!userData || !userData.isPremiumClient) &&
+                    ((!userData || membership?.status !== "active") &&
                       (item.route === "/client/my-analysis" ||
                         item.route === "/client/my-credit")) ||
                     (item.route === "/client/credit-repair" &&

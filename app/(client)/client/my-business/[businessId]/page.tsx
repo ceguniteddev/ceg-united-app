@@ -44,6 +44,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { useFeeSettings } from "@/hooks/fee-settings";
 
+import { useMembership } from "@/hooks/membership";
+
 // Pricing / Checkout imports
 import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
 import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
@@ -115,6 +117,9 @@ export default function BusinessDetailPage({ params }: Props) {
 
   const { data: feeSettings } = useFeeSettings();
   const reportFee = feeSettings?.businessCreditReportFee || 0;
+
+  const { data: userMembership } = useMembership(user?.uid);
+  const isPremium = userMembership?.status === "active";
 
   if (!user || isLoading) {
     return <Spinner displayText="Loading business…" />;
@@ -208,8 +213,6 @@ export default function BusinessDetailPage({ params }: Props) {
       setIsCreatingCheckout(false);
     }
   };
-
-  const isPremium = userData?.isPremiumClient === true;
 
   const renderTab = () => {
     switch (activeTab) {

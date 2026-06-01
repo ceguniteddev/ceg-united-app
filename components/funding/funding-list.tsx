@@ -51,6 +51,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CustomFormField } from "../CustomFormField";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import { useAuth } from "@/provider/AuthContext";
+import { useMembership } from "@/hooks/membership";
 import { useRouter } from "next/navigation";
 import { ApprovalOddsBadge } from "./v2/ApprovalOddsBadge";
 import { LenderLogo } from "./v2/LenderLogo";
@@ -69,7 +70,9 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
-const getBaseColumns = (isPremiumClient: boolean): ColumnDef<BankFormData>[] => [
+const getBaseColumns = (
+  hasPaidContract: boolean,
+): ColumnDef<BankFormData>[] => [
   {
     accessorKey: "referenceNumber",
     id: "referenceNumber",
@@ -86,12 +89,18 @@ const getBaseColumns = (isPremiumClient: boolean): ColumnDef<BankFormData>[] => 
     ),
     cell: ({ row }) => {
       const data = row.original as ApprovedBankFormData;
-      const displayBankName = isPremiumClient ? data.bankName : `Bank ${row.index + 1}`;
+      const displayBankName = hasPaidContract
+        ? data.bankName
+        : `Bank ${row.index + 1}`;
 
       return (
         <div className="flex items-center gap-3">
           <LenderLogo
-            initial={isPremiumClient ? (data.logoInitial || data.bankName.trim()[0]) : "B"}
+            initial={
+              hasPaidContract
+                ? data.logoInitial || data.bankName.trim()[0]
+                : "B"
+            }
             bgClass={data.logoBg || "bg-blue-100"}
             colorClass={data.logoColor || "text-blue-600"}
             size="sm"
@@ -227,7 +236,8 @@ type Props = {
 
 const FundingList = ({ appliedFunding, isAdminView }: Props) => {
   const { userData } = useAuth();
-  const isPremiumClient = !!userData?.isPremiumClient || !!isAdminView;
+  const { data: membership } = useMembership();
+  const hasPaidContract = membership?.status === "active" || !!isAdminView;
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -254,7 +264,7 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
       ) || false;
 
     // 2. Filter the base columns based on all conditions.
-    const baseCols = getBaseColumns(isPremiumClient);
+    const baseCols = getBaseColumns(hasPaidContract);
     return baseCols.filter((column) => {
       // Hide clientActions for admins
       if (isAdminView && column.id === "clientActions") {
@@ -292,7 +302,7 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
       // If none of the above conditions are met, keep the column
       return true;
     });
-  }, [isAdminView, appliedFunding, isPremiumClient]);
+  }, [isAdminView, appliedFunding, hasPaidContract]);
 
   const table = useReactTable({
     data: appliedFunding || [],
@@ -421,9 +431,12 @@ const FundingCard = ({
   appliedFunding: ApprovedBankFormData[] | undefined;
 }) => {
   const { userData } = useAuth();
-  const isPremiumClient = !!userData?.isPremiumClient || !!isAdminView;
+  const { data: membership } = useMembership();
+  const hasPaidContract = membership?.status === "active" || !!isAdminView;
   const data = row.original;
-  const displayBankName = isPremiumClient ? data.bankName : `Bank ${row.index + 1}`;
+  const displayBankName = hasPaidContract
+    ? data.bankName
+    : `Bank ${row.index + 1}`;
 
   const showApprovedFields =
     appliedFunding?.some(
@@ -448,7 +461,11 @@ const FundingCard = ({
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3 flex-1">
           <LenderLogo
-            initial={isPremiumClient ? (data.logoInitial || data.bankName.trim()[0]) : "B"}
+            initial={
+              hasPaidContract
+                ? data.logoInitial || data.bankName.trim()[0]
+                : "B"
+            }
             bgClass={data.logoBg || "bg-blue-100"}
             colorClass={data.logoColor || "text-blue-600"}
             size="md"
@@ -571,6 +588,7 @@ const ActionCell = ({ row }: { row: any }) => {
     amount: number;
   } | null>(null);
   const { userData } = useAuth();
+  const { data: membership } = useMembership();
 
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
     row.original.userId,
@@ -632,7 +650,7 @@ const ActionCell = ({ row }: { row: any }) => {
   return (
     <>
       <div className="flex gap-2 w-full lg:w-auto">
-        {userData?.isPremiumClient ? (
+        {membership?.status === "active" ? (
           <>
             <Button
               type="button"

@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useAuth } from "@/provider/AuthContext";
 import { useGetUserCoursesWithProgress } from "@/hooks/educational-materials/course";
+import { useMembership } from "@/hooks/membership";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import Spinner from "@/components/Spinner";
 import EmptyState from "@/components/EmptyState";
@@ -46,6 +47,8 @@ const MyLearningPage = () => {
   // const { denefitsContract, isLoading: isLoadingContract } =
   //   useGetDenefitsContractsByUserId(user?.uid || "");
 
+  const { data: userMembership } = useMembership(user?.uid);
+
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -53,8 +56,8 @@ const MyLearningPage = () => {
     return <Spinner displayText="Loading your courses..." />;
   }
 
-  // Check if user has a paid denefits contract
-  const hasPaidContract = userData?.isPremiumClient || false;
+  // Check if user has a paid membership
+  const hasPaidContract = userMembership?.status === "active";
 
   if (!hasPaidContract) {
     return (

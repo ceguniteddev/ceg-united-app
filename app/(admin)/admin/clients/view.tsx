@@ -38,13 +38,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   useUpdateUserStatusMutation,
-  useUpdateUserPremiumStatusMutation,
   useUpdateUserProfileMutation,
   useSendClientServiceAgreementMutation,
   useDeleteUserMutation,
   useUsersQuery,
   useUpdateClientBrokerMutation,
 } from "@/hooks/user";
+import { useMembership } from "@/hooks/membership";
 import { useRefreshCRSData } from "@/hooks/crs";
 import { toast } from "sonner";
 import EmptyState from "@/components/EmptyState";
@@ -144,7 +144,6 @@ const ClientData = ({
             {!isBrokerView && (
               <div className="lg:col-span-1 space-y-4">
                 <StatusPicker user={user} />
-                <PremiumStatusPicker user={user} />
                 <RefreshCRSData user={user} />
                 <SendPaymentLink user={user} />
                 <SendClientAgreement user={user} />
@@ -209,47 +208,6 @@ const STATUS_STYLES: Record<
     text: "text-emerald-700",
     chipBg: "bg-emerald-50",
   },
-};
-
-const PremiumStatusPicker = ({ user }: { user: UserWithId }) => {
-  const isPremium = user.isPremiumClient || false;
-  const { updatePremiumStatus, isUpdating } =
-    useUpdateUserPremiumStatusMutation({
-      userId: user.id,
-    });
-
-  const handleToggle = useCallback(
-    async (checked: boolean) => {
-      await updatePremiumStatus({ isPremium: checked });
-    },
-    [updatePremiumStatus],
-  );
-
-  return (
-    <div
-      className={[
-        "flex flex-row items-center justify-between rounded-lg px-3 py-3 border w-full sm:flex-1 transition-all duration-200",
-        isPremium
-          ? "border-purple-300 bg-purple-50/50 shadow-sm"
-          : "border-purple-200 bg-purple-50/50 shadow-sm",
-      ].join(" ")}
-    >
-      <span
-        className={[
-          "text-xs font-semibold",
-          isPremium ? "text-purple-700" : "text-purple-600",
-        ].join(" ")}
-      >
-        Premium Client
-      </span>
-      <Switch
-        checked={isPremium}
-        onCheckedChange={handleToggle}
-        disabled={isUpdating}
-        className="data-[state=checked]:bg-purple-600 scale-90 cursor-pointer"
-      />
-    </div>
-  );
 };
 
 const StatusPicker = ({ user }: { user: UserWithId }) => {
@@ -334,6 +292,8 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
   const [refreshConfirmationOpen, setRefreshConfirmationOpen] =
     React.useState(false);
   const { isUpdating, refreshCRSData } = useRefreshCRSData();
+  const { data: membershipData } = useMembership(user.id);
+  const isPremium = membershipData?.status === "active";
   const { appliedFunding } = useGetClientApplyFunding(user.id);
   const { businessData } = useBusinessQuery(user.id, true);
   const [selectedBureaus, setSelectedBureaus] = React.useState({
@@ -479,19 +439,16 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
                   <Checkbox
                     id="refreshBusinessCredit"
                     checked={refreshBusinessCredit}
-                    disabled={!user.isPremiumClient}
+                    disabled={!isPremium}
                     onCheckedChange={(checked) =>
                       setRefreshBusinessCredit(checked as boolean)
                     }
                   />
                   <Label
                     htmlFor="refreshBusinessCredit"
-                    className={
-                      !user.isPremiumClient ? "text-muted-foreground" : ""
-                    }
+                    className={!isPremium ? "text-muted-foreground" : ""}
                   >
-                    Refresh Business Credit{" "}
-                    {!user.isPremiumClient && "(Premium Only)"}
+                    Refresh Business Credit {!isPremium && "(Premium Only)"}
                   </Label>
                 </div>
 

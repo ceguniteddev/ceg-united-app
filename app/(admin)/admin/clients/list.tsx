@@ -87,21 +87,10 @@ const whopPaymentFilterFn: FilterFn<UserWithId> = (
   return value === selectedFilter;
 };
 
-const premiumFilterFn: FilterFn<UserWithId> = (row, columnId, filterValue) => {
-  const raw = row.getValue<boolean | undefined>(columnId);
-  const isPremium = raw === true;
-  const sel = String(filterValue);
-
-  if (sel === "Yes") return isPremium;
-  if (sel === "No") return !isPremium;
-  return true;
-};
-
 const ClientsList = () => {
   const [roleFilter, setRoleFilter] = useState("all");
   const [denefitsStatusFilter, setDenefitsStatusFilter] = useState("all");
   const [whopPaymentFilter, setWhopPaymentFilter] = useState("all");
-  const [premiumFilter, setPremiumFilter] = useState("all");
 
   const { users, isLoading } = useUsersQuery("Client");
   const [sorting, setSorting] = React.useState<SortingState>([
@@ -243,22 +232,6 @@ const ClientsList = () => {
       },
       filterFn: whopPaymentFilterFn,
     },
-    {
-      accessorKey: "isPremiumClient",
-      id: "isPremiumClient",
-      header: ({ column }) => (
-        <SortableHeader column={column} title="Is Premium" />
-      ),
-      cell: ({ row }) => {
-        const isPremium = row.getValue("isPremiumClient") as boolean;
-        return (
-          <div>
-            <CategoryBadge category={isPremium ? "Yes" : "No"} />
-          </div>
-        );
-      },
-      filterFn: premiumFilterFn,
-    },
 
     {
       id: "actions",
@@ -324,17 +297,6 @@ const ClientsList = () => {
       col.setFilterValue(whopPaymentFilter);
     }
   }, [whopPaymentFilter, table]);
-
-  useEffect(() => {
-    const col = table.getColumn("isPremiumClient");
-    if (!col) return;
-
-    if (premiumFilter === "all") {
-      col.setFilterValue(undefined);
-    } else {
-      col.setFilterValue(premiumFilter);
-    }
-  }, [premiumFilter, table]);
 
   if (isLoading || denefitsContractsLoading || whopPaymentsLoading) {
     return <Spinner displayText="Loading clients..." />;
@@ -457,33 +419,6 @@ const ClientsList = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          {/* Premium Filter */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-muted-foreground">
-              Premium
-            </label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-9 w-full justify-between"
-                >
-                  <span>{premiumFilter === "all" ? "All" : premiumFilter}</span>
-                  <ChevronDownIcon className="h-4 w-4 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[200px]">
-                <DropdownMenuRadioGroup
-                  value={premiumFilter}
-                  onValueChange={setPremiumFilter}
-                >
-                  <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="Yes">Yes</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="No">No</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
       </div>
 
@@ -525,12 +460,7 @@ const ClientsList = () => {
                     <span className="text-muted-foreground">Whop Payment:</span>
                     <CategoryBadge category={whopPaymentStatus} />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Premium:</span>
-                    <CategoryBadge
-                      category={client.isPremiumClient ? "Yes" : "No"}
-                    />
-                  </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Phone:</span>
                     <span className="font-medium">{client.phoneNumber}</span>

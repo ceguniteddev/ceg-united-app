@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/session";
 import { getUserById } from "@/service/user";
 import { hasActiveAddon } from "@/service/addons";
+import { getUserMembership } from "@/service/membership";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { isPlaidProductionReady } from "./lib/plaid";
 
@@ -162,14 +163,17 @@ export async function proxy(req: NextRequest) {
 
   // 4) Token present → verify + find role
   let role: "Admin" | "IT" | "Staff" | "Client" | "Broker" | null = null;
-  let isPremiumClient = false;
+  let hasPaidContract = false;
 
   try {
     // Use the already verified session instead of verifying again
     if (!sessionCookie?.email) throw new Error("Invalid session");
     const user = await getUserById(sessionCookie.uid);
     role = (user?.role as any) ?? "Client";
-    isPremiumClient = user?.isPremiumClient ?? false;
+
+    const membership = await getUserMembership(sessionCookie.uid);
+    hasPaidContract = membership?.status === "active";
+
     // We get isOnboarded so we can conditionally route clients
     var isOnboarded = true; // user?.isOnboarded ?? false;
   } catch {
@@ -212,7 +216,7 @@ export async function proxy(req: NextRequest) {
     }
 
     if (
-      !isPremiumClient &&
+      !hasPaidContract &&
       (pathname.startsWith("/client/my-analysis") ||
         pathname.startsWith("/client/my-credit") ||
         pathname.startsWith("/client/credit-repair"))

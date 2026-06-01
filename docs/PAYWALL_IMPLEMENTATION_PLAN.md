@@ -30,7 +30,7 @@ The CEG Brain platform is transitioning to a freemium/paywall model. Users regis
 - [x] Created `updatePathwayStatus` in `service/apply-funding.ts` to allow specific pathway statuses to be updated without modifying the global application status.
 - [x] Built the dynamic `PricingPlans` UI Component (`components/pricing-plans/PricingPlans.tsx`) to display the three tiers and the Credit Module Pro Add-on, loading live prices directly from the fee settings.
 - [x] Replaced direct routing on the "Unlock to Apply" button in `components/funding/funding-list.tsx` for non-premium users with a responsive dialog that displays the `PricingPlans` component.
-- [x] Added `activateUserMembership` and `getUserMembership` inside `service/membership.ts` to handle database creation of a new `user/{userId}/membership` subcollection and update the global `user.isPremiumClient` flag.
+- [x] Added `activateUserMembership` and `getUserMembership` inside `service/membership.ts` to handle database creation of a new `user/{userId}/membership` subcollection.
 
 ### Step 3: Payment Provider Integration via Whop (Completed)
 
@@ -48,7 +48,7 @@ The CEG Brain platform is transitioning to a freemium/paywall model. Users regis
 
 ### Step 5: Enforcement Logic (Pending)
 
-- [ ] Implement logic to restrict access to real credit pulls and advanced underwriting if `isPremiumClient` is false or the membership `status` is inactive.
+- [ ] Implement logic to restrict access to real credit pulls and advanced underwriting if the membership `status` is inactive.
 - [ ] Enforce lender visibility limits (e.g., show only 6 lenders for Starter, 12 for Pro).
 - [ ] Enforce category restrictions based on the user's selected categories during signup.
 - [ ] Restrict access to the Dispute Module unless the user has the `credit_module_pro` flag or add-on.

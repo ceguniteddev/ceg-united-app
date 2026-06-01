@@ -174,14 +174,6 @@ describe("registrationSchema", () => {
     ).toBe(true);
   });
 
-  it("should default isPremiumClient to false when not provided", () => {
-    const result = registrationSchema.safeParse(validRegistration);
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.isPremiumClient).toBe(false);
-    }
-  });
-
   it("should coerce commissionRate from string to number", () => {
     const result = registrationSchema.safeParse({
       ...validRegistration,

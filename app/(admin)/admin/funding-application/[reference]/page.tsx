@@ -29,6 +29,7 @@ import LetterList from "@/components/letter-stream/list";
 import LetterForm from "@/components/letter-stream/form";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { useUserQuery } from "@/hooks/user";
+import { useMembership } from "@/hooks/membership";
 import { UserWithId } from "@/schema/registration";
 import { useGetClientApplyFunding } from "@/hooks/apply-funding";
 import { ApplyFundingWithUser } from "@/schema/apply-funding";
@@ -49,10 +50,11 @@ const AdminViewApplication = () => {
   const { userData, isLoading: isUserLoading } = useUserQuery(userId);
   const { appliedFunding, isLoading: isFundingLoading } =
     useGetClientApplyFunding(userId);
+  const { data: userMembership } = useMembership(userId);
 
   const hasLearningMaterialsAccess = useMemo(() => {
-    return userData?.isPremiumClient;
-  }, [userData]);
+    return userMembership?.status === "active";
+  }, [userMembership]);
 
   const hasLetterFeatureEnabled = useMemo(() => {
     return !!userData?.letterFeatureEnabled;
@@ -102,7 +104,7 @@ const AdminViewApplication = () => {
                 <h1 className="text-xl font-bold text-gray-900">
                   {userData.firstName} {userData.middleName} {userData.lastName}
                 </h1>
-                {userData.isPremiumClient && (
+                {userMembership?.status === "active" && (
                   <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800">
                     Premium Client
                   </span>

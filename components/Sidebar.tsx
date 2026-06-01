@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
 import { useGetUserApplyFunding } from "@/hooks/apply-funding";
+import { useMembership } from "@/hooks/membership";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
 import { LockIcon } from "lucide-react";
 import React, { useState } from "react";
@@ -35,6 +36,7 @@ const Sidebar = () => {
   const { user, isOnboarded, userData } = useAuth();
   const { appliedFunding } = useGetUserApplyFunding();
   const { data: addons = [] } = useAddons();
+  const { data: membership } = useMembership();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -116,14 +118,14 @@ const Sidebar = () => {
           .filter((item) => {
             if (
               item.route === "/client/my-learning" &&
-              (!userData || !userData.isPremiumClient)
+              (!userData || membership?.status !== "active")
             ) {
               return false;
             }
 
             if (
               item.route === "/client/credit-repair" &&
-              (!userData || !userData.isPremiumClient)
+              (!userData || membership?.status !== "active")
             ) {
               return false;
             }
@@ -151,7 +153,7 @@ const Sidebar = () => {
               pathname === item.route || pathname.startsWith(`${item.route}/`);
 
             const isLocked =
-              ((!userData || !userData.isPremiumClient) &&
+              ((!userData || membership?.status !== "active") &&
                 (item.route === "/client/my-analysis" ||
                   item.route === "/client/my-credit")) ||
               (item.route === "/client/credit-repair" &&

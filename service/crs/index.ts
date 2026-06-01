@@ -20,6 +20,7 @@ import {
 import { Business } from "@/schema";
 import { getBusiness } from "@/service/business";
 import { getUserById } from "@/service/user";
+import { getUserMembership } from "@/service/membership";
 import { CRSAddressInfo, CRSPersonalInfo, CRSReportType } from "@/types/crs";
 import { getFeeSettings } from "@/service/fee-settings";
 import { createCRSReportCheckoutConfig } from "@/service/whop";
@@ -244,7 +245,8 @@ export const generateCRSReport = async ({
   // check if the user is premium client before allowing to generate CRS report
   const user = await getUserById(userId);
   if (!user) throw new Error("User not found.");
-  if (!user.isPremiumClient && !bypassPremiumCheck) {
+  const membership = await getUserMembership(userId);
+  if (membership?.status !== "active" && !bypassPremiumCheck) {
     throw new Error("Only premium clients can generate CRS reports.");
   }
 
@@ -277,7 +279,8 @@ export const generateCRSReportBusiness = async (
 ) => {
   const user = await getUserById(userId);
   if (!user) throw new Error("User not found.");
-  if (!user.isPremiumClient && !bypassPremiumCheck) {
+  const membership = await getUserMembership(userId);
+  if (membership?.status !== "active" && !bypassPremiumCheck) {
     throw new Error("Only premium clients can generate CRS reports.");
   }
 
@@ -345,7 +348,8 @@ export const refreshCRSData = async ({
   if (refreshBusinessCredit) {
     const user = await getUserById(userId);
     if (!user) throw new Error("User not found.");
-    if (!user.isPremiumClient) {
+    const membership = await getUserMembership(userId);
+    if (membership?.status !== "active") {
       throw new Error("Only premium clients can refresh business credit.");
     }
 

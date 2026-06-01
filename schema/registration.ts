@@ -64,7 +64,6 @@ export const registrationSchema = z.object({
     .max(100)
     .default(10)
     .optional(),
-  isPremiumClient: z.boolean().default(false).optional(),
   // Feature flags
   letterFeatureEnabled: z.boolean().default(false).optional(),
   latePaymentRemovalEnabled: z.boolean().default(false).optional(),

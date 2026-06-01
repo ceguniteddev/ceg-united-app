@@ -74,6 +74,7 @@ import CategoryBadge from "../CategoryBadge";
 import { formatAmount } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import BankProductsForm from "@/components/bank-products/bank-product-form";
+import { useMembership } from "@/hooks/membership";
 import { useUserQuery } from "@/hooks/user";
 import { DataTablePagination } from "./pagination";
 
@@ -703,6 +704,7 @@ const ActionCell = ({
     useApprovedMappedFundsMutation();
   const [isDenefitsPaid, setIsDenefitsPaid] = useState(false);
   const { userData } = useUserQuery(userId);
+  const { data: userMembership } = useMembership(userId);
 
   const { denefitsContract } = useGetDenefitsContractsByUserId(userId);
 
@@ -833,7 +835,8 @@ const ActionCell = ({
           type="button"
           variant="outline"
           disabled={
-            isApplying || (!isDenefitsPaid && !userData?.isPremiumClient)
+            isApplying ||
+            (!isDenefitsPaid && userMembership?.status !== "active")
           }
           className="bg-green-200 hover:bg-green-400 cursor-pointer h-8 px-3"
           onClick={handleApplyClick}

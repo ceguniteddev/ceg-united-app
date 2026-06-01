@@ -39,11 +39,6 @@ export const activateUserMembership = async ({
 
   const db = firestoreAdmin();
 
-  // Update user to premium
-  await db.collection(USER_COLLECTION).doc(userId).update({
-    isPremiumClient: true,
-  });
-
   // Create membership record
   await db.collection(`${USER_COLLECTION}/${userId}/membership`).add({
     tier,

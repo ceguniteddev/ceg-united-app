@@ -28,6 +28,7 @@ import { getUserById } from "./user";
 import { RegistrationType } from "@/schema/users";
 import { uploadDocument } from "./documents";
 import { calculateBusinessIncomePreApproved } from "./n8n";
+import { getUserMembership } from "./membership";
 
 export const processAndUploadDocuments = async ({
   userId,
@@ -249,8 +250,10 @@ export const applyFunding = async ({
   // 5-19-2026: pull crs report once client is premium.
 
   const crsData = await getCRSReport(value.userId!);
+  const userMembership = await getUserMembership(value.userId!);
+  const isPremium = userMembership?.status === "active";
 
-  if (userData.isPremiumClient === true && (!crsData || crsData.length === 0)) {
+  if (isPremium && (!crsData || crsData.length === 0)) {
     logInfo("Generating new CRS report for user:", { userId: value.userId });
     await generateCRSReport({
       userId: value.userId!,
@@ -259,7 +262,7 @@ export const applyFunding = async ({
     });
   }
 
-  if (userData.isPremiumClient === true && value.businessId) {
+  if (isPremium && value.businessId) {
     const businessData = await getCRSBusinessProfile(value.businessId);
     if (!businessData) {
       await generateCRSReportBusiness(
@@ -271,7 +274,7 @@ export const applyFunding = async ({
   }
 
   // we don't run funding analysis when registration as the CRS data are not pulled
-  if (userData.isPremiumClient === true) {
+  if (isPremium) {
     await fundAnalysis({
       referenceNumber,
       userId: value.userId!,
