@@ -3,6 +3,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/session";
 import { getUserById } from "@/service/user";
+import { hasActiveAddon } from "@/service/addons";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { isPlaidProductionReady } from "./lib/plaid";
 
@@ -213,9 +214,20 @@ export async function proxy(req: NextRequest) {
     if (
       !isPremiumClient &&
       (pathname.startsWith("/client/my-analysis") ||
-        pathname.startsWith("/client/my-credit"))
+        pathname.startsWith("/client/my-credit") ||
+        pathname.startsWith("/client/credit-repair"))
     ) {
       return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+    }
+
+    if (pathname.startsWith("/client/credit-repair")) {
+      const hasCreditRepairAddon = await hasActiveAddon(
+        sessionCookie.uid,
+        "credit_module_pro",
+      );
+      if (!hasCreditRepairAddon) {
+        return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+      }
     }
 
     // Force onboarding if not onboarded and trying to access client area

@@ -7,9 +7,11 @@ import { logInfo } from "@/lib/logger";
 import { fundAnalysis, generateCRSReport } from "@/service/crs";
 import { getApplyFunding } from "./apply-funding";
 
+export type MembershipTier = "tier_starter" | "tier_pro" | "tier_executive";
+
 export interface UserMembership {
   id: string;
-  tier: string;
+  tier: MembershipTier;
   amount: number;
   status: string;
   checkoutId?: string | null;

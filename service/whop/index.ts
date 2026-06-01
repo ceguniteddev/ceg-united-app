@@ -31,6 +31,7 @@ const WHOP_PRICING_PLAN_STARTER_ID = process.env.WHOP_PRICING_PLAN_STARTER_ID;
 const WHOP_PRICING_PLAN_PRO_ID = process.env.WHOP_PRICING_PLAN_PRO_ID;
 const WHOP_PRICING_PLAN_EXECUTIVE_ID =
   process.env.WHOP_PRICING_PLAN_EXECUTIVE_ID;
+const WHOP_CREDIT_REPAIR_PRODUCT_ID = process.env.WHOP_CREDIT_REPAIR_PRODUCT_ID;
 const WHOP_CREDIT_MODULE_PRO_ID = process.env.WHOP_CREDIT_MODULE_PRO_ID;
 
 const WHOP_FULL_PAYMENT_AMOUNT =
@@ -215,7 +216,7 @@ export const createMembershipCheckoutConfig = async ({
   isAddon = false,
 }: {
   userId: string;
-  planId: "tier_starter" | "tier_pro" | "tier_executive" | "credit_module_pro";
+  planId: "tier_starter" | "tier_pro" | "tier_executive";
   isAddon?: boolean;
 }): Promise<{
   checkoutId: string;
@@ -225,7 +226,12 @@ export const createMembershipCheckoutConfig = async ({
     throw new Error("Whop SDK is not initialized. Check API Key.");
   }
 
-  if (!WHOP_COMPANY_ID || !productId) {
+  if (
+    !WHOP_COMPANY_ID ||
+    !WHOP_PRICING_PLAN_STARTER_ID ||
+    !WHOP_PRICING_PLAN_PRO_ID ||
+    !WHOP_PRICING_PLAN_EXECUTIVE_ID
+  ) {
     throw new Error("Payment Server configuration error.");
   }
 
@@ -248,10 +254,6 @@ export const createMembershipCheckoutConfig = async ({
       amount = feeSettings.tierExecutivePrice;
       targetProductId = WHOP_PRICING_PLAN_EXECUTIVE_ID || productId;
     }
-    // else if (planId === "credit_module_pro") {
-    //   amount = feeSettings.creditModuleProAddonPrice;
-    //   targetProductId = WHOP_CREDIT_MODULE_PRO_ID || productId;
-    // }
 
     if (!targetProductId) {
       throw new Error(
@@ -320,9 +322,95 @@ export const createMembershipCheckoutConfig = async ({
   }
 };
 
-/**
- * Creates a checkout configuration for CRS reports with a specified fee.
- */
+export const createAddonCheckoutConfig = async ({
+  userId,
+  addonId,
+}: {
+  userId: string;
+  addonId: "credit_module_pro";
+}): Promise<{
+  checkoutId: string;
+  url: string;
+}> => {
+  if (!whopSdk) {
+    throw new Error("Whop SDK is not initialized. Check API Key.");
+  }
+
+  if (!WHOP_COMPANY_ID || !WHOP_CREDIT_MODULE_PRO_ID) {
+    throw new Error("Payment Server configuration error.");
+  }
+
+  try {
+    const user = await getUserById(userId);
+    if (!user) throw new Error("User not found");
+
+    const feeSettings = await getFeeSettings();
+
+    let amount = 0;
+    let targetProductId = productId;
+
+    if (addonId === "credit_module_pro") {
+      amount = feeSettings.creditModuleProAddonPrice;
+      targetProductId = WHOP_CREDIT_MODULE_PRO_ID || productId;
+    }
+
+    if (!targetProductId) {
+      throw new Error(
+        "Server configuration error: Missing Product ID for the selected addon.",
+      );
+    }
+
+    const planDetails: CheckoutConfigurationCreateParams.CreateCheckoutSessionInputModePaymentWithPlan.Plan =
+      {
+        company_id: WHOP_COMPANY_ID,
+        currency: "usd" as const,
+        renewal_price: amount,
+        billing_period: 30, // Whop expects this in DAYS (30 days = monthly)
+        plan_type: "renewal" as const,
+        product_id: targetProductId,
+        visibility: "hidden" as const,
+      };
+
+    const checkoutConfig = await whopSdk.checkoutConfigurations.create({
+      plan: planDetails,
+      metadata: {
+        userId: userId,
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        planId: addonId,
+        isAddon: "true",
+      },
+    });
+
+    if (!checkoutConfig.id) {
+      throw new Error("Failed to create checkout link for Addon.");
+    }
+
+    const checkoutId = checkoutConfig.id;
+
+    const checkoutDoc = {
+      userId,
+      checkoutId,
+      url: checkoutConfig.purchase_url,
+      createdAt: new Date(),
+      initialPrice: planDetails.initial_price,
+      planType: planDetails.plan_type,
+      productId: planDetails.product_id,
+      status: "created",
+      paymentKey: addonId,
+      ...checkoutConfig,
+    };
+
+    await firestoreAdmin()
+      .collection(WHOP_CHECKOUTS_COLLECTION)
+      .add(checkoutDoc);
+
+    return { checkoutId, url: checkoutConfig.purchase_url };
+  } catch (error: any) {
+    logError(new Error(`createAddonCheckoutConfig error: ${error.message}`));
+    throw error;
+  }
+};
 export const createCRSReportCheckoutConfig = async ({
   userId,
   paymentKey,

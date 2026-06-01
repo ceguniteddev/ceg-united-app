@@ -15,25 +15,34 @@ import React, { useState } from "react";
 // Pricing / Checkout imports
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
+import { AddonPlans } from "@/components/pricing-plans/AddonPlans";
 import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
+import { AddonCheckoutView } from "@/components/pricing-plans/AddonCheckoutView";
+import { useAddons } from "@/hooks/addons";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { createMembershipCheckoutConfig } from "@/service/whop";
+import {
+  createMembershipCheckoutConfig,
+  createAddonCheckoutConfig,
+} from "@/service/whop";
 import { toast } from "sonner";
 
 const Sidebar = () => {
   const { user, isOnboarded, userData } = useAuth();
   const { appliedFunding } = useGetUserApplyFunding();
+  const { data: addons = [] } = useAddons();
   const pathname = usePathname();
   const router = useRouter();
 
   // Pricing / Checkout state
   const [isPricingModalOpen, setPricingModalOpen] = useState(false);
+  const [isAddonModalOpen, setAddonModalOpen] = useState(false);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [isAddonCheckout, setIsAddonCheckout] = useState(false);
   const [isCheckoutSheetOpen, setCheckoutSheetOpen] = useState(false);
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<{
@@ -53,7 +62,30 @@ const Sidebar = () => {
       });
       setCheckoutId(res.checkoutId);
       setSelectedPlan({ id: planId, amount });
+      setIsAddonCheckout(false);
       setPricingModalOpen(false);
+      setAddonModalOpen(false);
+      setCheckoutSheetOpen(true);
+    } catch (err: any) {
+      toast.error("Failed to start checkout: " + err.message);
+    } finally {
+      setIsCreatingCheckout(false);
+    }
+  };
+
+  const handleSelectAddon = async (addonId: string, amount: number) => {
+    if (!userData?.id) return;
+    try {
+      setIsCreatingCheckout(true);
+      const res = await createAddonCheckoutConfig({
+        userId: userData.id,
+        addonId: addonId as any,
+      });
+      setCheckoutId(res.checkoutId);
+      setSelectedPlan({ id: addonId, amount });
+      setIsAddonCheckout(true);
+      setPricingModalOpen(false);
+      setAddonModalOpen(false);
       setCheckoutSheetOpen(true);
     } catch (err: any) {
       toast.error("Failed to start checkout: " + err.message);
@@ -89,6 +121,13 @@ const Sidebar = () => {
               return false;
             }
 
+            if (
+              item.route === "/client/credit-repair" &&
+              (!userData || !userData.isPremiumClient)
+            ) {
+              return false;
+            }
+
             if (item.route === "/client/letter-stream") {
               const hasAnyLetterFeature =
                 userData?.letterFeatureEnabled ||
@@ -112,9 +151,11 @@ const Sidebar = () => {
               pathname === item.route || pathname.startsWith(`${item.route}/`);
 
             const isLocked =
-              (!userData || !userData.isPremiumClient) &&
-              (item.route === "/client/my-analysis" ||
-                item.route === "/client/my-credit");
+              ((!userData || !userData.isPremiumClient) &&
+                (item.route === "/client/my-analysis" ||
+                  item.route === "/client/my-credit")) ||
+              (item.route === "/client/credit-repair" &&
+                !addons.some((a) => a.addonId === "credit_module_pro"));
 
             const content = (
               <>
@@ -144,7 +185,11 @@ const Sidebar = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setPricingModalOpen(true);
+                        if (item.route === "/client/credit-repair") {
+                          setAddonModalOpen(true);
+                        } else {
+                          setPricingModalOpen(true);
+                        }
                       }}
                     >
                       <LockIcon className="w-4 h-4 text-gray-500 opacity-80 hover:opacity-100 hover:text-blue-500" />
@@ -162,7 +207,13 @@ const Sidebar = () => {
                     "flex gap-2 md:gap-3 items-center py-1 md:p-1 2xl:p-1 rounded-lg justify-start opacity-70 cursor-pointer",
                     { "bg-bank-gradient": isActive },
                   )}
-                  onClick={() => setPricingModalOpen(true)}
+                  onClick={() => {
+                    if (item.route === "/client/credit-repair") {
+                      setAddonModalOpen(true);
+                    } else {
+                      setPricingModalOpen(true);
+                    }
+                  }}
                 >
                   {content}
                 </div>
@@ -201,6 +252,19 @@ const Sidebar = () => {
         />
       </ResponsiveDialog>
 
+      <ResponsiveDialog
+        isOpen={isAddonModalOpen}
+        setIsOpen={setAddonModalOpen}
+        title="Unlock Additional Modules"
+        description=""
+        className="sm:max-w-[90vw] md:max-w-5xl max-h-[90vh] overflow-y-auto p-0 border-0"
+      >
+        <AddonPlans
+          isLoading={isCreatingCheckout}
+          onSelectPlan={handleSelectAddon}
+        />
+      </ResponsiveDialog>
+
       <Sheet open={isCheckoutSheetOpen} onOpenChange={setCheckoutSheetOpen}>
         <SheetContent
           side="right"
@@ -212,19 +276,34 @@ const Sidebar = () => {
             </SheetTitle>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto">
-            {checkoutId && selectedPlan && userData && (
-              <MembershipCheckoutView
-                checkoutId={checkoutId}
-                userId={userData.id!}
-                tierId={selectedPlan.id}
-                amount={selectedPlan.amount}
-                prefillEmail={userData.email || ""}
-                onPaymentCompleteAction={() => {
-                  setCheckoutSheetOpen(false);
-                  router.refresh();
-                }}
-              />
-            )}
+            {checkoutId &&
+              selectedPlan &&
+              userData &&
+              (isAddonCheckout ? (
+                <AddonCheckoutView
+                  checkoutId={checkoutId}
+                  userId={userData.id!}
+                  addonId={selectedPlan.id}
+                  amount={selectedPlan.amount}
+                  prefillEmail={userData.email || ""}
+                  onPaymentCompleteAction={() => {
+                    setCheckoutSheetOpen(false);
+                    router.refresh();
+                  }}
+                />
+              ) : (
+                <MembershipCheckoutView
+                  checkoutId={checkoutId}
+                  userId={userData.id!}
+                  tierId={selectedPlan.id}
+                  amount={selectedPlan.amount}
+                  prefillEmail={userData.email || ""}
+                  onPaymentCompleteAction={() => {
+                    setCheckoutSheetOpen(false);
+                    router.refresh();
+                  }}
+                />
+              ))}
           </div>
         </SheetContent>
       </Sheet>

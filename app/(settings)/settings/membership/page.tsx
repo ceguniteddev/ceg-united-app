@@ -56,8 +56,6 @@ export default async function MembershipPage() {
                       {membership.tier === "tier_pro" && "CEG BRAIN PRO"}
                       {membership.tier === "tier_executive" &&
                         "CEG BRAIN EXECUTIVE"}
-                      {membership.tier === "credit_module_pro" &&
-                        "CREDIT MODULE PRO ADD-ON"}
                     </p>
                   </div>
                   <div className="text-right">
