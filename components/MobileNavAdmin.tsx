@@ -7,6 +7,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { adminSidebarLinks } from "@/constant/common";
 import { cn } from "@/lib/utils";
@@ -19,6 +24,7 @@ import { useContactUsQueryIsOpen } from "@/hooks/contact-us";
 import { useGetFundingApplicationsIsNew } from "@/hooks/apply-funding";
 import { usePendingTradelinesCount } from "@/hooks/tradelines";
 import { useAdminIncomeFunding } from "@/hooks/admin/income-funding";
+import { ChevronDown } from "lucide-react";
 
 const MobileNavAdmin = () => {
   const { user, role } = useAuth();
@@ -67,56 +73,83 @@ const MobileNavAdmin = () => {
               />
             </Link>
 
-            <nav className="flex-1 flex flex-col px-4 overflow-y-auto">
-              {adminSidebarLinks.map((item) => {
-                const isActive = pathname.startsWith(item.route);
+            <nav className="flex-1 flex flex-col px-2 overflow-y-auto">
+              {adminSidebarLinks.map((group) => (
+                <Collapsible
+                  defaultOpen
+                  key={group.group}
+                  className="group/collapsible mb-2"
+                >
+                  <CollapsibleTrigger className="flex items-center w-full px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider gap-2">
+                    <group.icon className="size-4" />
+                    {group.group}
+                    <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-1">
+                    {group.links.map((item) => {
+                      const isActive = pathname.startsWith(item.route);
 
-                return (
-                  <SheetClose asChild key={item.route}>
-                    <Link
-                      href={item.route}
-                      className={cn(
-                        "flex gap-3 items-center py-1 px-4 rounded-lg mb-2",
-                        { "bg-bank-gradient": isActive },
-                      )}
-                    >
-                      <div className="relative size-6">
-                        <Image
-                          src={item.imgURL}
-                          alt={item.label}
-                          fill
-                          className={cn({
-                            "brightness-[3] invert-0": isActive,
-                          })}
-                        />
-                        {item.route === "/admin/funding-application" &&
-                          (appliedFunding?.length ?? 0) > 0 && (
-                            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
-                          )}
-                        {item.route === "/admin/call-requests" &&
-                          (requestCallsOpen?.length ?? 0) > 0 && (
-                            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
-                          )}
-                        {item.route === "/admin/coordinator" &&
-                          coordinatorNeedsAttention && (
-                            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
-                          )}
-                        {item.route === "/admin/tradelines" &&
-                          pendingTradelinesCount > 0 && (
-                            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
-                          )}
-                      </div>
-                      <p
-                        className={cn("text-16 font-semibold text-black-2", {
-                          "text-white": isActive,
-                        })}
-                      >
-                        {item.label}
-                      </p>
-                    </Link>
-                  </SheetClose>
-                );
-              })}
+                      let badgeIndicator = false;
+                      if (
+                        item.route === "/admin/funding-application" &&
+                        (appliedFunding?.length ?? 0) > 0
+                      )
+                        badgeIndicator = true;
+                      if (
+                        item.route === "/admin/call-requests" &&
+                        (requestCallsOpen?.length ?? 0) > 0
+                      )
+                        badgeIndicator = true;
+                      if (
+                        item.route === "/admin/coordinator" &&
+                        coordinatorNeedsAttention
+                      )
+                        badgeIndicator = true;
+                      if (
+                        item.route === "/admin/tradelines" &&
+                        pendingTradelinesCount > 0
+                      )
+                        badgeIndicator = true;
+
+                      return (
+                        <SheetClose asChild key={item.route}>
+                          <Link
+                            href={item.route}
+                            className={cn(
+                              "flex gap-3 items-center py-1 px-4 rounded-lg",
+                              { "bg-bank-gradient": isActive },
+                            )}
+                          >
+                            <div className="relative size-5 shrink-0 flex items-center justify-center">
+                              <Image
+                                src={item.imgURL}
+                                alt={item.label}
+                                fill
+                                className={cn("object-contain", {
+                                  "brightness-[3] invert-0": isActive,
+                                })}
+                              />
+                              {badgeIndicator && (
+                                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                              )}
+                            </div>
+                            <span
+                              className={cn(
+                                "text-[15px] font-semibold text-black-2 truncate",
+                                {
+                                  "!text-white": isActive,
+                                },
+                              )}
+                            >
+                              {item.label}
+                            </span>
+                          </Link>
+                        </SheetClose>
+                      );
+                    })}
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
             </nav>
 
             <Footer type="mobile" />

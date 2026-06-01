@@ -1,6 +1,7 @@
-import Sidebar from "@/components/SidebarAdmin";
+import SidebarAdmin from "@/components/SidebarAdmin";
 import MobileNavAdmin from "@/components/MobileNavAdmin";
 import { Metadata } from "next";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
 export const metadata: Metadata = {
   title: "CEG United LLC",
@@ -17,15 +18,15 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen w-full overflow-hidden font-inter">
-      <Sidebar />
-      <div className="flex flex-1 min-h-0 flex-col">
+    <SidebarProvider>
+      <SidebarAdmin />
+      <SidebarInset className="bg-transparent font-inter overflow-hidden min-w-0">
         <MobileNavAdmin />
-        <div className="flex-1 min-h-0 overflow-y-auto pt-[60px] lg:pt-0 px-4 lg:px-6 pb-36 lg:pb-0">
+        <div className="flex-1 overflow-y-auto pt-[60px] lg:pt-0 px-4 lg:px-6 pb-36 lg:pb-0 h-screen min-w-0 w-full">
           {children}
         </div>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
   // return (
   //   <div className="flex h-dvh w-full overflow-hidden font-inter">
