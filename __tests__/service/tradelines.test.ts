@@ -47,8 +47,6 @@ vi.mock("@/constant/collection-name", () => ({
 }));
 
 import {
-  getMarkupPercentage,
-  setMarkupPercentage,
   purchaseTradeline,
   getUserRecentTradelines,
 } from "@/service/tradelines";
@@ -61,66 +59,6 @@ describe("service/tradelines", () => {
     mockLimit.mockReturnValue(mockCollectionRef);
     mockCollectionRef.doc = vi.fn().mockReturnValue(mockDocRef);
     mockDb.collection = vi.fn().mockReturnValue(mockCollectionRef);
-  });
-
-  describe("getMarkupPercentage", () => {
-    it("returns markupPercentage from settings doc when it exists", async () => {
-      mockGet.mockResolvedValueOnce({
-        exists: true,
-        data: () => ({ markupPercentage: 15 }),
-      });
-
-      const result = await getMarkupPercentage();
-
-      expect(mockDb.collection).toHaveBeenCalledWith("system-config");
-      expect(mockCollectionRef.doc).toHaveBeenCalledWith("settings");
-      expect(result).toBe(15);
-    });
-
-    it("returns 0 when settings doc does not exist", async () => {
-      mockGet.mockResolvedValueOnce({ exists: false });
-
-      const result = await getMarkupPercentage();
-
-      expect(result).toBe(0);
-    });
-
-    it("returns 0 when markupPercentage field is missing", async () => {
-      mockGet.mockResolvedValueOnce({
-        exists: true,
-        data: () => ({}),
-      });
-
-      const result = await getMarkupPercentage();
-
-      expect(result).toBe(0);
-    });
-  });
-
-  describe("setMarkupPercentage", () => {
-    it("sets markupPercentage in settings doc with merge", async () => {
-      mockSet.mockResolvedValueOnce(undefined);
-
-      await setMarkupPercentage(20);
-
-      expect(mockDb.collection).toHaveBeenCalledWith("system-config");
-      expect(mockCollectionRef.doc).toHaveBeenCalledWith("settings");
-      expect(mockSet).toHaveBeenCalledWith(
-        { markupPercentage: 20 },
-        { merge: true },
-      );
-    });
-
-    it("sets markupPercentage to 0", async () => {
-      mockSet.mockResolvedValueOnce(undefined);
-
-      await setMarkupPercentage(0);
-
-      expect(mockSet).toHaveBeenCalledWith(
-        { markupPercentage: 0 },
-        { merge: true },
-      );
-    });
   });
 
   describe("purchaseTradeline", () => {

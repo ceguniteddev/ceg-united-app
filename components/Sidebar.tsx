@@ -116,12 +116,12 @@ const Sidebar = () => {
         </Link>
         {sidebarLinks
           .filter((item) => {
-            if (
-              item.route === "/client/my-learning" &&
-              (!userData || membership?.status !== "active")
-            ) {
-              return false;
-            }
+            // if (
+            //   item.route === "/client/my-learning" &&
+            //   (!userData || membership?.status !== "active")
+            // ) {
+            //   return false;
+            // }
 
             if (
               item.route === "/client/credit-repair" &&
@@ -155,6 +155,7 @@ const Sidebar = () => {
             const isLocked =
               ((!userData || membership?.status !== "active") &&
                 (item.route === "/client/my-analysis" ||
+                  item.route === "/client/my-learning" ||
                   item.route === "/client/my-credit")) ||
               (item.route === "/client/credit-repair" &&
                 !addons.some((a) => a.addonId === "credit_module_pro"));

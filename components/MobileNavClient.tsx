@@ -140,12 +140,12 @@ const MobileNavClient = () => {
             <nav className="flex-1 flex flex-col px-4 overflow-y-auto">
               {sidebarLinks
                 .filter((item) => {
-                  if (
-                    item.route === "/client/my-learning" &&
-                    (!userData || membership?.status !== "active")
-                  ) {
-                    return false;
-                  }
+                  // if (
+                  //   item.route === "/client/my-learning" &&
+                  //   (!userData || membership?.status !== "active")
+                  // ) {
+                  //   return false;
+                  // }
 
                   if (
                     item.route === "/client/credit-repair" &&
