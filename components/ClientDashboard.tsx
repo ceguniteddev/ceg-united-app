@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/provider/AuthContext";
 import { useConfettiStore } from "@/hooks/use-confetti-store";
+import { useMembership } from "@/hooks/membership";
 
 // CEG Brain Dashboard Components
 import { MetricCards } from "@/components/dashboard/MetricCards";
@@ -195,6 +196,7 @@ export const ClientDashboard = ({
   const { user } = useAuth();
   const router = useRouter();
   const onOpenConfetti = useConfettiStore((state) => state.onOpen);
+  const { data: membershipData } = useMembership();
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
     clientData?.userData?.id || "",
   );
@@ -331,7 +333,7 @@ export const ClientDashboard = ({
               ) : (
                 <CreditScoresSection
                   scores={dashboardData.creditScores}
-                  isPremium={clientData?.userData?.isPremiumClient}
+                  isPremium={membershipData?.status === "active"}
                 />
               )}
 

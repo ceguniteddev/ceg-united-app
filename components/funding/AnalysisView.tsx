@@ -49,6 +49,7 @@ import {
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
 import Image from "next/image";
 import { useAuth } from "@/provider/AuthContext";
+import { useMembership } from "@/hooks/membership";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import PricingPlansGrid from "@/components/funding/PricingPlansGrid";
@@ -66,6 +67,7 @@ const AnalysisView = ({ referenceNumber }: Props) => {
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
   const { updateAnalysis } = useAnalysisMutation();
   const { isAdmin, role, userData } = useAuth();
+  const { data: userMembership } = useMembership(userData?.id);
   const { appliedFunding } = useGetApplyFundingByReferenceNumber({
     referenceNumber,
   });
@@ -109,7 +111,7 @@ const AnalysisView = ({ referenceNumber }: Props) => {
           {appliedFunding?.userId && (
             <UploadBankStatementsButton userId={appliedFunding.userId} />
           )}
-          {role === "Client" && !userData?.isPremiumClient && (
+          {role === "Client" && userMembership?.status !== "active" && (
             <PricingDetailsButton referenceNumber={referenceNumber} />
           )}
         </div>

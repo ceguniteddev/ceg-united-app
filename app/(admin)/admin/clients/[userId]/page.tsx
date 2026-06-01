@@ -17,6 +17,7 @@ import LetterForm from "@/components/letter-stream/form";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { useParams } from "next/navigation";
 import { useUserQuery } from "@/hooks/user";
+import { useMembership } from "@/hooks/membership";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import Spinner from "@/components/Spinner";
 import { useMemo, useState } from "react";
@@ -39,6 +40,7 @@ const ClientProfilePage = () => {
   const [activeTab, setActiveTab] = useState("personal-information");
 
   const { userData, isLoading: isUserLoading } = useUserQuery(userId);
+  const { data: membershipData } = useMembership(userId);
   const { appliedFunding, isLoading: isFundingLoading } =
     useGetClientApplyFunding(userId);
 
@@ -55,8 +57,8 @@ const ClientProfilePage = () => {
 
   // Check if user has access to learning materials
   const hasLearningMaterialsAccess = useMemo(() => {
-    return userData?.isPremiumClient;
-  }, [userData]);
+    return membershipData?.status === "active";
+  }, [membershipData]);
 
   // Check if user has letter feature enabled
   const hasLetterFeatureEnabled = useMemo(() => {

@@ -16,6 +16,7 @@ import {
 import { Timestamp } from "firebase-admin/firestore";
 import { getCourseById, getPublishedCourseIds } from "./course";
 import { getUserById } from "@/service/user";
+import { getUserMembership } from "@/service/membership";
 
 /**
  * Update user progress for a chapter (complete or incomplete)
@@ -391,7 +392,10 @@ export const getUserCoursesWithProgress = async (
 
   // Auto-enroll premium clients in all published courses
   const user = await getUserById(userId);
-  if (user?.isPremiumClient) {
+  const membership = await getUserMembership(userId);
+  const hasPaidContract = membership?.status === "active";
+
+  if (hasPaidContract) {
     const [publishedCourseIds, existingEnrollmentsSnapshot] = await Promise.all(
       [
         getPublishedCourseIds(),

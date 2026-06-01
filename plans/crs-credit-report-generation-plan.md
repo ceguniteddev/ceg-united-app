@@ -64,5 +64,5 @@ Implement a "Generate Credit Report" feature on the `ClientCreditReport.tsx` com
 
 ## Potential Edge Cases
 
-- **Bypassing Premium Check**: Currently `generateCRSReport` throws an error if `!user.isPremiumClient`. If a non-premium user is allowed to pay for a report, this check will need to be bypassed for paid requests. (Implementation should clarify this rule).
+- **Bypassing Premium Check**: Currently `generateCRSReport` throws an error if user doesn't have an active membership. If a non-premium user is allowed to pay for a report, this check will need to be bypassed for paid requests. (Implementation should clarify this rule).
 - **Reference Number Requirement**: N8N expects a `referenceNumber`. If the user has no funding application yet, a unique string like `crs-req-{timestamp}` should be passed.

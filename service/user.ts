@@ -824,25 +824,6 @@ export const updateUserStatus = async ({
   await docRef.update({ activeStatus: status });
 };
 
-export const updateUserPremiumStatus = async ({
-  id,
-  isPremium,
-}: {
-  id: string;
-  isPremium: boolean;
-}) => {
-  logInfo("Updating user premium status", { id, isPremium });
-  if (!id) throw new AppError("User ID is required.");
-
-  const userData = await getUserById(id);
-  if (!userData) throw new AppError("User not found.");
-
-  const db = firestoreAdmin();
-  const collectionRef = db.collection(USER_COLLECTION);
-  const docRef = collectionRef.doc(id);
-  await docRef.update({ isPremiumClient: isPremium });
-};
-
 export const updateUserProfile = async ({
   userId,
   data,

@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { CheckCircle2, XCircle, ShieldCheck, LockIcon } from "lucide-react";
 import { Business, CompatibilityFactor } from "@/schema";
 import { useAuth } from "@/provider/AuthContext";
+import { useMembership } from "@/hooks/membership";
 import { Button } from "@/components/ui/button";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
@@ -25,6 +26,7 @@ interface Props {
 
 export function FundabilityAuditTab({ business, factors = [] }: Props) {
   const { userData } = useAuth();
+  const { data: userMembership } = useMembership(userData?.id);
   const router = useRouter();
 
   // Pricing / Checkout state
@@ -145,7 +147,7 @@ export function FundabilityAuditTab({ business, factors = [] }: Props) {
                   >
                     {f.met ? "Meets" : "Below"}
                   </span>
-                  {!f.met && (!userData || !userData.isPremiumClient) && (
+                  {!f.met && userMembership?.status !== "active" && (
                     <Button
                       type="button"
                       size="sm"

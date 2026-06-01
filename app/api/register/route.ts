@@ -145,7 +145,6 @@ export async function POST(req: Request) {
         ...parsedAuth,
         role: "Client",
         isBrokerInvite: false,
-        isPremiumClient: false,
         leadId: body.leadId,
       } as any as User,
       registrationType: "Self",

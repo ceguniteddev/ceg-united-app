@@ -150,6 +150,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: WHOP_CREDIT_REPAIR_PRODUCT_ID
+    value: prod_eHxOYC1i4vmis
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: WHOP_TRADELINE_PRODUCT_ID
     value: prod_8qoWdnNh7w7PF
     availability:

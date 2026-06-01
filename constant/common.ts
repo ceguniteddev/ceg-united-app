@@ -114,6 +114,11 @@ export const sidebarLinks = [
     label: "My Documents",
   },
   {
+    imgURL: "/icons/shield.svg",
+    route: "/client/credit-repair",
+    label: "Credit Repair",
+  },
+  {
     imgURL: "/icons/mail.svg",
     route: "/client/letter-stream",
     label: "Letter Stream",

@@ -43,7 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useUserQuery } from "@/hooks/user";
+import { useMembership } from "@/hooks/membership";
 
 type BrokerFundingData = ApprovedBankFormData & {
   clientName?: string;
@@ -249,9 +249,7 @@ const ActionCell = ({ row }: { row: any }) => {
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
     row.original.userId,
   );
-  const { userData, isLoading: isUserLoading } = useUserQuery(
-    row.original.userId,
-  );
+  const { data: userMembership } = useMembership(row.original.userId);
 
   React.useEffect(() => {
     if (denefitsContract && denefitsContract.length > 0) {
@@ -281,7 +279,9 @@ const ActionCell = ({ row }: { row: any }) => {
         size="sm"
         onClick={handleApply}
         className="bg-green-200 hover:bg-green-400 cursor-pointer w-full md:w-auto"
-        disabled={(!isDenefitsPaid && !userData?.isPremiumClient) || isApplying}
+        disabled={
+          (!isDenefitsPaid && userMembership?.status !== "active") || isApplying
+        }
       >
         {isApplying ? (
           <Loader2Icon className="h-4 w-4 animate-spin" />
