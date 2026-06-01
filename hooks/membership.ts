@@ -2,10 +2,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getUserMembership,
   adminSetUserMembership,
+  getAllMemberships,
   MembershipTier,
 } from "@/service/membership";
 import { useAuth } from "@/provider/AuthContext";
 import { toast } from "sonner";
+
+export const useGetAllMemberships = () => {
+  return useQuery({
+    queryKey: ["all-memberships"],
+    queryFn: () => getAllMemberships(),
+  });
+};
 
 export const useMembership = (userId?: string) => {
   const { user } = useAuth();

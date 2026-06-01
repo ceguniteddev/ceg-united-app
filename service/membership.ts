@@ -142,6 +142,61 @@ export const adminSetUserMembership = async ({
   return { success: true };
 };
 
+export const getAllMemberships = async (): Promise<UserMembership[]> => {
+  logInfo("Fetching all user memberships");
+  const db = firestoreAdmin();
+
+  // We use a collection group query to fetch all membership documents
+  // Since we only want the active ones, we could filter by status or sort
+  // But a simple collection group might require an index, so let's just fetch them and filter
+  const snapshot = await db.collectionGroup("membership").get();
+
+  const memberships: UserMembership[] = [];
+  snapshot.docs.forEach((doc) => {
+    const data = doc.data();
+    // determine userId from path: USER_COLLECTION/{userId}/membership/{docId}
+    const pathSegments = doc.ref.path.split("/");
+    const userId = pathSegments[pathSegments.length - 3];
+
+    memberships.push({
+      id: doc.id,
+      userId,
+      tier: data.tier || "unknown",
+      amount: data.amount || 0,
+      status: data.status || "active",
+      checkoutId: data.checkoutId || null,
+      createdAt: data.createdAt?.toDate().toISOString() || null,
+      canceledAt: data.canceledAt?.toDate().toISOString() || null,
+      updatedBy: data.updatedBy || null,
+      updatedAt: data.updatedAt?.toDate().toISOString() || null,
+    } as UserMembership & { userId: string });
+  });
+
+  // Group by userId and get the latest one for each user
+  const latestMemberships = new Map<
+    string,
+    UserMembership & { userId: string }
+  >();
+
+  (memberships as (UserMembership & { userId: string })[]).forEach((m) => {
+    const existing = latestMemberships.get(m.userId);
+    if (!existing) {
+      latestMemberships.set(m.userId, m);
+    } else {
+      // Compare dates (fallback to string comparison if both exist)
+      if (
+        m.createdAt &&
+        existing.createdAt &&
+        m.createdAt > existing.createdAt
+      ) {
+        latestMemberships.set(m.userId, m);
+      }
+    }
+  });
+
+  return Array.from(latestMemberships.values());
+};
+
 export const getUserMembership = async (
   userId: string,
 ): Promise<UserMembership | null> => {

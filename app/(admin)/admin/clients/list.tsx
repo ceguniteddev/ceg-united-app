@@ -49,14 +49,20 @@ import { useGetDenefitsContracts } from "@/hooks/denefits";
 import { DenefitsRequest, DenefitsStatusEnum } from "@/schema/payments";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useGetWhopPayments } from "@/hooks/admin/payments/whop";
+import { useGetAllMemberships } from "@/hooks/membership";
 
-const statusFilterFn: FilterFn<UserWithId> = (row, columnId, filterValue) => {
-  const raw = row.getValue<string | undefined>(columnId);
-  const v = (raw ?? "Active").toLowerCase();
-  const sel = String(filterValue ?? "").toLowerCase();
-  // exact match; swap to v.includes(sel) if you want partials
-  return v === sel;
+const membershipFilterFn: FilterFn<UserWithId> = (
+  row,
+  columnId,
+  filterValue,
+) => {
+  const value = row.getValue<string>(columnId);
+  const selectedFilter = String(filterValue);
+  if (!selectedFilter || selectedFilter === "all") return true;
+
+  return value === selectedFilter;
 };
 
 const denefitsStatusFilterFn: FilterFn<UserWithId> = (
@@ -88,7 +94,7 @@ const whopPaymentFilterFn: FilterFn<UserWithId> = (
 };
 
 const ClientsList = () => {
-  const [roleFilter, setRoleFilter] = useState("all");
+  const [membershipFilter, setMembershipFilter] = useState("all");
   const [denefitsStatusFilter, setDenefitsStatusFilter] = useState("all");
   const [whopPaymentFilter, setWhopPaymentFilter] = useState("all");
 
@@ -102,6 +108,8 @@ const ClientsList = () => {
   const { denefitsContracts, isLoading: denefitsContractsLoading } =
     useGetDenefitsContracts();
   const { whopPayments, isLoading: whopPaymentsLoading } = useGetWhopPayments();
+  const { data: allMemberships, isLoading: membershipsLoading } =
+    useGetAllMemberships();
 
   const denefitsContractsMap = useMemo(() => {
     if (!denefitsContracts) return new Map();
@@ -119,6 +127,11 @@ const ClientsList = () => {
       whopPayments.map((payment: any) => [payment.userId, payment]),
     );
   }, [whopPayments]);
+
+  const membershipsMap = useMemo(() => {
+    if (!allMemberships) return new Map();
+    return new Map(allMemberships.map((m: any) => [m.userId, m]));
+  }, [allMemberships]);
 
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -179,20 +192,6 @@ const ClientsList = () => {
       },
     },
     {
-      accessorKey: "activeStatus",
-      id: "activeStatus",
-      header: ({ column }) => <SortableHeader column={column} title="Status" />,
-      cell: ({ row }) => {
-        const status = (row.getValue("activeStatus") as string) ?? "Active";
-        return (
-          <div>
-            <CategoryBadge category={status} />
-          </div>
-        );
-      },
-      filterFn: statusFilterFn,
-    },
-    {
       id: "denefitsContract",
       header: ({ column }) => (
         <SortableHeader column={column} title="Denefits Contract" />
@@ -234,6 +233,35 @@ const ClientsList = () => {
     },
 
     {
+      id: "membershipType",
+      header: ({ column }) => (
+        <SortableHeader column={column} title="Membership" />
+      ),
+      accessorFn: (row) => {
+        const membership = membershipsMap.get(row.id);
+        if (!membership || membership.status !== "active") return "None";
+        if (membership.tier === "tier_starter") return "Starter";
+        if (membership.tier === "tier_pro") return "Pro";
+        if (membership.tier === "tier_executive") return "Executive";
+        return "Active";
+      },
+      cell: ({ row }) => {
+        const val = row.getValue("membershipType") as string;
+        if (val === "None")
+          return (
+            <Badge variant="secondary" className="text-xs">
+              None
+            </Badge>
+          );
+        return (
+          <Badge className="bg-blue-100 hover:bg-blue-200 text-blue-800 border-blue-300">
+            {val}
+          </Badge>
+        );
+      },
+      filterFn: membershipFilterFn,
+    },
+    {
       id: "actions",
       cell: ({ row }) => {
         const id = row.original.id;
@@ -266,15 +294,15 @@ const ClientsList = () => {
   });
 
   useEffect(() => {
-    const col = table.getColumn("activeStatus");
+    const col = table.getColumn("membershipType");
     if (!col) return;
 
-    if (roleFilter === "all") {
+    if (membershipFilter === "all") {
       col.setFilterValue(undefined);
     } else {
-      col.setFilterValue(roleFilter);
+      col.setFilterValue(membershipFilter);
     }
-  }, [roleFilter, table]);
+  }, [membershipFilter, table]);
 
   useEffect(() => {
     const col = table.getColumn("denefitsContract");
@@ -298,7 +326,12 @@ const ClientsList = () => {
     }
   }, [whopPaymentFilter, table]);
 
-  if (isLoading || denefitsContractsLoading || whopPaymentsLoading) {
+  if (
+    isLoading ||
+    denefitsContractsLoading ||
+    whopPaymentsLoading ||
+    membershipsLoading
+  ) {
     return <Spinner displayText="Loading clients..." />;
   }
 
@@ -312,10 +345,10 @@ const ClientsList = () => {
           className="w-full"
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Status Filter */}
+          {/* Membership Filter */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-muted-foreground">
-              Status
+              Membership
             </label>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -324,24 +357,31 @@ const ClientsList = () => {
                   className="h-9 w-full justify-between"
                 >
                   <span>
-                    {roleFilter === "all" ? "All Status" : roleFilter}
+                    {membershipFilter === "all"
+                      ? "All Membership"
+                      : membershipFilter}
                   </span>
                   <ChevronDownIcon className="h-4 w-4 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-[200px]">
                 <DropdownMenuRadioGroup
-                  value={roleFilter}
-                  onValueChange={setRoleFilter}
+                  value={membershipFilter}
+                  onValueChange={setMembershipFilter}
                 >
                   <DropdownMenuRadioItem value="all">
-                    All Status
+                    All Membership
                   </DropdownMenuRadioItem>
-                  {UserActiveStatusEnum.options.map((status) => (
-                    <DropdownMenuRadioItem key={status} value={status}>
-                      {status}
-                    </DropdownMenuRadioItem>
-                  ))}
+                  <DropdownMenuRadioItem value="None">
+                    None
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="Starter">
+                    Starter
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="Pro">Pro</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="Executive">
+                    Executive
+                  </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -449,10 +489,6 @@ const ClientsList = () => {
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Status:</span>
-                    <CategoryBadge category={client.activeStatus ?? "Active"} />
-                  </div>
-                  <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Denefits:</span>
                     <CategoryBadge category={denefitsStatus} />
                   </div>
@@ -461,6 +497,20 @@ const ClientsList = () => {
                     <CategoryBadge category={whopPaymentStatus} />
                   </div>
 
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Membership:</span>
+                    <span className="font-medium">
+                      {row.getValue("membershipType") === "None" ? (
+                        <Badge variant="secondary" className="text-xs">
+                          None
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-blue-100 hover:bg-blue-200 text-blue-800 border-blue-300">
+                          {row.getValue("membershipType") as string}
+                        </Badge>
+                      )}
+                    </span>
+                  </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Phone:</span>
                     <span className="font-medium">{client.phoneNumber}</span>
