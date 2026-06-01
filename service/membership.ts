@@ -17,6 +17,8 @@ export interface UserMembership {
   checkoutId?: string | null;
   createdAt: string | null;
   canceledAt?: string | null;
+  updatedBy?: string | null;
+  updatedAt?: string | null;
 }
 
 export const activateUserMembership = async ({
@@ -94,6 +96,52 @@ export const activateUserMembership = async ({
   return { success: true };
 };
 
+export const adminSetUserMembership = async ({
+  userId,
+  tier,
+  status,
+  updatedBy,
+}: {
+  userId: string;
+  tier: MembershipTier;
+  status: string;
+  updatedBy: string;
+}) => {
+  logInfo("Admin setting user membership", { userId, tier, status, updatedBy });
+  if (!userId) throw new AppError("User ID is required.");
+
+  const db = firestoreAdmin();
+  const membershipRef = db.collection(
+    `${USER_COLLECTION}/${userId}/membership`,
+  );
+
+  // get latest membership
+  const snapshot = await membershipRef
+    .orderBy("createdAt", "desc")
+    .limit(1)
+    .get();
+
+  if (!snapshot.empty) {
+    const doc = snapshot.docs[0];
+    await doc.ref.update({
+      tier,
+      status,
+      updatedBy,
+      updatedAt: new Date(),
+    });
+  } else {
+    await membershipRef.add({
+      tier,
+      amount: 0,
+      status,
+      updatedBy,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+  return { success: true };
+};
+
 export const getUserMembership = async (
   userId: string,
 ): Promise<UserMembership | null> => {
@@ -121,6 +169,8 @@ export const getUserMembership = async (
     checkoutId: data.checkoutId || null,
     createdAt: data.createdAt?.toDate().toISOString() || null,
     canceledAt: data.canceledAt?.toDate().toISOString() || null,
+    updatedBy: data.updatedBy || null,
+    updatedAt: data.updatedAt?.toDate().toISOString() || null,
   };
 };
 

@@ -44,8 +44,13 @@ import {
   useUsersQuery,
   useUpdateClientBrokerMutation,
 } from "@/hooks/user";
-import { useMembership } from "@/hooks/membership";
+import {
+  useMembership,
+  useAdminSetMembershipMutation,
+} from "@/hooks/membership";
 import { useRefreshCRSData } from "@/hooks/crs";
+import { MembershipTier } from "@/service/membership";
+import { useAuth } from "@/provider/AuthContext";
 import { toast } from "sonner";
 import EmptyState from "@/components/EmptyState";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
@@ -159,6 +164,9 @@ const ClientData = ({
         setIsOpen={setEditModalOpen}
         user={user}
       />
+
+      <MembershipSection user={user} />
+
       <DangerZone user={user} />
     </main>
   );
@@ -209,6 +217,121 @@ const STATUS_STYLES: Record<
     chipBg: "bg-emerald-50",
   },
 };
+
+function MembershipSection({ user }: { user: UserWithId }) {
+  const { user: currentUser } = useAuth();
+  const { data: membershipData, isLoading } = useMembership(user.id);
+  const { mutate: updateMembership, isPending: isUpdating } =
+    useAdminSetMembershipMutation();
+
+  const currentAdminEmail = currentUser?.email || currentUser?.uid || "Admin";
+
+  const handleTierChange = useCallback(
+    (value: string) => {
+      if (value) {
+        updateMembership({
+          userId: user.id,
+          tier: value as MembershipTier,
+          status: membershipData?.status || "active",
+          updatedBy: currentAdminEmail,
+        });
+      }
+    },
+    [updateMembership, user.id, membershipData?.status, currentAdminEmail],
+  );
+
+  const handleStatusChange = useCallback(
+    (value: string) => {
+      if (value) {
+        updateMembership({
+          userId: user.id,
+          tier: membershipData?.tier || "tier_starter",
+          status: value,
+          updatedBy: currentAdminEmail,
+        });
+      }
+    },
+    [updateMembership, user.id, membershipData?.tier, currentAdminEmail],
+  );
+
+  return (
+    <Card className="mt-6 border-blue-200 shadow-sm bg-blue-50/10">
+      <CardHeader className="pb-3 px-4 sm:px-5 border-b border-blue-100">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900">
+            Membership Settings
+          </CardTitle>
+          {isLoading && (
+            <Loader2Icon className="h-4 w-4 animate-spin text-blue-500" />
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground mt-1">
+          Adjust the client's membership tier and status. This will override
+          their current subscription.
+        </p>
+      </CardHeader>
+      <CardContent className="px-4 sm:px-5 py-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Tier</Label>
+            <Select
+              disabled={!!isUpdating || isLoading}
+              value={membershipData?.tier || "unknown"}
+              onValueChange={handleTierChange}
+            >
+              <SelectTrigger className="w-full bg-white">
+                <SelectValue placeholder="Select Tier" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unknown" disabled>
+                  Unknown Tier
+                </SelectItem>
+                <SelectItem value="tier_starter">Starter</SelectItem>
+                <SelectItem value="tier_pro">Pro</SelectItem>
+                <SelectItem value="tier_executive">Executive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Status</Label>
+            <Select
+              disabled={!!isUpdating || isLoading}
+              value={membershipData?.status || "inactive"}
+              onValueChange={handleStatusChange}
+            >
+              <SelectTrigger className="w-full bg-white">
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="canceled">Canceled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="md:col-span-2 flex flex-col justify-end pb-2">
+            {isUpdating && (
+              <p className="text-sm text-blue-600 flex items-center">
+                <Loader2Icon className="h-3.5 w-3.5 animate-spin mr-1.5" />{" "}
+                Updating membership...
+              </p>
+            )}
+            {!isUpdating && membershipData?.updatedBy && (
+              <p className="text-xs text-muted-foreground">
+                Last updated by {membershipData.updatedBy}
+                {membershipData.updatedAt
+                  ? ` on ${fmtDate(new Date(membershipData.updatedAt))}`
+                  : ""}
+              </p>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 const StatusPicker = ({ user }: { user: UserWithId }) => {
   const styles =
