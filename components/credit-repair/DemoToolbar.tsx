@@ -1,29 +1,29 @@
-import { useState } from 'react'
-import { RotateCcw, X, Wrench } from 'lucide-react'
-import type { RepairView } from '@/lib/credit-repair-types'
+import { useState } from "react";
+import { RotateCcw, X, Wrench } from "lucide-react";
+import type { RepairView } from "@/lib/credit-repair/credit-repair-types";
 
 interface DemoToolbarProps {
-  view: RepairView
-  onSetView: (v: RepairView) => void
-  onReset: () => void
+  view: RepairView;
+  onSetView: (v: RepairView) => void;
+  onReset: () => void;
 }
 
 const states: { key: RepairView; label: string }[] = [
-  { key: 'overview', label: 'Overview' },
-  { key: 'select-items', label: 'Select Items' },
-  { key: 'choose-reasons', label: 'Choose Reasons' },
-  { key: 'pick-agencies', label: 'Pick Agencies' },
-  { key: 'generating', label: 'Generating' },
-  { key: 'letters-ready', label: 'Letters Ready' },
-  { key: 'attaching-documents', label: 'Attach Docs' },
-  { key: 'mailing-options', label: 'Mailing Options' },
-  { key: 'mailing-sent', label: 'Mailed' },
-  { key: 'tracking', label: 'Tracking' },
-]
+  { key: "overview", label: "Overview" },
+  { key: "select-items", label: "Select Items" },
+  { key: "choose-reasons", label: "Choose Reasons" },
+  { key: "pick-agencies", label: "Pick Agencies" },
+  { key: "generating", label: "Generating" },
+  { key: "letters-ready", label: "Letters Ready" },
+  { key: "attaching-documents", label: "Attach Docs" },
+  { key: "mailing-options", label: "Mailing Options" },
+  { key: "mailing-sent", label: "Mailed" },
+  { key: "tracking", label: "Tracking" },
+];
 
 export function DemoToolbar({ view, onSetView, onReset }: DemoToolbarProps) {
-  const [dismissed, setDismissed] = useState(false)
-  if (dismissed) return null
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
 
   return (
     <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white text-xs">
@@ -39,8 +39,8 @@ export function DemoToolbar({ view, onSetView, onReset }: DemoToolbarProps) {
               onClick={() => onSetView(s.key)}
               className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
                 view === s.key
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-white/5 text-gray-200 hover:bg-white/10'
+                  ? "bg-brand-600 text-white"
+                  : "bg-white/5 text-gray-200 hover:bg-white/10"
               }`}
             >
               {s.label}
@@ -66,5 +66,5 @@ export function DemoToolbar({ view, onSetView, onReset }: DemoToolbarProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

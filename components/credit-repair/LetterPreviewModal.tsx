@@ -1,14 +1,14 @@
-import { X, Download, Send } from 'lucide-react'
-import type { GeneratedLetter } from '@/lib/credit-repair-types'
-import { downloadLetterPdf } from '@/lib/pdfGenerator'
+import { X, Download, Send } from "lucide-react";
+import type { GeneratedLetter } from "@/lib/credit-repair/credit-repair-types";
+import { downloadLetterPdf } from "@/lib/pdfGenerator";
 
 interface Props {
-  letter: GeneratedLetter | null
-  onClose: () => void
+  letter: GeneratedLetter | null;
+  onClose: () => void;
 }
 
 export function LetterPreviewModal({ letter, onClose }: Props) {
-  if (!letter) return null
+  if (!letter) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
       <div
@@ -22,7 +22,9 @@ export function LetterPreviewModal({ letter, onClose }: Props) {
             <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-600">
               Dispute Letter
             </div>
-            <div className="text-base font-bold text-gray-900">{letter.agencyName}</div>
+            <div className="text-base font-bold text-gray-900">
+              {letter.agencyName}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -46,7 +48,7 @@ export function LetterPreviewModal({ letter, onClose }: Props) {
         <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50 px-5 sm:px-8 py-6">
           <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-lg shadow-sm p-6 sm:p-10">
             <pre className="whitespace-pre-wrap font-mono text-[12px] leading-relaxed text-gray-800">
-{letter.content}
+              {letter.content}
             </pre>
           </div>
         </div>
@@ -67,5 +69,5 @@ export function LetterPreviewModal({ letter, onClose }: Props) {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,21 +1,30 @@
-import { useState } from 'react'
-import { ArrowLeft, ArrowRight, AlertTriangle, ShieldAlert, ChevronDown } from 'lucide-react'
-import type { DisputeReasonAssignment, NegativeItem } from '@/lib/credit-repair-types'
-import { DISPUTE_REASONS, getReason } from '@/lib/disputeReasons'
-import { ItemTypeIcon, getTypeLabel } from './ItemTypeIcon'
-import { BureauBadges } from './BureauBadges'
+import { useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  AlertTriangle,
+  ShieldAlert,
+  ChevronDown,
+} from "lucide-react";
+import type {
+  DisputeReasonAssignment,
+  NegativeItem,
+} from "@/lib/credit-repair/credit-repair-types";
+import { DISPUTE_REASONS, getReason } from "@/lib/credit-repair/disputeReasons";
+import { ItemTypeIcon, getTypeLabel } from "./ItemTypeIcon";
+import { BureauBadges } from "./BureauBadges";
 
 interface Props {
-  items: NegativeItem[]
-  reasonByItem: Record<string, DisputeReasonAssignment>
-  onChange: (next: Record<string, DisputeReasonAssignment>) => void
-  onBack: () => void
-  onContinue: () => void
+  items: NegativeItem[];
+  reasonByItem: Record<string, DisputeReasonAssignment>;
+  onChange: (next: Record<string, DisputeReasonAssignment>) => void;
+  onBack: () => void;
+  onContinue: () => void;
 }
 
 function fmtMoney(n: number): string {
-  if (n === 0) return '—'
-  return `$${n.toLocaleString('en-US')}`
+  if (n === 0) return "—";
+  return `$${n.toLocaleString("en-US")}`;
 }
 
 export function DisputeReasonStep({
@@ -25,19 +34,19 @@ export function DisputeReasonStep({
   onBack,
   onContinue,
 }: Props) {
-  const [applyAll, setApplyAll] = useState(false)
-  const [bulkReason, setBulkReason] = useState('cannot-verify')
+  const [applyAll, setApplyAll] = useState(false);
+  const [bulkReason, setBulkReason] = useState("cannot-verify");
 
   const handleApplyAll = () => {
-    const next: Record<string, DisputeReasonAssignment> = {}
+    const next: Record<string, DisputeReasonAssignment> = {};
     for (const it of items) {
       next[it.id] = {
         reasonCode: bulkReason,
         additionalDetails: reasonByItem[it.id]?.additionalDetails,
-      }
+      };
     }
-    onChange(next)
-  }
+    onChange(next);
+  };
 
   const setItemReason = (itemId: string, reasonCode: string) => {
     onChange({
@@ -46,20 +55,20 @@ export function DisputeReasonStep({
         reasonCode,
         additionalDetails: reasonByItem[itemId]?.additionalDetails,
       },
-    })
-  }
+    });
+  };
 
   const setItemDetails = (itemId: string, details: string) => {
     onChange({
       ...reasonByItem,
       [itemId]: {
-        reasonCode: reasonByItem[itemId]?.reasonCode || 'cannot-verify',
+        reasonCode: reasonByItem[itemId]?.reasonCode || "cannot-verify",
         additionalDetails: details,
       },
-    })
-  }
+    });
+  };
 
-  const allAssigned = items.every((i) => reasonByItem[i.id]?.reasonCode)
+  const allAssigned = items.every((i) => reasonByItem[i.id]?.reasonCode);
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -68,9 +77,12 @@ export function DisputeReasonStep({
         <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-600">
           Step 1 of 3
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mt-0.5">Choose dispute reasons</h2>
+        <h2 className="text-xl font-bold text-gray-900 mt-0.5">
+          Choose dispute reasons
+        </h2>
         <p className="text-sm text-gray-500 mt-0.5">
-          Select why each item is being disputed. Reasons map to FCRA citations the AI uses when drafting your letters.
+          Select why each item is being disputed. Reasons map to FCRA citations
+          the AI uses when drafting your letters.
         </p>
       </div>
 
@@ -112,8 +124,8 @@ export function DisputeReasonStep({
       {/* Items grid */}
       <div className="space-y-3">
         {items.map((item) => {
-          const assigned = reasonByItem[item.id]
-          const reason = assigned ? getReason(assigned.reasonCode) : undefined
+          const assigned = reasonByItem[item.id];
+          const reason = assigned ? getReason(assigned.reasonCode) : undefined;
           return (
             <div
               key={item.id}
@@ -124,7 +136,9 @@ export function DisputeReasonStep({
                 <ItemTypeIcon type={item.type} />
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="font-semibold text-gray-900 text-sm">{item.creditor}</div>
+                    <div className="font-semibold text-gray-900 text-sm">
+                      {item.creditor}
+                    </div>
                     <span className="text-[11px] font-medium text-gray-500">
                       {getTypeLabel(item.type)}
                     </span>
@@ -144,7 +158,7 @@ export function DisputeReasonStep({
                     Dispute reason
                   </label>
                   <ReasonSelect
-                    value={assigned?.reasonCode || ''}
+                    value={assigned?.reasonCode || ""}
                     onChange={(v) => setItemReason(item.id, v)}
                     itemType={item.type}
                   />
@@ -154,7 +168,7 @@ export function DisputeReasonStep({
                     Additional details (optional)
                   </label>
                   <textarea
-                    value={assigned?.additionalDetails || ''}
+                    value={assigned?.additionalDetails || ""}
                     onChange={(e) => setItemDetails(item.id, e.target.value)}
                     placeholder="Anything else the AI should mention…"
                     rows={2}
@@ -168,9 +182,13 @@ export function DisputeReasonStep({
                 <div className="mt-3 flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-red-50 border border-red-100">
                   <ShieldAlert className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                   <div className="text-xs text-red-800">
-                    <div className="font-semibold">Identity theft — special legal rights apply</div>
+                    <div className="font-semibold">
+                      Identity theft — special legal rights apply
+                    </div>
                     <div className="mt-0.5">
-                      Under FCRA §605B, the bureau must block this item within 4 business days. We&rsquo;ll attach your FTC Identity Theft Report (IdentityTheft.gov) automatically.
+                      Under FCRA §605B, the bureau must block this item within 4
+                      business days. We&rsquo;ll attach your FTC Identity Theft
+                      Report (IdentityTheft.gov) automatically.
                     </div>
                   </div>
                 </div>
@@ -181,7 +199,7 @@ export function DisputeReasonStep({
                 </div>
               )}
             </div>
-          )
+          );
         })}
       </div>
 
@@ -198,7 +216,8 @@ export function DisputeReasonStep({
           {!allAssigned && (
             <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-amber-700">
               <AlertTriangle className="w-3.5 h-3.5" />
-              {items.filter((i) => !reasonByItem[i.id]?.reasonCode).length} items still need a reason
+              {items.filter((i) => !reasonByItem[i.id]?.reasonCode).length}{" "}
+              items still need a reason
             </span>
           )}
           <button
@@ -212,23 +231,25 @@ export function DisputeReasonStep({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function ReasonSelect({
   value,
   onChange,
   itemType,
-  className = '',
+  className = "",
 }: {
-  value: string
-  onChange: (v: string) => void
-  itemType?: string
-  className?: string
+  value: string;
+  onChange: (v: string) => void;
+  itemType?: string;
+  className?: string;
 }) {
   const list = itemType
-    ? DISPUTE_REASONS.filter((r) => !r.itemTypes || r.itemTypes.includes(itemType as any))
-    : DISPUTE_REASONS
+    ? DISPUTE_REASONS.filter(
+        (r) => !r.itemTypes || r.itemTypes.includes(itemType as any),
+      )
+    : DISPUTE_REASONS;
   return (
     <div className={`relative ${className}`}>
       <select
@@ -247,5 +268,5 @@ function ReasonSelect({
       </select>
       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
     </div>
-  )
+  );
 }

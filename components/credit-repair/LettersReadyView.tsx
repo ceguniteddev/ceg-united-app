@@ -1,6 +1,6 @@
 import { Send } from "lucide-react";
 import { useCreditAgenciesData } from "@/hooks/consumer-reporting-agency";
-import type { GeneratedLetter } from "@/lib/credit-repair-types";
+import type { GeneratedLetter } from "@/lib/credit-repair/credit-repair-types";
 import { LetterCard } from "@/components/credit-repair/LetterCard";
 import { useCreditRepairState } from "@/hooks/useCreditRepairState";
 

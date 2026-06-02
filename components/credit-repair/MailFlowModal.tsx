@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import type {
   GeneratedLetter,
   DisputeReasonAssignment,
-} from "@/lib/credit-repair-types";
+} from "@/lib/credit-repair/credit-repair-types";
 import { useCreditAgenciesData } from "@/hooks/consumer-reporting-agency";
 import {
   mailLetterViaLob,
@@ -11,13 +11,13 @@ import {
   type LobMailRequest,
   type LobMailResponse,
   type MailingMethod,
-} from "@/lib/lobMailing";
+} from "@/lib/credit-repair/lobMailing";
 import {
   MOCK_USER_DOCUMENTS,
   OPTIONAL_SUPPORTING_DOCS,
   REQUIRED_IDENTITY_DOCS,
-} from "@/lib/myDocuments";
-import { mockClient } from "@/lib/credit-repair-mockData";
+} from "@/lib/credit-repair/myDocuments";
+import { mockClient } from "@/lib/credit-repair/credit-repair-mockData";
 import {
   AttachDocumentsStep,
   type AttachDocumentsResult,

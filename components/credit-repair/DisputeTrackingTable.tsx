@@ -1,35 +1,67 @@
-import { CheckCircle2, RefreshCw, Eye, AlertTriangle, Sparkles, ExternalLink, Mail } from 'lucide-react'
-import type { GeneratedLetter, NegativeItem, NegativeItemStatus } from '@/lib/credit-repair-types'
-import { uspsTrackingUrl } from '@/lib/lobMailing'
-import { ItemTypeIcon, getTypeLabel } from './ItemTypeIcon'
+import {
+  CheckCircle2,
+  RefreshCw,
+  Eye,
+  AlertTriangle,
+  Sparkles,
+  ExternalLink,
+  Mail,
+} from "lucide-react";
+import type {
+  GeneratedLetter,
+  NegativeItem,
+  NegativeItemStatus,
+} from "@/lib/credit-repair/credit-repair-types";
+import { uspsTrackingUrl } from "@/lib/credit-repair/lobMailing";
+import { ItemTypeIcon, getTypeLabel } from "./ItemTypeIcon";
 
 export interface TrackingRow {
-  itemId: string
-  item: NegativeItem
-  agencyKey: string
-  agencyName: string
-  letter: GeneratedLetter
-  status: NegativeItemStatus | 'submitted' | 'under-review'
-  submittedAt: string
-  lastUpdatedAt: string
+  itemId: string;
+  item: NegativeItem;
+  agencyKey: string;
+  agencyName: string;
+  letter: GeneratedLetter;
+  status: NegativeItemStatus | "submitted" | "under-review";
+  submittedAt: string;
+  lastUpdatedAt: string;
 }
 
 interface Props {
-  rows: TrackingRow[]
-  onView: (row: TrackingRow) => void
-  onEscalate: (row: TrackingRow) => void
+  rows: TrackingRow[];
+  onView: (row: TrackingRow) => void;
+  onEscalate: (row: TrackingRow) => void;
 }
 
-const STATUS_LABEL: Record<string, { label: string; tone: string; icon?: any }> = {
-  submitted: { label: 'Submitted', tone: 'bg-gray-100 text-gray-700 border-gray-200' },
-  'under-review': { label: 'Under Review', tone: 'bg-brand-50 text-brand-700 border-brand-100' },
-  verified: { label: 'Verified', tone: 'bg-amber-50 text-amber-700 border-amber-100' },
-  updated: { label: 'Updated', tone: 'bg-violet-50 text-violet-700 border-violet-100' },
-  deleted: { label: 'Deleted', tone: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-}
+const STATUS_LABEL: Record<
+  string,
+  { label: string; tone: string; icon?: any }
+> = {
+  submitted: {
+    label: "Submitted",
+    tone: "bg-gray-100 text-gray-700 border-gray-200",
+  },
+  "under-review": {
+    label: "Under Review",
+    tone: "bg-brand-50 text-brand-700 border-brand-100",
+  },
+  verified: {
+    label: "Verified",
+    tone: "bg-amber-50 text-amber-700 border-amber-100",
+  },
+  updated: {
+    label: "Updated",
+    tone: "bg-violet-50 text-violet-700 border-violet-100",
+  },
+  deleted: {
+    label: "Deleted",
+    tone: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  },
+};
 
 function daysSince(iso: string): number {
-  return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24))
+  return Math.floor(
+    (Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24),
+  );
 }
 
 export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
@@ -39,12 +71,15 @@ export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
         <div className="w-12 h-12 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center mx-auto mb-3">
           <Sparkles className="w-5 h-5" />
         </div>
-        <div className="text-base font-bold text-gray-900">No active disputes yet</div>
+        <div className="text-base font-bold text-gray-900">
+          No active disputes yet
+        </div>
         <div className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
-          Once you mark letters as sent, each dispute lands here with a 30-day countdown.
+          Once you mark letters as sent, each dispute lands here with a 30-day
+          countdown.
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -53,48 +88,67 @@ export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left bg-gray-50 border-b border-gray-100">
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Item</th>
-              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Agency</th>
-              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Status</th>
-              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Tracking</th>
-              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Days / Deadline</th>
-              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Last Update</th>
-              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 text-right">Action</th>
+              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                Item
+              </th>
+              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                Agency
+              </th>
+              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                Status
+              </th>
+              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                Tracking
+              </th>
+              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                Days / Deadline
+              </th>
+              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                Last Update
+              </th>
+              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 text-right">
+                Action
+              </th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => {
-              const days = daysSince(row.submittedAt)
-              const remaining = Math.max(0, 30 - days)
-              const isDeleted = row.status === 'deleted'
-              const isVerified = row.status === 'verified'
-              const isUpdated = row.status === 'updated'
+              const days = daysSince(row.submittedAt);
+              const remaining = Math.max(0, 30 - days);
+              const isDeleted = row.status === "deleted";
+              const isVerified = row.status === "verified";
+              const isUpdated = row.status === "updated";
               return (
                 <tr
                   key={`${row.itemId}-${row.agencyKey}`}
                   className={`border-b border-gray-50 last:border-0 transition-colors ${
                     isDeleted
-                      ? 'bg-emerald-50/40 animate-fade-in'
+                      ? "bg-emerald-50/40 animate-fade-in"
                       : isUpdated
-                        ? 'bg-amber-50/30'
-                        : 'hover:bg-gray-50/60'
+                        ? "bg-amber-50/30"
+                        : "hover:bg-gray-50/60"
                   }`}
                 >
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-3">
                       <ItemTypeIcon type={row.item.type} size="sm" />
                       <div className="min-w-0">
-                        <div className="font-semibold text-sm text-gray-900 truncate">{row.item.creditor}</div>
+                        <div className="font-semibold text-sm text-gray-900 truncate">
+                          {row.item.creditor}
+                        </div>
                         <div className="text-[11px] text-gray-500 mt-0.5">
-                          {getTypeLabel(row.item.type)} · {row.item.accountNumber}
+                          {getTypeLabel(row.item.type)} ·{" "}
+                          {row.item.accountNumber}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-3.5 text-sm text-gray-700">{row.agencyName}</td>
+                  <td className="px-3 py-3.5 text-sm text-gray-700">
+                    {row.agencyName}
+                  </td>
                   <td className="px-3 py-3.5">
                     <span
-                      className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-md border ${STATUS_LABEL[row.status]?.tone || STATUS_LABEL['under-review'].tone}`}
+                      className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-md border ${STATUS_LABEL[row.status]?.tone || STATUS_LABEL["under-review"].tone}`}
                     >
                       {isDeleted && <CheckCircle2 className="w-3 h-3" />}
                       {STATUS_LABEL[row.status]?.label || row.status}
@@ -120,7 +174,9 @@ export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     ) : (
-                      <span className="text-[11px] text-gray-400 italic">Not mailed</span>
+                      <span className="text-[11px] text-gray-400 italic">
+                        Not mailed
+                      </span>
                     )}
                   </td>
                   <td className="px-3 py-3.5 text-xs">
@@ -134,9 +190,9 @@ export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
                     )}
                   </td>
                   <td className="px-3 py-3.5 text-xs text-gray-600">
-                    {new Date(row.lastUpdatedAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
+                    {new Date(row.lastUpdatedAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
                     })}
                   </td>
                   <td className="px-3 py-3.5">
@@ -165,7 +221,7 @@ export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
                     </div>
                   </td>
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
@@ -174,20 +230,22 @@ export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
       {/* Mobile cards */}
       <div className="md:hidden divide-y divide-gray-100">
         {rows.map((row) => {
-          const days = daysSince(row.submittedAt)
-          const isDeleted = row.status === 'deleted'
+          const days = daysSince(row.submittedAt);
+          const isDeleted = row.status === "deleted";
           return (
             <div
               key={`${row.itemId}-${row.agencyKey}`}
-              className={`p-4 ${isDeleted ? 'bg-emerald-50/40' : ''}`}
+              className={`p-4 ${isDeleted ? "bg-emerald-50/40" : ""}`}
             >
               <div className="flex items-start gap-3">
                 <ItemTypeIcon type={row.item.type} size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="font-semibold text-sm text-gray-900 truncate">{row.item.creditor}</div>
+                    <div className="font-semibold text-sm text-gray-900 truncate">
+                      {row.item.creditor}
+                    </div>
                     <span
-                      className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-md border ${STATUS_LABEL[row.status]?.tone || STATUS_LABEL['under-review'].tone} shrink-0`}
+                      className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-md border ${STATUS_LABEL[row.status]?.tone || STATUS_LABEL["under-review"].tone} shrink-0`}
                     >
                       {isDeleted && <CheckCircle2 className="w-3 h-3" />}
                       {STATUS_LABEL[row.status]?.label || row.status}
@@ -199,9 +257,9 @@ export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
                 </div>
               </div>
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

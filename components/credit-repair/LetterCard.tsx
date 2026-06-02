@@ -1,16 +1,23 @@
-import { Building2, Download, Eye, Send, Check, ExternalLink } from 'lucide-react'
-import type { GeneratedLetter } from '@/lib/credit-repair-types'
-import { downloadLetterPdf } from '@/lib/pdfGenerator'
-import { uspsTrackingUrl } from '@/lib/lobMailing'
+import {
+  Building2,
+  Download,
+  Eye,
+  Send,
+  Check,
+  ExternalLink,
+} from "lucide-react";
+import type { GeneratedLetter } from "@/lib/credit-repair/credit-repair-types";
+import { downloadLetterPdf } from "@/lib/pdfGenerator";
+import { uspsTrackingUrl } from "@/lib/credit-repair/lobMailing";
 
 interface Props {
-  letter: GeneratedLetter
-  itemCount: number
-  isBureau: boolean
-  onPreview: () => void
-  onMarkSent: () => void
+  letter: GeneratedLetter;
+  itemCount: number;
+  isBureau: boolean;
+  onPreview: () => void;
+  onMarkSent: () => void;
   /** Open the Mail Letter (Lob.com) flow for this letter */
-  onMail: () => void
+  onMail: () => void;
 }
 
 export function LetterCard({
@@ -21,9 +28,9 @@ export function LetterCard({
   onMarkSent,
   onMail,
 }: Props) {
-  const isMailed = !!letter.mailedAt
-  const isSent = !!letter.sentAt && !isMailed
-  const previewLines = letter.content.split('\n').slice(0, 6).join('\n')
+  const isMailed = !!letter.mailedAt;
+  const isSent = !!letter.sentAt && !isMailed;
+  const previewLines = letter.content.split("\n").slice(0, 6).join("\n");
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden card-hover">
@@ -31,7 +38,9 @@ export function LetterCard({
       <div className="flex items-start gap-3 px-5 pt-5">
         <div
           className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-bold ${
-            isBureau ? 'bg-brand-50 text-brand-700' : 'bg-violet-50 text-violet-700'
+            isBureau
+              ? "bg-brand-50 text-brand-700"
+              : "bg-violet-50 text-violet-700"
           }`}
         >
           {isBureau ? letter.agencyName[0] : <Building2 className="w-5 h-5" />}
@@ -53,8 +62,8 @@ export function LetterCard({
             )}
           </div>
           <div className="text-[11px] text-gray-500 mt-0.5">
-            {isBureau ? 'Credit Bureau' : 'Specialty CRA'} · {itemCount}{' '}
-            {itemCount === 1 ? 'item' : 'items'}
+            {isBureau ? "Credit Bureau" : "Specialty CRA"} · {itemCount}{" "}
+            {itemCount === 1 ? "item" : "items"}
           </div>
         </div>
       </div>
@@ -70,18 +79,21 @@ export function LetterCard({
           </div>
           <div className="text-[10px] text-gray-500 mt-1">
             {letter.expectedDelivery
-              ? `ETA ${new Date(letter.expectedDelivery).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })}`
-              : ''}
-            {letter.mailedFrom ? ` · mailed from ${letter.mailedFrom}` : ''}
+              ? `ETA ${new Date(letter.expectedDelivery).toLocaleDateString(
+                  "en-US",
+                  {
+                    month: "short",
+                    day: "numeric",
+                  },
+                )}`
+              : ""}
+            {letter.mailedFrom ? ` · mailed from ${letter.mailedFrom}` : ""}
           </div>
         </div>
       ) : (
         <div className="mx-5 mt-4 px-3 py-2.5 rounded-lg bg-gray-50 border border-gray-100">
           <pre className="font-mono text-[10.5px] leading-relaxed text-gray-700 line-clamp-6 whitespace-pre-wrap">
-{previewLines}
+            {previewLines}
           </pre>
         </div>
       )}
@@ -100,8 +112,8 @@ export function LetterCard({
             onClick={() => downloadLetterPdf({ letter })}
             className={`inline-flex items-center justify-center gap-1 px-2 py-2 rounded-lg text-xs font-semibold transition-colors ${
               isMailed
-                ? 'bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700'
-                : 'bg-brand-600 hover:bg-brand-700 text-white'
+                ? "bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700"
+                : "bg-brand-600 hover:bg-brand-700 text-white"
             }`}
           >
             <Download className="w-3.5 h-3.5" />
@@ -149,5 +161,5 @@ export function LetterCard({
         )}
       </div>
     </div>
-  )
+  );
 }

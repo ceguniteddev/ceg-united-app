@@ -1,5 +1,8 @@
 import { ArrowLeft, ArrowRight, Info, MapPin } from "lucide-react";
-import type { Bureau, NegativeItem } from "@/lib/credit-repair-types";
+import type {
+  Bureau,
+  NegativeItem,
+} from "@/lib/credit-repair/credit-repair-types";
 import { useCreditAgenciesData } from "@/hooks/consumer-reporting-agency";
 
 interface Props {

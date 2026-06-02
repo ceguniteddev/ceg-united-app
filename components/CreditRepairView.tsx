@@ -26,7 +26,7 @@ import { OverviewView } from "@/components/credit-repair/OverviewView";
 import { StageTabs } from "@/components/credit-repair/StageTabs";
 import { useCreditRepairState } from "@/hooks/useCreditRepairState";
 import { useCreditAgenciesData } from "@/hooks/consumer-reporting-agency";
-import type { GeneratedLetter } from "@/lib/credit-repair-types";
+import type { GeneratedLetter } from "@/lib/credit-repair/credit-repair-types";
 
 export default function CreditRepair({ userId }: { userId: string }) {
   const s = useCreditRepairState(userId);

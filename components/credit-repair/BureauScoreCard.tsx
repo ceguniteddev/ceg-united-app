@@ -1,5 +1,5 @@
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
-import type { BureauScore } from "@/lib/credit-repair-types";
+import type { BureauScore } from "@/lib/credit-repair/credit-repair-types";
 import Image from "next/image";
 
 function fmtPulled(iso: string): string {

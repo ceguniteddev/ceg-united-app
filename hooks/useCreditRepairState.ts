@@ -6,8 +6,11 @@ import type {
   NegativeItem,
   RepairView,
   Toast,
-} from "@/lib/credit-repair-types";
-import type { LobMailResponse, MailingMethod } from "@/lib/lobMailing";
+} from "@/lib/credit-repair/credit-repair-types";
+import type {
+  LobMailResponse,
+  MailingMethod,
+} from "@/lib/credit-repair/lobMailing";
 import {
   mockBureauScores,
   mockClient,
@@ -15,9 +18,9 @@ import {
   mockNegativeFactors,
   mockPositiveFactors,
   mockReportHealth,
-} from "@/lib/credit-repair-mockData";
+} from "@/lib/credit-repair/credit-repair-mockData";
 import { useCreditAgenciesData } from "@/hooks/consumer-reporting-agency";
-import { generateLetters } from "@/lib/disputeLetterGenerator";
+import { generateLetters } from "@/lib/credit-repair/disputeLetterGenerator";
 import type { TrackingRow } from "@/components/credit-repair/DisputeTrackingTable";
 import { useClientCRSReportQuery } from "@/hooks/crs";
 import { useEffect } from "react";
