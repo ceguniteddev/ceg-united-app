@@ -463,7 +463,7 @@ export const applyFundingSchema = z
     }
   })
   .superRefine((data, ctx) => {
-    console.log("Employment superRefine called with data:", data);
+    // console.log("Employment superRefine called with data:", data);
     // Check if the employment status is 'yes'
     // Exclude Auto Loan with Business financing and Community funding from employment validation
     if (
