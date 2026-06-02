@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Check, ShieldCheck, Mail, Loader2, ArrowLeft } from 'lucide-react'
-import { MAILING_METHODS, type MailingMethod } from '@/lib/lobMailing'
+import { MAILING_METHODS, type MailingMethod } from '@/lib/credit-repair/lobMailing'
 
 // ============================================
 // MailingOptionsStep — Step B

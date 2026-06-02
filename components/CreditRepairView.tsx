@@ -26,7 +26,7 @@ import { OverviewView } from "@/components/credit-repair/OverviewView";
 import { StageTabs } from "@/components/credit-repair/StageTabs";
 import { useCreditRepairState } from "@/hooks/useCreditRepairState";
 import { useCreditAgenciesData } from "@/hooks/consumer-reporting-agency";
-import type { GeneratedLetter } from "@/lib/credit-repair-types";
+import type { GeneratedLetter } from "@/lib/credit-repair/credit-repair-types";
 
 export default function CreditRepair({ userId }: { userId: string }) {
   const s = useCreditRepairState(userId);
@@ -39,6 +39,30 @@ export default function CreditRepair({ userId }: { userId: string }) {
   // Top-level view router (within the /credit-repair route)
   // ============================================
   const renderBody = () => {
+    if (s.isLoading) {
+      return (
+        <div className="space-y-5 animate-pulse">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5">
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 h-[120px]">
+                <div className="bg-gray-200 rounded-xl w-full h-full"></div>
+                <div className="bg-gray-200 rounded-xl w-full h-full"></div>
+                <div className="bg-gray-200 rounded-xl w-full h-full"></div>
+              </div>
+            </div>
+            <div className="h-[120px]">
+              <div className="bg-gray-200 rounded-xl w-full h-full"></div>
+            </div>
+          </div>
+          <div className="h-[200px] bg-gray-200 rounded-xl w-full"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="lg:col-span-2 h-[160px] bg-gray-200 rounded-2xl w-full"></div>
+            <div className="h-[160px] bg-gray-200 rounded-2xl w-full"></div>
+          </div>
+        </div>
+      );
+    }
+
     switch (s.view) {
       case "overview":
         return <OverviewView state={s} />;

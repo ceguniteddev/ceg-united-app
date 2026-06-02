@@ -8,7 +8,7 @@ import {
   Copy,
   ArrowRight,
 } from 'lucide-react'
-import { uspsTrackingUrl, type LobMailResponse, MAILING_METHODS } from '@/lib/lobMailing'
+import { uspsTrackingUrl, type LobMailResponse, MAILING_METHODS } from '@/lib/credit-repair/lobMailing'
 
 // ============================================
 // MailingSentStep — Step C

@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import type {
   GeneratedLetter,
   DisputeReasonAssignment,
-} from "@/lib/credit-repair-types";
+} from "@/lib/credit-repair/credit-repair-types";
 import { useCreditAgenciesData } from "@/hooks/consumer-reporting-agency";
 import {
   mailLetterViaLob,
@@ -11,13 +11,8 @@ import {
   type LobMailRequest,
   type LobMailResponse,
   type MailingMethod,
-} from "@/lib/lobMailing";
-import {
-  MOCK_USER_DOCUMENTS,
-  OPTIONAL_SUPPORTING_DOCS,
-  REQUIRED_IDENTITY_DOCS,
-} from "@/lib/myDocuments";
-import { mockClient } from "@/lib/credit-repair-mockData";
+} from "@/lib/credit-repair/lobMailing";
+import { mockClient } from "@/lib/credit-repair/credit-repair-mockData";
 import {
   AttachDocumentsStep,
   type AttachDocumentsResult,
@@ -201,13 +196,9 @@ export function MailFlowModal({
   const ensureAttached = (): AttachDocumentsResult => {
     if (attached) return attached;
     const seed: AttachDocumentsResult = {
-      requiredIds: REQUIRED_IDENTITY_DOCS.map((d) => d.id),
-      optionalIds: OPTIONAL_SUPPORTING_DOCS.filter(
-        (d) =>
-          d.autoRecommendForReason &&
-          reasonCodes.includes(d.autoRecommendForReason),
-      ).map((d) => d.id),
-      libraryIds: MOCK_USER_DOCUMENTS.slice(0, 2).map((d) => d.id),
+      requiredIds: [],
+      optionalIds: [],
+      libraryIds: [],
       redactionConfirmed: true,
     };
     setAttached(seed);

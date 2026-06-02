@@ -6,20 +6,16 @@ import type {
   NegativeItem,
   RepairView,
   Toast,
-} from "@/lib/credit-repair-types";
-import type { LobMailResponse, MailingMethod } from "@/lib/lobMailing";
-import {
-  mockBureauScores,
-  mockClient,
-  mockNegativeItems,
-  mockNegativeFactors,
-  mockPositiveFactors,
-  mockReportHealth,
-} from "@/lib/credit-repair-mockData";
+} from "@/lib/credit-repair/credit-repair-types";
+import type {
+  LobMailResponse,
+  MailingMethod,
+} from "@/lib/credit-repair/lobMailing";
 import { useCreditAgenciesData } from "@/hooks/consumer-reporting-agency";
-import { generateLetters } from "@/lib/disputeLetterGenerator";
+import { generateLetters } from "@/lib/credit-repair/disputeLetterGenerator";
 import type { TrackingRow } from "@/components/credit-repair/DisputeTrackingTable";
 import { useClientCRSReportQuery } from "@/hooks/crs";
+import { useUserQuery } from "@/hooks/user";
 import { useEffect } from "react";
 import { CreditReportWithId } from "@/types/crs";
 
@@ -36,9 +32,12 @@ import { CreditReportWithId } from "@/types/crs";
 export function useCreditRepairState(userId?: string) {
   const { allAgencies, bureauRecord } = useCreditAgenciesData();
 
-  const { crsReport, isLoading } = useClientCRSReportQuery({
+  const { crsReport, isLoading: isReportLoading } = useClientCRSReportQuery({
     userId: userId || "",
   });
+  const { userData, isLoading: isUserLoading } = useUserQuery(userId || "");
+
+  const isLoading = isReportLoading || isUserLoading;
 
   const [selectedTimestamp, setSelectedTimestamp] = useState<string>("");
 
@@ -76,13 +75,19 @@ export function useCreditRepairState(userId?: string) {
   }, [timestamps, selectedTimestamp]);
 
   const [view, setView] = useState<RepairView>("overview");
-  const [items, setItems] = useState<NegativeItem[]>(mockNegativeItems);
-  const [scores, setScores] = useState(mockBureauScores);
-  const [health, setHealth] = useState(mockReportHealth);
+  const [items, setItems] = useState<NegativeItem[]>([]);
+  const [scores, setScores] = useState<any[]>([]);
+  const [health, setHealth] = useState({
+    negativeItems: 0,
+    totalAccounts: 0,
+    openDisputes: 0,
+    itemsDeleted: 0,
+    averageScore: 0,
+  });
   const [refreshing, setRefreshing] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
-  const [positiveFactors, setPositiveFactors] = useState(mockPositiveFactors);
-  const [negativeFactors, setNegativeFactors] = useState(mockNegativeFactors);
+  const [positiveFactors, setPositiveFactors] = useState<any[]>([]);
+  const [negativeFactors, setNegativeFactors] = useState<any[]>([]);
 
   useEffect(() => {
     if (!crsReport || crsReport.length === 0) return;
@@ -206,7 +211,7 @@ export function useCreditRepairState(userId?: string) {
       },
     );
 
-    setItems(parsedItems.length > 0 ? parsedItems : mockNegativeItems);
+    setItems(parsedItems);
 
     const expScore =
       toNum(bureauMap.Experian?.report?.scores?.[0]?.scoreValue) || 0;
@@ -361,9 +366,7 @@ export function useCreditRepairState(userId?: string) {
         });
       }
     }
-    setPositiveFactors(
-      newPositives.length > 0 ? newPositives : mockPositiveFactors,
-    );
+    setPositiveFactors(newPositives);
 
     // Calc Negative Factors
     const newNegatives = [];
@@ -433,9 +436,7 @@ export function useCreditRepairState(userId?: string) {
         impact: "low",
       });
     }
-    setNegativeFactors(
-      newNegatives.length > 0 ? newNegatives : mockNegativeFactors,
-    );
+    setNegativeFactors(newNegatives);
   }, [crsReport, selectedTimestamp, reportsByTimestamp]);
 
   // Selection
@@ -516,8 +517,43 @@ export function useCreditRepairState(userId?: string) {
       selectedAgencies.includes(a.key),
     );
     const selectedItems = items.filter((i) => selectedItemIds.includes(i.id));
+
+    const clientInfo = userData
+      ? {
+          uid: userData.id || userId || "",
+          firstName: userData.firstName || "Unknown",
+          lastName: userData.lastName || "User",
+          email: userData.email || "",
+          phone: userData.phoneNumber || "",
+          dob: userData.dateOfBirth || "01/01/1970",
+          ssnLast4: userData.ssn ? userData.ssn.slice(-4) : "0000",
+          address: {
+            line1: userData.addressStreet || "",
+            line2: "",
+            city: userData.addressCity || "",
+            state: userData.addressState || "",
+            zip: userData.addressPostal || "",
+          },
+        }
+      : {
+          uid: userId || "",
+          firstName: "Unknown",
+          lastName: "User",
+          email: "",
+          phone: "",
+          dob: "",
+          ssnLast4: "",
+          address: {
+            line1: "",
+            line2: "",
+            city: "",
+            state: "",
+            zip: "",
+          },
+        };
+
     const generated = generateLetters({
-      client: mockClient,
+      client: clientInfo,
       agencies,
       items: selectedItems,
       reasonByItem,
@@ -569,7 +605,7 @@ export function useCreditRepairState(userId?: string) {
         const existing = new Set(
           prev.map((r) => `${r.itemId}::${r.agencyKey}`),
         );
-        const itemsBase = items.length ? items : mockNegativeItems;
+        const itemsBase = items;
         const selectedBase =
           selectedItemIds.length > 0
             ? itemsBase.filter((i) => selectedItemIds.includes(i.id))
@@ -771,9 +807,15 @@ export function useCreditRepairState(userId?: string) {
   // ---------- demo / reset ----------
   const reset = useCallback(() => {
     setView("overview");
-    setItems(mockNegativeItems);
-    setScores(mockBureauScores);
-    setHealth(mockReportHealth);
+    setItems([]);
+    setScores([]);
+    setHealth({
+      negativeItems: 0,
+      totalAccounts: 0,
+      openDisputes: 0,
+      itemsDeleted: 0,
+      averageScore: 0,
+    });
     setSelectedItemIds([]);
     setReasonByItem({});
     setSelectedAgencies([]);
@@ -816,6 +858,7 @@ export function useCreditRepairState(userId?: string) {
     mailingResults,
     timestamps,
     selectedTimestamp,
+    isLoading,
 
     // actions
     setView: goView,

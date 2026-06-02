@@ -6,7 +6,7 @@ import {
 } from "@/components/credit-repair/DisputeTrackingTable";
 import { ReportHealthCard } from "@/components/credit-repair/ReportHealthCard";
 import { EducationSidebar } from "@/components/credit-repair/EducationSidebar";
-import type { GeneratedLetter } from "@/lib/credit-repair-types";
+import type { GeneratedLetter } from "@/lib/credit-repair/credit-repair-types";
 import { useCreditRepairState } from "@/hooks/useCreditRepairState";
 
 export function TrackingView({

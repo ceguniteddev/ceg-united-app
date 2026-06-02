@@ -1,5 +1,8 @@
 import { ArrowLeft, ArrowRight, Info, MapPin } from "lucide-react";
-import type { Bureau, NegativeItem } from "@/lib/credit-repair-types";
+import type {
+  Bureau,
+  NegativeItem,
+} from "@/lib/credit-repair/credit-repair-types";
 import { useCreditAgenciesData } from "@/hooks/consumer-reporting-agency";
 
 interface Props {
@@ -40,7 +43,7 @@ export function AgencySelectionStep({
   ).length;
   const craCount = selectedAgencies.length - bureauCount;
 
-  const canContinue = selectedAgencies.length > 0;
+  const canContinue = selectedAgencies.length > 0 && !isLoading;
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -69,42 +72,53 @@ export function AgencySelectionStep({
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {bureauList.map((agency) => {
-            const isOn = selectedAgencies.includes(agency.key);
-            const reported = reportedBureaus.has(agency.key as Bureau);
-            return (
-              <button
-                key={agency.key}
-                onClick={() => toggle(agency.key)}
-                className={`text-left rounded-xl border p-4 transition-all ${
-                  isOn
-                    ? "border-brand-500 bg-brand-50/50 shadow-card"
-                    : "border-gray-200 bg-white hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="font-semibold text-gray-900">
-                    {agency.name}
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-[120px] rounded-xl border border-gray-200 bg-gray-50 animate-pulse"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {bureauList.map((agency) => {
+              const isOn = selectedAgencies.includes(agency.key);
+              const reported = reportedBureaus.has(agency.key as Bureau);
+              return (
+                <button
+                  key={agency.key}
+                  onClick={() => toggle(agency.key)}
+                  className={`text-left rounded-xl border p-4 transition-all ${
+                    isOn
+                      ? "border-brand-500 bg-brand-50/50 shadow-card"
+                      : "border-gray-200 bg-white hover:border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="font-semibold text-gray-900">
+                      {agency.name}
+                    </div>
+                    <Toggle on={isOn} />
                   </div>
-                  <Toggle on={isOn} />
-                </div>
-                {reported && (
-                  <div className="inline-flex items-center mt-2 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-100 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-                    Items reported here
+                  {reported && (
+                    <div className="inline-flex items-center mt-2 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-100 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                      Items reported here
+                    </div>
+                  )}
+                  <div className="mt-3 flex items-start gap-1.5 text-[11px] text-gray-500">
+                    <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
+                    <span>
+                      {agency.address.line1}, {agency.address.city},{" "}
+                      {agency.address.state} {agency.address.zip}
+                    </span>
                   </div>
-                )}
-                <div className="mt-3 flex items-start gap-1.5 text-[11px] text-gray-500">
-                  <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
-                  <span>
-                    {agency.address.line1}, {agency.address.city},{" "}
-                    {agency.address.state} {agency.address.zip}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Third-party CRAs */}
