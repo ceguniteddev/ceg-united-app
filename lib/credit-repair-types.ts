@@ -96,6 +96,7 @@ export type AgencyCategory = "bureau" | "cra";
 export interface Agency {
   key: string;
   name: string;
+  emailAddress?: string;
   category: AgencyCategory;
   address: {
     line1: string;
@@ -104,6 +105,7 @@ export interface Agency {
     state: string;
     zip: string;
   };
+  isActive?: boolean;
   notes?: string;
 }
 
