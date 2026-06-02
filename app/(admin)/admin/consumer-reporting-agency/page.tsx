@@ -163,7 +163,7 @@ export default function ConsumerReportingAgencyPage() {
 
   return (
     <div className="flex flex-col gap-6 p-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
             Consumer Reporting Agencies
@@ -174,14 +174,14 @@ export default function ConsumerReportingAgencyPage() {
         </div>
         <Button
           onClick={handleOpenAdd}
-          className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+          className="gap-2 bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
         >
           <Plus className="h-4 w-4" />
           Add Agency
         </Button>
       </div>
 
-      <div className="border rounded-md bg-white">
+      <div className="border rounded-md bg-white hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -289,6 +289,95 @@ export default function ConsumerReportingAgencyPage() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="flex flex-col gap-4 md:hidden">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="border rounded-md bg-white p-4 space-y-3">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-full" />
+              <div className="flex justify-between items-center pt-2">
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-8 w-16" />
+              </div>
+            </div>
+          ))
+        ) : agencies && agencies.length > 0 ? (
+          agencies.map((agency) => (
+            <div
+              key={agency.key}
+              className="border rounded-md bg-white p-4 space-y-3 shadow-sm flex flex-col"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="font-medium">{agency.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {agency.key}
+                  </div>
+                </div>
+                <Badge
+                  className={
+                    agency.category === "bureau"
+                      ? "bg-blue-100 text-blue-800 hover:bg-blue-200 border-transparent shadow-none"
+                      : "bg-gray-100 text-gray-800 hover:bg-gray-200 border-transparent shadow-none"
+                  }
+                >
+                  {agency.category.toUpperCase()}
+                </Badge>
+              </div>
+
+              <div className="text-sm text-gray-600">
+                {agency.address.line1}, {agency.address.city},{" "}
+                {agency.address.state} {agency.address.zip}
+              </div>
+
+              <div className="flex justify-between items-center pt-2 border-t mt-2">
+                <div>
+                  {agency.isActive ? (
+                    <Badge
+                      variant="outline"
+                      className="bg-blue-50 text-blue-700 border-blue-200"
+                    >
+                      Active
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="bg-gray-50 text-gray-700 border-gray-200"
+                    >
+                      Inactive
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleOpenEdit(agency)}
+                  >
+                    <Edit2 className="h-4 w-4 text-blue-600" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setPendingDeleteId(agency.key);
+                      setIsConfirmDeleteOpen(true);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="border rounded-md bg-white p-10 text-center text-muted-foreground">
+            No agencies found. Add one to get started.
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Modal */}

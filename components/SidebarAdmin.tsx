@@ -139,7 +139,7 @@ const SidebarAdmin = () => {
                               </div>
                               <span
                                 className={cn(
-                                  "text-[15px] font-semibold text-black-2 truncate",
+                                  "text-sm font-semibold text-black-2 truncate",
                                   {
                                     "!text-white": isActive,
                                   },
