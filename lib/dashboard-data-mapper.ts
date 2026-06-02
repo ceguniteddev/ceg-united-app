@@ -185,12 +185,8 @@ export function transformClientDataToDashboard(
   };
 
   // 4. Financial Snapshot - Calculate from fundingApplications
-  const incomeApps =
-    fundingApplications?.filter((app) =>
-      app.fundingProducts?.includes("Business Income Based Funding"),
-    ) || [];
 
-  const latestIncomeApp = incomeApps.sort(
+  const latestIncomeApp = fundingApplications?.sort(
     (a, b) =>
       new Date(b.appliedDate || 0).getTime() -
       new Date(a.appliedDate || 0).getTime(),

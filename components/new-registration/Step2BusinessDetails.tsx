@@ -95,7 +95,7 @@ export function Step2BusinessDetails() {
                   control={form.control}
                   name="creditScore"
                   required
-                  label="Estimated Credit Score"
+                  label="What is your credit score?"
                   placeholder="700"
                   min={400}
                   max={900}
@@ -158,7 +158,7 @@ export function Step2BusinessDetails() {
                     control={form.control}
                     name="businessCreditScore"
                     required
-                    label="Business Estimated Credit Score"
+                    label="What is your credit score?"
                     placeholder="700"
                     min={400}
                     max={900}

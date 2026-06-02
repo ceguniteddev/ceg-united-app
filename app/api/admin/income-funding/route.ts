@@ -14,14 +14,9 @@ export const GET = withAuth(async (request: NextRequest) => {
       return NextResponse.json([], { status: 200 });
     }
 
-    // Filter for Income Based Funding
-    const incomeFundingApps = applications.filter((app: ApplyFundingWithUser) =>
-      app.fundingProducts?.includes("Business Income Based Funding"),
-    );
-
     // Map to AdminClient format and fetch documents
     const mappedClients = await Promise.all(
-      incomeFundingApps.map(async (app: ApplyFundingWithUser) => {
+      applications.map(async (app: ApplyFundingWithUser) => {
         const computation = (app as any).businessIncomeComputation || {};
         const userDocs = await getUserDocuments({ userId: app.userId! });
 
@@ -101,29 +96,43 @@ export const GET = withAuth(async (request: NextRequest) => {
         });
 
         // Combine Bank Statements correctly depending on what they uploaded
-        const bankStatementDocs = documents.filter(d => d.key === "bankStatements" || d.key === "personalBankStatements");
-        const hasPersonalBankStatements = bankStatementDocs.find(d => d.key === "personalBankStatements")?.status === "uploaded";
-        const hasBusinessBankStatements = bankStatementDocs.find(d => d.key === "bankStatements")?.status === "uploaded";
-        
+        const bankStatementDocs = documents.filter(
+          (d) =>
+            d.key === "bankStatements" || d.key === "personalBankStatements",
+        );
+        const hasPersonalBankStatements =
+          bankStatementDocs.find((d) => d.key === "personalBankStatements")
+            ?.status === "uploaded";
+        const hasBusinessBankStatements =
+          bankStatementDocs.find((d) => d.key === "bankStatements")?.status ===
+          "uploaded";
+
         let finalDocuments = documents;
-        
+
         if (hasPersonalBankStatements && !hasBusinessBankStatements) {
           // They chose a personal path, hide the business ones
-          finalDocuments = finalDocuments.filter(d => 
-            d.key !== "bankStatements" && 
-            d.key !== "ein" && 
-            d.key !== "articles" && 
-            d.key !== "voidedCheck"
+          finalDocuments = finalDocuments.filter(
+            (d) =>
+              d.key !== "bankStatements" &&
+              d.key !== "ein" &&
+              d.key !== "articles" &&
+              d.key !== "voidedCheck",
           );
           // Re-key it so the UI handles it cleanly like it expects
-          const personalBankDoc = finalDocuments.find(d => d.key === "personalBankStatements");
+          const personalBankDoc = finalDocuments.find(
+            (d) => d.key === "personalBankStatements",
+          );
           if (personalBankDoc) personalBankDoc.key = "bankStatements" as any;
         } else if (hasBusinessBankStatements && !hasPersonalBankStatements) {
           // Normal business path
-          finalDocuments = finalDocuments.filter(d => d.key !== "personalBankStatements");
+          finalDocuments = finalDocuments.filter(
+            (d) => d.key !== "personalBankStatements",
+          );
         } else {
-           // Fallback if neither or both (default to business showing)
-           finalDocuments = finalDocuments.filter(d => d.key !== "personalBankStatements");
+          // Fallback if neither or both (default to business showing)
+          finalDocuments = finalDocuments.filter(
+            (d) => d.key !== "personalBankStatements",
+          );
         }
 
         // Map status
