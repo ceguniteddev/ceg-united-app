@@ -42,11 +42,7 @@ export function TrackingView({
         />
       </div>
       <div className="space-y-4">
-        <ReportHealthCard
-          health={state.health}
-          onRefresh={state.refreshFromCRS}
-          refreshing={state.refreshing}
-        />
+        <ReportHealthCard health={state.health} />
         <EducationSidebar />
       </div>
     </div>

@@ -16,11 +16,9 @@ interface ReportHealth {
 
 interface Props {
   health: ReportHealth;
-  onRefresh: () => void;
-  refreshing?: boolean;
 }
 
-export function ReportHealthCard({ health, onRefresh, refreshing }: Props) {
+export function ReportHealthCard({ health }: Props) {
   const [hover, setHover] = useState<string | null>(null);
 
   const stats = [

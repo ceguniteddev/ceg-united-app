@@ -54,9 +54,9 @@ export function LettersReadyView({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:border-gray-300 text-gray-700 text-xs font-semibold transition-colors">
+          {/* <button className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:border-gray-300 text-gray-700 text-xs font-semibold transition-colors">
             Download All as ZIP
-          </button>
+          </button> */}
           <button
             onClick={() =>
               state.startMailFlow(allLetters.map((l) => l.agencyKey))

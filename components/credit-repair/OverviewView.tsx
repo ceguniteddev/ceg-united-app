@@ -26,11 +26,7 @@ export function OverviewView({
           </div>
         </div>
         <div className="animate-fade-in-up stagger-4">
-          <ReportHealthCard
-            health={state.health}
-            onRefresh={state.refreshFromCRS}
-            refreshing={state.refreshing}
-          />
+          <ReportHealthCard health={state.health} />
         </div>
       </div>
 
