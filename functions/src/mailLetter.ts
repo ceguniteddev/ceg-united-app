@@ -22,10 +22,11 @@ export const mailLetter = functions.onCall(
       letterPdfBase64,
       attachmentPdfsBase64, // string[]
       mailingMethod, // 'first-class' | 'certified' | 'certified-rr'
+      toAddress,
+      toName,
+      fromAddress,
+      fromName,
     } = req.data;
-
-    const dispute = await admin.firestore().doc(`disputes/${disputeId}`).get();
-    const letterData = dispute.data()?.generatedLetters[agencyKey];
 
     // 1. Combine letter + attachments into one PDF (Lob accepts a single file)
     const merged = await PDFDocument.create();
@@ -57,21 +58,21 @@ export const mailLetter = functions.onCall(
     const letter = await lob.create(
       {
         to: {
-          name: letterData?.agencyName || "Unknown Agency",
-          address_line1: letterData?.addressLine1 || "Unknown Address",
-          address_line2: letterData?.addressLine2 || "",
-          address_city: letterData?.city || "Unknown City",
-          address_state: letterData?.state || "XX",
-          address_zip: letterData?.zipCode || "00000",
+          name: toName || "Unknown Agency",
+          address_line1: toAddress?.line1 || "Unknown Address",
+          address_line2: toAddress?.line2 || "",
+          address_city: toAddress?.city || "Unknown City",
+          address_state: toAddress?.state || "XX",
+          address_zip: toAddress?.zip || "00000",
           address_country: Lob.CountryExtended.Us,
           toJSON: () => ({}),
         } as any,
         from: {
-          name: "Credit Experts Group LLC",
-          address_line1: "123 CEG Way",
-          address_city: "Anytown",
-          address_state: "NY",
-          address_zip: "10001",
+          name: fromName || "Credit Experts Group LLC",
+          address_line1: fromAddress?.line1 || "123 CEG Way",
+          address_city: fromAddress?.city || "Anytown",
+          address_state: fromAddress?.state || "NY",
+          address_zip: fromAddress?.zip || "10001",
           address_country: Lob.CountryExtended.Us,
           toJSON: () => ({}),
         } as any,

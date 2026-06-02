@@ -65,3 +65,8 @@ export function buildPdf(letter: GeneratedLetter): jsPDF {
 export function getPdfBlob(letter: GeneratedLetter): Blob {
   return buildPdf(letter).output("blob");
 }
+
+export function getPdfBase64(letter: GeneratedLetter): string {
+  const dataUri = buildPdf(letter).output("datauristring");
+  return dataUri.split(",")[1];
+}
