@@ -12,11 +12,6 @@ import {
   type LobMailResponse,
   type MailingMethod,
 } from "@/lib/credit-repair/lobMailing";
-import {
-  MOCK_USER_DOCUMENTS,
-  OPTIONAL_SUPPORTING_DOCS,
-  REQUIRED_IDENTITY_DOCS,
-} from "@/lib/credit-repair/myDocuments";
 import { mockClient } from "@/lib/credit-repair/credit-repair-mockData";
 import {
   AttachDocumentsStep,
@@ -201,13 +196,9 @@ export function MailFlowModal({
   const ensureAttached = (): AttachDocumentsResult => {
     if (attached) return attached;
     const seed: AttachDocumentsResult = {
-      requiredIds: REQUIRED_IDENTITY_DOCS.map((d) => d.id),
-      optionalIds: OPTIONAL_SUPPORTING_DOCS.filter(
-        (d) =>
-          d.autoRecommendForReason &&
-          reasonCodes.includes(d.autoRecommendForReason),
-      ).map((d) => d.id),
-      libraryIds: MOCK_USER_DOCUMENTS.slice(0, 2).map((d) => d.id),
+      requiredIds: [],
+      optionalIds: [],
+      libraryIds: [],
       redactionConfirmed: true,
     };
     setAttached(seed);

@@ -9,47 +9,91 @@ import {
   Check,
   ArrowRight,
   Layers,
+  Trash2Icon,
+  Eye,
+  Loader2Icon,
 } from "lucide-react";
-import {
-  formatFileSize,
-  MOCK_USER_DOCUMENTS,
-  OPTIONAL_SUPPORTING_DOCS,
-  REQUIRED_IDENTITY_DOCS,
-} from "@/lib/credit-repair/myDocuments";
+import { formatFileSize } from "@/lib/credit-repair/myDocuments";
 import { DocumentLibraryPicker } from "./DocumentLibraryPicker";
-
-// ============================================
-// AttachDocumentsStep — Step A of Mail Letter flow
-// ============================================
-// Three sections + privacy notice + sticky sidebar summary.
-// Step is "complete" when the user has attached at minimum a Driver's
-// License (or equivalent ID) AND a Proof of Address.
+import { useAuth } from "@/provider/AuthContext";
+import {
+  useUserDocumentMutation,
+  useUserDocumentsQuery,
+} from "@/hooks/document";
+import UploadFile from "@/components/UploadFileV2";
+import { DOCUMENT_TYPES, DocumentType } from "@/lib/document-types";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export interface AttachDocumentsResult {
-  /** required identity template ids that are checked */
+  /** required identity template paths that are checked */
   requiredIds: string[];
-  /** optional template ids that are checked */
+  /** optional template paths that are checked */
   optionalIds: string[];
-  /** user library document ids that are attached */
+  /** user library document paths that are attached */
   libraryIds: string[];
   /** true once user confirms SSN-redaction notice */
   redactionConfirmed: boolean;
 }
 
 interface Props {
-  /** Display name for "Mailing to" sidebar (e.g. "Experian" or "All 4 agencies") */
   recipientLabel: string;
-  /** Sub-recipient line (e.g. "P.O. Box 4500, Allen TX") */
   recipientSubLabel?: string;
-  /** Number of letters this attachment will go on (1 for single, N for bulk) */
   letterCount: number;
-  /** Reasons across all selected items — used to auto-recommend optional docs */
   reasonCodes: string[];
-  /** Initial selection (used when re-entering the step) */
   initial?: AttachDocumentsResult;
   onBack: () => void;
   onContinue: (result: AttachDocumentsResult) => void;
 }
+
+const UUID_PREFIX_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[_-]/i;
+
+export const cleanFileName = (fileName: string) => {
+  const matchingDocType = DOCUMENT_TYPES.find((dt) =>
+    fileName.startsWith(dt.id + "_"),
+  );
+  if (matchingDocType) {
+    fileName = fileName.substring((matchingDocType.id + "_").length);
+  }
+  fileName = fileName.replace(UUID_PREFIX_RE, "");
+  const lastDot = fileName.lastIndexOf(".");
+  if (lastDot !== -1) {
+    fileName =
+      fileName.substring(0, lastDot).replace(/-/g, " ") +
+      fileName.substring(lastDot);
+  } else {
+    fileName = fileName.replace(/-/g, " ");
+  }
+  return fileName;
+};
+
+const REQUIRED_DOC_TYPES = ["DRIVERS_LICENSE", "SSN_CARD", "PROOF_OF_ADDRESS"];
+const OPTIONAL_DOC_TYPES = [
+  "FTC_REPORT",
+  "POLICE_REPORT",
+  "BANKRUPTCY_PAPERS",
+  "PAYMENT_RECEIPT",
+  "GOODWILL_LETTER",
+  "CEASE_AND_DESIST",
+  "METHOD_OF_VERIFICATION",
+  "ACCOUNT_CLOSURE_CONFIRMATION",
+];
 
 export function AttachDocumentsStep({
   recipientLabel,
@@ -60,22 +104,19 @@ export function AttachDocumentsStep({
   onBack,
   onContinue,
 }: Props) {
-  // ---- state ----
+  const { user } = useAuth();
+  const userId = user?.uid || "";
+  const { userDocuments, isLoading, refetch } = useUserDocumentsQuery({
+    userId,
+  });
+  const { deleteDocument, isDeleting } = useUserDocumentMutation();
+
   const [requiredIds, setRequiredIds] = useState<string[]>(
-    initial?.requiredIds ?? REQUIRED_IDENTITY_DOCS.map((d) => d.id),
+    initial?.requiredIds ?? [],
   );
-
-  const initialOptional = useMemo(() => {
-    if (initial?.optionalIds) return initial.optionalIds;
-    // Auto-recommend optional docs whose reason matches any selected reason.
-    return OPTIONAL_SUPPORTING_DOCS.filter(
-      (d) =>
-        d.autoRecommendForReason &&
-        reasonCodes.includes(d.autoRecommendForReason),
-    ).map((d) => d.id);
-  }, [initial, reasonCodes]);
-
-  const [optionalIds, setOptionalIds] = useState<string[]>(initialOptional);
+  const [optionalIds, setOptionalIds] = useState<string[]>(
+    initial?.optionalIds ?? [],
+  );
   const [libraryIds, setLibraryIds] = useState<string[]>(
     initial?.libraryIds ?? [],
   );
@@ -83,7 +124,46 @@ export function AttachDocumentsStep({
     initial?.redactionConfirmed ?? false,
   );
 
-  // ---- toggles ----
+  const [previewDoc, setPreviewDoc] = useState<any>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [docToDelete, setDocToDelete] = useState<any>(null);
+
+  // Group docs
+  const { requiredDocs, optionalDocs, otherDocs } = useMemo(() => {
+    const req: any[] = [];
+    const opt: any[] = [];
+    const oth: any[] = [];
+    if (!userDocuments)
+      return { requiredDocs: req, optionalDocs: opt, otherDocs: oth };
+
+    userDocuments.forEach((doc: any) => {
+      const fileName = doc.name.split("/").pop() || "";
+      const matchingDocType = DOCUMENT_TYPES.find((dt) =>
+        fileName.startsWith(dt.id + "_"),
+      );
+
+      if (matchingDocType) {
+        if (REQUIRED_DOC_TYPES.includes(matchingDocType.id)) {
+          req.push({ ...doc, docType: matchingDocType });
+        } else if (OPTIONAL_DOC_TYPES.includes(matchingDocType.id)) {
+          opt.push({ ...doc, docType: matchingDocType });
+        } else {
+          oth.push({ ...doc, docType: matchingDocType });
+        }
+      } else {
+        oth.push({ ...doc, docType: null });
+      }
+    });
+    return { requiredDocs: req, optionalDocs: opt, otherDocs: oth };
+  }, [userDocuments]);
+
+  // Pre-select required docs if none are selected and they just loaded
+  useEffect(() => {
+    if (requiredDocs.length > 0 && requiredIds.length === 0 && !initial) {
+      setRequiredIds(requiredDocs.map((d) => d.path));
+    }
+  }, [requiredDocs, requiredIds, initial]);
+
   const toggle = (
     id: string,
     list: string[],
@@ -92,45 +172,70 @@ export function AttachDocumentsStep({
     setter(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
   };
 
-  // ---- summary maths ----
+  const handleOpenDeleteDialog = (doc: any) => {
+    setDocToDelete(doc);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!docToDelete) return;
+    await deleteDocument({ path: docToDelete.path });
+    setIsDeleteDialogOpen(false);
+    setDocToDelete(null);
+    refetch();
+    // Remove from selections
+    setRequiredIds((prev) => prev.filter((p) => p !== docToDelete.path));
+    setOptionalIds((prev) => prev.filter((p) => p !== docToDelete.path));
+    setLibraryIds((prev) => prev.filter((p) => p !== docToDelete.path));
+  };
+
   const summary = useMemo(() => {
-    const reqDocs = REQUIRED_IDENTITY_DOCS.filter((d) =>
-      requiredIds.includes(d.id),
+    const allSelected = [...requiredIds, ...optionalIds, ...libraryIds];
+    const selectedDocs = (userDocuments || []).filter((d: any) =>
+      allSelected.includes(d.path),
     );
-    const optDocs = OPTIONAL_SUPPORTING_DOCS.filter((d) =>
-      optionalIds.includes(d.id),
+    const totalCount = selectedDocs.length;
+    const totalBytes = selectedDocs.reduce(
+      (s: number, d: any) => s + (d.size || 0),
+      0,
     );
-    const libDocs = MOCK_USER_DOCUMENTS.filter((d) =>
-      libraryIds.includes(d.id),
-    );
-    const totalCount = reqDocs.length + optDocs.length + libDocs.length;
-    const totalBytes =
-      reqDocs.reduce((s, d) => s + d.estimatedSizeBytes, 0) +
-      optDocs.reduce((s, d) => s + d.estimatedSizeBytes, 0) +
-      libDocs.reduce((s, d) => s + d.sizeBytes, 0);
-    const pages = 1 + totalCount; // 1 page letter + ~1 page per attachment (avg)
+    const pages = 1 + totalCount; // 1 page letter + ~1 page per attachment
     const postageClass =
       pages <= 5
         ? "USPS First-Class (1 oz)"
         : `USPS First-Class (${Math.ceil(pages / 5)} oz)`;
     return { totalCount, totalBytes, pages, postageClass };
-  }, [requiredIds, optionalIds, libraryIds]);
+  }, [requiredIds, optionalIds, libraryIds, userDocuments]);
 
-  // Continue gate: must have DL + POA + redaction confirmed.
-  const hasDL = requiredIds.includes("req-dl");
-  const hasPOA = requiredIds.includes("req-poa");
+  const hasDL = requiredDocs.some(
+    (d) => d.docType?.id === "DRIVERS_LICENSE" && requiredIds.includes(d.path),
+  );
+  const hasPOA = requiredDocs.some(
+    (d) => d.docType?.id === "PROOF_OF_ADDRESS" && requiredIds.includes(d.path),
+  );
   const canContinue = hasDL && hasPOA && redactionConfirmed;
 
-  // Scroll to top whenever this step mounts (when reached via demo toolbar)
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, []);
 
+  const getMissingRequired = () => {
+    const missing = [];
+    if (!requiredDocs.some((d) => d.docType?.id === "DRIVERS_LICENSE")) {
+      missing.push(DOCUMENT_TYPES.find((d) => d.id === "DRIVERS_LICENSE"));
+    }
+    if (!requiredDocs.some((d) => d.docType?.id === "SSN_CARD")) {
+      missing.push(DOCUMENT_TYPES.find((d) => d.id === "SSN_CARD"));
+    }
+    if (!requiredDocs.some((d) => d.docType?.id === "PROOF_OF_ADDRESS")) {
+      missing.push(DOCUMENT_TYPES.find((d) => d.id === "PROOF_OF_ADDRESS"));
+    }
+    return missing.filter(Boolean) as DocumentType[];
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      {/* Main column */}
       <div className="lg:col-span-2 space-y-5">
-        {/* Heading */}
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-600">
             Mail Letter — Step 1 of 3
@@ -144,70 +249,96 @@ export function AttachDocumentsStep({
           </p>
         </div>
 
-        {/* Required Identity Documents */}
         <Section
           icon={<ShieldCheck className="w-4 h-4" />}
           iconTone="brand"
           title="Required Identity Documents"
           subtitle="Bureaus reject disputes without these. Recommended on by default."
         >
-          <div className="space-y-2">
-            {REQUIRED_IDENTITY_DOCS.map((doc) => (
-              <DocCheckRow
-                key={doc.id}
-                checked={requiredIds.includes(doc.id)}
-                onToggle={() => toggle(doc.id, requiredIds, setRequiredIds)}
-                label={doc.label}
-                description={doc.description}
-                sizeBytes={doc.estimatedSizeBytes}
-                badge="Recommended"
-              />
+          <div className="space-y-4">
+            {requiredDocs.length > 0 && (
+              <div className="space-y-2">
+                {requiredDocs.map((doc) => (
+                  <DocCheckRow
+                    key={doc.path}
+                    doc={doc}
+                    checked={requiredIds.includes(doc.path)}
+                    onToggle={() =>
+                      toggle(doc.path, requiredIds, setRequiredIds)
+                    }
+                    onDelete={() => handleOpenDeleteDialog(doc)}
+                    onPreview={() => setPreviewDoc(doc)}
+                    badge={
+                      doc.docType?.id === "DRIVERS_LICENSE" ||
+                      doc.docType?.id === "PROOF_OF_ADDRESS"
+                        ? "Required"
+                        : "Recommended"
+                    }
+                  />
+                ))}
+              </div>
+            )}
+
+            {getMissingRequired().map((dt) => (
+              <div key={dt.id} className="mt-4">
+                <UploadFile
+                  userId={userId}
+                  documentType={dt}
+                  titleOverride={`Missing: ${dt.title}`}
+                  descriptionOverride={dt.description}
+                />
+              </div>
             ))}
           </div>
         </Section>
 
-        {/* Optional Supporting Documents */}
         <Section
           icon={<Sparkles className="w-4 h-4" />}
           iconTone="violet"
           title="Optional Supporting Documents"
           subtitle="Add proof that strengthens specific dispute reasons."
         >
-          <div className="space-y-2">
-            {OPTIONAL_SUPPORTING_DOCS.map((doc) => {
-              const autoRec =
-                doc.autoRecommendForReason &&
-                reasonCodes.includes(doc.autoRecommendForReason);
-              return (
-                <DocCheckRow
-                  key={doc.id}
-                  checked={optionalIds.includes(doc.id)}
-                  onToggle={() => toggle(doc.id, optionalIds, setOptionalIds)}
-                  label={doc.label}
-                  description={doc.description}
-                  sizeBytes={doc.estimatedSizeBytes}
-                  badge={autoRec ? "Auto-suggested" : undefined}
-                  badgeTone={autoRec ? "amber" : undefined}
-                />
-              );
-            })}
+          <div className="space-y-4">
+            {optionalDocs.length > 0 && (
+              <div className="space-y-2">
+                {optionalDocs.map((doc) => (
+                  <DocCheckRow
+                    key={doc.path}
+                    doc={doc}
+                    checked={optionalIds.includes(doc.path)}
+                    onToggle={() =>
+                      toggle(doc.path, optionalIds, setOptionalIds)
+                    }
+                    onDelete={() => handleOpenDeleteDialog(doc)}
+                    onPreview={() => setPreviewDoc(doc)}
+                  />
+                ))}
+              </div>
+            )}
+
+            <div className="mt-2 text-sm text-gray-500 bg-gray-50 p-3 rounded-xl border border-dashed border-gray-200">
+              Need to attach a Police Report, FTC Report, or other specific
+              proof? Upload it in the library below.
+            </div>
           </div>
         </Section>
 
-        {/* From My Documents Library */}
         <Section
           icon={<Layers className="w-4 h-4" />}
           iconTone="emerald"
           title="From My Documents Library"
-          subtitle="Files you’ve already uploaded to CEG — reuse them on this dispute."
+          subtitle="Files you've already uploaded to CEG - reuse them on this dispute."
         >
           <DocumentLibraryPicker
+            userId={userId}
+            docs={otherDocs}
             selectedIds={libraryIds}
             onToggle={(id) => toggle(id, libraryIds, setLibraryIds)}
+            onPreview={setPreviewDoc}
+            onDelete={handleOpenDeleteDialog}
           />
         </Section>
 
-        {/* Privacy notice */}
         <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
@@ -215,7 +346,7 @@ export function AttachDocumentsStep({
             </div>
             <div className="flex-1">
               <div className="text-sm font-semibold text-gray-900">
-                Privacy &amp; SSN Protection
+                Privacy & SSN Protection
               </div>
               <p className="text-xs text-gray-600 mt-1 leading-relaxed">
                 We recommend redacting all but the last 4 digits of your SSN on
@@ -236,7 +367,6 @@ export function AttachDocumentsStep({
           </div>
         </div>
 
-        {/* Mobile sticky bottom bar substitute (back/continue) */}
         <div className="lg:hidden flex items-center gap-2 pt-2">
           <button
             onClick={onBack}
@@ -266,7 +396,6 @@ export function AttachDocumentsStep({
         </div>
       </div>
 
-      {/* Sidebar summary (desktop) */}
       <div className="hidden lg:block">
         <div className="sticky top-4">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
@@ -306,7 +435,7 @@ export function AttachDocumentsStep({
                   {summary.totalCount === 1 ? "" : "s"}
                 </div>
                 <div className="text-[11px] text-gray-500 mt-0.5">
-                  {formatFileSize(summary.totalBytes)} total
+                  {formatFileSize(summary.totalBytes || 0)} total
                 </div>
               </SummaryRow>
               <div className="pt-3 border-t border-gray-100 space-y-1.5">
@@ -325,7 +454,6 @@ export function AttachDocumentsStep({
               </div>
             </div>
 
-            {/* Continue CTA */}
             <button
               disabled={!canContinue}
               onClick={() =>
@@ -363,11 +491,92 @@ export function AttachDocumentsStep({
           </div>
         </div>
       </div>
+
+      <Sheet
+        open={!!previewDoc}
+        onOpenChange={(open) => !open && setPreviewDoc(null)}
+      >
+        <SheetContent
+          side="bottom"
+          className="h-[85vh] flex flex-col p-0 z-[100]"
+        >
+          <SheetHeader className="p-4 pb-2 border-b flex-shrink-0">
+            <SheetTitle className="text-sm break-words text-left leading-snug">
+              {previewDoc &&
+                cleanFileName(previewDoc.name.split("/").pop() || "")}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-hidden p-2">
+            {previewDoc?.contentType?.startsWith("image/") ? (
+              <ImageZoom>
+                <Image
+                  src={previewDoc.signedUrl}
+                  alt={previewDoc.name}
+                  className="w-full h-full object-contain"
+                  width={800}
+                  height={600}
+                  unoptimized
+                />
+              </ImageZoom>
+            ) : previewDoc?.contentType === "application/pdf" ? (
+              <iframe
+                src={`${previewDoc.signedUrl}#toolbar=1&view=FitH`}
+                title={previewDoc.name}
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-sm text-muted-foreground">
+                  Preview unavailable for this file type
+                </p>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md z-[100]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base sm:text-lg">
+              Delete Document?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              This action cannot be undone. This will permanently delete:
+              <span className="font-semibold block mt-2 break-all text-xs sm:text-sm text-gray-700">
+                {cleanFileName(docToDelete?.name.split("/").pop() || "")}
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              className="cursor-pointer w-full sm:w-auto"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="cursor-pointer w-full sm:w-auto"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting && (
+                <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {isDeleting ? "Deleting..." : "Yes, Delete File"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
-
-// ---------- subcomponents ----------
 
 function Section({
   icon,
@@ -407,20 +616,20 @@ function Section({
   );
 }
 
-function DocCheckRow({
+export function DocCheckRow({
+  doc,
   checked,
   onToggle,
-  label,
-  description,
-  sizeBytes,
+  onDelete,
+  onPreview,
   badge,
   badgeTone = "brand",
 }: {
+  doc: any;
   checked: boolean;
   onToggle: () => void;
-  label: string;
-  description: string;
-  sizeBytes: number;
+  onDelete: () => void;
+  onPreview: () => void;
   badge?: string;
   badgeTone?: "brand" | "amber";
 }) {
@@ -428,10 +637,14 @@ function DocCheckRow({
     badgeTone === "amber"
       ? "bg-amber-50 text-amber-700 border-amber-100"
       : "bg-brand-50 text-brand-700 border-brand-100";
+
+  const rawName = doc.name.split("/").pop() || "";
+  const displayName = cleanFileName(rawName);
+
   return (
-    <button
+    <div
       onClick={onToggle}
-      className={`w-full text-left rounded-xl border p-3 transition-all flex items-start gap-3 ${
+      className={`group w-full text-left rounded-xl border p-3 transition-all flex items-start gap-3 cursor-pointer ${
         checked
           ? "border-brand-500 bg-brand-50/40 shadow-sm"
           : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
@@ -448,7 +661,12 @@ function DocCheckRow({
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-semibold text-gray-900">{label}</span>
+          <span
+            className="text-sm font-semibold text-gray-900 truncate"
+            title={displayName}
+          >
+            {displayName}
+          </span>
           {badge && (
             <span
               className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border ${badgeClass}`}
@@ -458,13 +676,35 @@ function DocCheckRow({
           )}
         </div>
         <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
-          {description}
+          {doc.docType ? doc.docType.title : "Document"}
         </div>
       </div>
-      <div className="text-[11px] font-mono tabular-nums text-gray-400 shrink-0">
-        ~{formatFileSize(sizeBytes)}
+
+      {/* Actions */}
+      <div
+        className="flex items-center gap-1 shrink-0 ml-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onPreview}
+          className="p-1.5 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors"
+          title="Preview"
+        >
+          <Eye className="w-4 h-4" />
+        </button>
+        <button
+          onClick={onDelete}
+          className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors"
+          title="Delete"
+        >
+          <Trash2Icon className="w-4 h-4" />
+        </button>
       </div>
-    </button>
+
+      <div className="hidden sm:block text-[11px] font-mono tabular-nums text-gray-400 shrink-0 ml-2 mt-1.5">
+        ~{formatFileSize(doc.size || 0)}
+      </div>
+    </div>
   );
 }
 
