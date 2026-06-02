@@ -21,6 +21,41 @@ export const useGetConsumerReportingAgencies = () => {
   });
 };
 
+export const useCreditAgenciesData = () => {
+  const {
+    data: allAgencies = [],
+    isLoading,
+    error,
+  } = useGetConsumerReportingAgencies();
+
+  const bureausList = allAgencies.filter(
+    (a) => a.category === "bureau" && a.isActive !== false,
+  );
+  const craList = allAgencies.filter(
+    (a) => a.category === "cra" && a.isActive !== false,
+  );
+
+  const bureauRecord = bureausList.reduce(
+    (acc, curr) => {
+      acc[curr.key as any] = curr;
+      return acc;
+    },
+    {} as Record<string, AgencySchemaForm>,
+  );
+
+  const getAgency = (key: string) => allAgencies.find((a) => a.key === key);
+
+  return {
+    allAgencies,
+    bureausList,
+    craList,
+    bureauRecord,
+    getAgency,
+    isLoading,
+    error,
+  };
+};
+
 export const useAddConsumerReportingAgency = () => {
   const queryClient = useQueryClient();
 

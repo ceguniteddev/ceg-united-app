@@ -25,11 +25,12 @@ import { SelectItemsView } from "@/components/credit-repair/SelectItemsView";
 import { OverviewView } from "@/components/credit-repair/OverviewView";
 import { StageTabs } from "@/components/credit-repair/StageTabs";
 import { useCreditRepairState } from "@/hooks/useCreditRepairState";
-import { BUREAUS } from "@/lib/creditAgencies";
+import { useCreditAgenciesData } from "@/hooks/consumer-reporting-agency";
 import type { GeneratedLetter } from "@/lib/credit-repair-types";
 
 export default function CreditRepair({ userId }: { userId: string }) {
   const s = useCreditRepairState(userId);
+  const { bureauRecord } = useCreditAgenciesData();
   const [previewLetter, setPreviewLetter] = useState<GeneratedLetter | null>(
     null,
   );
@@ -175,12 +176,14 @@ export default function CreditRepair({ userId }: { userId: string }) {
       <GeneratingLettersModal
         open={s.view === "generating"}
         bureauCount={
-          s.selectedAgencies.filter((k) => Object.keys(BUREAUS).includes(k))
-            .length
+          s.selectedAgencies.filter((k) =>
+            Object.keys(bureauRecord).includes(k),
+          ).length
         }
         craCount={
-          s.selectedAgencies.filter((k) => !Object.keys(BUREAUS).includes(k))
-            .length
+          s.selectedAgencies.filter(
+            (k) => !Object.keys(bureauRecord).includes(k),
+          ).length
         }
         onComplete={s.finishGenerating}
       />

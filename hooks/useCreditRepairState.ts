@@ -16,7 +16,7 @@ import {
   mockPositiveFactors,
   mockReportHealth,
 } from "@/lib/credit-repair-mockData";
-import { ALL_AGENCIES, BUREAUS } from "@/lib/creditAgencies";
+import { useCreditAgenciesData } from "@/hooks/consumer-reporting-agency";
 import { generateLetters } from "@/lib/disputeLetterGenerator";
 import type { TrackingRow } from "@/components/credit-repair/DisputeTrackingTable";
 import { useClientCRSReportQuery } from "@/hooks/crs";
@@ -34,6 +34,8 @@ import { CreditReportWithId } from "@/types/crs";
 // (items, disputes, letters) would round-trip through Firestore.
 
 export function useCreditRepairState(userId?: string) {
+  const { allAgencies, bureauRecord } = useCreditAgenciesData();
+
   const { crsReport, isLoading } = useClientCRSReportQuery({
     userId: userId || "",
   });
@@ -510,7 +512,7 @@ export function useCreditRepairState(userId?: string) {
 
   const finishGenerating = useCallback(() => {
     // Build letters now (deterministic).
-    const agencies = ALL_AGENCIES.filter((a) =>
+    const agencies = allAgencies.filter((a) =>
       selectedAgencies.includes(a.key),
     );
     const selectedItems = items.filter((i) => selectedItemIds.includes(i.id));
@@ -522,7 +524,7 @@ export function useCreditRepairState(userId?: string) {
     });
     setLetters(generated);
     setView("letters-ready");
-  }, [items, reasonByItem, selectedAgencies, selectedItemIds]);
+  }, [items, reasonByItem, selectedAgencies, selectedItemIds, allAgencies]);
 
   // ---------- mail flow actions ----------
   const startMailFlow = useCallback((agencyKeys: string[]) => {
@@ -574,7 +576,7 @@ export function useCreditRepairState(userId?: string) {
             : itemsBase.slice(0, 5);
         const newRows: TrackingRow[] = [];
         for (const r of results) {
-          const isBureau = !!BUREAUS[r.agencyKey as Bureau];
+          const isBureau = !!bureauRecord[r.agencyKey as Bureau];
           const itemsForAgency = isBureau
             ? selectedBase.filter((i) =>
                 i.bureaus.includes(r.agencyKey as Bureau),
@@ -637,7 +639,7 @@ export function useCreditRepairState(userId?: string) {
 
       setView("mailing-sent");
     },
-    [items, letters, selectedItemIds],
+    [items, letters, selectedItemIds, bureauRecord],
   );
 
   const cancelMailFlow = useCallback(() => {
@@ -676,7 +678,7 @@ export function useCreditRepairState(userId?: string) {
           selectedItemIds.includes(i.id),
         );
         // Bureau letters are scoped to items reported on that bureau.
-        const isBureau = !!BUREAUS[agencyKey as Bureau];
+        const isBureau = !!bureauRecord[agencyKey as Bureau];
         const itemsForAgency = isBureau
           ? selectedItems.filter((i) => i.bureaus.includes(agencyKey as Bureau))
           : selectedItems;
@@ -707,7 +709,7 @@ export function useCreditRepairState(userId?: string) {
         return [...prev, ...newRows];
       });
     },
-    [items, letters, selectedItemIds],
+    [items, letters, selectedItemIds, bureauRecord],
   );
 
   // ---------- refresh from CRS ----------

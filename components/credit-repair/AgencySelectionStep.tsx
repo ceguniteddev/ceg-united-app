@@ -1,7 +1,6 @@
 import { ArrowLeft, ArrowRight, Info, MapPin } from "lucide-react";
-import { BUREAUS } from "@/lib/creditAgencies";
 import type { Bureau, NegativeItem } from "@/lib/credit-repair-types";
-import { useGetConsumerReportingAgencies } from "@/hooks/consumer-reporting-agency";
+import { useCreditAgenciesData } from "@/hooks/consumer-reporting-agency";
 
 interface Props {
   items: NegativeItem[];
@@ -18,10 +17,11 @@ export function AgencySelectionStep({
   onBack,
   onContinue,
 }: Props) {
-  const { data: allAgencies, isLoading } = useGetConsumerReportingAgencies();
-  const thirdPartyAgencies =
-    allAgencies?.filter((a) => a.category === "cra" && a.isActive !== false) ||
-    [];
+  const {
+    craList: thirdPartyAgencies,
+    bureausList: bureauList,
+    isLoading,
+  } = useCreditAgenciesData();
 
   const reportedBureaus = new Set<Bureau>();
   for (const item of items)
@@ -34,8 +34,6 @@ export function AgencySelectionStep({
         : [...selectedAgencies, key],
     );
   };
-
-  const bureauList = Object.values(BUREAUS);
 
   const bureauCount = selectedAgencies.filter((k) =>
     bureauList.some((b) => b.key === k),

@@ -1,5 +1,5 @@
 import { Send } from "lucide-react";
-import { BUREAUS } from "@/lib/creditAgencies";
+import { useCreditAgenciesData } from "@/hooks/consumer-reporting-agency";
 import type { GeneratedLetter } from "@/lib/credit-repair-types";
 import { LetterCard } from "@/components/credit-repair/LetterCard";
 import { useCreditRepairState } from "@/hooks/useCreditRepairState";
@@ -13,13 +13,14 @@ export function LettersReadyView({
   onPreview: (l: GeneratedLetter) => void;
   onContinueToTracking: () => void;
 }) {
+  const { bureauRecord } = useCreditAgenciesData();
   const allLetters = Object.values(state.letters);
   const sentCount = allLetters.filter((l) => l.sentAt).length;
   const mailedCount = allLetters.filter((l) => l.mailedAt).length;
 
   // Count items per agency
   const itemsForAgency = (key: string): number => {
-    const isBureau = !!BUREAUS[key as keyof typeof BUREAUS];
+    const isBureau = !!bureauRecord[key as keyof typeof bureauRecord];
     const items = state.selectedItems.length
       ? state.selectedItems
       : state.items.slice(0, 5);
@@ -84,7 +85,9 @@ export function LettersReadyView({
             <LetterCard
               letter={letter}
               itemCount={itemsForAgency(letter.agencyKey)}
-              isBureau={!!BUREAUS[letter.agencyKey as keyof typeof BUREAUS]}
+              isBureau={
+                !!bureauRecord[letter.agencyKey as keyof typeof bureauRecord]
+              }
               onPreview={() => onPreview(letter)}
               onMarkSent={() => state.markLetterSent(letter.agencyKey)}
               onMail={() => state.startMailFlow([letter.agencyKey])}
