@@ -1,15 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  Bot,
-  CheckCircle2,
-  FileSearch,
-  ListChecks,
-  ShieldCheck,
-  Send,
-} from "lucide-react";
-import { DemoToolbar } from "@/components/credit-repair/DemoToolbar";
+import { Bot, CheckCircle2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -33,7 +25,6 @@ import { SelectItemsView } from "@/components/credit-repair/SelectItemsView";
 import { OverviewView } from "@/components/credit-repair/OverviewView";
 import { StageTabs } from "@/components/credit-repair/StageTabs";
 import { useCreditRepairState } from "@/hooks/useCreditRepairState";
-import { mockUser } from "@/lib/credit-repair-mockData";
 import { BUREAUS } from "@/lib/creditAgencies";
 import type { GeneratedLetter } from "@/lib/credit-repair-types";
 

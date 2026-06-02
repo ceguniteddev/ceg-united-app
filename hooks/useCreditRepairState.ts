@@ -89,6 +89,15 @@ export function useCreditRepairState(userId?: string) {
       ? reportsByTimestamp[selectedTimestamp] || []
       : [];
 
+    const currentIndex = timestamps.indexOf(selectedTimestamp);
+    const prevTimestamp =
+      currentIndex >= 0 && currentIndex + 1 < timestamps.length
+        ? timestamps[currentIndex + 1]
+        : null;
+    const prevReports = prevTimestamp
+      ? reportsByTimestamp[prevTimestamp] || []
+      : [];
+
     // Group reports to find the latest within selected
     const bureauMap: any = { Experian: null, TransUnion: null, Equifax: null };
     for (const d of selectedReports) {
@@ -109,6 +118,34 @@ export function useCreditRepairState(userId?: string) {
             new Date(bureauMap[bureauKey].createdAt).getTime()
           ) {
             bureauMap[bureauKey] = d;
+          }
+        }
+      }
+    }
+
+    const prevBureauMap: any = {
+      Experian: null,
+      TransUnion: null,
+      Equifax: null,
+    };
+    for (const d of prevReports) {
+      if (
+        d.type &&
+        ["equifax", "experian", "transunion"].includes(d.type.toLowerCase())
+      ) {
+        const typeStr = d.type.toLowerCase();
+        let bureauKey = "Experian";
+        if (typeStr === "equifax") bureauKey = "Equifax";
+        if (typeStr === "transunion") bureauKey = "TransUnion";
+
+        if (!prevBureauMap[bureauKey]) {
+          prevBureauMap[bureauKey] = d;
+        } else {
+          if (
+            new Date(d.createdAt).getTime() >
+            new Date(prevBureauMap[bureauKey].createdAt).getTime()
+          ) {
+            prevBureauMap[bureauKey] = d;
           }
         }
       }
@@ -169,25 +206,42 @@ export function useCreditRepairState(userId?: string) {
 
     setItems(parsedItems.length > 0 ? parsedItems : mockNegativeItems);
 
+    const expScore =
+      toNum(bureauMap.Experian?.report?.scores?.[0]?.scoreValue) || 0;
+    const prevExpScore =
+      toNum(prevBureauMap.Experian?.report?.scores?.[0]?.scoreValue) || 0;
+
+    const eqScore =
+      toNum(bureauMap.Equifax?.report?.scores?.[0]?.scoreValue) || 0;
+    const prevEqScore =
+      toNum(prevBureauMap.Equifax?.report?.scores?.[0]?.scoreValue) || 0;
+
+    const tuScore =
+      toNum(bureauMap.TransUnion?.report?.scores?.[0]?.scoreValue) || 0;
+    const prevTuScore =
+      toNum(prevBureauMap.TransUnion?.report?.scores?.[0]?.scoreValue) || 0;
+
     const parsedScores = [
       {
         bureau: "experian" as Bureau,
-        score: toNum(bureauMap.Experian?.report?.scores?.[0]?.scoreValue) || 0,
-        delta: 0,
+        score: expScore,
+        delta: expScore && prevExpScore ? expScore - prevExpScore : 0,
         pulledAt: bureauMap.Experian?.createdAt || "",
+        prevScore: prevExpScore,
       },
       {
         bureau: "equifax" as Bureau,
-        score: toNum(bureauMap.Equifax?.report?.scores?.[0]?.scoreValue) || 0,
-        delta: 0,
+        score: eqScore,
+        delta: eqScore && prevEqScore ? eqScore - prevEqScore : 0,
         pulledAt: bureauMap.Equifax?.createdAt || "",
+        prevScore: prevEqScore,
       },
       {
         bureau: "transunion" as Bureau,
-        score:
-          toNum(bureauMap.TransUnion?.report?.scores?.[0]?.scoreValue) || 0,
-        delta: 0,
+        score: tuScore,
+        delta: tuScore && prevTuScore ? tuScore - prevTuScore : 0,
         pulledAt: bureauMap.TransUnion?.createdAt || "",
+        prevScore: prevTuScore,
       },
     ];
     setScores(parsedScores);
@@ -427,13 +481,29 @@ export function useCreditRepairState(userId?: string) {
   const goReasons = useCallback(() => {
     // Auto-toggle on bureaus that have at least one selected item.
     const bureausInPlay = new Set<Bureau>();
+    const newReasons = { ...reasonByItem };
+
     for (const id of selectedItemIds) {
       const it = items.find((x) => x.id === id);
-      if (it) for (const b of it.bureaus) bureausInPlay.add(b);
+      if (it) {
+        for (const b of it.bureaus) bureausInPlay.add(b);
+
+        // Auto-select dispute reason based on item type if not already set
+        if (!newReasons[id]) {
+          let code = "cannot-verify"; // default fallback
+          if (it.type === "late-payment") code = "never-late";
+          else if (it.type === "inquiry") code = "unauthorized-inquiry";
+          else if (it.type === "bankruptcy" || it.type === "public-record")
+            code = "not-mine";
+
+          newReasons[id] = { reasonCode: code };
+        }
+      }
     }
+    setReasonByItem(newReasons);
     setSelectedAgencies(Array.from(bureausInPlay));
     setView("choose-reasons");
-  }, [items, selectedItemIds]);
+  }, [items, selectedItemIds, reasonByItem]);
 
   const goAgencies = useCallback(() => setView("pick-agencies"), []);
   const goGenerating = useCallback(() => setView("generating"), []);

@@ -108,37 +108,58 @@ export function transformClientDataToDashboard(
 
   // 2. Credit Scores
   const creditReports =
-    crsReportData?.filter((d): d is any => {
-      if (d.id === "issues" || d.id === "dti") return false;
-      // Check if it's a credit report with scores (not IssueItem or DTI)
-      return Array.isArray((d as any).report?.scores);
-    }) || [];
+    crsReportData
+      ?.filter((d): d is any => {
+        if (d.id === "issues" || d.id === "dti") return false;
+        // Check if it's a credit report with scores (not IssueItem or DTI)
+        return Array.isArray((d as any).report?.scores);
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || 0).getTime() -
+          new Date(a.createdAt || 0).getTime(),
+      ) || [];
 
-  const creditScores: CreditScore[] = [];
-  const seenBureaus = new Set<string>();
+  const creditScoresMap = new Map<string, CreditScore>();
+  const prevScoresMap = new Map<string, number>();
 
   for (const reportDoc of creditReports) {
     const bureau = detectBureau(reportDoc.report);
-    if (!bureau || seenBureaus.has(bureau)) continue;
+    if (!bureau) continue;
 
     const score = reportDoc.report.scores?.[0];
     if (!score?.scoreValue) continue;
 
     const scoreValue = Number(score.scoreValue);
-    const accountNum =
-      reportDoc.report.creditFiles?.[0]?.creditFileDetail?.fileNumber ||
-      `XX-XXX${Math.floor(Math.random() * 9999)}`;
 
-    creditScores.push({
-      bureau,
-      score: scoreValue,
-      rating: getRating(scoreValue),
-      accountNumber: accountNum,
-      lastUpdated: reportDoc.createdAt || new Date().toISOString(),
-    });
+    if (!creditScoresMap.has(bureau)) {
+      const accountNum =
+        reportDoc.report.creditFiles?.[0]?.creditFileDetail?.fileNumber ||
+        `XX-XXX${Math.floor(Math.random() * 9999)}`;
 
-    seenBureaus.add(bureau);
+      creditScoresMap.set(bureau, {
+        bureau,
+        score: scoreValue,
+        rating: getRating(scoreValue),
+        accountNumber: accountNum,
+        lastUpdated: reportDoc.createdAt || new Date().toISOString(),
+      });
+    } else if (!prevScoresMap.has(bureau)) {
+      prevScoresMap.set(bureau, scoreValue);
+    }
   }
+
+  const creditScores: CreditScore[] = Array.from(creditScoresMap.values()).map(
+    (cs) => {
+      const prevScore = prevScoresMap.get(cs.bureau) || 0;
+      const delta = prevScore ? cs.score - prevScore : 0;
+      return {
+        ...cs,
+        prevScore,
+        delta,
+      };
+    },
+  );
 
   // Fill missing bureaus with placeholders
   const allBureaus: Array<"experian" | "equifax" | "transunion"> = [
@@ -147,13 +168,15 @@ export function transformClientDataToDashboard(
     "transunion",
   ];
   for (const bureau of allBureaus) {
-    if (!seenBureaus.has(bureau)) {
+    if (!creditScoresMap.has(bureau)) {
       creditScores.push({
         bureau,
         score: 0,
         rating: "Poor",
         accountNumber: "N/A",
         lastUpdated: new Date().toISOString(),
+        prevScore: 0,
+        delta: 0,
       });
     }
   }

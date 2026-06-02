@@ -1,103 +1,139 @@
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
-import type { BureauScore } from '@/lib/credit-repair-types'
-
-const BUREAU_LABEL: Record<string, string> = {
-  experian: 'Experian',
-  equifax: 'Equifax',
-  transunion: 'TransUnion',
-}
-
-const BUREAU_ACCENT: Record<string, string> = {
-  experian: 'text-blue-600 bg-blue-50',
-  equifax: 'text-red-600 bg-red-50',
-  transunion: 'text-emerald-600 bg-emerald-50',
-}
-
-function band(score: number): { label: string; color: string } {
-  if (score >= 800) return { label: 'Excellent', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' }
-  if (score >= 740) return { label: 'Very Good', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' }
-  if (score >= 670) return { label: 'Good', color: 'bg-brand-50 text-brand-700 border-brand-100' }
-  if (score >= 580) return { label: 'Fair', color: 'bg-amber-50 text-amber-700 border-amber-100' }
-  return { label: 'Poor', color: 'bg-red-50 text-red-700 border-red-100' }
-}
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import type { BureauScore } from "@/lib/credit-repair-types";
+import Image from "next/image";
 
 function fmtPulled(iso: string): string {
-  const d = new Date(iso)
-  const diff = Date.now() - d.getTime()
-  const hours = Math.floor(diff / (1000 * 60 * 60))
-  if (hours < 1) return 'just now'
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
+  if (!iso) return "";
+  const d = new Date(iso);
+  const nth = (d: number) => {
+    if (d > 3 && d < 21) return "th";
+    switch (d % 10) {
+      case 1:
+        return "st";
+      case 2:
+        return "nd";
+      case 3:
+        return "rd";
+      default:
+        return "th";
+    }
+  };
+  const month = d.toLocaleDateString("en-US", { month: "short" });
+  const day = d.getDate();
+  const year = d.getFullYear();
+  return `${month} ${day}${nth(day)}, ${year}`;
 }
 
 export function BureauScoreCard({ score }: { score: BureauScore }) {
-  const b = band(score.score)
-  const accent = BUREAU_ACCENT[score.bureau]
+  const min = 300;
+  const max = 850;
+  const currentScore = score.score || 0;
+  const prevScore =
+    score.prevScore !== undefined
+      ? score.prevScore
+      : currentScore - score.delta;
 
-  // Score arc — visual progress 300-850
-  const pct = Math.max(0, Math.min(1, (score.score - 300) / 550))
-  const arcLength = 100
-  const filled = pct * arcLength
+  const pct = Math.max(0, Math.min(1, (currentScore - min) / (max - min)));
+  const angle = -180 + pct * 180;
+
+  // Capitalize bureau for image src
+  const bureauName =
+    score.bureau.charAt(0).toUpperCase() + score.bureau.slice(1);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5 card-hover">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2.5">
-          <div className={`w-9 h-9 rounded-xl ${accent} flex items-center justify-center font-bold text-sm`}>
-            {BUREAU_LABEL[score.bureau][0]}
-          </div>
-          <div className="text-sm font-semibold text-gray-900">
-            {BUREAU_LABEL[score.bureau]}
-          </div>
-        </div>
-        <span
-          className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-md border ${b.color}`}
-        >
-          {b.label}
-        </span>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-6 flex flex-col items-center justify-center">
+      {/* Bureau Logo */}
+      <div className="h-8 flex items-center justify-center mb-6">
+        <Image
+          src={`/icons/${bureauName}.png`}
+          alt={bureauName}
+          width={100}
+          height={32}
+          className="object-contain h-full w-auto"
+        />
       </div>
 
-      <div className="mt-4 flex items-end justify-between">
-        <div>
-          <div className="text-4xl font-bold text-gray-900 tabular-nums leading-none">
-            {score.score}
+      {/* Gauge and Score */}
+      <div className="relative w-full max-w-[200px] aspect-[2/1] mb-8">
+        <svg viewBox="0 0 200 100" className="w-full h-full overflow-visible">
+          <defs>
+            <linearGradient
+              id={`gaugeGradient-${score.bureau}`}
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="0%"
+            >
+              <stop offset="0%" stopColor="#ef4444" />
+              <stop offset="25%" stopColor="#ef4444" />
+              <stop offset="25%" stopColor="#f59e0b" />
+              <stop offset="50%" stopColor="#f59e0b" />
+              <stop offset="50%" stopColor="#3b82f6" />
+              <stop offset="75%" stopColor="#3b82f6" />
+              <stop offset="75%" stopColor="#22c55e" />
+              <stop offset="100%" stopColor="#22c55e" />
+            </linearGradient>
+          </defs>
+
+          {/* Colored track */}
+          <path
+            d="M 10 90 A 90 90 0 0 1 190 90"
+            fill="none"
+            stroke={`url(#gaugeGradient-${score.bureau})`}
+            strokeWidth="10"
+            strokeLinecap="round"
+          />
+
+          {/* Marker */}
+          <g transform={`translate(100, 90) rotate(${angle})`}>
+            <circle
+              cx="90"
+              cy="0"
+              r="5"
+              fill="#fff"
+              stroke="#f59e0b"
+              strokeWidth="2"
+            />
+          </g>
+        </svg>
+
+        {/* Inside the arc content */}
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
+          <div className="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-none">
+            {currentScore}
           </div>
-          <div className="mt-1.5 flex items-center gap-1.5 text-xs">
-            {score.delta > 0 ? (
-              <span className="inline-flex items-center gap-0.5 text-emerald-600 font-medium">
-                <TrendingUp className="w-3 h-3" />+{score.delta}
-              </span>
-            ) : score.delta < 0 ? (
-              <span className="inline-flex items-center gap-0.5 text-red-600 font-medium">
-                <TrendingDown className="w-3 h-3" />
-                {score.delta}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-0.5 text-gray-500 font-medium">
-                <Minus className="w-3 h-3" />0
-              </span>
-            )}
-            <span className="text-gray-400">since last pull</span>
+          <div className="text-[11px] sm:text-xs font-semibold text-gray-800 mt-1">
+            {fmtPulled(score.pulledAt)}
           </div>
         </div>
 
-        {/* Mini progress arc */}
-        <div className="text-right">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-            300 — 850
-          </div>
-          <div className="mt-2 w-[88px] h-1.5 rounded-full bg-gray-100 overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-brand-500 to-brand-600 transition-all duration-700"
-              style={{ width: `${filled}%` }}
-            />
-          </div>
-          <div className="mt-1.5 text-[11px] text-gray-500">
-            Updated {fmtPulled(score.pulledAt)}
-          </div>
+        {/* 300 and 850 labels */}
+        <div className="absolute -bottom-2 left-0 text-sm font-bold text-gray-800 -translate-x-2 translate-y-full">
+          300
+        </div>
+        <div className="absolute -bottom-2 right-0 text-sm font-bold text-gray-800 translate-x-2 translate-y-full">
+          850
+        </div>
+      </div>
+
+      {/* Delta */}
+      <div className="text-center mt-2">
+        <div
+          className={`text-3xl sm:text-4xl font-extrabold leading-none tracking-tight mb-2 ${
+            score.delta > 0
+              ? "text-emerald-500"
+              : score.delta < 0
+                ? "text-red-500"
+                : "text-gray-400"
+          }`}
+        >
+          {score.delta > 0 ? "+" : ""}
+          {score.delta}
+        </div>
+        <div className="text-sm font-semibold text-gray-700">
+          Prev Score: {prevScore}
         </div>
       </div>
     </div>
-  )
+  );
 }
