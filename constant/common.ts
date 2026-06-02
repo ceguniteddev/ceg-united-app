@@ -275,6 +275,11 @@ export const adminSidebarLinks: AdminSidebarGroup[] = [
         route: "/admin/system-config",
         label: "System Config",
       },
+      {
+        imgURL: "/icons/settings.svg",
+        route: "/admin/consumer-reporting-agency",
+        label: "Consumer Reporting Agency",
+      },
     ],
   },
 ];

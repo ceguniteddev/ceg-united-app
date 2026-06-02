@@ -69,3 +69,5 @@ export const LETTER_RECIPIENT = "letter-recipient";
 export const BROKERAGE_COLLECTION = "brokerages";
 
 export const FUNDING_SUBMISSION_DOCUMENTS = "funding-submission-documents";
+export const CONSUMER_REPORTING_AGENCY_COLLECTION =
+  "consumer-reporting-agencies";

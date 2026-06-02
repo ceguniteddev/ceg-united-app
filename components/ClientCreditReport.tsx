@@ -2,7 +2,6 @@
 import Spinner from "@/components/Spinner";
 import { useClientCRSReportQuery } from "@/hooks/crs";
 import { useCountUp } from "@/hooks/useCountUp";
-import { useAuth } from "@/provider/AuthContext";
 import {
   CreditReport,
   CreditReportWithId,
@@ -330,94 +329,7 @@ function getScoreRating(score: number) {
   return { label: "Poor", color: "text-red-600" };
 }
 
-// --- ScoreCard with animated semi-circle gauge ---
-const ScoreCard: React.FC<{
-  bureau: "Experian" | "Equifax" | "TransUnion";
-  score?: CreditScore;
-  index: number;
-}> = ({ bureau, score, index }) => {
-  const rawValue = score?.scoreValue ? Number(score.scoreValue) : 0;
-  const max = score?.scoreMaximumValue ? Number(score.scoreMaximumValue) : 850;
-  const animatedScore = useCountUp(rawValue, 1400);
-  const colors = bureauColors[bureau];
-
-  const radius = 70;
-  const circumference = Math.PI * radius;
-  const scoreRatio = max > 0 ? rawValue / max : 0;
-  const dashOffset = circumference * (1 - scoreRatio);
-  const pct = max > 0 ? Math.min(100, Math.round((rawValue / max) * 100)) : 0;
-  const rating = rawValue ? getScoreRating(rawValue) : null;
-
-  return (
-    <div
-      className={`bg-white rounded-xl border border-gray-100 shadow-card p-5 card-hover animate-fade-in-up stagger-${index + 1}`}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-            <Image
-              src={`/icons/${bureau}.png`}
-              alt={bureau}
-              width={28}
-              height={28}
-              className="object-contain"
-            />
-          </div>
-          <span className="text-sm font-semibold text-gray-900">{bureau}</span>
-        </div>
-        <span
-          className={`text-xs font-semibold px-2.5 py-1 rounded-full ${colors.bg} ${colors.text}`}
-        >
-          {rawValue ? `${pct}% of max` : "No score"}
-        </span>
-      </div>
-
-      {/* Semi-circle gauge */}
-      <div className="relative w-full flex justify-center mb-2">
-        <div className="relative w-[160px] h-[88px]">
-          <svg viewBox="0 0 180 100" className="w-full h-full">
-            <path
-              d="M 10 90 A 70 70 0 0 1 170 90"
-              fill="none"
-              strokeWidth="10"
-              strokeLinecap="round"
-              className="stroke-gray-100"
-            />
-            <path
-              d="M 10 90 A 70 70 0 0 1 170 90"
-              fill="none"
-              strokeWidth="10"
-              strokeLinecap="round"
-              className={colors.stroke}
-              strokeDasharray={`${circumference}`}
-              strokeDashoffset={`${dashOffset}`}
-              style={{
-                transition:
-                  "stroke-dashoffset 1.4s cubic-bezier(0.16, 1, 0.3, 1)",
-              }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-end pb-0">
-            <span className="text-3xl font-bold text-gray-900 font-mono">
-              {rawValue ? animatedScore : "—"}
-            </span>
-            {rating && (
-              <span className={`text-xs font-semibold ${rating.color}`}>
-                {rating.label}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {score?.modelName && (
-        <p className="text-[11px] text-gray-400 text-center mt-1 truncate">
-          {score.modelName}
-        </p>
-      )}
-    </div>
-  );
-};
+import { BureauScoreCard } from "@/components/credit-repair/BureauScoreCard";
 
 // --- Score History Bar Chart ---
 const ScoreHistoryChart: React.FC<{
@@ -1069,15 +981,60 @@ const ClientCreditReport = ({ userId, isAdminView, userData }: Props) => {
     [selectedReports],
   );
 
-  // Scores per bureau
-  const scoresByBureau: Record<
-    "Experian" | "TransUnion" | "Equifax",
-    CreditScore | undefined
-  > = {
-    Experian: bureauMap.Experian?.report.scores?.[0],
-    TransUnion: bureauMap.TransUnion?.report.scores?.[0],
-    Equifax: bureauMap.Equifax?.report.scores?.[0],
-  };
+  const prevReports = useMemo(() => {
+    const currentIndex = timestamps.indexOf(selectedTimestamp);
+    const prevTimestamp =
+      currentIndex >= 0 && currentIndex + 1 < timestamps.length
+        ? timestamps[currentIndex + 1]
+        : null;
+    return prevTimestamp ? reportsByTimestamp[prevTimestamp] || [] : [];
+  }, [timestamps, selectedTimestamp, reportsByTimestamp]);
+
+  const prevBureauMap = useMemo(
+    () => groupByBureau(prevReports),
+    [prevReports],
+  );
+
+  const parsedScores = useMemo(() => {
+    const expScore =
+      toNum(bureauMap.Experian?.report?.scores?.[0]?.scoreValue) || 0;
+    const prevExpScore =
+      toNum(prevBureauMap.Experian?.report?.scores?.[0]?.scoreValue) || 0;
+
+    const eqScore =
+      toNum(bureauMap.Equifax?.report?.scores?.[0]?.scoreValue) || 0;
+    const prevEqScore =
+      toNum(prevBureauMap.Equifax?.report?.scores?.[0]?.scoreValue) || 0;
+
+    const tuScore =
+      toNum(bureauMap.TransUnion?.report?.scores?.[0]?.scoreValue) || 0;
+    const prevTuScore =
+      toNum(prevBureauMap.TransUnion?.report?.scores?.[0]?.scoreValue) || 0;
+
+    return {
+      experian: {
+        bureau: "experian" as const,
+        score: expScore,
+        delta: prevExpScore ? expScore - prevExpScore : 0,
+        pulledAt: bureauMap.Experian?.createdAt || "",
+        prevScore: prevExpScore,
+      },
+      equifax: {
+        bureau: "equifax" as const,
+        score: eqScore,
+        delta: prevEqScore ? eqScore - prevEqScore : 0,
+        pulledAt: bureauMap.Equifax?.createdAt || "",
+        prevScore: prevEqScore,
+      },
+      transunion: {
+        bureau: "transunion" as const,
+        score: tuScore,
+        delta: prevTuScore ? tuScore - prevTuScore : 0,
+        pulledAt: bureauMap.TransUnion?.createdAt || "",
+        prevScore: prevTuScore,
+      },
+    };
+  }, [bureauMap, prevBureauMap]);
 
   // Inquiries per bureau (default to empty array if not present)
   const inquiriesByBureau: Record<
@@ -1310,17 +1267,9 @@ const ClientCreditReport = ({ userId, isAdminView, userData }: Props) => {
         icon={<ShieldCheck className="w-4 h-4 text-blue-600" />}
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        <ScoreCard
-          bureau="Experian"
-          score={scoresByBureau.Experian}
-          index={0}
-        />
-        <ScoreCard bureau="Equifax" score={scoresByBureau.Equifax} index={1} />
-        <ScoreCard
-          bureau="TransUnion"
-          score={scoresByBureau.TransUnion}
-          index={2}
-        />
+        <BureauScoreCard score={parsedScores.experian} />
+        <BureauScoreCard score={parsedScores.equifax} />
+        <BureauScoreCard score={parsedScores.transunion} />
       </div>
 
       {/* Score History Chart */}

@@ -22,7 +22,7 @@ export default function AdminLayout({
       <SidebarAdmin />
       <SidebarInset className="bg-transparent font-inter overflow-hidden min-w-0">
         <MobileNavAdmin />
-        <div className="flex-1 overflow-y-auto pt-[60px] lg:pt-0 px-4 lg:px-6 pb-36 lg:pb-0 h-screen min-w-0 w-full">
+        <div className="flex-1 overflow-y-auto pt-28 lg:pt-0 px-4 lg:px-6 pb-36 lg:pb-0 h-screen min-w-0 w-full">
           {children}
         </div>
       </SidebarInset>
