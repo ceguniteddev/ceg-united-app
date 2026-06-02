@@ -53,7 +53,7 @@ export function ReportHealthCard({ health }: Props) {
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5 h-full flex flex-col">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-600">
@@ -65,7 +65,7 @@ export function ReportHealthCard({ health }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 flex-1">
+      <div className="grid grid-cols-2 gap-3">
         {stats.map((s) => (
           <div
             key={s.key}
