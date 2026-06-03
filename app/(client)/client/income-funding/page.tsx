@@ -103,7 +103,7 @@ export function IncomeFundingContent() {
 
   let hasMissingComputation =
     realDeal && !(realDeal as any).businessIncomeComputation;
-  hasMissingComputation = true;
+
   const renderView = () => {
     if (
       hasMissingComputation &&
