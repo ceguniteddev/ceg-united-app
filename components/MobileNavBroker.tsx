@@ -24,7 +24,7 @@ const MobileNavBroker = () => {
   if (loading || !user) return null;
 
   return (
-    <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+    <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between h-[105px]">
       <Sheet>
         <SheetTrigger>
           <Image
@@ -52,7 +52,7 @@ const MobileNavBroker = () => {
                 alt="Logo"
                 width={548}
                 height={455}
-                className="h-20 w-auto object-contain"
+                className="h-14 w-auto object-contain"
               />
             </Link>
 
@@ -108,7 +108,7 @@ const MobileNavBroker = () => {
           alt="Logo"
           width={548}
           height={455}
-          className="h-20 w-auto object-contain"
+          className="h-14 w-auto object-contain"
         />
       </Link>
     </div>
