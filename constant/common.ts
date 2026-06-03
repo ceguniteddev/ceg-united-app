@@ -83,11 +83,11 @@ export const sidebarLinks = [
     route: "/client/my-analysis",
     label: "My Funding Analysis",
   },
-  {
-    imgURL: "/icons/credit-card.svg",
-    route: "/client/my-accounts",
-    label: "My Accounts",
-  },
+  // {
+  //   imgURL: "/icons/credit-card.svg",
+  //   route: "/client/my-accounts",
+  //   label: "My Accounts",
+  // },
   {
     imgURL: "/icons/building-2.svg",
     route: "/client/my-business",

@@ -105,7 +105,7 @@ const MobileNavClient = () => {
   };
 
   return (
-    <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+    <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between h-[105px]">
       <Sheet>
         <SheetTrigger>
           <Image
@@ -133,7 +133,7 @@ const MobileNavClient = () => {
                 alt="Logo"
                 width={548}
                 height={455}
-                className="h-20 w-auto object-contain"
+                className="h-14 w-auto object-contain"
               />
             </Link>
 
@@ -181,6 +181,7 @@ const MobileNavClient = () => {
                   const isLocked =
                     ((!userData || membership?.status !== "active") &&
                       (item.route === "/client/my-analysis" ||
+                        item.route === "/client/my-learning" ||
                         item.route === "/client/my-credit")) ||
                     (item.route === "/client/credit-repair" &&
                       !addons.some((a) => a.addonId === "credit_module_pro"));
@@ -277,7 +278,7 @@ const MobileNavClient = () => {
           alt="Logo"
           width={548}
           height={455}
-          className="h-20 w-auto object-contain"
+          className="h-14 w-auto object-contain"
         />
       </Link>
 

@@ -23,7 +23,9 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
-import { CustomFormField } from "@/components/CustomFormField";
+import { FormInput } from "@/components/forms/form-input";
+import { FormSelect } from "../forms/form-select";
+import { US_STATES } from "@/constant/common";
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -315,7 +317,7 @@ const LocalDocumentList = ({
 };
 
 export function Step3Funding() {
-  const { watch, setValue, getValues } = useFormContext();
+  const { watch, setValue, getValues, control } = useFormContext();
   const { businessDetailsData, authData, updateAuthData } =
     useNewRegistrationStore();
 
@@ -512,22 +514,27 @@ export function Step3Funding() {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-5 rounded-lg border border-blue-100 shadow-sm">
-                <CustomFormField
+                <FormInput
+                  control={control}
                   name="addressStreet"
                   label="Street Address"
                   placeholder="123 Main St"
                 />
-                <CustomFormField
+                <FormInput
+                  control={control}
                   name="addressCity"
                   label="City"
                   placeholder="New York"
                 />
-                <CustomFormField
+                <FormSelect
+                  control={control}
                   name="addressState"
                   label="State"
                   placeholder="NY"
+                  options={US_STATES}
                 />
-                <CustomFormField
+                <FormInput
+                  control={control}
                   name="addressPostal"
                   label="Zip / Postal Code"
                   placeholder="10001"

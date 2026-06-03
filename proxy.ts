@@ -24,7 +24,7 @@ const PUBLIC_ROUTES = new Set<string>([
   "/api/payments/whop",
   "/api/ocr",
 ]);
-const CLIENT_HOME = "/client/home";
+const CLIENT_HOME = "/client/income-funding";
 const ADMIN_HOME = "/admin/home";
 const BROKER_HOME = "/broker/home";
 
