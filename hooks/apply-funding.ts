@@ -19,7 +19,7 @@ import { NoteSchema } from "@/schema/notes";
 export const useGetUserApplyFunding = () => {
   const { user } = useAuth();
 
-  const { data: appliedFunding, isLoading } = useQuery({
+  const { data: appliedFunding, isPending: isLoading } = useQuery({
     queryKey: ["GET_USER_APPLY_FUNDING", user?.uid],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
@@ -39,7 +39,7 @@ export const useGetUserApplyFunding = () => {
 export const useGetClientApplyFunding = (userId: string) => {
   const { user } = useAuth();
 
-  const { data: appliedFunding, isLoading } = useQuery({
+  const { data: appliedFunding, isPending: isLoading } = useQuery({
     queryKey: ["GET_USER_APPLY_FUNDING", userId],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
@@ -59,7 +59,7 @@ export const useGetClientApplyFunding = (userId: string) => {
 export const useGetClientApprovedMappedFunding = () => {
   const { user } = useAuth();
 
-  const { data: appliedFunding, isLoading } = useQuery({
+  const { data: appliedFunding, isPending: isLoading } = useQuery({
     queryKey: ["useGetClientApprovedMappedFunding", user?.uid],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
@@ -79,7 +79,7 @@ export const useGetClientApprovedMappedFunding = () => {
 export const useGetFundingApplications = ({ state }: { state?: string }) => {
   const { user } = useAuth();
 
-  const { data: appliedFunding, isLoading } = useQuery({
+  const { data: appliedFunding, isPending: isLoading } = useQuery({
     queryKey: ["GET_FUNDING_APPLICATIONS", state],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
@@ -106,7 +106,7 @@ export const useGetApplyFundingByReferenceNumber = ({
 }) => {
   const { user } = useAuth();
 
-  const { data: appliedFunding, isLoading } = useQuery({
+  const { data: appliedFunding, isPending: isLoading } = useQuery({
     queryKey: ["GET_FUNDING_APPLICATIONS", referenceNumber],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
@@ -129,7 +129,7 @@ export const useGetApplyFundingByReferenceNumber = ({
 export const useGetFundingApplicationsIsNew = () => {
   const { user } = useAuth();
 
-  const { data: appliedFunding, isLoading } = useQuery({
+  const { data: appliedFunding, isPending: isLoading } = useQuery({
     queryKey: ["GET_FUNDING_APPLICATIONS_NEW"],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");

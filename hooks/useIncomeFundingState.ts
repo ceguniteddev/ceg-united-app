@@ -87,7 +87,7 @@ export function useIncomeFundingState(
 ) {
   const [deal, setDeal] = useState<IncomeFundingDeal>(defaultEmptyDeal);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
+  const { user, loading: isAuthLoading } = useAuth();
   const queryClient = useQueryClient();
   const { userDocuments } = useUserDocumentsQuery({ userId: user?.uid || "" });
   const { appliedFunding, isLoading: isLoadingApplications } =
@@ -534,7 +534,7 @@ export function useIncomeFundingState(
     deal,
     realDeal,
     incomeFundingApps,
-    isLoadingApplications,
+    isLoadingApplications: isLoadingApplications || isAuthLoading,
     setStatus,
     setDocuments,
     uploadDocument,

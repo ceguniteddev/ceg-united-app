@@ -102,6 +102,7 @@ export function IncomeFundingContent() {
 
   let hasMissingComputation =
     realDeal && !(realDeal as any).businessIncomeComputation;
+
   const renderView = () => {
     if (
       hasMissingComputation &&
@@ -259,7 +260,7 @@ export function IncomeFundingContent() {
     );
   }
 
-  if (!realDeal) {
+  if (!realDeal && !isLoadingApplications) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full p-6 sm:p-10">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 max-w-md text-center flex flex-col items-center">
