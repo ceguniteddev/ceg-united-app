@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 
 import { useSearchParams } from "next/navigation";
+import { ComputationActionRequired } from "@/components/income-funding/ComputationActionRequired";
 import { Suspense } from "react";
 
 export default function IncomeFundingPage() {
@@ -102,7 +103,7 @@ export function IncomeFundingContent() {
 
   let hasMissingComputation =
     realDeal && !(realDeal as any).businessIncomeComputation;
-
+  hasMissingComputation = true;
   const renderView = () => {
     if (
       hasMissingComputation &&
@@ -110,28 +111,11 @@ export function IncomeFundingContent() {
       deal.status !== "collecting-documents"
     ) {
       return (
-        <div className="bg-white rounded-2xl border border-red-100 shadow-card p-10 text-center flex flex-col items-center justify-center animate-fade-in-up">
-          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
-            <Bot className="w-8 h-8 text-red-500" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
-            Action Required: Calculate Business Income
-          </h2>
-          <p className="text-sm text-gray-500 max-w-md mx-auto mb-6">
-            We noticed that your business income computation is missing. Please
-            calculate your pre-approved business income to proceed with your
-            application.
-          </p>
-          <button
-            onClick={calculateIncomePreApproval}
-            disabled={isCalculating}
-            className="inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-6 py-3 rounded-xl font-semibold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isCalculating
-              ? "Calculating..."
-              : "Calculate Pre-Approved Business Income"}
-          </button>
-        </div>
+        <ComputationActionRequired
+          realDeal={realDeal as any}
+          isCalculating={isCalculating}
+          onCalculate={calculateIncomePreApproval}
+        />
       );
     }
 

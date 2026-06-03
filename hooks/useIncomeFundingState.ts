@@ -140,7 +140,7 @@ export function useIncomeFundingState(
           ) {
             nextStatus = d.status;
           } else {
-            nextStatus = "prequalified";
+            nextStatus = "offers-ready";
           }
         } else if (
           relevantStatus === "Pre-Approved" ||

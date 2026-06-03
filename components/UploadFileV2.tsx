@@ -18,6 +18,7 @@ type UploadFileProps = {
   onUploadComplete?: (files: File[]) => void;
   titleOverride?: string;
   descriptionOverride?: string;
+  pdfOnly?: boolean;
 };
 
 const UploadFile = ({
@@ -26,6 +27,7 @@ const UploadFile = ({
   onUploadComplete,
   titleOverride,
   descriptionOverride,
+  pdfOnly = false,
 }: UploadFileProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
@@ -35,7 +37,9 @@ const UploadFile = ({
       if (!droppedFiles || droppedFiles.length === 0) return;
 
       const validFiles = droppedFiles.filter(
-        (f) => f.type === "application/pdf" || f.type.startsWith("image/"),
+        (f) =>
+          f.type === "application/pdf" ||
+          (!pdfOnly && f.type.startsWith("image/")),
       );
 
       if (validFiles.length === 0) {
@@ -111,10 +115,14 @@ const UploadFile = ({
         className="cursor-pointer"
         onDrop={handleDrop}
         disabled={isLoading}
-        accept={{
-          "application/pdf": [".pdf"],
-          "image/*": [".png", ".jpg", ".jpeg", ".gif"],
-        }}
+        accept={
+          pdfOnly
+            ? { "application/pdf": [".pdf"] }
+            : {
+                "application/pdf": [".pdf"],
+                "image/*": [".png", ".jpg", ".jpeg", ".gif"],
+              }
+        }
       >
         <DropzoneEmptyState />
         <DropzoneContent />
