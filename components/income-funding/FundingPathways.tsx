@@ -24,7 +24,7 @@
 //
 // Author: Built for Julian (CEG United) — May 22, 2026
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
 import { useMembership } from "@/hooks/membership";
 import { LockIcon } from "lucide-react";
@@ -276,9 +276,10 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
     id: string;
     amount: number;
   } | null>(null);
+  const [isUpgradeFlow, setUpgradeFlow] = useState(false);
 
   const [selectedId, setSelectedId] = useState<PathwayId | null>(
-    (selectedPathwayId as PathwayId) || "income_based",
+    selectedPathwayId as PathwayId,
   );
 
   const computationFromBackend = realDeal?.businessIncomeComputation || {};
@@ -299,6 +300,17 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
     (realDeal?.appliedPathways || []).map((p: any) => p.pathwayId),
   );
   const appliedCount = uniqueAppliedPathwayIds.size;
+
+  useEffect(() => {
+    const isTierMissing = !tierId;
+    const needsUpgrade = isTierMissing && appliedCount === 0;
+    setUpgradeFlow(needsUpgrade);
+    if (needsUpgrade) {
+      setSelectedId(null);
+    } else if (!selectedPathwayId) {
+      setSelectedId("income_based");
+    }
+  }, [tierId, appliedCount, selectedPathwayId]);
 
   const handleSelectPlan = async (planId: string, amount: number) => {
     if (!user?.uid) return;
@@ -428,102 +440,155 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                   aria-checked={isSelected}
                   onClick={() => handleSelect(p)}
                   className={[
-                    "group relative flex w-full items-stretch gap-4 rounded-2xl border p-5 text-left transition-all sm:gap-5 sm:p-6 overflow-hidden",
+                    "group relative flex w-full flex-col sm:flex-row items-stretch gap-4 sm:gap-5 rounded-2xl border p-4 sm:p-6 text-left transition-all overflow-hidden",
                     isSelected
                       ? "border-blue-600 bg-blue-50/60 shadow-[0_0_0_3px_rgba(37,99,235,0.12)]"
                       : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm",
                   ].join(" ")}
                 >
-                  {/* Radio dot */}
-                  <span
-                    aria-hidden
-                    className={[
-                      "mt-1 flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 transition-colors",
-                      isSelected
-                        ? "border-blue-600 bg-blue-600"
-                        : "border-slate-300 bg-white group-hover:border-slate-400",
-                    ].join(" ")}
-                  >
-                    {isSelected && <IconCheck className="h-3 w-3 text-white" />}
-                  </span>
-
-                  {/* Icon */}
-                  <span
-                    className={[
-                      "flex h-12 w-12 flex-none items-center justify-center rounded-xl",
-                      isSelected
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-100 text-slate-700",
-                    ].join(" ")}
-                  >
-                    <p.Icon className="h-6 w-6" />
-                  </span>
-
-                  {/* Text block */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-base font-semibold text-slate-900 sm:text-lg">
-                        {p.title}
-                      </h3>
-                      {realDeal?.appliedPathways?.some(
-                        (ap: any) => ap.pathwayId === p.id,
-                      ) ? (
-                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                          Applied
-                        </span>
-                      ) : !uniqueAppliedPathwayIds.has(p.id) &&
-                        appliedCount >= allowedCategoriesCount ? (
-                        <span className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-0.5 text-[11px] font-bold tracking-wide inline-flex items-center gap-1.5 shadow-sm hover:from-blue-700 hover:to-indigo-700 transition-all uppercase">
-                          <LockIcon className="h-3 w-3 text-blue-200" /> Upgrade
-                        </span>
-                      ) : p.badge ? (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                          {p.badge}
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-0.5 text-sm text-slate-600">{p.tagline}</p>
-                    <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1 text-xs text-slate-500 sm:grid-cols-3">
-                      <div>
-                        <dt className="font-medium text-slate-400 uppercase tracking-wide">
-                          Best for
-                        </dt>
-                        <dd className="text-slate-700">{p.bestFor}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-medium text-slate-400 uppercase tracking-wide">
-                          Funding time
-                        </dt>
-                        <dd className="text-slate-700">{p.fundingTime}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-medium text-slate-400 uppercase tracking-wide">
-                          Credit check
-                        </dt>
-                        <dd className="text-slate-700">{p.pullType}</dd>
-                      </div>
-                    </dl>
-                  </div>
-
-                  {/* Amount */}
-                  <div className="flex flex-none flex-col items-end justify-center pl-2 text-right">
-                    <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400">
-                      Up to
+                  <div className="flex items-center gap-4 sm:flex-none">
+                    {/* Radio dot */}
+                    <span
+                      aria-hidden
+                      className={[
+                        "flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 transition-colors",
+                        isSelected
+                          ? "border-blue-600 bg-blue-600"
+                          : "border-slate-300 bg-white group-hover:border-slate-400",
+                      ].join(" ")}
+                    >
+                      {isSelected && (
+                        <IconCheck className="h-3 w-3 text-white" />
+                      )}
                     </span>
+
+                    {/* Icon */}
                     <span
                       className={[
-                        "font-mono text-2xl font-bold leading-none sm:text-3xl",
-                        isSelected ? "text-blue-700" : "text-slate-900",
+                        "hidden h-12 w-12 flex-none items-center justify-center rounded-xl sm:flex",
+                        isSelected
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-100 text-slate-700",
                       ].join(" ")}
-                      style={{
-                        fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-                      }}
                     >
-                      {formatMoney(p.maxAmount)}
+                      <p.Icon className="h-6 w-6" />
                     </span>
-                    <span className="mt-1 text-[11px] text-slate-500">
-                      {formatMoneyFull(p.maxAmount)}
-                    </span>
+
+                    {/* Mobile Title (hidden on SM and above) */}
+                    <div className="min-w-0 flex-1 sm:hidden">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-semibold text-slate-900 leading-tight">
+                          {p.title}
+                        </h3>
+                        {realDeal?.appliedPathways?.some(
+                          (ap: any) => ap.pathwayId === p.id,
+                        ) ? (
+                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                            Applied
+                          </span>
+                        ) : !uniqueAppliedPathwayIds.has(p.id) &&
+                          appliedCount >= allowedCategoriesCount ? (
+                          <span className="rounded-full bg-blue-600 text-white px-2 py-0.5 text-[10px] font-bold tracking-wide shadow-sm hover:bg-blue-700 transition-all uppercase flex items-center gap-1">
+                            <LockIcon className="h-2.5 w-2.5 text-white" />{" "}
+                            Upgrade
+                          </span>
+                        ) : p.badge ? (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                            {p.badge}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Main Content Area */}
+                  <div className="flex flex-col sm:flex-row flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 pl-[36px] sm:pl-0">
+                      {/* Desktop Title & Tags */}
+                      <div className="hidden sm:flex flex-wrap items-center gap-2">
+                        <h3 className="text-lg font-semibold text-slate-900">
+                          {p.title}
+                        </h3>
+                        {realDeal?.appliedPathways?.some(
+                          (ap: any) => ap.pathwayId === p.id,
+                        ) ? (
+                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                            Applied
+                          </span>
+                        ) : !uniqueAppliedPathwayIds.has(p.id) &&
+                          appliedCount >= allowedCategoriesCount ? (
+                          <span className="rounded-full bg-blue-600 text-white px-3 py-0.5 text-[11px] font-bold tracking-wide inline-flex items-center gap-1.5 shadow-sm hover:bg-blue-700 transition-all uppercase">
+                            <LockIcon className="h-3 w-3 text-white" /> Upgrade
+                          </span>
+                        ) : p.badge ? (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                            {p.badge}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <p className="mt-0.5 text-sm text-slate-600 hidden sm:block">
+                        {p.tagline}
+                      </p>
+
+                      {/* Mobile Tagline */}
+                      <p className="text-sm text-slate-600 sm:hidden">
+                        {p.tagline}
+                      </p>
+
+                      <dl className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-x-4 sm:gap-x-6 gap-y-2 text-xs text-slate-500">
+                        <div>
+                          <dt className="font-medium text-slate-400 uppercase tracking-wide">
+                            Best for
+                          </dt>
+                          <dd className="text-slate-700">{p.bestFor}</dd>
+                        </div>
+                        <div>
+                          <dt className="font-medium text-slate-400 uppercase tracking-wide">
+                            Funding time
+                          </dt>
+                          <dd className="text-slate-700">{p.fundingTime}</dd>
+                        </div>
+                        <div className="col-span-2 sm:col-span-1 hidden sm:block">
+                          <dt className="font-medium text-slate-400 uppercase tracking-wide">
+                            Credit check
+                          </dt>
+                          <dd className="text-slate-700">{p.pullType}</dd>
+                        </div>
+                      </dl>
+                    </div>
+
+                    {/* Amount Block */}
+                    <div className="flex flex-none items-end sm:items-center sm:justify-end pl-[36px] sm:pl-4 mt-3 sm:mt-0">
+                      <div className="flex flex-col sm:items-end w-full sm:w-auto">
+                        <div className="flex justify-between items-end sm:flex-col sm:justify-center w-full">
+                          <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400 sm:hidden">
+                            Up to
+                          </span>
+                          <div className="flex flex-col items-end">
+                            <span className="hidden sm:block text-[10px] font-medium uppercase tracking-widest text-slate-400">
+                              Up to
+                            </span>
+                            <span
+                              className={[
+                                "font-mono font-bold leading-none text-right",
+                                isSelected ? "text-blue-700" : "text-slate-900",
+                                "text-2xl sm:text-3xl",
+                              ].join(" ")}
+                              style={{
+                                fontFamily:
+                                  "'JetBrains Mono', ui-monospace, monospace",
+                              }}
+                            >
+                              {formatMoney(p.maxAmount)}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="mt-1 text-[11px] text-slate-500 hidden sm:block text-right">
+                          {formatMoneyFull(p.maxAmount)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </button>
               </li>
@@ -567,20 +632,31 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
 
         {/* Footer actions */}
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <button
-            type="button"
-            disabled={!dynamicSelected}
-            onClick={handleContinue}
-            className={[
-              "cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all",
-              dynamicSelected
-                ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
-                : "cursor-not-allowed bg-slate-300",
-            ].join(" ")}
-          >
-            Continue to Offers
-            <IconArrowRight className="h-4 w-4" />
-          </button>
+          {isUpgradeFlow ? (
+            <button
+              type="button"
+              onClick={() => setPricingModalOpen(true)}
+              className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all bg-blue-600 hover:bg-blue-700"
+            >
+              <LockIcon className="h-4 w-4" />
+              Upgrade to Continue
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={!dynamicSelected}
+              onClick={handleContinue}
+              className={[
+                "cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all",
+                dynamicSelected
+                  ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
+                  : "cursor-not-allowed bg-slate-300",
+              ].join(" ")}
+            >
+              Continue to Offers
+              <IconArrowRight className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         {/* Reassurance footer */}
