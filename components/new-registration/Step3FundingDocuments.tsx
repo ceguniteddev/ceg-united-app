@@ -38,21 +38,31 @@ const ALLOWED_MIME_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 const ALLOWED_EXTENSIONS = [".pdf", ".jpeg", ".jpg", ".png"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-const validateFile = (file: File): string | null => {
+const validateFile = (file: File, pdfOnly: boolean = false): string | null => {
   if (file.size > MAX_FILE_SIZE) {
     return `File "${file.name}" is too large. Maximum size is 10MB.`;
   }
 
-  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-    return `File "${file.name}" has an invalid format. Only PDF, JPEG, and PNG are allowed.`;
-  }
-
   const fileName = file.name.toLowerCase();
-  const hasValidExtension = ALLOWED_EXTENSIONS.some((ext) =>
-    fileName.endsWith(ext),
-  );
-  if (!hasValidExtension) {
-    return `File "${file.name}" has an invalid extension. Only .pdf, .jpg, .jpeg, and .png are allowed.`;
+
+  if (pdfOnly) {
+    if (file.type !== "application/pdf") {
+      return `File "${file.name}" has an invalid format. Only PDF is allowed.`;
+    }
+    if (!fileName.endsWith(".pdf")) {
+      return `File "${file.name}" has an invalid extension. Only .pdf is allowed.`;
+    }
+  } else {
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      return `File "${file.name}" has an invalid format. Only PDF, JPEG, and PNG are allowed.`;
+    }
+
+    const hasValidExtension = ALLOWED_EXTENSIONS.some((ext) =>
+      fileName.endsWith(ext),
+    );
+    if (!hasValidExtension) {
+      return `File "${file.name}" has an invalid extension. Only .pdf, .jpg, .jpeg, and .png are allowed.`;
+    }
   }
 
   // Explicitly block known executable/script extensions as an extra precaution
@@ -80,6 +90,7 @@ const PublicFileUpload = ({
   titleOverride,
   descriptionOverride,
   maxFiles = 4,
+  pdfOnly = false,
 }: {
   documentType?: DocumentType;
   onUploadComplete?: (
@@ -94,6 +105,7 @@ const PublicFileUpload = ({
   titleOverride?: string;
   descriptionOverride?: string;
   maxFiles?: number;
+  pdfOnly?: boolean;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -104,7 +116,7 @@ const PublicFileUpload = ({
 
     // Perform security checks on each file
     for (const file of droppedFiles) {
-      const errorMsg = validateFile(file);
+      const errorMsg = validateFile(file, pdfOnly);
       if (errorMsg) {
         toast.error(errorMsg);
       } else {
@@ -143,8 +155,8 @@ const PublicFileUpload = ({
   const description =
     descriptionOverride ||
     (documentType
-      ? `${documentType.description} (PDF or Image only)`
-      : "Upload documents (PDF or Image only)");
+      ? `${documentType.description} (${pdfOnly ? "PDF only" : "PDF or Image only"})`
+      : `Upload documents (${pdfOnly ? "PDF only" : "PDF or Image only"})`);
 
   return (
     <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 mb-4 relative">
@@ -163,10 +175,14 @@ const PublicFileUpload = ({
         className="cursor-pointer"
         onDrop={handleDrop}
         disabled={isLoading}
-        accept={{
-          "application/pdf": [".pdf"],
-          "image/*": [".png", ".jpg", ".jpeg", ".gif"],
-        }}
+        accept={
+          pdfOnly
+            ? { "application/pdf": [".pdf"] }
+            : {
+                "application/pdf": [".pdf"],
+                "image/*": [".png", ".jpg", ".jpeg", ".gif"],
+              }
+        }
       >
         <DropzoneEmptyState />
         <DropzoneContent />
@@ -549,11 +565,12 @@ export function Step3Funding() {
                     (dt) => dt.id === "PERSONAL_BANK_STATEMENTS",
                   )}
                   titleOverride="3 Months Bank Statements"
-                  descriptionOverride="Click to upload your recent personal bank statements."
+                  descriptionOverride="Click to upload your recent personal bank statements. (PDF only)"
                   onUploadComplete={(files) =>
                     handleUploadComplete("personalDocs.bankStatements", files)
                   }
                   maxFiles={3}
+                  pdfOnly
                 />
                 <LocalDocumentList
                   fieldName="personalDocs.bankStatements"
@@ -574,11 +591,12 @@ export function Step3Funding() {
               <PublicFileUpload
                 documentType={bankStatementsType}
                 titleOverride="4 Months of Bank Statements"
-                descriptionOverride="Upload your most recent 4 months of business bank statements."
+                descriptionOverride="Upload your most recent 4 months of business bank statements. (PDF only)"
                 onUploadComplete={(files) =>
                   handleUploadComplete("businessDocs.bankStatements", files)
                 }
                 maxFiles={4}
+                pdfOnly
               />
               <LocalDocumentList
                 fieldName="businessDocs.bankStatements"
