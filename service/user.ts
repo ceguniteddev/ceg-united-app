@@ -9,7 +9,7 @@ import {
 } from "@/constant/collection-name";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import AppError from "@/error/AppError";
-import { normalizeAllDates, normalizeDate } from "@/lib/date-parser";
+import { normalizeAllDates } from "@/lib/date-parser";
 import {
   authenticationAdmin,
   firestoreAdmin,
@@ -18,20 +18,17 @@ import {
 import { logError, logInfo } from "@/lib/logger";
 import { sendTriggerEmail } from "@/service/trigger-email";
 import { EmailJobs } from "@/schema/trigger-email";
-import { ChangePassword, CurrentUser, Role, Business } from "@/schema";
+import { ChangePassword, CurrentUser, Role } from "@/schema";
 import { noteSchema, NoteSchema } from "@/schema/notes";
 
 import { User, UserActiveStatus, UserWithId } from "@/schema/registration";
-import { format } from "date-fns";
+
 import { cookies, headers } from "next/headers";
 import { FieldPath } from "firebase-admin/firestore";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { applyFunding } from "./apply-funding";
 import * as crypto from "node:crypto";
-import {
-  sendClientFundingApplicationAuditAnalysis,
-  sendClientFundingApplicationCongratsMessage,
-} from "./crs";
+
 import { RegistrationType } from "@/schema/users";
 import { generateEmailVerificationToken } from "./email-verification";
 import { createAsanaTaskForLender } from "@/lib/n8n";

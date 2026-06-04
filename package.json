@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --fix",
     "postinstall": "node postinstall.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -127,6 +127,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@eslint/compat": "^1.1.0",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.1.12",
     "@tanstack/react-query-devtools": "^5.85.5",
@@ -142,6 +143,9 @@
     "baseline-browser-mapping": "^2.10.10",
     "eslint": "^9",
     "eslint-config-next": "^16.2.4",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.34.2",
+    "globals": "^15.4.0",
     "jsdom": "^29.0.1",
     "puppeteer": "^24.32.1",
     "shadcn": "^3.7.0",
@@ -149,6 +153,7 @@
     "tsx": "^4.20.5",
     "tw-animate-css": "^1.3.7",
     "typescript": "^5",
+    "typescript-eslint": "^7.13.0",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.2"
   },

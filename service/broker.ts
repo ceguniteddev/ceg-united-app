@@ -88,7 +88,7 @@ export const createBrokerInvitation = async (
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
   };
 
-  const docRef = await db.collection(BROKER_INVITATION).add(invitation);
+  // const docRef = await db.collection(BROKER_INVITATION).add(invitation);
   return token;
 };
 

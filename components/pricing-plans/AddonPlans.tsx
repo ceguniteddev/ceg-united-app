@@ -15,7 +15,7 @@ export function AddonPlans({
   isLoading = false,
 }: AddonPlansProps) {
   const { data: feeSettings, isLoading: isLoadingSettings } = useFeeSettings();
-  const { data: addons = [], isLoading: isLoadingAddons } = useAddons();
+  const { data: addons = [] } = useAddons();
 
   const creditRepairEnabled = addons.some(
     (addon) =>

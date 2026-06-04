@@ -17,9 +17,10 @@ import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
 import { useMembership } from "@/hooks/membership";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
-import { useGetUserApplyFunding } from "@/hooks/apply-funding";
+// import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 import { LockIcon } from "lucide-react";
 import React, { useState } from "react";
+import { useSystemConfig } from "@/hooks/system-config";
 
 // Pricing / Checkout imports
 import { ResponsiveDialog } from "@/components/responsive-dialog";
@@ -42,11 +43,12 @@ import { toast } from "sonner";
 
 const MobileNavClient = () => {
   const { user, userData } = useAuth();
-  const { appliedFunding } = useGetUserApplyFunding();
+  // const { appliedFunding } = useGetUserApplyFunding();
   const { data: addons = [] } = useAddons();
   const { data: membership } = useMembership();
   const pathname = usePathname();
   const router = useRouter();
+  const { config: systemConfig } = useSystemConfig();
 
   // Pricing / Checkout state
   const [isPricingModalOpen, setPricingModalOpen] = useState(false);
@@ -140,6 +142,12 @@ const MobileNavClient = () => {
             <nav className="flex-1 flex flex-col px-4 overflow-y-auto">
               {sidebarLinks
                 .filter((item) => {
+                  if (
+                    item.route === "/client/credit-repair" &&
+                    !systemConfig?.creditRepairEnabled
+                  ) {
+                    return false;
+                  }
                   // if (
                   //   item.route === "/client/my-learning" &&
                   //   (!userData || membership?.status !== "active")

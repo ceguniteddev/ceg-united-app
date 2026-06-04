@@ -346,7 +346,7 @@ export function AcceptanceView({
             <a
               className="text-brand-600 underline-offset-2 hover:underline"
               target="_blank"
-              href="https://www.cegunited.com/terms"
+              href="https://www.cegunited.com/terms" rel="noreferrer"
             >
               Terms of Service
             </a>

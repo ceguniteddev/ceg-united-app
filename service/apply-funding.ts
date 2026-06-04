@@ -296,7 +296,7 @@ export const getApplyFunding = async (
     console.log("No matching documents.");
     return null;
   }
-  let results = snapshot.docs.map((doc) => ({
+  const results = snapshot.docs.map((doc) => ({
     referenceNumber: doc.id,
     ...normalizeAllDates(doc.data()),
   }));

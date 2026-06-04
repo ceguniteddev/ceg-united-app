@@ -18,7 +18,6 @@ import { PaymentPlan } from "@/schema/payments";
 import { randomUUID } from "crypto";
 import { sendTriggerEmail } from "../trigger-email";
 import { EmailJobs } from "@/schema/trigger-email";
-import { currency } from "@/lib/utils";
 import { getFeeSettings } from "../fee-settings";
 
 const WHOP_COMPANY_ID = process.env.WHOP_COMPANY_ID;
@@ -31,7 +30,7 @@ const WHOP_PRICING_PLAN_STARTER_ID = process.env.WHOP_PRICING_PLAN_STARTER_ID;
 const WHOP_PRICING_PLAN_PRO_ID = process.env.WHOP_PRICING_PLAN_PRO_ID;
 const WHOP_PRICING_PLAN_EXECUTIVE_ID =
   process.env.WHOP_PRICING_PLAN_EXECUTIVE_ID;
-const WHOP_CREDIT_REPAIR_PRODUCT_ID = process.env.WHOP_CREDIT_REPAIR_PRODUCT_ID;
+// const WHOP_CREDIT_REPAIR_PRODUCT_ID = process.env.WHOP_CREDIT_REPAIR_PRODUCT_ID;
 const WHOP_CREDIT_MODULE_PRO_ID = process.env.WHOP_CREDIT_MODULE_PRO_ID;
 
 const WHOP_FULL_PAYMENT_AMOUNT =
@@ -506,7 +505,10 @@ export const recordPaymentSucceeded = async ({
   let authUser = null;
 
   try {
-    authUser = await auth.getUserByEmail(payment.user?.email!);
+    if (!payment.user?.email) {
+      throw new Error("Payment user email not found.");
+    }
+    authUser = await auth.getUserByEmail(payment.user.email);
   } catch (error: any) {
     console.log("User not found.");
 
@@ -647,13 +649,7 @@ export const getWhopCheckoutDetailByCheckoutId = async (checkoutId: string) => {
   }
 };
 
-export const sendPaymentLink = async ({
-  userId,
-  paymentKey = "AcceleratorFull",
-}: {
-  userId: string;
-  paymentKey?: PaymentPlan;
-}) => {
+export const sendPaymentLink = async ({ userId }: { userId: string }) => {
   try {
     const user = await getUserById(userId);
     if (!user) {

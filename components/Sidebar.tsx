@@ -12,6 +12,7 @@ import { useMembership } from "@/hooks/membership";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
 import { LockIcon } from "lucide-react";
 import React, { useState } from "react";
+import { useSystemConfig } from "@/hooks/system-config";
 
 // Pricing / Checkout imports
 import { ResponsiveDialog } from "@/components/responsive-dialog";
@@ -39,6 +40,7 @@ const Sidebar = () => {
   const { data: membership } = useMembership();
   const pathname = usePathname();
   const router = useRouter();
+  const { config: systemConfig } = useSystemConfig();
 
   // Pricing / Checkout state
   const [isPricingModalOpen, setPricingModalOpen] = useState(false);
@@ -116,6 +118,12 @@ const Sidebar = () => {
         </Link>
         {sidebarLinks
           .filter((item) => {
+            if (
+              item.route === "/client/credit-repair" &&
+              !systemConfig?.creditRepairEnabled
+            ) {
+              return false;
+            }
             // if (
             //   item.route === "/client/my-learning" &&
             //   (!userData || membership?.status !== "active")

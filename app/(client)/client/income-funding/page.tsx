@@ -101,7 +101,7 @@ export function IncomeFundingContent() {
   const selectedOffer =
     deal.offers.find((o) => o.id === deal.selectedOfferId) || deal.offers[0];
 
-  let hasMissingComputation =
+  const hasMissingComputation =
     realDeal && !(realDeal as any).businessIncomeComputation;
 
   const renderView = () => {

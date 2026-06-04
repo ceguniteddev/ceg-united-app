@@ -6,6 +6,7 @@ import { getUserById } from "@/service/user";
 import { hasActiveAddon } from "@/service/addons";
 import { getUserMembership } from "@/service/membership";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
+import { getSystemConfig } from "@/service/system-config";
 import { isPlaidProductionReady } from "./lib/plaid";
 
 const PUBLIC_ROUTES = new Set<string>([
@@ -225,6 +226,10 @@ export async function proxy(req: NextRequest) {
     }
 
     if (pathname.startsWith("/client/credit-repair")) {
+      const systemConfig = await getSystemConfig();
+      if (!systemConfig.creditRepairEnabled) {
+        return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+      }
       const hasCreditRepairAddon = await hasActiveAddon(
         sessionCookie.uid,
         "credit_module_pro",
