@@ -160,13 +160,13 @@ describe("getTimeLeft", () => {
   it("returns days and hours for future date > 1 day away", () => {
     const future = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
     const result = getTimeLeft(future);
-    expect(result).toMatch(/\dd \dh left/);
+    expect(result).toMatch(/\d+d \d+h left/);
   });
 
   it("returns hours and minutes for future date < 1 day away", () => {
     const future = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString();
     const result = getTimeLeft(future);
-    expect(result).toMatch(/\dh \dm left/);
+    expect(result).toMatch(/\d+h \d+m left/);
   });
 
   it("returns '0d 0h left' for just-over-zero time", () => {
