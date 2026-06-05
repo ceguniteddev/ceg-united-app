@@ -30,6 +30,7 @@ const eslintConfig = [
       ...nextPlugin.configs["core-web-vitals"].rules,
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "warn",
+      "react/react-in-jsx-scope": "off",
     },
   },
   {

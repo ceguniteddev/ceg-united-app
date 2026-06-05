@@ -9,6 +9,7 @@ import {
 import type { GeneratedLetter } from "@/lib/credit-repair/credit-repair-types";
 import { downloadLetterPdf } from "@/lib/pdfGenerator";
 import { uspsTrackingUrl } from "@/lib/credit-repair/lobMailing";
+import React from "react";
 
 interface Props {
   letter: GeneratedLetter;

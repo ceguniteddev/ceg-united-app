@@ -12,7 +12,7 @@ import {
   type LobMailResponse,
   type MailingMethod,
 } from "@/lib/credit-repair/lobMailing";
-import { mockClient } from "@/lib/credit-repair/credit-repair-mockData";
+import { useAuth } from "@/provider/AuthContext";
 import {
   AttachDocumentsStep,
   type AttachDocumentsResult,
@@ -62,6 +62,7 @@ export function MailFlowModal({
   onViewTracking,
 }: Props) {
   const { allAgencies } = useCreditAgenciesData();
+  const { userData } = useAuth();
   const [subview, setSubviewState] = useState<MailFlowSubview>(initialSubview);
   const [attached, setAttached] = useState<AttachDocumentsResult | null>(null);
   const [method, setMethod] = useState<MailingMethod>("certified");
@@ -220,9 +221,17 @@ export function MailFlowModal({
     // Build LobMailRequests
     const requests: LobMailRequest[] = letters.map((letter) => {
       const agency = allAgencies.find((x) => x.key === letter.agencyKey);
+      const anyUser = userData as any;
+      const firstName = anyUser?.firstName || "Client";
+      const lastName = anyUser?.lastName || "Name";
       return {
-        fromName: `${mockClient.firstName} ${mockClient.lastName}`,
-        fromAddress: mockClient.address,
+        fromName: `${firstName} ${lastName}`,
+        fromAddress: {
+          line1: anyUser?.addressStreet || anyUser?.address1 || "Unknown",
+          city: anyUser?.addressCity || anyUser?.city || "Unknown",
+          state: anyUser?.addressState || anyUser?.state || "XX",
+          zip: anyUser?.addressPostal || anyUser?.postalCode || "00000",
+        },
         toName: letter.agencyName,
         toAddress: agency
           ? agency.address

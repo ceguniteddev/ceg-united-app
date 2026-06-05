@@ -176,7 +176,7 @@ export async function proxy(req: NextRequest) {
     hasPaidContract = membership?.status === "active";
 
     // We get isOnboarded so we can conditionally route clients
-    var isOnboarded = true; // user?.isOnboarded ?? false;
+    // var isOnboarded = true;
   } catch {
     // Bad token/session: clear cookie and kick to "/"
     const res = NextResponse.redirect(new URL("/", origin));
@@ -196,7 +196,7 @@ export async function proxy(req: NextRequest) {
     let dest = CLIENT_HOME;
     if (role === "Broker") dest = BROKER_HOME;
     else if (role !== "Client") dest = ADMIN_HOME;
-    else if (!isOnboarded) dest = "/onboarding"; // Route to onboarding if client is not onboarded
+    // else if (!isOnboarded) dest = "/onboarding"; // Route to onboarding if client is not onboarded
     return NextResponse.redirect(new URL(dest, origin));
   }
 
@@ -240,14 +240,14 @@ export async function proxy(req: NextRequest) {
     }
 
     // Force onboarding if not onboarded and trying to access client area
-    if (!isOnboarded && isClientRoute(pathname)) {
-      return NextResponse.redirect(new URL("/onboarding", origin));
-    }
+    // if (!isOnboarded && isClientRoute(pathname)) {
+    //   return NextResponse.redirect(new URL("/onboarding", origin));
+    // }
 
     // Redirect to home if they are onboarded and try to go to onboarding
-    if (isOnboarded && pathname === "/onboarding") {
-      return NextResponse.redirect(new URL(CLIENT_HOME, origin));
-    }
+    // if (isOnboarded && pathname === "/onboarding") {
+    //   return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+    // }
   }
 
   // BROKER ROLE: Can only access broker routes
