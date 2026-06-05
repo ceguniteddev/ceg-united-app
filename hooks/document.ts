@@ -2,7 +2,7 @@ import { GET_USER_DOCUMENTS } from "@/constant/react-query-keys";
 import AppError from "@/error/AppError";
 import { useAuth } from "@/provider/AuthContext";
 import { deleteDocument } from "@/service/documents";
-import { getUserDocuments } from "@/service/user";
+// import { getUserDocuments } from "@/service/user";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 

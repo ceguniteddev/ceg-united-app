@@ -704,6 +704,7 @@ export function useCreditRepairState(userId?: string) {
             expectedDelivery: r.response.expectedDelivery,
             mailingMethod: method,
             mailedFrom: r.response.mailedFrom,
+            url: r.response.url,
           };
         }
         return next;
@@ -747,6 +748,7 @@ export function useCreditRepairState(userId?: string) {
                 expectedDelivery: r.response.expectedDelivery,
                 mailingMethod: method,
                 mailedFrom: r.response.mailedFrom,
+                url: r.response.url,
               },
               status: "under-review",
               submittedAt: r.response.mailedAt,

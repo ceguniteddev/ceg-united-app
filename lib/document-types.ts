@@ -247,4 +247,12 @@ export const DOCUMENT_TYPES: DocumentType[] = [
     category: "personal",
     required: false,
   },
+  {
+    id: "DISPUTE_LETTER",
+    title: "Dispute Letter",
+    description: "A dispute letter sent to a credit bureau.",
+    icon: FileText,
+    category: "personal",
+    required: false,
+  },
 ];

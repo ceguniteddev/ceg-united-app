@@ -103,7 +103,13 @@ export default function CreditRepair({ userId }: { userId: string }) {
           />
         );
       case "tracking":
-        return <TrackingView state={s} onPreview={setPreviewLetter} />;
+        return (
+          <TrackingView
+            state={s}
+            onPreview={setPreviewLetter}
+            userId={userId}
+          />
+        );
     }
   };
 

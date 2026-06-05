@@ -99,14 +99,13 @@ export function AttachDocumentsStep({
   recipientLabel,
   recipientSubLabel,
   letterCount,
-  reasonCodes,
   initial,
   onBack,
   onContinue,
 }: Props) {
   const { user } = useAuth();
   const userId = user?.uid || "";
-  const { userDocuments, isLoading, refetch } = useUserDocumentsQuery({
+  const { userDocuments, refetch } = useUserDocumentsQuery({
     userId,
   });
   const { deleteDocument, isDeleting } = useUserDocumentMutation();

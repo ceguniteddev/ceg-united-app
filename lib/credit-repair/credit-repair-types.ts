@@ -137,6 +137,7 @@ export interface GeneratedLetter {
   expectedDelivery?: string;
   mailingMethod?: "first-class" | "certified" | "certified-rr";
   mailedFrom?: string;
+  url?: string;
 }
 
 export interface Dispute {

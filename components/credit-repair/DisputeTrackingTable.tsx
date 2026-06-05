@@ -7,7 +7,6 @@ import {
 } from "@tanstack/react-table";
 import {
   CheckCircle2,
-  RefreshCw,
   Eye,
   AlertTriangle,
   Sparkles,
@@ -297,36 +296,132 @@ export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
         </table>
       </div>
 
-      {/* Mobile cards remain using raw row data for simpler layout */}
-      <div className="md:hidden divide-y divide-gray-100">
+      {/* Mobile cards */}
+      <div className="md:hidden p-4 space-y-4 bg-gray-50/50">
         {rows.map((row) => {
           const days = daysSince(row.submittedAt);
+          const remaining = Math.max(0, 30 - days);
           const isDeleted = row.status === "deleted";
+          const isVerified = row.status === "verified";
+          const isUpdated = row.status === "updated";
+
           return (
             <div
               key={`${row.itemId}-${row.agencyKey}`}
-              className={`p-4 ${isDeleted ? "bg-emerald-50/40" : ""}`}
+              className={`bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden ${
+                isDeleted
+                  ? "border-emerald-100/50 ring-1 ring-inset ring-emerald-50"
+                  : ""
+              }`}
             >
-              <div className="flex items-start gap-3">
-                <ItemTypeIcon type={row.item.type} size="sm" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="font-semibold text-sm text-gray-900 truncate">
-                      {row.item.creditor}
+              <div className={`p-4 ${isDeleted ? "bg-emerald-50/20" : ""}`}>
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <ItemTypeIcon type={row.item.type} size="sm" />
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm text-gray-900 truncate">
+                        {row.item.creditor}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                        <span>{getTypeLabel(row.item.type)}</span>
+                        <span className="text-gray-300">•</span>
+                        <span className="font-mono text-[10px]">
+                          {row.item.accountNumber}
+                        </span>
+                      </div>
                     </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
                     <span
                       className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-md border ${
                         STATUS_LABEL[row.status]?.tone ||
                         STATUS_LABEL["under-review"].tone
-                      } shrink-0`}
+                      }`}
                     >
                       {isDeleted && <CheckCircle2 className="w-3 h-3" />}
                       {STATUS_LABEL[row.status]?.label || row.status}
                     </span>
+                    {row.letter.mailedAt && (
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100 text-emerald-700">
+                        <Mail className="w-2.5 h-2.5" />
+                        Mailed
+                      </span>
+                    )}
                   </div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">
-                    {row.agencyName} · Day {days} of 30
+                </div>
+
+                <div className="grid grid-cols-2 gap-y-3 gap-x-4 py-3 border-t border-gray-50">
+                  <div>
+                    <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
+                      Agency
+                    </div>
+                    <div className="text-xs font-medium text-gray-700">
+                      {row.agencyName}
+                    </div>
                   </div>
+                  <div>
+                    <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
+                      Tracking
+                    </div>
+                    {row.letter.trackingNumber ? (
+                      <a
+                        href={uspsTrackingUrl(row.letter.trackingNumber)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-mono text-brand-600 hover:text-brand-800"
+                      >
+                        {row.letter.trackingNumber}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    ) : (
+                      <div className="text-xs text-gray-400 italic">
+                        Not mailed
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
+                      Timeline
+                    </div>
+                    <div className="text-xs text-gray-700">
+                      Day {days} of 30
+                      {!isDeleted && !isVerified && !isUpdated && (
+                        <span className="text-gray-400 ml-1">
+                          ({remaining} left)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
+                      Last Update
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {new Date(row.lastUpdatedAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-gray-50 flex items-center justify-end gap-2">
+                  {isVerified && (
+                    <button
+                      onClick={() => onEscalate(row)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition-colors flex-1 justify-center"
+                    >
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      Escalate
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onView(row)}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold transition-colors flex-1"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    View Details
+                  </button>
                 </div>
               </div>
             </div>

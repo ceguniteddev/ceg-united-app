@@ -19,6 +19,9 @@ import {
 } from "./AttachDocumentsStep";
 import { MailingOptionsStep } from "./MailingOptionsStep";
 import { MailingSentStep } from "./MailingSentStep";
+import { uploadDisputeLetter } from "@/service/credit-repair";
+import { useQueryClient } from "@tanstack/react-query";
+import { GET_USER_DOCUMENTS } from "@/constant/react-query-keys";
 
 // ============================================
 // MailFlowModal — full-screen 3-step wizard
@@ -72,6 +75,7 @@ export function MailFlowModal({
   const [results, setResults] = useState<
     { agencyKey: string; agencyName: string; response: LobMailResponse }[]
   >([]);
+  const queryClient = useQueryClient();
 
   // Keep the parent in sync when subview changes (so demo toolbar reflects)
   useEffect(() => {
@@ -246,6 +250,7 @@ export function MailFlowModal({
           : { line1: "Unknown", city: "Unknown", state: "XX", zip: "00000" },
         letter,
         attachmentCount: totalAttach,
+        attachmentDocIds: [...a.requiredIds, ...a.optionalIds, ...a.libraryIds],
         method: chosenMethod,
         idempotencyKey: `${letter.agencyKey}-${Date.now()}`,
       };
@@ -260,6 +265,9 @@ export function MailFlowModal({
           response: r,
         },
       ]);
+      if (userData?.id) {
+        await uploadDisputeLetter(userData.id, requests[0].letter, r.lobId);
+      }
     } else {
       const map = await mailManyLettersViaLob(requests);
       setResults(
@@ -269,7 +277,26 @@ export function MailFlowModal({
           response: map[l.agencyKey],
         })),
       );
+      if (userData?.id) {
+        for (const request of requests) {
+          const result = map[request.letter.agencyKey];
+          if (result) {
+            await uploadDisputeLetter(
+              userData.id,
+              request.letter,
+              result.lobId,
+            );
+          }
+        }
+      }
     }
+
+    if (userData?.id) {
+      queryClient.invalidateQueries({
+        queryKey: [GET_USER_DOCUMENTS, userData.id],
+      });
+    }
+
     setSubviewState("mailing-sent");
   };
 
