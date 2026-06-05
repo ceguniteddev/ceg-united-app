@@ -37,6 +37,13 @@ export const authFirebase = getAuth(app);
 export const db = initializeFirestore(
   app,
   { ignoreUndefinedProperties: true },
-  `${process.env.FIREBASE_DB_NAME}`,
+  process.env.NEXT_PUBLIC_ENVIRONMENT === "production"
+    ? "ceg-united-db-production"
+    : "ceg-united-db-staging",
 );
-export const storage = getStorage(app, `${process.env.FIREBASE_STORAGE_NAME}`);
+export const storage = getStorage(
+  app,
+  process.env.NEXT_PUBLIC_ENVIRONMENT === "production"
+    ? "gs://ceg-united-llc-prod.firebasestorage.app"
+    : "gs://cegunitedllc.firebasestorage.app",
+);

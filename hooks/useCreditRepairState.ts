@@ -16,15 +16,8 @@ import { generateLetters } from "@/lib/credit-repair/disputeLetterGenerator";
 import type { TrackingRow } from "@/components/credit-repair/DisputeTrackingTable";
 import { useClientCRSReportQuery } from "@/hooks/crs";
 import { useUserQuery } from "@/hooks/user";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  getDocs,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import type { CreditReportWithId } from "@/types/crs";
+import { useGetDisputes } from "@/hooks/disputes";
 
 // ============================================
 // useCreditRepairState
@@ -96,32 +89,19 @@ export function useCreditRepairState(userId?: string) {
   const [positiveFactors, setPositiveFactors] = useState<any[]>([]);
   const [negativeFactors, setNegativeFactors] = useState<any[]>([]);
 
-  // Fetch all items currently in dispute from Firestore
-  const [persistedDisputedItemIds, setPersistedDisputedItemIds] = useState<
-    Set<string>
-  >(new Set());
-
-  useEffect(() => {
-    if (!userId) return;
-    const q = query(collection(db, "disputes"), where("userId", "==", userId));
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const disputedIds = new Set<string>();
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.itemIds && Array.isArray(data.itemIds)) {
-            data.itemIds.forEach((id: string) => disputedIds.add(id));
-          }
-        });
-        setPersistedDisputedItemIds(disputedIds);
-      },
-      (error) => {
-        console.error("Error fetching disputes:", error);
-      },
-    );
-    return () => unsubscribe();
-  }, [userId]);
+  // Fetch all items currently in dispute from Firestore via API
+  const { data: disputesData } = useGetDisputes(userId);
+  const persistedDisputedItemIds = useMemo(() => {
+    const disputedIds = new Set<string>();
+    if (disputesData && Array.isArray(disputesData)) {
+      disputesData.forEach((doc: any) => {
+        if (doc.itemIds && Array.isArray(doc.itemIds)) {
+          doc.itemIds.forEach((id: string) => disputedIds.add(id));
+        }
+      });
+    }
+    return disputedIds;
+  }, [disputesData]);
 
   useEffect(() => {
     if (!crsReport || crsReport.length === 0) return;
@@ -248,10 +228,12 @@ export function useCreditRepairState(userId?: string) {
       },
     );
 
+    // console.log("Parsed negative items:", parsedItems);
+
     setItems((prevItems) => {
-      return parsedItems.map((newItem) => {
+      const merged = parsedItems.map((newItem) => {
         if (persistedDisputedItemIds.has(newItem.id)) {
-          return { ...newItem, status: "in-dispute" };
+          return { ...newItem, status: "in-dispute" as const };
         }
         const existing = prevItems.find((p) => p.id === newItem.id);
         if (existing && existing.status !== "new") {
@@ -259,6 +241,11 @@ export function useCreditRepairState(userId?: string) {
         }
         return newItem;
       });
+      // console.log(
+      //   "Merged Items statuses:",
+      //   merged.map((i) => ({ id: i.id, status: i.status })),
+      // );
+      return merged;
     });
 
     const expScore =
