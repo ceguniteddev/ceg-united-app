@@ -3,7 +3,7 @@
 import { CONSUMER_REPORTING_AGENCY_COLLECTION } from "@/constant/collection-name";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { AgencySchemaForm } from "@/schema/consumer-reporting-agency";
-import AppError from "@/error/AppError";
+// import AppError from "@/error/AppError";
 import { normalizeAllDates } from "@/lib/date-parser";
 
 export const getConsumerReportingAgencies = async (): Promise<{

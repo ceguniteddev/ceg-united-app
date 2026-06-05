@@ -12,7 +12,7 @@ import {
   type LobMailResponse,
   type MailingMethod,
 } from "@/lib/credit-repair/lobMailing";
-import { mockClient } from "@/lib/credit-repair/credit-repair-mockData";
+import { useAuth } from "@/provider/AuthContext";
 import {
   AttachDocumentsStep,
   type AttachDocumentsResult,
@@ -33,6 +33,8 @@ export type MailFlowSubview =
   | "mailing-sent";
 
 interface Props {
+  /** The unique dispute ID for this mailing session */
+  disputeId?: string;
   /** Letters being mailed (one for single flow, many for bulk) */
   letters: GeneratedLetter[];
   /** Reason codes across selected items — powers auto-suggested optional docs */
@@ -53,6 +55,7 @@ interface Props {
 }
 
 export function MailFlowModal({
+  disputeId: propDisputeId,
   letters,
   reasonByItem,
   initialSubview,
@@ -62,6 +65,7 @@ export function MailFlowModal({
   onViewTracking,
 }: Props) {
   const { allAgencies } = useCreditAgenciesData();
+  const { userData } = useAuth();
   const [subview, setSubviewState] = useState<MailFlowSubview>(initialSubview);
   const [attached, setAttached] = useState<AttachDocumentsResult | null>(null);
   const [method, setMethod] = useState<MailingMethod>("certified");
@@ -217,12 +221,25 @@ export function MailFlowModal({
     const totalAttach =
       a.requiredIds.length + a.optionalIds.length + a.libraryIds.length;
 
+    const disputeId =
+      propDisputeId || `${userData?.id || "anon"}_${Date.now()}`;
+
     // Build LobMailRequests
     const requests: LobMailRequest[] = letters.map((letter) => {
       const agency = allAgencies.find((x) => x.key === letter.agencyKey);
+      const anyUser = userData as any;
+      const firstName = anyUser?.firstName || "Client";
+      const lastName = anyUser?.lastName || "Name";
       return {
-        fromName: `${mockClient.firstName} ${mockClient.lastName}`,
-        fromAddress: mockClient.address,
+        disputeId,
+        itemIds: Object.keys(reasonByItem),
+        fromName: `${firstName} ${lastName}`,
+        fromAddress: {
+          line1: anyUser?.addressStreet || anyUser?.address1 || "Unknown",
+          city: anyUser?.addressCity || anyUser?.city || "Unknown",
+          state: anyUser?.addressState || anyUser?.state || "XX",
+          zip: anyUser?.addressPostal || anyUser?.postalCode || "00000",
+        },
         toName: letter.agencyName,
         toAddress: agency
           ? agency.address
@@ -234,7 +251,6 @@ export function MailFlowModal({
       };
     });
 
-    // Single vs bulk: same shape, different timing.
     if (requests.length === 1) {
       const r = await mailLetterViaLob(requests[0]);
       setResults([

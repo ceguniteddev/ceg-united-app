@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import type {
   Bureau,
   DisputeReasonAssignment,
@@ -16,8 +16,8 @@ import { generateLetters } from "@/lib/credit-repair/disputeLetterGenerator";
 import type { TrackingRow } from "@/components/credit-repair/DisputeTrackingTable";
 import { useClientCRSReportQuery } from "@/hooks/crs";
 import { useUserQuery } from "@/hooks/user";
-import { useEffect } from "react";
-import { CreditReportWithId } from "@/types/crs";
+import type { CreditReportWithId } from "@/types/crs";
+import { useGetDisputes } from "@/hooks/disputes";
 
 // ============================================
 // useCreditRepairState
@@ -88,6 +88,20 @@ export function useCreditRepairState(userId?: string) {
   const [toast, setToast] = useState<Toast | null>(null);
   const [positiveFactors, setPositiveFactors] = useState<any[]>([]);
   const [negativeFactors, setNegativeFactors] = useState<any[]>([]);
+
+  // Fetch all items currently in dispute from Firestore via API
+  const { data: disputesData } = useGetDisputes(userId);
+  const persistedDisputedItemIds = useMemo(() => {
+    const disputedIds = new Set<string>();
+    if (disputesData && Array.isArray(disputesData)) {
+      disputesData.forEach((doc: any) => {
+        if (doc.itemIds && Array.isArray(doc.itemIds)) {
+          doc.itemIds.forEach((id: string) => disputedIds.add(id));
+        }
+      });
+    }
+    return disputedIds;
+  }, [disputesData]);
 
   useEffect(() => {
     if (!crsReport || crsReport.length === 0) return;
@@ -193,7 +207,10 @@ export function useCreditRepairState(userId?: string) {
         if (s.includes("transunion")) bKey = "transunion";
 
         return {
-          id: `live-item-${idx}`,
+          id:
+            `${t.creditorName || "unknown"}-${t.accountIdentifier || "****"}-${t.accountOpenedDate || "nodate"}`
+              .replace(/[^a-zA-Z0-9-]/g, "")
+              .toLowerCase() || `live-item-${idx}`,
           type: "late-payment",
           creditor: t.creditorName || "Unknown",
           accountNumber: t.accountIdentifier || "****",
@@ -211,7 +228,25 @@ export function useCreditRepairState(userId?: string) {
       },
     );
 
-    setItems(parsedItems);
+    // console.log("Parsed negative items:", parsedItems);
+
+    setItems((prevItems) => {
+      const merged = parsedItems.map((newItem) => {
+        if (persistedDisputedItemIds.has(newItem.id)) {
+          return { ...newItem, status: "in-dispute" as const };
+        }
+        const existing = prevItems.find((p) => p.id === newItem.id);
+        if (existing && existing.status !== "new") {
+          return { ...newItem, status: existing.status };
+        }
+        return newItem;
+      });
+      // console.log(
+      //   "Merged Items statuses:",
+      //   merged.map((i) => ({ id: i.id, status: i.status })),
+      // );
+      return merged;
+    });
 
     const expScore =
       toNum(bureauMap.Experian?.report?.scores?.[0]?.scoreValue) || 0;
@@ -437,7 +472,12 @@ export function useCreditRepairState(userId?: string) {
       });
     }
     setNegativeFactors(newNegatives);
-  }, [crsReport, selectedTimestamp, reportsByTimestamp]);
+  }, [
+    crsReport,
+    selectedTimestamp,
+    reportsByTimestamp,
+    persistedDisputedItemIds,
+  ]);
 
   // Selection
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
@@ -511,6 +551,8 @@ export function useCreditRepairState(userId?: string) {
   const goAgencies = useCallback(() => setView("pick-agencies"), []);
   const goGenerating = useCallback(() => setView("generating"), []);
 
+  const [currentDisputeId, setCurrentDisputeId] = useState<string>("");
+
   const finishGenerating = useCallback(() => {
     // Build letters now (deterministic).
     const agencies = allAgencies.filter((a) =>
@@ -558,9 +600,21 @@ export function useCreditRepairState(userId?: string) {
       items: selectedItems,
       reasonByItem,
     });
+
+    const newDisputeId = `${userId || "anon"}_${Date.now()}`;
+    setCurrentDisputeId(newDisputeId);
+
     setLetters(generated);
     setView("letters-ready");
-  }, [items, reasonByItem, selectedAgencies, selectedItemIds, allAgencies]);
+  }, [
+    items,
+    reasonByItem,
+    selectedAgencies,
+    selectedItemIds,
+    allAgencies,
+    userData,
+    userId,
+  ]);
 
   // ---------- mail flow actions ----------
   const startMailFlow = useCallback((agencyKeys: string[]) => {
@@ -673,7 +727,8 @@ export function useCreditRepairState(userId?: string) {
       });
       setTimeout(() => setToast(null), 4500);
 
-      setView("mailing-sent");
+      setView("letters-ready");
+      setMailingAgencyKeys([]);
     },
     [items, letters, selectedItemIds, bureauRecord],
   );
@@ -859,6 +914,7 @@ export function useCreditRepairState(userId?: string) {
     timestamps,
     selectedTimestamp,
     isLoading,
+    currentDisputeId,
 
     // actions
     setView: goView,

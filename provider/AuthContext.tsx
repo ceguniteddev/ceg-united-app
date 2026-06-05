@@ -195,10 +195,14 @@ export function AuthProvider({
         // local cleanup only; don't revoke all sessions
         try {
           await authFirebase.signOut();
-        } catch {}
+        } catch (error) {
+          console.error("Error signing out:", error);
+        }
         try {
           await deleteCookie(FIREBASE_TOKEN_NAME);
-        } catch {}
+        } catch (error) {
+          console.error("Error deleting cookie:", error);
+        }
 
         const { user: firebaseUser } = await signInWithEmailAndPassword(
           authFirebase,
@@ -250,7 +254,9 @@ export function AuthProvider({
         if (error instanceof AppError) throw error;
         try {
           await deleteCookie(FIREBASE_TOKEN_NAME);
-        } catch {}
+        } catch (error) {
+          console.error("Error deleting cookie:", error);
+        }
         throw new Error("Invalid email or password.");
       } finally {
         setIsLoggingIn(false); // Reset login flag

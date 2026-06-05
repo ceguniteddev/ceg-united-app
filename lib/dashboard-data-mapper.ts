@@ -285,8 +285,8 @@ export function transformClientDataToDashboard(
     ) ||
     false;
 
-  let hasBusiness = businessesWithCrsData.length > 0;
-  let hasApplied = (fundingApplications?.length || 0) > 0;
+  const hasBusiness = businessesWithCrsData.length > 0;
+  const hasApplied = (fundingApplications?.length || 0) > 0;
 
   const nextSteps: NextStep[] = [
     {

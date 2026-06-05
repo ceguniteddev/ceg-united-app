@@ -2,7 +2,6 @@ import {
   AccountsGetResponse,
   AssetReport,
   AuthGetResponse,
-  CraCheckReportBaseReportGetResponse,
   CraCheckReportIncomeInsightsGetResponse,
   CraCheckReportPartnerInsightsGetResponse,
   IdentityGetResponse,
@@ -23,7 +22,7 @@ import {
 
 const formatCurrency = (
   number: number | null | undefined,
-  code: string | null | undefined
+  code: string | null | undefined,
 ) => {
   if (number != null && number !== undefined) {
     return ` ${parseFloat(number.toFixed(2)).toLocaleString("en")} ${code}`;
@@ -616,7 +615,7 @@ export const transformIdentityData = (data: IdentityData) => {
       emails.length,
       names.length,
       phones.length,
-      addresses.length
+      addresses.length,
     );
 
     for (let i = 0; i < num; i++) {
@@ -660,10 +659,10 @@ export const transformInvestmentsData = (data: InvestmentData) => {
   });
   return holdingsData.map((holding) => {
     const account = data.holdings.accounts!.filter(
-      (acc) => acc.account_id === holding.account_id
+      (acc) => acc.account_id === holding.account_id,
     )[0];
     const security = data.holdings.securities!.filter(
-      (sec) => sec.security_id === holding.security_id
+      (sec) => sec.security_id === holding.security_id,
     )[0];
     const value = holding.quantity * security.close_price!;
 
@@ -673,7 +672,7 @@ export const transformInvestmentsData = (data: InvestmentData) => {
       quantity: formatCurrency(holding.quantity, ""),
       price: formatCurrency(
         security.close_price!,
-        account.balances.iso_currency_code
+        account.balances.iso_currency_code,
       ),
       value: formatCurrency(value, account.balances.iso_currency_code),
     };
@@ -687,19 +686,18 @@ interface InvestmentsTransactionData {
 }
 
 export const transformInvestmentTransactionsData = (
-  data: InvestmentsTransactionData
+  data: InvestmentsTransactionData,
 ) => {
   const investmentTransactionsData =
-    data.investments_transactions.investment_transactions!.sort(function (
-      a,
-      b
-    ) {
-      if (a.account_id > b.account_id) return 1;
-      return -1;
-    });
+    data.investments_transactions.investment_transactions!.sort(
+      function (a, b) {
+        if (a.account_id > b.account_id) return 1;
+        return -1;
+      },
+    );
   return investmentTransactionsData.map((investmentTransaction) => {
     const security = data.investments_transactions.securities!.filter(
-      (sec) => sec.security_id === investmentTransaction.security_id
+      (sec) => sec.security_id === investmentTransaction.security_id,
     )[0];
 
     const obj: DataItem = {
@@ -722,7 +720,7 @@ export const transformLiabilitiesData = (data: LiabilitiesDataResponse) => {
   //console.log("random")
   const credit = liabilitiesData.credit!.map((credit) => {
     const account = data.liabilities.accounts.filter(
-      (acc) => acc.account_id === credit.account_id
+      (acc) => acc.account_id === credit.account_id,
     )[0];
     const obj: DataItem = {
       name: account.name,
@@ -730,7 +728,7 @@ export const transformLiabilitiesData = (data: LiabilitiesDataResponse) => {
       date: credit.last_payment_date ?? "",
       amount: formatCurrency(
         credit.last_payment_amount,
-        account.balances.iso_currency_code
+        account.balances.iso_currency_code,
       ),
     };
     return obj;
@@ -738,7 +736,7 @@ export const transformLiabilitiesData = (data: LiabilitiesDataResponse) => {
 
   const mortgages = liabilitiesData.mortgage?.map((mortgage) => {
     const account = data.liabilities.accounts.filter(
-      (acc) => acc.account_id === mortgage.account_id
+      (acc) => acc.account_id === mortgage.account_id,
     )[0];
     const obj: DataItem = {
       name: account.name,
@@ -746,7 +744,7 @@ export const transformLiabilitiesData = (data: LiabilitiesDataResponse) => {
       date: mortgage.last_payment_date!,
       amount: formatCurrency(
         mortgage.last_payment_amount!,
-        account.balances.iso_currency_code
+        account.balances.iso_currency_code,
       ),
     };
     return obj;
@@ -754,7 +752,7 @@ export const transformLiabilitiesData = (data: LiabilitiesDataResponse) => {
 
   const student = liabilitiesData.student?.map((student) => {
     const account = data.liabilities.accounts.filter(
-      (acc) => acc.account_id === student.account_id
+      (acc) => acc.account_id === student.account_id,
     )[0];
     const obj: DataItem = {
       name: account.name,
@@ -762,7 +760,7 @@ export const transformLiabilitiesData = (data: LiabilitiesDataResponse) => {
       date: student.last_payment_date!,
       amount: formatCurrency(
         student.last_payment_amount!,
-        account.balances.iso_currency_code
+        account.balances.iso_currency_code,
       ),
     };
     return obj;
@@ -789,7 +787,7 @@ export const transformSignalData = (data: SignalEvaluateResponse) => {
 };
 
 export const transformTransferAuthorizationData = (
-  data: TransferAuthorizationCreateResponse
+  data: TransferAuthorizationCreateResponse,
 ): Array<DataItem> => {
   const transferAuthorizationData = data.authorization;
   return [
@@ -809,7 +807,7 @@ export const transformTransferAuthorizationData = (
 };
 
 export const transformTransferData = (
-  data: TransferCreateResponse
+  data: TransferCreateResponse,
 ): Array<DataItem> => {
   const transferData = data.transfer;
   return [
@@ -823,11 +821,6 @@ export const transformTransferData = (
     },
   ];
 };
-
-interface ItemData {
-  item: ItemGetResponse["item"];
-  institution: InstitutionsGetByIdResponse["institution"];
-}
 
 export const transformItemData = (data: any): Array<DataItem> => {
   return [
@@ -923,7 +916,7 @@ export const transformIncomePaystubsData = (data: IncomePaystub) => {
 };
 
 export const transformIncomeInsightsData = (
-  data: CraCheckReportIncomeInsightsGetResponse
+  data: CraCheckReportIncomeInsightsGetResponse,
 ) => {
   const report = data.report?.bank_income_summary;
   const historicalIncome = report?.historical_annual_income?.pop();
@@ -933,18 +926,18 @@ export const transformIncomeInsightsData = (
       incomeSourcesCount: report?.income_sources_count,
       historicalAnnualIncome: formatCurrency(
         historicalIncome?.amount,
-        historicalIncome?.iso_currency_code
+        historicalIncome?.iso_currency_code,
       ),
       forecastedAnnualIncome: formatCurrency(
         forecastedIncome?.amount,
-        forecastedIncome?.iso_currency_code
+        forecastedIncome?.iso_currency_code,
       ),
     },
   ] as Array<CreditInsightsGetItem>;
 };
 
 export const transformPartnerInsightsData = (
-  data: CraCheckReportPartnerInsightsGetResponse
+  data: CraCheckReportPartnerInsightsGetResponse,
 ) => {
   const report = data.report?.prism;
   return [

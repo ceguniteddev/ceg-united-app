@@ -184,6 +184,7 @@ export default function CreditRepair({ userId }: { userId: string }) {
       {/* Mail Letter modal (3-step wizard) */}
       {isMailFlowActive && mailingLetters.length > 0 && (
         <MailFlowModal
+          disputeId={s.currentDisputeId}
           letters={mailingLetters}
           reasonByItem={s.reasonByItem}
           initialSubview={s.view as MailFlowSubview}

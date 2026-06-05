@@ -60,7 +60,7 @@ export const GET = withAuth(async (request: NextRequest) => {
           },
         ];
 
-        let documents = requiredDocsKeys.map((def) => {
+        const documents = requiredDocsKeys.map((def) => {
           const matchingDocs = userDocs.filter((d: any) => {
             const rawName = d.name.split("/").pop() || "";
             return rawName.startsWith(def.type + "_");

@@ -41,11 +41,11 @@ export function LettersReadyView({
             Letters ready
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            {allLetters.length} personalized letters generated · {sentCount}{" "}
+            {allLetters.length} personalized letters generated{` · {sentCount} `}
             sent
             {mailedCount > 0 && (
               <>
-                 ·{" "}
+                {` · `}
                 <span className="text-emerald-700 font-semibold">
                   {mailedCount} mailed
                 </span>

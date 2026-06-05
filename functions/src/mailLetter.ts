@@ -1,5 +1,5 @@
 import * as functions from "firebase-functions/v2/https";
-import * as Lob from "@lob/lob-typescript-sdk";
+// import * as Lob from "@lob/lob-typescript-sdk";
 import { defineSecret } from "firebase-functions/params";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import * as admin from "firebase-admin";
@@ -12,12 +12,22 @@ import { PDFDocument } from "pdf-lib";
 const LOB_API_KEY = defineSecret("LOB_API_KEY");
 
 export const mailLetter = functions.onCall(
-  { secrets: [LOB_API_KEY] },
+  {
+    secrets: [LOB_API_KEY],
+    invoker: "public",
+    cors: [
+      "http://localhost:3000",
+      "https://raccoon-robust-likely.ngrok-free.app",
+      "https://staging.cegunited.com",
+      "https://app.cegunited.com",
+    ],
+  },
   async (req) => {
     if (!req.auth)
       throw new functions.HttpsError("unauthenticated", "Sign in required");
     const {
       disputeId,
+      itemIds,
       agencyKey,
       letterPdfBase64,
       attachmentPdfsBase64, // string[]
@@ -42,59 +52,86 @@ export const mailLetter = functions.onCall(
         "Lob accepts max 60 pages.",
       );
     }
-    const mergedB64 = Buffer.from(await merged.save()).toString("base64");
+    const mergedPdfBytes = await merged.save();
 
-    // 2. Send to Lob
-    const lob = new Lob.LettersApi(
-      new Lob.Configuration({ username: LOB_API_KEY.value() }),
-    );
+    // 2. Send to Lob via native fetch
     const extraService =
       mailingMethod === "certified"
-        ? Lob.LetterEditableExtraServiceEnum.Certified
+        ? "certified"
         : mailingMethod === "certified-rr"
-          ? Lob.LetterEditableExtraServiceEnum.CertifiedReturnReceipt
+          ? "certified_return_receipt"
           : undefined;
 
-    const letter = await lob.create(
-      {
-        to: {
-          name: toName || "Unknown Agency",
-          address_line1: toAddress?.line1 || "Unknown Address",
-          address_line2: toAddress?.line2 || "",
-          address_city: toAddress?.city || "Unknown City",
-          address_state: toAddress?.state || "XX",
-          address_zip: toAddress?.zip || "00000",
-          address_country: Lob.CountryExtended.Us,
-          toJSON: () => ({}),
-        } as any,
-        from: {
-          name: fromName || "Credit Experts Group LLC",
-          address_line1: fromAddress?.line1 || "123 CEG Way",
-          address_city: fromAddress?.city || "Anytown",
-          address_state: fromAddress?.state || "NY",
-          address_zip: fromAddress?.zip || "10001",
-          address_country: Lob.CountryExtended.Us,
-          toJSON: () => ({}),
-        } as any,
-        file: `data:application/pdf;base64,${mergedB64}`,
-        color: false,
-        address_placement: Lob.LetterEditableAddressPlacementEnum
-          .TopFirstPage as any,
-        mail_type: Lob.MailType.FirstClass as any,
-        extra_service: extraService as any,
-        use_type: Lob.LtrUseType.Operational as any,
-        double_sided: true,
-        toJSON: () => ({}),
-      } as any,
-      {
-        headers: {
-          "Idempotency-Key": `${disputeId}:${agencyKey}:${Date.now()}`,
-        },
-      } as any,
-    );
+    const formData = new FormData();
+    formData.append("to[name]", toName || "Unknown Agency");
+    formData.append("to[address_line1]", toAddress?.line1 || "Unknown Address");
+    if (toAddress?.line2) formData.append("to[address_line2]", toAddress.line2);
+    formData.append("to[address_city]", toAddress?.city || "Unknown City");
+    formData.append("to[address_state]", toAddress?.state || "XX");
+    formData.append("to[address_zip]", toAddress?.zip || "00000");
+    formData.append("to[address_country]", "US");
+
+    formData.append("from[name]", fromName || "Credit Experts Group LLC");
+    formData.append("from[address_line1]", fromAddress?.line1 || "123 CEG Way");
+    formData.append("from[address_city]", fromAddress?.city || "Anytown");
+    formData.append("from[address_state]", fromAddress?.state || "NY");
+    formData.append("from[address_zip]", fromAddress?.zip || "10001");
+    formData.append("from[address_country]", "US");
+
+    formData.append("color", "false");
+    formData.append("address_placement", "top_first_page");
+    formData.append("mail_type", "usps_first_class");
+    if (extraService) {
+      formData.append("extra_service", extraService);
+    }
+    formData.append("use_type", "operational");
+    formData.append("double_sided", "true");
+    formData.append("metadata[disputeId]", disputeId);
+    formData.append("metadata[agencyKey]", agencyKey);
+
+    const pdfBlob = new Blob([mergedPdfBytes as any], {
+      type: "application/pdf",
+    });
+    formData.append("file", pdfBlob, "letter.pdf");
+
+    const authStr = Buffer.from(`${LOB_API_KEY.value()}:`).toString("base64");
+    const lobRes = await fetch("https://api.lob.com/v1/letters", {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${authStr}`,
+        "Idempotency-Key": `${disputeId}:${agencyKey}:${Date.now()}`,
+      },
+      body: formData,
+    });
+
+    if (!lobRes.ok) {
+      const errText = await lobRes.text();
+      console.error("Lob API error:", errText);
+      throw new functions.HttpsError(
+        "internal",
+        `Lob API error: ${lobRes.status}`,
+      );
+    }
+    const letter = (await lobRes.json()) as any;
 
     // 3. Persist tracking back to Firestore
-    const db = getFirestore();
+    const projectId = process.env.GCLOUD_PROJECT || "cegunitedllc";
+    const databaseId =
+      projectId === "ceg-united-llc-prod"
+        ? "ceg-united-db-production"
+        : "ceg-united-db-staging";
+    const db = getFirestore(databaseId);
+
+    // Create or update the parent dispute document
+    await db.doc(`disputes/${disputeId}`).set(
+      {
+        userId: req.auth.uid,
+        createdAt: FieldValue.serverTimestamp(),
+        itemIds: itemIds || [],
+      },
+      { merge: true },
+    );
+
     await db.doc(`disputes/${disputeId}/generatedLetters/${agencyKey}`).set(
       {
         mailedAt: FieldValue.serverTimestamp(),

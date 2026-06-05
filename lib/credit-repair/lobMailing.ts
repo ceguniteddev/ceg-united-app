@@ -44,7 +44,7 @@ export const MAILING_METHODS: Record<
     key: "first-class",
     label: "First-Class Mail",
     price: 1.95,
-    deliveryWindow: "3–5 business days",
+    deliveryWindow: "3-5 business days",
     description: "Standard USPS delivery. No tracking, no proof.",
     lobMailType: "usps_first_class",
     lobExtraService: null,
@@ -53,7 +53,7 @@ export const MAILING_METHODS: Record<
     key: "certified",
     label: "Certified Mail",
     price: 7.0,
-    deliveryWindow: "3–5 business days",
+    deliveryWindow: "3-5 business days",
     description:
       "Proof of mailing + USPS tracking number. Recommended for FCRA disputes.",
     recommended: true,
@@ -64,7 +64,7 @@ export const MAILING_METHODS: Record<
     key: "certified-rr",
     label: "Certified Mail + Return Receipt",
     price: 11.5,
-    deliveryWindow: "3–5 business days",
+    deliveryWindow: "3-5 business days",
     description:
       "Strongest legal proof — bureau signature returned via green card.",
     lobMailType: "usps_first_class",
@@ -73,6 +73,8 @@ export const MAILING_METHODS: Record<
 };
 
 export interface LobMailRequest {
+  disputeId: string;
+  itemIds: string[];
   /** Who is mailing — used for the "from" address on the envelope */
   fromName: string;
   fromAddress: {
@@ -159,7 +161,8 @@ export async function mailLetterViaLob(
   const fn = httpsCallable(getFunctions(app), "mailLetter");
   // Map the frontend request shape into what the Cloud Function expects
   const payload = {
-    disputeId: "draft",
+    disputeId: request.disputeId,
+    itemIds: request.itemIds,
     agencyKey: request.letter.agencyKey,
     letterPdfBase64: getPdfBase64(request.letter),
     attachmentPdfsBase64: [], // Demo: mock documents don't have base64 readily available here
@@ -198,44 +201,6 @@ export async function mailManyLettersViaLob(
     }
   }
   return out;
-}
-
-// ---------- helpers ----------
-
-function hashString(input: string): number {
-  let h = 0;
-  for (let i = 0; i < input.length; i++) {
-    h = (h << 5) - h + input.charCodeAt(i);
-    h |= 0;
-  }
-  return Math.abs(h);
-}
-
-/**
- * Format a USPS Certified Mail tracking number — 22 digits, grouped 4-4-4-4-4-2.
- * Real Lob numbers begin with `9407 1118` (Certified Mail bar coded prefix).
- */
-function formatUSPSTracking(seed: number): string {
-  // Use the seed to fill the trailing 14 digits.
-  const tail = String(seed).padStart(14, "0").slice(-14);
-  const a = "9407";
-  const b = "1118";
-  const c = tail.slice(0, 4);
-  const d = tail.slice(4, 8);
-  const e = tail.slice(8, 12);
-  const f = tail.slice(12, 14);
-  return `${a} ${b} ${c} ${d} ${e} ${f}`;
-}
-
-function addBusinessDays(start: Date, days: number): Date {
-  const d = new Date(start);
-  let added = 0;
-  while (added < days) {
-    d.setDate(d.getDate() + 1);
-    const dow = d.getDay();
-    if (dow !== 0 && dow !== 6) added++;
-  }
-  return d;
 }
 
 export function uspsTrackingUrl(trackingNumber: string): string {
