@@ -7,7 +7,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
-import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 import { useMembership } from "@/hooks/membership";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
 import { LockIcon } from "lucide-react";
@@ -34,8 +33,7 @@ import {
 import { toast } from "sonner";
 
 const Sidebar = () => {
-  const { user, isOnboarded, userData } = useAuth();
-  const { appliedFunding } = useGetUserApplyFunding();
+  const { user, userData } = useAuth();
   const { data: addons = [] } = useAddons();
   const { data: membership } = useMembership();
   const pathname = usePathname();
@@ -203,7 +201,7 @@ const Sidebar = () => {
                         }
                       }}
                     >
-                      <LockIcon className="w-4 h-4 text-gray-500 opacity-80 hover:opacity-100 hover:text-blue-500" />
+                      <LockIcon className="w-4 h-4 text-amber-500 opacity-80 hover:opacity-100 hover:text-amber-600" />
                     </button>
                   )}
                 </div>

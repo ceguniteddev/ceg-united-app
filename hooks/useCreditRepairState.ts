@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import type {
   Bureau,
   DisputeReasonAssignment,
@@ -16,8 +16,15 @@ import { generateLetters } from "@/lib/credit-repair/disputeLetterGenerator";
 import type { TrackingRow } from "@/components/credit-repair/DisputeTrackingTable";
 import { useClientCRSReportQuery } from "@/hooks/crs";
 import { useUserQuery } from "@/hooks/user";
-import { useEffect } from "react";
-import { CreditReportWithId } from "@/types/crs";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  getDocs,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import type { CreditReportWithId } from "@/types/crs";
 
 // ============================================
 // useCreditRepairState
@@ -88,6 +95,33 @@ export function useCreditRepairState(userId?: string) {
   const [toast, setToast] = useState<Toast | null>(null);
   const [positiveFactors, setPositiveFactors] = useState<any[]>([]);
   const [negativeFactors, setNegativeFactors] = useState<any[]>([]);
+
+  // Fetch all items currently in dispute from Firestore
+  const [persistedDisputedItemIds, setPersistedDisputedItemIds] = useState<
+    Set<string>
+  >(new Set());
+
+  useEffect(() => {
+    if (!userId) return;
+    const q = query(collection(db, "disputes"), where("userId", "==", userId));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const disputedIds = new Set<string>();
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.itemIds && Array.isArray(data.itemIds)) {
+            data.itemIds.forEach((id: string) => disputedIds.add(id));
+          }
+        });
+        setPersistedDisputedItemIds(disputedIds);
+      },
+      (error) => {
+        console.error("Error fetching disputes:", error);
+      },
+    );
+    return () => unsubscribe();
+  }, [userId]);
 
   useEffect(() => {
     if (!crsReport || crsReport.length === 0) return;
@@ -193,7 +227,10 @@ export function useCreditRepairState(userId?: string) {
         if (s.includes("transunion")) bKey = "transunion";
 
         return {
-          id: `live-item-${idx}`,
+          id:
+            `${t.creditorName || "unknown"}-${t.accountIdentifier || "****"}-${t.accountOpenedDate || "nodate"}`
+              .replace(/[^a-zA-Z0-9-]/g, "")
+              .toLowerCase() || `live-item-${idx}`,
           type: "late-payment",
           creditor: t.creditorName || "Unknown",
           accountNumber: t.accountIdentifier || "****",
@@ -211,7 +248,18 @@ export function useCreditRepairState(userId?: string) {
       },
     );
 
-    setItems(parsedItems);
+    setItems((prevItems) => {
+      return parsedItems.map((newItem) => {
+        if (persistedDisputedItemIds.has(newItem.id)) {
+          return { ...newItem, status: "in-dispute" };
+        }
+        const existing = prevItems.find((p) => p.id === newItem.id);
+        if (existing && existing.status !== "new") {
+          return { ...newItem, status: existing.status };
+        }
+        return newItem;
+      });
+    });
 
     const expScore =
       toNum(bureauMap.Experian?.report?.scores?.[0]?.scoreValue) || 0;
@@ -437,7 +485,12 @@ export function useCreditRepairState(userId?: string) {
       });
     }
     setNegativeFactors(newNegatives);
-  }, [crsReport, selectedTimestamp, reportsByTimestamp]);
+  }, [
+    crsReport,
+    selectedTimestamp,
+    reportsByTimestamp,
+    persistedDisputedItemIds,
+  ]);
 
   // Selection
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
@@ -511,6 +564,8 @@ export function useCreditRepairState(userId?: string) {
   const goAgencies = useCallback(() => setView("pick-agencies"), []);
   const goGenerating = useCallback(() => setView("generating"), []);
 
+  const [currentDisputeId, setCurrentDisputeId] = useState<string>("");
+
   const finishGenerating = useCallback(() => {
     // Build letters now (deterministic).
     const agencies = allAgencies.filter((a) =>
@@ -558,9 +613,21 @@ export function useCreditRepairState(userId?: string) {
       items: selectedItems,
       reasonByItem,
     });
+
+    const newDisputeId = `${userId || "anon"}_${Date.now()}`;
+    setCurrentDisputeId(newDisputeId);
+
     setLetters(generated);
     setView("letters-ready");
-  }, [items, reasonByItem, selectedAgencies, selectedItemIds, allAgencies]);
+  }, [
+    items,
+    reasonByItem,
+    selectedAgencies,
+    selectedItemIds,
+    allAgencies,
+    userData,
+    userId,
+  ]);
 
   // ---------- mail flow actions ----------
   const startMailFlow = useCallback((agencyKeys: string[]) => {
@@ -673,7 +740,8 @@ export function useCreditRepairState(userId?: string) {
       });
       setTimeout(() => setToast(null), 4500);
 
-      setView("mailing-sent");
+      setView("letters-ready");
+      setMailingAgencyKeys([]);
     },
     [items, letters, selectedItemIds, bureauRecord],
   );
@@ -859,6 +927,7 @@ export function useCreditRepairState(userId?: string) {
     timestamps,
     selectedTimestamp,
     isLoading,
+    currentDisputeId,
 
     // actions
     setView: goView,

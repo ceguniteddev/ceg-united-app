@@ -228,7 +228,7 @@ const MobileNavClient = () => {
                               }
                             }}
                           >
-                            <LockIcon className="w-4 h-4 text-gray-500 opacity-80 hover:opacity-100 hover:text-blue-500" />
+                            <LockIcon className="w-4 h-4 text-amber-500 opacity-80 hover:opacity-100 hover:text-amber-600" />
                           </button>
                         )}
                       </div>

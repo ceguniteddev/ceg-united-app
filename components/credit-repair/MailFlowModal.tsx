@@ -33,6 +33,8 @@ export type MailFlowSubview =
   | "mailing-sent";
 
 interface Props {
+  /** The unique dispute ID for this mailing session */
+  disputeId?: string;
   /** Letters being mailed (one for single flow, many for bulk) */
   letters: GeneratedLetter[];
   /** Reason codes across selected items — powers auto-suggested optional docs */
@@ -53,6 +55,7 @@ interface Props {
 }
 
 export function MailFlowModal({
+  disputeId: propDisputeId,
   letters,
   reasonByItem,
   initialSubview,
@@ -218,6 +221,9 @@ export function MailFlowModal({
     const totalAttach =
       a.requiredIds.length + a.optionalIds.length + a.libraryIds.length;
 
+    const disputeId =
+      propDisputeId || `${userData?.id || "anon"}_${Date.now()}`;
+
     // Build LobMailRequests
     const requests: LobMailRequest[] = letters.map((letter) => {
       const agency = allAgencies.find((x) => x.key === letter.agencyKey);
@@ -225,6 +231,8 @@ export function MailFlowModal({
       const firstName = anyUser?.firstName || "Client";
       const lastName = anyUser?.lastName || "Name";
       return {
+        disputeId,
+        itemIds: Object.keys(reasonByItem),
         fromName: `${firstName} ${lastName}`,
         fromAddress: {
           line1: anyUser?.addressStreet || anyUser?.address1 || "Unknown",
@@ -243,7 +251,6 @@ export function MailFlowModal({
       };
     });
 
-    // Single vs bulk: same shape, different timing.
     if (requests.length === 1) {
       const r = await mailLetterViaLob(requests[0]);
       setResults([

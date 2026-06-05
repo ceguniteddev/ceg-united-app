@@ -27,6 +27,7 @@ export const mailLetter = functions.onCall(
       throw new functions.HttpsError("unauthenticated", "Sign in required");
     const {
       disputeId,
+      itemIds,
       agencyKey,
       letterPdfBase64,
       attachmentPdfsBase64, // string[]
@@ -85,6 +86,8 @@ export const mailLetter = functions.onCall(
     }
     formData.append("use_type", "operational");
     formData.append("double_sided", "true");
+    formData.append("metadata[disputeId]", disputeId);
+    formData.append("metadata[agencyKey]", agencyKey);
 
     const pdfBlob = new Blob([mergedPdfBytes as any], {
       type: "application/pdf",
@@ -118,6 +121,16 @@ export const mailLetter = functions.onCall(
         ? "ceg-united-db-production"
         : "ceg-united-db-staging";
     const db = getFirestore(databaseId);
+
+    // Create or update the parent dispute document
+    await db.doc(`disputes/${disputeId}`).set(
+      {
+        userId: req.auth.uid,
+        createdAt: FieldValue.serverTimestamp(),
+        itemIds: itemIds || [],
+      },
+      { merge: true },
+    );
 
     await db.doc(`disputes/${disputeId}/generatedLetters/${agencyKey}`).set(
       {
