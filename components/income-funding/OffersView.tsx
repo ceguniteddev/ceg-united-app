@@ -28,12 +28,24 @@ export function OffersView({
 
   const computationFromBackend = realDeal?.businessIncomeComputation || {};
 
-  let estimatedAmountValue =
+  // Compute requested amount as fallback
+  const requestedAmount =
+    Number(realDeal?.personalAmountFunding || 0) +
+    Number(realDeal?.businessAmountFunding || 0);
+
+  const backendEstimatedAmountValue =
     typeof computationFromBackend.estimatedApprovalAmount === "object" &&
     computationFromBackend.estimatedApprovalAmount !== null
       ? computationFromBackend.estimatedApprovalAmount.amount
-      : computationFromBackend.estimatedApprovalAmount ||
-        deal.underwritingResult.maxFundingAmount;
+      : computationFromBackend.estimatedApprovalAmount;
+
+  // Handle both old flat structure and new nested structure, fallback to requested amount if 0/null/undefined
+  let estimatedAmountValue =
+    backendEstimatedAmountValue !== undefined &&
+    backendEstimatedAmountValue !== null &&
+    backendEstimatedAmountValue !== 0
+      ? backendEstimatedAmountValue
+      : requestedAmount || deal.underwritingResult.maxFundingAmount;
 
   if (selectedPathwayId === "business_credit_card_stacking") {
     estimatedAmountValue =
@@ -78,7 +90,10 @@ export function OffersView({
     computationFromBackend.monthlyBusinessRevenue ||
     (realDeal?.annualBusinessRevenue
       ? realDeal.annualBusinessRevenue / 12
-      : deal.underwritingInput.monthlyDeposits);
+      : Number(realDeal?.payPerMonth || 0) ||
+        Number(realDeal?.employmentPayPerMonth || 0) ||
+        deal.underwritingInput.monthlyDeposits ||
+        0);
 
   const gradeValue =
     computationFromBackend.assignedGrade || deal.underwritingResult.grade;

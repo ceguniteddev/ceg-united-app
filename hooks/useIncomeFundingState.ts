@@ -142,10 +142,14 @@ export function useIncomeFundingState(
           } else {
             nextStatus = "prequalified";
           }
-        } else if (
-          relevantStatus === "Pre-Approved" ||
-          relevantStatus === "Offer Accepted"
-        ) {
+        } else if (relevantStatus === "Pre-Approved") {
+          // If they are already in offers-ready, keep it. Otherwise, start at prequalified
+          if (d.status === "offers-ready" || d.status === "accepting") {
+            nextStatus = d.status;
+          } else {
+            nextStatus = "prequalified";
+          }
+        } else if (relevantStatus === "Offer Accepted") {
           nextStatus = "offers-ready";
         } else if (relevantStatus === "Approved") {
           nextStatus = "complete";
