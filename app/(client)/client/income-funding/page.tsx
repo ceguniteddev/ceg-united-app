@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, AlertCircle, Bot, Loader2 } from "lucide-react";
+import { ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 // import { ProgressStepper } from "@/components/income-funding/ProgressStepper";
 import { PreApprovalView } from "@/components/income-funding/PreApprovalView";
 import { DocumentCollectionView } from "@/components/income-funding/DocumentCollectionView";
