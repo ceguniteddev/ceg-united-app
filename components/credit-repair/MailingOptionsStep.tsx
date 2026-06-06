@@ -263,7 +263,7 @@ function SubmitCTA({
         {submitting ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Mailing via Lob.com…
+            Sending…
           </>
         ) : (
           <>

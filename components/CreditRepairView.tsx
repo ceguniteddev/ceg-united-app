@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Bot, CheckCircle2 } from "lucide-react";
 import {
   Select,
@@ -103,7 +103,13 @@ export default function CreditRepair({ userId }: { userId: string }) {
           />
         );
       case "tracking":
-        return <TrackingView state={s} onPreview={setPreviewLetter} />;
+        return (
+          <TrackingView
+            state={s}
+            onPreview={setPreviewLetter}
+            userId={userId}
+          />
+        );
     }
   };
 

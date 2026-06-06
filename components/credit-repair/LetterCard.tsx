@@ -141,24 +141,10 @@ export function LetterCard({
           )}
         </div>
 
-        {isMailed ? (
+        {isMailed && (
           <div className="mt-2.5 text-[11px] text-center text-gray-500">
             Lob ID <span className="font-mono">{letter.lobId}</span>
           </div>
-        ) : !isSent ? (
-          <button
-            onClick={onMarkSent}
-            className="mt-2.5 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-gray-300 text-gray-500 hover:text-gray-900 hover:border-gray-400 text-xs font-medium transition-colors"
-          >
-            Mark as Sent (manual)
-          </button>
-        ) : (
-          <button
-            onClick={onMarkSent}
-            className="mt-2.5 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold"
-          >
-            <Check className="w-3.5 h-3.5" /> Sent — tracking active
-          </button>
         )}
       </div>
     </div>

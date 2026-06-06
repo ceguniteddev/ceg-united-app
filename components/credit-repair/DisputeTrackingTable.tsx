@@ -1,6 +1,12 @@
+import React, { useMemo } from "react";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import {
   CheckCircle2,
-  RefreshCw,
   Eye,
   AlertTriangle,
   Sparkles,
@@ -64,7 +70,157 @@ function daysSince(iso: string): number {
   );
 }
 
+const columnHelper = createColumnHelper<TrackingRow>();
+
 export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
+  const columns = useMemo(
+    () => [
+      columnHelper.accessor("item", {
+        header: "Item",
+        cell: (info) => {
+          const item = info.getValue();
+          return (
+            <div className="flex items-center gap-3">
+              <ItemTypeIcon type={item.type} size="sm" />
+              <div className="min-w-0">
+                <div className="font-semibold text-sm text-gray-900 truncate">
+                  {item.creditor}
+                </div>
+                <div className="text-[11px] text-gray-500 mt-0.5">
+                  {getTypeLabel(item.type)} · {item.accountNumber}
+                </div>
+              </div>
+            </div>
+          );
+        },
+      }),
+      columnHelper.accessor("agencyName", {
+        header: "Agency",
+        cell: (info) => (
+          <span className="text-sm text-gray-700">{info.getValue()}</span>
+        ),
+      }),
+      columnHelper.accessor("status", {
+        header: "Status",
+        cell: (info) => {
+          const status = info.getValue();
+          const row = info.row.original;
+          const isDeleted = status === "deleted";
+          return (
+            <div>
+              <span
+                className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-md border ${
+                  STATUS_LABEL[status]?.tone ||
+                  STATUS_LABEL["under-review"].tone
+                }`}
+              >
+                {isDeleted && <CheckCircle2 className="w-3 h-3" />}
+                {STATUS_LABEL[status]?.label || status}
+              </span>
+              {row.letter.mailedAt && (
+                <div className="mt-1">
+                  <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100 text-emerald-700">
+                    <Mail className="w-2.5 h-2.5" />
+                    Mailed
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        },
+      }),
+      columnHelper.accessor("letter", {
+        header: "Tracking",
+        cell: (info) => {
+          const letter = info.getValue();
+          return letter.trackingNumber ? (
+            <a
+              href={uspsTrackingUrl(letter.trackingNumber)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[10.5px] font-mono tabular-nums text-brand-700 hover:text-brand-800 hover:underline whitespace-nowrap"
+            >
+              {letter.trackingNumber}
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          ) : (
+            <span className="text-[11px] text-gray-400 italic">Not mailed</span>
+          );
+        },
+      }),
+      columnHelper.accessor("submittedAt", {
+        header: "Days / Deadline",
+        cell: (info) => {
+          const submittedAt = info.getValue();
+          const status = info.row.original.status;
+          const days = daysSince(submittedAt);
+          const remaining = Math.max(0, 30 - days);
+          const isDeleted = status === "deleted";
+          const isVerified = status === "verified";
+          const isUpdated = status === "updated";
+          return (
+            <div>
+              <div className="font-mono tabular-nums text-gray-900">
+                Day {days} of 30
+              </div>
+              {!isDeleted && !isVerified && !isUpdated && (
+                <div className="text-[11px] text-gray-500 mt-0.5">
+                  {remaining} days remaining
+                </div>
+              )}
+            </div>
+          );
+        },
+      }),
+      columnHelper.accessor("lastUpdatedAt", {
+        header: "Last Update",
+        cell: (info) => (
+          <span className="text-xs text-gray-600">
+            {new Date(info.getValue()).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            })}
+          </span>
+        ),
+      }),
+      columnHelper.display({
+        id: "action",
+        header: () => <div className="text-right">Action</div>,
+        cell: (info) => {
+          const row = info.row.original;
+          const isVerified = row.status === "verified";
+          return (
+            <div className="flex items-center justify-end gap-2">
+              {isVerified && (
+                <button
+                  onClick={() => onEscalate(row)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-semibold transition-colors"
+                >
+                  <AlertTriangle className="w-3 h-3" />
+                  Escalate
+                </button>
+              )}
+              <button
+                onClick={() => onView(row)}
+                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                aria-label="View letter"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          );
+        },
+      }),
+    ],
+    [onEscalate, onView],
+  );
+
+  const table = useReactTable({
+    data: rows,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
   if (rows.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-10 text-center">
@@ -87,40 +243,36 @@ export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left bg-gray-50 border-b border-gray-100">
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                Item
-              </th>
-              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                Agency
-              </th>
-              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                Status
-              </th>
-              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                Tracking
-              </th>
-              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                Days / Deadline
-              </th>
-              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                Last Update
-              </th>
-              <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 text-right">
-                Action
-              </th>
-            </tr>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr
+                key={headerGroup.id}
+                className="text-left bg-gray-50 border-b border-gray-100"
+              >
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500"
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                  </th>
+                ))}
+              </tr>
+            ))}
           </thead>
           <tbody>
-            {rows.map((row) => {
-              const days = daysSince(row.submittedAt);
-              const remaining = Math.max(0, 30 - days);
-              const isDeleted = row.status === "deleted";
-              const isVerified = row.status === "verified";
-              const isUpdated = row.status === "updated";
+            {table.getRowModel().rows.map((row) => {
+              const status = row.original.status;
+              const isDeleted = status === "deleted";
+              const isUpdated = status === "updated";
+
               return (
                 <tr
-                  key={`${row.itemId}-${row.agencyKey}`}
+                  key={row.id}
                   className={`border-b border-gray-50 last:border-0 transition-colors ${
                     isDeleted
                       ? "bg-emerald-50/40 animate-fade-in"
@@ -129,97 +281,14 @@ export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
                         : "hover:bg-gray-50/60"
                   }`}
                 >
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <ItemTypeIcon type={row.item.type} size="sm" />
-                      <div className="min-w-0">
-                        <div className="font-semibold text-sm text-gray-900 truncate">
-                          {row.item.creditor}
-                        </div>
-                        <div className="text-[11px] text-gray-500 mt-0.5">
-                          {getTypeLabel(row.item.type)} ·{" "}
-                          {row.item.accountNumber}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3.5 text-sm text-gray-700">
-                    {row.agencyName}
-                  </td>
-                  <td className="px-3 py-3.5">
-                    <span
-                      className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-md border ${STATUS_LABEL[row.status]?.tone || STATUS_LABEL["under-review"].tone}`}
-                    >
-                      {isDeleted && <CheckCircle2 className="w-3 h-3" />}
-                      {STATUS_LABEL[row.status]?.label || row.status}
-                    </span>
-                    {row.letter.mailedAt && (
-                      <div className="mt-1">
-                        <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100 text-emerald-700">
-                          <Mail className="w-2.5 h-2.5" />
-                          Mailed
-                        </span>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-3.5 whitespace-nowrap">
-                    {row.letter.trackingNumber ? (
-                      <a
-                        href={uspsTrackingUrl(row.letter.trackingNumber)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[10.5px] font-mono tabular-nums text-brand-700 hover:text-brand-800 hover:underline whitespace-nowrap"
-                      >
-                        {row.letter.trackingNumber}
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    ) : (
-                      <span className="text-[11px] text-gray-400 italic">
-                        Not mailed
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3.5 text-xs">
-                    <div className="font-mono tabular-nums text-gray-900">
-                      Day {days} of 30
-                    </div>
-                    {!isDeleted && !isVerified && !isUpdated && (
-                      <div className="text-[11px] text-gray-500 mt-0.5">
-                        {remaining} days remaining
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-3.5 text-xs text-gray-600">
-                    {new Date(row.lastUpdatedAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </td>
-                  <td className="px-3 py-3.5">
-                    <div className="flex items-center justify-end gap-2">
-                      {isVerified ? (
-                        <button
-                          onClick={() => onEscalate(row)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-semibold transition-colors"
-                        >
-                          <AlertTriangle className="w-3 h-3" />
-                          Escalate
-                        </button>
-                      ) : (
-                        <button className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-[11px] font-semibold transition-colors">
-                          <RefreshCw className="w-3 h-3" />
-                          Refresh
-                        </button>
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-4 py-3.5">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
                       )}
-                      <button
-                        onClick={() => onView(row)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-                        aria-label="View letter"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
+                    </td>
+                  ))}
                 </tr>
               );
             })}
@@ -228,32 +297,131 @@ export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
       </div>
 
       {/* Mobile cards */}
-      <div className="md:hidden divide-y divide-gray-100">
+      <div className="md:hidden p-4 space-y-4 bg-gray-50/50">
         {rows.map((row) => {
           const days = daysSince(row.submittedAt);
+          const remaining = Math.max(0, 30 - days);
           const isDeleted = row.status === "deleted";
+          const isVerified = row.status === "verified";
+          const isUpdated = row.status === "updated";
+
           return (
             <div
               key={`${row.itemId}-${row.agencyKey}`}
-              className={`p-4 ${isDeleted ? "bg-emerald-50/40" : ""}`}
+              className={`bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden ${
+                isDeleted
+                  ? "border-emerald-100/50 ring-1 ring-inset ring-emerald-50"
+                  : ""
+              }`}
             >
-              <div className="flex items-start gap-3">
-                <ItemTypeIcon type={row.item.type} size="sm" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="font-semibold text-sm text-gray-900 truncate">
-                      {row.item.creditor}
+              <div className={`p-4 ${isDeleted ? "bg-emerald-50/20" : ""}`}>
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <ItemTypeIcon type={row.item.type} size="sm" />
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm text-gray-900 truncate">
+                        {row.item.creditor}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                        <span>{getTypeLabel(row.item.type)}</span>
+                        <span className="text-gray-300">•</span>
+                        <span className="font-mono text-[10px]">
+                          {row.item.accountNumber}
+                        </span>
+                      </div>
                     </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
                     <span
-                      className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-md border ${STATUS_LABEL[row.status]?.tone || STATUS_LABEL["under-review"].tone} shrink-0`}
+                      className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-md border ${
+                        STATUS_LABEL[row.status]?.tone ||
+                        STATUS_LABEL["under-review"].tone
+                      }`}
                     >
                       {isDeleted && <CheckCircle2 className="w-3 h-3" />}
                       {STATUS_LABEL[row.status]?.label || row.status}
                     </span>
+                    {row.letter.mailedAt && (
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100 text-emerald-700">
+                        <Mail className="w-2.5 h-2.5" />
+                        Mailed
+                      </span>
+                    )}
                   </div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">
-                    {row.agencyName} · Day {days} of 30
+                </div>
+
+                <div className="grid grid-cols-2 gap-y-3 gap-x-4 py-3 border-t border-gray-50">
+                  <div>
+                    <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
+                      Agency
+                    </div>
+                    <div className="text-xs font-medium text-gray-700">
+                      {row.agencyName}
+                    </div>
                   </div>
+                  <div>
+                    <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
+                      Tracking
+                    </div>
+                    {row.letter.trackingNumber ? (
+                      <a
+                        href={uspsTrackingUrl(row.letter.trackingNumber)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-mono text-brand-600 hover:text-brand-800"
+                      >
+                        {row.letter.trackingNumber}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    ) : (
+                      <div className="text-xs text-gray-400 italic">
+                        Not mailed
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
+                      Timeline
+                    </div>
+                    <div className="text-xs text-gray-700">
+                      Day {days} of 30
+                      {!isDeleted && !isVerified && !isUpdated && (
+                        <span className="text-gray-400 ml-1">
+                          ({remaining} left)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
+                      Last Update
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {new Date(row.lastUpdatedAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-gray-50 flex items-center justify-end gap-2">
+                  {isVerified && (
+                    <button
+                      onClick={() => onEscalate(row)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition-colors flex-1 justify-center"
+                    >
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      Escalate
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onView(row)}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold transition-colors flex-1"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    View Details
+                  </button>
                 </div>
               </div>
             </div>

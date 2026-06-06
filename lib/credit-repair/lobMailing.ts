@@ -126,6 +126,8 @@ export interface LobMailResponse {
   totalPrice: number;
   /** Server timestamp when Lob accepted the letter */
   mailedAt: string;
+  /** Direct URL to the Lob PDF */
+  url?: string;
 }
 
 // ---------- the call ----------
@@ -166,6 +168,7 @@ export async function mailLetterViaLob(
     agencyKey: request.letter.agencyKey,
     letterPdfBase64: getPdfBase64(request.letter),
     attachmentPdfsBase64: [], // Demo: mock documents don't have base64 readily available here
+    attachmentDocIds: request.attachmentDocIds || [],
     mailingMethod: request.method,
     toAddress: request.toAddress,
     toName: request.toName,

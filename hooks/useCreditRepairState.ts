@@ -492,6 +492,61 @@ export function useCreditRepairState(userId?: string) {
   const [letters, setLetters] = useState<Record<string, GeneratedLetter>>({});
   const [trackingRows, setTrackingRows] = useState<TrackingRow[]>([]);
 
+  useEffect(() => {
+    if (!disputesData || !Array.isArray(disputesData) || items.length === 0)
+      return;
+
+    setTrackingRows((prev) => {
+      const existingIds = new Set(
+        prev.map((r) => `${r.itemId}::${r.agencyKey}`),
+      );
+      const newRows: TrackingRow[] = [];
+
+      disputesData.forEach((dispute: any) => {
+        if (!dispute.generatedLetters) return;
+
+        Object.keys(dispute.generatedLetters).forEach((agencyKey) => {
+          const letter = dispute.generatedLetters[agencyKey];
+
+          if (dispute.itemIds && Array.isArray(dispute.itemIds)) {
+            dispute.itemIds.forEach((itemId: string) => {
+              const item = items.find((i) => i.id === itemId);
+              if (item && item.bureaus.includes(agencyKey as Bureau)) {
+                const rowId = `${itemId}::${agencyKey}`;
+                if (!existingIds.has(rowId)) {
+                  newRows.push({
+                    itemId,
+                    item: { ...item, status: "in-dispute" },
+                    agencyKey,
+                    agencyName: letter.agencyName || agencyKey,
+                    letter,
+                    status:
+                      letter.status === "sent" ? "under-review" : "submitted",
+                    submittedAt:
+                      letter.sentAt ||
+                      letter.generatedAt ||
+                      dispute.createdAt ||
+                      new Date().toISOString(),
+                    lastUpdatedAt:
+                      letter.lastResponseAt ||
+                      letter.sentAt ||
+                      letter.generatedAt ||
+                      dispute.createdAt ||
+                      new Date().toISOString(),
+                  });
+                  existingIds.add(rowId);
+                }
+              }
+            });
+          }
+        });
+      });
+
+      if (newRows.length === 0) return prev;
+      return [...prev, ...newRows];
+    });
+  }, [disputesData, items]);
+
   // Mail Letter (Lob.com) flow state
   // - mailingAgencyKeys: which letters are being mailed in the current flow
   //   (one for single, all for bulk)
@@ -649,6 +704,7 @@ export function useCreditRepairState(userId?: string) {
             expectedDelivery: r.response.expectedDelivery,
             mailingMethod: method,
             mailedFrom: r.response.mailedFrom,
+            url: r.response.url,
           };
         }
         return next;
@@ -692,6 +748,7 @@ export function useCreditRepairState(userId?: string) {
                 expectedDelivery: r.response.expectedDelivery,
                 mailingMethod: method,
                 mailedFrom: r.response.mailedFrom,
+                url: r.response.url,
               },
               status: "under-review",
               submittedAt: r.response.mailedAt,
