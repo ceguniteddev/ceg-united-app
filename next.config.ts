@@ -51,7 +51,7 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://cdn.tiny.cloud https://cdn.tailwindcss.com https://cdn.plaid.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://cdn.tiny.cloud https://cdn.tailwindcss.com https://cdn.plaid.com https://apis.google.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tiny.cloud",
               "img-src 'self' data: blob: https://storage.googleapis.com https://placehold.co",
               "font-src 'self' data: https://fonts.gstatic.com https://cdn.tiny.cloud",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -12,13 +12,13 @@ import {
 import { AlertCircle, PartyPopper } from "lucide-react";
 
 // --- IMPORT YOUR ACTUAL APPLICATION TYPES ---
-import { User, UserWithId } from "@/schema/registration";
+import { UserWithId } from "@/schema/registration";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { PlaidCompleteRow } from "@/service/plaid/data";
 import { Business } from "@/schema";
 import { CreditScore } from "@/types/crs";
 import { ApprovedBankFormData } from "@/schema/bank-products";
-import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+// import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import { useGetCongrats, useMarkCongratsAsRead } from "@/hooks/congrats";
 import {
   AlertDialog,
@@ -53,6 +53,8 @@ import {
 
 // Data transformation
 import { transformClientDataToDashboard } from "@/lib/dashboard-data-mapper";
+
+import { PreApprovalHeroCard } from "@/components/income-funding/PreApprovalHeroCard";
 
 interface IssueItem {
   issues: string[];
@@ -120,71 +122,6 @@ export interface ClientData {
   userDocuments?: any[];
 }
 
-// --- 2. YOUR HELPER FUNCTIONS (NOW FULLY TYPED) ---
-function bureauLabel(sourceType?: string): string {
-  const s = (sourceType || "").toLowerCase();
-  if (s.includes("experian")) return "Experian";
-  if (s.includes("equifax")) return "Equifax";
-  if (s.includes("trans")) return "TransUnion";
-  return sourceType || "Unknown";
-}
-
-function detectBureau(
-  report: CreditReport,
-): "Experian" | "TransUnion" | "Equifax" | null {
-  const fromScore = report.scores?.[0]?.sourceType;
-  if (fromScore) return bureauLabel(fromScore) as any;
-
-  const fromFile = report.creditFiles?.[0]?.creditFileDetail?.sourceType;
-  if (fromFile) return bureauLabel(fromFile) as any;
-
-  const r = report.repositoryIncluded;
-  if (r) {
-    const truths = [
-      r.experian ? "Experian" : null,
-      r.transunion ? "TransUnion" : null,
-      r.equifax ? "Equifax" : null,
-    ].filter(Boolean) as ("Experian" | "TransUnion" | "Equifax")[];
-    if (truths.length === 1) return truths[0];
-  }
-  return null;
-}
-
-function groupByBureau(
-  docs?: (CreditReportWithId | IssuesReportData | DTIReportData)[] | null,
-) {
-  const out: Record<
-    "Experian" | "TransUnion" | "Equifax",
-    CreditReportWithId | null
-  > = {
-    Experian: null,
-    TransUnion: null,
-    Equifax: null,
-  };
-  if (!docs) return out;
-
-  // Filter for actual credit reports before grouping to avoid processing the 'issues' object
-  const creditDocs = docs.filter(
-    (d): d is CreditReportWithId => d.id !== "issues" && d.id !== "dti",
-  );
-
-  for (const d of creditDocs) {
-    const bureau = d?.report ? detectBureau(d.report) : null;
-    if (!bureau) continue;
-    const prev = out[bureau];
-    if (!prev) {
-      out[bureau] = d;
-    } else {
-      const prevTs = new Date(prev.createdAt).getTime();
-      const curTs = new Date(d.createdAt).getTime();
-      if (curTs >= prevTs) {
-        out[bureau] = d;
-      }
-    }
-  }
-  return out;
-}
-
 // --- MAIN DASHBOARD COMPONENT ---
 export const ClientDashboard = ({
   clientData,
@@ -197,9 +134,9 @@ export const ClientDashboard = ({
   const router = useRouter();
   const onOpenConfetti = useConfettiStore((state) => state.onOpen);
   const { data: membershipData } = useMembership();
-  const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
-    clientData?.userData?.id || "",
-  );
+  // const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
+  //   clientData?.userData?.id || "",
+  // );
 
   const [congratsModalOpen, setCongratsModalOpen] = useState(false);
   const [currentCongratsMessage, setCurrentCongratsMessage] = useState<{
@@ -263,6 +200,15 @@ export const ClientDashboard = ({
   // Transform data for new dashboard components
   const dashboardData = transformClientDataToDashboard(clientData);
 
+  // Compute estimated amount for the Hero Card
+  const computationFromBackend =
+    (firstFundingApp as any)?.businessIncomeComputation || {};
+  const estimatedApprovalAmount =
+    typeof computationFromBackend.estimatedApprovalAmount === "object" &&
+    computationFromBackend.estimatedApprovalAmount !== null
+      ? computationFromBackend.estimatedApprovalAmount.amount
+      : computationFromBackend.estimatedApprovalAmount || 0;
+
   if (!clientData || !dashboardData) {
     return (
       <div className="flex items-center justify-center p-10 bg-gray-50 dark:bg-gray-900 rounded-lg">
@@ -287,7 +233,9 @@ export const ClientDashboard = ({
         <div className="flex-1">
           {adminView ? (
             <h1 className="text-xl font-bold text-gray-900">
-              {`${userData?.firstName} ${userData?.lastName}` || "Client"}
+              {userData?.firstName && userData?.lastName
+                ? `${userData.firstName} ${userData.lastName}`
+                : "Client"}
             </h1>
           ) : (
             <div className="animate-fadeInUp">
@@ -308,6 +256,16 @@ export const ClientDashboard = ({
 
       <main className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="max-w-[1400px] mx-auto px-6 py-6">
+          {/* Pre-Approval Hero Card */}
+          {firstFundingApp && estimatedApprovalAmount > 0 && (
+            <PreApprovalHeroCard
+              estimatedApprovalAmount={estimatedApprovalAmount}
+              onContinue={() =>
+                router.push("/client/income-funding?showPathways=true")
+              }
+            />
+          )}
+
           {/* Grid: main content (left) + sidebar panels (right) */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
             {/* === LEFT COLUMN === */}

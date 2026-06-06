@@ -1,28 +1,4 @@
 "use client";
-// FundingPathways.tsx
-// CEG United — Funding Pathways Selection Page
-//
-// Shown immediately AFTER the "Congratulations, you've been pre-approved" screen.
-// The client picks ONE pathway and clicks Continue, which routes them into the
-// offers list for that specific funding type.
-//
-// Visual design matches the existing CEG application:
-//   - Light premium fintech style, NO dark mode
-//   - Brand-600 blue (#2563eb) primary
-//   - Green "Pre-approval complete" pill chip (matches the previous screen)
-//   - Inter for body, JetBrains Mono for monetary amounts
-//
-// Developer integration notes:
-//   1. Drop into your existing React (Vite) + Tailwind project.
-//   2. Replace the `onContinue` handler with your real router push to each
-//      pathway's offers page. The route map at the bottom of this file is the
-//      single source of truth for where each pathway sends the client.
-//   3. Pre-approval amounts come from props (`pathways` array) so the back-end
-//      can override per-client. Defaults match the user's spec: 300/200/300/400.
-//   4. The selected pathway is also returned via `onSelect` so you can persist
-//      it to Firestore / your API before the redirect.
-//
-// Author: Built for Julian (CEG United) — May 22, 2026
 
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
@@ -133,20 +109,6 @@ const IconUser: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-// Sparkle icon for the "Pre-approval complete" chip
-const IconSparkle: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.75}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
-  </svg>
-);
 const IconArrowRight: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     viewBox="0 0 24 24"
@@ -160,19 +122,7 @@ const IconArrowRight: React.FC<{ className?: string }> = ({ className }) => (
     <path d="M5 12h14M13 5l7 7-7 7" />
   </svg>
 );
-const IconArrowLeft: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M19 12H5M11 19l-7-7 7-7" />
-  </svg>
-);
+
 const IconCheck: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     viewBox="0 0 24 24"
@@ -196,7 +146,7 @@ const DEFAULT_PATHWAYS: FundingPathway[] = [
     maxAmount: 300_000,
     tagline: "Funding based on your business cash flow",
     bestFor: "Businesses doing $20K+/month in revenue",
-    fundingTime: "24–72 hours",
+    fundingTime: "24-72 hours",
     pullType: "No hard pull",
     badge: "Fastest",
     Icon: IconCashflow,
@@ -208,7 +158,7 @@ const DEFAULT_PATHWAYS: FundingPathway[] = [
     maxAmount: 200_000,
     tagline: "0% intro APR business cards stacked for maximum capital",
     bestFor: "700+ personal credit, established business",
-    fundingTime: "7–14 days",
+    fundingTime: "7-14 days",
     pullType: "Soft pull first",
     Icon: IconCard,
     route: "/funding/credit-card-stacking/offers",
@@ -219,7 +169,7 @@ const DEFAULT_PATHWAYS: FundingPathway[] = [
     maxAmount: 300_000,
     tagline: "Revolving credit you draw on as needed",
     bestFor: "6+ months in business with documented revenue",
-    fundingTime: "3–7 days",
+    fundingTime: "3-7 days",
     pullType: "Soft pull first",
     Icon: IconBank,
     route: "/funding/business-line-of-credit/offers",
@@ -230,7 +180,7 @@ const DEFAULT_PATHWAYS: FundingPathway[] = [
     maxAmount: 400_000,
     tagline: "Fixed-term installment loans, predictable payments",
     bestFor: "Strong personal credit, W-2 or 1099 income",
-    fundingTime: "1–5 days",
+    fundingTime: "1-5 days",
     pullType: "Hard pull on funding",
     Icon: IconUser,
     route: "/funding/personal-loans/offers",
@@ -241,7 +191,7 @@ const DEFAULT_PATHWAYS: FundingPathway[] = [
     maxAmount: 150_000,
     tagline: "High-limit personal cards with rewards",
     bestFor: "Strong personal credit, lower limits than business",
-    fundingTime: "7–14 days",
+    fundingTime: "7-14 days",
     pullType: "Soft pull first",
     Icon: IconCard,
     route: "/funding/personal-credit-cards/offers",
@@ -301,13 +251,27 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
   );
   const appliedCount = uniqueAppliedPathwayIds.size;
 
+  const isPathwayLocked = (pId: string) => {
+    // "income_based" is completely free and requires no membership
+    if (pId === "income_based") {
+      return false;
+    }
+
+    // For all other pathways, they are locked if we have hit the allowed cap
+    // AND the user hasn't already applied for it
+    const isAlreadyApplied = uniqueAppliedPathwayIds.has(pId);
+    if (!isAlreadyApplied && appliedCount >= allowedCategoriesCount) {
+      return true;
+    }
+
+    return false;
+  };
+
   useEffect(() => {
-    const isTierMissing = !tierId;
-    const needsUpgrade = isTierMissing && appliedCount === 0;
-    setUpgradeFlow(needsUpgrade);
-    if (needsUpgrade) {
-      setSelectedId(null);
-    } else if (!selectedPathwayId) {
+    // Global upgrade flow disabled because "income_based" is always a free option
+    setUpgradeFlow(false);
+
+    if (!selectedPathwayId) {
       setSelectedId("income_based");
     }
   }, [tierId, appliedCount, selectedPathwayId]);
@@ -391,8 +355,7 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
     dynamicPathways.find((p) => p.id === selectedId) || null;
 
   const handleSelect = (p: FundingPathway) => {
-    const isAlreadyApplied = uniqueAppliedPathwayIds.has(p.id);
-    if (!isAlreadyApplied && appliedCount >= allowedCategoriesCount) {
+    if (isPathwayLocked(p.id)) {
       setPricingModalOpen(true);
       return;
     }
@@ -415,12 +378,12 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
             path
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-base text-slate-600">
-            You've been pre-approved across{" "}
+            {`You've been pre-approved across `}
             <span className="font-semibold text-slate-900">
               {pathways.length} funding categories
             </span>
-            . Select the one you'd like to pursue first — you can always come
-            back for the others.
+            {`. Select the one you'd like to pursue first — you can always come
+            back for the others.`}
           </p>
         </div>
 
@@ -486,8 +449,7 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                           <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
                             Applied
                           </span>
-                        ) : !uniqueAppliedPathwayIds.has(p.id) &&
-                          appliedCount >= allowedCategoriesCount ? (
+                        ) : isPathwayLocked(p.id) ? (
                           <span className="rounded-full bg-blue-600 text-white px-2 py-0.5 text-[10px] font-bold tracking-wide shadow-sm hover:bg-blue-700 transition-all uppercase flex items-center gap-1">
                             <LockIcon className="h-2.5 w-2.5 text-white" />{" "}
                             Upgrade
@@ -515,8 +477,7 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                           <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
                             Applied
                           </span>
-                        ) : !uniqueAppliedPathwayIds.has(p.id) &&
-                          appliedCount >= allowedCategoriesCount ? (
+                        ) : isPathwayLocked(p.id) ? (
                           <span className="rounded-full bg-blue-600 text-white px-3 py-0.5 text-[11px] font-bold tracking-wide inline-flex items-center gap-1.5 shadow-sm hover:bg-blue-700 transition-all uppercase">
                             <LockIcon className="h-3 w-3 text-white" /> Upgrade
                           </span>
