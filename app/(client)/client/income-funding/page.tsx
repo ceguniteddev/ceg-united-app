@@ -46,7 +46,9 @@ export function IncomeFundingContent() {
   const initialPathwayId = searchParams.get("pathwayId") || "income_based";
 
   const [selectedReference, setSelectedReference] = useState<string>("");
-  const [showPathways, setShowPathways] = useState(false);
+  const [showPathways, setShowPathways] = useState(
+    searchParams.get("showPathways") === "true",
+  );
   const [selectedPathwayId, setSelectedPathwayId] =
     useState<string>(initialPathwayId);
 
@@ -255,9 +257,9 @@ export function IncomeFundingContent() {
             Access Denied
           </h2>
           <p className="text-sm text-gray-500 mb-6">
-            You do not currently have an active application for "Business Income
+            {`You do not currently have an active application for "Business Income
             Based Funding". Please apply for this funding product to access this
-            page.
+            page.`}
           </p>
           <Link
             href="/client/home"

@@ -133,20 +133,6 @@ const IconUser: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-// Sparkle icon for the "Pre-approval complete" chip
-const IconSparkle: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.75}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
-  </svg>
-);
 const IconArrowRight: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     viewBox="0 0 24 24"
@@ -160,19 +146,7 @@ const IconArrowRight: React.FC<{ className?: string }> = ({ className }) => (
     <path d="M5 12h14M13 5l7 7-7 7" />
   </svg>
 );
-const IconArrowLeft: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M19 12H5M11 19l-7-7 7-7" />
-  </svg>
-);
+
 const IconCheck: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     viewBox="0 0 24 24"
@@ -415,12 +389,12 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
             path
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-base text-slate-600">
-            You've been pre-approved across{" "}
+            {`You've been pre-approved across `}
             <span className="font-semibold text-slate-900">
               {pathways.length} funding categories
             </span>
-            . Select the one you'd like to pursue first — you can always come
-            back for the others.
+            {`. Select the one you'd like to pursue first — you can always come
+            back for the others.`}
           </p>
         </div>
 
