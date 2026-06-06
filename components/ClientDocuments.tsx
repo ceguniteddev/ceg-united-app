@@ -39,9 +39,8 @@ import {
   Search,
   Calendar,
   HardDrive,
-  Eye,
 } from "lucide-react";
-import React, { useCallback, useMemo, useState, useEffect } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import Image from "next/image";
@@ -78,17 +77,8 @@ const cleanFileName = (fileName: string) => {
   return fileName;
 };
 
-const truncateForMobile = (fileName: string) => {
-  if (fileName.length > 20) {
-    const lastDotIndex = fileName.lastIndexOf(".");
-    if (lastDotIndex !== -1) {
-      const extension = fileName.substring(lastDotIndex);
-      const nameWithoutExt = fileName.substring(0, lastDotIndex);
-      return `${nameWithoutExt.substring(0, 20)}....${extension}`;
-    }
-    return `${fileName.substring(0, 20)}....`;
-  }
-  return fileName;
+const spaceFilename = (fileName: string) => {
+  return fileName.replace(/_/g, " ");
 };
 
 // File type icon config
@@ -216,7 +206,8 @@ const DocList = ({
         {docs.map((doc, i) => {
           const isReadOnly = doc.path.toLowerCase().includes("asset-report");
           const rawName = doc.name.split("/").pop() || "";
-          const displayName = cleanFileName(rawName);
+          let displayName = cleanFileName(rawName);
+          displayName = spaceFilename(displayName);
           const { Icon, color, bg } = getFileIconConfig(
             doc.contentType,
             rawName,
