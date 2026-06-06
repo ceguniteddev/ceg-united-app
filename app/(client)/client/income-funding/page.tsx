@@ -103,8 +103,14 @@ export function IncomeFundingContent() {
   const selectedOffer =
     deal.offers.find((o) => o.id === deal.selectedOfferId) || deal.offers[0];
 
+  const requestedAmount =
+    Number((realDeal as any)?.personalAmountFunding || 0) +
+    Number((realDeal as any)?.businessAmountFunding || 0);
+
   const hasMissingComputation =
-    realDeal && !(realDeal as any).businessIncomeComputation;
+    realDeal &&
+    !(realDeal as any).businessIncomeComputation &&
+    requestedAmount === 0;
 
   const renderView = () => {
     if (

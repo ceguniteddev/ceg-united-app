@@ -200,15 +200,6 @@ export const ClientDashboard = ({
   // Transform data for new dashboard components
   const dashboardData = transformClientDataToDashboard(clientData);
 
-  // Compute estimated amount for the Hero Card
-  const computationFromBackend =
-    (firstFundingApp as any)?.businessIncomeComputation || {};
-  const estimatedApprovalAmount =
-    typeof computationFromBackend.estimatedApprovalAmount === "object" &&
-    computationFromBackend.estimatedApprovalAmount !== null
-      ? computationFromBackend.estimatedApprovalAmount.amount
-      : computationFromBackend.estimatedApprovalAmount || 0;
-
   if (!clientData || !dashboardData) {
     return (
       <div className="flex items-center justify-center p-10 bg-gray-50 dark:bg-gray-900 rounded-lg">
@@ -226,6 +217,22 @@ export const ClientDashboard = ({
   const { userData } = clientData;
 
   const loading = !dashboardData;
+
+  // Compute estimated amount for the Hero Card
+  const computationFromBackend =
+    (firstFundingApp as any)?.businessIncomeComputation || {};
+  const backendEstimatedApprovalAmount =
+    typeof computationFromBackend.estimatedApprovalAmount === "object" &&
+    computationFromBackend.estimatedApprovalAmount !== null
+      ? computationFromBackend.estimatedApprovalAmount.amount
+      : computationFromBackend.estimatedApprovalAmount;
+
+  const estimatedApprovalAmount =
+    backendEstimatedApprovalAmount !== undefined &&
+    backendEstimatedApprovalAmount !== null &&
+    backendEstimatedApprovalAmount !== 0
+      ? backendEstimatedApprovalAmount
+      : dashboardData?.fundingMetrics?.totalRequested || 0;
 
   return (
     <div className="flex flex-col h-full">
