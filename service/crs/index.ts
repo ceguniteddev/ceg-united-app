@@ -11,13 +11,81 @@ import {
   deleteCRSReportN8N,
   generateCRSReportN8N,
   getFundingAnalysis,
+  // getFundingAnalysisNewRegistrationFlow,
+  mapBankProductsN8nNewRegistration,
   sendClientAnalysisN8N,
   sendClientCongratsMessageN8N,
+  sendClientCongratsMessageN8NNewRegistration,
 } from "@/lib/n8n";
 import { Business } from "@/schema";
 import { getBusiness } from "@/service/business";
 import { getUserById } from "@/service/user";
+import { getUserMembership } from "@/service/membership";
 import { CRSAddressInfo, CRSPersonalInfo, CRSReportType } from "@/types/crs";
+import { getFeeSettings } from "@/service/fee-settings";
+import { createCRSReportCheckoutConfig } from "@/service/whop";
+
+export const initiateCRSReportCheckout = async ({
+  userId,
+  reportType,
+  businessId,
+  referenceNumber,
+}: {
+  userId: string;
+  reportType: "personal" | "business";
+  businessId?: string;
+  referenceNumber?: string;
+}) => {
+  const user = await getUserById(userId);
+  if (!user) throw new Error("User not found.");
+
+  const feeSettings = await getFeeSettings();
+  const fee =
+    reportType === "personal"
+      ? feeSettings.creditReportFee
+      : feeSettings.businessCreditReportFee;
+
+  // Generate a temporary reference number if one isn't provided
+  const generatedRef = referenceNumber || `crs-req-${Date.now()}`;
+
+  if (fee > 0) {
+    // Return checkout info
+    const paymentKey =
+      reportType === "personal" ? "CreditReportFee" : "BusinessCreditReportFee";
+
+    return await createCRSReportCheckoutConfig({
+      userId,
+      paymentKey,
+      feeAmount: fee,
+      metadata: {
+        reportType,
+        businessId: businessId || "",
+        referenceNumber: generatedRef,
+      },
+    });
+  }
+
+  return { success: false, url: null, checkoutId: null };
+  // } else {
+  //   // Fee is $0, invoke generation directly
+  //   if (reportType === "personal") {
+  //     await generateCRSReport({
+  //       userId,
+  //       referenceNumber: generatedRef,
+  //       bureaus: { equifax: true, experian: true, transunion: true },
+  //       bypassPremiumCheck: true,
+  //     });
+  //   } else if (reportType === "business" && businessId) {
+  //     await generateCRSReportBusiness(
+  //       userId,
+  //       generatedRef,
+  //       businessId,
+  //       true, // bypassPremiumCheck
+  //     );
+  //   }
+  //   return { success: true, url: null, checkoutId: null };
+  // }
+};
 
 export const recordCRSReport = async (
   userId: string,
@@ -165,13 +233,23 @@ export const generateCRSReport = async ({
   bureaus,
   personalInfo,
   addressInfo,
+  bypassPremiumCheck = false,
 }: {
   userId: string;
   referenceNumber: string;
   bureaus: { equifax: boolean; experian: boolean; transunion: boolean };
   personalInfo?: CRSPersonalInfo;
   addressInfo?: CRSAddressInfo;
+  bypassPremiumCheck?: boolean;
 }) => {
+  // check if the user is premium client before allowing to generate CRS report
+  const user = await getUserById(userId);
+  if (!user) throw new Error("User not found.");
+  const membership = await getUserMembership(userId);
+  if (membership?.status !== "active" && !bypassPremiumCheck) {
+    throw new Error("Only premium clients can generate CRS reports.");
+  }
+
   await fetch(`${process.env.n8n_HOST}/${await generateCRSReportN8N()}`, {
     method: "POST",
     headers: {
@@ -197,7 +275,15 @@ export const generateCRSReportBusiness = async (
   userId: string,
   referenceNumber: string,
   businessId: string,
+  bypassPremiumCheck = false,
 ) => {
+  const user = await getUserById(userId);
+  if (!user) throw new Error("User not found.");
+  const membership = await getUserMembership(userId);
+  if (membership?.status !== "active" && !bypassPremiumCheck) {
+    throw new Error("Only premium clients can generate CRS reports.");
+  }
+
   await fetch(`${process.env.n8n_HOST}/${await generateCRSReportN8N()}`, {
     method: "POST",
     headers: {
@@ -262,7 +348,8 @@ export const refreshCRSData = async ({
   if (refreshBusinessCredit) {
     const user = await getUserById(userId);
     if (!user) throw new Error("User not found.");
-    if (!user.isPremiumClient) {
+    const membership = await getUserMembership(userId);
+    if (membership?.status !== "active") {
       throw new Error("Only premium clients can refresh business credit.");
     }
 
@@ -285,6 +372,33 @@ export const refreshCRSData = async ({
   }
 };
 
+// export const fundAnalysisNewRegistrationFlow = async ({
+//   referenceNumber,
+//   userId,
+// }: {
+//   referenceNumber: string;
+//   userId: string;
+// }) => {
+//   logInfo("Sending funding application for analysis...", {
+//     referenceNumber,
+//     userId,
+//   });
+//   await fetch(
+//     `${process.env.n8n_HOST}/${await getFundingAnalysisNewRegistrationFlow()}`,
+//     {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//         ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+//       },
+//       body: JSON.stringify({
+//         referenceNumber,
+//         userId,
+//       }),
+//     },
+//   );
+// };
+
 export const fundAnalysis = async ({
   referenceNumber,
   userId,
@@ -292,7 +406,13 @@ export const fundAnalysis = async ({
   referenceNumber: string;
   userId: string;
 }) => {
-  await fetch(`${process.env.n8n_HOST}/${await getFundingAnalysis()}`, {
+  const url = await getFundingAnalysis();
+  logInfo("Sending funding application for analysis...", {
+    referenceNumber,
+    userId,
+    url,
+  });
+  await fetch(`${process.env.n8n_HOST}/${url}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -331,6 +451,65 @@ export const sendClientFundingApplicationCongratsMessage = async ({
       body: JSON.stringify({
         referenceNumber,
         userId,
+      }),
+    },
+  );
+};
+
+export const sendClientFundingApplicationCongratsMessageNewRegistration =
+  async ({
+    referenceNumber,
+    userId,
+  }: {
+    referenceNumber: string;
+    userId: string;
+  }) => {
+    logInfo("Sending client congrats message new registration...", {
+      referenceNumber,
+      userId,
+    });
+    await fetch(
+      `${process.env.n8n_HOST}/${await sendClientCongratsMessageN8NNewRegistration()}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+        },
+        body: JSON.stringify({
+          referenceNumber,
+          userId,
+        }),
+      },
+    );
+  };
+
+export const requestMapBankProductsN8nNewRegistration = async ({
+  referenceNumber,
+  userId,
+  selectedPathwayId,
+}: {
+  referenceNumber: string;
+  userId: string;
+  selectedPathwayId: string;
+}) => {
+  logInfo("Sending bank product mapping request for new registration...", {
+    referenceNumber,
+    userId,
+    selectedPathwayId,
+  });
+  await fetch(
+    `${process.env.n8n_HOST}/${await mapBankProductsN8nNewRegistration()}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+      },
+      body: JSON.stringify({
+        referenceNumber,
+        userId,
+        selectedPathwayId,
       }),
     },
   );

@@ -10,13 +10,93 @@ import type {
 
 interface OffersViewProps {
   deal: IncomeFundingDeal;
+  realDeal?: any;
+  selectedPathwayId?: string;
   onSelect: (offer: DealOffer) => void;
   onSkip?: (offerId: string) => void;
 }
 
-export function OffersView({ deal, onSelect, onSkip }: OffersViewProps) {
+export function OffersView({
+  deal,
+  realDeal,
+  selectedPathwayId,
+  onSelect,
+  onSkip,
+}: OffersViewProps) {
   // Use the offer status to determine visibility instead of local state
   const visibleOffers = deal.offers.filter((o) => o.status !== "Skipped");
+
+  const computationFromBackend = realDeal?.businessIncomeComputation || {};
+
+  // Compute requested amount as fallback
+  const requestedAmount =
+    Number(realDeal?.personalAmountFunding || 0) +
+    Number(realDeal?.businessAmountFunding || 0);
+
+  const backendEstimatedAmountValue =
+    typeof computationFromBackend.estimatedApprovalAmount === "object" &&
+    computationFromBackend.estimatedApprovalAmount !== null
+      ? computationFromBackend.estimatedApprovalAmount.amount
+      : computationFromBackend.estimatedApprovalAmount;
+
+  // Handle both old flat structure and new nested structure, fallback to requested amount if 0/null/undefined
+  let estimatedAmountValue =
+    backendEstimatedAmountValue !== undefined &&
+    backendEstimatedAmountValue !== null &&
+    backendEstimatedAmountValue !== 0
+      ? backendEstimatedAmountValue
+      : requestedAmount || deal.underwritingResult.maxFundingAmount;
+
+  if (selectedPathwayId === "business_credit_card_stacking") {
+    estimatedAmountValue =
+      typeof computationFromBackend.businessCreditCardStackingEstimatedApprovalAmount ===
+        "object" &&
+      computationFromBackend.businessCreditCardStackingEstimatedApprovalAmount !==
+        null
+        ? computationFromBackend
+            .businessCreditCardStackingEstimatedApprovalAmount.amount
+        : (computationFromBackend.businessCreditCardStackingEstimatedApprovalAmount ??
+          estimatedAmountValue);
+  } else if (selectedPathwayId === "business_lines_of_credit") {
+    estimatedAmountValue =
+      typeof computationFromBackend.businessLineOfCreditEstimatedApprovalAmount ===
+        "object" &&
+      computationFromBackend.businessLineOfCreditEstimatedApprovalAmount !==
+        null
+        ? computationFromBackend.businessLineOfCreditEstimatedApprovalAmount
+            .amount
+        : (computationFromBackend.businessLineOfCreditEstimatedApprovalAmount ??
+          estimatedAmountValue);
+  } else if (selectedPathwayId === "personal_loan") {
+    estimatedAmountValue =
+      typeof computationFromBackend.personalLoanEstimatedApprovalAmount ===
+        "object" &&
+      computationFromBackend.personalLoanEstimatedApprovalAmount !== null
+        ? computationFromBackend.personalLoanEstimatedApprovalAmount.amount
+        : (computationFromBackend.personalLoanEstimatedApprovalAmount ??
+          estimatedAmountValue);
+  } else if (selectedPathwayId === "personal_credit_card") {
+    estimatedAmountValue =
+      typeof computationFromBackend.personalCreditCardEstimatedApprovalAmount ===
+        "object" &&
+      computationFromBackend.personalCreditCardEstimatedApprovalAmount !== null
+        ? computationFromBackend.personalCreditCardEstimatedApprovalAmount
+            .amount
+        : (computationFromBackend.personalCreditCardEstimatedApprovalAmount ??
+          estimatedAmountValue);
+  }
+
+  const monthlyDepositsValue =
+    computationFromBackend.monthlyBusinessRevenue ||
+    (realDeal?.annualBusinessRevenue
+      ? realDeal.annualBusinessRevenue / 12
+      : Number(realDeal?.payPerMonth || 0) ||
+        Number(realDeal?.employmentPayPerMonth || 0) ||
+        deal.underwritingInput.monthlyDeposits ||
+        0);
+
+  const gradeValue =
+    computationFromBackend.assignedGrade || deal.underwritingResult.grade;
 
   return (
     <div className="space-y-6">
@@ -29,11 +109,10 @@ export function OffersView({ deal, onSelect, onSkip }: OffersViewProps) {
               Pre-approved
             </div>
             <div className="mt-1 text-3xl md:text-4xl font-extrabold tabular-nums">
-              up to {formatUSD(deal.underwritingResult.maxFundingAmount)}
+              up to {formatUSD(estimatedAmountValue)}
             </div>
             <div className="mt-1 text-xs text-brand-100">
-              Based on {formatUSD(deal.underwritingInput.monthlyDeposits)}/mo
-              revenue
+              Based on {formatUSD(monthlyDepositsValue)}/mo revenue
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -41,11 +120,9 @@ export function OffersView({ deal, onSelect, onSkip }: OffersViewProps) {
               <div className="text-[10px] font-semibold uppercase tracking-wider text-brand-200">
                 Risk grade
               </div>
-              <div className="font-bold">
-                Tier {deal.underwritingResult.grade}
-              </div>
+              <div className="font-bold">Tier {gradeValue}</div>
             </div>
-            <GradeBadge grade={deal.underwritingResult.grade} size="md" />
+            <GradeBadge grade={gradeValue} size="md" />
           </div>
         </div>
       </div>

@@ -2,10 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/logger", () => ({ logInfo: vi.fn() }));
 vi.mock("@/lib/n8n", () => ({
-  sendClientServiceAgreementN8N: vi.fn().mockResolvedValue("webhook-path-1"),
+  sendClientServiceAgreementN8N: vi
+    .fn()
+    .mockResolvedValue("webhook-path-1" as any),
   createAsanaCustomerServiceTaskN8N: vi
     .fn()
-    .mockResolvedValue("webhook-path-2"),
+    .mockResolvedValue("webhook-path-2" as any),
+  // getFundingAnalysisNewRegistrationFlow: vi.fn(),
+  mapBankProductsN8nNewRegistration: vi.fn(),
+  sendClientCongratsMessageN8NNewRegistration: vi.fn(),
 }));
 
 const mockFetch = vi.fn().mockResolvedValue({ ok: true });

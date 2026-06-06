@@ -5,12 +5,14 @@ import { getApplyFunding } from "@/service/apply-funding";
 import { refreshCRSData } from "@/service/crs";
 import { getUserById } from "@/service/user";
 
+import { getUserMembership } from "@/service/membership";
+
 import { NextRequest, NextResponse } from "next/server";
 
 export const POST = withAuth(
   async (
     req: NextRequest,
-    { params }: { params?: Promise<{ userId: string }> }
+    { params }: { params?: Promise<{ userId: string }> },
   ) => {
     const { userId } = (await params) ?? {};
     if (!userId) {
@@ -51,7 +53,9 @@ export const POST = withAuth(
         if (!user) {
           return badRequest({ errors: "User not found" });
         }
-        if (!user.isPremiumClient) {
+
+        const membership = await getUserMembership(userId);
+        if (membership?.status !== "active") {
           return badRequest({
             errors: "Only premium clients can refresh business credit.",
           });
@@ -89,5 +93,5 @@ export const POST = withAuth(
       console.log("err", err);
       return internalServerError();
     }
-  }
+  },
 );

@@ -3,7 +3,10 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/session";
 import { getUserById } from "@/service/user";
+import { hasActiveAddon } from "@/service/addons";
+import { getUserMembership } from "@/service/membership";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
+import { getSystemConfig } from "@/service/system-config";
 import { isPlaidProductionReady } from "./lib/plaid";
 
 const PUBLIC_ROUTES = new Set<string>([
@@ -12,6 +15,8 @@ const PUBLIC_ROUTES = new Set<string>([
   "/verify-email",
   "/api/auth/login",
   "/api/register",
+  "/api/leads",
+  "/api/leads/upload",
   "/api/auth/verify-session",
   "/api/auth/verify-email",
   "/api/auth/validate-invitation",
@@ -20,9 +25,33 @@ const PUBLIC_ROUTES = new Set<string>([
   "/api/payments/whop",
   "/api/ocr",
 ]);
-const CLIENT_HOME = "/client/home";
+const CLIENT_HOME = "/client/income-funding";
 const ADMIN_HOME = "/admin/home";
 const BROKER_HOME = "/broker/home";
+
+const CLIENT_ALLOWED_API_PREFIXES = [
+  "/api/pdf/generate",
+  "/api/whop/checkout",
+  "/api/special-deals",
+  "/api/pricing",
+  "/api/contact/schedule",
+  "/api/funding-application",
+  "/api/auth/refresh-session",
+  "/api/ocr",
+];
+
+function isAllowedClientApiRoute(pathname: string, uid: string) {
+  if (isPublic(pathname)) return true;
+
+  // A client can access their own /api/user/[uid]/... routes
+  if (pathname.startsWith(`/api/user/${uid}`)) return true;
+  if (pathname.startsWith(`/api/crs/${uid}`)) return true;
+
+  // Check against other allowed prefixes
+  return CLIENT_ALLOWED_API_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix),
+  );
+}
 
 function isPublic(pathname: string) {
   // allow exact public pages and their subpaths (if you add any)
@@ -41,15 +70,15 @@ function isPublic(pathname: string) {
 }
 
 function isAdminRoute(pathname: string) {
-  return pathname.startsWith("/admin");
+  return pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
 }
 
 function isClientRoute(pathname: string) {
-  return pathname.startsWith("/client");
+  return pathname.startsWith("/client") || pathname.startsWith("/api/client");
 }
 
 function isBrokerRoute(pathname: string) {
-  return pathname.startsWith("/broker");
+  return pathname.startsWith("/broker") || pathname.startsWith("/api/broker");
 }
 
 export async function proxy(req: NextRequest) {
@@ -57,18 +86,54 @@ export async function proxy(req: NextRequest) {
 
   const token = req.cookies.get(FIREBASE_TOKEN_NAME)?.value;
 
-  // 1) API first: short-circuit and only 401 if truly unauthenticated
+  // 1) API first: Handle non-session token authentication (system-to-system, external APIs)
   if (pathname.startsWith("/api/")) {
     const xIdToken = req.headers.get("x-id-token");
     const adminAccessKey = req.headers.get("ADMIN_ACCESS_KEY");
     const authHeader = req.headers.get("Authorization");
     console.log("API ", pathname);
-    if (xIdToken || adminAccessKey || token || authHeader || isPublic(pathname))
+
+    // If using external tokens, bypass proxy role checks (withAuth will handle them)
+    if (xIdToken || adminAccessKey || authHeader || isPublic(pathname))
       return NextResponse.next();
 
     if (!token && !pathname.includes("webhook"))
       return NextResponse.json("Unauthorized", { status: 401 });
-    // Optionally verify here if your API routes need auth in middleware
+
+    // If using a session cookie (token), fetch role and validate
+    if (token) {
+      try {
+        const sessionCookie = await verifySession(token);
+        if (!sessionCookie || !sessionCookie.email)
+          throw new Error("Invalid session");
+
+        const user = await getUserById(sessionCookie.uid);
+        const role = (user?.role as any) ?? "Client";
+
+        // Block Clients from accessing Admin APIs and Broker APIs
+        // And ensure they only access allowed client APIs
+        if (role === "Client") {
+          if (!isAllowedClientApiRoute(pathname, sessionCookie.uid)) {
+            return NextResponse.json("Unauthorized: Access denied", {
+              status: 403,
+            });
+          }
+
+          if (isAdminRoute(pathname) || isBrokerRoute(pathname)) {
+            const url = req.nextUrl.clone();
+            url.pathname = "/";
+            return NextResponse.redirect(url);
+          }
+        }
+
+        return NextResponse.next();
+      } catch (error) {
+        return NextResponse.json("Unauthorized: Invalid session", {
+          status: 401,
+        });
+      }
+    }
+
     return NextResponse.next();
   }
 
@@ -99,12 +164,19 @@ export async function proxy(req: NextRequest) {
 
   // 4) Token present → verify + find role
   let role: "Admin" | "IT" | "Staff" | "Client" | "Broker" | null = null;
+  let hasPaidContract = false;
 
   try {
     // Use the already verified session instead of verifying again
     if (!sessionCookie?.email) throw new Error("Invalid session");
     const user = await getUserById(sessionCookie.uid);
     role = (user?.role as any) ?? "Client";
+
+    const membership = await getUserMembership(sessionCookie.uid);
+    hasPaidContract = membership?.status === "active";
+
+    // We get isOnboarded so we can conditionally route clients
+    // var isOnboarded = true;
   } catch {
     // Bad token/session: clear cookie and kick to "/"
     const res = NextResponse.redirect(new URL("/", origin));
@@ -124,6 +196,7 @@ export async function proxy(req: NextRequest) {
     let dest = CLIENT_HOME;
     if (role === "Broker") dest = BROKER_HOME;
     else if (role !== "Client") dest = ADMIN_HOME;
+    // else if (!isOnboarded) dest = "/onboarding"; // Route to onboarding if client is not onboarded
     return NextResponse.redirect(new URL(dest, origin));
   }
 
@@ -142,6 +215,39 @@ export async function proxy(req: NextRequest) {
     if (isBrokerRoute(pathname)) {
       return NextResponse.redirect(new URL(CLIENT_HOME, origin));
     }
+
+    if (
+      !hasPaidContract &&
+      (pathname.startsWith("/client/my-analysis") ||
+        pathname.startsWith("/client/my-credit") ||
+        pathname.startsWith("/client/credit-repair"))
+    ) {
+      return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+    }
+
+    if (pathname.startsWith("/client/credit-repair")) {
+      const systemConfig = await getSystemConfig();
+      if (!systemConfig.creditRepairEnabled) {
+        return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+      }
+      const hasCreditRepairAddon = await hasActiveAddon(
+        sessionCookie.uid,
+        "credit_module_pro",
+      );
+      if (!hasCreditRepairAddon) {
+        return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+      }
+    }
+
+    // Force onboarding if not onboarded and trying to access client area
+    // if (!isOnboarded && isClientRoute(pathname)) {
+    //   return NextResponse.redirect(new URL("/onboarding", origin));
+    // }
+
+    // Redirect to home if they are onboarded and try to go to onboarding
+    // if (isOnboarded && pathname === "/onboarding") {
+    //   return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+    // }
   }
 
   // BROKER ROLE: Can only access broker routes
@@ -173,6 +279,7 @@ export const config = {
     "/", // root (we fan out to role home)
     "/register", // public page
     "/verify-email/:path*", // email verification page
+    "/onboarding", // onboarding flow
     // "/my-funding/:path*",
     // "/my-accounts/:path*",
     // "/my-business/:path*",

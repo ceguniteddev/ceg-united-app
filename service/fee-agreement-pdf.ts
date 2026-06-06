@@ -54,10 +54,15 @@ export const saveFeeAgreementToPDF = async (
     });
 
     // Upload to user documents
-    const result = await uploadDocument(userId, file, "FEE_AGREEMENT", {
-      referenceNumber,
+    const result = await uploadDocument({
+      userId,
+      file,
       documentType: "FEE_AGREEMENT",
-      generatedAt: new Date().toISOString(),
+      customMetadata: {
+        referenceNumber,
+        documentType: "FEE_AGREEMENT",
+        generatedAt: new Date().toISOString(),
+      },
     });
 
     return result;

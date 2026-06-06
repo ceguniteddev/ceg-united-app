@@ -49,10 +49,15 @@ export const saveAnalysisToPDF = async (
     });
 
     // Upload using centralized uploadDocument service function
-    const result = await uploadDocument(userId, file, "FUNDING_ANALYSIS", {
-      referenceNumber,
+    const result = await uploadDocument({
+      userId,
+      file,
       documentType: "FUNDING_ANALYSIS",
-      generatedAt: new Date().toISOString(),
+      customMetadata: {
+        referenceNumber,
+        documentType: "FUNDING_ANALYSIS",
+        generatedAt: new Date().toISOString(),
+      },
     });
 
     logInfo("saveAnalysisToPDF success", {

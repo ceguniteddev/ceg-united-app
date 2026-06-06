@@ -27,14 +27,14 @@ export function SelectedLenderCard({
         />
         <div className="min-w-0">
           <h3 className="text-lg font-bold text-gray-900">{lender.bankName}</h3>
-          <div className="flex items-center gap-1.5 mt-0.5">
+          {/* <div className="flex items-center gap-1.5 mt-0.5">
             <span className="text-sm text-gray-500">
               Estimated Approval Odds
             </span>
-            {lender.approvalOdds && lender.approvalOdds > 0 && (
+            {lender.approvalOdds !== undefined && lender.approvalOdds > 0 && (
               <TrendingUp className="size-3.5 text-emerald-500" />
             )}
-          </div>
+          </div> */}
         </div>
       </div>
 

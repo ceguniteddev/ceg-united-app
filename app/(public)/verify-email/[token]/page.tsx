@@ -28,12 +28,12 @@ export default function VerifyEmailPage() {
     "Verifying email signature...",
     "Validating account information...",
     "Initializing secure session...",
-    "Retrieving credit report data...",
-    "Analyzing credit profile...",
-    "Calculating credit utilization...",
-    "Checking payment history...",
-    "Scanning for derogatory marks...",
-    "Generating financial assessment...",
+    // "Retrieving credit report data...",
+    // "Analyzing credit profile...",
+    // "Calculating credit utilization...",
+    // "Checking payment history...",
+    // "Scanning for derogatory marks...",
+    // "Generating financial assessment...",
     "Finalizing verification...",
   ];
 
@@ -100,10 +100,10 @@ export default function VerifyEmailPage() {
         <div className="flex justify-center mb-6">
           <Image
             src="/icon.png"
-            alt={process.env.NEXT_PUBLIC_APP_NAME as string}
-            width={80}
-            height={80}
-            className="sm:w-[100px] sm:h-[100px]"
+            alt="Logo"
+            width={548}
+            height={455}
+            className="h-20 w-auto object-contain"
           />
         </div>
 
@@ -139,10 +139,10 @@ export default function VerifyEmailPage() {
               <div className="flex flex-col items-center justify-center py-6">
                 {verificationResult?.success ? (
                   <>
-                    <div className="bg-green-100 rounded-full p-3 mb-4">
-                      <CheckCircle className="h-12 w-12 text-green-600" />
+                    <div className="bg-blue-100 rounded-full p-3 mb-4">
+                      <CheckCircle className="h-12 w-12 text-blue-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-green-700 mb-2">
+                    <h3 className="text-xl font-semibold text-blue-700 mb-2">
                       Success!
                     </h3>
                     <p className="text-gray-700 text-center mb-2">
@@ -155,7 +155,7 @@ export default function VerifyEmailPage() {
                     )}
                     <Button
                       onClick={handleGoToLogin}
-                      className="w-full bg-green-500 hover:bg-green-600 text-white"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       Go to Login
                     </Button>

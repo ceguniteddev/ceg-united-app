@@ -3,7 +3,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomFormField } from "@/components/CustomFormField";
 import { PasswordStrength } from "@/components/PasswordStrength";
-import { genderTypes } from "@/schema";
 import { useFormContext, useWatch } from "react-hook-form";
 
 interface Step1PersonalInfoProps {
@@ -64,23 +63,6 @@ export function Step1PersonalInfo({
             name={"phoneNumber"}
             placeholder=""
             label="* Phone Number"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <CustomFormField
-            name={"birthdate"}
-            type="date-picker"
-            placeholder=""
-            label="* Birthdate"
-            dateAfterHidden={new Date()}
-          />
-          <CustomFormField
-            name={"gender"}
-            type="select"
-            placeholder=" "
-            label="* Gender"
-            options={genderTypes()}
           />
         </div>
 

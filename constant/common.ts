@@ -68,11 +68,11 @@ export const sidebarLinks = [
     route: "/client/home",
     label: "Home",
   },
-  {
-    imgURL: "/icons/money-send.svg",
-    route: "/client/my-funding",
-    label: "My Funding",
-  },
+  // {
+  //   imgURL: "/icons/money-send.svg",
+  //   route: "/client/my-funding",
+  //   label: "My Funding",
+  // },
   {
     imgURL: "/icons/money-send.svg",
     route: "/client/income-funding",
@@ -81,13 +81,13 @@ export const sidebarLinks = [
   {
     imgURL: "/icons/file-chart-column.svg",
     route: "/client/my-analysis",
-    label: "My Analysis",
+    label: "My Funding Analysis",
   },
-  {
-    imgURL: "/icons/credit-card.svg",
-    route: "/client/my-accounts",
-    label: "My Accounts",
-  },
+  // {
+  //   imgURL: "/icons/credit-card.svg",
+  //   route: "/client/my-accounts",
+  //   label: "My Accounts",
+  // },
   {
     imgURL: "/icons/building-2.svg",
     route: "/client/my-business",
@@ -112,6 +112,11 @@ export const sidebarLinks = [
     imgURL: "/icons/files.svg",
     route: "/client/my-documents",
     label: "My Documents",
+  },
+  {
+    imgURL: "/icons/shield.svg",
+    route: "/client/credit-repair",
+    label: "Credit Repair",
   },
   {
     imgURL: "/icons/mail.svg",
@@ -140,81 +145,142 @@ export const sidebarLinks = [
   },
 ];
 
-export const adminSidebarLinks = [
+import {
+  LayoutDashboard,
+  Users,
+  Landmark,
+  CircleDollarSign,
+  MessageSquare,
+  LucideIcon,
+  Settings,
+} from "lucide-react";
+
+export type AdminSidebarGroup = {
+  group: string;
+  icon: LucideIcon;
+  links: {
+    imgURL: string;
+    route: string;
+    label: string;
+  }[];
+};
+
+export const adminSidebarLinks: AdminSidebarGroup[] = [
   {
-    imgURL: "/icons/home.svg",
-    route: "/admin/home",
-    label: "Home",
+    group: "Overview",
+    icon: LayoutDashboard,
+    links: [
+      {
+        imgURL: "/icons/home.svg",
+        route: "/admin/home",
+        label: "Home",
+      },
+      {
+        imgURL: "/icons/bell.svg",
+        route: "/admin/whats-new",
+        label: "What's New",
+      },
+    ],
   },
   {
-    imgURL: "/icons/users.svg",
-    route: "/admin/clients",
-    label: "Clients",
+    group: "User Management",
+    icon: Users,
+    links: [
+      {
+        imgURL: "/icons/users.svg",
+        route: "/admin/clients",
+        label: "Clients",
+      },
+      {
+        imgURL: "/icons/user-round-plus.svg",
+        route: "/admin/leads",
+        label: "Leads",
+      },
+      {
+        imgURL: "/icons/handshake.svg",
+        route: "/admin/brokers",
+        label: "Brokers",
+      },
+    ],
   },
   {
-    imgURL: "/icons/handshake.svg",
-    route: "/admin/brokers",
-    label: "Brokers",
-  },
-  // {
-  //   imgURL: "/icons/building-2.svg",
-  //   route: "/admin/brokerages",
-  //   label: "Brokerages",
-  // },
-  // {
-  //   imgURL: "/icons/credit-card.svg",
-  //   route: "/admin/funding-products",
-  //   label: "Products",
-  // },
-  // {
-  //   imgURL: "/icons/landmark.svg",
-  //   route: "/admin/bank-products",
-  //   label: "Bank Products",
-  // },
-  {
-    imgURL: "/icons/landmark.svg",
-    route: "/admin/bank-products-new",
-    label: "Bank Products",
-  },
-  {
-    imgURL: "/icons/money-send.svg",
-    route: "/admin/funding-application",
-    label: "Funding Applications",
+    group: "Products & Funding",
+    icon: Landmark,
+    links: [
+      {
+        imgURL: "/icons/landmark.svg",
+        route: "/admin/bank-products-new",
+        label: "Bank Products",
+      },
+      {
+        imgURL: "/icons/money-send.svg",
+        route: "/admin/funding-application",
+        label: "Funding Applications",
+      },
+      {
+        imgURL: "/icons/money-send.svg",
+        route: "/admin/coordinator",
+        label: "Loan Coordinator",
+      },
+      {
+        imgURL: "/icons/chart-no-axes-combined.svg",
+        route: "/admin/tradelines",
+        label: "Tradelines",
+      },
+    ],
   },
   {
-    imgURL: "/icons/money-send.svg",
-    route: "/admin/coordinator",
-    label: "Loan Coordinator",
+    group: "Financial",
+    icon: CircleDollarSign,
+    links: [
+      {
+        imgURL: "/icons/dollar-circle.svg",
+        route: "/admin/payments",
+        label: "Payments",
+      },
+      {
+        imgURL: "/icons/dollar-circle.svg",
+        route: "/admin/fee-settings",
+        label: "Fee Settings",
+      },
+    ],
   },
   {
-    imgURL: "/icons/chart-no-axes-combined.svg",
-    route: "/admin/tradelines",
-    label: "Tradelines",
+    group: "Communication & Resources",
+    icon: MessageSquare,
+    links: [
+      {
+        imgURL: "/icons/phone-call.svg",
+        route: "/admin/call-requests",
+        label: "Call Requests",
+      },
+      {
+        imgURL: "/icons/mail.svg",
+        route: "/admin/mail",
+        label: "Mail",
+      },
+      {
+        imgURL: "/icons/book-open-text.svg",
+        route: "/admin/educational-materials",
+        label: "Educational Materials",
+      },
+    ],
   },
   {
-    imgURL: "/icons/dollar-circle.svg",
-    route: "/admin/payments",
-    label: "Payments",
-  },
-  {
-    imgURL: "/icons/phone-call.svg",
-    route: "/admin/call-requests",
-    label: "Call Requests",
-  },
-  {
-    imgURL: "/icons/bell.svg",
-    route: "/admin/whats-new",
-    label: "What's New",
-  },
-  {
-    imgURL: "/icons/book-open-text.svg",
-    route: "/admin/educational-materials",
-    label: "Educational Materials",
-  },
-  {
-    imgURL: "/icons/mail.svg",
-    route: "/admin/mail",
-    label: "Mail",
+    group: "System Settings",
+    icon: Settings,
+    links: [
+      {
+        imgURL: "/icons/settings.svg",
+        route: "/admin/system-config",
+        label: "System Config",
+      },
+      {
+        imgURL: "/icons/settings.svg",
+        route: "/admin/consumer-reporting-agency",
+        label: "Consumer Reporting Agency",
+      },
+    ],
   },
 ];
 
@@ -247,6 +313,11 @@ export const settingsSidebar = [
     route: "/settings/personal",
     label: "Personal",
   },
+  {
+    imgURL: "/icons/credit-card.svg",
+    route: "/settings/membership",
+    label: "Membership",
+  },
 ];
 
 export const settingsSidebarAdmin = [
@@ -255,6 +326,11 @@ export const settingsSidebarAdmin = [
     route: "/settings/personal",
     label: "Personal",
   },
+  // {
+  //   imgURL: "/icons/credit-card.svg",
+  //   route: "/settings/membership",
+  //   label: "Membership",
+  // },
   // {
   //   imgURL: "/icons/circle-user-round.svg",
   //   route: "/settings/users",

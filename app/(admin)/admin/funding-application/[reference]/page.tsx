@@ -29,6 +29,7 @@ import LetterList from "@/components/letter-stream/list";
 import LetterForm from "@/components/letter-stream/form";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { useUserQuery } from "@/hooks/user";
+import { useMembership } from "@/hooks/membership";
 import { UserWithId } from "@/schema/registration";
 import { useGetClientApplyFunding } from "@/hooks/apply-funding";
 import { ApplyFundingWithUser } from "@/schema/apply-funding";
@@ -49,26 +50,27 @@ const AdminViewApplication = () => {
   const { userData, isLoading: isUserLoading } = useUserQuery(userId);
   const { appliedFunding, isLoading: isFundingLoading } =
     useGetClientApplyFunding(userId);
+  const { data: userMembership } = useMembership(userId);
 
   const hasLearningMaterialsAccess = useMemo(() => {
-    return userData?.isPremiumClient;
-  }, [userData]);
+    return userMembership?.status === "active";
+  }, [userMembership]);
 
   const hasLetterFeatureEnabled = useMemo(() => {
     return !!userData?.letterFeatureEnabled;
   }, [userData]);
 
-  useEffect(() => {
-    const updateStatus = async () => {
-      if (formData?.status === "New") {
-        await updateApplicationStatus(
-          formData.referenceNumber ?? "",
-          "Processing",
-        );
-      }
-    };
-    updateStatus();
-  }, [formData]);
+  // useEffect(() => {
+  //   const updateStatus = async () => {
+  //     if (formData?.status === "New") {
+  //       await updateApplicationStatus({
+  //         referenceNumber: formData.referenceNumber ?? "",
+  //         status: "Processing",
+  //       });
+  //     }
+  //   };
+  //   updateStatus();
+  // }, [formData]);
 
   const tabOptions = useMemo(() => {
     const options = [
@@ -77,7 +79,7 @@ const AdminViewApplication = () => {
       { value: "client-profile", label: "Client Profile" },
       { value: "documents", label: "Documents" },
       { value: "analysis", label: "Analysis" },
-      { value: "fund-mapping", label: "Fund Mapping" },
+      // { value: "fund-mapping", label: "Fund Mapping" },
       { value: "notes", label: "Notes" },
       { value: "credit-report", label: "Credit Report" },
       { value: "business", label: "Business" },
@@ -102,7 +104,7 @@ const AdminViewApplication = () => {
                 <h1 className="text-xl font-bold text-gray-900">
                   {userData.firstName} {userData.middleName} {userData.lastName}
                 </h1>
-                {userData.isPremiumClient && (
+                {userMembership?.status === "active" && (
                   <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800">
                     Premium Client
                   </span>
@@ -185,12 +187,12 @@ const AdminViewApplication = () => {
         <TabsContent value="personal-information" className="w-full">
           {userData && <ClientData user={userData as UserWithId} />}
         </TabsContent>
-        <TabsContent value="fund-mapping" className="w-full">
+        {/* <TabsContent value="fund-mapping" className="w-full">
           <AdminMappedFunds
             referenceNumber={formData?.referenceNumber ?? ""}
             userId={formData?.userId ?? ""}
           />
-        </TabsContent>
+        </TabsContent> */}
         <TabsContent value="notes" className="w-full">
           <FundApplicationNotesV2
             applicationReferenceNumber={formData?.referenceNumber ?? ""}
@@ -221,7 +223,11 @@ const AdminViewApplication = () => {
         </TabsContent>
 
         <TabsContent value="credit-report" className="w-full">
-          <ClientCreditReport userId={userId} isAdminView />
+          <ClientCreditReport
+            userId={userId}
+            isAdminView
+            userData={userData as UserWithId}
+          />
         </TabsContent>
 
         <TabsContent value="business" className="w-full">

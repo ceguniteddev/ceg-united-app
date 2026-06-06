@@ -38,13 +38,37 @@ let logging: Logging | null = null;
 let logSync: LogSync | null = null;
 
 try {
-  const loggingConfig = {
+  let clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+  if (process.env.FIREBASE_PRIVATE_KEY_BASE64) {
+    try {
+      const decoded = Buffer.from(
+        process.env.FIREBASE_PRIVATE_KEY_BASE64,
+        "base64",
+      ).toString("utf-8");
+      const creds = JSON.parse(decoded);
+      clientEmail = creds.client_email || clientEmail;
+      privateKey = creds.private_key || privateKey;
+    } catch (e) {
+      console.error("[LOGGER] Failed to parse FIREBASE_PRIVATE_KEY_BASE64", e);
+    }
+  }
+
+  if (privateKey) {
+    privateKey = privateKey.replace(/\\n/g, "\n");
+  }
+
+  const loggingConfig: any = {
     projectId: process.env.FIREBASE_PROJECT_ID,
-    credentials: {
-      client_email: process.env.FIREBASE_CLIENT_EMAIL,
-      private_key: process.env.FIREBASE_PRIVATE_KEY,
-    },
   };
+
+  if (clientEmail && privateKey) {
+    loggingConfig.credentials = {
+      client_email: clientEmail,
+      private_key: privateKey,
+    };
+  }
 
   if (LOGGING_MODE === "api" || LOGGING_MODE === "both") {
     logging = new Logging(loggingConfig);

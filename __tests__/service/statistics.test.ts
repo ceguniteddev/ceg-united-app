@@ -52,6 +52,7 @@ vi.mock("@/lib/fireabase-admin", () => ({
 vi.mock("@/service/user", () => ({
   getUsers: vi.fn(),
   getUserById: vi.fn(),
+  getUserDocuments: vi.fn(),
 }));
 
 vi.mock("@/service/apply-funding", () => ({
@@ -93,7 +94,7 @@ vi.mock("firebase-admin/firestore", () => ({
 }));
 
 import { getAdminStatistics, getClientStatistics } from "@/service/statistics";
-import { getUsers, getUserById } from "@/service/user";
+import { getUsers, getUserById, getUserDocuments } from "@/service/user";
 import {
   getApplyFunding,
   getFundingApplications,
@@ -224,6 +225,7 @@ describe("service/statistics", () => {
         id: "user-1",
         email: "u@test.com",
       } as any);
+      vi.mocked(getUserDocuments).mockResolvedValue([] as any);
       vi.mocked(getApplyFunding).mockResolvedValue([] as any);
       vi.mocked(getFundMappingAnalysisDetails).mockResolvedValue([] as any);
       vi.mocked(getCRSReport).mockResolvedValue([] as any);

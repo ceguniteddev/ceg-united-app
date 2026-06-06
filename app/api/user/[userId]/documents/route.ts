@@ -20,6 +20,7 @@ export const POST = withAuth(
       const files = formData.getAll("files") as File[];
       const documentType = formData.get("documentType") as string | null;
       const referenceNumber = formData.get("referenceNumber") as string | null;
+      const lobId = formData.get("lobId") as string | null;
 
       // --- Validation ---
       if (!userId) {
@@ -49,8 +50,16 @@ export const POST = withAuth(
         if (referenceNumber) {
           metadata.referenceNumber = referenceNumber;
         }
+        if (lobId) {
+          metadata.lobId = lobId;
+        }
 
-        return uploadDocument(userId, file, documentType, metadata);
+        return uploadDocument({
+          userId,
+          file,
+          documentType,
+          customMetadata: metadata,
+        });
       });
 
       // Wait for all promises to resolve

@@ -91,11 +91,11 @@ export const applyFundingSchema = z
 
     // legalResidentOther: z.string().optional(),
     // motherMaidenName: z.string().min(1, { error: "Required" }),
-    addressStreet: z.string().min(1, { error: "Required" }),
+    addressStreet: z.string().optional(),
     houseNumber: z.string().optional(),
-    addressCity: z.string().min(1, { error: "Required" }),
-    addressState: z.string().min(1, { error: "Required" }),
-    addressPostal: z.string().min(1, { error: "Required" }),
+    addressCity: z.string().optional(),
+    addressState: z.string().optional(),
+    addressPostal: z.string().optional(),
 
     moveInCurrentAddress: z.coerce
       .date<Date>({ error: "Require Date" })
@@ -197,7 +197,8 @@ export const applyFundingSchema = z
     // personalEmailAddress: z.string().optional(),
     // dateOfBirth: z.coerce.date<Date>({ error: "Require Date" }).optional(),
     // socialSecurityNumber: z.string().optional(),
-    // ficoCreditScore: z.coerce.number<number>().optional(),
+    ficoCreditScore: z.coerce.number<number>().optional(),
+    businessCreditScore: z.coerce.number<number>().optional(),
     whoReferredYou: z.string().optional(),
 
     // Auto Loan Fields
@@ -271,6 +272,14 @@ export const applyFundingSchema = z
     // Application method selection (Specialist vs Online)
     applicationMethod: ClientApplicationMethodEnum.optional(),
     analysisStatus: z.enum(["In Progress", "Completed"]).optional(),
+    appliedPathways: z
+      .array(
+        z.object({
+          pathwayId: z.string(),
+          status: z.string(),
+        }),
+      )
+      .optional(),
   })
   .superRefine((data, ctx) => {
     // Define the exclusion condition for clarity
@@ -454,7 +463,7 @@ export const applyFundingSchema = z
     }
   })
   .superRefine((data, ctx) => {
-    console.log("Employment superRefine called with data:", data);
+    // console.log("Employment superRefine called with data:", data);
     // Check if the employment status is 'yes'
     // Exclude Auto Loan with Business financing and Community funding from employment validation
     if (

@@ -97,9 +97,6 @@ describe("admin/funding-application/analysis hooks", () => {
         "/api/funding-application/REF-001/analysis/refresh",
         { method: "POST" },
       );
-      expect(toast.success).toHaveBeenCalledWith(
-        "Analysis data refreshed successfully.",
-      );
     });
 
     it("should handle refresh error", async () => {

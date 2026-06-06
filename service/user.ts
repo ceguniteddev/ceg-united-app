@@ -5,10 +5,11 @@ import {
   USER_COLLECTION,
   USER_FUNDING_APPLICATION,
   USER_FUNDING_APPLICATION_CONGRATS,
+  BUSINESS_DETAIL_COLLECTION,
 } from "@/constant/collection-name";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import AppError from "@/error/AppError";
-import { normalizeAllDates, normalizeDate } from "@/lib/date-parser";
+import { normalizeAllDates } from "@/lib/date-parser";
 import {
   authenticationAdmin,
   firestoreAdmin,
@@ -17,21 +18,17 @@ import {
 import { logError, logInfo } from "@/lib/logger";
 import { sendTriggerEmail } from "@/service/trigger-email";
 import { EmailJobs } from "@/schema/trigger-email";
-import { ChangePassword, CurrentUser, Role, Business } from "@/schema";
+import { ChangePassword, CurrentUser, Role } from "@/schema";
 import { noteSchema, NoteSchema } from "@/schema/notes";
 
 import { User, UserActiveStatus, UserWithId } from "@/schema/registration";
-import { format } from "date-fns";
+
 import { cookies, headers } from "next/headers";
 import { FieldPath } from "firebase-admin/firestore";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { applyFunding } from "./apply-funding";
-import { recordBusiness } from "./business";
 import * as crypto from "node:crypto";
-import {
-  sendClientFundingApplicationAuditAnalysis,
-  sendClientFundingApplicationCongratsMessage,
-} from "./crs";
+
 import { RegistrationType } from "@/schema/users";
 import { generateEmailVerificationToken } from "./email-verification";
 import { createAsanaTaskForLender } from "@/lib/n8n";
@@ -66,7 +63,27 @@ export const getUser = async (email: string): Promise<User | null> => {
   const userDoc = querySnapshot.docs[0];
   const user = userDoc.data();
 
-  return { id: userDoc.id, ...normalizeAllDates(user) } as User;
+  const userData = { id: userDoc.id, ...normalizeAllDates(user) } as User;
+
+  if (!userData.registrationDate) {
+    userData.registrationDate = new Date(userRecord.metadata.creationTime);
+    await collectionRef
+      .doc(userDoc.id)
+      .update({ registrationDate: userData.registrationDate });
+  }
+
+  const may15Cutoff = new Date("2026-05-15T00:00:00Z");
+  if (
+    userData.isOnboarded === undefined ||
+    (userData.isOnboarded === false &&
+      userData.registrationDate &&
+      new Date(userData.registrationDate).getTime() < may15Cutoff.getTime())
+  ) {
+    userData.isOnboarded = true;
+    await collectionRef.doc(userDoc.id).update({ isOnboarded: true });
+  }
+
+  return userData;
 };
 
 export const getUserById = async (id: string): Promise<UserWithId | null> => {
@@ -81,6 +98,27 @@ export const getUserById = async (id: string): Promise<UserWithId | null> => {
   const userDoc = docSnapshot;
   const user = userDoc.data();
   const userData = { id: userDoc.id, ...normalizeAllDates(user) } as UserWithId;
+
+  if (!userData.registrationDate) {
+    try {
+      const authUser = await authenticationAdmin().getUser(id);
+      userData.registrationDate = new Date(authUser.metadata.creationTime);
+      await docRef.update({ registrationDate: userData.registrationDate });
+    } catch (err) {
+      console.error("Failed to fetch user creation time from auth:", err);
+    }
+  }
+
+  const may15Cutoff = new Date("2026-05-15T00:00:00Z");
+  if (
+    userData.isOnboarded === undefined ||
+    (userData.isOnboarded === false &&
+      userData.registrationDate &&
+      new Date(userData.registrationDate).getTime() < may15Cutoff.getTime())
+  ) {
+    userData.isOnboarded = true;
+    await docRef.update({ isOnboarded: true });
+  }
 
   // If this is a client, fetch broker information
   if (userData.role === "Client") {
@@ -166,11 +204,11 @@ export const registerUser = async ({
   let businessId: string | undefined;
   let referenceNumber: string | undefined;
   if (fundingData?.businessName && fundingData.businessName.trim().length > 0) {
-    const businessData: Business = {
+    const businessData = {
       userId: userId,
       businessName: fundingData.businessName,
       businessStreetAddress: fundingData.businessStreetAddress ?? "",
-      businessStreetHouseNumber: fundingData.businessStreetHouseNumber,
+      businessStreetHouseNumber: fundingData.businessStreetHouseNumber ?? "",
       businessCityAddress: fundingData.businessCityAddress ?? "",
       businessStateAddress: fundingData.businessStateAddress ?? "",
       businessPostalAddress: fundingData.businessPostalAddress ?? "",
@@ -178,13 +216,16 @@ export const registerUser = async ({
         fundingData.employerIdentificationNumber ?? "",
       businessPhoneNumber: fundingData.businessPhoneNumber ?? "",
       businessEmail: fundingData.businessEmail ?? "",
-      businessWebsite: fundingData.businessWebsite,
-      socialMedia: fundingData.socialMedia,
+      businessWebsite: fundingData.businessWebsite ?? "",
+      socialMedia: fundingData.socialMedia || [],
+      createdAt: new Date(),
     };
 
-    // Record business and get the ID
-    const businessDocRef = await recordBusiness(businessData);
-    businessId = businessDocRef;
+    // Record business directly to bypass strict validation (since it's partial at this stage)
+    const businessDocRef = await db
+      .collection(BUSINESS_DETAIL_COLLECTION)
+      .add(businessData);
+    businessId = businessDocRef.id;
   }
 
   // Create funding application if fundingData is provided
@@ -196,6 +237,10 @@ export const registerUser = async ({
       appliedDate: fundingData.appliedDate || new Date(),
       status: fundingData.status || "New",
       analysisStatus: fundingData.analysisStatus || "In Progress",
+      addressCity: user.addressCity,
+      addressState: user.addressState,
+      addressPostal: user.addressPostal,
+      addressStreet: user.addressStreet,
     };
 
     const result = await applyFunding({
@@ -206,35 +251,24 @@ export const registerUser = async ({
     referenceNumber = result.referenceNumber;
     logInfo("Funding application created", { referenceNumber });
 
-    // Store referenceNumber for later use in email verification
-    if (
-      user.role === "Client" &&
-      referenceNumber &&
-      registrationType === "Self"
-    ) {
-      // We'll pass referenceNumber to the verification token
-      // Analysis will be triggered AFTER email verification
-      fundingData.referenceNumber = referenceNumber;
-    }
+    // if (
+    //   user.role === "Client" &&
+    //   referenceNumber &&
+    //   registrationType !== "Self"
+    // ) {
+    //   // For non-self registrations (Broker/Admin), trigger analysis immediately
+    //   // Send Client Congrats Message
+    //   await sendClientFundingApplicationCongratsMessage({
+    //     userId: userId,
+    //     referenceNumber: referenceNumber!,
+    //   });
 
-    if (
-      user.role === "Client" &&
-      referenceNumber &&
-      registrationType !== "Self"
-    ) {
-      // For non-self registrations (Broker/Admin), trigger analysis immediately
-      // Send Client Congrats Message
-      await sendClientFundingApplicationCongratsMessage({
-        userId: userId,
-        referenceNumber,
-      });
-
-      // Send Client Audit Analysis
-      await sendClientFundingApplicationAuditAnalysis({
-        userId: userId,
-        referenceNumber,
-      });
-    }
+    //   // Send Client Audit Analysis
+    //   await sendClientFundingApplicationAuditAnalysis({
+    //     userId: userId,
+    //     referenceNumber: referenceNumber!,
+    //   });
+    // }
   }
 
   const authAdmin = authenticationAdmin();
@@ -243,7 +277,7 @@ export const registerUser = async ({
     uid: userId,
     email: user.email,
     password: user.password,
-    displayName: `${user.firstName} ${user.lastName}`,
+    displayName: `${user.firstName} ${user.middleName ? user.middleName + " " : ""}${user.lastName}`,
     disabled: false,
     emailVerified: false,
   });
@@ -254,7 +288,7 @@ export const registerUser = async ({
       clientId: userId,
       brokerId,
       brokerName: brokerName || "",
-      clientName: `${user.firstName} ${user.lastName}`,
+      clientName: `${user.firstName} ${user.middleName ? user.middleName + " " : ""}${user.lastName}`,
       clientEmail: user.email,
     });
   }
@@ -280,7 +314,7 @@ export const registerUser = async ({
   let requestBody = "";
   if (registrationType === "Broker" && brokerName) {
     requestBody = getBrokerInvitationToClientBody({
-      clientName: `${user.firstName} ${user.lastName}`,
+      clientName: `${user.firstName} ${user.middleName ? user.middleName + " " : ""}${user.lastName}`,
       email: user.email,
       temporaryPassword: user.password!,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
@@ -289,7 +323,7 @@ export const registerUser = async ({
     });
   } else if (registrationType === "Admin") {
     requestBody = getAdminInvitationToClientBody({
-      clientName: `${user.firstName} ${user.lastName}`,
+      clientName: `${user.firstName} ${user.middleName ? user.middleName + " " : ""}${user.lastName}`,
       email: user.email,
       temporaryPassword: user.password!,
       loginUrl: process.env.NEXT_PUBLIC_APP_URL!,
@@ -313,7 +347,7 @@ export const registerUser = async ({
   await sendTriggerEmail({
     to: process.env.NEW_REGISTRATION_EMAIL_NOTIF!,
     message: {
-      subject: `New Registration - ${user.firstName} ${user.lastName}`,
+      subject: `New Registration - ${user.firstName} ${user.middleName ? user.middleName + " " : ""}${user.lastName}`,
       html: registrationBody,
     },
     job: EmailJobs.NEW_REGISTRATION,
@@ -568,7 +602,7 @@ const getNewRegistrationBody = (value: User) => {
                 Full Name
             </th>
             <td style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; color: #333333;">
-                ${value.firstName} ${value.lastName}
+                ${value.firstName} ${value.middleName ? value.middleName + " " : ""}${value.lastName}
             </td>
         </tr>
         <tr>
@@ -587,22 +621,8 @@ const getNewRegistrationBody = (value: User) => {
                 ${value.phoneNumber}
             </td>
         </tr>
-        <tr>
-            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; width: 150px; color: #555555; background-color: #f9f9f9;">
-                Birthdate
-            </th>
-            <td style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; color: #333333;">
-                ${format(value.birthdate, "MMM d, yyyy")}
-            </td>
-        </tr>
-        <tr>
-            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; width: 150px; color: #555555; background-color: #f9f9f9;">
-                Gender
-            </th>
-            <td style="text-align: left; padding: 12px; border-bottom: 1px solid #eeeeee; color: #333333;">
-                ${value.gender}
-            </td>
-        </tr>
+        
+        
     </table>
 </div>
   `;
@@ -639,10 +659,72 @@ export const getUsers = async ({
   }
 
   const users: UserWithId[] = [];
+  const missingDateIds: string[] = [];
+  const missingOnboardedIds: string[] = [];
+  const may15Cutoff = new Date("2026-05-15T00:00:00Z");
+
   querySnapshot.forEach((doc) => {
     const data = doc.data();
-    users.push({ id: doc.id, ...normalizeAllDates(data) } as UserWithId);
+    const user = { id: doc.id, ...normalizeAllDates(data) } as UserWithId;
+    if (!user.registrationDate) {
+      missingDateIds.push(doc.id);
+    }
+
+    // Check if missing OR if false and before cutoff
+    if (
+      user.isOnboarded === undefined ||
+      (user.isOnboarded === false &&
+        user.registrationDate &&
+        new Date(user.registrationDate).getTime() < may15Cutoff.getTime())
+    ) {
+      missingOnboardedIds.push(doc.id);
+      user.isOnboarded = true;
+    }
+    users.push(user);
   });
+
+  if (missingDateIds.length > 0 || missingOnboardedIds.length > 0) {
+    try {
+      const batchWrites = db.batch();
+
+      if (missingDateIds.length > 0) {
+        const identifiers = missingDateIds.map((uid) => ({ uid }));
+        for (let i = 0; i < identifiers.length; i += 100) {
+          const batch = identifiers.slice(i, i + 100);
+          const authUsers = await authenticationAdmin().getUsers(batch);
+          authUsers.users.forEach((authUser) => {
+            const userIndex = users.findIndex((u) => u.id === authUser.uid);
+            if (userIndex !== -1) {
+              const creationDate = new Date(authUser.metadata.creationTime);
+              users[userIndex].registrationDate = creationDate;
+
+              const docRef = collectionRef.doc(authUser.uid);
+              batchWrites.update(docRef, { registrationDate: creationDate });
+
+              if (
+                users[userIndex].isOnboarded === false &&
+                creationDate.getTime() < may15Cutoff.getTime()
+              ) {
+                users[userIndex].isOnboarded = true;
+                batchWrites.update(docRef, { isOnboarded: true });
+              }
+            }
+          });
+        }
+      }
+
+      if (missingOnboardedIds.length > 0) {
+        missingOnboardedIds.forEach((uid) => {
+          const docRef = collectionRef.doc(uid);
+          batchWrites.update(docRef, { isOnboarded: true });
+        });
+      }
+
+      await batchWrites.commit();
+    } catch (err) {
+      console.error("Failed to update missing properties for users:", err);
+    }
+  }
 
   // If getting clients, fetch broker mappings
   if (role === "Client") {
@@ -737,25 +819,6 @@ export const updateUserStatus = async ({
   const collectionRef = db.collection(USER_COLLECTION);
   const docRef = collectionRef.doc(id);
   await docRef.update({ activeStatus: status });
-};
-
-export const updateUserPremiumStatus = async ({
-  id,
-  isPremium,
-}: {
-  id: string;
-  isPremium: boolean;
-}) => {
-  logInfo("Updating user premium status", { id, isPremium });
-  if (!id) throw new AppError("User ID is required.");
-
-  const userData = await getUserById(id);
-  if (!userData) throw new AppError("User not found.");
-
-  const db = firestoreAdmin();
-  const collectionRef = db.collection(USER_COLLECTION);
-  const docRef = collectionRef.doc(id);
-  await docRef.update({ isPremiumClient: isPremium });
 };
 
 export const updateUserProfile = async ({

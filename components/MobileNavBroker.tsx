@@ -24,7 +24,7 @@ const MobileNavBroker = () => {
   if (loading || !user) return null;
 
   return (
-    <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+    <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between h-[105px]">
       <Sheet>
         <SheetTrigger>
           <Image
@@ -48,10 +48,11 @@ const MobileNavBroker = () => {
               className="cursor-pointer flex items-center justify-center py-6"
             >
               <Image
-                src="/icons/logo.svg"
-                width={64}
-                height={64}
-                alt={process.env.NEXT_PUBLIC_APP_NAME as string}
+                src="/icon.png"
+                alt="Logo"
+                width={548}
+                height={455}
+                className="h-14 w-auto object-contain"
               />
             </Link>
 
@@ -67,7 +68,7 @@ const MobileNavBroker = () => {
                       href={item.route}
                       className={cn(
                         "flex gap-3 items-center py-1 px-4 rounded-lg mb-2",
-                        { "bg-bank-gradient": isActive }
+                        { "bg-bank-gradient": isActive },
                       )}
                     >
                       <div className="relative size-6">
@@ -103,10 +104,11 @@ const MobileNavBroker = () => {
 
       <Link href="/broker/home" className="flex items-center">
         <Image
-          src="/icons/logo.svg"
-          width={40}
-          height={40}
-          alt={process.env.NEXT_PUBLIC_APP_NAME as string}
+          src="/icon.png"
+          alt="Logo"
+          width={548}
+          height={455}
+          className="h-14 w-auto object-contain"
         />
       </Link>
     </div>

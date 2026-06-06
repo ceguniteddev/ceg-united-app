@@ -7,6 +7,7 @@ import { getAutoServedClientFunds } from "@/service/bank-products";
 const querySchema = z.object({
   userId: z.string(),
   referenceNumber: z.string(),
+  pathwayId: z.string().optional(),
 });
 
 export const GET = withAuth(async (request: NextRequest) => {
@@ -15,6 +16,7 @@ export const GET = withAuth(async (request: NextRequest) => {
   const queryToValidate = {
     userId: searchParams.get("userId") ?? undefined,
     referenceNumber: searchParams.get("referenceNumber") ?? undefined,
+    pathwayId: searchParams.get("pathwayId") ?? undefined,
   };
 
   const query = querySchema.safeParse(queryToValidate);
@@ -24,10 +26,14 @@ export const GET = withAuth(async (request: NextRequest) => {
     return badRequest({ errors: message });
   }
 
-  const { userId, referenceNumber } = query.data;
+  const { userId, referenceNumber, pathwayId } = query.data;
 
   try {
-    const data = await getAutoServedClientFunds({ userId, referenceNumber });
+    const data = await getAutoServedClientFunds({
+      userId,
+      referenceNumber,
+      pathwayId,
+    });
     return NextResponse.json(data, { status: 200 });
   } catch (error: any) {
     console.error("Unexpected error in auto-serve:", error);

@@ -15,7 +15,7 @@ vi.mock("@/service/user", () => ({
   getUserById: vi.fn(),
 }));
 
-import { POST } from "@/app/api/register/route";
+import { POST } from "@/app/api/_register/route";
 import {
   registerUser,
   verifyClientInvitationToken,

@@ -38,14 +38,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   useUpdateUserStatusMutation,
-  useUpdateUserPremiumStatusMutation,
   useUpdateUserProfileMutation,
   useSendClientServiceAgreementMutation,
   useDeleteUserMutation,
   useUsersQuery,
   useUpdateClientBrokerMutation,
 } from "@/hooks/user";
+import {
+  useMembership,
+  useAdminSetMembershipMutation,
+} from "@/hooks/membership";
 import { useRefreshCRSData } from "@/hooks/crs";
+import { MembershipTier } from "@/service/membership";
+import { useAuth } from "@/provider/AuthContext";
 import { toast } from "sonner";
 import EmptyState from "@/components/EmptyState";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
@@ -64,7 +69,6 @@ import { CustomFormField } from "@/components/CustomFormField";
 import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { genderTypes } from "@/schema";
 import { registrationSchema } from "@/schema/registration";
 import { sendPaymentLink } from "@/service/whop";
 import { cn } from "@/lib/utils";
@@ -135,11 +139,6 @@ const ClientData = ({
               <Info label="Email" value={user.email} />
               <Info label="Phone" value={user.phoneNumber} />
 
-              <Info
-                label="Birthdate"
-                value={format(user.birthdate, "MMM d, yyyy")}
-              />
-              <Info label="Gender" value={user.gender || "—"} />
               {!isBrokerView && (
                 <Info label="Broker" value={user.brokerName || ""} />
               )}
@@ -150,7 +149,6 @@ const ClientData = ({
             {!isBrokerView && (
               <div className="lg:col-span-1 space-y-4">
                 <StatusPicker user={user} />
-                <PremiumStatusPicker user={user} />
                 <RefreshCRSData user={user} />
                 <SendPaymentLink user={user} />
                 <SendClientAgreement user={user} />
@@ -166,6 +164,9 @@ const ClientData = ({
         setIsOpen={setEditModalOpen}
         user={user}
       />
+
+      <MembershipSection user={user} />
+
       <DangerZone user={user} />
     </main>
   );
@@ -217,46 +218,120 @@ const STATUS_STYLES: Record<
   },
 };
 
-const PremiumStatusPicker = ({ user }: { user: UserWithId }) => {
-  const isPremium = user.isPremiumClient || false;
-  const { updatePremiumStatus, isUpdating } =
-    useUpdateUserPremiumStatusMutation({
-      userId: user.id,
-    });
+function MembershipSection({ user }: { user: UserWithId }) {
+  const { user: currentUser } = useAuth();
+  const { data: membershipData, isLoading } = useMembership(user.id);
+  const { mutate: updateMembership, isPending: isUpdating } =
+    useAdminSetMembershipMutation();
 
-  const handleToggle = useCallback(
-    async (checked: boolean) => {
-      await updatePremiumStatus({ isPremium: checked });
+  const currentAdminEmail = currentUser?.email || currentUser?.uid || "Admin";
+
+  const handleTierChange = useCallback(
+    (value: string) => {
+      if (value) {
+        updateMembership({
+          userId: user.id,
+          tier: value as MembershipTier,
+          status: membershipData?.status || "active",
+          updatedBy: currentAdminEmail,
+        });
+      }
     },
-    [updatePremiumStatus],
+    [updateMembership, user.id, membershipData?.status, currentAdminEmail],
+  );
+
+  const handleStatusChange = useCallback(
+    (value: string) => {
+      if (value) {
+        updateMembership({
+          userId: user.id,
+          tier: membershipData?.tier || "tier_starter",
+          status: value,
+          updatedBy: currentAdminEmail,
+        });
+      }
+    },
+    [updateMembership, user.id, membershipData?.tier, currentAdminEmail],
   );
 
   return (
-    <div
-      className={[
-        "flex flex-row items-center justify-between rounded-lg px-3 py-3 border w-full sm:flex-1 transition-all duration-200",
-        isPremium
-          ? "border-purple-300 bg-purple-50/50 shadow-sm"
-          : "border-purple-200 bg-purple-50/50 shadow-sm",
-      ].join(" ")}
-    >
-      <span
-        className={[
-          "text-xs font-semibold",
-          isPremium ? "text-purple-700" : "text-purple-600",
-        ].join(" ")}
-      >
-        Premium Client
-      </span>
-      <Switch
-        checked={isPremium}
-        onCheckedChange={handleToggle}
-        disabled={isUpdating}
-        className="data-[state=checked]:bg-purple-600 scale-90 cursor-pointer"
-      />
-    </div>
+    <Card className="mt-6 border-blue-200 shadow-sm bg-blue-50/10">
+      <CardHeader className="pb-3 px-4 sm:px-5 border-b border-blue-100">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900">
+            Membership Settings
+          </CardTitle>
+          {isLoading && (
+            <Loader2Icon className="h-4 w-4 animate-spin text-blue-500" />
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground mt-1">
+          Adjust the client's membership tier and status. This will override
+          their current subscription.
+        </p>
+      </CardHeader>
+      <CardContent className="px-4 sm:px-5 py-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Tier</Label>
+            <Select
+              disabled={!!isUpdating || isLoading}
+              value={membershipData?.tier || "unknown"}
+              onValueChange={handleTierChange}
+            >
+              <SelectTrigger className="w-full bg-white">
+                <SelectValue placeholder="Select Tier" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unknown" disabled>
+                  Unknown Tier
+                </SelectItem>
+                <SelectItem value="tier_starter">Starter</SelectItem>
+                <SelectItem value="tier_pro">Pro</SelectItem>
+                <SelectItem value="tier_executive">Executive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Status</Label>
+            <Select
+              disabled={!!isUpdating || isLoading}
+              value={membershipData?.status || "inactive"}
+              onValueChange={handleStatusChange}
+            >
+              <SelectTrigger className="w-full bg-white">
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="canceled">Canceled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="md:col-span-2 flex flex-col justify-end pb-2">
+            {isUpdating && (
+              <p className="text-sm text-blue-600 flex items-center">
+                <Loader2Icon className="h-3.5 w-3.5 animate-spin mr-1.5" />{" "}
+                Updating membership...
+              </p>
+            )}
+            {!isUpdating && membershipData?.updatedBy && (
+              <p className="text-xs text-muted-foreground">
+                Last updated by {membershipData.updatedBy}
+                {membershipData.updatedAt
+                  ? ` on ${fmtDate(new Date(membershipData.updatedAt))}`
+                  : ""}
+              </p>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
-};
+}
 
 const StatusPicker = ({ user }: { user: UserWithId }) => {
   const styles =
@@ -340,6 +415,8 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
   const [refreshConfirmationOpen, setRefreshConfirmationOpen] =
     React.useState(false);
   const { isUpdating, refreshCRSData } = useRefreshCRSData();
+  const { data: membershipData } = useMembership(user.id);
+  const isPremium = membershipData?.status === "active";
   const { appliedFunding } = useGetClientApplyFunding(user.id);
   const { businessData } = useBusinessQuery(user.id, true);
   const [selectedBureaus, setSelectedBureaus] = React.useState({
@@ -485,19 +562,16 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
                   <Checkbox
                     id="refreshBusinessCredit"
                     checked={refreshBusinessCredit}
-                    disabled={!user.isPremiumClient}
+                    disabled={!isPremium}
                     onCheckedChange={(checked) =>
                       setRefreshBusinessCredit(checked as boolean)
                     }
                   />
                   <Label
                     htmlFor="refreshBusinessCredit"
-                    className={
-                      !user.isPremiumClient ? "text-muted-foreground" : ""
-                    }
+                    className={!isPremium ? "text-muted-foreground" : ""}
                   >
-                    Refresh Business Credit{" "}
-                    {!user.isPremiumClient && "(Premium Only)"}
+                    Refresh Business Credit {!isPremium && "(Premium Only)"}
                   </Label>
                 </div>
 
@@ -782,7 +856,7 @@ const SendPaymentLink = ({ user }: { user: UserWithId }) => {
   const handleSendLink = async () => {
     setIsSending(true);
     try {
-      await sendPaymentLink({ userId: user.id, paymentKey: "AcceleratorFull" });
+      await sendPaymentLink({ userId: user.id });
       toast.success("Payment link sent successfully!");
       setConfirmationOpen(false);
     } catch (error) {
@@ -1012,8 +1086,6 @@ const EditClientModal = ({
       middleName: user.middleName || "",
       lastName: user.lastName || "",
       phoneNumber: user.phoneNumber || "",
-      birthdate: user.birthdate ? new Date(user.birthdate) : undefined,
-      gender: user.gender || "",
       ssn: user.ssn || "",
     },
   });
@@ -1087,25 +1159,11 @@ const EditClientModal = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <CustomFormField
                 name="phoneNumber"
                 label="* Phone Number"
                 placeholder=""
-              />
-              <CustomFormField
-                name="birthdate"
-                type="date-picker"
-                label="* Birthdate"
-                placeholder=""
-                dateAfterHidden={new Date()}
-              />
-              <CustomFormField
-                name="gender"
-                type="select"
-                label="* Gender"
-                placeholder=" "
-                options={genderTypes()}
               />
             </div>
 

@@ -45,8 +45,6 @@ export const POST = withAuth(async (req: NextRequest) => {
       lastName: data.lastName,
       email: data.email,
       password: data.email, // Temporary password is email
-      birthdate: data.birthdate,
-      gender: data.gender,
       phoneNumber: data.phoneNumber,
       ssn: data.ssn,
       role: "Client",

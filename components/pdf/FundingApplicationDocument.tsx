@@ -124,32 +124,35 @@ export const FundingApplicationDocument = ({ application, user }: Props) => {
       {/* Client Information */}
       <View style={styles.section} wrap={false}>
         <Text style={styles.sectionTitle}>Client Information</Text>
+        {/* 1st Row */}
         <View style={styles.row}>
           <View style={styles.columnThird}>
-            <Text style={styles.label}>Name</Text>
-            <Text style={styles.value}>{name}</Text>
+            <Text style={styles.label}>First Name</Text>
+            <Text style={styles.value}>{user?.firstName || "—"}</Text>
           </View>
+          <View style={styles.columnThird}>
+            <Text style={styles.label}>Middle Name</Text>
+            <Text style={styles.value}>{user?.middleName || "—"}</Text>
+          </View>
+          <View style={styles.columnThird}>
+            <Text style={styles.label}>Last Name</Text>
+            <Text style={styles.value}>{user?.lastName || "—"}</Text>
+          </View>
+        </View>
+
+        {/* 2nd Row */}
+        <View style={styles.row}>
           <View style={styles.columnThird}>
             <Text style={styles.label}>Email</Text>
             <Text style={styles.value}>{user?.email || "—"}</Text>
           </View>
           <View style={styles.columnThird}>
-            <Text style={styles.label}>Phone</Text>
+            <Text style={styles.label}>Phone Number</Text>
             <Text style={styles.value}>{user?.phoneNumber || "—"}</Text>
           </View>
           <View style={styles.columnThird}>
             <Text style={styles.label}>SSN</Text>
             <Text style={styles.value}>{user?.ssn || "—"}</Text>
-          </View>
-          <View style={styles.columnThird}>
-            <Text style={styles.label}>Birthdate</Text>
-            <Text style={styles.value}>
-              {user?.birthdate ? fmtDate(user.birthdate) : "—"}
-            </Text>
-          </View>
-          <View style={styles.columnThird}>
-            <Text style={styles.label}>Gender</Text>
-            <Text style={styles.value}>{user?.gender || "—"}</Text>
           </View>
         </View>
 

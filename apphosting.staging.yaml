@@ -136,22 +136,47 @@ env:
       - BUILD
       - RUNTIME
   - variable: WHOP_COMPANY_ID
-    value: biz_x5m0LdbuN9YPJm
+    value: biz_CEGVfTydxqFwgI
     availability:
       - BUILD
       - RUNTIME
   - variable: WHOP_PRODUCT_ID
-    value: prod_1PZ2aXMZQH1Dc
+    value: prod_Nx8k4DHCfXq8g
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_GENERATE_CRS_REPORT_PRODUCT_ID
+    value: prod_4fUciRne9Fa7z
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_CREDIT_REPAIR_PRODUCT_ID
+    value: prod_eHxOYC1i4vmis
     availability:
       - BUILD
       - RUNTIME
   - variable: WHOP_TRADELINE_PRODUCT_ID
-    value: prod_1PZ2aXMZQH1Dc
+    value: prod_8qoWdnNh7w7PF
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_PRICING_PLAN_STARTER_ID
+    value: prod_fV5gCPjKwe067
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_PRICING_PLAN_PRO_ID
+    value: prod_oJhxhteiZonAQ
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: WHOP_PRICING_PLAN_EXECUTIVE_ID
+    value: prod_0mb3w3BVfhYYQ
     availability:
       - BUILD
       - RUNTIME
   - variable: WHOP_BASE_URL
-    value: https://sandbox-api.whop.com/api/v1
+    value: https://api.whop.com/api/v1
     availability:
       - BUILD
       - RUNTIME
@@ -202,6 +227,11 @@ env:
       - RUNTIME
   - variable: OFFER_EMAIL
     value: offer@cegunited.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: CLASSIFY_BASE_URL
+    value: https://classifydocument-ffuzmpuyia-uc.a.run.app
     availability:
       - BUILD
       - RUNTIME

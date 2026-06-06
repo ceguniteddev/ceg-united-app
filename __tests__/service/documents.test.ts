@@ -34,6 +34,14 @@ vi.mock("next/headers", () => ({
 }));
 vi.mock("@/service/user", () => ({ getCurrentUser: vi.fn() }));
 
+vi.stubGlobal(
+  "fetch",
+  vi.fn().mockResolvedValue({
+    ok: true,
+    json: vi.fn().mockResolvedValue({ data: {} }),
+  }),
+);
+
 // ── Import after mocks ────────────────────────────────────────────────────────
 import { uploadDocument, deleteDocument } from "@/service/documents";
 import { getCurrentUser } from "@/service/user";
@@ -66,7 +74,11 @@ describe("service/documents", () => {
     it("uses documentType prefix in filename when documentType is provided", async () => {
       const file = makeMockFile("passport.pdf");
 
-      const result = await uploadDocument("user-1", file, "PASSPORT");
+      const result = await uploadDocument({
+        userId: "user-1",
+        file,
+        documentType: "PASSPORT",
+      });
 
       expect(mockFile).toHaveBeenCalledWith(
         expect.stringMatching(
@@ -87,7 +99,7 @@ describe("service/documents", () => {
       const file = makeMockFile("my doc.pdf");
       const before = Date.now();
 
-      await uploadDocument("user-1", file, null);
+      await uploadDocument({ userId: "user-1", file, documentType: null });
 
       // The path should match: documents/user-1/<timestamp>_my_doc.pdf
       const callArg: string = mockFile.mock.calls[0][0];
@@ -101,7 +113,11 @@ describe("service/documents", () => {
       vi.mocked(getCurrentUser).mockResolvedValue({ role: "Client" } as any);
       mockHeadersInstance.get.mockReturnValue("10.0.0.1");
 
-      await uploadDocument("user-1", file, "DOC_TYPE");
+      await uploadDocument({
+        userId: "user-1",
+        file,
+        documentType: "DOC_TYPE",
+      });
 
       expect(mockSave).toHaveBeenCalledWith(
         expect.any(Buffer),
@@ -120,7 +136,11 @@ describe("service/documents", () => {
       vi.mocked(getCurrentUser).mockResolvedValue({ role: "Admin" } as any);
       const file = makeMockFile("test.pdf");
 
-      await uploadDocument("user-1", file, "DOC_TYPE");
+      await uploadDocument({
+        userId: "user-1",
+        file,
+        documentType: "DOC_TYPE",
+      });
 
       const saveCall = mockSave.mock.calls[0][1];
       expect(saveCall.metadata.metadata).not.toHaveProperty("clientIP");
@@ -129,8 +149,13 @@ describe("service/documents", () => {
     it("includes customMetadata in saved file metadata", async () => {
       const file = makeMockFile("test.pdf");
 
-      await uploadDocument("user-1", file, "DOC_TYPE", {
-        category: "identity",
+      await uploadDocument({
+        userId: "user-1",
+        file,
+        documentType: "DOC_TYPE",
+        customMetadata: {
+          category: "identity",
+        },
       });
 
       expect(mockSave).toHaveBeenCalledWith(
@@ -146,7 +171,11 @@ describe("service/documents", () => {
     it("returns correct UploadedFileData shape", async () => {
       const file = makeMockFile("report.pdf");
 
-      const result = await uploadDocument("user-42", file, "REPORT");
+      const result = await uploadDocument({
+        userId: "user-42",
+        file,
+        documentType: "REPORT",
+      });
 
       expect(result).toMatchObject({
         originalFilename: "report.pdf",

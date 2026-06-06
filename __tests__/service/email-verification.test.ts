@@ -48,6 +48,8 @@ vi.mock("@/service/crs", () => ({
   getCRSReport: vi.fn(),
   sendClientFundingApplicationAuditAnalysis: vi.fn(),
   sendClientFundingApplicationCongratsMessage: vi.fn(),
+  sendClientFundingApplicationCongratsMessageNewRegistration: vi.fn(),
+  requestMapBankProductsN8nNewRegistration: vi.fn(),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -77,7 +79,13 @@ import {
 } from "@/service/email-verification";
 import { Timestamp } from "firebase-admin/firestore";
 import { authenticationAdmin } from "@/lib/fireabase-admin";
-import { getCRSReport, fundAnalysis, generateCRSReport } from "@/service/crs";
+import {
+  getCRSReport,
+  fundAnalysis,
+  generateCRSReport,
+  sendClientFundingApplicationCongratsMessageNewRegistration,
+  requestMapBankProductsN8nNewRegistration,
+} from "@/service/crs";
 
 describe("service/email-verification", () => {
   beforeEach(() => {
@@ -233,8 +241,9 @@ describe("service/email-verification", () => {
       vi.mocked(getCRSReport).mockResolvedValue(null as any);
       const result = await verifyEmailToken("token-4");
       expect(result.success).toBe(true);
-      expect(vi.mocked(generateCRSReport)).toHaveBeenCalled();
-      expect(vi.mocked(fundAnalysis)).toHaveBeenCalled();
+      expect(
+        vi.mocked(sendClientFundingApplicationCongratsMessageNewRegistration),
+      ).toHaveBeenCalled();
     });
   });
 

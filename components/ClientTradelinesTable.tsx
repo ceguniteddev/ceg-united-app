@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { ShoppingCartIcon, Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
 import {
-  useMarkupPercentage,
   useUserRecentTradelines,
   USER_ALL_TRADELINES_KEY,
 } from "@/hooks/tradelines";
+import { useSystemConfig } from "@/hooks/system-config";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { purchaseTradeline } from "@/service/tradelines";
 import { useAuth } from "@/provider/AuthContext";
@@ -225,7 +225,8 @@ export default function ClientTradelinesTable() {
     null,
   );
 
-  const { markupPercentage } = useMarkupPercentage();
+  const { config } = useSystemConfig();
+  const markupPercentage = config?.markupPercentage ?? 0;
   const { recentTradelines, refetch: refetchRecent } = useUserRecentTradelines(
     user?.uid,
   );

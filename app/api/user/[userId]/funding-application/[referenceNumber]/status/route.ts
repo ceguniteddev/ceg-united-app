@@ -48,7 +48,11 @@ export const PUT = withAuth(
         return badRequest({ errors: "Status is required" });
       }
 
-      await updateApplicationStatus(referenceNumber, status, undefined);
+      await updateApplicationStatus({
+        referenceNumber,
+        status,
+        approveOrDeclineValue: undefined,
+      });
 
       if (signature) {
         const db = firestoreAdmin();

@@ -1,4 +1,4 @@
-import { initializeFirestore, getFirestore } from "firebase/firestore";
+import { initializeFirestore } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
@@ -24,17 +24,26 @@ const firebaseConfigProd = {
 };
 
 const getConfig = () => {
-  return process.env.NEXT_PUBLIC_ENVIRONMENT === "production" ? firebaseConfigProd : firebaseConfig;
+  return process.env.NEXT_PUBLIC_ENVIRONMENT === "production"
+    ? firebaseConfigProd
+    : firebaseConfig;
 };
 
 // console.log("Firebase config:", process.env.NEXT_PUBLIC_ENVIRONMENT);
 // console.log("Firebase config:", getConfig().projectId);
-const app = initializeApp(getConfig());
+export const app = initializeApp(getConfig());
 
 export const authFirebase = getAuth(app);
 export const db = initializeFirestore(
   app,
   { ignoreUndefinedProperties: true },
-  `${process.env.FIREBASE_DB_NAME}`
+  process.env.NEXT_PUBLIC_ENVIRONMENT === "production"
+    ? "ceg-united-db-production"
+    : "ceg-united-db-staging",
 );
-export const storage = getStorage(app, `${process.env.FIREBASE_STORAGE_NAME}`);
+export const storage = getStorage(
+  app,
+  process.env.NEXT_PUBLIC_ENVIRONMENT === "production"
+    ? "gs://ceg-united-llc-prod.firebasestorage.app"
+    : "gs://cegunitedllc.firebasestorage.app",
+);

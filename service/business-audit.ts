@@ -13,6 +13,7 @@ import {
   getCRSBusinessScore,
   getCRSBusinessProfile,
 } from "./crs";
+import { logInfo } from "@/lib/logger";
 
 /**
  * Get business audit items from funding applications and CRS data
@@ -35,9 +36,16 @@ export const getBusinessAuditData = async (
   // Get all funding applications for this user
   const allApps = await getApplyFunding(userId);
 
+  logInfo("Fetched funding applications for user", {
+    userId,
+    businessId,
+    count: allApps?.length,
+  });
+
   // Filter to only apps related to this business
   const businessApps =
     allApps?.filter((app) => app.businessId === businessId) || [];
+  // logInfo("Filtered funding applications for business", businessApps);
 
   // Only generate audit items if there's at least one business funding application
   if (businessApps.length === 0) {
@@ -253,7 +261,7 @@ export const getBusinessAuditData = async (
   const compatibilityFactors: CompatibilityFactor[] = [
     {
       id: "credit-score",
-      label: "Credit Score",
+      label: "Business Credit Score",
       met: creditScore >= 60,
       detail:
         creditScore > 0

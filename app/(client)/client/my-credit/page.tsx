@@ -1,12 +1,11 @@
 "use client";
 import ClientCreditReport from "@/components/ClientCreditReport";
 import { useAuth } from "@/provider/AuthContext";
-import React from "react";
 
 const MyCreditPage = () => {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
 
-  return <ClientCreditReport userId={user?.uid ?? ""} />;
+  return <ClientCreditReport userId={user?.uid ?? ""} userData={userData!} />;
 };
 
 export default MyCreditPage;

@@ -23,11 +23,11 @@ const SidebarBroker = () => {
             className="mb-3 cursor-pointer flex items-center gap-2"
           >
             <Image
-              src="/icons/logo.svg"
-              width={34}
-              height={34}
-              alt={process.env.NEXT_PUBLIC_APP_NAME as string}
-              className="size-[24px] max-xl:size-14"
+              src="/icon.png"
+              alt="Logo"
+              width={548}
+              height={455}
+              className="h-20 w-auto object-contain"
             />
             <h1 className="sidebar-logo">
               {process.env.NEXT_PUBLIC_APP_NAME as string}
@@ -46,11 +46,11 @@ const SidebarBroker = () => {
           className="mb-6 cursor-pointer flex items-center gap-2 xl:justify-center"
         >
           <Image
-            src="/icons/logo.svg"
-            width={34}
-            height={34}
-            alt={process.env.NEXT_PUBLIC_APP_NAME as string}
-            className="size-[34px] xl:size-[64px]"
+            src="/icon.png"
+            alt="Logo"
+            width={548}
+            height={455}
+            className="h-20 w-auto object-contain"
           />
           <h1 className="sidebar-logo xl:hidden">
             {process.env.NEXT_PUBLIC_APP_NAME as string}

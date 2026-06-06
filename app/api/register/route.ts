@@ -1,103 +1,179 @@
-import { badRequest, internalServerError, notAllowed } from "@/app/api/helpers";
-import AppError from "@/error/AppError";
-import { createEnterpriseAssessment } from "@/lib/captcha/captcha";
+import { NextResponse } from "next/server";
+import { authSchema } from "@/schema/new-registration";
+import { registerUser } from "@/service/user";
 import { User } from "@/schema/registration";
-import {
-  consumeClientInvitationToken,
-  registerUser,
-  verifyClientInvitationToken,
-} from "@/service/user";
-import { NextRequest, NextResponse } from "next/server";
+import { firestoreAdmin } from "@/lib/fireabase-admin";
+import { FUNDING_PRODUCTS_BY_CATEGORY } from "@/schema/apply-funding";
 
-export const POST = async (req: NextRequest) => {
-  if (req.method !== "POST") {
-    return notAllowed();
+function mapFundingData(body: any) {
+  if (!body.business || !body.business.fundingType) {
+    return undefined;
   }
 
-  const adminAccessKey =
-    req.headers.get("ADMIN_ACCESS_KEY") || req.headers.get("admin-access-key");
-  const isAdmin = adminAccessKey === process.env.ADMIN_ACCESS_KEY;
+  const typeMap: Record<string, string> = {
+    Personal: "Personal",
+    Business: "Business",
+    Both: "Personal And Business",
+  };
 
-  const body = await req.json();
-  const {
-    token,
-    step1Data,
-    step2Data,
-    values,
-    invitationToken,
-    invitationType,
-  } = body;
+  const mappedType = typeMap[body.business.fundingType];
 
-  try {
-    if (!token && !isAdmin) {
-      return badRequest({ errors: "Missing token" });
+  if (!mappedType) {
+    return undefined;
+  }
+
+  const interestedProduct =
+    mappedType === "Personal And Business"
+      ? "Personal & Business Funding"
+      : `${mappedType} Funding`;
+
+  const fundingData: any = {
+    fundingType: mappedType,
+    interestedProduct: interestedProduct,
+    fundingProducts: FUNDING_PRODUCTS_BY_CATEGORY[interestedProduct] || [],
+    personalAmountFunding:
+      mappedType === "Personal" || mappedType === "Personal And Business"
+        ? body.business.fundingAmount
+        : undefined,
+    businessAmountFunding:
+      mappedType === "Business" || mappedType === "Personal And Business"
+        ? body.business.fundingAmount
+        : undefined,
+    howDoYouGetPaid: body.business.employmentType,
+    businessName: body.business.businessName,
+    employerIdentificationNumber: body.business.ein,
+    industryField: body.business.businessIndustry,
+    ficoCreditScore:
+      mappedType === "Personal" || mappedType === "Personal And Business"
+        ? body.business.creditScore
+        : undefined,
+    businessCreditScore:
+      mappedType === "Business" ? body.business.businessCreditScore : undefined,
+    appliedDate: new Date(),
+    status: "New",
+    analysisStatus: "Completed",
+  };
+
+  if (body.documents) {
+    // Map uploaded documents to applyFunding schema arrays
+    if (body.documents.driverLicense?.files) {
+      fundingData.driverLicenseDocuments =
+        body.documents.driverLicense.files.map((f: any) => ({
+          name: f.name,
+          size: f.size,
+          type: f.type,
+          storagePath: f.url ? f.url : undefined, // the service downloads it via storagePath
+          url: f.url,
+          base64: f.base64,
+        }));
     }
 
-    // Support both old format (values) and new format (step1Data, step2Data)
-    if (!step1Data && !values) {
-      return badRequest({ errors: "Missing registration data" });
-    }
-
-    if (!isAdmin) {
-      await createEnterpriseAssessment(token, "registration");
-    }
-
-    let brokerId: string | undefined;
-    let brokerName: string | undefined;
-    let invitationId: string | undefined;
-
-    // Handle Client Invitation
-    if (invitationToken && invitationType === "client") {
-      try {
-        const invitation = await verifyClientInvitationToken(invitationToken);
-        brokerId = invitation.brokerId;
-        brokerName = invitation.brokerName;
-        invitationId = invitation.id;
-      } catch (error: any) {
-        return badRequest({ errors: error.message });
+    if (
+      body.documents.businessDocs?.bankStatements?.files ||
+      body.documents.personalDocs?.bankStatements?.files
+    ) {
+      const allBankStatements = [
+        ...(body.documents.businessDocs?.bankStatements?.files?.map(
+          (f: any) => ({ ...f, docType: "BANK_STATEMENTS" }),
+        ) || []),
+        ...(body.documents.personalDocs?.bankStatements?.files?.map(
+          (f: any) => ({ ...f, docType: "PERSONAL_BANK_STATEMENTS" }),
+        ) || []),
+      ];
+      if (allBankStatements.length > 0) {
+        fundingData.bankStatements = allBankStatements.map((f: any) => ({
+          name: f.name,
+          size: f.size,
+          type: f.type,
+          storagePath: f.url ? f.url : undefined,
+          url: f.url,
+          base64: f.base64,
+          docType: f.docType,
+        }));
       }
     }
 
-    // If step1Data and step2Data are provided, use the multi-step registration
-    if (step1Data && step2Data) {
-      await registerUser({
-        user: {
-          ...step1Data,
-          role: "Client",
-          consentConfirmTerms: step2Data.consentConfirmTerms,
-          consentConfirmPrivacy: step2Data.consentConfirmPrivacy,
-        } as User,
-        fundingData: step2Data,
-        registrationType: "Self",
-        brokerId,
-        brokerName,
-        isBrokerInvite: !!invitationId,
-      });
-    } else {
-      // Fallback to old single-step registration
-      await registerUser({
-        user: values,
-        registrationType: "Self",
-        brokerId,
-        brokerName,
-        isBrokerInvite: !!invitationId,
-      });
+    if (body.documents.personalDocs?.paystubs?.files) {
+      fundingData.paystubs = body.documents.personalDocs.paystubs.files.map(
+        (f: any) => ({
+          name: f.name,
+          size: f.size,
+          type: f.type,
+          storagePath: f.url ? f.url : undefined,
+          url: f.url,
+          base64: f.base64,
+        }),
+      );
     }
-
-    // Mark invitation as accepted if successful
-    if (invitationId) {
-      await consumeClientInvitationToken(invitationId);
-    }
-
-    return NextResponse.json({ message: "ok" }, { status: 200 });
-  } catch (error: any) {
-    if (error instanceof AppError) {
-      // This is a controlled, user-facing error from our logic.
-      console.warn(`AppError caught: ${error.message}`);
-      return badRequest({ errors: error.message });
-    }
-
-    console.error("Internal Server Error:", error);
-    return internalServerError();
   }
-};
+
+  return fundingData;
+}
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+
+    if (!body.auth) {
+      return NextResponse.json(
+        { error: "Incomplete registration data" },
+        { status: 400 },
+      );
+    }
+
+    // Validate payloads
+    const parsedAuth = authSchema.parse(body.auth);
+
+    // Call service to register the user
+    const fundingData = mapFundingData(body);
+
+    // logInfo("Parsed Auth Data:", parsedAuth);
+
+    // let fundingDataLog = undefined;
+    // if (fundingData) {
+    //   const {
+    //     driverLicenseDocuments,
+    //     bankStatements,
+    //     paystubs,
+    //     ...restFundingData
+    //   } = fundingData;
+    //   fundingDataLog = restFundingData;
+    // }
+    // logInfo("Mapped Funding Data:", fundingDataLog);
+    await registerUser({
+      user: {
+        ...parsedAuth,
+        role: "Client",
+        isBrokerInvite: false,
+        leadId: body.leadId,
+      } as any as User,
+      registrationType: "Self",
+      fundingData: fundingData,
+    });
+
+    // Update the lead document status if leadId is provided
+    if (body.leadId) {
+      const db = firestoreAdmin();
+
+      // We also update the lead with the latest auth data since OCR on step 3 might have added address info
+      const finalAuthDataForLead = btoa(JSON.stringify(parsedAuth));
+
+      await db.collection("user-leads").doc(body.leadId).update({
+        status: "Registered",
+        data: finalAuthDataForLead,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    return NextResponse.json(
+      { success: true, message: "Registration successful" },
+      { status: 200 },
+    );
+  } catch (error: any) {
+    console.error("New Registration API Error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to process registration" },
+      { status: 500 },
+    );
+  }
+}

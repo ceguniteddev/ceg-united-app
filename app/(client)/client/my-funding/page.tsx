@@ -105,7 +105,10 @@ const ApplyFundingPage = () => {
         )}
 
         <section className="flex w-full flex-col gap-6">
-          <FundingBankProducts selectedReference={selectedReference} />
+          <FundingBankProducts
+            selectedReference={selectedReference}
+            selectedPathwayId={""}
+          />
         </section>
       </div>
 

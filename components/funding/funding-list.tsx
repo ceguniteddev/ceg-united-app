@@ -19,6 +19,7 @@ import {
   BanknoteX,
   CircleDollarSign,
   Loader2Icon,
+  LockIcon,
   SendIcon,
   XCircle,
 } from "lucide-react";
@@ -50,14 +51,28 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CustomFormField } from "../CustomFormField";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import { useAuth } from "@/provider/AuthContext";
+import { useMembership } from "@/hooks/membership";
 import { useRouter } from "next/navigation";
 import { ApprovalOddsBadge } from "./v2/ApprovalOddsBadge";
 import { LenderLogo } from "./v2/LenderLogo";
 import { CheckCircle2 } from "lucide-react";
 import IconMenu from "../icon-menu";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
+import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
 
-const baseColumns: ColumnDef<BankFormData>[] = [
+import { toast } from "sonner";
+import { createMembershipCheckoutConfig } from "@/service/whop";
+import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+
+const getBaseColumns = (
+  hasPaidContract: boolean,
+): ColumnDef<BankFormData>[] => [
   {
     accessorKey: "referenceNumber",
     id: "referenceNumber",
@@ -74,18 +89,25 @@ const baseColumns: ColumnDef<BankFormData>[] = [
     ),
     cell: ({ row }) => {
       const data = row.original as ApprovedBankFormData;
+      const displayBankName = hasPaidContract
+        ? data.bankName
+        : `Bank ${row.index + 1}`;
 
       return (
         <div className="flex items-center gap-3">
           <LenderLogo
-            initial={data.logoInitial || data.bankName.trim()[0]}
+            initial={
+              hasPaidContract
+                ? data.logoInitial || data.bankName.trim()[0]
+                : "B"
+            }
             bgClass={data.logoBg || "bg-blue-100"}
             colorClass={data.logoColor || "text-blue-600"}
             size="sm"
           />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">
-              {data.bankName}
+            <p className="text-sm font-semibold text-gray-900 whitespace-normal break-words max-w-[250px] md:max-w-[300px] xl:max-w-[400px]">
+              {displayBankName}
             </p>
             {data.clientApplicationStatus === "Funded" && data.fundedAmount && (
               <div className="flex items-center gap-1.5 mt-0.5">
@@ -213,6 +235,10 @@ type Props = {
 };
 
 const FundingList = ({ appliedFunding, isAdminView }: Props) => {
+  const { userData } = useAuth();
+  const { data: membership } = useMembership();
+  const hasPaidContract = membership?.status === "active" || !!isAdminView;
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
@@ -238,7 +264,8 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
       ) || false;
 
     // 2. Filter the base columns based on all conditions.
-    return baseColumns.filter((column) => {
+    const baseCols = getBaseColumns(hasPaidContract);
+    return baseCols.filter((column) => {
       // Hide clientActions for admins
       if (isAdminView && column.id === "clientActions") {
         return false;
@@ -275,7 +302,7 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
       // If none of the above conditions are met, keep the column
       return true;
     });
-  }, [isAdminView, appliedFunding]);
+  }, [isAdminView, appliedFunding, hasPaidContract]);
 
   const table = useReactTable({
     data: appliedFunding || [],
@@ -403,7 +430,13 @@ const FundingCard = ({
   isAdminView?: boolean;
   appliedFunding: ApprovedBankFormData[] | undefined;
 }) => {
+  const { userData } = useAuth();
+  const { data: membership } = useMembership();
+  const hasPaidContract = membership?.status === "active" || !!isAdminView;
   const data = row.original;
+  const displayBankName = hasPaidContract
+    ? data.bankName
+    : `Bank ${row.index + 1}`;
 
   const showApprovedFields =
     appliedFunding?.some(
@@ -428,14 +461,18 @@ const FundingCard = ({
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3 flex-1">
           <LenderLogo
-            initial={data.logoInitial || data.bankName.trim()[0]}
+            initial={
+              hasPaidContract
+                ? data.logoInitial || data.bankName.trim()[0]
+                : "B"
+            }
             bgClass={data.logoBg || "bg-blue-100"}
             colorClass={data.logoColor || "text-blue-600"}
             size="md"
           />
           <div>
             <p className="text-xs text-gray-500">Bank Name</p>
-            <p className="font-semibold">{data.bankName}</p>
+            <p className="font-semibold">{displayBankName}</p>
             {data.clientApplicationStatus === "Funded" && data.fundedAmount && (
               <div className="flex items-center gap-1.5 mt-0.5">
                 <CheckCircle2 className="size-3.5 text-blue-500" />
@@ -542,7 +579,16 @@ const ActionCell = ({ row }: { row: any }) => {
   const router = useRouter();
   const [isDenefitsPaid, setIsDenefitsPaid] = React.useState(false);
   const [isSkipDialogOpen, setSkipDialogOpen] = React.useState(false);
+  const [isPricingModalOpen, setPricingModalOpen] = React.useState(false);
+  const [checkoutId, setCheckoutId] = React.useState<string | null>(null);
+  const [isCheckoutSheetOpen, setCheckoutSheetOpen] = React.useState(false);
+  const [isCreatingCheckout, setIsCreatingCheckout] = React.useState(false);
+  const [selectedPlan, setSelectedPlan] = React.useState<{
+    id: string;
+    amount: number;
+  } | null>(null);
   const { userData } = useAuth();
+  const { data: membership } = useMembership();
 
   const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
     row.original.userId,
@@ -566,7 +612,7 @@ const ActionCell = ({ row }: { row: any }) => {
 
   const handleApproveClickCapture = () => {
     router.push(
-      `/client/my-funding/apply/${row.original.fundMappingApprovedId}`,
+      `/client/income-funding/apply/${row.original.fundMappingApprovedId}`,
     );
   };
 
@@ -580,39 +626,116 @@ const ActionCell = ({ row }: { row: any }) => {
     formSkip.reset();
   };
 
+  const handleSelectPlan = async (planId: string, amount: number) => {
+    if (!row.original.userId) return;
+    try {
+      setIsCreatingCheckout(true);
+      const res = await createMembershipCheckoutConfig({
+        userId: row.original.userId,
+        planId: planId as any,
+      });
+      setCheckoutId(res.checkoutId);
+      setSelectedPlan({ id: planId, amount });
+      setPricingModalOpen(false);
+      setCheckoutSheetOpen(true);
+    } catch (err: any) {
+      toast.error("Failed to start checkout: " + err.message);
+    } finally {
+      setIsCreatingCheckout(false);
+    }
+  };
+
   if (row.original.clientApplicationStatus !== "Not Applied") return null;
 
   return (
     <>
       <div className="flex gap-2 w-full lg:w-auto">
-        <Button
-          type="button"
-          variant="outline"
-          disabled={!isDenefitsPaid && !userData?.isPremiumClient}
-          className="group bg-blue-500 hover:bg-blue-600 text-white cursor-pointer flex-1 lg:flex-none transition-all"
-          onClick={() => handleApproveClickCapture()}
-        >
-          <IconMenu
-            icon={
-              <SendIcon className="h-4 w-4 transition-all group-hover:fill-white group-hover:stroke-[1.5]" />
-            }
-            text="Apply"
-          />
-        </Button>
+        {membership?.status === "active" ? (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              className="group bg-blue-500 hover:bg-blue-600 text-white cursor-pointer flex-1 lg:flex-none transition-all"
+              onClick={() => handleApproveClickCapture()}
+            >
+              <IconMenu
+                icon={
+                  <SendIcon className="h-4 w-4 transition-all group-hover:fill-white group-hover:stroke-[1.5]" />
+                }
+                text="Apply"
+              />
+            </Button>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="group border-gray-300 hover:border-gray-400 hover:bg-gray-50 flex-1 lg:flex-none transition-all"
-          onClick={() => setSkipDialogOpen(true)}
+            <Button
+              type="button"
+              variant="outline"
+              className="group border-gray-300 hover:border-gray-400 hover:bg-gray-50 flex-1 lg:flex-none transition-all"
+              onClick={() => setSkipDialogOpen(true)}
+            >
+              <IconMenu
+                icon={
+                  <XCircle className="h-4 w-4 text-gray-600 transition-all group-hover:text-gray-700" />
+                }
+                text="Skip"
+              />
+            </Button>
+          </>
+        ) : (
+          <Button
+            type="button"
+            className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold cursor-pointer flex-1 lg:flex-none transition-all border-none shadow-md hover:shadow-lg"
+            onClick={() => setPricingModalOpen(true)}
+          >
+            <span className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-out -skew-x-12 -translate-x-full" />
+            <IconMenu
+              icon={
+                <LockIcon className="h-4 w-4 transition-all group-hover:scale-110" />
+              }
+              text="Unlock to Apply"
+            />
+          </Button>
+        )}
+
+        <ResponsiveDialog
+          isOpen={isPricingModalOpen}
+          setIsOpen={setPricingModalOpen}
+          title="Upgrade to Apply"
+          description=""
+          className="sm:max-w-[90vw] md:max-w-6xl max-h-[90vh] overflow-y-auto p-0 border-0"
         >
-          <IconMenu
-            icon={
-              <XCircle className="h-4 w-4 text-gray-600 transition-all group-hover:text-gray-700" />
-            }
-            text="Skip"
+          <PricingPlans
+            isLoading={isCreatingCheckout}
+            onSelectPlan={handleSelectPlan}
           />
-        </Button>
+        </ResponsiveDialog>
+
+        <Sheet open={isCheckoutSheetOpen} onOpenChange={setCheckoutSheetOpen}>
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden"
+          >
+            <SheetHeader className="px-6 py-4 border-b border-gray-200">
+              <SheetTitle className="text-xl font-bold">
+                Secure Checkout
+              </SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto">
+              {checkoutId && selectedPlan && (
+                <MembershipCheckoutView
+                  checkoutId={checkoutId}
+                  userId={row.original.userId}
+                  tierId={selectedPlan.id}
+                  amount={selectedPlan.amount}
+                  prefillEmail={userData?.email || ""}
+                  onPaymentCompleteAction={() => {
+                    setCheckoutSheetOpen(false);
+                    router.refresh();
+                  }}
+                />
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
 
         <ResponsiveDialog
           isOpen={isSkipDialogOpen}

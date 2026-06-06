@@ -165,4 +165,5 @@ export type ApprovedBankFormData = BankFormData & {
   logoInitial?: string; // For LenderLogo component (e.g., "C" for Chase)
   logoBg?: string; // Background color class (e.g., "bg-blue-100")
   logoColor?: string; // Text color class (e.g., "text-blue-600")
+  pathwayId?: string; // Identifier for which pathway this belongs to
 };

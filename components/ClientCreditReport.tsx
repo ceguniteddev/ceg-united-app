@@ -2,7 +2,6 @@
 import Spinner from "@/components/Spinner";
 import { useClientCRSReportQuery } from "@/hooks/crs";
 import { useCountUp } from "@/hooks/useCountUp";
-import { useAuth } from "@/provider/AuthContext";
 import {
   CreditReport,
   CreditReportWithId,
@@ -32,10 +31,12 @@ import {
   CreditCard,
   FileCheck,
   Info,
+  ReceiptIcon,
   Search,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import React, { useMemo, useState } from "react";
@@ -58,6 +59,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { initiateCRSReportCheckout } from "@/service/crs";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { WhopCheckoutEmbed } from "@whop/checkout/react";
+import { User, UserWithId } from "@/schema/registration";
+import { ConfirmButton } from "@/components/Confirmation";
+import { useFeeSettings } from "@/hooks/fee-settings";
 
 ChartJS.register(
   CategoryScale,
@@ -319,94 +329,7 @@ function getScoreRating(score: number) {
   return { label: "Poor", color: "text-red-600" };
 }
 
-// --- ScoreCard with animated semi-circle gauge ---
-const ScoreCard: React.FC<{
-  bureau: "Experian" | "Equifax" | "TransUnion";
-  score?: CreditScore;
-  index: number;
-}> = ({ bureau, score, index }) => {
-  const rawValue = score?.scoreValue ? Number(score.scoreValue) : 0;
-  const max = score?.scoreMaximumValue ? Number(score.scoreMaximumValue) : 850;
-  const animatedScore = useCountUp(rawValue, 1400);
-  const colors = bureauColors[bureau];
-
-  const radius = 70;
-  const circumference = Math.PI * radius;
-  const scoreRatio = max > 0 ? rawValue / max : 0;
-  const dashOffset = circumference * (1 - scoreRatio);
-  const pct = max > 0 ? Math.min(100, Math.round((rawValue / max) * 100)) : 0;
-  const rating = rawValue ? getScoreRating(rawValue) : null;
-
-  return (
-    <div
-      className={`bg-white rounded-xl border border-gray-100 shadow-card p-5 card-hover animate-fade-in-up stagger-${index + 1}`}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-            <Image
-              src={`/icons/${bureau}.png`}
-              alt={bureau}
-              width={28}
-              height={28}
-              className="object-contain"
-            />
-          </div>
-          <span className="text-sm font-semibold text-gray-900">{bureau}</span>
-        </div>
-        <span
-          className={`text-xs font-semibold px-2.5 py-1 rounded-full ${colors.bg} ${colors.text}`}
-        >
-          {rawValue ? `${pct}% of max` : "No score"}
-        </span>
-      </div>
-
-      {/* Semi-circle gauge */}
-      <div className="relative w-full flex justify-center mb-2">
-        <div className="relative w-[160px] h-[88px]">
-          <svg viewBox="0 0 180 100" className="w-full h-full">
-            <path
-              d="M 10 90 A 70 70 0 0 1 170 90"
-              fill="none"
-              strokeWidth="10"
-              strokeLinecap="round"
-              className="stroke-gray-100"
-            />
-            <path
-              d="M 10 90 A 70 70 0 0 1 170 90"
-              fill="none"
-              strokeWidth="10"
-              strokeLinecap="round"
-              className={colors.stroke}
-              strokeDasharray={`${circumference}`}
-              strokeDashoffset={`${dashOffset}`}
-              style={{
-                transition:
-                  "stroke-dashoffset 1.4s cubic-bezier(0.16, 1, 0.3, 1)",
-              }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-end pb-0">
-            <span className="text-3xl font-bold text-gray-900 font-mono">
-              {rawValue ? animatedScore : "—"}
-            </span>
-            {rating && (
-              <span className={`text-xs font-semibold ${rating.color}`}>
-                {rating.label}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {score?.modelName && (
-        <p className="text-[11px] text-gray-400 text-center mt-1 truncate">
-          {score.modelName}
-        </p>
-      )}
-    </div>
-  );
-};
+import { BureauScoreCard } from "@/components/credit-repair/BureauScoreCard";
 
 // --- Score History Bar Chart ---
 const ScoreHistoryChart: React.FC<{
@@ -946,11 +869,19 @@ const BureauSection: React.FC<{
 type Props = {
   userId: string;
   isAdminView?: boolean;
+  userData?: UserWithId;
 };
 
 // --- Main Page ---
-const ClientCreditReport = ({ userId, isAdminView }: Props) => {
+const ClientCreditReport = ({ userId, isAdminView, userData }: Props) => {
+  const router = useRouter();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [checkoutMetadata, setCheckoutMetadata] = useState<any>(null);
   const { crsReport, isLoading } = useClientCRSReportQuery({ userId });
+  const { data: feeSettings } = useFeeSettings();
+  const reportFee = feeSettings?.creditReportFee || 49;
 
   // Group reports by createdAt timestamp (only for bureau reports)
   const reportsByTimestamp = useMemo(() => {
@@ -1002,6 +933,42 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
     }
   }, [timestamps, selectedTimestamp]);
 
+  const handleGenerateReport = async () => {
+    try {
+      setIsGenerating(true);
+      const res = await initiateCRSReportCheckout({
+        userId,
+        reportType: "personal",
+      });
+
+      if (res.checkoutId && res.url) {
+        setCheckoutMetadata({
+          reportType: "personal",
+          referenceNumber:
+            "metadata" in res
+              ? (res as any).metadata?.referenceNumber
+              : undefined,
+        });
+        setCheckoutId(res.checkoutId);
+        setIsConfirmOpen(false);
+      } else if ("success" in res && res.success) {
+        toast.success(
+          "Credit report generation has started. Please wait a few moments for the new data to appear.",
+        );
+        setIsConfirmOpen(false);
+        // The data will refresh automatically if using real-time listener or we can trigger a refetch here.
+      }
+    } catch (error: any) {
+      console.error("Failed to initiate CRS report checkout:", error);
+      toast.error(
+        error.message ||
+          "Failed to generate credit report. Please contact support.",
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   // Get reports for selected timestamp
   const selectedReports = useMemo(
     () =>
@@ -1014,15 +981,60 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
     [selectedReports],
   );
 
-  // Scores per bureau
-  const scoresByBureau: Record<
-    "Experian" | "TransUnion" | "Equifax",
-    CreditScore | undefined
-  > = {
-    Experian: bureauMap.Experian?.report.scores?.[0],
-    TransUnion: bureauMap.TransUnion?.report.scores?.[0],
-    Equifax: bureauMap.Equifax?.report.scores?.[0],
-  };
+  const prevReports = useMemo(() => {
+    const currentIndex = timestamps.indexOf(selectedTimestamp);
+    const prevTimestamp =
+      currentIndex >= 0 && currentIndex + 1 < timestamps.length
+        ? timestamps[currentIndex + 1]
+        : null;
+    return prevTimestamp ? reportsByTimestamp[prevTimestamp] || [] : [];
+  }, [timestamps, selectedTimestamp, reportsByTimestamp]);
+
+  const prevBureauMap = useMemo(
+    () => groupByBureau(prevReports),
+    [prevReports],
+  );
+
+  const parsedScores = useMemo(() => {
+    const expScore =
+      toNum(bureauMap.Experian?.report?.scores?.[0]?.scoreValue) || 0;
+    const prevExpScore =
+      toNum(prevBureauMap.Experian?.report?.scores?.[0]?.scoreValue) || 0;
+
+    const eqScore =
+      toNum(bureauMap.Equifax?.report?.scores?.[0]?.scoreValue) || 0;
+    const prevEqScore =
+      toNum(prevBureauMap.Equifax?.report?.scores?.[0]?.scoreValue) || 0;
+
+    const tuScore =
+      toNum(bureauMap.TransUnion?.report?.scores?.[0]?.scoreValue) || 0;
+    const prevTuScore =
+      toNum(prevBureauMap.TransUnion?.report?.scores?.[0]?.scoreValue) || 0;
+
+    return {
+      experian: {
+        bureau: "experian" as const,
+        score: expScore,
+        delta: prevExpScore ? expScore - prevExpScore : 0,
+        pulledAt: bureauMap.Experian?.createdAt || "",
+        prevScore: prevExpScore,
+      },
+      equifax: {
+        bureau: "equifax" as const,
+        score: eqScore,
+        delta: prevEqScore ? eqScore - prevEqScore : 0,
+        pulledAt: bureauMap.Equifax?.createdAt || "",
+        prevScore: prevEqScore,
+      },
+      transunion: {
+        bureau: "transunion" as const,
+        score: tuScore,
+        delta: prevTuScore ? tuScore - prevTuScore : 0,
+        pulledAt: bureauMap.TransUnion?.createdAt || "",
+        prevScore: prevTuScore,
+      },
+    };
+  }, [bureauMap, prevBureauMap]);
 
   // Inquiries per bureau (default to empty array if not present)
   const inquiriesByBureau: Record<
@@ -1174,32 +1186,77 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
               </p>
             )}
           </div>
-          {timestamps.length > 1 && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
-              <label className="text-sm text-gray-600 whitespace-nowrap font-medium">
-                Report Date:
-              </label>
-              <Select
-                value={selectedTimestamp}
-                onValueChange={setSelectedTimestamp}
-              >
-                <SelectTrigger className="w-full sm:w-[240px] border-gray-200">
-                  <SelectValue placeholder="Select report date" />
-                </SelectTrigger>
-                <SelectContent>
-                  {timestamps.map((timestamp) => (
-                    <SelectItem key={timestamp} value={timestamp}>
-                      {new Date(timestamp).toLocaleString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <ConfirmButton
+              open={isConfirmOpen}
+              onOpenChange={setIsConfirmOpen}
+              onConfirm={handleGenerateReport}
+              isLoading={isGenerating}
+              disabled={isGenerating}
+              description={
+                <div className="space-y-3 mt-2 text-sm text-gray-600">
+                  <p>Pulling a new credit report requires a one-time fee.</p>
+                  <ul className="list-disc pl-5 font-medium text-gray-800 text-left">
+                    <li>Fee ${reportFee.toFixed(2)}.</li>
+                  </ul>
+                  <p>
+                    You will be redirected to our secure payment portal to
+                    complete your purchase before the report is generated.
+                  </p>
+                </div>
+              }
+              confirmLabel="Proceed to Payment"
+              classNameAction="bg-blue-600 hover:bg-blue-700 text-white"
+              title="Pull New Credit Report"
+              trigger={
+                <button
+                  onClick={() => setIsConfirmOpen(true)}
+                  disabled={isGenerating}
+                  className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors w-full sm:w-auto justify-center"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Pulling Credit Report...
+                    </>
+                  ) : (
+                    <>
+                      <ReceiptIcon className="w-4 h-4" />
+                      Pull Credit Report
+                    </>
+                  )}
+                </button>
+              }
+            />
+
+            {timestamps.length > 1 && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                <label className="text-sm text-gray-600 whitespace-nowrap font-medium">
+                  Report Date:
+                </label>
+                <Select
+                  value={selectedTimestamp}
+                  onValueChange={setSelectedTimestamp}
+                >
+                  <SelectTrigger className="w-full sm:w-[240px] border-gray-200">
+                    <SelectValue placeholder="Select report date" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timestamps.map((timestamp) => (
+                      <SelectItem key={timestamp} value={timestamp}>
+                        {new Date(timestamp).toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -1210,17 +1267,9 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         icon={<ShieldCheck className="w-4 h-4 text-blue-600" />}
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        <ScoreCard
-          bureau="Experian"
-          score={scoresByBureau.Experian}
-          index={0}
-        />
-        <ScoreCard bureau="Equifax" score={scoresByBureau.Equifax} index={1} />
-        <ScoreCard
-          bureau="TransUnion"
-          score={scoresByBureau.TransUnion}
-          index={2}
-        />
+        <BureauScoreCard score={parsedScores.experian} />
+        <BureauScoreCard score={parsedScores.equifax} />
+        <BureauScoreCard score={parsedScores.transunion} />
       </div>
 
       {/* Score History Chart */}
@@ -1722,6 +1771,77 @@ const ClientCreditReport = ({ userId, isAdminView }: Props) => {
         Note: When multiple docs per bureau exist for the same date, the newest
         is used.
       </p>
+
+      {/* Checkout Modal */}
+      <Dialog
+        open={!!checkoutId}
+        onOpenChange={(open) => !open && setCheckoutId(null)}
+      >
+        <DialogContent
+          className="w-[95vw] sm:max-w-[600px] md:max-w-[700px] p-0 overflow-hidden bg-transparent border-none shadow-none"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogTitle className="sr-only">Complete Your Purchase</DialogTitle>
+          {checkoutId && (
+            <div className="bg-white rounded-xl shadow-2xl overflow-y-auto w-full max-h-[90vh] md:max-h-[85vh] relative">
+              <button
+                onClick={() => setCheckoutId(null)}
+                className="cursor-pointer absolute top-3 right-3 p-2 bg-gray-100 hover:bg-gray-200 rounded-full z-50 transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4 text-gray-600" />
+              </button>
+              <WhopCheckoutEmbed
+                sessionId={checkoutId}
+                prefill={{
+                  email: userData?.email,
+                  address: {
+                    country: "US",
+                  },
+                }}
+                onComplete={async (planId, receiptId) => {
+                  try {
+                    const response = await fetch(
+                      `/api/user/${userId}/crs/purchase`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          planId,
+                          receiptId,
+                          checkoutId,
+                          metadata: checkoutMetadata,
+                        }),
+                      },
+                    );
+
+                    if (!response.ok) {
+                      throw new Error("Failed to trigger report generation");
+                    }
+
+                    toast.success(
+                      "Payment successful! Generating your credit report...",
+                    );
+                    setCheckoutId(null);
+                    setCheckoutMetadata(null);
+                  } catch (error) {
+                    console.error(error);
+                    toast.error(
+                      "Payment succeeded but report generation failed. Please contact support.",
+                    );
+                    setCheckoutId(null);
+                  }
+                }}
+                fallback={
+                  <div className="flex items-center justify-center h-full">
+                    <Spinner displayText="Loading secure checkout..." />
+                  </div>
+                }
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

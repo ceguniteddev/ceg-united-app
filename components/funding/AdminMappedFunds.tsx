@@ -74,6 +74,7 @@ import CategoryBadge from "../CategoryBadge";
 import { formatAmount } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import BankProductsForm from "@/components/bank-products/bank-product-form";
+import { useMembership } from "@/hooks/membership";
 import { useUserQuery } from "@/hooks/user";
 import { DataTablePagination } from "./pagination";
 
@@ -176,7 +177,11 @@ const BankProductsList = ({
         header: ({ column }) => (
           <SortableHeader column={column} title="Bank Name" />
         ),
-        cell: ({ row }) => <div>{row.getValue("bankName")}</div>,
+        cell: ({ row }) => (
+          <div className="text-sm font-semibold text-gray-900 whitespace-normal break-words max-w-[250px] md:max-w-[300px] xl:max-w-[400px]">
+            {row.getValue("bankName")}
+          </div>
+        ),
       },
       {
         accessorKey: "products",
@@ -611,7 +616,10 @@ const BankProductsList = ({
 
       {/* Desktop Table View */}
       <div className="hidden md:flex rounded-md border">
-        <ScrollArea type="always" className="w-1 flex-1 h-[calc(100vh-380px)] min-h-[400px]">
+        <ScrollArea
+          type="always"
+          className="w-1 flex-1 h-[calc(100vh-380px)] min-h-[400px]"
+        >
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -696,6 +704,7 @@ const ActionCell = ({
     useApprovedMappedFundsMutation();
   const [isDenefitsPaid, setIsDenefitsPaid] = useState(false);
   const { userData } = useUserQuery(userId);
+  const { data: userMembership } = useMembership(userId);
 
   const { denefitsContract } = useGetDenefitsContractsByUserId(userId);
 
@@ -826,7 +835,8 @@ const ActionCell = ({
           type="button"
           variant="outline"
           disabled={
-            isApplying || (!isDenefitsPaid && !userData?.isPremiumClient)
+            isApplying ||
+            (!isDenefitsPaid && userMembership?.status !== "active")
           }
           className="bg-green-200 hover:bg-green-400 cursor-pointer h-8 px-3"
           onClick={handleApplyClick}

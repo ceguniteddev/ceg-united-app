@@ -118,8 +118,6 @@ describe("registrationSchema", () => {
     firstName: "Jane",
     lastName: "Doe",
     email: "jane@example.com",
-    birthdate: new Date("1990-01-15"),
-    gender: "Female" as const,
     phoneNumber: "555-123-4567",
     ssn: "234-56-7890",
   };
@@ -154,15 +152,6 @@ describe("registrationSchema", () => {
     ).toBe(false);
   });
 
-  it("should reject a future birthdate", () => {
-    const future = new Date();
-    future.setFullYear(future.getFullYear() + 1);
-    expect(
-      registrationSchema.safeParse({ ...validRegistration, birthdate: future })
-        .success,
-    ).toBe(false);
-  });
-
   it("should allow optional password to be absent", () => {
     expect(registrationSchema.safeParse(validRegistration).success).toBe(true);
   });
@@ -183,14 +172,6 @@ describe("registrationSchema", () => {
         password: "",
       }).success,
     ).toBe(true);
-  });
-
-  it("should default isPremiumClient to false when not provided", () => {
-    const result = registrationSchema.safeParse(validRegistration);
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.isPremiumClient).toBe(false);
-    }
   });
 
   it("should coerce commissionRate from string to number", () => {

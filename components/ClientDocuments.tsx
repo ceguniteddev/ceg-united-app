@@ -39,9 +39,9 @@ import {
   Search,
   Calendar,
   HardDrive,
-  Eye,
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import Image from "next/image";
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
@@ -77,17 +77,8 @@ const cleanFileName = (fileName: string) => {
   return fileName;
 };
 
-const truncateForMobile = (fileName: string) => {
-  if (fileName.length > 20) {
-    const lastDotIndex = fileName.lastIndexOf(".");
-    if (lastDotIndex !== -1) {
-      const extension = fileName.substring(lastDotIndex);
-      const nameWithoutExt = fileName.substring(0, lastDotIndex);
-      return `${nameWithoutExt.substring(0, 20)}....${extension}`;
-    }
-    return `${fileName.substring(0, 20)}....`;
-  }
-  return fileName;
+const spaceFilename = (fileName: string) => {
+  return fileName.replace(/_/g, " ");
 };
 
 // File type icon config
@@ -215,7 +206,8 @@ const DocList = ({
         {docs.map((doc, i) => {
           const isReadOnly = doc.path.toLowerCase().includes("asset-report");
           const rawName = doc.name.split("/").pop() || "";
-          const displayName = cleanFileName(rawName);
+          let displayName = cleanFileName(rawName);
+          displayName = spaceFilename(displayName);
           const { Icon, color, bg } = getFileIconConfig(
             doc.contentType,
             rawName,
@@ -407,15 +399,26 @@ const DocList = ({
   );
 };
 
-export default function ClientDocuments({ userId }: { userId: string }) {
+import { Suspense } from "react";
+
+function ClientDocumentsInner({ userId }: { userId: string }) {
   const { userDocuments, isLoading, refetch } = useUserDocumentsQuery({
     userId,
   });
   const { deleteDocument, isDeleting } = useUserDocumentMutation();
+  const searchParams = useSearchParams();
 
   const [selectedDocType, setSelectedDocType] = useState<
     DocumentType | "OTHER" | "ALL"
-  >("ALL");
+  >(() => {
+    const typeParam = searchParams.get("type");
+    if (typeParam) {
+      if (typeParam === "OTHER") return "OTHER";
+      const docType = DOCUMENT_TYPES.find((dt) => dt.id === typeParam);
+      if (docType) return docType;
+    }
+    return "ALL";
+  });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [docToDelete, setDocToDelete] = useState<UserDoc | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -610,7 +613,7 @@ export default function ClientDocuments({ userId }: { userId: string }) {
               </SelectTrigger>
               <SelectContent
                 className="max-h-[70vh] overflow-y-auto"
-                position="item-aligned"
+                position="popper"
               >
                 <SelectItem value="ALL" className="py-3">
                   <div className="flex items-center gap-2 w-full">
@@ -759,5 +762,13 @@ export default function ClientDocuments({ userId }: { userId: string }) {
         </AlertDialogContent>
       </AlertDialog>
     </main>
+  );
+}
+
+export default function ClientDocuments({ userId }: { userId: string }) {
+  return (
+    <Suspense fallback={<div className="p-4">Loading documents...</div>}>
+      <ClientDocumentsInner userId={userId} />
+    </Suspense>
   );
 }

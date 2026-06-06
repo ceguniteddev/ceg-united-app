@@ -26,7 +26,7 @@ const MyBusinessPage = () => {
 
   return (
     <section className="home">
-      <div className="home-content mb-16 sm:mb-0">
+      <div className="home-content pb-8 sm:pb-0">
         {/* Page Header */}
         <div className="mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">

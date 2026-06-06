@@ -66,6 +66,8 @@ export const DISPUTE_TRACKING = "dispute-tracking";
 export const EMAIL_VERIFICATION_TOKENS = "email-verification-tokens";
 export const LETTER_RECIPIENT = "letter-recipient";
 
-export const BROKERAGE_COLLECTION = 'brokerages';
+export const BROKERAGE_COLLECTION = "brokerages";
 
 export const FUNDING_SUBMISSION_DOCUMENTS = "funding-submission-documents";
+export const CONSUMER_REPORTING_AGENCY_COLLECTION =
+  "consumer-reporting-agencies";

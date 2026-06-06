@@ -49,6 +49,7 @@ import {
 import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
 import Image from "next/image";
 import { useAuth } from "@/provider/AuthContext";
+import { useMembership } from "@/hooks/membership";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import PricingPlansGrid from "@/components/funding/PricingPlansGrid";
@@ -66,12 +67,13 @@ const AnalysisView = ({ referenceNumber }: Props) => {
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
   const { updateAnalysis } = useAnalysisMutation();
   const { isAdmin, role, userData } = useAuth();
+  const { data: userMembership } = useMembership(userData?.id);
   const { appliedFunding } = useGetApplyFundingByReferenceNumber({
     referenceNumber,
   });
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
-  console.log("Analysis data:", appliedFunding);
+  // console.log("Analysis data:", appliedFunding);
   if (appliedFunding?.analysisStatus === "In Progress") {
     return (
       <EmptyState
@@ -86,7 +88,7 @@ const AnalysisView = ({ referenceNumber }: Props) => {
     return (
       <div className="flex flex-col sm:flex-row justify-between gap-3 p-4">
         <div className="text-sm sm:text-base">No analysis found.</div>
-        <RefreshAnalysisData referenceNumber={referenceNumber} />
+        {isAdmin && <RefreshAnalysisData referenceNumber={referenceNumber} />}
       </div>
     );
   }
@@ -109,7 +111,7 @@ const AnalysisView = ({ referenceNumber }: Props) => {
           {appliedFunding?.userId && (
             <UploadBankStatementsButton userId={appliedFunding.userId} />
           )}
-          {role === "Client" && !userData?.isPremiumClient && (
+          {role === "Client" && userMembership?.status !== "active" && (
             <PricingDetailsButton referenceNumber={referenceNumber} />
           )}
         </div>

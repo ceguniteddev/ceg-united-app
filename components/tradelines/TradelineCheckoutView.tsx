@@ -15,7 +15,7 @@ type TradelineCheckoutViewProps = {
   totalPrice: number;
   prefillEmail?: string;
   userId: string;
-  onPaymentComplete?: () => void;
+  onPaymentCompleteAction?: () => void;
 };
 
 export const TradelineCheckoutView = ({
@@ -24,7 +24,7 @@ export const TradelineCheckoutView = ({
   totalPrice,
   prefillEmail,
   userId,
-  onPaymentComplete,
+  onPaymentCompleteAction,
 }: TradelineCheckoutViewProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const queryClient = useQueryClient();
@@ -66,7 +66,7 @@ export const TradelineCheckoutView = ({
         sessionStorage.removeItem("tradeline_checkout_data");
 
         // Notify parent to close sheet / switch tabs
-        onPaymentComplete?.();
+        onPaymentCompleteAction?.();
 
         toast.success("Payment successful! Your order is being processed.");
       } catch (error: any) {

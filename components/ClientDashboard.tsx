@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -9,27 +9,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  PartyPopper,
-} from "lucide-react";
-import Link from "next/link";
+import { AlertCircle, PartyPopper } from "lucide-react";
 
 // --- IMPORT YOUR ACTUAL APPLICATION TYPES ---
-import { User, UserWithId } from "@/schema/registration";
+import { UserWithId } from "@/schema/registration";
 import { ApplyFunding } from "@/schema/apply-funding";
 import { PlaidCompleteRow } from "@/service/plaid/data";
 import { Business } from "@/schema";
 import { CreditScore } from "@/types/crs";
 import { ApprovedBankFormData } from "@/schema/bank-products";
-import { Button } from "./ui/button";
-import { ResponsiveDialog } from "./responsive-dialog";
-import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
-import CalendlyScheduler from "@/components/support-service/CalendlyScheduler";
-import ApplyFundingForm from "@/components/fundingv2/ApplyFundingForm";
+// import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import { useGetCongrats, useMarkCongratsAsRead } from "@/hooks/congrats";
 import {
   AlertDialog,
@@ -42,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/provider/AuthContext";
 import { useConfettiStore } from "@/hooks/use-confetti-store";
+import { useMembership } from "@/hooks/membership";
 
 // CEG Brain Dashboard Components
 import { MetricCards } from "@/components/dashboard/MetricCards";
@@ -63,6 +53,8 @@ import {
 
 // Data transformation
 import { transformClientDataToDashboard } from "@/lib/dashboard-data-mapper";
+
+import { PreApprovalHeroCard } from "@/components/income-funding/PreApprovalHeroCard";
 
 interface IssueItem {
   issues: string[];
@@ -127,71 +119,7 @@ export interface ClientData {
   approvedFunds?: ApprovedBankFormData[] | null;
   businessesWithCrsData: BusinessWithCRSData[];
   getPlaidCompleteData: PlaidCompleteRow[] | null;
-}
-
-// --- 2. YOUR HELPER FUNCTIONS (NOW FULLY TYPED) ---
-function bureauLabel(sourceType?: string): string {
-  const s = (sourceType || "").toLowerCase();
-  if (s.includes("experian")) return "Experian";
-  if (s.includes("equifax")) return "Equifax";
-  if (s.includes("trans")) return "TransUnion";
-  return sourceType || "Unknown";
-}
-
-function detectBureau(
-  report: CreditReport,
-): "Experian" | "TransUnion" | "Equifax" | null {
-  const fromScore = report.scores?.[0]?.sourceType;
-  if (fromScore) return bureauLabel(fromScore) as any;
-
-  const fromFile = report.creditFiles?.[0]?.creditFileDetail?.sourceType;
-  if (fromFile) return bureauLabel(fromFile) as any;
-
-  const r = report.repositoryIncluded;
-  if (r) {
-    const truths = [
-      r.experian ? "Experian" : null,
-      r.transunion ? "TransUnion" : null,
-      r.equifax ? "Equifax" : null,
-    ].filter(Boolean) as ("Experian" | "TransUnion" | "Equifax")[];
-    if (truths.length === 1) return truths[0];
-  }
-  return null;
-}
-
-function groupByBureau(
-  docs?: (CreditReportWithId | IssuesReportData | DTIReportData)[] | null,
-) {
-  const out: Record<
-    "Experian" | "TransUnion" | "Equifax",
-    CreditReportWithId | null
-  > = {
-    Experian: null,
-    TransUnion: null,
-    Equifax: null,
-  };
-  if (!docs) return out;
-
-  // Filter for actual credit reports before grouping to avoid processing the 'issues' object
-  const creditDocs = docs.filter(
-    (d): d is CreditReportWithId => d.id !== "issues" && d.id !== "dti",
-  );
-
-  for (const d of creditDocs) {
-    const bureau = d?.report ? detectBureau(d.report) : null;
-    if (!bureau) continue;
-    const prev = out[bureau];
-    if (!prev) {
-      out[bureau] = d;
-    } else {
-      const prevTs = new Date(prev.createdAt).getTime();
-      const curTs = new Date(d.createdAt).getTime();
-      if (curTs >= prevTs) {
-        out[bureau] = d;
-      }
-    }
-  }
-  return out;
+  userDocuments?: any[];
 }
 
 // --- MAIN DASHBOARD COMPONENT ---
@@ -205,9 +133,10 @@ export const ClientDashboard = ({
   const { user } = useAuth();
   const router = useRouter();
   const onOpenConfetti = useConfettiStore((state) => state.onOpen);
-  const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
-    clientData?.userData?.id || "",
-  );
+  const { data: membershipData } = useMembership();
+  // const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
+  //   clientData?.userData?.id || "",
+  // );
 
   const [congratsModalOpen, setCongratsModalOpen] = useState(false);
   const [currentCongratsMessage, setCurrentCongratsMessage] = useState<{
@@ -224,128 +153,6 @@ export const ClientDashboard = ({
   // const [isOpenFunding, setIsOpenFunding] = useState(
   //   adminView === false || adminView === undefined
   // );
-
-  const stats = useMemo(() => {
-    if (!clientData) return null;
-
-    const totalRequested =
-      clientData.fundingApplications?.reduce((sum, app) => {
-        const personalAmount = app.personalAmountFunding || 0;
-        const businessAmount = app.businessAmountFunding || 0;
-
-        return sum + Number(personalAmount) + Number(businessAmount);
-      }, 0) ?? 0;
-
-    const totalApproved =
-      clientData.approvedFunds
-        // ?.filter((app) => app.clientApplicationStatus === "Approved")
-        ?.reduce((sum, currentApp) => {
-          const amount = Number(currentApp.approvedAmount) || 0;
-          return sum + amount;
-        }, 0) ?? 0;
-
-    const totalFunded =
-      clientData.approvedFunds
-        // ?.filter((app) => app.clientApplicationStatus === "Approved")
-        ?.reduce((sum, currentApp) => {
-          const amount = Number(currentApp.fundedAmount) || 0;
-          return sum + amount;
-        }, 0) ?? 0;
-
-    const allPlaidData = clientData.getPlaidCompleteData || [];
-    const allTransactions = allPlaidData.flatMap((d) => d.transaction || []);
-    const allBalances = allPlaidData.flatMap((d) => d.balance || []);
-    const allBankIncome = allPlaidData.flatMap((d) => d.bank_income || []);
-    const personalAccountsBalances = allBalances.filter(
-      (b) => b.type === "depository",
-    );
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    const lastMonthDeposits = allTransactions
-      .filter((t) => new Date(t.date) >= oneMonthAgo && t.amount < 0)
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-    const totalCurrentBalance = personalAccountsBalances.reduce(
-      (sum, b) => sum + (b.balances.current || 0),
-      0,
-    );
-    const averageMonthlyBalance =
-      personalAccountsBalances.length > 0
-        ? totalCurrentBalance / personalAccountsBalances.length
-        : 0;
-    const monthlyIncomes = allBankIncome
-      .flatMap((bi) => bi.bank_income_summary?.historical_summary || [])
-      .map((summary) => summary.total_amount);
-    const averageMonthlyIncome =
-      monthlyIncomes.length > 0
-        ? monthlyIncomes.reduce((a, b) => a + b, 0) / monthlyIncomes.length
-        : 0;
-
-    // --- 3. REVISED Credit Score Extraction Logic ---
-    const bureauMap = groupByBureau(clientData.crsReportData || []);
-
-    const scoresByBureau: Record<
-      "Experian" | "TransUnion" | "Equifax",
-      CreditScore | undefined
-    > = {
-      Experian: bureauMap.Experian?.report.scores?.[0],
-      TransUnion: bureauMap.TransUnion?.report.scores?.[0],
-      Equifax: bureauMap.Equifax?.report.scores?.[0],
-    };
-
-    const issuesData = clientData.crsReportData?.find(
-      (d) => d.id === "issues",
-    ) as IssuesReportData | undefined;
-
-    const dtiData = clientData.crsReportData?.find((d) => d.id === "dti") as
-      | DTIReportData
-      | undefined;
-
-    const reportIssues = issuesData?.report[0]?.issues ?? [];
-    const reportNegatives = issuesData?.report[0]?.negatives ?? [];
-    const reportDerogatory = issuesData?.report[0]?.degoretory ?? [];
-
-    const initialValue = issuesData?.report[0]?.downPaymentRequired;
-    const dtiReport = dtiData?.report[0] ?? null;
-    let downPaymentRequired =
-      typeof initialValue === "string"
-        ? initialValue.toLowerCase() === "true"
-        : Boolean(initialValue);
-
-    if (denefitsContract && denefitsContract.length > 0) {
-      downPaymentRequired = false;
-    } else if (dtiReport && parseFloat(dtiReport.finalDTI) > 50) {
-      downPaymentRequired = true;
-    }
-
-    /**
-     * downPaymentRequired note
-     * If the audit contains any of the following items: 'late payments', 'charge-off', 'collections', or 'bankruptcy', set `downPaymentRequired` to `true`
-     * if DTI > 50
-     */
-
-    return {
-      totalRequested,
-      totalApproved,
-      totalFunded,
-      lastMonthDeposits,
-      averageMonthlyBalance,
-      averageMonthlyIncome,
-      scoresByBureau,
-      reportIssues,
-      reportNegatives,
-      reportDerogatory,
-      dtiReport,
-      downPaymentRequired,
-    };
-  }, [clientData, denefitsContract]);
-
-  const handleSignUp = useCallback(() => {
-    let url = process.env.NEXT_PUBLIC_DENEFITS_URL;
-    if (stats?.downPaymentRequired) {
-      url = process.env.NEXT_PUBLIC_FANBASIS_URL;
-    }
-    window.open(url, "_blank", "noopener,noreferrer");
-  }, [stats]);
 
   // Check for unread congrats messages
   useEffect(() => {
@@ -381,7 +188,7 @@ export const ClientDashboard = ({
   }, [currentCongratsMessage, markAsReadMutation]);
 
   const viewAuditReport = useCallback(() => {
-    router.push("/client/my-funding");
+    router.push("/client/income-funding");
   }, [router]);
 
   // useEffect(() => {
@@ -390,7 +197,10 @@ export const ClientDashboard = ({
   //   }
   // }, [denefitsContract]);
 
-  if (!clientData || !stats) {
+  // Transform data for new dashboard components
+  const dashboardData = transformClientDataToDashboard(clientData);
+
+  if (!clientData || !dashboardData) {
     return (
       <div className="flex items-center justify-center p-10 bg-gray-50 dark:bg-gray-900 rounded-lg">
         <div className="text-center">
@@ -404,18 +214,25 @@ export const ClientDashboard = ({
     );
   }
 
-  const { userData, fundingApplications, businessesWithCrsData } = clientData;
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+  const { userData } = clientData;
 
-  // Transform data for new dashboard components
-  const dashboardData = transformClientDataToDashboard(clientData);
   const loading = !dashboardData;
+
+  // Compute estimated amount for the Hero Card
+  const computationFromBackend =
+    (firstFundingApp as any)?.businessIncomeComputation || {};
+  const backendEstimatedApprovalAmount =
+    typeof computationFromBackend.estimatedApprovalAmount === "object" &&
+    computationFromBackend.estimatedApprovalAmount !== null
+      ? computationFromBackend.estimatedApprovalAmount.amount
+      : computationFromBackend.estimatedApprovalAmount;
+
+  const estimatedApprovalAmount =
+    backendEstimatedApprovalAmount !== undefined &&
+    backendEstimatedApprovalAmount !== null &&
+    backendEstimatedApprovalAmount !== 0
+      ? backendEstimatedApprovalAmount
+      : dashboardData?.fundingMetrics?.totalRequested || 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -423,7 +240,9 @@ export const ClientDashboard = ({
         <div className="flex-1">
           {adminView ? (
             <h1 className="text-xl font-bold text-gray-900">
-              {`${userData?.firstName} ${userData?.lastName}` || "Client"}
+              {userData?.firstName && userData?.lastName
+                ? `${userData.firstName} ${userData.lastName}`
+                : "Client"}
             </h1>
           ) : (
             <div className="animate-fadeInUp">
@@ -444,6 +263,16 @@ export const ClientDashboard = ({
 
       <main className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="max-w-[1400px] mx-auto px-6 py-6">
+          {/* Pre-Approval Hero Card */}
+          {firstFundingApp && estimatedApprovalAmount > 0 && (
+            <PreApprovalHeroCard
+              estimatedApprovalAmount={estimatedApprovalAmount}
+              onContinue={() =>
+                router.push("/client/income-funding?showPathways=true")
+              }
+            />
+          )}
+
           {/* Grid: main content (left) + sidebar panels (right) */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
             {/* === LEFT COLUMN === */}
@@ -467,7 +296,10 @@ export const ClientDashboard = ({
                   <CreditScoreSkeleton />
                 </div>
               ) : (
-                <CreditScoresSection scores={dashboardData.creditScores} />
+                <CreditScoresSection
+                  scores={dashboardData.creditScores}
+                  isPremium={membershipData?.status === "active"}
+                />
               )}
 
               {/* My Businesses grid */}
@@ -530,11 +362,11 @@ export const ClientDashboard = ({
           </div>
 
           {/* Issues Card (if needed) */}
-          {stats?.reportIssues && stats.reportIssues.length > 0 && (
+          {dashboardData.creditAnalysis && (
             <IssuesCard
-              issues={stats.reportIssues}
-              negatives={stats.reportNegatives}
-              derogatory={stats.reportDerogatory}
+              issues={dashboardData.creditAnalysis.issues}
+              negatives={dashboardData.creditAnalysis.negatives}
+              derogatory={dashboardData.creditAnalysis.derogatory}
             />
           )}
         </div>
@@ -552,14 +384,16 @@ export const ClientDashboard = ({
                 Congratulations!
               </AlertDialogTitle>
             </div>
-            <div className="text-xs sm:text-sm text-muted-foreground">
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: currentCongratsMessage?.message || "",
-                }}
-                className="[&_p]:mb-2 sm:[&_p]:mb-3 [&_ul]:mb-2 sm:[&_ul]:mb-3 [&_ul]:ml-4 sm:[&_ul]:ml-5 [&_ul]:list-disc [&_li]:mb-1 [&_strong]:font-semibold [&_br]:block"
-              />
-            </div>
+            <AlertDialogDescription asChild>
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: currentCongratsMessage?.message || "",
+                  }}
+                  className="[&_p]:mb-2 sm:[&_p]:mb-3 [&_ul]:mb-2 sm:[&_ul]:mb-3 [&_ul]:ml-4 sm:[&_ul]:ml-5 [&_ul]:list-disc [&_li]:mb-1 [&_strong]:font-semibold [&_br]:block"
+                />
+              </div>
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2 justify-between">
             <AlertDialogAction

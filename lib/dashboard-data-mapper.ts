@@ -20,6 +20,11 @@ export interface DashboardData {
   businesses: Business[];
   nextSteps: NextStep[];
   applicationStatus: ApplicationStatus;
+  creditAnalysis?: {
+    issues: string[];
+    negatives: string[];
+    derogatory: string[];
+  };
 }
 
 function detectBureau(
@@ -103,37 +108,58 @@ export function transformClientDataToDashboard(
 
   // 2. Credit Scores
   const creditReports =
-    crsReportData?.filter((d): d is any => {
-      if (d.id === "issues" || d.id === "dti") return false;
-      // Check if it's a credit report with scores (not IssueItem or DTI)
-      return Array.isArray((d as any).report?.scores);
-    }) || [];
+    crsReportData
+      ?.filter((d): d is any => {
+        if (d.id === "issues" || d.id === "dti") return false;
+        // Check if it's a credit report with scores (not IssueItem or DTI)
+        return Array.isArray((d as any).report?.scores);
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || 0).getTime() -
+          new Date(a.createdAt || 0).getTime(),
+      ) || [];
 
-  const creditScores: CreditScore[] = [];
-  const seenBureaus = new Set<string>();
+  const creditScoresMap = new Map<string, CreditScore>();
+  const prevScoresMap = new Map<string, number>();
 
   for (const reportDoc of creditReports) {
     const bureau = detectBureau(reportDoc.report);
-    if (!bureau || seenBureaus.has(bureau)) continue;
+    if (!bureau) continue;
 
     const score = reportDoc.report.scores?.[0];
     if (!score?.scoreValue) continue;
 
     const scoreValue = Number(score.scoreValue);
-    const accountNum =
-      reportDoc.report.creditFiles?.[0]?.creditFileDetail?.fileNumber ||
-      `XX-XXX${Math.floor(Math.random() * 9999)}`;
 
-    creditScores.push({
-      bureau,
-      score: scoreValue,
-      rating: getRating(scoreValue),
-      accountNumber: accountNum,
-      lastUpdated: reportDoc.createdAt || new Date().toISOString(),
-    });
+    if (!creditScoresMap.has(bureau)) {
+      const accountNum =
+        reportDoc.report.creditFiles?.[0]?.creditFileDetail?.fileNumber ||
+        `XX-XXX${Math.floor(Math.random() * 9999)}`;
 
-    seenBureaus.add(bureau);
+      creditScoresMap.set(bureau, {
+        bureau,
+        score: scoreValue,
+        rating: getRating(scoreValue),
+        accountNumber: accountNum,
+        lastUpdated: reportDoc.createdAt || new Date().toISOString(),
+      });
+    } else if (!prevScoresMap.has(bureau)) {
+      prevScoresMap.set(bureau, scoreValue);
+    }
   }
+
+  const creditScores: CreditScore[] = Array.from(creditScoresMap.values()).map(
+    (cs) => {
+      const prevScore = prevScoresMap.get(cs.bureau) || 0;
+      const delta = prevScore ? cs.score - prevScore : 0;
+      return {
+        ...cs,
+        prevScore,
+        delta,
+      };
+    },
+  );
 
   // Fill missing bureaus with placeholders
   const allBureaus: Array<"experian" | "equifax" | "transunion"> = [
@@ -142,13 +168,15 @@ export function transformClientDataToDashboard(
     "transunion",
   ];
   for (const bureau of allBureaus) {
-    if (!seenBureaus.has(bureau)) {
+    if (!creditScoresMap.has(bureau)) {
       creditScores.push({
         bureau,
         score: 0,
         rating: "Poor",
         accountNumber: "N/A",
         lastUpdated: new Date().toISOString(),
+        prevScore: 0,
+        delta: 0,
       });
     }
   }
@@ -179,38 +207,40 @@ export function transformClientDataToDashboard(
             : "Needs Improvement",
   };
 
-  // 4. Financial Snapshot - Calculate from Plaid data
-  const allTransactions =
-    getPlaidCompleteData?.flatMap((d) => d.transaction || []) || [];
-  const oneMonthAgo = new Date();
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-  const monthlyDeposits = allTransactions
-    .filter((t: any) => new Date(t.date) >= oneMonthAgo && t.amount < 0)
-    .reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+  // 4. Financial Snapshot - Calculate from fundingApplications
 
-  const allBalances =
-    getPlaidCompleteData?.flatMap((d) => d.balance || []) || [];
-  const personalAccountsBalances = allBalances.filter(
-    (b: any) => b.type === "depository",
-  );
-  const avgBalance =
-    personalAccountsBalances.length > 0
-      ? personalAccountsBalances.reduce(
-          (sum: number, b: any) => sum + (b.balances?.current || 0),
-          0,
-        ) / personalAccountsBalances.length
-      : 0;
+  const latestIncomeApp = fundingApplications?.sort(
+    (a, b) =>
+      new Date(b.appliedDate || 0).getTime() -
+      new Date(a.appliedDate || 0).getTime(),
+  )[0];
 
-  const allBankIncome =
-    getPlaidCompleteData?.flatMap((d) => d.bank_income || []) || [];
-  const monthlyIncomes = allBankIncome
-    .flatMap((bi: any) => bi.bank_income_summary?.historical_summary || [])
-    .map((summary: any) => summary.total_amount);
-  const verifiedIncome =
-    monthlyIncomes.length > 0
-      ? monthlyIncomes.reduce((a: number, b: number) => a + b, 0) /
-        monthlyIncomes.length
-      : 0;
+  let monthlyDeposits = 0;
+  let avgBalance = 0;
+  let verifiedIncome = 0;
+
+  if (latestIncomeApp) {
+    const computation =
+      (latestIncomeApp as any).businessIncomeComputation || {};
+
+    monthlyDeposits =
+      computation.monthlyBusinessRevenue ||
+      (latestIncomeApp.annualBusinessRevenue
+        ? latestIncomeApp.annualBusinessRevenue / 12
+        : 0) ||
+      computation.monthlyDeposits ||
+      0;
+
+    avgBalance =
+      computation.avgDailyBankBalance ||
+      latestIncomeApp.avgDailyBankBalance ||
+      0;
+
+    verifiedIncome =
+      computation.estimatedApprovalAmount ||
+      computation.preApprovedAmount ||
+      monthlyDeposits;
+  }
 
   const financialSnapshot: FinancialSnapshot = {
     monthlyDeposits: Math.round(monthlyDeposits),
@@ -245,7 +275,16 @@ export function transformClientDataToDashboard(
   }));
 
   // 6. Next Steps (hardcoded for now - TODO: integrate with user onboarding state)
-  const hasPlaid = (getPlaidCompleteData?.length || 0) > 0;
+
+  const hasBankStatements =
+    (getPlaidCompleteData?.length || 0) > 0 ||
+    clientData.userDocuments?.some(
+      (doc) =>
+        doc.name.includes("PERSONAL_BANK_STATEMENTS") ||
+        doc.name.includes("BANK_STATEMENTS"),
+    ) ||
+    false;
+
   const hasBusiness = businessesWithCrsData.length > 0;
   const hasApplied = (fundingApplications?.length || 0) > 0;
 
@@ -253,20 +292,23 @@ export function transformClientDataToDashboard(
     {
       id: "step-1",
       label: "Upload bank statements",
-      completed: hasPlaid,
+      completed: hasBankStatements,
       icon: "upload",
+      href: !hasBankStatements ? "/client/my-documents" : undefined,
     },
     {
       id: "step-2",
       label: "Add business EIN",
       completed: hasBusiness,
       icon: "building",
+      href: !hasBusiness ? "/client/my-business" : undefined,
     },
     {
       id: "step-3",
       label: "Apply to matched lenders",
       completed: hasApplied,
       icon: "send",
+      href: !hasApplied ? "/client/income-funding" : undefined,
     },
   ];
 
@@ -293,6 +335,23 @@ export function transformClientDataToDashboard(
     declined,
   };
 
+  // 8. Credit Analysis (Issues)
+  const issuesDoc = crsReportData?.find((d) => d.id === "issues") as any;
+  const reportIssues = issuesDoc?.report?.[0]?.issues ?? [];
+  const reportNegatives = issuesDoc?.report?.[0]?.negatives ?? [];
+  const reportDerogatory = issuesDoc?.report?.[0]?.degoretory ?? [];
+
+  const creditAnalysis =
+    reportIssues.length > 0 ||
+    reportNegatives.length > 0 ||
+    reportDerogatory.length > 0
+      ? {
+          issues: reportIssues,
+          negatives: reportNegatives,
+          derogatory: reportDerogatory,
+        }
+      : undefined;
+
   return {
     fundingMetrics,
     creditScores,
@@ -301,5 +360,6 @@ export function transformClientDataToDashboard(
     businesses,
     nextSteps,
     applicationStatus,
+    creditAnalysis,
   };
 }
