@@ -46,7 +46,7 @@ export function PreApprovalHeroCard({
             onClick={onContinue}
             className="cursor-pointer inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all"
           >
-            Continue to Submit Your File
+            Continue to select your offer
             <ArrowRight className="w-4 h-4" />
           </button>
           <span className="inline-flex items-center text-xs text-gray-500 px-3 py-3">
