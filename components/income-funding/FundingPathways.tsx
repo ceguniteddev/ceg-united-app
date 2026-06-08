@@ -2,14 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
-import { useMembership } from "@/hooks/membership";
-import { LockIcon } from "lucide-react";
-import { ResponsiveDialog } from "@/components/responsive-dialog";
-import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
-import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
-import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
-import { createMembershipCheckoutConfig } from "@/service/whop";
-import { toast } from "sonner";
 
 // -------------------------- Types --------------------------
 
@@ -215,85 +207,17 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
   onSelect,
   selectedPathwayId,
 }) => {
-  const { user, userData } = useAuth();
-  const { data: membership, refetch: refetchMembership } = useMembership();
-
-  const [isPricingModalOpen, setPricingModalOpen] = useState(false);
-  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
-  const [isCheckoutSheetOpen, setCheckoutSheetOpen] = useState(false);
-  const [checkoutId, setCheckoutId] = useState<string | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<{
-    id: string;
-    amount: number;
-  } | null>(null);
-  const [isUpgradeFlow, setUpgradeFlow] = useState(false);
-
   const [selectedId, setSelectedId] = useState<PathwayId | null>(
     selectedPathwayId as PathwayId,
   );
 
   const computationFromBackend = realDeal?.businessIncomeComputation || {};
 
-  // Calculate tier limit
-  const tierId = membership?.status === "active" ? membership?.tier : null;
-  const allowedCategoriesCount =
-    tierId === "tier_starter"
-      ? 1
-      : tierId === "tier_pro"
-        ? 2
-        : tierId === "tier_executive"
-          ? 99
-          : 0;
-
-  // Calculate applied categories
-  const uniqueAppliedPathwayIds = new Set(
-    (realDeal?.appliedPathways || []).map((p: any) => p.pathwayId),
-  );
-  const appliedCount = uniqueAppliedPathwayIds.size;
-
-  const isPathwayLocked = (pId: string) => {
-    // "income_based" is completely free and requires no membership
-    if (pId === "income_based") {
-      return false;
-    }
-
-    // For all other pathways, they are locked if we have hit the allowed cap
-    // AND the user hasn't already applied for it
-    const isAlreadyApplied = uniqueAppliedPathwayIds.has(pId);
-    if (!isAlreadyApplied && appliedCount >= allowedCategoriesCount) {
-      return true;
-    }
-
-    return false;
-  };
-
   useEffect(() => {
-    // Global upgrade flow disabled because "income_based" is always a free option
-    setUpgradeFlow(false);
-
     if (!selectedPathwayId) {
       setSelectedId("income_based");
     }
-  }, [tierId, appliedCount, selectedPathwayId]);
-
-  const handleSelectPlan = async (planId: string, amount: number) => {
-    if (!user?.uid) return;
-    try {
-      setIsCreatingCheckout(true);
-      const res = await createMembershipCheckoutConfig({
-        userId: user.uid,
-        planId: planId as any,
-      });
-      setCheckoutId(res.checkoutId);
-      setSelectedPlan({ id: planId, amount });
-      setPricingModalOpen(false);
-      setCheckoutSheetOpen(true);
-    } catch (err: any) {
-      toast.error("Failed to start checkout: " + err.message);
-    } finally {
-      setIsCreatingCheckout(false);
-    }
-  };
+  }, [selectedPathwayId]);
 
   // Extract dynamically calculated maximums from backend data
   const getAmountFromBackend = (
@@ -355,10 +279,6 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
     dynamicPathways.find((p) => p.id === selectedId) || null;
 
   const handleSelect = (p: FundingPathway) => {
-    if (isPathwayLocked(p.id)) {
-      setPricingModalOpen(true);
-      return;
-    }
     setSelectedId(p.id);
     onSelect?.(p);
   };
@@ -449,11 +369,6 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                           <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
                             Applied
                           </span>
-                        ) : isPathwayLocked(p.id) ? (
-                          <span className="rounded-full bg-blue-600 text-white px-2 py-0.5 text-[10px] font-bold tracking-wide shadow-sm hover:bg-blue-700 transition-all uppercase flex items-center gap-1">
-                            <LockIcon className="h-2.5 w-2.5 text-white" />{" "}
-                            Upgrade
-                          </span>
                         ) : p.badge ? (
                           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
                             {p.badge}
@@ -476,10 +391,6 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                         ) ? (
                           <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
                             Applied
-                          </span>
-                        ) : isPathwayLocked(p.id) ? (
-                          <span className="rounded-full bg-blue-600 text-white px-3 py-0.5 text-[11px] font-bold tracking-wide inline-flex items-center gap-1.5 shadow-sm hover:bg-blue-700 transition-all uppercase">
-                            <LockIcon className="h-3 w-3 text-white" /> Upgrade
                           </span>
                         ) : p.badge ? (
                           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
@@ -593,31 +504,20 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
 
         {/* Footer actions */}
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-          {isUpgradeFlow ? (
-            <button
-              type="button"
-              onClick={() => setPricingModalOpen(true)}
-              className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all bg-blue-600 hover:bg-blue-700"
-            >
-              <LockIcon className="h-4 w-4" />
-              Upgrade to Continue
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={!dynamicSelected}
-              onClick={handleContinue}
-              className={[
-                "cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all",
-                dynamicSelected
-                  ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
-                  : "cursor-not-allowed bg-slate-300",
-              ].join(" ")}
-            >
-              Continue to Offers
-              <IconArrowRight className="h-4 w-4" />
-            </button>
-          )}
+          <button
+            type="button"
+            disabled={!dynamicSelected}
+            onClick={handleContinue}
+            className={[
+              "cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all",
+              dynamicSelected
+                ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
+                : "cursor-not-allowed bg-slate-300",
+            ].join(" ")}
+          >
+            Continue to Offers
+            <IconArrowRight className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Reassurance footer */}
@@ -626,43 +526,6 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
           offers
         </p>
       </div>
-
-      <ResponsiveDialog
-        isOpen={isPricingModalOpen}
-        setIsOpen={setPricingModalOpen}
-        title="Upgrade to Access More Categories"
-        description=""
-        className="sm:max-w-[90vw] md:max-w-6xl max-h-[90vh] overflow-y-auto p-0 border-0"
-      >
-        <PricingPlans
-          isLoading={isCreatingCheckout}
-          onSelectPlan={handleSelectPlan}
-        />
-      </ResponsiveDialog>
-
-      <Sheet open={isCheckoutSheetOpen} onOpenChange={setCheckoutSheetOpen}>
-        <SheetContent
-          side="right"
-          className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden"
-        >
-          <SheetHeader className="px-6 py-4 border-b border-gray-200"></SheetHeader>
-          <div className="flex-1 overflow-y-auto">
-            {checkoutId && user && selectedPlan && (
-              <MembershipCheckoutView
-                checkoutId={checkoutId}
-                userId={user.uid}
-                tierId={selectedPlan.id}
-                amount={selectedPlan.amount}
-                prefillEmail={userData?.email}
-                onPaymentCompleteAction={() => {
-                  setCheckoutSheetOpen(false);
-                  refetchMembership();
-                }}
-              />
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 };
