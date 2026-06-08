@@ -35,7 +35,12 @@ export async function authenticateRequest(req: NextRequest) {
     if (ADMIN_ACCESS_KEY_HEADER) {
       console.log("validating ADMIN_ACCESS_KEY");
       const ADMIN_ACCESS_KEY = process.env.ADMIN_ACCESS_KEY as string;
-      if (ADMIN_ACCESS_KEY !== ADMIN_ACCESS_KEY_HEADER) {
+      if (
+        !ADMIN_ACCESS_KEY ||
+        ADMIN_ACCESS_KEY === "undefined" ||
+        ADMIN_ACCESS_KEY === "" ||
+        ADMIN_ACCESS_KEY !== ADMIN_ACCESS_KEY_HEADER
+      ) {
         return NextResponse.json("Unauthorized", { status: 401 });
       }
       return true;
@@ -66,7 +71,7 @@ export const validateToken = async (token: string) => {
   } catch (idTokenError) {
     console.warn(
       "Session cookie verification failed, trying to verify ID token instead:",
-      idTokenError
+      idTokenError,
     );
 
     try {

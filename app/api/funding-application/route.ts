@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { badRequest, getMessage, internalServerError } from "../helpers";
 import { getFundMappingAnalysisDetails } from "@/service/bank-products";
+import { getCurrentUser } from "@/service/user";
 
 const querySchema = z.object({
   userId: z.string().optional(),
@@ -16,9 +17,17 @@ const querySchema = z.object({
 export const GET = withAuth(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
 
+  const currentUser = await getCurrentUser();
+  const isClient = currentUser?.role === "Client";
+
+  // Force Client role to only query their own records
+  const targetUserId = isClient
+    ? currentUser.uid
+    : (searchParams.get("userId") ?? undefined);
+
   // THIS IS THE CRITICAL FIX: Build the object for Zod manually
   const queryToValidate = {
-    userId: searchParams.get("userId") ?? undefined,
+    userId: targetUserId,
     referenceNumber: searchParams.get("referenceNumber") ?? undefined,
     pathwayId: searchParams.get("pathwayId") ?? undefined,
     // Use .getAll() to correctly capture all values for the array key
