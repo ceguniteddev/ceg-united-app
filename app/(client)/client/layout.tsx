@@ -23,7 +23,7 @@ export default function ClientLayout({
       <Sidebar />
       <div className="flex flex-1 min-h-0 flex-col">
         <MobileNavClient />
-        <div className="flex-1 min-h-0 overflow-y-auto pt-[110px] lg:pt-0 px-4 lg:px-6 pb-36 lg:pb-0">
+        <div className="flex-1 min-h-0 overflow-y-auto pt-[110px] lg:pt-0 px-4 lg:px-6 pb-24 lg:pb-0">
           {children}
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AlertCircle, PartyPopper } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 // --- IMPORT YOUR ACTUAL APPLICATION TYPES ---
 import { UserWithId } from "@/schema/registration";
@@ -20,15 +20,7 @@ import { CreditScore } from "@/types/crs";
 import { ApprovedBankFormData } from "@/schema/bank-products";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import { useGetCongrats, useMarkCongratsAsRead } from "@/hooks/congrats";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+
 import { useAuth } from "@/provider/AuthContext";
 import { useConfettiStore } from "@/hooks/use-confetti-store";
 import { useMembership } from "@/hooks/membership";
@@ -132,64 +124,29 @@ export const ClientDashboard = ({
 }) => {
   const { user } = useAuth();
   const router = useRouter();
-  const onOpenConfetti = useConfettiStore((state) => state.onOpen);
+  // const onOpenConfetti = useConfettiStore((state) => state.onOpen);
   const { data: membershipData } = useMembership();
   // const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
   //   clientData?.userData?.id || "",
   // );
 
-  const [congratsModalOpen, setCongratsModalOpen] = useState(false);
-  const [currentCongratsMessage, setCurrentCongratsMessage] = useState<{
-    id: string;
-    message: string;
-    userId: string;
-  } | null>(null);
+  // const [congratsModalOpen, setCongratsModalOpen] = useState(false);
+  // const [currentCongratsMessage, setCurrentCongratsMessage] = useState<{
+  //   id: string;
+  //   message: string;
+  //   userId: string;
+  // } | null>(null);
 
   // Fetch congrats messages for the first funding application
   const firstFundingApp = clientData?.fundingApplications?.[0];
-  const { congratsMessages } = useGetCongrats(user?.uid || "");
-  const markAsReadMutation = useMarkCongratsAsRead();
+  // const { congratsMessages } = useGetCongrats(user?.uid || "");
+  // const markAsReadMutation = useMarkCongratsAsRead();
 
   // const [isOpenFunding, setIsOpenFunding] = useState(
   //   adminView === false || adminView === undefined
   // );
 
   // Check for unread congrats messages
-  useEffect(() => {
-    if (congratsMessages && !adminView) {
-      const unreadMessages = congratsMessages.filter((msg) => !msg.isRead);
-      if (unreadMessages.length > 0 && firstFundingApp?.referenceNumber) {
-        setCurrentCongratsMessage({
-          id: unreadMessages[0].id,
-          message: unreadMessages[0].message,
-          userId: user?.uid || "",
-        });
-        setCongratsModalOpen(true);
-        onOpenConfetti();
-      }
-    }
-  }, [
-    congratsMessages,
-    adminView,
-    firstFundingApp?.referenceNumber,
-    onOpenConfetti,
-    user?.uid,
-  ]);
-
-  const handleCongratsClose = useCallback(() => {
-    if (currentCongratsMessage) {
-      markAsReadMutation.mutate({
-        userId: currentCongratsMessage.userId,
-        docId: currentCongratsMessage.id,
-      });
-    }
-    setCongratsModalOpen(false);
-    setCurrentCongratsMessage(null);
-  }, [currentCongratsMessage, markAsReadMutation]);
-
-  const viewAuditReport = useCallback(() => {
-    router.push("/client/income-funding");
-  }, [router]);
 
   // useEffect(() => {
   //   if (denefitsContract && denefitsContract.length > 0) {
@@ -371,46 +328,6 @@ export const ClientDashboard = ({
           )}
         </div>
       </main>
-
-      {/* Congratulations Message Modal */}
-      <AlertDialog open={congratsModalOpen} onOpenChange={setCongratsModalOpen}>
-        <AlertDialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
-          <AlertDialogHeader className="text-left">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-2 bg-green-100 rounded-full">
-                <PartyPopper className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
-              </div>
-              <AlertDialogTitle className="text-xl sm:text-2xl">
-                Congratulations!
-              </AlertDialogTitle>
-            </div>
-            <AlertDialogDescription asChild>
-              <div className="text-xs sm:text-sm text-muted-foreground">
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: currentCongratsMessage?.message || "",
-                  }}
-                  className="[&_p]:mb-2 sm:[&_p]:mb-3 [&_ul]:mb-2 sm:[&_ul]:mb-3 [&_ul]:ml-4 sm:[&_ul]:ml-5 [&_ul]:list-disc [&_li]:mb-1 [&_strong]:font-semibold [&_br]:block"
-                />
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2 justify-between">
-            <AlertDialogAction
-              onClick={viewAuditReport}
-              className="bg-blue-500 hover:bg-blue-600 w-full sm:w-auto"
-            >
-              View Audit Report
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={handleCongratsClose}
-              className="bg-green-500 hover:bg-green-600 w-full sm:w-auto"
-            >
-              Got it, thanks!
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

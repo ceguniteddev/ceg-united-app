@@ -279,8 +279,8 @@ export function IncomeFundingContent() {
   }
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <main className="flex-1 overflow-y-auto custom-scrollbar">
+    <div className="flex flex-col w-full">
+      <main className="flex-1 custom-scrollbar">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
           {/* Page heading */}
           <div className="mb-5 animate-fade-in-up flex flex-col md:flex-row md:items-center justify-between gap-4">
