@@ -122,10 +122,10 @@ export function AuthProvider({
         } catch (error) {
           console.error("Error during auth state change:", error);
           // DO NOT call logOut() here.
-          // Optionally keep firebaseUser and use a cached role, or default to 'Staff'.
+          // Optionally keep firebaseUser and use a cached role, or default to 'Client'.
           if (firebaseUser) {
             setUser(firebaseUser);
-            setRole((r) => r ?? ("Staff" as Role));
+            setRole((r) => r ?? ("Client" as Role));
           }
         } finally {
           setLoading(false);

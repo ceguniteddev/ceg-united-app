@@ -2,9 +2,10 @@ import { defineConfig } from "vitest/config";
 // import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-  resolve:{
+  resolve: {
     tsconfigPaths: true,
   },
+  // plugins: [tsconfigPaths()],
   // plugins: [tsconfigPaths()],
   test: {
     globals: true,
