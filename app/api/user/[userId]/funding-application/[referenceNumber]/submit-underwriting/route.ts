@@ -46,7 +46,7 @@ export const POST = withAuth(
       const banks = await getBanks();
       const brokerages = banks.filter((bank) => bank.isBrokerage);
 
-      if (brokerages.length > 0) {
+      if (pathwayId === "income_based" && brokerages.length > 0) {
         const brokerageEmails = brokerages
           .flatMap((b) => b.contacts?.map((c) => c.email))
           .filter(Boolean);
