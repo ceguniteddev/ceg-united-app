@@ -128,7 +128,11 @@ export function useIncomeFundingState(
         const globalStatus = realDeal.status;
 
         // Base status on pathway status, falling back to global status
-        const relevantStatus = pathwayStatus || globalStatus;
+        // Only fallback to global status if appliedPathways is empty/not present (legacy support)
+        const hasAppliedPathways = appliedPathways.length > 0;
+        const relevantStatus = hasAppliedPathways
+          ? pathwayStatus || "Sent to Brokerage"
+          : globalStatus;
 
         if (relevantStatus === "Sent to Brokerage") {
           // If the user is currently working on an application (collecting-documents) or just submitted (under-review), keep their current local state.

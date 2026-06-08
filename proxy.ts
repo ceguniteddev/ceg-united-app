@@ -93,9 +93,31 @@ export async function proxy(req: NextRequest) {
     const authHeader = req.headers.get("Authorization");
     console.log("API ", pathname);
 
-    // If using external tokens, bypass proxy role checks (withAuth will handle them)
-    if (xIdToken || adminAccessKey || authHeader || isPublic(pathname))
+    // If using a public route, bypass
+    if (isPublic(pathname)) {
       return NextResponse.next();
+    }
+
+    // Validate ADMIN_ACCESS_KEY if supplied
+    if (adminAccessKey) {
+      const expectedKey = process.env.ADMIN_ACCESS_KEY;
+      if (
+        !expectedKey ||
+        expectedKey === "undefined" ||
+        expectedKey === "" ||
+        adminAccessKey !== expectedKey
+      ) {
+        return NextResponse.json("Unauthorized: Invalid ADMIN_ACCESS_KEY", {
+          status: 401,
+        });
+      }
+      return NextResponse.next();
+    }
+
+    // If using other external tokens, allow withAuth to handle validation
+    if (xIdToken || authHeader) {
+      return NextResponse.next();
+    }
 
     if (!token && !pathname.includes("webhook"))
       return NextResponse.json("Unauthorized", { status: 401 });
@@ -110,19 +132,28 @@ export async function proxy(req: NextRequest) {
         const user = await getUserById(sessionCookie.uid);
         const role = (user?.role as any) ?? "Client";
 
-        // Block Clients from accessing Admin APIs and Broker APIs
-        // And ensure they only access allowed client APIs
+        // Guard API routes based on roles
+        if (isAdminRoute(pathname)) {
+          if (role !== "Admin") {
+            return NextResponse.json("Unauthorized: Access denied", {
+              status: 403,
+            });
+          }
+        }
+
+        if (isBrokerRoute(pathname)) {
+          if (role !== "Broker" && role !== "Admin") {
+            return NextResponse.json("Unauthorized: Access denied", {
+              status: 403,
+            });
+          }
+        }
+
         if (role === "Client") {
           if (!isAllowedClientApiRoute(pathname, sessionCookie.uid)) {
             return NextResponse.json("Unauthorized: Access denied", {
               status: 403,
             });
-          }
-
-          if (isAdminRoute(pathname) || isBrokerRoute(pathname)) {
-            const url = req.nextUrl.clone();
-            url.pathname = "/";
-            return NextResponse.redirect(url);
           }
         }
 
@@ -163,7 +194,7 @@ export async function proxy(req: NextRequest) {
   }
 
   // 4) Token present → verify + find role
-  let role: "Admin" | "IT" | "Staff" | "Client" | "Broker" | null = null;
+  let role: "Admin" | "Client" | "Broker" | null = null;
   let hasPaidContract = false;
 
   try {
@@ -261,7 +292,7 @@ export async function proxy(req: NextRequest) {
   }
 
   // ADMIN/STAFF/IT ROLES: Can only access admin routes
-  if (role === "Admin" || role === "Staff" || role === "IT") {
+  if (role === "Admin") {
     if (isClientRoute(pathname)) {
       return NextResponse.redirect(new URL(ADMIN_HOME, origin));
     }

@@ -21,10 +21,20 @@ vi.mock("@/service/apply-funding", () => ({
   getApplyFundingByReferenceNumber: vi.fn(),
 }));
 
+vi.mock("@/service/user", () => ({
+  getCurrentUser: vi.fn().mockResolvedValue({
+    uid: "admin-uid",
+    email: "admin@test.com",
+    role: "Admin",
+  }),
+  getUserById: vi.fn(),
+}));
+
 import { GET as listApplications } from "@/app/api/funding-application/route";
 import { GET as getByReference } from "@/app/api/funding-application/[referenceNumber]/route";
 import { getFundMappingAnalysisDetails } from "@/service/bank-products";
 import { getApplyFundingByReferenceNumber } from "@/service/apply-funding";
+import { getCurrentUser } from "@/service/user";
 
 // ---------------------------------------------------------------------------
 // GET /api/funding-application
@@ -72,6 +82,24 @@ describe("GET /api/funding-application", () => {
     const req = new NextRequest("http://localhost/api/funding-application");
     const res = await listApplications(req);
     expect(res.status).toBe(500);
+  });
+
+  it("should force filter by caller's own userId if caller is a Client", async () => {
+    (getFundMappingAnalysisDetails as any).mockResolvedValue([]);
+    vi.mocked(getCurrentUser).mockResolvedValueOnce({
+      uid: "client-123",
+      email: "client@test.com",
+      role: "Client",
+    } as any);
+
+    const req = new NextRequest(
+      "http://localhost/api/funding-application?userId=another-user",
+    );
+    await listApplications(req);
+
+    expect(getFundMappingAnalysisDetails).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "client-123" }),
+    );
   });
 });
 
@@ -125,5 +153,51 @@ describe("GET /api/funding-application/[referenceNumber]", () => {
     );
     const res = await getByReference(req, params("REF-001"));
     expect(res.status).toBe(500);
+  });
+
+  it("should block Client from accessing another user's funding application data", async () => {
+    const mockApp = {
+      id: "a1",
+      referenceNumber: "REF-001",
+      userId: "user-456",
+    };
+    (getApplyFundingByReferenceNumber as any).mockResolvedValue(mockApp);
+
+    vi.mocked(getCurrentUser).mockResolvedValueOnce({
+      uid: "user-123",
+      email: "client@test.com",
+      role: "Client",
+    } as any);
+
+    const req = new NextRequest(
+      "http://localhost/api/funding-application/REF-001",
+    );
+    const res = await getByReference(req, params("REF-001"));
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body).toBe("Unauthorized: Access denied");
+  });
+
+  it("should allow Client to access their own funding application data", async () => {
+    const mockApp = {
+      id: "a1",
+      referenceNumber: "REF-001",
+      userId: "user-123",
+    };
+    (getApplyFundingByReferenceNumber as any).mockResolvedValue(mockApp);
+
+    vi.mocked(getCurrentUser).mockResolvedValueOnce({
+      uid: "user-123",
+      email: "client@test.com",
+      role: "Client",
+    } as any);
+
+    const req = new NextRequest(
+      "http://localhost/api/funding-application/REF-001",
+    );
+    const res = await getByReference(req, params("REF-001"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toEqual(mockApp);
   });
 });
