@@ -16,9 +16,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useGetApplyFundingByReferenceNumber } from "@/hooks/apply-funding";
-import { updateApplicationStatus } from "@/service/apply-funding";
+// import { updateApplicationStatus } from "@/service/apply-funding";
 import { useParams } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import {  useState, useMemo } from "react";
 
 import ClientCreditReport from "@/components/ClientCreditReport";
 import BusinessRecordsPage from "@/components/ClientBusinessReport";
@@ -32,7 +32,7 @@ import { useUserQuery } from "@/hooks/user";
 import { useMembership } from "@/hooks/membership";
 import { UserWithId } from "@/schema/registration";
 import { useGetClientApplyFunding } from "@/hooks/apply-funding";
-import { ApplyFundingWithUser } from "@/schema/apply-funding";
+// import { ApplyFundingWithUser } from "@/schema/apply-funding";
 
 const AdminViewApplication = () => {
   const params = useParams();
