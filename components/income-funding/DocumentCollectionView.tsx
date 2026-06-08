@@ -1,5 +1,11 @@
-import { useState } from "react";
-import { ArrowRight, ArrowLeft, Lock, ShieldCheck } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Lock,
+  ShieldCheck,
+  Loader2,
+} from "lucide-react";
 import { DocumentUploadCard } from "./DocumentUploadCard";
 import type {
   DocumentRecord,
@@ -237,7 +243,7 @@ export function DocumentCollectionView({
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (skipped: boolean = false) => {
     if (
       selectedPathwayId !== "income_based" &&
       user?.uid &&
@@ -249,18 +255,39 @@ export function DocumentCollectionView({
           referenceNumber: realDeal.referenceNumber,
           selectedPathwayId,
         });
-        toast.success("Application submitted successfully!");
+        if (!skipped) {
+          toast.success("Application submitted successfully!");
+        }
       } catch (error) {
         console.error("Failed to map bank products:", error);
-        toast.error(
-          "There was an issue processing your submission, but your documents were saved.",
-        );
+        if (!skipped) {
+          toast.error(
+            "There was an issue processing your submission, but your documents were saved.",
+          );
+        }
       }
     } else {
-      toast.success("Application submitted successfully!");
+      if (!skipped) {
+        toast.success("Application submitted successfully!");
+      }
     }
     onSubmit();
   };
+
+  useEffect(() => {
+    if (selectedPathwayId !== "income_based") {
+      handleSubmit(true);
+    }
+  }, [selectedPathwayId]);
+
+  if (selectedPathwayId !== "income_based") {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full p-10">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-4" />
+        <p className="text-sm text-gray-500 font-medium">Processing...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
