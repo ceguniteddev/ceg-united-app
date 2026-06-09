@@ -1033,14 +1033,17 @@ export const getFundMappingAnalysisDetails = async ({
         //     approvalOdds: p.approvalOdds,
         //   })),
         // );
-        // Calculate overall approval odds (average of all products)
+        // Calculate overall approval odds (average of all products) + 25 extra
         const overallApprovalOdds =
           productsWithOdds.length > 0
-            ? Math.round(
-                productsWithOdds.reduce(
-                  (sum, p: any) => sum + (p.approvalOdds || 0),
-                  0,
-                ) / productsWithOdds.length,
+            ? Math.min(
+                100,
+                Math.round(
+                  productsWithOdds.reduce(
+                    (sum, p: any) => sum + (p.approvalOdds || 0),
+                    0,
+                  ) / productsWithOdds.length,
+                ) + 25,
               )
             : undefined;
         // console.log(
@@ -1253,11 +1256,14 @@ export const getAutoServedClientFunds = async ({
 
         const overallApprovalOdds =
           productsWithOdds.length > 0
-            ? Math.round(
-                productsWithOdds.reduce(
-                  (sum, p: any) => sum + (p.approvalOdds || 0),
-                  0,
-                ) / productsWithOdds.length,
+            ? Math.min(
+                100,
+                Math.round(
+                  productsWithOdds.reduce(
+                    (sum, p: any) => sum + (p.approvalOdds || 0),
+                    0,
+                  ) / productsWithOdds.length,
+                ) + 25,
               )
             : undefined;
 
