@@ -395,21 +395,6 @@ async function estimateClientCreditScore(
   return estimatedScore;
 }
 
-/**
- * Parse time in business requirement string to months
- */
-function parseTimeInBusiness(requirement?: string): number {
-  if (!requirement) return 0;
-  const lower = requirement.toLowerCase();
-
-  if (lower.includes("2") && lower.includes("year")) return 24;
-  if (lower.includes("1") && lower.includes("year")) return 12;
-  if (lower.includes("6") && lower.includes("month")) return 6;
-  if (lower.includes("3") && lower.includes("month")) return 3;
-
-  return 0;
-}
-
 export const recordBankProduct = async (value: BankFormData) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(BANK_PRODUCTS_COLLECTION);
@@ -1103,7 +1088,7 @@ export const getAutoServedClientFunds = async ({
 
   // 1. Read full queue
   // If pathwayId is provided, get the specific pathway's mapped funds. Otherwise, just use referenceNumber (which might actually be the pathway ID due to previous logic, so let's handle that).
-  const docId = pathwayId || referenceNumber;
+  // const docId = pathwayId || referenceNumber;
   const queue =
     (await getFundMappingAnalysis(referenceNumber, pathwayId)) ?? [];
 
