@@ -14,7 +14,6 @@ import {
   VisibilityState,
 } from "@tanstack/react-table";
 import {
-  BanknoteArrowUp,
   BanknoteIcon,
   BanknoteX,
   CircleDollarSign,
@@ -49,7 +48,7 @@ import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CustomFormField } from "../CustomFormField";
-import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+// import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import { useAuth } from "@/provider/AuthContext";
 import { useMembership } from "@/hooks/membership";
 import { useRouter } from "next/navigation";
@@ -235,7 +234,7 @@ type Props = {
 };
 
 const FundingList = ({ appliedFunding, isAdminView }: Props) => {
-  const { userData } = useAuth();
+  // const { userData } = useAuth();
   const { data: membership } = useMembership();
   const hasPaidContract = membership?.status === "active" || !!isAdminView;
 
@@ -430,7 +429,7 @@ const FundingCard = ({
   isAdminView?: boolean;
   appliedFunding: ApprovedBankFormData[] | undefined;
 }) => {
-  const { userData } = useAuth();
+  // const { userData } = useAuth();
   const { data: membership } = useMembership();
   const hasPaidContract = membership?.status === "active" || !!isAdminView;
   const data = row.original;
@@ -577,7 +576,7 @@ const FundingCard = ({
 
 const ActionCell = ({ row }: { row: any }) => {
   const router = useRouter();
-  const [isDenefitsPaid, setIsDenefitsPaid] = React.useState(false);
+  // const [isDenefitsPaid, setIsDenefitsPaid] = React.useState(false);
   const [isSkipDialogOpen, setSkipDialogOpen] = React.useState(false);
   const [isPricingModalOpen, setPricingModalOpen] = React.useState(false);
   const [checkoutId, setCheckoutId] = React.useState<string | null>(null);
@@ -590,9 +589,9 @@ const ActionCell = ({ row }: { row: any }) => {
   const { userData } = useAuth();
   const { data: membership } = useMembership();
 
-  const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
-    row.original.userId,
-  );
+  // const { denefitsContract } = useGetDenefitsContractsByUserId(
+  //   row.original.userId,
+  // );
 
   const { skipLenderAppliedBankProduct, isSkipping } =
     useApprovedMappedFundsMutation();
@@ -604,11 +603,11 @@ const ActionCell = ({ row }: { row: any }) => {
     },
   });
 
-  React.useEffect(() => {
-    if (denefitsContract && denefitsContract.length > 0) {
-      setIsDenefitsPaid(true);
-    }
-  }, [denefitsContract]);
+  // React.useEffect(() => {
+  //   if (denefitsContract && denefitsContract.length > 0) {
+  //     setIsDenefitsPaid(true);
+  //   }
+  // }, [denefitsContract]);
 
   const handleApproveClickCapture = () => {
     router.push(

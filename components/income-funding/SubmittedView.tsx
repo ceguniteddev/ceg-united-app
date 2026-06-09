@@ -3,10 +3,7 @@ import {
   Clock,
   FileSearch,
   Mail,
-  MessageSquare,
-  Phone,
   Send,
-  ArrowLeft,
 } from "lucide-react";
 // import { mockCoordinator } from "@/lib/income-funding-mock";
 import type { IncomeFundingDeal } from "@/types/income-funding-types";
@@ -30,7 +27,7 @@ const timelineSteps = [
   },
   {
     key: "underwriting",
-    label: "Verification in progress",
+    label: "Funding verification in progress",
     icon: FileSearch,
     status: "active" as const,
   },
@@ -62,7 +59,7 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
             <p className="mt-2 text-sm text-gray-500 ">
               We typically have offers back within{" "}
               <span className="font-semibold text-gray-700">24-48 hours</span>.
-              You'll receive an email the moment your offers are ready.
+              {`You'll receive an email the moment your offers are ready.`}
             </p>
           </div>
         </div>
