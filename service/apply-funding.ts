@@ -536,10 +536,12 @@ export const updatePathwayStatus = async ({
   referenceNumber,
   pathwayId,
   status,
+  noOutputReason,
 }: {
   referenceNumber: string;
   pathwayId: string;
   status: FundingApplicationSatus;
+  noOutputReason?: string;
 }) => {
   logInfo("updatePathwayStatus", { referenceNumber, pathwayId, status });
 
@@ -556,8 +558,11 @@ export const updatePathwayStatus = async ({
 
   if (index > -1) {
     existingPathways[index].status = status;
+    if (noOutputReason !== undefined) {
+      existingPathways[index].noOutputReason = noOutputReason;
+    }
   } else {
-    existingPathways.push({ pathwayId, status });
+    existingPathways.push({ pathwayId, status, noOutputReason });
   }
 
   await appRef.update({ appliedPathways: existingPathways });

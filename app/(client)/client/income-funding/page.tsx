@@ -196,7 +196,13 @@ export function IncomeFundingContent() {
           />
         );
       case "under-review":
-        return <SubmittedView deal={deal} />;
+        return (
+          <SubmittedView
+            deal={deal}
+            realDeal={realDeal}
+            selectedPathwayId={selectedPathwayId}
+          />
+        );
       case "offers-ready":
         if (selectedPathwayId !== "income_based") {
           return (
