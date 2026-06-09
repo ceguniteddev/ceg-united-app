@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ArrowRight,
   ArrowLeft,
@@ -67,6 +67,7 @@ export function DocumentCollectionView({
     contentType?: string;
   } | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const lastSubmittedPathwayIdRef = useRef<string | null>(null);
 
   const displayDocuments = deal.documents
     .filter((doc) => {
@@ -275,7 +276,11 @@ export function DocumentCollectionView({
   };
 
   useEffect(() => {
-    if (selectedPathwayId !== "income_based") {
+    if (
+      selectedPathwayId !== "income_based" &&
+      lastSubmittedPathwayIdRef.current !== selectedPathwayId
+    ) {
+      lastSubmittedPathwayIdRef.current = selectedPathwayId;
       handleSubmit(true);
     }
   }, [selectedPathwayId]);
