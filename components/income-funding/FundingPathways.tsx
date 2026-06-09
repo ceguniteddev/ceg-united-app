@@ -287,6 +287,33 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
     onContinue?.(dynamicSelected);
   };
 
+  const renderBadge = (p: FundingPathway) => {
+    const ap = realDeal?.appliedPathways?.find(
+      (ap: any) => ap.pathwayId === p.id,
+    );
+    if (ap) {
+      const status = ap.status || "Applied";
+      const isDeclined = status.toLowerCase() === "declined";
+      return (
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+            isDeclined ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"
+          }`}
+        >
+          {status}
+        </span>
+      );
+    }
+    if (p.badge) {
+      return (
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+          {p.badge}
+        </span>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-emerald-50/40 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-10">
@@ -314,6 +341,13 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
         >
           {dynamicPathways.map((p) => {
             const isSelected = selectedId === p.id;
+
+            const ap = realDeal?.appliedPathways?.find(
+              (ap: any) => ap.pathwayId === p.id,
+            );
+            const isDeclined =
+              ap && (ap.status || "Applied").toLowerCase() === "declined";
+
             return (
               <li key={p.id}>
                 <button
@@ -362,17 +396,7 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                         <h3 className="text-base font-semibold text-slate-900 leading-tight">
                           {p.title}
                         </h3>
-                        {realDeal?.appliedPathways?.some(
-                          (ap: any) => ap.pathwayId === p.id,
-                        ) ? (
-                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                            Applied
-                          </span>
-                        ) : p.badge ? (
-                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                            {p.badge}
-                          </span>
-                        ) : null}
+                        {renderBadge(p)}
                       </div>
                     </div>
                   </div>
@@ -385,17 +409,7 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                         <h3 className="text-lg font-semibold text-slate-900">
                           {p.title}
                         </h3>
-                        {realDeal?.appliedPathways?.some(
-                          (ap: any) => ap.pathwayId === p.id,
-                        ) ? (
-                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                            Applied
-                          </span>
-                        ) : p.badge ? (
-                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                            {p.badge}
-                          </span>
-                        ) : null}
+                        {renderBadge(p)}
                       </div>
 
                       <p className="mt-0.5 text-sm text-slate-600 hidden sm:block">
@@ -430,36 +444,40 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                     </div>
 
                     {/* Amount Block */}
-                    <div className="flex flex-none items-end sm:items-center sm:justify-end pl-[36px] sm:pl-4 mt-3 sm:mt-0">
-                      <div className="flex flex-col sm:items-end w-full sm:w-auto">
-                        <div className="flex justify-between items-end sm:flex-col sm:justify-center w-full">
-                          <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400 sm:hidden">
-                            Up to
-                          </span>
-                          <div className="flex flex-col items-end">
-                            <span className="hidden sm:block text-[10px] font-medium uppercase tracking-widest text-slate-400">
+                    {!isDeclined && (
+                      <div className="flex flex-none items-end sm:items-center sm:justify-end pl-[36px] sm:pl-4 mt-3 sm:mt-0">
+                        <div className="flex flex-col sm:items-end w-full sm:w-auto">
+                          <div className="flex justify-between items-end sm:flex-col sm:justify-center w-full">
+                            <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400 sm:hidden">
                               Up to
                             </span>
-                            <span
-                              className={[
-                                "font-mono font-bold leading-none text-right",
-                                isSelected ? "text-blue-700" : "text-slate-900",
-                                "text-2xl sm:text-3xl",
-                              ].join(" ")}
-                              style={{
-                                fontFamily:
-                                  "'JetBrains Mono', ui-monospace, monospace",
-                              }}
-                            >
-                              {formatMoney(p.maxAmount)}
-                            </span>
+                            <div className="flex flex-col items-end">
+                              <span className="hidden sm:block text-[10px] font-medium uppercase tracking-widest text-slate-400">
+                                Up to
+                              </span>
+                              <span
+                                className={[
+                                  "font-mono font-bold leading-none text-right",
+                                  isSelected
+                                    ? "text-blue-700"
+                                    : "text-slate-900",
+                                  "text-2xl sm:text-3xl",
+                                ].join(" ")}
+                                style={{
+                                  fontFamily:
+                                    "'JetBrains Mono', ui-monospace, monospace",
+                                }}
+                              >
+                                {formatMoney(p.maxAmount)}
+                              </span>
+                            </div>
                           </div>
+                          <span className="mt-1 text-[11px] text-slate-500 hidden sm:block text-right">
+                            {formatMoneyFull(p.maxAmount)}
+                          </span>
                         </div>
-                        <span className="mt-1 text-[11px] text-slate-500 hidden sm:block text-right">
-                          {formatMoneyFull(p.maxAmount)}
-                        </span>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </button>
               </li>
@@ -484,9 +502,20 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
                 <span className="font-semibold text-slate-900">
                   {dynamicSelected.title}
                 </span>{" "}
-                <span className="text-slate-500">
-                  · up to {formatMoneyFull(dynamicSelected.maxAmount)}
-                </span>
+                {(() => {
+                  const ap = realDeal?.appliedPathways?.find(
+                    (ap: any) => ap.pathwayId === dynamicSelected.id,
+                  );
+                  const isSelectedDeclined =
+                    ap && (ap.status || "Applied").toLowerCase() === "declined";
+                  return (
+                    !isSelectedDeclined && (
+                      <span className="text-slate-500">
+                        · up to {formatMoneyFull(dynamicSelected.maxAmount)}
+                      </span>
+                    )
+                  );
+                })()}
               </span>
               <button
                 type="button"
