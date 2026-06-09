@@ -277,6 +277,7 @@ export const applyFundingSchema = z
         z.object({
           pathwayId: z.string(),
           status: z.string(),
+          noOutputReason: z.string().optional(),
         }),
       )
       .optional(),

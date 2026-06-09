@@ -1,15 +1,11 @@
-import {
-  Check,
-  Clock,
-  FileSearch,
-  Mail,
-  Send,
-} from "lucide-react";
+import { Check, Clock, FileSearch, Mail, Send, XCircle } from "lucide-react";
 // import { mockCoordinator } from "@/lib/income-funding-mock";
 import type { IncomeFundingDeal } from "@/types/income-funding-types";
 
 interface SubmittedViewProps {
   deal: IncomeFundingDeal;
+  realDeal?: any;
+  selectedPathwayId?: string;
 }
 
 const timelineSteps = [
@@ -39,31 +35,98 @@ const timelineSteps = [
   },
 ];
 
-export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
+export function SubmittedView({
+  deal: _deal,
+  realDeal,
+  selectedPathwayId,
+}: SubmittedViewProps) {
+  const appliedPathways = realDeal?.appliedPathways || [];
+  const appliedPathway = appliedPathways.find(
+    (p: any) => p.pathwayId === selectedPathwayId,
+  );
+
+  const isDeclined =
+    appliedPathway?.status === "Declined" || realDeal?.status === "Declined";
+  const noOutputReason = appliedPathway?.noOutputReason;
+
+  const currentTimelineSteps = isDeclined
+    ? [
+        {
+          key: "received",
+          label: "Application received",
+          icon: Send,
+          status: "complete" as const,
+        },
+        {
+          key: "verified",
+          label: "Documents verified",
+          icon: Check,
+          status: "complete" as const,
+        },
+        {
+          key: "underwriting",
+          label: "Funding verification",
+          icon: FileSearch,
+          status: "complete" as const,
+        },
+        {
+          key: "declined",
+          label: "Not Approved",
+          icon: XCircle,
+          status: "error" as const,
+        },
+      ]
+    : timelineSteps;
+
   return (
     <div className="space-y-6">
       {/* Status hero */}
-      <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-100 shadow-card p-6 md:p-8 animate-fade-in-up">
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-100/40 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative flex items-start gap-4">
-          <div className="shrink-0 relative">
-            <span className="block w-3 h-3 rounded-full bg-amber-500 pulse-amber" />
-          </div>
-          <div className="flex-1">
-            <div className="text-xs font-semibold uppercase tracking-wider text-amber-600">
-              Under review
+      {isDeclined && noOutputReason ? (
+        <div className="relative overflow-hidden bg-white rounded-2xl border border-red-100 shadow-card p-6 md:p-8 animate-fade-in-up">
+          <div className="absolute -top-20 -right-20 w-64 h-64 bg-red-100/40 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative flex items-start gap-4">
+            <div className="shrink-0 relative mt-1">
+              <span className="block w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
+                <XCircle className="w-5 h-5" />
+              </span>
             </div>
-            <h1 className="mt-1 text-xl md:text-2xl font-bold text-gray-900">
-              Your deal has been submitted for verification.
-            </h1>
-            <p className="mt-2 text-sm text-gray-500 ">
-              We typically have offers back within{" "}
-              <span className="font-semibold text-gray-700">24-48 hours</span>.
-              {`You'll receive an email the moment your offers are ready.`}
-            </p>
+            <div className="flex-1">
+              <div className="text-xs font-semibold uppercase tracking-wider text-red-600">
+                Not Approved
+              </div>
+              <h1 className="mt-1 text-xl md:text-2xl font-bold text-gray-900">
+                {`We couldn't match you with an offer at this time.`}
+              </h1>
+              <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-100 text-sm text-red-800">
+                <span className="font-semibold block mb-1">Reason:</span>
+                {noOutputReason}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-100 shadow-card p-6 md:p-8 animate-fade-in-up">
+          <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-100/40 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative flex items-start gap-4">
+            <div className="shrink-0 relative">
+              <span className="block w-3 h-3 rounded-full bg-amber-500 pulse-amber" />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs font-semibold uppercase tracking-wider text-amber-600">
+                Under review
+              </div>
+              <h1 className="mt-1 text-xl md:text-2xl font-bold text-gray-900">
+                Your deal has been submitted for verification.
+              </h1>
+              <p className="mt-2 text-sm text-gray-500 ">
+                We typically have offers back within{" "}
+                <span className="font-semibold text-gray-700">24-48 hours</span>
+                .{`You'll receive an email the moment your offers are ready.`}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Timeline */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-6 md:p-7 animate-fade-in-up stagger-1">
@@ -71,21 +134,24 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
           Deal Timeline
         </h2>
         <ol className="space-y-4">
-          {timelineSteps.map((step, i) => {
+          {currentTimelineSteps.map((step, i) => {
             const Icon = step.icon;
             const isComplete = step.status === "complete";
             const isActive = step.status === "active";
+            const isError = step.status === "error";
             return (
               <li key={step.key} className="flex items-start gap-4">
                 <div className="flex flex-col items-center">
                   <span
                     className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-colors
                       ${
-                        isComplete
-                          ? "bg-emerald-500 border-emerald-500 text-white"
-                          : isActive
-                            ? "bg-amber-50 border-amber-300 text-amber-600 pulse-amber"
-                            : "bg-white border-gray-200 text-gray-300"
+                        isError
+                          ? "bg-red-50 border-red-300 text-red-600"
+                          : isComplete
+                            ? "bg-emerald-500 border-emerald-500 text-white"
+                            : isActive
+                              ? "bg-amber-50 border-amber-300 text-amber-600 pulse-amber"
+                              : "bg-white border-gray-200 text-gray-300"
                       }`}
                   >
                     {isComplete ? (
@@ -94,7 +160,7 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
                       <Icon className="w-4 h-4" />
                     )}
                   </span>
-                  {i < timelineSteps.length - 1 && (
+                  {i < currentTimelineSteps.length - 1 && (
                     <span
                       className={`w-0.5 flex-1 mt-1 ${
                         isComplete ? "bg-emerald-200" : "bg-gray-100"
@@ -106,11 +172,13 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
                 <div className="flex-1 pt-1.5 pb-4">
                   <div
                     className={`text-sm font-semibold ${
-                      isComplete
-                        ? "text-gray-900"
-                        : isActive
-                          ? "text-amber-700"
-                          : "text-gray-400"
+                      isError
+                        ? "text-red-600"
+                        : isComplete
+                          ? "text-gray-900"
+                          : isActive
+                            ? "text-amber-700"
+                            : "text-gray-400"
                     }`}
                   >
                     {step.label}
@@ -119,6 +187,12 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
                     <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-amber-600">
                       <Clock className="w-3 h-3" />
                       In progress
+                    </div>
+                  )}
+                  {isError && (
+                    <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-red-600">
+                      <XCircle className="w-3 h-3" />
+                      Declined
                     </div>
                   )}
                 </div>
@@ -164,18 +238,20 @@ export function SubmittedView({ deal: _deal }: SubmittedViewProps) {
       </div> */}
 
       {/* Empty state for offers */}
-      <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center animate-fade-in-up stagger-3">
-        <div className="w-12 h-12 rounded-2xl bg-gray-50 mx-auto flex items-center justify-center text-gray-400">
-          <Mail className="w-6 h-6" />
+      {!isDeclined && (
+        <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center animate-fade-in-up stagger-3">
+          <div className="w-12 h-12 rounded-2xl bg-gray-50 mx-auto flex items-center justify-center text-gray-400">
+            <Mail className="w-6 h-6" />
+          </div>
+          <h3 className="mt-4 text-sm font-bold text-gray-700">
+            Your funding offers will appear here once approved
+          </h3>
+          <p className="mt-1 text-xs text-gray-500 max-w-sm mx-auto">
+            Sit tight — your dedicated coordinator is reviewing your file and
+            matching you with the best lenders for your profile.
+          </p>
         </div>
-        <h3 className="mt-4 text-sm font-bold text-gray-700">
-          Your funding offers will appear here once approved
-        </h3>
-        <p className="mt-1 text-xs text-gray-500 max-w-sm mx-auto">
-          Sit tight — your dedicated coordinator is reviewing your file and
-          matching you with the best lenders for your profile.
-        </p>
-      </div>
+      )}
     </div>
   );
 }

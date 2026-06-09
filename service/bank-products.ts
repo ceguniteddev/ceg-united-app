@@ -603,6 +603,42 @@ export const recordFundMappingAnalysis = async ({
   }
 };
 
+export const recordFundMappingAnalysisNoOutput = async ({
+  userId,
+  referenceNumber,
+  selectedPathwayId,
+  reason,
+}: {
+  userId: string;
+  referenceNumber: string;
+  selectedPathwayId?: string;
+  reason: string;
+}) => {
+  if (!userId) throw new NotFoundError("User ID is required.");
+  if (!referenceNumber)
+    throw new NotFoundError("Reference number is required.");
+
+  const db = firestoreAdmin();
+  const docId = selectedPathwayId || referenceNumber;
+  const collectionRef = db
+    .collection(
+      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`,
+    )
+    .doc(docId);
+
+  await collectionRef.set(
+    {
+      bank_products: [],
+      noOutputReason: reason,
+      userId,
+      ...(selectedPathwayId && { selectedPathwayId }),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    },
+    { merge: true },
+  );
+};
+
 export const recordFundMappingAnalysisOld = async (
   userId: string,
   // referenceNumber: string,
@@ -689,6 +725,37 @@ export const updateClientApplicationStatus = async ({
 
 //   return userIds;
 // };
+
+export const getFundMappingNoOutputReason = async (
+  referenceNumber: string,
+  pathwayId?: string,
+) => {
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`,
+  );
+
+  let docs = [];
+  if (pathwayId) {
+    const docSnapshot = await collectionRef.doc(pathwayId).get();
+    if (docSnapshot.exists) {
+      docs.push(docSnapshot);
+    }
+  } else {
+    const querySnapshot = await collectionRef.get();
+    docs = querySnapshot.docs;
+  }
+
+  for (const doc of docs) {
+    const data = doc.data();
+    if (data?.noOutputReason) {
+      return data.noOutputReason as string;
+    }
+  }
+
+  return null;
+};
+
 export const getFundMappingAnalysis = async (
   referenceNumber: string,
   pathwayId?: string,
