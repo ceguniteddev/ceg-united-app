@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Bot,
-  CheckCircle2,
-  Mail,
-  MessageSquare,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { SelectedLenderCard } from "@/components/funding/v2/SelectedLenderCard";
@@ -21,6 +15,7 @@ import { DynamicOddsCard } from "@/components/funding/v2/DynamicOddsCard";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
 import { useApprovedMappedFundsMutation } from "@/hooks/admin/funding-application/fund-mapping";
 import { useAuth } from "@/provider/AuthContext";
+import { useMembership } from "@/hooks/membership";
 import Spinner from "@/components/Spinner";
 import type { ApprovedBankFormData } from "@/schema/bank-products";
 
@@ -75,9 +70,20 @@ export default function FundingApplyPage() {
 
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  const { data: userMembership, isLoading: isMembershipLoading } =
+    useMembership(user?.uid);
+  const isPremium = userMembership?.status === "active";
+
+  useEffect(() => {
+    if (!isMembershipLoading && !isPremium) {
+      router.push("/client/income-funding");
+    }
+  }, [isMembershipLoading, isPremium, router]);
+
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
     userId: user?.uid,
   });
+  // console.log("Mapped Fund Details:", mappedFund, fundMappingApprovedId);
 
   const { applyApprovedMappedFund, isApplying } =
     useApprovedMappedFundsMutation();
@@ -125,7 +131,7 @@ export default function FundingApplyPage() {
     setIsSubmitted(true);
   };
 
-  if (isLoading) {
+  if (isLoading || isMembershipLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner />
@@ -141,8 +147,8 @@ export default function FundingApplyPage() {
             Lender Not Found
           </h1>
           <p className="text-gray-600 mb-6">
-            The funding application you're looking for doesn't exist or has been
-            removed.
+            {`The funding application you're looking for doesn't exist or has been
+            removed.`}
           </p>
           <Button onClick={() => router.push(`/client/income-funding`)}>
             <ArrowLeft className="size-4 mr-2" />
@@ -230,7 +236,7 @@ export default function FundingApplyPage() {
       <button
         onClick={() =>
           router.push(
-            `/client/income-funding${lender.pathwayId ? `?pathwayId=${lender.pathwayId}` : ""}`,
+            `/client/income-funding${lender.pathwayId ? `?pathwayId=${lender.pathwayId}&fromApply=true` : "?fromApply=true"}`,
           )
         }
         className="cursor-pointer inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 font-medium mb-4 transition-colors"
@@ -242,10 +248,10 @@ export default function FundingApplyPage() {
       {/* Page heading */}
       <div className="mb-6 animate-fade-in-up">
         <h1 className="text-xl font-bold text-gray-900">
-          You've Started Your Application
+          {`You've Started Your Application`}
         </h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          Next, choose how you'd like to apply for funding from{" "}
+          {`Next, choose how you'd like to apply for funding from `}
           {lender.bankName}.
         </p>
       </div>

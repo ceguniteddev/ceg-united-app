@@ -16,7 +16,6 @@ import {
   skipLenderAppliedBankProduct,
   getApprovedMappedFunds,
   getFundMappingAnalysis,
-  getFundMappingAnalysisDetails,
 } from "@/service/bank-products";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -748,7 +747,7 @@ export const useManualFundedMutation = () => {
 
       return await response.json();
     },
-    onSuccess: (_data, variable) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["useClientMappedFundingDetailsQuery"],
         exact: false,

@@ -395,21 +395,6 @@ async function estimateClientCreditScore(
   return estimatedScore;
 }
 
-/**
- * Parse time in business requirement string to months
- */
-function parseTimeInBusiness(requirement?: string): number {
-  if (!requirement) return 0;
-  const lower = requirement.toLowerCase();
-
-  if (lower.includes("2") && lower.includes("year")) return 24;
-  if (lower.includes("1") && lower.includes("year")) return 12;
-  if (lower.includes("6") && lower.includes("month")) return 6;
-  if (lower.includes("3") && lower.includes("month")) return 3;
-
-  return 0;
-}
-
 export const recordBankProduct = async (value: BankFormData) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(BANK_PRODUCTS_COLLECTION);
@@ -802,45 +787,146 @@ export const getFundMappingAnalysisDetails = async ({
 }) => {
   const db = firestoreAdmin();
 
-  let collectionGroupRef = db
-    .collectionGroup(USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED)
-    // .where("userId", "==", userId)
-    .orderBy("createdAt", "desc");
+  let docs: FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>[] =
+    [];
+
   if (userId) {
-    collectionGroupRef = collectionGroupRef.where("userId", "==", userId);
+    // 1. Fetch user's funding applications first to get reference numbers
+    const userApplicationsSnapshot = await db
+      .collection(USER_FUNDING_APPLICATION)
+      .where("userId", "==", userId)
+      .get();
+
+    let referenceNumbers = userApplicationsSnapshot.docs.map((d) => d.id);
+
+    if (referenceNumber) {
+      referenceNumbers = referenceNumbers.filter(
+        (ref) => ref === referenceNumber,
+      );
+    }
+
+    if (referenceNumbers.length > 0) {
+      // 2. Fetch documents from each reference number's subcollection directly.
+      // This is extremely robust and works even if the userId field is missing from subcollection documents!
+      const subcollectionPromises = referenceNumbers.map(async (refNum) => {
+        let query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = db
+          .collection(USER_FUNDING_APPLICATION)
+          .doc(refNum)
+          .collection(USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED);
+
+        if (clientApplicationStatus && clientApplicationStatus.length > 0) {
+          query = query.where(
+            "clientApplicationStatus",
+            "in",
+            clientApplicationStatus,
+          );
+        }
+        if (bankProductId) {
+          query = query.where("bankProductId", "==", bankProductId);
+        }
+        if (pathwayId) {
+          query = query.where("pathwayId", "==", pathwayId);
+        }
+        const snapshot = await query.get();
+        return snapshot.docs;
+      });
+
+      const results = await Promise.all(subcollectionPromises);
+      docs = results.flat();
+
+      // Sort by createdAt desc
+      docs.sort((a, b) => {
+        const aData = a.data();
+        const bData = b.data();
+        const aTime =
+          aData.createdAt?.toMillis?.() ||
+          (aData.createdAt instanceof Date ? aData.createdAt.getTime() : 0);
+        const bTime =
+          bData.createdAt?.toMillis?.() ||
+          (bData.createdAt instanceof Date ? bData.createdAt.getTime() : 0);
+        return bTime - aTime;
+      });
+    }
+
+    // 3. Fetch manual entries (where parent doc ID = userId) as well
+    let manualQuery: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> =
+      db
+        .collection(USER_FUNDING_APPLICATION)
+        .doc(userId)
+        .collection(USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED);
+
+    if (clientApplicationStatus && clientApplicationStatus.length > 0) {
+      manualQuery = manualQuery.where(
+        "clientApplicationStatus",
+        "in",
+        clientApplicationStatus,
+      );
+    }
+    if (bankProductId) {
+      manualQuery = manualQuery.where("bankProductId", "==", bankProductId);
+    }
+    if (pathwayId) {
+      manualQuery = manualQuery.where("pathwayId", "==", pathwayId);
+    }
+    const manualSnapshot = await manualQuery.get();
+    if (!manualSnapshot.empty) {
+      docs = [...docs, ...manualSnapshot.docs];
+      // Re-sort by createdAt desc
+      docs.sort((a, b) => {
+        const aData = a.data();
+        const bData = b.data();
+        const aTime =
+          aData.createdAt?.toMillis?.() ||
+          (aData.createdAt instanceof Date ? aData.createdAt.getTime() : 0);
+        const bTime =
+          bData.createdAt?.toMillis?.() ||
+          (bData.createdAt instanceof Date ? bData.createdAt.getTime() : 0);
+        return bTime - aTime;
+      });
+    }
+  } else {
+    // Original collectionGroup query for non-userId cases (e.g. admin or fallback)
+    let collectionGroupRef = db
+      .collectionGroup(USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED)
+      .orderBy("createdAt", "desc");
+
+    if (clientApplicationStatus && clientApplicationStatus.length > 0) {
+      collectionGroupRef = collectionGroupRef.where(
+        "clientApplicationStatus",
+        "in",
+        clientApplicationStatus,
+      );
+    }
+
+    if (referenceNumber) {
+      collectionGroupRef = collectionGroupRef.where(
+        "referenceNumber",
+        "==",
+        referenceNumber,
+      );
+    }
+
+    if (bankProductId) {
+      collectionGroupRef = collectionGroupRef.where(
+        "bankProductId",
+        "==",
+        bankProductId,
+      );
+    }
+
+    if (pathwayId) {
+      collectionGroupRef = collectionGroupRef.where(
+        "pathwayId",
+        "==",
+        pathwayId,
+      );
+    }
+
+    const docSnapshot = await collectionGroupRef.get();
+    docs = docSnapshot.docs;
   }
 
-  if (clientApplicationStatus && clientApplicationStatus.length > 0) {
-    collectionGroupRef = collectionGroupRef.where(
-      "clientApplicationStatus",
-      "in",
-      clientApplicationStatus,
-    );
-  }
-
-  if (referenceNumber) {
-    collectionGroupRef = collectionGroupRef.where(
-      "referenceNumber",
-      "==",
-      referenceNumber,
-    );
-  }
-
-  if (bankProductId) {
-    collectionGroupRef = collectionGroupRef.where(
-      "bankProductId",
-      "==",
-      bankProductId,
-    );
-  }
-
-  if (pathwayId) {
-    collectionGroupRef = collectionGroupRef.where("pathwayId", "==", pathwayId);
-  }
-
-  const doc = await collectionGroupRef.get();
-
-  const bankProductIds = doc.docs.map((d) => {
+  const bankProductIds = docs.map((d) => {
     return {
       id: d.id,
       ...normalizeAllDates(d.data()),
@@ -947,14 +1033,17 @@ export const getFundMappingAnalysisDetails = async ({
         //     approvalOdds: p.approvalOdds,
         //   })),
         // );
-        // Calculate overall approval odds (average of all products)
+        // Calculate overall approval odds (average of all products) + 25 extra
         const overallApprovalOdds =
           productsWithOdds.length > 0
-            ? Math.round(
-                productsWithOdds.reduce(
-                  (sum, p: any) => sum + (p.approvalOdds || 0),
-                  0,
-                ) / productsWithOdds.length,
+            ? Math.min(
+                100,
+                Math.round(
+                  productsWithOdds.reduce(
+                    (sum, p: any) => sum + (p.approvalOdds || 0),
+                    0,
+                  ) / productsWithOdds.length,
+                ) + 25,
               )
             : undefined;
         // console.log(
@@ -1002,7 +1091,7 @@ export const getAutoServedClientFunds = async ({
 
   // 1. Read full queue
   // If pathwayId is provided, get the specific pathway's mapped funds. Otherwise, just use referenceNumber (which might actually be the pathway ID due to previous logic, so let's handle that).
-  const docId = pathwayId || referenceNumber;
+  // const docId = pathwayId || referenceNumber;
   const queue =
     (await getFundMappingAnalysis(referenceNumber, pathwayId)) ?? [];
 
@@ -1167,11 +1256,14 @@ export const getAutoServedClientFunds = async ({
 
         const overallApprovalOdds =
           productsWithOdds.length > 0
-            ? Math.round(
-                productsWithOdds.reduce(
-                  (sum, p: any) => sum + (p.approvalOdds || 0),
-                  0,
-                ) / productsWithOdds.length,
+            ? Math.min(
+                100,
+                Math.round(
+                  productsWithOdds.reduce(
+                    (sum, p: any) => sum + (p.approvalOdds || 0),
+                    0,
+                  ) / productsWithOdds.length,
+                ) + 25,
               )
             : undefined;
 

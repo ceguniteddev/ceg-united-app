@@ -47,7 +47,7 @@ export function DynamicOddsCard({
   // Adjust odds slightly based on method (specialist typically has better odds)
   const baseOdds = lender.approvalOdds || 75;
   const displayOdds =
-    method === "specialist" ? Math.min(baseOdds + 5, 95) : baseOdds;
+    method === "specialist" ? Math.min(baseOdds, 95) : baseOdds;
 
   // Chart configuration
   const chartData = {
@@ -95,7 +95,7 @@ export function DynamicOddsCard({
   const hasProducts = lender.products && lender.products.length > 0;
 
   const buttonText =
-    method === "specialist" ? "Conect me with Banker" : "Apply Now";
+    method === "specialist" ? "Connect me with Banker" : "Apply Now";
   const buttonSubtext =
     method === "specialist"
       ? `A ${lender.bankName} specialist will contact you within 1-2 business days.`
@@ -123,10 +123,15 @@ export function DynamicOddsCard({
 
       {/* Your Approval Odds */}
       <div>
-        <div className="flex items-center gap-2 mb-3">
-          <TrendingUp className="size-4 text-emerald-500" />
-          <span className="text-sm font-medium text-gray-900">
-            Your Approval Odds
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="size-4 text-emerald-500" />
+            <span className="text-sm font-medium text-gray-900">
+              Your Approval Odds
+            </span>
+          </div>
+          <span className="text-sm font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+            {displayOdds}%
           </span>
         </div>
 

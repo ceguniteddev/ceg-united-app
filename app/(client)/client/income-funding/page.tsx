@@ -100,6 +100,14 @@ export function IncomeFundingContent() {
     }
   }, [referenceOptions, selectedReference]);
 
+  // If returning from applying, automatically set status to show offers
+  useEffect(() => {
+    const fromApply = searchParams.get("fromApply") === "true";
+    if (fromApply) {
+      setStatus("offers-ready");
+    }
+  }, [searchParams, setStatus]);
+
   const selectedOffer =
     deal.offers.find((o) => o.id === deal.selectedOfferId) || deal.offers[0];
 
