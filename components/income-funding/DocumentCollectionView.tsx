@@ -1,11 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import {
-  ArrowRight,
-  ArrowLeft,
-  Lock,
-  ShieldCheck,
-  Loader2,
-} from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, Lock, ShieldCheck } from "lucide-react";
 import { DocumentUploadCard } from "./DocumentUploadCard";
 import type {
   DocumentRecord,
@@ -67,13 +61,9 @@ export function DocumentCollectionView({
     contentType?: string;
   } | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const lastSubmittedPathwayIdRef = useRef<string | null>(null);
 
   const displayDocuments = deal.documents
     .filter((doc) => {
-      // If credit-based pathway is selected (personal or business), we actually don't NEED them,
-      // but we can ask to upload IF they want to fine-tune.
-      // However, if the user explicitly requested we remove "business-specific" for personal:
       if (
         selectedPathwayId === "personal_credit_card" ||
         selectedPathwayId === "personal_loan"
@@ -91,18 +81,29 @@ export function DocumentCollectionView({
     .map((doc) => {
       let required = doc.required;
 
-      // For ALL credit-based products, documents are NOT required.
-      const isCreditProduct =
-        selectedPathwayId === "credit_card_stacking" ||
-        selectedPathwayId === "business_loc" ||
+      if (selectedPathwayId === "income_based") {
+        if (doc.key === "ein") required = true;
+        if (doc.key === "voidedCheck") required = true;
+        if (doc.key === "bankStatements") required = true;
+        if (doc.key === "id") required = true;
+        if (doc.key === "articles") required = false;
+      } else if (
+        selectedPathwayId === "business_credit_card_stacking" ||
+        selectedPathwayId === "business_lines_of_credit"
+      ) {
+        if (doc.key === "ein") required = true;
+        if (doc.key === "bankStatements") required = true;
+        if (doc.key === "id") required = true;
+        if (doc.key === "articles") required = false;
+        if (doc.key === "voidedCheck") required = false;
+      } else if (
         selectedPathwayId === "personal_loan" ||
-        selectedPathwayId === "personal_credit_card";
-
-      if (isCreditProduct) {
-        required = false;
+        selectedPathwayId === "personal_credit_card"
+      ) {
+        if (doc.key === "id") required = true;
+        if (doc.key === "bankStatements") required = true;
       }
 
-      // Adjust visibility based on the selected pathway
       if (
         selectedPathwayId === "personal_credit_card" ||
         selectedPathwayId === "personal_loan"
@@ -110,21 +111,10 @@ export function DocumentCollectionView({
         if (doc.key === "bankStatements") {
           return {
             ...doc,
-            required: false, // Override to optional
-            title: "Personal Bank Statements (Optional)",
-            description:
-              "Not required, but uploading recent statements (within 30 days) can help fine-tune your real approval amount.",
+            required,
+            title: "Personal Bank Statements",
+            description: "Recent personal bank statements.",
             documentTypeId: "PERSONAL_BANK_STATEMENTS",
-          };
-        }
-      } else if (isCreditProduct) {
-        if (doc.key === "bankStatements") {
-          return {
-            ...doc,
-            required: false, // Override to optional
-            title: "Business Bank Statements (Optional)",
-            description:
-              "Not required, but uploading recent statements (within 30 days) can help fine-tune your real approval amount.",
           };
         }
       }
@@ -132,39 +122,9 @@ export function DocumentCollectionView({
       if (doc.key === "ein" && realDeal?.employerIdentificationNumber) {
         return {
           ...doc,
-          required: false, // Skip validation
+          required: false,
           providedValue: realDeal.employerIdentificationNumber,
           description: "Your EIN was successfully retrieved from your profile.",
-        };
-      }
-
-      if (isCreditProduct) {
-        if (doc.key === "ein") {
-          return {
-            ...doc,
-            required: false,
-            description: "Not required for credit-based funding.",
-          };
-        }
-        if (doc.key === "voidedCheck") {
-          return {
-            ...doc,
-            required: false,
-            description: "Not required until time of funding.",
-          };
-        }
-        if (doc.key === "id") {
-          return {
-            ...doc,
-            required: false,
-            description: "Not required for initial credit review.",
-          };
-        }
-      }
-      if (doc.key === "articles") {
-        return {
-          ...doc,
-          required: false, // Make Articles of Organization strictly optional
         };
       }
 
@@ -244,7 +204,7 @@ export function DocumentCollectionView({
     }
   };
 
-  const handleSubmit = async (skipped: boolean = false) => {
+  const handleSubmit = async () => {
     if (
       selectedPathwayId !== "income_based" &&
       user?.uid &&
@@ -256,43 +216,18 @@ export function DocumentCollectionView({
           referenceNumber: realDeal.referenceNumber,
           selectedPathwayId,
         });
-        if (!skipped) {
-          toast.success("Application submitted successfully!");
-        }
+        toast.success("Application submitted successfully!");
       } catch (error) {
         console.error("Failed to map bank products:", error);
-        if (!skipped) {
-          toast.error(
-            "There was an issue processing your submission, but your documents were saved.",
-          );
-        }
+        toast.error(
+          "There was an issue processing your submission, but your documents were saved.",
+        );
       }
     } else {
-      if (!skipped) {
-        toast.success("Application submitted successfully!");
-      }
+      toast.success("Application submitted successfully!");
     }
     onSubmit();
   };
-
-  useEffect(() => {
-    if (
-      selectedPathwayId !== "income_based" &&
-      lastSubmittedPathwayIdRef.current !== selectedPathwayId
-    ) {
-      lastSubmittedPathwayIdRef.current = selectedPathwayId;
-      handleSubmit(true);
-    }
-  }, [selectedPathwayId]);
-
-  if (selectedPathwayId !== "income_based") {
-    return (
-      <div className="flex flex-col items-center justify-center h-full w-full p-10">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-4" />
-        <p className="text-sm text-gray-500 font-medium">Processing...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
