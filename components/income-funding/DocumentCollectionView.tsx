@@ -92,7 +92,7 @@ export function DocumentCollectionView({
         selectedPathwayId === "business_lines_of_credit"
       ) {
         if (doc.key === "ein") required = true;
-        if (doc.key === "bankStatements") required = true;
+        if (doc.key === "bankStatements") required = false;
         if (doc.key === "id") required = true;
         if (doc.key === "articles") required = false;
         if (doc.key === "voidedCheck") required = false;
@@ -101,7 +101,7 @@ export function DocumentCollectionView({
         selectedPathwayId === "personal_credit_card"
       ) {
         if (doc.key === "id") required = true;
-        if (doc.key === "bankStatements") required = true;
+        if (doc.key === "bankStatements") required = false;
       }
 
       if (
@@ -136,16 +136,23 @@ export function DocumentCollectionView({
 
   const requiredDocs = displayDocuments.filter((d) => d.required);
   const allRequiredDone = requiredDocs.every(
-    (d) => d.status === "uploaded" || d.status === "synced",
+    (d) =>
+      d.status === "uploaded" ||
+      d.status === "synced" ||
+      (d.key === "ein" && realDeal?.employerIdentificationNumber),
   );
 
-  // Count EIN as "done" if provided, even if not uploaded
-  const totalDone = displayDocuments.filter(
+  const totalRequiredDone = requiredDocs.filter(
     (d) =>
       d.status === "uploaded" ||
       d.status === "synced" ||
       (d.key === "ein" && realDeal?.employerIdentificationNumber),
   ).length;
+
+  const progressPercentage =
+    requiredDocs.length === 0
+      ? 100
+      : Math.round((totalRequiredDone / requiredDocs.length) * 100);
 
   const handleUpload = async (
     key: DocumentRecord["key"],
@@ -252,17 +259,18 @@ export function DocumentCollectionView({
         <div className="mt-5">
           <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
             <span>
-              {totalDone} of {displayDocuments.length} documents ready
+              {totalRequiredDone} of {requiredDocs.length} required documents
+              ready
             </span>
             <span className="font-semibold text-gray-700">
-              {Math.round((totalDone / displayDocuments.length) * 100)}%
+              {progressPercentage}%
             </span>
           </div>
           <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-brand-500 to-brand-600 transition-all duration-500"
               style={{
-                width: `${(totalDone / displayDocuments.length) * 100}%`,
+                width: `${progressPercentage}%`,
               }}
             />
           </div>
