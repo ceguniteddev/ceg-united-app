@@ -1,4 +1,12 @@
-import { Check, Clock, FileSearch, Mail, Send, XCircle } from "lucide-react";
+import {
+  Check,
+  Clock,
+  FileSearch,
+  Mail,
+  Send,
+  XCircle,
+  Upload,
+} from "lucide-react";
 // import { mockCoordinator } from "@/lib/income-funding-mock";
 import type { IncomeFundingDeal } from "@/types/income-funding-types";
 
@@ -6,6 +14,7 @@ interface SubmittedViewProps {
   deal: IncomeFundingDeal;
   realDeal?: any;
   selectedPathwayId?: string;
+  onRetry?: () => void;
 }
 
 const timelineSteps = [
@@ -39,6 +48,7 @@ export function SubmittedView({
   deal: _deal,
   realDeal,
   selectedPathwayId,
+  onRetry,
 }: SubmittedViewProps) {
   const appliedPathways = realDeal?.appliedPathways || [];
   const appliedPathway = appliedPathways.find(
@@ -101,6 +111,22 @@ export function SubmittedView({
                 <span className="font-semibold block mb-1">Reason:</span>
                 {noOutputReason}
               </div>
+
+              {onRetry && (
+                <div className="mt-6 border-t border-red-200 pt-5">
+                  <p className="text-sm text-gray-700 mb-3">
+                    Does this look like a missing document issue? You can upload
+                    additional documents and try again.
+                  </p>
+                  <button
+                    onClick={onRetry}
+                    className="inline-flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-xl shadow-sm transition"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Upload Missing Documents & Retry
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
