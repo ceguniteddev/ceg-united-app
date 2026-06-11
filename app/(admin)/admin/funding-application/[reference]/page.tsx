@@ -18,7 +18,7 @@ import {
 import { useGetApplyFundingByReferenceNumber } from "@/hooks/apply-funding";
 // import { updateApplicationStatus } from "@/service/apply-funding";
 import { useParams } from "next/navigation";
-import {  useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 
 import ClientCreditReport from "@/components/ClientCreditReport";
 import BusinessRecordsPage from "@/components/ClientBusinessReport";
@@ -31,7 +31,7 @@ import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { useUserQuery } from "@/hooks/user";
 import { useMembership } from "@/hooks/membership";
 import { UserWithId } from "@/schema/registration";
-import { useGetClientApplyFunding } from "@/hooks/apply-funding";
+// import { useGetClientApplyFunding } from "@/hooks/apply-funding";
 // import { ApplyFundingWithUser } from "@/schema/apply-funding";
 
 const AdminViewApplication = () => {
@@ -48,8 +48,8 @@ const AdminViewApplication = () => {
   const userId = formData?.userId ?? "";
 
   const { userData, isLoading: isUserLoading } = useUserQuery(userId);
-  const { appliedFunding, isLoading: isFundingLoading } =
-    useGetClientApplyFunding(userId);
+  // const { appliedFunding, isLoading: isFundingLoading } =
+  //   useGetClientApplyFunding(userId);
   const { data: userMembership } = useMembership(userId);
 
   const hasLearningMaterialsAccess = useMemo(() => {
@@ -79,7 +79,7 @@ const AdminViewApplication = () => {
       { value: "client-profile", label: "Client Profile" },
       { value: "documents", label: "Documents" },
       { value: "analysis", label: "Analysis" },
-      // { value: "fund-mapping", label: "Fund Mapping" },
+      { value: "fund-mapping", label: "Fund Mapping" },
       { value: "notes", label: "Notes" },
       { value: "credit-report", label: "Credit Report" },
       { value: "business", label: "Business" },
@@ -187,12 +187,13 @@ const AdminViewApplication = () => {
         <TabsContent value="personal-information" className="w-full">
           {userData && <ClientData user={userData as UserWithId} />}
         </TabsContent>
-        {/* <TabsContent value="fund-mapping" className="w-full">
+        <TabsContent value="fund-mapping" className="w-full">
           <AdminMappedFunds
             referenceNumber={formData?.referenceNumber ?? ""}
             userId={formData?.userId ?? ""}
+            appliedPathways={(formData as any)?.appliedPathways || []}
           />
-        </TabsContent> */}
+        </TabsContent>
         <TabsContent value="notes" className="w-full">
           <FundApplicationNotesV2
             applicationReferenceNumber={formData?.referenceNumber ?? ""}

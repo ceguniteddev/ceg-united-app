@@ -1522,6 +1522,7 @@ export const cancelMappedFund = async ({
 
 export const getApprovedMappedFunds = async (
   referenceNumber: string,
+  pathwayId?: string,
 ): Promise<GetBankFormDataResponse> => {
   try {
     // 1. Return an error object for invalid input instead of throwing
@@ -1544,9 +1545,15 @@ export const getApprovedMappedFunds = async (
     }
 
     const db = firestoreAdmin();
-    const collectionRef = db.collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
-    );
+    let collectionRef: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> =
+      db.collection(
+        `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
+      );
+
+    if (pathwayId) {
+      collectionRef = collectionRef.where("pathwayId", "==", pathwayId);
+    }
+
     const snapshot = await collectionRef.get();
 
     // Handle case where no approved funds exist
