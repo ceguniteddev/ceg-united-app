@@ -610,7 +610,7 @@ const ManualAddBankProduct = ({
 
       <DataTablePagination table={table} />
 
-      <div className="flex justify-end gap-2 pt-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3 pt-4">
         <Button
           onClick={handleAdd}
           disabled={isAdding || selectedIds.length === 0}

@@ -59,6 +59,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import IconMenu from "@/components/icon-menu";
 
 import {
@@ -82,10 +89,23 @@ type Props = {
   referenceNumber: string;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   userId: string;
+  appliedPathways?: { pathwayId: string; status: string }[];
 };
 
-const AdminMappedFunds = ({ referenceNumber, setOpen, userId }: Props) => {
-  return <BankProductsList referenceNumber={referenceNumber} userId={userId} />;
+const AdminMappedFunds = ({
+  referenceNumber,
+  setOpen,
+  userId,
+  appliedPathways,
+}: Props) => {
+  // console.log("AdminMappedFunds Props:", { referenceNumber, userId, appliedPathways });
+  return (
+    <BankProductsList
+      referenceNumber={referenceNumber}
+      userId={userId}
+      appliedPathways={appliedPathways}
+    />
+  );
 };
 
 export default AdminMappedFunds;
@@ -93,15 +113,35 @@ export default AdminMappedFunds;
 const BankProductsList = ({
   referenceNumber,
   userId,
+  appliedPathways,
 }: {
   referenceNumber: string;
   userId: string;
+  appliedPathways?: { pathwayId: string; status: string }[];
 }) => {
-  const { mappedFund = [], isLoading } =
-    useFundingApplicationsMappedFundsQuery(referenceNumber);
+  const [selectedPathwayId, setSelectedPathwayId] = useState<string>(
+    appliedPathways && appliedPathways.length > 0
+      ? appliedPathways[0].pathwayId
+      : "",
+  );
 
-  const { approvedMappedFunds = [] } =
-    useApproveMappedFundsQuery(referenceNumber);
+  React.useEffect(() => {
+    if (appliedPathways && appliedPathways.length > 0 && !selectedPathwayId) {
+      setSelectedPathwayId(appliedPathways[0].pathwayId);
+    }
+  }, [appliedPathways, selectedPathwayId]);
+
+  const activePathwayId = selectedPathwayId || undefined;
+
+  const { mappedFund = [], isLoading } = useFundingApplicationsMappedFundsQuery(
+    referenceNumber,
+    activePathwayId,
+  );
+
+  const { approvedMappedFunds = [] } = useApproveMappedFundsQuery(
+    referenceNumber,
+    activePathwayId,
+  );
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -127,10 +167,12 @@ const BankProductsList = ({
   }, [mappedFund]);
 
   const handleManualAdd = async (selectedIds: string[]) => {
+    const pathwayId = selectedPathwayId === "" ? undefined : selectedPathwayId;
     await addManualMappedFund({
       bankProductIds: selectedIds,
       referenceNumber,
       userId,
+      selectedPathwayId: pathwayId,
     });
     setIsAddDialogOpen(false);
   };
@@ -336,21 +378,46 @@ const BankProductsList = ({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <p className="text-sm sm:text-base">No mapped funds found.</p>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button
+            {appliedPathways && appliedPathways.length > 0 && (
+              <div className="w-full sm:w-auto min-w-[200px]">
+                <Select
+                  value={selectedPathwayId}
+                  onValueChange={setSelectedPathwayId}
+                >
+                  <SelectTrigger className="h-10 sm:h-9">
+                    <SelectValue placeholder="Select Pathway" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {appliedPathways.map((pathway) => (
+                      <SelectItem
+                        key={pathway.pathwayId}
+                        value={pathway.pathwayId}
+                      >
+                        {pathway.pathwayId
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {/* <Button
               variant={"outline"}
               className="bg-green-200 hover:bg-green-300 w-full sm:w-auto h-10 sm:h-9"
               onClick={() => setIsRefreshAlertOpen(true)}
-              disabled={isRefreshing}
+              disabled={isRefreshing || selectedPathwayId === ""}
             >
               <RefreshCwIcon
                 className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
               />
               {isRefreshing ? "Refreshing..." : "Refresh Bank Products"}
-            </Button>
+            </Button> */}
             <Button
               variant={"outline"}
               className="bg-blue-200 hover:bg-blue-300 w-full sm:w-auto h-10 sm:h-9"
               onClick={() => setIsAddDialogOpen(true)}
+              disabled={selectedPathwayId === ""}
             >
               <PlusCircleIcon className="h-4 w-4" />
               Add Bank Product
@@ -431,21 +498,46 @@ const BankProductsList = ({
           Mapped Bank Products
         </h3>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button
+          {appliedPathways && appliedPathways.length > 0 && (
+            <div className="w-full sm:w-auto min-w-[200px]">
+              <Select
+                value={selectedPathwayId}
+                onValueChange={setSelectedPathwayId}
+              >
+                <SelectTrigger className="h-10 sm:h-9">
+                  <SelectValue placeholder="Select Pathway" />
+                </SelectTrigger>
+                <SelectContent>
+                  {appliedPathways.map((pathway) => (
+                    <SelectItem
+                      key={pathway.pathwayId}
+                      value={pathway.pathwayId}
+                    >
+                      {pathway.pathwayId
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {/* <Button
             variant={"outline"}
             className="bg-green-200 hover:bg-green-300 w-full sm:w-auto h-10 sm:h-9"
             onClick={() => setIsRefreshAlertOpen(true)}
-            disabled={isRefreshing}
+            disabled={isRefreshing || selectedPathwayId === ""}
           >
             <RefreshCwIcon
               className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
             />
             {isRefreshing ? "Refreshing..." : "Refresh Bank Products"}
-          </Button>
+          </Button> */}
           <Button
             variant={"outline"}
             className="bg-blue-200 hover:bg-blue-300 w-full sm:w-auto h-10 sm:h-9"
             onClick={() => setIsAddDialogOpen(true)}
+            disabled={selectedPathwayId === ""}
           >
             <PlusCircleIcon className="h-4 w-4" />
             Add Bank Product
