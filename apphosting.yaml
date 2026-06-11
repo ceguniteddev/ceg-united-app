@@ -110,11 +110,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  - variable: NEXT_PUBLIC_FANBASIS_URL
-    value: https://www.fanbasis.com/agency-checkout/Cegunited/lOOnM
-    availability:
-      - BUILD
-      - RUNTIME
+  # - variable: NEXT_PUBLIC_FANBASIS_URL
+  #   value: https://www.fanbasis.com/agency-checkout/Cegunited/lOOnM
+  #   availability:
+  #     - BUILD
+  #     - RUNTIME
   - variable: MUX_TOKEN_ID
     value: 0d9782a4-b4cb-42c3-844e-cb0822886a82
     availability:

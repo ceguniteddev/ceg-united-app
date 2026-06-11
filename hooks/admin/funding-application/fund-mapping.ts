@@ -22,6 +22,7 @@ import { toast } from "sonner";
 
 export const useFundingApplicationsMappedFundsQuery = (
   referenceNumber: string,
+  pathwayId?: string,
 ) => {
   const { user } = useAuth();
 
@@ -30,11 +31,15 @@ export const useFundingApplicationsMappedFundsQuery = (
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["GET_FUNDING_APPLICATION_MAPPED_FUNDS", referenceNumber],
+    queryKey: [
+      "GET_FUNDING_APPLICATION_MAPPED_FUNDS",
+      referenceNumber,
+      pathwayId,
+    ],
     enabled: !!user && !!referenceNumber,
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
-      const data = await getFundMappingAnalysis(referenceNumber);
+      const data = await getFundMappingAnalysis(referenceNumber, pathwayId);
       return data;
     },
     staleTime: 0,
@@ -68,7 +73,10 @@ export const useApproveMappedFundsQueryOld = (referenceNumber: string) => {
   return { approvedMappedFunds, isLoading, error };
 };
 
-export const useApproveMappedFundsQuery = (referenceNumber: string) => {
+export const useApproveMappedFundsQuery = (
+  referenceNumber: string,
+  pathwayId?: string,
+) => {
   const { user } = useAuth();
 
   const {
@@ -78,7 +86,7 @@ export const useApproveMappedFundsQuery = (referenceNumber: string) => {
     error,
   } = useQuery<ApprovedBankFormData[], Error>({
     // 1. Add explicit types for data and error
-    queryKey: ["GET_APPROVED_MAPPED_FUNDS", referenceNumber],
+    queryKey: ["GET_APPROVED_MAPPED_FUNDS", referenceNumber, pathwayId],
     enabled: !!user && !!referenceNumber,
     queryFn: async () => {
       // User authentication check remains on the client for early exit
@@ -87,7 +95,7 @@ export const useApproveMappedFundsQuery = (referenceNumber: string) => {
       }
 
       // 2. Await the structured response from your server function
-      const response = await getApprovedMappedFunds(referenceNumber);
+      const response = await getApprovedMappedFunds(referenceNumber, pathwayId);
 
       // Check if the call to get the funds failed
       if (!response.success && response.message) {
@@ -118,10 +126,12 @@ export const useFundingApplicationsMappedFundsMutation = () => {
       bankProductIds,
       referenceNumber,
       userId,
+      selectedPathwayId,
     }: {
       bankProductIds: string[];
       referenceNumber: string;
       userId: string;
+      selectedPathwayId?: string;
     }) => {
       if (!user) throw new Error("User not authenticated");
 
@@ -135,6 +145,7 @@ export const useFundingApplicationsMappedFundsMutation = () => {
           referenceNumber,
           userId,
           append: true, // Important: This tells the service to append instead of replace
+          selectedPathwayId,
         }),
       });
 
