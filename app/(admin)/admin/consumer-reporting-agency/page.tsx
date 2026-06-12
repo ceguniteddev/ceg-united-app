@@ -3,8 +3,21 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Edit2, Trash2, Loader2, Save, Check } from "lucide-react";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Loader2,
+  Save,
+  Check,
+  ShieldCheck,
+  ShieldAlert,
+} from "lucide-react";
 import { toast } from "sonner";
+import {
+  verifyAddressViaLob,
+  type VerifyAddressResponse,
+} from "@/lib/credit-repair/lobMailing";
 
 import {
   useGetConsumerReportingAgencies,
@@ -65,6 +78,8 @@ export default function ConsumerReportingAgencyPage() {
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
+  const [isVerifyingAddress, setIsVerifyingAddress] = useState(false);
+
   const form = useForm<AgencySchemaForm>({
     resolver: zodResolver(agencySchema),
     defaultValues: {
@@ -81,6 +96,7 @@ export default function ConsumerReportingAgencyPage() {
       },
       isActive: true,
       notes: "",
+      addressVerification: undefined,
     },
   });
 
@@ -93,6 +109,7 @@ export default function ConsumerReportingAgencyPage() {
       address: { line1: "", line2: "", city: "", state: "", zip: "" },
       isActive: true,
       notes: "",
+      addressVerification: undefined,
     });
     setEditingAgency(null);
     setIsFormModalOpen(true);
@@ -112,7 +129,42 @@ export default function ConsumerReportingAgencyPage() {
     setIsFormModalOpen(true);
   };
 
-  const handleFormSubmit = (data: AgencySchemaForm) => {
+  const handleVerifyAddressClick = async () => {
+    const address = form.getValues("address");
+    if (!address.line1 || !address.city || !address.state || !address.zip) {
+      toast.error("Please fill in Line 1, City, State, and Zip code first.");
+      return;
+    }
+
+    setIsVerifyingAddress(true);
+    try {
+      const res = await verifyAddressViaLob({
+        primary_line: address.line1,
+        secondary_line: address.line2,
+        city: address.city,
+        state: address.state,
+        zip_code: address.zip,
+      });
+
+      form.setValue("addressVerification", {
+        deliverability: res.deliverability,
+        verifiedAt: new Date().toISOString(),
+      });
+
+      if (res.deliverability === "undeliverable") {
+        toast.error("Lob API checked: Address is undeliverable.");
+      } else {
+        toast.success("Address verified successfully with USPS via Lob!");
+      }
+    } catch (err) {
+      console.error("Address verification failed:", err);
+      toast.error("Address verification failed. Please try again.");
+    } finally {
+      setIsVerifyingAddress(false);
+    }
+  };
+
+  const handleFormSubmit = async (data: AgencySchemaForm) => {
     setPendingSaveData(data);
     setIsConfirmSaveOpen(true);
   };
@@ -431,7 +483,49 @@ export default function ConsumerReportingAgencyPage() {
               />
 
               <div className="space-y-3 pt-2">
-                <h4 className="text-sm font-medium">Mailing Address</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium">Mailing Address</h4>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-2 text-xs"
+                    onClick={handleVerifyAddressClick}
+                    disabled={isVerifyingAddress}
+                  >
+                    {isVerifyingAddress ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                    )}
+                    {isVerifyingAddress ? "Verifying..." : "Verify Address"}
+                  </Button>
+                </div>
+
+                {form.watch("addressVerification") && (
+                  <div
+                    className={`text-xs px-2 py-1.5 rounded-md border flex items-center gap-1.5 ${
+                      form.watch("addressVerification")?.deliverability ===
+                      "undeliverable"
+                        ? "bg-red-50 text-red-700 border-red-100"
+                        : "bg-emerald-50 text-emerald-700 border-emerald-100"
+                    }`}
+                  >
+                    {form.watch("addressVerification")?.deliverability ===
+                    "undeliverable" ? (
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                    ) : (
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                    )}
+                    Deliverability:{" "}
+                    <span className="font-semibold capitalize">
+                      {form
+                        .watch("addressVerification")
+                        ?.deliverability.replace(/_/g, " ")}
+                    </span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-3">
                   <FormInput
                     control={form.control}
@@ -549,6 +643,34 @@ export default function ConsumerReportingAgencyPage() {
                   {pendingSaveData.isActive ? "Active" : "Inactive"}
                 </span>
               </div>
+              {pendingSaveData.addressVerification && (
+                <div className="grid grid-cols-3 items-center">
+                  <span className="font-semibold text-muted-foreground">
+                    Address Verification:
+                  </span>
+                  <span
+                    className={`col-span-2 flex items-center gap-1.5 text-sm ${
+                      pendingSaveData.addressVerification.deliverability ===
+                      "undeliverable"
+                        ? "text-red-600"
+                        : "text-emerald-600 font-medium"
+                    }`}
+                  >
+                    {pendingSaveData.addressVerification.deliverability ===
+                    "undeliverable" ? (
+                      <ShieldAlert className="w-4 h-4" />
+                    ) : (
+                      <ShieldCheck className="w-4 h-4" />
+                    )}
+                    <span className="capitalize">
+                      {pendingSaveData.addressVerification.deliverability.replace(
+                        /_/g,
+                        " ",
+                      )}
+                    </span>
+                  </span>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>

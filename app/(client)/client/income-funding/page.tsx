@@ -25,6 +25,9 @@ import {
 import { useSearchParams } from "next/navigation";
 import { ComputationActionRequired } from "@/components/income-funding/ComputationActionRequired";
 import { Suspense } from "react";
+import { requestMapBankProductsN8nNewRegistration } from "@/service/crs";
+import { toast } from "sonner";
+import { useAuth } from "@/provider/AuthContext";
 
 export default function IncomeFundingPage() {
   return (
@@ -48,6 +51,8 @@ export function IncomeFundingContent({
 }) {
   const searchParams = useSearchParams();
   const initialPathwayId = searchParams.get("pathwayId") || "income_based";
+  const { user } = useAuth();
+  const activeUserId = userIdOverride || user?.uid;
 
   const [selectedReference, setSelectedReference] = useState<string>("");
   const [showPathways, setShowPathways] = useState(
@@ -55,6 +60,7 @@ export function IncomeFundingContent({
   );
   const [selectedPathwayId, setSelectedPathwayId] =
     useState<string>(initialPathwayId);
+  const [isProcessingSubmit, setIsProcessingSubmit] = useState(false);
 
   const {
     deal,
@@ -150,7 +156,8 @@ export function IncomeFundingContent({
           return (
             <FundingPathways
               realDeal={realDeal}
-              onContinue={(pathway) => {
+              isSubmitting={isSubmitting || isProcessingSubmit}
+              onContinue={async (pathway) => {
                 setSelectedPathwayId(pathway.id);
                 const appliedPathways =
                   (realDeal as any)?.appliedPathways || [];
@@ -177,10 +184,34 @@ export function IncomeFundingContent({
                   }
 
                   setStatus(nextStatus as any);
+                  setShowPathways(false);
                 } else {
-                  setStatus("collecting-documents");
+                  if (pathway.id !== "income_based") {
+                    if (activeUserId && realDeal?.referenceNumber) {
+                      try {
+                        setIsProcessingSubmit(true);
+                        await requestMapBankProductsN8nNewRegistration({
+                          userId: activeUserId,
+                          referenceNumber: realDeal.referenceNumber,
+                          selectedPathwayId: pathway.id,
+                        });
+                        toast.success("Application submitted successfully!");
+                        await submitForUnderwriting(pathway.id);
+                        setShowPathways(false);
+                      } catch (error) {
+                        console.error("Failed to submit application:", error);
+                        toast.error(
+                          "There was an issue processing your submission.",
+                        );
+                      } finally {
+                        setIsProcessingSubmit(false);
+                      }
+                    }
+                  } else {
+                    setStatus("collecting-documents");
+                    setShowPathways(false);
+                  }
                 }
-                setShowPathways(false);
               }}
               selectedPathwayId={selectedPathwayId}
             />

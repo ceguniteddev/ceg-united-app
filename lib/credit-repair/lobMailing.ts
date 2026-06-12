@@ -45,7 +45,7 @@ export const MAILING_METHODS: Record<
     label: "First-Class Mail",
     price: 1.95,
     deliveryWindow: "3-5 business days",
-    description: "Standard USPS delivery. No tracking, no proof.",
+    description: "Regular USPS First-Class delivery. No tracking, no proof.",
     lobMailType: "usps_first_class",
     lobExtraService: null,
   },
@@ -162,6 +162,9 @@ export async function mailLetterViaLob(
 ): Promise<LobMailResponse> {
   const fn = httpsCallable(getFunctions(app), "mailLetter");
   // Map the frontend request shape into what the Cloud Function expects
+
+  const methodConfig = MAILING_METHODS[request.method];
+
   const payload = {
     disputeId: request.disputeId,
     itemIds: request.itemIds,
@@ -169,7 +172,9 @@ export async function mailLetterViaLob(
     letterPdfBase64: getPdfBase64(request.letter),
     attachmentPdfsBase64: [], // Demo: mock documents don't have base64 readily available here
     attachmentDocIds: request.attachmentDocIds || [],
-    mailingMethod: request.method,
+    mailingMethod: request.method, // Keep for Firestore tracking
+    mailType: methodConfig.lobMailType,
+    extraService: methodConfig.lobExtraService,
     toAddress: request.toAddress,
     toName: request.toName,
     fromAddress: request.fromAddress,
@@ -209,4 +214,32 @@ export async function mailManyLettersViaLob(
 export function uspsTrackingUrl(trackingNumber: string): string {
   const clean = trackingNumber.replace(/\s+/g, "");
   return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${clean}`;
+}
+
+export interface VerifyAddressRequest {
+  address?: string; // single line
+  primary_line?: string;
+  secondary_line?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+}
+
+export interface VerifyAddressResponse {
+  deliverability:
+    | "deliverable"
+    | "deliverable_unnecessary_unit"
+    | "deliverable_incorrect_unit"
+    | "deliverable_missing_unit"
+    | "undeliverable";
+  components?: any;
+  id: string;
+}
+
+export async function verifyAddressViaLob(
+  request: VerifyAddressRequest,
+): Promise<VerifyAddressResponse> {
+  const fn = httpsCallable(getFunctions(app), "verifyAddress");
+  const result = await fn(request);
+  return result.data as VerifyAddressResponse;
 }
