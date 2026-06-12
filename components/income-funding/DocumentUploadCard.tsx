@@ -54,7 +54,6 @@ export function DocumentUploadCard({
 }: DocumentUploadCardProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [einInput, setEinInput] = useState("");
   const Icon = iconMap[doc.key] || FileText;
 
   const form = useForm({ defaultValues: { ein: "" } });

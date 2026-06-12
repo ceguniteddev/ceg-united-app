@@ -41,6 +41,7 @@ interface DocumentCollectionViewProps {
   onSubmit: () => void;
   isSubmitting?: boolean;
   selectedPathwayId?: string;
+  userIdOverride?: string;
 }
 
 export function DocumentCollectionView({
@@ -50,8 +51,10 @@ export function DocumentCollectionView({
   onSubmit,
   isSubmitting = false,
   selectedPathwayId = "income_based",
+  userIdOverride,
 }: DocumentCollectionViewProps) {
   const { user } = useAuth();
+  const activeUserId = userIdOverride || user?.uid;
   const queryClient = useQueryClient();
   const { updateApplyFunding } = useApplyFunding();
   const [uploadingState, setUploadingState] = useState<Record<string, boolean>>(
@@ -202,7 +205,7 @@ export function DocumentCollectionView({
       fileName: string,
       fileSize: string,
     ) => {
-      if (!user) return;
+      if (!activeUserId) return;
 
       setUploadingState((prev) => ({ ...prev, [key]: true }));
 
@@ -221,14 +224,14 @@ export function DocumentCollectionView({
       else if (key === "paystubs") documentTypeId = "PAYSTUBS";
 
       const formData = new FormData();
-      formData.append("userId", user.uid);
+      formData.append("userId", activeUserId);
       if (documentTypeId !== "OTHER") {
         formData.append("documentType", documentTypeId);
       }
       formData.append("files", file);
 
       try {
-        const response = await fetch(`/api/user/${user.uid}/documents`, {
+        const response = await fetch(`/api/user/${activeUserId}/documents`, {
           method: "POST",
           body: formData,
         });
@@ -240,7 +243,7 @@ export function DocumentCollectionView({
 
         // Invalidate queries to refetch the document list in other parts of the app
         queryClient.invalidateQueries({
-          queryKey: [GET_USER_DOCUMENTS, user.uid],
+          queryKey: [GET_USER_DOCUMENTS, activeUserId],
         });
 
         // Update local state to show it's uploaded
@@ -253,7 +256,7 @@ export function DocumentCollectionView({
         setUploadingState((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [user, selectedPathwayId, queryClient, onUpload],
+    [activeUserId, selectedPathwayId, queryClient, onUpload],
   );
 
   const handleUpdateEin = useCallback(
@@ -273,7 +276,7 @@ export function DocumentCollectionView({
         });
         // Optionally invalidate queries if not already handled by hook
         queryClient.invalidateQueries({
-          queryKey: ["GET_USER_APPLY_FUNDING", user?.uid],
+          queryKey: ["GET_USER_APPLY_FUNDING", activeUserId],
         });
       } catch (error: any) {
         console.error("Failed to update EIN", error);
@@ -282,18 +285,18 @@ export function DocumentCollectionView({
         setIsUpdatingEin(false);
       }
     },
-    [realDeal, updateApplyFunding, queryClient, user?.uid],
+    [realDeal, updateApplyFunding, queryClient, activeUserId],
   );
 
   const handleSubmit = useCallback(async () => {
     if (
       selectedPathwayId !== "income_based" &&
-      user?.uid &&
+      activeUserId &&
       realDeal?.referenceNumber
     ) {
       try {
         await requestMapBankProductsN8nNewRegistration({
-          userId: user.uid,
+          userId: activeUserId,
           referenceNumber: realDeal.referenceNumber,
           selectedPathwayId,
         });
@@ -308,7 +311,7 @@ export function DocumentCollectionView({
       toast.success("Application submitted successfully!");
     }
     onSubmit();
-  }, [selectedPathwayId, user?.uid, realDeal?.referenceNumber, onSubmit]);
+  }, [selectedPathwayId, activeUserId, realDeal?.referenceNumber, onSubmit]);
 
   return (
     <div className="space-y-6">

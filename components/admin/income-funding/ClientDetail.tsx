@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Send, Calculator, Loader2, X, Check } from "lucide-react";
+import { Send, Calculator, Loader2, X, Check } from "lucide-react";
 import { GradeBadge } from "@/components/income-funding/GradeBadge";
 import { DealOfferForm } from "./DealOfferForm";
 import { ExistingOffersList } from "./ExistingOffersList";
@@ -166,7 +166,12 @@ export function ClientDetail({
                   <span className="font-semibold text-gray-700">
                     Pre-approved:
                   </span>{" "}
-                  {formatUSD(typeof client.preApprovedAmount === 'object' && client.preApprovedAmount !== null ? (client.preApprovedAmount as any).amount : client.preApprovedAmount)}
+                  {formatUSD(
+                    typeof client.preApprovedAmount === "object" &&
+                      client.preApprovedAmount !== null
+                      ? (client.preApprovedAmount as any).amount
+                      : client.preApprovedAmount,
+                  )}
                 </span>
                 <span>
                   <span className="font-semibold text-gray-700">
@@ -204,10 +209,10 @@ export function ClientDetail({
                     Calculate Income Pre-Approval
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to run the automated AI income
+                    {`Are you sure you want to run the automated AI income
                     computation? This will analyze the submitted documents and
                     automatically generate pre-approval offers based on the
-                    client's risk profile.
+                    client's risk profile.`}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -283,11 +288,11 @@ export function ClientDetail({
                 {client.documents.map((d) => {
                   let isRequired = d.required;
                   let providedValue = undefined;
-                  
+
                   if (d.key === "articles") {
                     isRequired = false;
                   }
-                  
+
                   if (d.key === "ein" && client.ein) {
                     isRequired = false;
                     providedValue = client.ein;

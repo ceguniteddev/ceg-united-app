@@ -224,9 +224,15 @@ export const ClientDashboard = ({
           {firstFundingApp && estimatedApprovalAmount > 0 && (
             <PreApprovalHeroCard
               estimatedApprovalAmount={estimatedApprovalAmount}
-              onContinue={() =>
-                router.push("/client/income-funding?showPathways=true")
-              }
+              onContinue={() => {
+                if (adminView && userData?.id) {
+                  router.push(
+                    `/admin/clients/${userData.id}/income-funding?showPathways=true`,
+                  );
+                } else {
+                  router.push("/client/income-funding?showPathways=true");
+                }
+              }}
             />
           )}
 
