@@ -1139,6 +1139,8 @@ export const getFundMappingAnalysisDetails = async ({
   return result;
 };
 
+import { getUserMembership } from "./membership";
+
 export const getAutoServedClientFunds = async ({
   userId,
   referenceNumber,
@@ -1153,20 +1155,102 @@ export const getAutoServedClientFunds = async ({
     "Sent to Lender",
     "Approved",
   ];
-  const SLOT_TARGET = 4;
-  const MONTHLY_CAP = 8;
+
+  let membershipTier = "tier_starter"; // default
+
+  try {
+    const membership = await getUserMembership(userId);
+    if (membership && membership.status === "active") {
+      membershipTier = membership.tier;
+    }
+  } catch (error) {
+    console.error("Error fetching user membership for auto serve cap:", error);
+  }
 
   // 1. Read full queue
-  // If pathwayId is provided, get the specific pathway's mapped funds. Otherwise, just use referenceNumber (which might actually be the pathway ID due to previous logic, so let's handle that).
-  // const docId = pathwayId || referenceNumber;
   const queue =
     (await getFundMappingAnalysis(referenceNumber, pathwayId)) ?? [];
 
-  // 2. Read existing tracking records directly from Firestore
+  // 2. Read ALL tracking records directly from Firestore (to check global vs pathway caps)
   const db = firestoreAdmin();
   const baseApprovedCollectionRef = db.collection(
     `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
   );
+
+  const allApprovedSnapshot = await baseApprovedCollectionRef.get();
+  const allExistingDocs = allApprovedSnapshot.docs.map((d: any) => ({
+    id: d.id,
+    ...normalizeAllDates(d.data()),
+  })) as (ApprovedBankFormData & {
+    autoServed?: boolean;
+    createdAt?: any;
+    pathwayId?: string;
+  })[];
+
+  // Filter docs for current pathway
+  const existingDocs = pathwayId
+    ? allExistingDocs.filter((d) => d.pathwayId === pathwayId)
+    : allExistingDocs;
+
+  // Count "Not Applied" records
+  const notAppliedCount = existingDocs.filter(
+    (r) => r.clientApplicationStatus === "Not Applied",
+  ).length;
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const getMonthlyActiveCount = (docs: any[]) =>
+    docs.filter((r) => {
+      if (
+        !MONTHLY_CAP_STATUSES.includes(
+          r.clientApplicationStatus as ClientApplicationStatus,
+        )
+      ) {
+        return false;
+      }
+      const createdAt = r.createdAt;
+      if (!createdAt) return false;
+      const createdDate =
+        createdAt instanceof Date ? createdAt : new Date(createdAt);
+      return createdDate >= startOfMonth;
+    }).length;
+
+  const monthlyActiveCount = getMonthlyActiveCount(existingDocs);
+  const totalMonthlyActiveCount = getMonthlyActiveCount(allExistingDocs);
+  const totalNotAppliedCount = allExistingDocs.filter(
+    (r) => r.clientApplicationStatus === "Not Applied",
+  ).length;
+
+  let SLOT_TARGET = 4;
+  let MONTHLY_CAP = 8;
+  let globalCap = false;
+
+  switch (membershipTier) {
+    case "tier_starter":
+      SLOT_TARGET = 6;
+      MONTHLY_CAP = 6;
+      globalCap = true; // 6 lenders TOTAL
+      break;
+    case "tier_pro":
+      SLOT_TARGET = 6;
+      MONTHLY_CAP = 6;
+      globalCap = false; // 6 lenders PER CATEGORY
+      break;
+    case "tier_executive":
+      SLOT_TARGET = 12;
+      MONTHLY_CAP = 12;
+      globalCap = false; // 12 lenders PER CATEGORY
+      break;
+  }
+
+  const effectiveNotAppliedCount = globalCap
+    ? totalNotAppliedCount
+    : notAppliedCount;
+  const effectiveMonthlyActiveCount = globalCap
+    ? totalMonthlyActiveCount
+    : monthlyActiveCount;
+
   let approvedQuery: any = baseApprovedCollectionRef;
   if (pathwayId) {
     approvedQuery = baseApprovedCollectionRef.where(
@@ -1175,40 +1259,15 @@ export const getAutoServedClientFunds = async ({
       pathwayId,
     );
   }
-  const approvedSnapshot = await approvedQuery.get();
-  const existingDocs = approvedSnapshot.docs.map((d: any) => ({
-    id: d.id,
-    ...normalizeAllDates(d.data()),
-  })) as (ApprovedBankFormData & { autoServed?: boolean; createdAt?: any })[];
 
-  // 3. Count "Not Applied" records — these are the available slots for client action
-  const notAppliedCount = existingDocs.filter(
-    (r) => r.clientApplicationStatus === "Not Applied",
-  ).length;
-
-  // 5. Monthly cap check — count records created this month with cap statuses
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthlyActiveCount = existingDocs.filter((r) => {
-    if (
-      !MONTHLY_CAP_STATUSES.includes(
-        r.clientApplicationStatus as ClientApplicationStatus,
-      )
-    ) {
-      return false;
-    }
-    const createdAt = r.createdAt;
-    if (!createdAt) return false;
-    const createdDate =
-      createdAt instanceof Date ? createdAt : new Date(createdAt);
-    return createdDate >= startOfMonth;
-  }).length;
-
-  // 6. Fill slots to SLOT_TARGET — maintain 4 "Not Applied" banks until queue is exhausted
-  if (notAppliedCount < SLOT_TARGET && monthlyActiveCount < MONTHLY_CAP) {
+  // 6. Fill slots to SLOT_TARGET
+  if (
+    effectiveNotAppliedCount < SLOT_TARGET &&
+    effectiveMonthlyActiveCount < MONTHLY_CAP
+  ) {
     const slotsToFill = Math.min(
-      SLOT_TARGET - notAppliedCount,
-      MONTHLY_CAP - monthlyActiveCount,
+      SLOT_TARGET - effectiveNotAppliedCount,
+      MONTHLY_CAP - effectiveMonthlyActiveCount,
     );
 
     // Find untracked banks: queue banks whose id doesn't appear in any existing record
@@ -1240,7 +1299,7 @@ export const getAutoServedClientFunds = async ({
     }
   }
 
-  // 7. Build return data — re-read all fund-mapping-approved records
+  // 7. Build return data — re-read all fund-mapping-approved records for current pathway
   const refreshedSnapshot = await approvedQuery.get();
   const refreshedDocs = refreshedSnapshot.docs.map((d: any) => ({
     id: d.id,
