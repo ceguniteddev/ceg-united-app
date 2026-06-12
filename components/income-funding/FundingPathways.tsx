@@ -38,6 +38,8 @@ interface FundingPathwaysProps {
   onSelect?: (pathway: FundingPathway) => void;
   /** The currently selected pathway ID from parent state, if any */
   selectedPathwayId?: string;
+  /** Indicates if the form is currently submitting */
+  isSubmitting?: boolean;
 }
 
 // -------------------------- Icons (inline SVG, currentColor) --------------------------
@@ -196,6 +198,17 @@ const formatMoney = (n: number) =>
 
 const formatMoneyFull = (n: number) => `$${n.toLocaleString()}`;
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 // -------------------------- Component --------------------------
 
 const FundingPathways: React.FC<FundingPathwaysProps> = ({
@@ -205,9 +218,14 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
   onContinue,
   onSelect,
   selectedPathwayId,
+  isSubmitting = false,
 }) => {
   const [selectedId, setSelectedId] = useState<PathwayId | null>(
     selectedPathwayId as PathwayId,
+  );
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [pendingPathway, setPendingPathway] = useState<FundingPathway | null>(
+    null,
   );
 
   const computationFromBackend = realDeal?.businessIncomeComputation || {};
@@ -284,7 +302,17 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
 
   const handleContinue = () => {
     if (!dynamicSelected) return;
-    onContinue?.(dynamicSelected);
+
+    const ap = realDeal?.appliedPathways?.find(
+      (ap: any) => ap.pathwayId === dynamicSelected.id,
+    );
+
+    if (dynamicSelected.id !== "income_based" && !ap) {
+      setPendingPathway(dynamicSelected);
+      setIsAlertOpen(true);
+    } else {
+      onContinue?.(dynamicSelected);
+    }
   };
 
   const renderBadge = (p: FundingPathway) => {
@@ -534,17 +562,17 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
           <button
             type="button"
-            disabled={!dynamicSelected}
+            disabled={!dynamicSelected || isSubmitting}
             onClick={handleContinue}
             className={[
               "cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all",
-              dynamicSelected
+              dynamicSelected && !isSubmitting
                 ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
                 : "cursor-not-allowed bg-slate-300",
             ].join(" ")}
           >
-            Continue to Offers
-            <IconArrowRight className="h-4 w-4" />
+            {isSubmitting ? "Submitting..." : "Continue to Offers"}
+            {!isSubmitting && <IconArrowRight className="h-4 w-4" />}
           </button>
         </div>
 
@@ -554,6 +582,38 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
           offers
         </p>
       </div>
+
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit Application?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to submit your application for underwriting?
+              Since this pathway does not require additional documents, your
+              application will be submitted directly.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                setIsAlertOpen(false);
+                if (pendingPathway) {
+                  onContinue?.(pendingPathway);
+                }
+              }}
+              disabled={isSubmitting}
+              className="bg-brand-600 hover:bg-brand-700 inline-flex items-center gap-2"
+            >
+              Confirm Submission
+              <IconArrowRight className="h-4 w-4" />
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
