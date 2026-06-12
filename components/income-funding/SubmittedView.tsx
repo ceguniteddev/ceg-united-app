@@ -6,7 +6,10 @@ import {
   Send,
   XCircle,
   Upload,
+  Loader2,
 } from "lucide-react";
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 // import { mockCoordinator } from "@/lib/income-funding-mock";
 import type { IncomeFundingDeal } from "@/types/income-funding-types";
 
@@ -50,6 +53,17 @@ export function SubmittedView({
   selectedPathwayId,
   onRetry,
 }: SubmittedViewProps) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ["GET_USER_APPLY_FUNDING"] });
+      queryClient.invalidateQueries({ queryKey: ["GET_FUNDING_APPLICATIONS"] });
+    }, 60000); // 1 minute
+
+    return () => clearInterval(interval);
+  }, [queryClient]);
+
   const appliedPathways = realDeal?.appliedPathways || [];
   const appliedPathway = appliedPathways.find(
     (p: any) => p.pathwayId === selectedPathwayId,
@@ -211,7 +225,7 @@ export function SubmittedView({
                   </div>
                   {isActive && (
                     <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-amber-600">
-                      <Clock className="w-3 h-3" />
+                      <Loader2 className="w-3 h-3 animate-spin" />
                       In progress
                     </div>
                   )}
