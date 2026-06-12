@@ -41,7 +41,11 @@ export default function IncomeFundingPage() {
   );
 }
 
-export function IncomeFundingContent() {
+export function IncomeFundingContent({
+  userIdOverride,
+}: {
+  userIdOverride?: string;
+}) {
   const searchParams = useSearchParams();
   const initialPathwayId = searchParams.get("pathwayId") || "income_based";
 
@@ -67,7 +71,11 @@ export function IncomeFundingContent() {
     isSubmitting,
     isCalculating,
     calculateIncomePreApproval,
-  } = useIncomeFundingState(selectedReference, selectedPathwayId);
+  } = useIncomeFundingState(
+    selectedReference,
+    selectedPathwayId,
+    userIdOverride,
+  );
 
   const referenceOptions = useMemo(() => {
     if (!incomeFundingApps || incomeFundingApps.length === 0) return [];
@@ -131,6 +139,7 @@ export function IncomeFundingContent() {
           realDeal={realDeal as any}
           isCalculating={isCalculating}
           onCalculate={calculateIncomePreApproval}
+          userIdOverride={userIdOverride}
         />
       );
     }
@@ -193,6 +202,7 @@ export function IncomeFundingContent() {
             onSubmit={() => submitForUnderwriting(selectedPathwayId)}
             isSubmitting={isSubmitting}
             selectedPathwayId={selectedPathwayId}
+            userIdOverride={userIdOverride}
           />
         );
       case "under-review":
@@ -220,6 +230,7 @@ export function IncomeFundingContent() {
                 <FundingBankProducts
                   selectedReference={selectedReference}
                   selectedPathwayId={selectedPathwayId}
+                  userIdOverride={userIdOverride}
                 />
               </section>
             </div>
@@ -283,7 +294,11 @@ export function IncomeFundingContent() {
             page.`}
           </p>
           <Link
-            href="/client/home"
+            href={
+              userIdOverride
+                ? `/admin/clients/${userIdOverride}`
+                : "/client/home"
+            }
             className="inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm transition"
           >
             Go to Back
