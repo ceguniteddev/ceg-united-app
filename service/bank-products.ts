@@ -1222,9 +1222,9 @@ export const getAutoServedClientFunds = async ({
     (r) => r.clientApplicationStatus === "Not Applied",
   ).length;
 
-  let SLOT_TARGET = 4;
-  let MONTHLY_CAP = 8;
-  let globalCap = false;
+  let SLOT_TARGET = 6;
+  let MONTHLY_CAP = 6;
+  let globalCap = true;
 
   switch (membershipTier) {
     case "tier_starter":
