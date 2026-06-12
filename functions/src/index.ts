@@ -130,3 +130,4 @@ export const generatePdf = onRequest(
 export * from "./classifyDocument";
 export * from "./mailLetter";
 export * from "./lobWebhook";
+export * from "./verifyAddress";

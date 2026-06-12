@@ -33,6 +33,8 @@ export const mailLetter = functions.onCall(
       attachmentPdfsBase64, // string[]
       attachmentDocIds, // string[]
       mailingMethod, // 'first-class' | 'certified' | 'certified-rr'
+      mailType,
+      extraService,
       toAddress,
       toName,
       fromAddress,
@@ -135,13 +137,6 @@ export const mailLetter = functions.onCall(
     const mergedPdfBytes = await merged.save();
 
     // 2. Send to Lob via native fetch
-    const extraService =
-      mailingMethod === "certified"
-        ? "certified"
-        : mailingMethod === "certified-rr"
-          ? "certified_return_receipt"
-          : undefined;
-
     const formData = new FormData();
     formData.append("to[name]", toName || "Unknown Agency");
     formData.append("to[address_line1]", toAddress?.line1 || "Unknown Address");
@@ -160,7 +155,7 @@ export const mailLetter = functions.onCall(
 
     formData.append("color", "false");
     formData.append("address_placement", "top_first_page");
-    formData.append("mail_type", "usps_first_class");
+    formData.append("mail_type", mailType || "usps_first_class");
     if (extraService) {
       formData.append("extra_service", extraService);
     }
