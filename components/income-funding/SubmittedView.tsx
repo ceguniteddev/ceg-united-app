@@ -6,7 +6,10 @@ import {
   Send,
   XCircle,
   Upload,
+  Loader2,
 } from "lucide-react";
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 // import { mockCoordinator } from "@/lib/income-funding-mock";
 import type { IncomeFundingDeal } from "@/types/income-funding-types";
 
@@ -50,6 +53,17 @@ export function SubmittedView({
   selectedPathwayId,
   onRetry,
 }: SubmittedViewProps) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      queryClient.refetchQueries({ queryKey: ["GET_USER_APPLY_FUNDING"] });
+      queryClient.refetchQueries({ queryKey: ["GET_FUNDING_APPLICATIONS"] });
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [queryClient]);
+
   const appliedPathways = realDeal?.appliedPathways || [];
   const appliedPathway = appliedPathways.find(
     (p: any) => p.pathwayId === selectedPathwayId,
@@ -91,7 +105,7 @@ export function SubmittedView({
   return (
     <div className="space-y-6">
       {/* Status hero */}
-      {isDeclined && noOutputReason ? (
+      {isDeclined ? (
         <div className="relative overflow-hidden bg-white rounded-2xl border border-red-100 shadow-card p-6 md:p-8 animate-fade-in-up">
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-red-100/40 rounded-full blur-3xl pointer-events-none" />
           <div className="relative flex items-start gap-4">
@@ -107,10 +121,13 @@ export function SubmittedView({
               <h1 className="mt-1 text-xl md:text-2xl font-bold text-gray-900">
                 {`We couldn't match you with an offer at this time.`}
               </h1>
-              <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-100 text-sm text-red-800">
-                <span className="font-semibold block mb-1">Reason:</span>
-                {noOutputReason}
-              </div>
+
+              {noOutputReason && (
+                <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-100 text-sm text-red-800">
+                  <span className="font-semibold block mb-1">Reason:</span>
+                  {noOutputReason}
+                </div>
+              )}
 
               {onRetry && (
                 <div className="mt-6 border-t border-red-200 pt-5">
@@ -211,7 +228,7 @@ export function SubmittedView({
                   </div>
                   {isActive && (
                     <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-amber-600">
-                      <Clock className="w-3 h-3" />
+                      <Loader2 className="w-3 h-3 animate-spin" />
                       In progress
                     </div>
                   )}
