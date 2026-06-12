@@ -69,6 +69,13 @@ const defaultEmptyDeal: IncomeFundingDeal = {
       required: true,
       status: "required",
     },
+    {
+      key: "paystubs",
+      title: "Paystubs",
+      description: "Recent paystubs or proof of income.",
+      required: false,
+      status: "required",
+    },
   ],
   offers: [],
   coordinatorId: "",
@@ -241,6 +248,7 @@ export function useIncomeFundingState(
               ? "PERSONAL_BANK_STATEMENTS"
               : "BANK_STATEMENTS";
           } else if (doc.key === "voidedCheck") documentTypeId = "VOIDED_CHECK";
+          else if (doc.key === "paystubs") documentTypeId = "PAYSTUBS";
 
           const matchingApiDocs = userDocuments.filter((apiDoc: any) => {
             const rawName = apiDoc.name.split("/").pop() || "";

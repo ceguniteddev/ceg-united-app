@@ -10,8 +10,14 @@ import {
   Link as LinkIcon,
   X,
   Eye,
+  SaveIcon,
+  Loader2Icon,
 } from "lucide-react";
 import type { DocumentRecord } from "@/types/income-funding-types";
+import { useForm } from "react-hook-form";
+import { FormEINInput } from "@/components/forms/form-ein-number-input";
+import { Button } from "../ui/button";
+import IconMenu from "../icon-menu";
 
 interface DocumentUploadCardProps {
   doc: DocumentRecord;
@@ -23,15 +29,18 @@ interface DocumentUploadCardProps {
   ) => void;
   onRemove?: (key: DocumentRecord["key"]) => void;
   onView?: (url: string, title: string, contentType?: string) => void;
+  onUpdateEin?: (ein: string) => void;
+  isUpdatingEin?: boolean;
   isUploading?: boolean;
 }
 
-const iconMap = {
+const iconMap: Record<string, any> = {
   ein: FileText,
   articles: Building,
   voidedCheck: Receipt,
   id: IdCard,
   bankStatements: Landmark,
+  paystubs: FileText,
 };
 
 export function DocumentUploadCard({
@@ -39,11 +48,16 @@ export function DocumentUploadCard({
   onUpload,
   onRemove,
   onView,
+  onUpdateEin,
+  isUpdatingEin,
   isUploading,
 }: DocumentUploadCardProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
-  const Icon = iconMap[doc.key];
+  const [einInput, setEinInput] = useState("");
+  const Icon = iconMap[doc.key] || FileText;
+
+  const form = useForm({ defaultValues: { ein: "" } });
 
   const handleFile = (file: File) => {
     const sizeKb = file.size / 1024;
@@ -210,16 +224,61 @@ export function DocumentUploadCard({
               )}
             </div>
           ) : (
-            <div className="mt-3 flex items-center gap-2">
-              <button
-                disabled={isUploading}
-                onClick={() => inputRef.current?.click()}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                {isUploading ? "Uploading..." : "Upload file"}
-              </button>
-              <span className="text-xs text-gray-400">or drop a file here</span>
+            <div className="mt-3 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={isUploading}
+                  onClick={() => inputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  {isUploading ? "Uploading..." : "Upload file"}
+                </button>
+                <span className="text-xs text-gray-400">
+                  or drop a file here
+                </span>
+              </div>
+
+              {doc.key === "ein" &&
+                !(doc as any).providedValue &&
+                onUpdateEin && (
+                  <div className="mt-2 pt-2 border-t border-gray-100 flex flex-col gap-2">
+                    <span className="text-xs font-medium text-gray-600">
+                      Or enter your EIN directly:
+                    </span>
+                    <form
+                      onSubmit={form.handleSubmit((data) =>
+                        onUpdateEin(data.ein),
+                      )}
+                      className="flex items-end gap-3"
+                    >
+                      <div className="flex-1 max-w-[200px]">
+                        <FormEINInput
+                          control={form.control}
+                          name="ein"
+                          label=""
+                          placeholder="XX-XXXXXXX"
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        disabled={!form.watch("ein") || isUpdatingEin}
+                        className="text-sm bg-brand-600 hover:bg-brand-700 text-white px-4 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <IconMenu
+                          text={isUpdatingEin ? "Saving..." : "Save"}
+                          icon={
+                            isUpdatingEin ? (
+                              <Loader2Icon className="animate-spin" />
+                            ) : (
+                              <SaveIcon />
+                            )
+                          }
+                        />
+                      </Button>
+                    </form>
+                  </div>
+                )}
             </div>
           )}
         </div>

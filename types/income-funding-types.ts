@@ -47,7 +47,13 @@ export interface UploadedFileRecord {
 }
 
 export interface DocumentRecord {
-  key: "ein" | "articles" | "voidedCheck" | "id" | "bankStatements";
+  key:
+    | "ein"
+    | "articles"
+    | "voidedCheck"
+    | "id"
+    | "bankStatements"
+    | "paystubs";
   title: string;
   description: string;
   required: boolean;

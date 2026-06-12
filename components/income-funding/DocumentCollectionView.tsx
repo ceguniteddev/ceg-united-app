@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { ArrowRight, Lock, ShieldCheck } from "lucide-react";
 import { DocumentUploadCard } from "./DocumentUploadCard";
 import type {
@@ -9,6 +9,7 @@ import { useAuth } from "@/provider/AuthContext";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { GET_USER_DOCUMENTS } from "@/constant/react-query-keys";
+import { useApplyFunding } from "@/hooks/apply-funding";
 import {
   Sheet,
   SheetContent,
@@ -52,9 +53,11 @@ export function DocumentCollectionView({
 }: DocumentCollectionViewProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { updateApplyFunding } = useApplyFunding();
   const [uploadingState, setUploadingState] = useState<Record<string, boolean>>(
     {},
   );
+  const [isUpdatingEin, setIsUpdatingEin] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<{
     url: string;
     title: string;
@@ -62,156 +65,227 @@ export function DocumentCollectionView({
   } | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
 
-  const displayDocuments = deal.documents
-    .filter((doc) => {
-      if (
-        selectedPathwayId === "personal_credit_card" ||
-        selectedPathwayId === "personal_loan"
-      ) {
+  const {
+    displayDocuments,
+    requiredDocs,
+    allRequiredDone,
+    totalRequiredDone,
+    progressPercentage,
+  } = useMemo(() => {
+    const computedDisplayDocs = deal.documents
+      .filter((doc) => {
         if (
-          doc.key === "ein" ||
-          doc.key === "articles" ||
-          doc.key === "voidedCheck"
+          selectedPathwayId === "personal_credit_card" ||
+          selectedPathwayId === "personal_loan"
         ) {
-          return false;
+          if (
+            doc.key === "ein" ||
+            doc.key === "articles" ||
+            doc.key === "voidedCheck"
+          ) {
+            return false;
+          }
+        } else if (
+          selectedPathwayId === "business_credit_card_stacking" ||
+          selectedPathwayId === "business_lines_of_credit"
+        ) {
+          if (
+            doc.key === "articles" ||
+            doc.key === "voidedCheck" ||
+            doc.key === "paystubs"
+          ) {
+            return false;
+          }
+        } else if (selectedPathwayId === "income_based") {
+          if (doc.key === "paystubs") {
+            return false;
+          }
         }
-      }
-      return true;
-    })
-    .map((doc) => {
-      let required = doc.required;
+        return true;
+      })
+      .map((doc) => {
+        let required = doc.required;
 
-      if (selectedPathwayId === "income_based") {
-        if (doc.key === "ein") required = true;
-        if (doc.key === "voidedCheck") required = true;
-        if (doc.key === "bankStatements") required = true;
-        if (doc.key === "id") required = true;
-        if (doc.key === "articles") required = false;
-      } else if (
-        selectedPathwayId === "business_credit_card_stacking" ||
-        selectedPathwayId === "business_lines_of_credit"
-      ) {
-        if (doc.key === "ein") required = true;
-        if (doc.key === "bankStatements") required = false;
-        if (doc.key === "id") required = true;
-        if (doc.key === "articles") required = false;
-        if (doc.key === "voidedCheck") required = false;
-      } else if (
-        selectedPathwayId === "personal_loan" ||
-        selectedPathwayId === "personal_credit_card"
-      ) {
-        if (doc.key === "id") required = true;
-        if (doc.key === "bankStatements") required = false;
-      }
+        if (selectedPathwayId === "income_based") {
+          if (doc.key === "ein") required = true;
+          if (doc.key === "voidedCheck") required = true;
+          if (doc.key === "bankStatements") required = true;
+          if (doc.key === "id") required = true;
+          if (doc.key === "articles") required = false;
+        } else if (
+          selectedPathwayId === "business_credit_card_stacking" ||
+          selectedPathwayId === "business_lines_of_credit"
+        ) {
+          // if (doc.key === "ein") required = true;
+          if (doc.key === "bankStatements") required = false;
+          if (doc.key === "id") required = true;
+          if (doc.key === "articles") required = false;
+          if (doc.key === "voidedCheck") required = false;
+        } else if (
+          selectedPathwayId === "personal_loan" ||
+          selectedPathwayId === "personal_credit_card"
+        ) {
+          if (doc.key === "id") required = true;
+          if (doc.key === "bankStatements") required = false;
+        }
 
-      if (
-        selectedPathwayId === "personal_credit_card" ||
-        selectedPathwayId === "personal_loan"
-      ) {
-        if (doc.key === "bankStatements") {
+        if (
+          selectedPathwayId === "personal_credit_card" ||
+          selectedPathwayId === "personal_loan"
+        ) {
+          if (doc.key === "bankStatements") {
+            return {
+              ...doc,
+              required,
+              title: "Personal Bank Statements",
+              description: "Recent personal bank statements.",
+              documentTypeId: "PERSONAL_BANK_STATEMENTS",
+            };
+          }
+        }
+
+        if (doc.key === "ein" && realDeal?.employerIdentificationNumber) {
           return {
             ...doc,
-            required,
-            title: "Personal Bank Statements",
-            description: "Recent personal bank statements.",
-            documentTypeId: "PERSONAL_BANK_STATEMENTS",
+            required: false,
+            providedValue: realDeal.employerIdentificationNumber,
+            description:
+              "Your EIN was successfully retrieved from your profile.",
           };
         }
-      }
 
-      if (doc.key === "ein" && realDeal?.employerIdentificationNumber) {
         return {
           ...doc,
-          required: false,
-          providedValue: realDeal.employerIdentificationNumber,
-          description: "Your EIN was successfully retrieved from your profile.",
+          required,
         };
+      });
+
+    const computedRequiredDocs = computedDisplayDocs.filter((d) => d.required);
+    const computedAllRequiredDone = computedRequiredDocs.every(
+      (d) =>
+        d.status === "uploaded" ||
+        d.status === "synced" ||
+        (d.key === "ein" && realDeal?.employerIdentificationNumber),
+    );
+
+    const computedTotalRequiredDone = computedRequiredDocs.filter(
+      (d) =>
+        d.status === "uploaded" ||
+        d.status === "synced" ||
+        (d.key === "ein" && realDeal?.employerIdentificationNumber),
+    ).length;
+
+    const computedProgressPercentage =
+      computedRequiredDocs.length === 0
+        ? 100
+        : Math.round(
+            (computedTotalRequiredDone / computedRequiredDocs.length) * 100,
+          );
+
+    return {
+      displayDocuments: computedDisplayDocs,
+      requiredDocs: computedRequiredDocs,
+      allRequiredDone: computedAllRequiredDone,
+      totalRequiredDone: computedTotalRequiredDone,
+      progressPercentage: computedProgressPercentage,
+    };
+  }, [
+    deal.documents,
+    selectedPathwayId,
+    realDeal?.employerIdentificationNumber,
+  ]);
+
+  const handleUpload = useCallback(
+    async (
+      key: DocumentRecord["key"],
+      file: File,
+      fileName: string,
+      fileSize: string,
+    ) => {
+      if (!user) return;
+
+      setUploadingState((prev) => ({ ...prev, [key]: true }));
+
+      // Map key to DocumentType ID
+      let documentTypeId = "OTHER";
+      if (key === "ein") documentTypeId = "EIN_LETTER";
+      else if (key === "articles") documentTypeId = "ARTICLES_OF_ORGANIZATION";
+      else if (key === "id") documentTypeId = "DRIVERS_LICENSE";
+      else if (key === "bankStatements") {
+        documentTypeId =
+          selectedPathwayId === "personal_credit_card" ||
+          selectedPathwayId === "personal_loan"
+            ? "PERSONAL_BANK_STATEMENTS"
+            : "BANK_STATEMENTS";
+      } else if (key === "voidedCheck") documentTypeId = "VOIDED_CHECK";
+      else if (key === "paystubs") documentTypeId = "PAYSTUBS";
+
+      const formData = new FormData();
+      formData.append("userId", user.uid);
+      if (documentTypeId !== "OTHER") {
+        formData.append("documentType", documentTypeId);
       }
+      formData.append("files", file);
 
-      return {
-        ...doc,
-        required,
-      };
-    });
+      try {
+        const response = await fetch(`/api/user/${user.uid}/documents`, {
+          method: "POST",
+          body: formData,
+        });
 
-  const requiredDocs = displayDocuments.filter((d) => d.required);
-  const allRequiredDone = requiredDocs.every(
-    (d) =>
-      d.status === "uploaded" ||
-      d.status === "synced" ||
-      (d.key === "ein" && realDeal?.employerIdentificationNumber),
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.error || "Upload failed");
+        }
+
+        // Invalidate queries to refetch the document list in other parts of the app
+        queryClient.invalidateQueries({
+          queryKey: [GET_USER_DOCUMENTS, user.uid],
+        });
+
+        // Update local state to show it's uploaded
+        onUpload(key, fileName, fileSize);
+        toast.success("Document uploaded successfully");
+      } catch (error: any) {
+        console.error(error);
+        toast.error(error.message || "Failed to upload document");
+      } finally {
+        setUploadingState((prev) => ({ ...prev, [key]: false }));
+      }
+    },
+    [user, selectedPathwayId, queryClient, onUpload],
   );
 
-  const totalRequiredDone = requiredDocs.filter(
-    (d) =>
-      d.status === "uploaded" ||
-      d.status === "synced" ||
-      (d.key === "ein" && realDeal?.employerIdentificationNumber),
-  ).length;
-
-  const progressPercentage =
-    requiredDocs.length === 0
-      ? 100
-      : Math.round((totalRequiredDone / requiredDocs.length) * 100);
-
-  const handleUpload = async (
-    key: DocumentRecord["key"],
-    file: File,
-    fileName: string,
-    fileSize: string,
-  ) => {
-    if (!user) return;
-
-    setUploadingState((prev) => ({ ...prev, [key]: true }));
-
-    // Map key to DocumentType ID
-    let documentTypeId = "OTHER";
-    if (key === "ein") documentTypeId = "EIN_LETTER";
-    else if (key === "articles") documentTypeId = "ARTICLES_OF_ORGANIZATION";
-    else if (key === "id") documentTypeId = "DRIVERS_LICENSE";
-    else if (key === "bankStatements") {
-      documentTypeId =
-        selectedPathwayId === "personal_credit_card" ||
-        selectedPathwayId === "personal_loan"
-          ? "PERSONAL_BANK_STATEMENTS"
-          : "BANK_STATEMENTS";
-    } else if (key === "voidedCheck") documentTypeId = "VOIDED_CHECK";
-
-    const formData = new FormData();
-    formData.append("userId", user.uid);
-    if (documentTypeId !== "OTHER") {
-      formData.append("documentType", documentTypeId);
-    }
-    formData.append("files", file);
-
-    try {
-      const response = await fetch(`/api/user/${user.uid}/documents`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const result = await response.json();
-        throw new Error(result.error || "Upload failed");
+  const handleUpdateEin = useCallback(
+    async (ein: string) => {
+      if (!realDeal || !realDeal.referenceNumber) {
+        toast.error("Application reference not found.");
+        return;
       }
 
-      // Invalidate queries to refetch the document list in other parts of the app
-      queryClient.invalidateQueries({
-        queryKey: [GET_USER_DOCUMENTS, user.uid],
-      });
+      setIsUpdatingEin(true);
+      try {
+        await updateApplyFunding({
+          values: {
+            ...realDeal,
+            employerIdentificationNumber: ein,
+          },
+        });
+        // Optionally invalidate queries if not already handled by hook
+        queryClient.invalidateQueries({
+          queryKey: ["GET_USER_APPLY_FUNDING", user?.uid],
+        });
+      } catch (error: any) {
+        console.error("Failed to update EIN", error);
+        toast.error(error.message || "Failed to update EIN");
+      } finally {
+        setIsUpdatingEin(false);
+      }
+    },
+    [realDeal, updateApplyFunding, queryClient, user?.uid],
+  );
 
-      // Update local state to show it's uploaded
-      onUpload(key, fileName, fileSize);
-      toast.success("Document uploaded successfully");
-    } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || "Failed to upload document");
-    } finally {
-      setUploadingState((prev) => ({ ...prev, [key]: false }));
-    }
-  };
-
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (
       selectedPathwayId !== "income_based" &&
       user?.uid &&
@@ -234,7 +308,7 @@ export function DocumentCollectionView({
       toast.success("Application submitted successfully!");
     }
     onSubmit();
-  };
+  }, [selectedPathwayId, user?.uid, realDeal?.referenceNumber, onSubmit]);
 
   return (
     <div className="space-y-6">
@@ -290,6 +364,8 @@ export function DocumentCollectionView({
               onView={(url, title, contentType) =>
                 setPreviewDoc({ url, title, contentType })
               }
+              onUpdateEin={doc.key === "ein" ? handleUpdateEin : undefined}
+              isUpdatingEin={isUpdatingEin}
             />
           </div>
         ))}
