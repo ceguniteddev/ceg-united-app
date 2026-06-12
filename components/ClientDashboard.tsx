@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+// import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -19,10 +19,10 @@ import { Business } from "@/schema";
 import { CreditScore } from "@/types/crs";
 import { ApprovedBankFormData } from "@/schema/bank-products";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
-import { useGetCongrats, useMarkCongratsAsRead } from "@/hooks/congrats";
+// import { useGetCongrats, useMarkCongratsAsRead } from "@/hooks/congrats";
 
-import { useAuth } from "@/provider/AuthContext";
-import { useConfettiStore } from "@/hooks/use-confetti-store";
+// import { useAuth } from "@/provider/AuthContext";
+// import { useConfettiStore } from "@/hooks/use-confetti-store";
 import { useMembership } from "@/hooks/membership";
 
 // CEG Brain Dashboard Components
@@ -122,7 +122,7 @@ export const ClientDashboard = ({
   clientData: ClientData | null | undefined;
   adminView?: boolean;
 }) => {
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const router = useRouter();
   // const onOpenConfetti = useConfettiStore((state) => state.onOpen);
   const { data: membershipData } = useMembership();
