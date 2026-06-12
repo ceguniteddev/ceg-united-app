@@ -273,8 +273,7 @@ function SubmitCTA({
         )}
       </button>
       <div className="text-[10px] text-gray-500 text-center mt-2.5 leading-relaxed">
-        By clicking, you authorize CEG to mail this letter via Lob.com USPS
-        service.
+        By clicking, you authorize CEG to mail this letter.
       </div>
       <button
         onClick={onBack}
@@ -284,10 +283,6 @@ function SubmitCTA({
         <ArrowLeft className="w-3.5 h-3.5" />
         Back
       </button>
-      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-center gap-1.5 text-[10px] text-gray-400">
-        <LobLogo />
-        <span>Powered by Lob.com</span>
-      </div>
     </div>
   );
 }
