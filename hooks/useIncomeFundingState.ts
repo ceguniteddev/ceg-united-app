@@ -8,7 +8,10 @@ import type {
 } from "@/types/income-funding-types";
 import { useUserDocumentsQuery } from "@/hooks/document";
 import { useAuth } from "@/provider/AuthContext";
-import { useGetUserApplyFunding } from "@/hooks/apply-funding";
+import {
+  useGetUserApplyFunding,
+  useGetClientApplyFunding,
+} from "@/hooks/apply-funding";
 import { toast } from "sonner";
 import { useConfettiStore } from "@/hooks/use-confetti-store";
 
@@ -91,14 +94,27 @@ const defaultEmptyDeal: IncomeFundingDeal = {
 export function useIncomeFundingState(
   selectedReference?: string,
   selectedPathwayId: string = "income_based",
+  userIdOverride?: string,
 ) {
   const [deal, setDeal] = useState<IncomeFundingDeal>(defaultEmptyDeal);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, loading: isAuthLoading } = useAuth();
   const queryClient = useQueryClient();
-  const { userDocuments } = useUserDocumentsQuery({ userId: user?.uid || "" });
-  const { appliedFunding, isLoading: isLoadingApplications } =
-    useGetUserApplyFunding();
+
+  const targetUserId = userIdOverride || user?.uid || "";
+
+  const { userDocuments } = useUserDocumentsQuery({ userId: targetUserId });
+
+  // Use client specific query if userIdOverride is provided
+  const clientQuery = useGetClientApplyFunding(userIdOverride || "");
+  const userQuery = useGetUserApplyFunding();
+
+  const appliedFunding = userIdOverride
+    ? clientQuery.appliedFunding
+    : userQuery.appliedFunding;
+  const isLoadingApplications = userIdOverride
+    ? clientQuery.isLoading
+    : userQuery.isLoading;
   const { onOpen: triggerConfetti } = useConfettiStore();
 
   // Find the real deal reference number based on selectedReference or the first one
@@ -339,7 +355,7 @@ export function useIncomeFundingState(
 
   const submitForUnderwriting = useCallback(
     async (pathwayId?: string) => {
-      if (!user?.uid || !referenceNumber) {
+      if (!targetUserId || !referenceNumber) {
         toast.error("Unable to find funding application record.");
         return;
       }
@@ -347,7 +363,7 @@ export function useIncomeFundingState(
       try {
         setIsSubmitting(true);
         const response = await fetch(
-          `/api/user/${user.uid}/funding-application/${referenceNumber}/submit-underwriting`,
+          `/api/user/${targetUserId}/funding-application/${referenceNumber}/submit-underwriting`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -366,7 +382,7 @@ export function useIncomeFundingState(
         }));
 
         queryClient.invalidateQueries({
-          queryKey: ["GET_USER_APPLY_FUNDING", user?.uid],
+          queryKey: ["GET_USER_APPLY_FUNDING", targetUserId],
         });
 
         toast.success("Successfully submitted for underwriting!");
@@ -376,12 +392,12 @@ export function useIncomeFundingState(
         setIsSubmitting(false);
       }
     },
-    [user?.uid, referenceNumber, queryClient],
+    [targetUserId, referenceNumber, queryClient],
   );
 
   const skipOffer = useCallback(
     async (offerId: string) => {
-      if (!user?.uid || !referenceNumber) {
+      if (!targetUserId || !referenceNumber) {
         toast.error("Unable to find funding application record.");
         return;
       }
@@ -400,7 +416,7 @@ export function useIncomeFundingState(
         );
 
         const response = await fetch(
-          `/api/user/${user.uid}/funding-application/${referenceNumber}/offers`,
+          `/api/user/${targetUserId}/funding-application/${referenceNumber}/offers`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -422,7 +438,7 @@ export function useIncomeFundingState(
         }));
       }
     },
-    [user?.uid, referenceNumber, deal.offers],
+    [targetUserId, referenceNumber, deal.offers],
   );
 
   const selectOffer = useCallback((offer: DealOffer) => {
@@ -440,7 +456,7 @@ export function useIncomeFundingState(
       fundingAmount: number,
       percentageFee: number,
     ) => {
-      if (!user?.uid || !referenceNumber) {
+      if (!targetUserId || !referenceNumber) {
         toast.error("Unable to find funding application record.");
         return;
       }
@@ -458,7 +474,7 @@ export function useIncomeFundingState(
         );
 
         await fetch(
-          `/api/user/${user.uid}/funding-application/${referenceNumber}/offers`,
+          `/api/user/${targetUserId}/funding-application/${referenceNumber}/offers`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -468,7 +484,7 @@ export function useIncomeFundingState(
 
         // Generate PDF and update status
         const response = await fetch(
-          `/api/user/${user.uid}/funding-application/${referenceNumber}/status`,
+          `/api/user/${targetUserId}/funding-application/${referenceNumber}/status`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -506,7 +522,7 @@ export function useIncomeFundingState(
         setIsSubmitting(false);
       }
     },
-    [user?.uid, referenceNumber, deal.offers, deal.selectedOfferId],
+    [targetUserId, referenceNumber, deal.offers, deal.selectedOfferId],
   );
 
   const reset = useCallback(() => {
@@ -520,7 +536,7 @@ export function useIncomeFundingState(
   const [isCalculating, setIsCalculating] = useState(false);
 
   const calculateIncomePreApproval = useCallback(async () => {
-    if (!user?.uid || !referenceNumber) {
+    if (!targetUserId || !referenceNumber) {
       toast.error("Unable to find funding application record.");
       return;
     }
@@ -528,7 +544,7 @@ export function useIncomeFundingState(
     try {
       setIsCalculating(true);
       const response = await fetch(
-        `/api/user/${user.uid}/funding-application/${referenceNumber}/calculate-income`,
+        `/api/user/${targetUserId}/funding-application/${referenceNumber}/calculate-income`,
         {
           method: "POST",
         },
@@ -546,7 +562,7 @@ export function useIncomeFundingState(
     } finally {
       setIsCalculating(false);
     }
-  }, [user?.uid, referenceNumber]);
+  }, [targetUserId, referenceNumber]);
 
   return {
     deal,

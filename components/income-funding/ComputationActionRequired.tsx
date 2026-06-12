@@ -24,15 +24,17 @@ interface ComputationActionRequiredProps {
   realDeal?: ApplyFunding;
   isCalculating: boolean;
   onCalculate: () => void;
+  userIdOverride?: string;
 }
 
 export function ComputationActionRequired({
   realDeal,
   isCalculating,
   onCalculate,
+  userIdOverride,
 }: ComputationActionRequiredProps) {
   const { user } = useAuth();
-  const userId = user?.uid || "";
+  const userId = userIdOverride || user?.uid || "";
   const { userDocuments, isLoading: isDocsLoading } = useUserDocumentsQuery({
     userId,
   });

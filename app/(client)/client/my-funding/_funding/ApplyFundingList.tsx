@@ -13,16 +13,18 @@ import { Card, CardContent } from "@/components/ui/card";
 type Props = {
   selectedReference: string;
   selectedPathwayId: string;
+  userIdOverride?: string;
 };
 
 export const FundingBankProducts = ({
   selectedReference,
   selectedPathwayId,
+  userIdOverride,
 }: Props) => {
   const { user } = useAuth();
 
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
-    userId: user?.uid,
+    userId: userIdOverride || user?.uid,
     referenceNumber: selectedReference,
     pathwayId: selectedPathwayId,
   });
