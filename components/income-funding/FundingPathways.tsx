@@ -208,6 +208,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Loader2 } from "lucide-react";
 
 // -------------------------- Component --------------------------
 
@@ -572,7 +573,11 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
             ].join(" ")}
           >
             {isSubmitting ? "Submitting..." : "Continue to Offers"}
-            {!isSubmitting && <IconArrowRight className="h-4 w-4" />}
+            {!isSubmitting ? (
+              <IconArrowRight className="h-4 w-4" />
+            ) : (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
           </button>
         </div>
 
