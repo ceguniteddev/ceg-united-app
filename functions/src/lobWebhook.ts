@@ -107,7 +107,7 @@ export const lobWebhook = onRequest(
       rawBodyData,
     );
 
-    logger.info("Signature Verification Result:", verification.debugDetails);
+    // logger.info("Signature Verification Result:", verification.debugDetails);
 
     // Provide a fallback check using JSON.stringify just in case rawBody was slightly modified
     let isAltValid = false;
@@ -151,10 +151,10 @@ export const lobWebhook = onRequest(
 
     try {
       const event = req.body;
-      logger.info("Received Lob webhook event", {
-        type: event.event_type,
-        id: event.id,
-      });
+      // logger.info("Received Lob webhook event", {
+      //   type: event.event_type,
+      //   id: event.id,
+      // });
 
       const eventType = event.event_type.id; // e.g. letter.in_transit, letter.processed_for_delivery
 
@@ -176,24 +176,33 @@ export const lobWebhook = onRequest(
             `disputes/${disputeId}/generatedLetters/${agencyKey}`,
           );
 
-          await docRef.set(
-            {
-              mailingStatus: eventType.replace("letter.", ""), // e.g. in_transit
-              trackingEvents: FieldValue.arrayUnion({
-                status: eventType,
-                timestamp: event.date_created,
-                location: letter.tracking_events?.length
-                  ? letter.tracking_events[letter.tracking_events.length - 1]
-                      .location
-                  : null,
-              }),
-              updatedAt: FieldValue.serverTimestamp(),
-            },
-            { merge: true },
-          );
+          // Extract the return receipt PDF URL if available
+          const returnReceiptUrl = letter.return_receipt?.pdf || null;
+
+          const updateData: any = {
+            mailingStatus: eventType.replace("letter.", ""), // e.g. in_transit
+            trackingEvents: FieldValue.arrayUnion({
+              status: eventType,
+              timestamp: event.date_created,
+              location: letter.tracking_events?.length
+                ? letter.tracking_events[letter.tracking_events.length - 1]
+                    .location
+                : null,
+            }),
+            updatedAt: FieldValue.serverTimestamp(),
+          };
+
+          if (returnReceiptUrl) {
+            updateData.returnReceiptUrl = returnReceiptUrl;
+          }
+
+          await docRef.set(updateData, { merge: true });
 
           logger.info(
-            `Updated dispute letter status for ${disputeId} / ${agencyKey} to ${eventType}`,
+            `Updated dispute letter status for ${disputeId} / ${agencyKey} to ${eventType}` +
+              (returnReceiptUrl
+                ? ` with Return Receipt URL: ${returnReceiptUrl}`
+                : ""),
           );
         } else {
           logger.warn(
