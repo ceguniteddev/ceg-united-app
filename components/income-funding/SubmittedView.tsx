@@ -57,9 +57,9 @@ export function SubmittedView({
 
   useEffect(() => {
     const interval = setInterval(() => {
-      queryClient.invalidateQueries({ queryKey: ["GET_USER_APPLY_FUNDING"] });
-      queryClient.invalidateQueries({ queryKey: ["GET_FUNDING_APPLICATIONS"] });
-    }, 60000); // 1 minute
+      queryClient.refetchQueries({ queryKey: ["GET_USER_APPLY_FUNDING"] });
+      queryClient.refetchQueries({ queryKey: ["GET_FUNDING_APPLICATIONS"] });
+    }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
   }, [queryClient]);
@@ -105,7 +105,7 @@ export function SubmittedView({
   return (
     <div className="space-y-6">
       {/* Status hero */}
-      {isDeclined && noOutputReason ? (
+      {isDeclined ? (
         <div className="relative overflow-hidden bg-white rounded-2xl border border-red-100 shadow-card p-6 md:p-8 animate-fade-in-up">
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-red-100/40 rounded-full blur-3xl pointer-events-none" />
           <div className="relative flex items-start gap-4">
@@ -121,10 +121,13 @@ export function SubmittedView({
               <h1 className="mt-1 text-xl md:text-2xl font-bold text-gray-900">
                 {`We couldn't match you with an offer at this time.`}
               </h1>
-              <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-100 text-sm text-red-800">
-                <span className="font-semibold block mb-1">Reason:</span>
-                {noOutputReason}
-              </div>
+
+              {noOutputReason && (
+                <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-100 text-sm text-red-800">
+                  <span className="font-semibold block mb-1">Reason:</span>
+                  {noOutputReason}
+                </div>
+              )}
 
               {onRetry && (
                 <div className="mt-6 border-t border-red-200 pt-5">
