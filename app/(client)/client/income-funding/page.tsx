@@ -201,6 +201,7 @@ export function IncomeFundingContent() {
             deal={deal}
             realDeal={realDeal}
             selectedPathwayId={selectedPathwayId}
+            onRetry={() => setStatus("collecting-documents")}
           />
         );
       case "offers-ready":
