@@ -1,8 +1,17 @@
 import { useEffect, useState } from "react";
-import { Check, ShieldCheck, Mail, Loader2, ArrowLeft } from "lucide-react";
+import {
+  Check,
+  ShieldCheck,
+  Mail,
+  Loader2,
+  ArrowLeft,
+  ShieldAlert,
+} from "lucide-react";
 import {
   MAILING_METHODS,
+  verifyAddressViaLob,
   type MailingMethod,
+  type VerifyAddressResponse,
 } from "@/lib/credit-repair/lobMailing";
 
 // ============================================

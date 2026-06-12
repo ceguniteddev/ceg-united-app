@@ -16,6 +16,12 @@ export const agencySchema = z.object({
     state: z.string().min(1, { message: "State is required" }),
     zip: z.string().min(1, { message: "Zip code is required" }),
   }),
+  addressVerification: z
+    .object({
+      deliverability: z.string(),
+      verifiedAt: z.string(),
+    })
+    .optional(),
   isActive: z.boolean(),
   notes: z.string().optional(),
 });

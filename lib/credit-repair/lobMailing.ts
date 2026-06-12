@@ -215,3 +215,31 @@ export function uspsTrackingUrl(trackingNumber: string): string {
   const clean = trackingNumber.replace(/\s+/g, "");
   return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${clean}`;
 }
+
+export interface VerifyAddressRequest {
+  address?: string; // single line
+  primary_line?: string;
+  secondary_line?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+}
+
+export interface VerifyAddressResponse {
+  deliverability:
+    | "deliverable"
+    | "deliverable_unnecessary_unit"
+    | "deliverable_incorrect_unit"
+    | "deliverable_missing_unit"
+    | "undeliverable";
+  components?: any;
+  id: string;
+}
+
+export async function verifyAddressViaLob(
+  request: VerifyAddressRequest,
+): Promise<VerifyAddressResponse> {
+  const fn = httpsCallable(getFunctions(app), "verifyAddress");
+  const result = await fn(request);
+  return result.data as VerifyAddressResponse;
+}
