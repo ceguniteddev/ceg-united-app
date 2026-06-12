@@ -154,10 +154,21 @@ export function useIncomeFundingState(
         // If the selected pathway is "income_based", we can fallback to global status for legacy compatibility.
         // For other pathways, we only use their specific pathway status, defaulting to "Sent to Brokerage"
         // so that we don't override active local progress (like collecting-documents or under-review).
-        const relevantStatus =
-          selectedPathwayId === "income_based"
-            ? pathwayStatus || globalStatus
-            : pathwayStatus || "Sent to Brokerage";
+        let relevantStatus = pathwayStatus || globalStatus;
+
+        if (selectedPathwayId === "income_based") {
+          // If pathway is just "Sent to Brokerage" but global status advanced, use global status
+          if (
+            globalStatus === "Pre-Approved" ||
+            globalStatus === "Offer Accepted" ||
+            globalStatus === "Approved" ||
+            globalStatus === "Declined"
+          ) {
+            relevantStatus = globalStatus;
+          }
+        } else {
+          relevantStatus = pathwayStatus || "Sent to Brokerage";
+        }
 
         if (relevantStatus === "Sent to Brokerage") {
           // If the user is currently working on an application (collecting-documents) or just submitted (under-review), keep their current local state.
@@ -173,8 +184,12 @@ export function useIncomeFundingState(
           }
         } else if (relevantStatus === "Pre-Approved") {
           // If they are already in offers-ready, keep it. Otherwise, start at prequalified
-          if (d.status === "offers-ready" || d.status === "accepting") {
-            nextStatus = d.status;
+          if (
+            d.status === "offers-ready" ||
+            d.status === "accepting" ||
+            d.status === "under-review"
+          ) {
+            nextStatus = "offers-ready";
           } else {
             nextStatus = "prequalified";
           }
@@ -328,6 +343,7 @@ export function useIncomeFundingState(
     (realDeal as any)?.offers,
     (realDeal as any)?.selectedOfferId,
     (realDeal as any)?.businessIncomeComputation,
+    JSON.stringify((realDeal as any)?.appliedPathways || []),
     selectedPathwayId,
   ]);
 
