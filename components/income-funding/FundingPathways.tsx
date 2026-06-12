@@ -209,6 +209,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/provider/AuthContext";
+import { useMembership } from "@/hooks/membership";
+import { toast } from "sonner";
 
 // -------------------------- Component --------------------------
 
@@ -221,6 +224,9 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
   selectedPathwayId,
   isSubmitting = false,
 }) => {
+  const { user } = useAuth();
+  const { data: membership } = useMembership(user?.uid);
+
   const [selectedId, setSelectedId] = useState<PathwayId | null>(
     selectedPathwayId as PathwayId,
   );
@@ -230,6 +236,15 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
   );
 
   const computationFromBackend = realDeal?.businessIncomeComputation || {};
+
+  const appliedPathwaysCount = (realDeal?.appliedPathways || []).length;
+
+  let maxPathways = 1; // Default
+  if (membership?.status === "active") {
+    if (membership.tier === "tier_starter") maxPathways = 1;
+    else if (membership.tier === "tier_pro") maxPathways = 2;
+    else if (membership.tier === "tier_executive") maxPathways = 5;
+  }
 
   useEffect(() => {
     if (!selectedPathwayId) {
@@ -307,6 +322,14 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
     const ap = realDeal?.appliedPathways?.find(
       (ap: any) => ap.pathwayId === dynamicSelected.id,
     );
+
+    if (!ap && appliedPathwaysCount >= maxPathways) {
+      // Trying to apply for a new pathway, but maxed out
+      toast.error(
+        `Your current membership tier allows a maximum of ${maxPathways} pathway(s). Please upgrade to access more.`,
+      );
+      return;
+    }
 
     if (dynamicSelected.id !== "income_based" && !ap) {
       setPendingPathway(dynamicSelected);
