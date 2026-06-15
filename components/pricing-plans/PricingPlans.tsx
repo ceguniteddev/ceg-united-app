@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Check, X, Shield, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Check, X, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFeeSettings } from "@/hooks/fee-settings";
 import { cn } from "@/lib/utils";
@@ -79,7 +79,7 @@ export function PricingPlans({
         "Refresh every 30 days",
         "Business LOC intelligence",
         "SBA & Commercial lender intelligence",
-        "Advanced underwriting",
+        "Advanced AI underwriting",
         "Advanced education vault & financial optimization",
         "Banker coordination access",
       ],
@@ -162,7 +162,7 @@ export function PricingPlans({
 
             <div className="p-8 flex-1 flex flex-col bg-slate-50 rounded-b-2xl">
               <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
-                What's Included
+                {`What's Included`}
               </h4>
               <ul className="mt-2 space-y-1 flex-1">
                 {tier.features.map((feature, i) => (
