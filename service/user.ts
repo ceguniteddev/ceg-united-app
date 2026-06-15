@@ -632,10 +632,12 @@ export const getUsers = async ({
   role,
   email,
   isActive,
+  includeMembership,
 }: {
   role?: Role;
   email?: string;
   isActive?: boolean;
+  includeMembership?: boolean;
 }): Promise<UserWithId[]> => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(USER_COLLECTION);
@@ -794,7 +796,22 @@ export const getUsers = async ({
       } as UserWithId;
     });
 
-    return dataResult;
+    users.length = 0;
+    users.push(...dataResult);
+  }
+
+  if (includeMembership) {
+    const { getAllMemberships } = await import("./membership");
+    const memberships = await getAllMemberships();
+    const membershipMap = new Map();
+    memberships.forEach((m) => {
+      membershipMap.set((m as any).userId, m);
+    });
+
+    return users.map((user) => ({
+      ...user,
+      membership: membershipMap.get(user.id) || null,
+    })) as UserWithId[];
   }
 
   return users;
