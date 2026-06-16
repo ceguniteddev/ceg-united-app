@@ -125,7 +125,7 @@ export const ClientDashboard = ({
   // const { user } = useAuth();
   const router = useRouter();
   // const onOpenConfetti = useConfettiStore((state) => state.onOpen);
-  const { data: membershipData } = useMembership();
+  const { data: membershipData } = useMembership(clientData?.userData?.id);
   // const { denefitsContract, isLoading } = useGetDenefitsContractsByUserId(
   //   clientData?.userData?.id || "",
   // );
