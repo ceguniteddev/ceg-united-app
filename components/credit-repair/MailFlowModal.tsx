@@ -11,8 +11,14 @@ import {
   type LobMailRequest,
   type LobMailResponse,
   type MailingMethod,
+  getMailingMethods,
+  MAILING_METHODS,
 } from "@/lib/credit-repair/lobMailing";
 import { useAuth } from "@/provider/AuthContext";
+import { useFeeSettings } from "@/hooks/fee-settings";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { app } from "@/lib/firebase";
+import { toast } from "sonner";
 import {
   AttachDocumentsStep,
   type AttachDocumentsResult,
@@ -69,6 +75,7 @@ export function MailFlowModal({
 }: Props) {
   const { allAgencies } = useCreditAgenciesData();
   const { userData } = useAuth();
+  const { data: feeSettings } = useFeeSettings();
   const [subview, setSubviewState] = useState<MailFlowSubview>(initialSubview);
   const [attached, setAttached] = useState<AttachDocumentsResult | null>(null);
   const [method, setMethod] = useState<MailingMethod>("certified");
@@ -227,6 +234,32 @@ export function MailFlowModal({
 
     const disputeId =
       propDisputeId || `${userData?.id || "anon"}_${Date.now()}`;
+
+    const mailingMethods = feeSettings
+      ? getMailingMethods(feeSettings)
+      : MAILING_METHODS;
+    const price = mailingMethods[chosenMethod].price;
+    const totalCost = price * letters.length;
+
+    try {
+      const spendFundsFn = httpsCallable(getFunctions(app), "spendFunds");
+      await spendFundsFn({
+        amount: totalCost,
+        description: `Mailed ${letters.length} dispute letter(s) via ${mailingMethods[chosenMethod].label}`,
+        metadata: {
+          disputeId,
+          letterCount: letters.length,
+          mailingMethod: chosenMethod,
+        },
+      });
+    } catch (error: any) {
+      console.error("Wallet debit failed:", error);
+      toast.error(
+        error.message ||
+          "Failed to deduct wallet funds. Please top up your wallet and try again.",
+      );
+      return; // Abort mailing since debit failed!
+    }
 
     // Build LobMailRequests
     const requests: LobMailRequest[] = letters.map((letter) => {

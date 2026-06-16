@@ -124,6 +124,11 @@ export const sidebarLinks = [
     label: "Letter Stream",
   },
   {
+    imgURL: "/icons/wallet.svg",
+    route: "/client/wallet",
+    label: "Wallet",
+  },
+  {
     imgURL: "/icons/book-open-text.svg",
     route: "/client/my-learning",
     label: "My Learning",

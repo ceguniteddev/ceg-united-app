@@ -304,10 +304,14 @@ export function useCreditRepairState(userId?: string) {
       0,
     );
 
+    const openDisputesCount = parsedItems.filter((item) =>
+      persistedDisputedItemIds.has(item.id),
+    ).length;
+
     setHealth({
       negativeItems: parsedItems.length,
       totalAccounts: allTradelines.length,
-      openDisputes: 0,
+      openDisputes: openDisputesCount,
       itemsDeleted: 0,
       averageScore: avgScore || 0,
     });
