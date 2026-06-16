@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Check, Mail, Loader2, ArrowLeft, CreditCard } from "lucide-react";
+import {
+  Check,
+  Mail,
+  Loader2,
+  ArrowLeft,
+  CreditCard,
+  ExternalLink,
+} from "lucide-react";
 import {
   MAILING_METHODS,
   getMailingMethods,
@@ -11,6 +18,7 @@ import { useWalletQuery } from "@/hooks/wallet";
 import { createWalletCheckoutConfig } from "@/service/whop";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -62,6 +70,7 @@ export function MailingOptionsStep({
 
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [checkoutSessionId, setCheckoutSessionId] = useState("");
+  const [checkoutUrl, setCheckoutUrl] = useState("");
   const queryClient = useQueryClient();
 
   const handleCheckoutComplete = () => {
@@ -70,6 +79,7 @@ export function MailingOptionsStep({
     );
     setIsCheckoutOpen(false);
     setCheckoutSessionId("");
+    setCheckoutUrl("");
     setTopUpModalOpen(false); // Close the top-up packages picker modal too!
     // Refetch/invalidate balance
     queryClient.invalidateQueries({ queryKey: [GET_WALLET, user?.uid] });
@@ -91,9 +101,7 @@ export function MailingOptionsStep({
   const hasSufficientBalance = currentBalance >= total;
 
   const handleSubmit = async () => {
-    console.log("hasSufficientBalance:", hasSufficientBalance);
     if (!hasSufficientBalance) {
-      console.log("Opening top-up modal...");
       setTopUpModalOpen(true);
       return;
     }
@@ -235,24 +243,51 @@ export function MailingOptionsStep({
           isOpen={topUpModalOpen}
           onClose={() => setTopUpModalOpen(false)}
           userId={user.uid}
-          onCheckoutIdGenerated={setCheckoutSessionId}
-          onCheckoutOpen={() => setIsCheckoutOpen(true)}
+          onCheckoutIdGenerated={(id, url) => {
+            setCheckoutSessionId(id);
+            setCheckoutUrl(url);
+          }}
+          onCheckoutOpen={() => {
+            setIsCheckoutOpen(true);
+            setTopUpModalOpen(false); // Close the top-up selection modal immediately so the sheet can slide open smoothly!
+          }}
         />
       )}
 
-      <Sheet open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
+      <Sheet
+        open={isCheckoutOpen}
+        onOpenChange={(open) => {
+          setIsCheckoutOpen(open);
+          if (!open) {
+            setCheckoutSessionId("");
+            setCheckoutUrl("");
+          }
+        }}
+      >
         <SheetContent
           side="right"
-          className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden"
+          className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden z-[80]"
         >
-          <SheetHeader className="px-6 py-4 border-b border-gray-200">
-            <SheetTitle className="text-xl font-bold">
-              Secure Checkout
-            </SheetTitle>
-            <SheetDescription>
-              Please complete your top-up payment using the secure Whop checkout
-              form below.
-            </SheetDescription>
+          <SheetHeader className="px-6 py-4 border-b border-gray-200 flex flex-row items-center justify-between space-y-0">
+            <div>
+              <SheetTitle className="text-xl font-bold">
+                Secure Checkout
+              </SheetTitle>
+              <SheetDescription className="hidden sm:block">
+                Please complete your top-up payment using the secure Whop
+                checkout form below.
+              </SheetDescription>
+            </div>
+            {checkoutUrl && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(checkoutUrl, "_blank")}
+                className="text-xs flex items-center gap-1.5 shrink-0 bg-white"
+              >
+                Open in New Tab ↗
+              </Button>
+            )}
           </SheetHeader>
           <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative">
             {checkoutSessionId && (
@@ -268,6 +303,24 @@ export function MailingOptionsStep({
               />
             )}
           </div>
+          {checkoutUrl && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-4">
+              <span className="text-xs text-gray-500 text-center sm:text-left">
+                Having trouble with the secure form? You can complete payment in
+                a new window.
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 flex items-center justify-center gap-1 shrink-0"
+                onClick={() =>
+                  window.open(checkoutUrl, "_blank", "noopener,noreferrer")
+                }
+              >
+                Open in New Tab <ExternalLink className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          )}
         </SheetContent>
       </Sheet>
     </div>
@@ -283,7 +336,7 @@ function TopUpModal({
   isOpen: boolean;
   onClose: () => void;
   userId: string;
-  onCheckoutIdGenerated: (checkoutId: string) => void;
+  onCheckoutIdGenerated: (checkoutId: string, url: string) => void;
   onCheckoutOpen: () => void;
 }) {
   const [selectedPack, setSelectedPack] = useState<number | "custom">(25);
@@ -312,12 +365,12 @@ function TopUpModal({
 
     try {
       setIsPurchasing(true);
-      const { checkoutId } = await createWalletCheckoutConfig({
+      const { checkoutId, url } = await createWalletCheckoutConfig({
         userId,
         amount,
       });
       if (checkoutId) {
-        onCheckoutIdGenerated(checkoutId);
+        onCheckoutIdGenerated(checkoutId, url || "");
         onCheckoutOpen();
       } else {
         throw new Error("Failed to generate checkout session");

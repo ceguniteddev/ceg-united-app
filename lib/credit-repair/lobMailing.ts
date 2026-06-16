@@ -116,7 +116,7 @@ export interface LobMailResponse {
   /** Lob letter ID, e.g. "ltr_abc123xyz" */
   lobId: string;
   /** USPS Form-3811 tracking number, 22 digits */
-  trackingNumber: string;
+  trackingNumber?: string | null;
   /** ISO date — Lob's expected_delivery_date */
   expectedDelivery: string;
   /** Always 'usps' for now */
@@ -214,7 +214,10 @@ export async function mailManyLettersViaLob(
   return out;
 }
 
-export function uspsTrackingUrl(trackingNumber: string): string {
+export function uspsTrackingUrl(
+  trackingNumber: string | null | undefined,
+): string {
+  if (!trackingNumber) return "";
   const clean = trackingNumber.replace(/\s+/g, "");
   return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${clean}`;
 }
