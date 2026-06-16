@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useFeeSettings } from "@/hooks/fee-settings";
 import { cn } from "@/lib/utils";
 import { useMembership } from "@/hooks/membership";
+import { useAuth } from "@/provider/AuthContext";
 
 interface PricingPlansProps {
   onSelectPlan?: (planId: string, amount: number) => void;
@@ -16,8 +17,9 @@ export function PricingPlans({
   onSelectPlan,
   isLoading = false,
 }: PricingPlansProps) {
+  const { userData } = useAuth();
   const { data: feeSettings, isLoading: isLoadingSettings } = useFeeSettings();
-  const { data: membership } = useMembership();
+  const { data: membership } = useMembership(userData?.id);
 
   const activeTierId = membership?.status === "active" ? membership.tier : null;
 

@@ -45,7 +45,7 @@ const MobileNavClient = () => {
   const { user, userData } = useAuth();
   // const { appliedFunding } = useGetUserApplyFunding();
   const { data: addons = [] } = useAddons();
-  const { data: membership } = useMembership();
+  const { data: membership } = useMembership(userData?.id);
   const pathname = usePathname();
   const router = useRouter();
   const { config: systemConfig } = useSystemConfig();
