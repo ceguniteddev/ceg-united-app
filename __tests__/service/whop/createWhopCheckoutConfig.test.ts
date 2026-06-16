@@ -5,6 +5,7 @@ vi.hoisted(() => {
   process.env.WHOP_COMPANY_ID = "test-company-id";
   process.env.WHOP_PRODUCT_ID = "test-product-id";
   process.env.WHOP_TRADELINE_PRODUCT_ID = "test-tradeline-product-id";
+  process.env.WHOP_WALLET_PRODUCT_ID = "test-wallet-product-id";
 });
 
 // --- Firestore mocks (before vi.mock calls) ---
