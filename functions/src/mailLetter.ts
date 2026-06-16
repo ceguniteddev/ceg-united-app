@@ -15,12 +15,7 @@ export const mailLetter = functions.onCall(
   {
     secrets: [LOB_API_KEY],
     invoker: "public",
-    cors: [
-      "http://localhost:3000",
-      "https://raccoon-robust-likely.ngrok-free.app",
-      "https://staging.cegunited.com",
-      "https://app.cegunited.com",
-    ],
+    cors: true,
   },
   async (req) => {
     if (!req.auth)

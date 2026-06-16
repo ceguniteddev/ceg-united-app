@@ -9,14 +9,12 @@ import {
 import type { GeneratedLetter } from "@/lib/credit-repair/credit-repair-types";
 import { downloadLetterPdf } from "@/lib/pdfGenerator";
 import { uspsTrackingUrl } from "@/lib/credit-repair/lobMailing";
-import React from "react";
 
 interface Props {
   letter: GeneratedLetter;
   itemCount: number;
   isBureau: boolean;
   onPreview: () => void;
-  onMarkSent: () => void;
   /** Open the Mail Letter (Lob.com) flow for this letter */
   onMail: () => void;
 }
@@ -26,7 +24,6 @@ export function LetterCard({
   itemCount,
   isBureau,
   onPreview,
-  onMarkSent,
   onMail,
 }: Props) {
   const isMailed = !!letter.mailedAt;
@@ -136,7 +133,7 @@ export function LetterCard({
               className="inline-flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold transition-colors"
             >
               <Send className="w-3.5 h-3.5" />
-              Mail $7
+              Mail
             </button>
           )}
         </div>

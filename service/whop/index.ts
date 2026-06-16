@@ -30,8 +30,8 @@ const WHOP_PRICING_PLAN_STARTER_ID = process.env.WHOP_PRICING_PLAN_STARTER_ID;
 const WHOP_PRICING_PLAN_PRO_ID = process.env.WHOP_PRICING_PLAN_PRO_ID;
 const WHOP_PRICING_PLAN_EXECUTIVE_ID =
   process.env.WHOP_PRICING_PLAN_EXECUTIVE_ID;
-// const WHOP_CREDIT_REPAIR_PRODUCT_ID = process.env.WHOP_CREDIT_REPAIR_PRODUCT_ID;
-const WHOP_CREDIT_MODULE_PRO_ID = process.env.WHOP_CREDIT_MODULE_PRO_ID;
+const WHOP_CREDIT_REPAIR_PRODUCT_ID = process.env.WHOP_CREDIT_REPAIR_PRODUCT_ID;
+// const WHOP_CREDIT_MODULE_PRO_ID = process.env.WHOP_CREDIT_MODULE_PRO_ID;
 
 const WHOP_FULL_PAYMENT_AMOUNT =
   process.env.NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT || "15000";
@@ -335,7 +335,7 @@ export const createAddonCheckoutConfig = async ({
     throw new Error("Whop SDK is not initialized. Check API Key.");
   }
 
-  if (!WHOP_COMPANY_ID || !WHOP_CREDIT_MODULE_PRO_ID) {
+  if (!WHOP_COMPANY_ID || !WHOP_CREDIT_REPAIR_PRODUCT_ID) {
     throw new Error("Payment Server configuration error.");
   }
 
@@ -350,7 +350,7 @@ export const createAddonCheckoutConfig = async ({
 
     if (addonId === "credit_module_pro") {
       amount = feeSettings.creditModuleProAddonPrice;
-      targetProductId = WHOP_CREDIT_MODULE_PRO_ID || productId;
+      targetProductId = WHOP_CREDIT_REPAIR_PRODUCT_ID || productId;
     }
 
     if (!targetProductId) {

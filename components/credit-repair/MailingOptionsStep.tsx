@@ -5,14 +5,13 @@ import {
   Mail,
   Loader2,
   ArrowLeft,
-  ShieldAlert,
 } from "lucide-react";
 import {
   MAILING_METHODS,
-  verifyAddressViaLob,
+  getMailingMethods,
   type MailingMethod,
-  type VerifyAddressResponse,
 } from "@/lib/credit-repair/lobMailing";
+import { useFeeSettings } from "@/hooks/fee-settings";
 
 // ============================================
 // MailingOptionsStep — Step B
@@ -45,12 +44,16 @@ export function MailingOptionsStep({
 }: Props) {
   const [method, setMethod] = useState<MailingMethod>(initialMethod);
   const [submitting, setSubmitting] = useState(false);
+  const { data: feeSettings } = useFeeSettings();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, []);
 
-  const cfg = MAILING_METHODS[method];
+  const mailingMethods = feeSettings
+    ? getMailingMethods(feeSettings)
+    : MAILING_METHODS;
+  const cfg = mailingMethods[method];
   const subtotal = cfg.price * letterCount;
   // Lob is invoice-billed so we just show subtotal == total — no tax in demo.
   const total = subtotal;
@@ -82,8 +85,8 @@ export function MailingOptionsStep({
         </div>
 
         <div className="space-y-3">
-          {(Object.keys(MAILING_METHODS) as MailingMethod[]).map((key) => {
-            const opt = MAILING_METHODS[key];
+          {(Object.keys(mailingMethods) as MailingMethod[]).map((key) => {
+            const opt = mailingMethods[key];
             const isActive = method === key;
             return (
               <button
@@ -198,7 +201,11 @@ function OrderSummaryCard({
   subtotal: number;
   total: number;
 }) {
-  const cfg = MAILING_METHODS[method];
+  const { data: feeSettings } = useFeeSettings();
+  const mailingMethods = feeSettings
+    ? getMailingMethods(feeSettings)
+    : MAILING_METHODS;
+  const cfg = mailingMethods[method];
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
       <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-600">
@@ -243,10 +250,10 @@ function OrderSummaryCard({
       </div>
 
       {/* USPS verification badge */}
-      <div className="mt-4 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 border border-emerald-100 text-[11px] font-semibold text-emerald-700">
+      {/* <div className="mt-4 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 border border-emerald-100 text-[11px] font-semibold text-emerald-700">
         <ShieldCheck className="w-3 h-3" />
         Address verified by USPS
-      </div>
+      </div> */}
     </div>
   );
 }
