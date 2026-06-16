@@ -235,7 +235,7 @@ type Props = {
 
 const FundingList = ({ appliedFunding, isAdminView }: Props) => {
   // const { userData } = useAuth();
-  const { data: membership } = useMembership();
+  const { data: membership } = useMembership(appliedFunding?.[0]?.userId);
   const hasPaidContract = membership?.status === "active" || !!isAdminView;
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -430,7 +430,7 @@ const FundingCard = ({
   appliedFunding: ApprovedBankFormData[] | undefined;
 }) => {
   // const { userData } = useAuth();
-  const { data: membership } = useMembership();
+  const { data: membership } = useMembership(row?.original?.userId);
   const hasPaidContract = membership?.status === "active" || !!isAdminView;
   const data = row.original;
   const displayBankName = hasPaidContract
@@ -587,7 +587,7 @@ const ActionCell = ({ row }: { row: any }) => {
     amount: number;
   } | null>(null);
   const { userData } = useAuth();
-  const { data: membership } = useMembership();
+  const { data: membership } = useMembership(row?.original?.userId);
 
   // const { denefitsContract } = useGetDenefitsContractsByUserId(
   //   row.original.userId,

@@ -35,7 +35,7 @@ import { toast } from "sonner";
 const Sidebar = () => {
   const { user, userData } = useAuth();
   const { data: addons = [] } = useAddons();
-  const { data: membership } = useMembership();
+  const { data: membership } = useMembership(userData?.id);
   const pathname = usePathname();
   const router = useRouter();
   const { config: systemConfig } = useSystemConfig();
