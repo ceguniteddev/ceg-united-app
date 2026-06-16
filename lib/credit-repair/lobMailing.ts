@@ -27,23 +27,24 @@ export type MailingMethod =
   | "certified" // ~$7.00 — proof of mailing + tracking number
   | "certified-rr"; // ~$11.50 — certified + return-receipt green card
 
-export const MAILING_METHODS: Record<
-  MailingMethod,
-  {
-    key: MailingMethod;
-    label: string;
-    price: number;
-    deliveryWindow: string;
-    description: string;
-    recommended?: boolean;
-    lobMailType: "usps_first_class";
-    lobExtraService: null | "certified" | "certified_return_receipt";
-  }
-> = {
+export interface MailingMethodConfig {
+  key: MailingMethod;
+  label: string;
+  price: number;
+  deliveryWindow: string;
+  description: string;
+  recommended?: boolean;
+  lobMailType: "usps_first_class";
+  lobExtraService: null | "certified" | "certified_return_receipt";
+}
+
+export const getMailingMethods = (
+  feeSettings?: any,
+): Record<MailingMethod, MailingMethodConfig> => ({
   "first-class": {
     key: "first-class",
     label: "First-Class Mail",
-    price: 1.95,
+    price: feeSettings?.firstClassMailFee ?? 1.95,
     deliveryWindow: "3-5 business days",
     description: "Regular USPS First-Class delivery. No tracking, no proof.",
     lobMailType: "usps_first_class",
@@ -52,7 +53,7 @@ export const MAILING_METHODS: Record<
   certified: {
     key: "certified",
     label: "Certified Mail",
-    price: 7.0,
+    price: feeSettings?.certifiedMailFee ?? 7.0,
     deliveryWindow: "3-5 business days",
     description:
       "Proof of mailing + USPS tracking number. Recommended for FCRA disputes.",
@@ -63,14 +64,16 @@ export const MAILING_METHODS: Record<
   "certified-rr": {
     key: "certified-rr",
     label: "Certified Mail + Return Receipt",
-    price: 11.5,
+    price: feeSettings?.certifiedMailRRFee ?? 11.5,
     deliveryWindow: "3-5 business days",
     description:
       "Strongest legal proof — bureau signature returned via green card.",
     lobMailType: "usps_first_class",
     lobExtraService: "certified_return_receipt",
   },
-};
+});
+
+export const MAILING_METHODS = getMailingMethods();
 
 export interface LobMailRequest {
   disputeId: string;
@@ -113,7 +116,7 @@ export interface LobMailResponse {
   /** Lob letter ID, e.g. "ltr_abc123xyz" */
   lobId: string;
   /** USPS Form-3811 tracking number, 22 digits */
-  trackingNumber: string;
+  trackingNumber?: string | null;
   /** ISO date — Lob's expected_delivery_date */
   expectedDelivery: string;
   /** Always 'usps' for now */
@@ -211,7 +214,10 @@ export async function mailManyLettersViaLob(
   return out;
 }
 
-export function uspsTrackingUrl(trackingNumber: string): string {
+export function uspsTrackingUrl(
+  trackingNumber: string | null | undefined,
+): string {
+  if (!trackingNumber) return "";
   const clean = trackingNumber.replace(/\s+/g, "");
   return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${clean}`;
 }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect } from "react";
 import {
   CheckCircle2,
   ExternalLink,
@@ -7,8 +7,12 @@ import {
   Clock,
   Copy,
   ArrowRight,
-} from 'lucide-react'
-import { uspsTrackingUrl, type LobMailResponse, MAILING_METHODS } from '@/lib/credit-repair/lobMailing'
+} from "lucide-react";
+import {
+  uspsTrackingUrl,
+  type LobMailResponse,
+  MAILING_METHODS,
+} from "@/lib/credit-repair/lobMailing";
 
 // ============================================
 // MailingSentStep — Step C
@@ -16,29 +20,34 @@ import { uspsTrackingUrl, type LobMailResponse, MAILING_METHODS } from '@/lib/cr
 // Confirmation screen. Supports both single-letter and bulk results.
 
 interface SingleResult {
-  agencyKey: string
-  agencyName: string
-  response: LobMailResponse
+  agencyKey: string;
+  agencyName: string;
+  response: LobMailResponse;
 }
 
 interface Props {
-  results: SingleResult[]
+  results: SingleResult[];
   /** Original mailing method (used for receipt summary) */
-  method: keyof typeof MAILING_METHODS
-  onDone: () => void
-  onViewTracking: () => void
+  method: keyof typeof MAILING_METHODS;
+  onDone: () => void;
+  onViewTracking: () => void;
 }
 
-export function MailingSentStep({ results, method, onDone, onViewTracking }: Props) {
+export function MailingSentStep({
+  results,
+  method,
+  onDone,
+  onViewTracking,
+}: Props) {
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' })
-  }, [])
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
 
-  const isBulk = results.length > 1
-  const totalCost = results.reduce((s, r) => s + r.response.totalPrice, 0)
-  const cfg = MAILING_METHODS[method]
+  const isBulk = results.length > 1;
+  const totalCost = results.reduce((s, r) => s + r.response.totalPrice, 0);
+  const cfg = MAILING_METHODS[method];
   // For single, deep-link the first; for bulk, use a header date.
-  const expected = results[0]?.response.expectedDelivery
+  const expected = results[0]?.response.expectedDelivery;
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
@@ -56,11 +65,12 @@ export function MailingSentStep({ results, method, onDone, onViewTracking }: Pro
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mt-0.5">
                 {isBulk
                   ? `${results.length} letters sent successfully`
-                  : 'Letter sent successfully'}
+                  : "Letter sent successfully"}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
-                Your dispute {isBulk ? 'letters are' : 'letter is'} on the way. Lob.com has
-                queued {isBulk ? 'them' : 'it'} for printing and USPS handoff.
+                Your dispute {isBulk ? "letters are" : "letter is"} on the way.
+                Lob.com has queued {isBulk ? "them" : "it"} for printing and
+                USPS handoff.
               </p>
             </div>
           </div>
@@ -69,7 +79,12 @@ export function MailingSentStep({ results, method, onDone, onViewTracking }: Pro
         {/* Tracking cards */}
         <div className="px-6 sm:px-8 py-5 sm:py-6 space-y-3">
           {results.map((r, idx) => (
-            <TrackingCard key={r.agencyKey} idx={idx + 1} total={results.length} item={r} />
+            <TrackingCard
+              key={r.agencyKey}
+              idx={idx + 1}
+              total={results.length}
+              item={r}
+            />
           ))}
         </div>
 
@@ -88,10 +103,10 @@ export function MailingSentStep({ results, method, onDone, onViewTracking }: Pro
               {expected && (
                 <ReceiptRow
                   label="Expected delivery"
-                  value={new Date(expected).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
+                  value={new Date(expected).toLocaleDateString("en-US", {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
                   })}
                 />
               )}
@@ -99,15 +114,21 @@ export function MailingSentStep({ results, method, onDone, onViewTracking }: Pro
                 label="Mailed from"
                 value={(() => {
                   const froms = Array.from(
-                    new Set(results.map((r) => r.response.mailedFrom).filter(Boolean) as string[]),
-                  )
-                  if (froms.length === 0) return 'Lob facility'
-                  if (froms.length === 1) return froms[0]
-                  return `${froms.length} Lob facilities`
+                    new Set(
+                      results
+                        .map((r) => r.response.mailedFrom)
+                        .filter(Boolean) as string[],
+                    ),
+                  );
+                  if (froms.length === 0) return "Lob facility";
+                  if (froms.length === 1) return froms[0];
+                  return `${froms.length} Lob facilities`;
                 })()}
               />
               <div className="pt-2 mt-1 border-t border-gray-200 flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-900">Total charged</span>
+                <span className="text-sm font-bold text-gray-900">
+                  Total charged
+                </span>
                 <span className="text-sm font-bold font-mono tabular-nums text-gray-900">
                   ${totalCost.toFixed(2)}
                 </span>
@@ -134,7 +155,7 @@ export function MailingSentStep({ results, method, onDone, onViewTracking }: Pro
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // ---------- subcomponents ----------
@@ -144,17 +165,18 @@ function TrackingCard({
   total,
   item,
 }: {
-  idx: number
-  total: number
-  item: SingleResult
+  idx: number;
+  total: number;
+  item: SingleResult;
 }) {
-  const url = uspsTrackingUrl(item.response.trackingNumber)
-  const expected = new Date(item.response.expectedDelivery)
-  const expectedLabel = expected.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  })
+  const hasTracking = !!item.response.trackingNumber;
+  const url = hasTracking ? uspsTrackingUrl(item.response.trackingNumber) : "";
+  const expected = new Date(item.response.expectedDelivery);
+  const expectedLabel = expected.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
 
   return (
     <div className="rounded-xl border border-gray-100 bg-white shadow-card-sm hover:shadow-card transition-shadow">
@@ -164,7 +186,9 @@ function TrackingCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="text-sm font-bold text-gray-900">{item.agencyName}</div>
+            <div className="text-sm font-bold text-gray-900">
+              {item.agencyName}
+            </div>
             {total > 1 && (
               <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
                 {idx} of {total}
@@ -172,17 +196,27 @@ function TrackingCard({
             )}
           </div>
           <div className="mt-1 flex items-center gap-2 flex-wrap">
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] font-mono tabular-nums text-brand-700 hover:text-brand-800 hover:underline"
-            >
-              <Mail className="w-3 h-3" />
-              {item.response.trackingNumber}
-              <ExternalLink className="w-3 h-3" />
-            </a>
-            <CopyButton value={item.response.trackingNumber.replace(/\s+/g, '')} />
+            {hasTracking ? (
+              <>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] font-mono tabular-nums text-brand-700 hover:text-brand-800 hover:underline"
+                >
+                  <Mail className="w-3 h-3" />
+                  {item.response.trackingNumber}
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                <CopyButton
+                  value={item.response.trackingNumber!.replace(/\s+/g, "")}
+                />
+              </>
+            ) : (
+              <span className="text-[11px] text-gray-400">
+                No tracking (USPS First-Class Mail)
+              </span>
+            )}
           </div>
           <div className="mt-1 flex items-center gap-3 text-[11px] text-gray-500">
             <span className="font-mono">Lob ID {item.response.lobId}</span>
@@ -194,7 +228,7 @@ function TrackingCard({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function ReceiptRow({ label, value }: { label: string; value: string }) {
@@ -203,15 +237,15 @@ function ReceiptRow({ label, value }: { label: string; value: string }) {
       <span className="text-gray-500">{label}</span>
       <span className="text-gray-900 font-medium">{value}</span>
     </div>
-  )
+  );
 }
 
 function CopyButton({ value }: { value: string }) {
   const handleCopy = () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(value).catch(() => {})
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(value).catch(() => {});
     }
-  }
+  };
   return (
     <button
       onClick={handleCopy}
@@ -220,5 +254,5 @@ function CopyButton({ value }: { value: string }) {
       <Copy className="w-3 h-3" />
       Copy
     </button>
-  )
+  );
 }

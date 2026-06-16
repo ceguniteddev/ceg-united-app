@@ -338,7 +338,7 @@ export function AttachDocumentsStep({
           />
         </Section>
 
-        <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
+        <div className="lg:hidden rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
               <Lock className="w-4 h-4" />
@@ -449,6 +449,35 @@ export function AttachDocumentsStep({
                   <span className="text-gray-900 font-medium">
                     {summary.postageClass}
                   </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-gray-900">
+                    Privacy & SSN Protection
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                    We recommend redacting all but the last 4 digits of your SSN
+                    on any documents containing it. CEG never stores your full
+                    SSN.
+                  </p>
+                  <label className="mt-3 inline-flex items-start gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={redactionConfirmed}
+                      onChange={(e) => setRedactionConfirmed(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                    />
+                    <span className="text-xs font-medium text-gray-800">
+                      I have redacted sensitive information where appropriate
+                    </span>
+                  </label>
                 </div>
               </div>
             </div>

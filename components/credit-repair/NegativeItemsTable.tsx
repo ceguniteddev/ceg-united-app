@@ -94,8 +94,13 @@ export function NegativeItemsTable({
     });
   }, [items, query, type, bureau, status]);
 
+  const selectableVisibleItems = useMemo(
+    () => filtered.filter((i) => i.status === "new"),
+    [filtered],
+  );
   const allVisibleSelected =
-    filtered.length > 0 && filtered.every((i) => selected.includes(i.id));
+    selectableVisibleItems.length > 0 &&
+    selectableVisibleItems.every((i) => selected.includes(i.id));
 
   const columns = useMemo(() => {
     const helper = createColumnHelper<NegativeItem>();
@@ -108,7 +113,9 @@ export function NegativeItemsTable({
             className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500/20"
             checked={allVisibleSelected}
             onChange={(e) =>
-              onSelectAll(e.target.checked ? filtered.map((i) => i.id) : [])
+              onSelectAll(
+                e.target.checked ? selectableVisibleItems.map((i) => i.id) : [],
+              )
             }
             aria-label="Select all visible"
           />
@@ -116,12 +123,14 @@ export function NegativeItemsTable({
         cell: ({ row }) => {
           const item = row.original;
           const isSel = selected.includes(item.id);
+          const canSelect = item.status === "new";
           return (
             <input
               type="checkbox"
               checked={isSel}
-              onChange={() => onToggle(item.id)}
-              className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500/20"
+              disabled={!canSelect}
+              onChange={() => canSelect && onToggle(item.id)}
+              className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label={`Select ${item.creditor}`}
             />
           );
@@ -194,7 +203,14 @@ export function NegativeItemsTable({
         },
       }),
     ];
-  }, [allVisibleSelected, filtered, selected, onSelectAll, onToggle]);
+  }, [
+    allVisibleSelected,
+    filtered,
+    selectableVisibleItems,
+    selected,
+    onSelectAll,
+    onToggle,
+  ]);
 
   const table = useReactTable({
     data: filtered,
@@ -345,6 +361,7 @@ export function NegativeItemsTable({
           table.getRowModel().rows.map((row) => {
             const item = row.original;
             const isSel = selected.includes(item.id);
+            const canSelect = item.status === "new";
             return (
               <div
                 key={row.id}
@@ -354,8 +371,9 @@ export function NegativeItemsTable({
                   <input
                     type="checkbox"
                     checked={isSel}
-                    onChange={() => onToggle(item.id)}
-                    className="mt-1 w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500/20"
+                    disabled={!canSelect}
+                    onChange={() => canSelect && onToggle(item.id)}
+                    className="mt-1 w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
                   />
                   <ItemTypeIcon type={item.type} size="sm" />
                   <div className="flex-1 min-w-0">

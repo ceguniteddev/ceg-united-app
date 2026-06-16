@@ -41,7 +41,8 @@ export function LettersReadyView({
             Letters ready
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            {allLetters.length} personalized letters generated{` · ${sentCount} `}
+            {allLetters.length} personalized letters generated
+            {` · ${sentCount} `}
             sent
             {mailedCount > 0 && (
               <>
@@ -52,27 +53,6 @@ export function LettersReadyView({
               </>
             )}
           </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* <button className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:border-gray-300 text-gray-700 text-xs font-semibold transition-colors">
-            Download All as ZIP
-          </button> */}
-          <button
-            onClick={() =>
-              state.startMailFlow(allLetters.map((l) => l.agencyKey))
-            }
-            disabled={allLetters.length === 0}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 text-white text-xs font-semibold transition-colors"
-          >
-            <Send className="w-3.5 h-3.5" />
-            Mail All Letters
-          </button>
-          <button
-            onClick={onContinueToTracking}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold transition-colors"
-          >
-            Go to Tracking
-          </button>
         </div>
       </div>
 
@@ -89,7 +69,6 @@ export function LettersReadyView({
                 !!bureauRecord[letter.agencyKey as keyof typeof bureauRecord]
               }
               onPreview={() => onPreview(letter)}
-              onMarkSent={() => state.markLetterSent(letter.agencyKey)}
               onMail={() => state.startMailFlow([letter.agencyKey])}
             />
           </div>

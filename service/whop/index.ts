@@ -8,6 +8,8 @@ import {
   PAYMENT_REQUESTS_COLLECTION,
   USER_WHOP_PAYMENTS,
   WHOP_CHECKOUTS_COLLECTION,
+  USER_WALLET,
+  USER_WALLET_TRANSACTIONS,
 } from "@/constant/collection-name";
 import { whopSdk } from "@/lib/whop-sdk";
 import {
@@ -30,8 +32,8 @@ const WHOP_PRICING_PLAN_STARTER_ID = process.env.WHOP_PRICING_PLAN_STARTER_ID;
 const WHOP_PRICING_PLAN_PRO_ID = process.env.WHOP_PRICING_PLAN_PRO_ID;
 const WHOP_PRICING_PLAN_EXECUTIVE_ID =
   process.env.WHOP_PRICING_PLAN_EXECUTIVE_ID;
-// const WHOP_CREDIT_REPAIR_PRODUCT_ID = process.env.WHOP_CREDIT_REPAIR_PRODUCT_ID;
-const WHOP_CREDIT_MODULE_PRO_ID = process.env.WHOP_CREDIT_MODULE_PRO_ID;
+const WHOP_CREDIT_REPAIR_PRODUCT_ID = process.env.WHOP_CREDIT_REPAIR_PRODUCT_ID;
+// const WHOP_CREDIT_MODULE_PRO_ID = process.env.WHOP_CREDIT_MODULE_PRO_ID;
 
 const WHOP_FULL_PAYMENT_AMOUNT =
   process.env.NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT || "15000";
@@ -335,7 +337,7 @@ export const createAddonCheckoutConfig = async ({
     throw new Error("Whop SDK is not initialized. Check API Key.");
   }
 
-  if (!WHOP_COMPANY_ID || !WHOP_CREDIT_MODULE_PRO_ID) {
+  if (!WHOP_COMPANY_ID || !WHOP_CREDIT_REPAIR_PRODUCT_ID) {
     throw new Error("Payment Server configuration error.");
   }
 
@@ -350,7 +352,7 @@ export const createAddonCheckoutConfig = async ({
 
     if (addonId === "credit_module_pro") {
       amount = feeSettings.creditModuleProAddonPrice;
-      targetProductId = WHOP_CREDIT_MODULE_PRO_ID || productId;
+      targetProductId = WHOP_CREDIT_REPAIR_PRODUCT_ID || productId;
     }
 
     if (!targetProductId) {
@@ -494,6 +496,85 @@ export const createCRSReportCheckoutConfig = async ({
   }
 };
 
+export const createWalletCheckoutConfig = async ({
+  userId,
+  amount,
+}: {
+  userId: string;
+  amount: number;
+}): Promise<{
+  checkoutId: string;
+  url: string;
+}> => {
+  if (!whopSdk) {
+    throw new Error("Whop SDK is not initialized. Check API Key.");
+  }
+
+  const WHOP_WALLET_PRODUCT_ID = process.env.WHOP_WALLET_PRODUCT_ID;
+  if (!WHOP_COMPANY_ID || !WHOP_WALLET_PRODUCT_ID) {
+    throw new Error("Payment Server configuration error.");
+  }
+
+  try {
+    const user = await getUserById(userId);
+    if (!user) throw new Error("User not found");
+
+    const planDetails: CheckoutConfigurationCreateParams.CreateCheckoutSessionInputModePaymentWithPlan.Plan =
+      {
+        company_id: WHOP_COMPANY_ID,
+        currency: "usd" as const,
+        initial_price: amount,
+        plan_type: "one_time" as const,
+        product_id: WHOP_WALLET_PRODUCT_ID,
+        visibility: "hidden" as const,
+        payment_method_configuration: {
+          enabled: ["card", "apple_pay", "google_pay"],
+          disabled: ["crypto", "splitit", "cashapp", "paypal"],
+          include_platform_defaults: false,
+        },
+      };
+
+    const checkoutConfig = await whopSdk.checkoutConfigurations.create({
+      plan: planDetails,
+      metadata: {
+        userId: userId,
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        paymentKey: "WalletTopUp",
+      },
+    });
+
+    if (!checkoutConfig.id) {
+      throw new Error("Failed to create checkout link for wallet top-up.");
+    }
+
+    const checkoutId = checkoutConfig.id;
+
+    // Save checkout details to Firestore
+    const checkoutDoc = {
+      userId,
+      checkoutId,
+      url: checkoutConfig.purchase_url,
+      createdAt: new Date(),
+      initialPrice: planDetails.initial_price,
+      planType: planDetails.plan_type,
+      productId: planDetails.product_id,
+      status: "created",
+      paymentKey: "WalletTopUp",
+      ...checkoutConfig,
+    };
+
+    await firestoreAdmin()
+      .collection(WHOP_CHECKOUTS_COLLECTION)
+      .add(checkoutDoc);
+
+    return { checkoutId, url: checkoutConfig.purchase_url };
+  } catch (error: any) {
+    logError(new Error(`createWalletCheckoutConfig error: ${error.message}`));
+    throw error;
+  }
+};
+
 export const recordPaymentSucceeded = async ({
   payment,
 }: {
@@ -531,6 +612,81 @@ export const recordPaymentSucceeded = async ({
     const collectionRef = db.collection(USER_WHOP_PAYMENTS);
     await collectionRef.add({ ...payment, userId: null });
     return null;
+  }
+
+  const userId = authUser.uid;
+
+  // Check if this is a wallet top-up payment
+  const checkoutConfigId =
+    (payment as any).checkout_configuration_id ||
+    (payment as any).checkout_configuration?.id;
+  const checkoutDetail = checkoutConfigId
+    ? ((await getWhopCheckoutDetailByCheckoutId(checkoutConfigId)) as any)
+    : null;
+  const isWalletTopUp =
+    checkoutDetail?.paymentKey === "WalletTopUp" ||
+    (payment as any).product_id === process.env.WHOP_WALLET_PRODUCT_ID;
+
+  if (isWalletTopUp) {
+    try {
+      await db.runTransaction(async (transaction) => {
+        const txQuery = db
+          .collection(USER_WALLET_TRANSACTIONS)
+          .where("paymentId", "==", payment.id)
+          .limit(1);
+        const transactionQuery = await transaction.get(txQuery);
+
+        if (!transactionQuery.empty) {
+          logInfo(
+            "Wallet top-up transaction already exists. Skipping credit.",
+            { paymentId: payment.id },
+          );
+          return;
+        }
+
+        const creditAmount =
+          checkoutDetail?.initialPrice ||
+          ((payment as any).amount ? (payment as any).amount / 100 : 0);
+        const walletRef = db.collection(USER_WALLET).doc(userId);
+        const walletDoc = await transaction.get(walletRef);
+
+        if (!walletDoc.exists) {
+          transaction.set(walletRef, {
+            balance: creditAmount,
+            userId,
+            updatedAt: new Date().toISOString(),
+          });
+        } else {
+          const currentBalance = walletDoc.data()?.balance || 0;
+          transaction.update(walletRef, {
+            balance: currentBalance + creditAmount,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+
+        const transactionRef = db.collection(USER_WALLET_TRANSACTIONS).doc();
+        transaction.set(transactionRef, {
+          userId,
+          amount: creditAmount,
+          type: "credit",
+          description: "Wallet Top-up via Whop",
+          createdAt: new Date().toISOString(),
+          paymentId: payment.id,
+        });
+
+        logInfo("Successfully credited wallet top-up", {
+          userId,
+          creditAmount,
+          paymentId: payment.id,
+        });
+      });
+    } catch (txError: any) {
+      logError(
+        new Error(
+          `Failed to credit wallet during recordPaymentSucceeded transaction: ${txError.message}`,
+        ),
+      );
+    }
   }
 
   const collectionRef = db.collection(USER_WHOP_PAYMENTS);
