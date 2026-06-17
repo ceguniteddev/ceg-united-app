@@ -131,3 +131,4 @@ export * from "./classifyDocument";
 export * from "./mailLetter";
 export * from "./lobWebhook";
 export * from "./verifyAddress";
+export * from "./wallet";

@@ -15,6 +15,9 @@ export interface FeeSettings {
   personalUnlimitedUnlockFee: number;
   businessUnlimitedUnlockFee: number;
   sbaUnlimitedUnlockFee: number;
+  firstClassMailFee: number;
+  certifiedMailFee: number;
+  certifiedMailRRFee: number;
 }
 
 export const getFeeSettings = async (): Promise<FeeSettings> => {
@@ -35,6 +38,9 @@ export const getFeeSettings = async (): Promise<FeeSettings> => {
     personalUnlimitedUnlockFee: data?.personalUnlimitedUnlockFee ?? 999,
     businessUnlimitedUnlockFee: data?.businessUnlimitedUnlockFee ?? 999,
     sbaUnlimitedUnlockFee: data?.sbaUnlimitedUnlockFee ?? 999,
+    firstClassMailFee: data?.firstClassMailFee ?? 1.95,
+    certifiedMailFee: data?.certifiedMailFee ?? 7.0,
+    certifiedMailRRFee: data?.certifiedMailRRFee ?? 11.5,
   };
 };
 

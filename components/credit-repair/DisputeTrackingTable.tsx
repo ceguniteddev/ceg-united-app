@@ -133,17 +133,33 @@ export function DisputeTrackingTable({ rows, onView, onEscalate }: Props) {
         header: "Tracking",
         cell: (info) => {
           const letter = info.getValue();
-          return letter.trackingNumber ? (
-            <a
-              href={uspsTrackingUrl(letter.trackingNumber)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[10.5px] font-mono tabular-nums text-brand-700 hover:text-brand-800 hover:underline whitespace-nowrap"
-            >
-              {letter.trackingNumber}
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          ) : (
+          const isMailed = !!letter.mailedAt;
+          const hasTracking = !!letter.trackingNumber;
+
+          if (hasTracking) {
+            return (
+              <a
+                href={uspsTrackingUrl(letter.trackingNumber)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[10.5px] font-mono tabular-nums text-brand-700 hover:text-brand-800 hover:underline whitespace-nowrap"
+              >
+                {letter.trackingNumber}
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            );
+          }
+
+          if (isMailed) {
+            return (
+              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                First-Class (No Tracking)
+              </span>
+            );
+          }
+
+          return (
             <span className="text-[11px] text-gray-400 italic">Not mailed</span>
           );
         },

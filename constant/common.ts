@@ -124,6 +124,11 @@ export const sidebarLinks = [
     label: "Letter Stream",
   },
   {
+    imgURL: "/icons/wallet.svg",
+    route: "/client/wallet",
+    label: "Wallet",
+  },
+  {
     imgURL: "/icons/book-open-text.svg",
     route: "/client/my-learning",
     label: "My Learning",
@@ -473,6 +478,10 @@ export const US_STATES = [
     value: "AK",
   },
   {
+    label: "American Samoa",
+    value: "AS",
+  },
+  {
     label: "Arizona",
     value: "AZ",
   },
@@ -507,6 +516,10 @@ export const US_STATES = [
   {
     label: "Georgia",
     value: "GA",
+  },
+  {
+    label: "Guam",
+    value: "GU",
   },
   {
     label: "Hawaii",
@@ -605,6 +618,10 @@ export const US_STATES = [
     value: "ND",
   },
   {
+    label: "Northern Mariana Islands",
+    value: "MP",
+  },
+  {
     label: "Ohio",
     value: "OH",
   },
@@ -619,6 +636,10 @@ export const US_STATES = [
   {
     label: "Pennsylvania",
     value: "PA",
+  },
+  {
+    label: "Puerto Rico",
+    value: "PR",
   },
   {
     label: "Rhode Island",
@@ -639,6 +660,10 @@ export const US_STATES = [
   {
     label: "Texas",
     value: "TX",
+  },
+  {
+    label: "U.S. Virgin Islands",
+    value: "VI",
   },
   {
     label: "Utah",

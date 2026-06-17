@@ -26,6 +26,9 @@ interface FeeSettingsFormData {
   personalUnlimitedUnlockFee: number;
   businessUnlimitedUnlockFee: number;
   sbaUnlimitedUnlockFee: number;
+  firstClassMailFee: number;
+  certifiedMailFee: number;
+  certifiedMailRRFee: number;
 }
 
 export default function FeeSettingsPage() {
@@ -44,6 +47,9 @@ export default function FeeSettingsPage() {
       personalUnlimitedUnlockFee: 999,
       businessUnlimitedUnlockFee: 999,
       sbaUnlimitedUnlockFee: 999,
+      firstClassMailFee: 1.95,
+      certifiedMailFee: 7.0,
+      certifiedMailRRFee: 11.5,
     },
   });
 
@@ -89,6 +95,9 @@ export default function FeeSettingsPage() {
         personalUnlimitedUnlockFee: feeSettings.personalUnlimitedUnlockFee,
         businessUnlimitedUnlockFee: feeSettings.businessUnlimitedUnlockFee,
         sbaUnlimitedUnlockFee: feeSettings.sbaUnlimitedUnlockFee,
+        firstClassMailFee: feeSettings.firstClassMailFee,
+        certifiedMailFee: feeSettings.certifiedMailFee,
+        certifiedMailRRFee: feeSettings.certifiedMailRRFee,
       });
     }
   }, [feeSettings, reset]);
@@ -106,6 +115,9 @@ export default function FeeSettingsPage() {
         personalUnlimitedUnlockFee: Number(data.personalUnlimitedUnlockFee),
         businessUnlimitedUnlockFee: Number(data.businessUnlimitedUnlockFee),
         sbaUnlimitedUnlockFee: Number(data.sbaUnlimitedUnlockFee),
+        firstClassMailFee: Number(data.firstClassMailFee),
+        certifiedMailFee: Number(data.certifiedMailFee),
+        certifiedMailRRFee: Number(data.certifiedMailRRFee),
       });
       toast.success("Fee settings updated successfully");
     } catch (error) {
@@ -143,9 +155,9 @@ export default function FeeSettingsPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">
-                    Credit Report Fees
+                <div className="space-y-4 rounded-xl border border-blue-100 bg-blue-50/40 p-5">
+                  <h3 className="text-lg font-semibold text-blue-900 border-b border-blue-100 pb-2 flex items-center gap-2">
+                    📊 Credit Report Fees
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-1">
@@ -204,9 +216,9 @@ export default function FeeSettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">
-                    Membership Tiers (Monthly)
+                <div className="space-y-4 rounded-xl border border-purple-100 bg-purple-50/40 p-5">
+                  <h3 className="text-lg font-semibold text-purple-900 border-b border-purple-100 pb-2 flex items-center gap-2">
+                    ⭐ Membership Tiers (Monthly)
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-1">
@@ -245,9 +257,9 @@ export default function FeeSettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">
-                    Add-ons & Refresh Fees
+                <div className="space-y-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-5">
+                  <h3 className="text-lg font-semibold text-emerald-900 border-b border-emerald-100 pb-2 flex items-center gap-2">
+                    🔄 Add-ons & Refresh Fees
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-1">
@@ -275,9 +287,9 @@ export default function FeeSettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">
-                    One-Time Unlocks
+                <div className="space-y-4 rounded-xl border border-amber-100 bg-amber-50/40 p-5">
+                  <h3 className="text-lg font-semibold text-amber-900 border-b border-amber-100 pb-2 flex items-center gap-2">
+                    🔓 One-Time Unlocks
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-1">
@@ -307,6 +319,47 @@ export default function FeeSettingsPage() {
                         control={control}
                         name="sbaUnlimitedUnlockFee"
                         label="SBA / Commercial Unlimited"
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                        min={0}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 rounded-xl border border-rose-100 bg-rose-50/40 p-5">
+                  <h3 className="text-lg font-semibold text-rose-900 border-b border-rose-100 pb-2 flex items-center gap-2">
+                    ✉️ Mailing Options Fees
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-1">
+                      <FormNumberInput
+                        control={control}
+                        name="firstClassMailFee"
+                        label="First-Class Mail"
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                        min={0}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <FormNumberInput
+                        control={control}
+                        name="certifiedMailFee"
+                        label="Certified Mail"
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                        min={0}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <FormNumberInput
+                        control={control}
+                        name="certifiedMailRRFee"
+                        label="Certified Mail + Return Receipt"
                         prefix="$"
                         decimalScale={2}
                         fixedDecimalScale={true}

@@ -10,6 +10,7 @@ export const PaymentPlanEnum = z.enum([
   "TradelinePurchase",
   "CreditReportFee",
   "BusinessCreditReportFee",
+  "WalletTopUp",
 ]);
 
 export type PaymentPlan = z.infer<typeof PaymentPlanEnum>;

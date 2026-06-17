@@ -217,6 +217,7 @@ export const classifyDocument = onRequest(
     timeoutSeconds: 120,
     invoker: "public",
     secrets: [adminAccessKey, geminiApiKey],
+    cors: true,
   },
   async (req, res) => {
     // Verify API Key

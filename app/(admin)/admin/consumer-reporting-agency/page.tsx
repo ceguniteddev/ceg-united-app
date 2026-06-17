@@ -138,13 +138,15 @@ export default function ConsumerReportingAgencyPage() {
 
     setIsVerifyingAddress(true);
     try {
-      const res = await verifyAddressViaLob({
+      const addressObject = {
         primary_line: address.line1,
         secondary_line: address.line2,
         city: address.city,
         state: address.state,
         zip_code: address.zip,
-      });
+      };
+      // console.log(addressObject);
+      const res = await verifyAddressViaLob(addressObject);
 
       form.setValue("addressVerification", {
         deliverability: res.deliverability,
