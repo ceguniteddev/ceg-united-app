@@ -1,5 +1,6 @@
 "use client";
 import Spinner from "@/components/Spinner";
+import { checkFreePullEligibility } from "@/lib/crs-eligibility";
 import { useClientCRSReportQuery } from "@/hooks/crs";
 import { useCountUp } from "@/hooks/useCountUp";
 import {
@@ -67,6 +68,7 @@ import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { UserWithId } from "@/schema/registration";
 import { ConfirmButton } from "@/components/Confirmation";
 import { useFeeSettings } from "@/hooks/fee-settings";
+import { useMembership } from "@/hooks/membership";
 
 ChartJS.register(
   CategoryScale,
@@ -870,7 +872,19 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
   const [checkoutMetadata, setCheckoutMetadata] = useState<any>(null);
   const { crsReport, isLoading } = useClientCRSReportQuery({ userId });
   const { data: feeSettings } = useFeeSettings();
+  const { data: membership } = useMembership(userId);
   const reportFee = feeSettings?.creditReportFee || 49;
+
+  const isEligibleForFreePull = useMemo(() => {
+    return checkFreePullEligibility(membership, userData?.lastFreePullAt);
+  }, [membership, userData?.lastFreePullAt]);
+
+  const membershipTierLabel = useMemo(() => {
+    if (membership?.tier === "tier_starter") return "Starter";
+    if (membership?.tier === "tier_pro") return "Pro";
+    if (membership?.tier === "tier_executive") return "Executive";
+    return "Premium";
+  }, [membership?.tier]);
 
   // Group reports by createdAt timestamp (only for bureau reports)
   const reportsByTimestamp = useMemo(() => {
@@ -1184,20 +1198,47 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
               isLoading={isGenerating}
               disabled={isGenerating}
               description={
-                <div className="space-y-3 mt-2 text-sm text-gray-600">
-                  <p>Pulling a new credit report requires a one-time fee.</p>
-                  <ul className="list-disc pl-5 font-medium text-gray-800 text-left">
-                    <li>Fee ${reportFee.toFixed(2)}.</li>
-                  </ul>
-                  <p>
-                    You will be redirected to our secure payment portal to
-                    complete your purchase before the report is generated.
-                  </p>
-                </div>
+                isEligibleForFreePull ? (
+                  <div className="space-y-3 mt-2 text-sm text-blue-800 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <p className="font-semibold flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-blue-600" />
+                      Free Monthly Pull Available!
+                    </p>
+                    <p>
+                      As an active {membershipTierLabel} member, you are
+                      eligible for 1 free credit report pull every calendar
+                      month.
+                    </p>
+                    <p>
+                      You have not used your free pull for this month yet.
+                      Pulling a new credit report now will use this monthly
+                      benefit and will be completely free of charge.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 mt-2 text-sm text-gray-600">
+                    <p>Pulling a new credit report requires a one-time fee.</p>
+                    <ul className="list-disc pl-5 font-medium text-gray-800 text-left">
+                      <li>Fee ${reportFee.toFixed(2)}.</li>
+                    </ul>
+                    <p>
+                      You will be redirected to our secure payment portal to
+                      complete your purchase before the report is generated.
+                    </p>
+                  </div>
+                )
               }
-              confirmLabel="Proceed to Payment"
+              confirmLabel={
+                isEligibleForFreePull
+                  ? "Pull Credit Report for Free"
+                  : "Proceed to Payment"
+              }
               classNameAction="bg-blue-600 hover:bg-blue-700 text-white"
-              title="Pull New Credit Report"
+              title={
+                isEligibleForFreePull
+                  ? "Free Credit Report Pull"
+                  : "Pull New Credit Report"
+              }
               trigger={
                 <button
                   onClick={() => setIsConfirmOpen(true)}
@@ -1211,8 +1252,17 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
                     </>
                   ) : (
                     <>
-                      <ReceiptIcon className="w-4 h-4" />
-                      Pull Credit Report
+                      {isEligibleForFreePull ? (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          Pull Credit Report (Free)
+                        </>
+                      ) : (
+                        <>
+                          <ReceiptIcon className="w-4 h-4" />
+                          Pull Credit Report
+                        </>
+                      )}
                     </>
                   )}
                 </button>

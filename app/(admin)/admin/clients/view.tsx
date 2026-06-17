@@ -17,7 +17,8 @@ import {
   Save,
 } from "lucide-react";
 import type { Metadata } from "next";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useMemo } from "react";
+import { getFreePullStatus } from "@/lib/crs-eligibility";
 import {
   Select,
   SelectContent,
@@ -101,6 +102,7 @@ const ClientData = ({
   isBrokerView?: boolean;
 }) => {
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const { data: membership } = useMembership(user.id);
 
   if (!user) {
     return <EmptyState title="User not found" description="" />;
@@ -110,6 +112,16 @@ const ClientData = ({
   const name = [user.firstName, user.middleName, user.lastName]
     .filter(Boolean)
     .join(" ");
+
+  const personalFreePullStatus = useMemo(
+    () => getFreePullStatus(membership, user.lastFreePullAt, fmtDate),
+    [membership, user.lastFreePullAt],
+  );
+
+  const businessFreePullStatus = useMemo(
+    () => getFreePullStatus(membership, user.lastFreeBusinessPullAt, fmtDate),
+    [membership, user.lastFreeBusinessPullAt],
+  );
 
   return (
     <main className="mx-auto w-full px-2 sm:px-0">
@@ -146,6 +158,14 @@ const ClientData = ({
               )}
 
               <Info label="Registered" value={fmtDate(registered)} />
+              <Info
+                label="Monthly Personal Free Pull"
+                value={personalFreePullStatus}
+              />
+              <Info
+                label="Monthly Business Free Pull"
+                value={businessFreePullStatus}
+              />
             </div>
 
             {!isBrokerView && (

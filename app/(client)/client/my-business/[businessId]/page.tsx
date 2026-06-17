@@ -1,5 +1,5 @@
 "use client";
-import { use, useState } from "react";
+import { use, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -11,6 +11,7 @@ import {
   Loader2,
   X,
   LockIcon,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/provider/AuthContext";
 import Spinner from "@/components/Spinner";
@@ -45,6 +46,7 @@ import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { useFeeSettings } from "@/hooks/fee-settings";
 
 import { useMembership } from "@/hooks/membership";
+import { checkFreePullEligibility } from "@/lib/crs-eligibility";
 
 // Pricing / Checkout imports
 import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
@@ -126,6 +128,13 @@ export default function BusinessDetailPage({ params }: Props) {
 
   const { data: userMembership } = useMembership(user?.uid);
   const isPremium = userMembership?.status === "active";
+
+  const isEligibleForFreePull = useMemo(() => {
+    return checkFreePullEligibility(
+      userMembership,
+      userData?.lastFreeBusinessPullAt,
+    );
+  }, [userMembership, userData?.lastFreeBusinessPullAt]);
 
   if (!user || isLoading) {
     return <Spinner displayText="Loading business…" />;
@@ -329,6 +338,11 @@ export default function BusinessDetailPage({ params }: Props) {
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Pulling Credit Report...
                     </>
+                  ) : isEligibleForFreePull ? (
+                    <>
+                      <Sparkles className="w-4 h-4 text-yellow-300" />
+                      Pull Credit Report (Free)
+                    </>
                   ) : (
                     <>
                       <ReceiptIcon className="w-4 h-4" />
@@ -372,11 +386,17 @@ export default function BusinessDetailPage({ params }: Props) {
                     >
                       <IconMenu
                         text={
-                          isGenerating ? "Pulling..." : "Pull Credit Report"
+                          isGenerating
+                            ? "Pulling..."
+                            : isEligibleForFreePull
+                              ? "Pull Credit Report (Free)"
+                              : "Pull Credit Report"
                         }
                         icon={
                           isGenerating ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : isEligibleForFreePull ? (
+                            <Sparkles className="h-4 w-4 text-yellow-500" />
                           ) : (
                             <ReceiptIcon className="h-4 w-4" />
                           )
@@ -477,20 +497,56 @@ export default function BusinessDetailPage({ params }: Props) {
         onConfirm={handleGenerateReport}
         isLoading={isGenerating}
         description={
-          <div className="space-y-3 mt-2 text-sm text-gray-600">
-            <p>Pulling a new business credit report requires a one-time fee.</p>
-            <ul className="list-disc pl-5 font-medium text-gray-800">
-              <li>Fee ${reportFee.toFixed(2)}.</li>
-            </ul>
-            <p>
-              You will be redirected to our secure payment portal to complete
-              your purchase before the report is generated.
-            </p>
-          </div>
+          isEligibleForFreePull ? (
+            <div className="bg-blue-50 text-blue-800 border-blue-100 p-4 rounded-lg border space-y-3 mt-4 text-sm">
+              <div className="flex items-center gap-2 font-semibold">
+                <Sparkles className="w-5 h-5 text-blue-600" />
+                Monthly Free Benefit Available
+              </div>
+              <p>
+                As an active{" "}
+                {userMembership?.tier
+                  ? userMembership.tier
+                      .replace("tier_", "")
+                      .charAt(0)
+                      .toUpperCase() +
+                    userMembership.tier.replace("tier_", "").slice(1)
+                  : "Premium"}{" "}
+                member, you are eligible for 1 free business credit report pull
+                every calendar month.
+              </p>
+              <p>
+                You have not used your free business pull for this month yet.
+                Pulling a new credit report now will use this monthly benefit
+                and will be completely free of charge.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3 mt-2 text-sm text-gray-600">
+              <p>
+                Pulling a new business credit report requires a one-time fee.
+              </p>
+              <ul className="list-disc pl-5 font-medium text-gray-800">
+                <li>Fee ${reportFee.toFixed(2)}.</li>
+              </ul>
+              <p>
+                You will be redirected to our secure payment portal to complete
+                your purchase before the report is generated.
+              </p>
+            </div>
+          )
         }
-        confirmLabel="Proceed to Payment"
+        confirmLabel={
+          isEligibleForFreePull
+            ? "Pull Credit Report for Free"
+            : "Proceed to Payment"
+        }
         classNameAction="bg-blue-600 hover:bg-blue-700 text-white"
-        title="Pull New Credit Report"
+        title={
+          isEligibleForFreePull
+            ? "Free Credit Report Pull"
+            : "Pull New Credit Report"
+        }
       />
 
       {/* Membership Pricing Modal */}

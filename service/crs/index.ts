@@ -3,6 +3,7 @@ import {
   CRS_REPORT_BUSINESS_PROFILE,
   CRS_REPORT_BUSINESS_SCORE,
   CRS_REPORT_DATA,
+  USER_COLLECTION,
 } from "@/constant/collection-name";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
@@ -21,6 +22,7 @@ import { Business } from "@/schema";
 import { getBusiness } from "@/service/business";
 import { getUserById } from "@/service/user";
 import { getUserMembership } from "@/service/membership";
+import { checkFreePullEligibility } from "@/lib/crs-eligibility";
 import { CRSAddressInfo, CRSPersonalInfo, CRSReportType } from "@/types/crs";
 import { getFeeSettings } from "@/service/fee-settings";
 import { createCRSReportCheckoutConfig } from "@/service/whop";
@@ -48,6 +50,93 @@ export const initiateCRSReportCheckout = async ({
   // Generate a temporary reference number if one isn't provided
   const generatedRef = referenceNumber || `crs-req-${Date.now()}`;
 
+  // Check if eligible for a free monthly pull benefit
+  if (reportType === "personal") {
+    try {
+      const membership = await getUserMembership(userId);
+      const isEligible = checkFreePullEligibility(
+        membership,
+        user.lastFreePullAt,
+      );
+
+      if (isEligible) {
+        logInfo(
+          "User is eligible for a free monthly personal credit report pull. Initiating bypass flow.",
+          {
+            userId,
+            referenceNumber: generatedRef,
+          },
+        );
+
+        // Update user's document in Firestore with lastFreePullAt set to now
+        const db = firestoreAdmin();
+        await db.collection(USER_COLLECTION).doc(userId).update({
+          lastFreePullAt: new Date(),
+        });
+
+        // Generate the CRS Report directly
+        await generateCRSReport({
+          userId,
+          referenceNumber: generatedRef,
+          bureaus: { equifax: true, experian: true, transunion: true },
+          bypassPremiumCheck: true,
+        });
+
+        return { success: true, url: null, checkoutId: null };
+      }
+    } catch (error) {
+      console.error(
+        "Error evaluating free monthly personal pull eligibility:",
+        error,
+      );
+      // Fall back to standard paid flow if error occurs during verification
+    }
+  } else if (reportType === "business") {
+    try {
+      if (!businessId) {
+        throw new Error("Business ID is required for a business report pull.");
+      }
+      const membership = await getUserMembership(userId);
+      const isEligible = checkFreePullEligibility(
+        membership,
+        user.lastFreeBusinessPullAt,
+      );
+
+      if (isEligible) {
+        logInfo(
+          "User is eligible for a free monthly business credit report pull. Initiating bypass flow.",
+          {
+            userId,
+            referenceNumber: generatedRef,
+            businessId,
+          },
+        );
+
+        // Update user's document in Firestore with lastFreeBusinessPullAt set to now
+        const db = firestoreAdmin();
+        await db.collection(USER_COLLECTION).doc(userId).update({
+          lastFreeBusinessPullAt: new Date(),
+        });
+
+        // Generate the CRS Business Report directly
+        await generateCRSReportBusiness(
+          userId,
+          generatedRef,
+          businessId,
+          true, // bypassPremiumCheck
+        );
+
+        return { success: true, url: null, checkoutId: null };
+      }
+    } catch (error) {
+      console.error(
+        "Error evaluating free monthly business pull eligibility:",
+        error,
+      );
+      // Fall back to standard paid flow if error occurs during verification
+    }
+  }
+
   if (fee > 0) {
     // Return checkout info
     const paymentKey =
@@ -66,25 +155,6 @@ export const initiateCRSReportCheckout = async ({
   }
 
   return { success: false, url: null, checkoutId: null };
-  // } else {
-  //   // Fee is $0, invoke generation directly
-  //   if (reportType === "personal") {
-  //     await generateCRSReport({
-  //       userId,
-  //       referenceNumber: generatedRef,
-  //       bureaus: { equifax: true, experian: true, transunion: true },
-  //       bypassPremiumCheck: true,
-  //     });
-  //   } else if (reportType === "business" && businessId) {
-  //     await generateCRSReportBusiness(
-  //       userId,
-  //       generatedRef,
-  //       businessId,
-  //       true, // bypassPremiumCheck
-  //     );
-  //   }
-  //   return { success: true, url: null, checkoutId: null };
-  // }
 };
 
 export const recordCRSReport = async (
