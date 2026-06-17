@@ -2,6 +2,9 @@
 import { use, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { useUserQuery } from "@/hooks/user";
+import { GET_USER } from "@/constant/react-query-keys";
 import {
   ArrowLeft,
   MoreHorizontal,
@@ -58,10 +61,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  createMembershipCheckoutConfig,
-  createAddonCheckoutConfig,
-} from "@/service/whop";
+import { createMembershipCheckoutConfig } from "@/service/whop";
 
 interface Props {
   params: Promise<{ businessId: string }>;
@@ -79,7 +79,10 @@ function getInitials(name: string) {
 export default function BusinessDetailPage({ params }: Props) {
   const { businessId } = use(params);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, userData } = useAuth();
+  const { userData: queryUserData } = useUserQuery(user?.uid ?? "");
+  const activeUserData = queryUserData || userData;
   const { business, isLoading } = useBusinessByIdQuery(
     user?.uid ?? "",
     businessId,
@@ -132,9 +135,9 @@ export default function BusinessDetailPage({ params }: Props) {
   const isEligibleForFreePull = useMemo(() => {
     return checkFreePullEligibility(
       userMembership,
-      userData?.lastFreeBusinessPullAt,
+      activeUserData?.lastFreeBusinessPullAt,
     );
-  }, [userMembership, userData?.lastFreeBusinessPullAt]);
+  }, [userMembership, activeUserData?.lastFreeBusinessPullAt]);
 
   if (!user || isLoading) {
     return <Spinner displayText="Loading business…" />;
@@ -197,6 +200,13 @@ export default function BusinessDetailPage({ params }: Props) {
         toast.success(
           "Credit report generation has started. Please wait a few moments for the new data to appear.",
         );
+        queryClient.invalidateQueries({ queryKey: [GET_USER, user!.uid] });
+        queryClient.invalidateQueries({
+          queryKey: ["GET_BUSINESS_BY_ID", user!.uid, businessId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["GET_BUSINESS_AUDIT", user!.uid, businessId],
+        });
         setIsConfirmOpen(false);
       }
     } catch (error: any) {
@@ -660,6 +670,15 @@ export default function BusinessDetailPage({ params }: Props) {
                     toast.success(
                       "Payment successful! Generating your business credit report...",
                     );
+                    queryClient.invalidateQueries({
+                      queryKey: [GET_USER, user.uid],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ["GET_BUSINESS_BY_ID", user.uid, businessId],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ["GET_BUSINESS_AUDIT", user.uid, businessId],
+                    });
                     setCrsCheckoutId(null);
                     setCheckoutMetadata(null);
                   } catch (error) {

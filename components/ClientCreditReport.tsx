@@ -3,6 +3,9 @@ import Spinner from "@/components/Spinner";
 import { checkFreePullEligibility } from "@/lib/crs-eligibility";
 import { useClientCRSReportQuery } from "@/hooks/crs";
 import { useCountUp } from "@/hooks/useCountUp";
+import { useQueryClient } from "@tanstack/react-query";
+import { useUserQuery } from "@/hooks/user";
+import { GET_USER, GET_USER_CRS_REPORT } from "@/constant/react-query-keys";
 import {
   CreditReport,
   CreditReportWithId,
@@ -866,6 +869,10 @@ type Props = {
 // --- Main Page ---
 const ClientCreditReport = ({ userId, userData }: Props) => {
   // const router = useRouter();
+  const queryClient = useQueryClient();
+  const { userData: queryUserData } = useUserQuery(userId);
+  const activeUserData = queryUserData || userData;
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
@@ -876,8 +883,8 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
   const reportFee = feeSettings?.creditReportFee || 49;
 
   const isEligibleForFreePull = useMemo(() => {
-    return checkFreePullEligibility(membership, userData?.lastFreePullAt);
-  }, [membership, userData?.lastFreePullAt]);
+    return checkFreePullEligibility(membership, activeUserData?.lastFreePullAt);
+  }, [membership, activeUserData?.lastFreePullAt]);
 
   const membershipTierLabel = useMemo(() => {
     if (membership?.tier === "tier_starter") return "Starter";
@@ -959,7 +966,10 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
           "Credit report generation has started. Please wait a few moments for the new data to appear.",
         );
         setIsConfirmOpen(false);
-        // The data will refresh automatically if using real-time listener or we can trigger a refetch here.
+        queryClient.invalidateQueries({ queryKey: [GET_USER, userId] });
+        queryClient.invalidateQueries({
+          queryKey: [GET_USER_CRS_REPORT, userId],
+        });
       }
     } catch (error: any) {
       console.error("Failed to initiate CRS report checkout:", error);
@@ -1833,7 +1843,7 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
               <WhopCheckoutEmbed
                 sessionId={checkoutId}
                 prefill={{
-                  email: userData?.email,
+                  email: activeUserData?.email,
                   address: {
                     country: "US",
                   },
