@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useCountUp } from "@/hooks/useCountUp";
 import Image from "next/image";
 import { Lock } from "lucide-react";
 
@@ -18,9 +17,8 @@ import {
 import { useAuth } from "@/provider/AuthContext";
 import {
   createMembershipCheckoutConfig,
-  createAddonCheckoutConfig,
 } from "@/service/whop";
-import { useFeeSettings } from "@/hooks/fee-settings";
+// import { useFeeSettings } from "@/hooks/fee-settings";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -34,30 +32,30 @@ export interface CreditScore {
   prevScore?: number;
 }
 
-const bureauConfig: Record<
-  string,
-  {
-    label: string;
-    logoPath: string;
-    bgColor: string;
-  }
-> = {
-  experian: {
-    label: "Experian",
-    logoPath: "/icons/experian.jpeg",
-    bgColor: "bg-white",
-  },
-  equifax: {
-    label: "Equifax",
-    logoPath: "/icons/equifax.jpeg",
-    bgColor: "bg-white",
-  },
-  transunion: {
-    label: "TransUnion",
-    logoPath: "/icons/transunion.jpeg",
-    bgColor: "bg-white",
-  },
-};
+// const bureauConfig: Record<
+//   string,
+//   {
+//     label: string;
+//     logoPath: string;
+//     bgColor: string;
+//   }
+// > = {
+//   experian: {
+//     label: "Experian",
+//     logoPath: "/icons/experian.jpeg",
+//     bgColor: "bg-white",
+//   },
+//   equifax: {
+//     label: "Equifax",
+//     logoPath: "/icons/equifax.jpeg",
+//     bgColor: "bg-white",
+//   },
+//   transunion: {
+//     label: "TransUnion",
+//     logoPath: "/icons/transunion.jpeg",
+//     bgColor: "bg-white",
+//   },
+// };
 
 function ratingStyle(rating: string) {
   switch (rating) {
@@ -124,7 +122,7 @@ function CreditScoreCard({
   // Re-use logic for styles
   const bureauName =
     score.bureau.charAt(0).toUpperCase() + score.bureau.slice(1);
-  const style = ratingStyle(score.rating);
+  // const style = ratingStyle(score.rating);
 
   return (
     <div
@@ -264,7 +262,7 @@ export function CreditScoresSection({
 
   const { userData } = useAuth();
   const router = useRouter();
-  const { data: feeSettings } = useFeeSettings();
+  // const { data: feeSettings } = useFeeSettings();
 
   const handleSelectPlan = async (
     planId: string,

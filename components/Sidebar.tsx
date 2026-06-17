@@ -20,7 +20,7 @@ import { AddonPlans } from "@/components/pricing-plans/AddonPlans";
 import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
 import { AddonCheckoutView } from "@/components/pricing-plans/AddonCheckoutView";
 import { useAddons } from "@/hooks/addons";
-import { useFeeSettings } from "@/hooks/fee-settings";
+// import { useFeeSettings } from "@/hooks/fee-settings";
 import {
   Sheet,
   SheetContent,
@@ -40,7 +40,7 @@ const Sidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { config: systemConfig } = useSystemConfig();
-  const { data: feeSettings } = useFeeSettings();
+  // const { data: feeSettings } = useFeeSettings();
 
   // Pricing / Checkout state
   const [isPricingModalOpen, setPricingModalOpen] = useState(false);

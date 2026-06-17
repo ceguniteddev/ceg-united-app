@@ -29,7 +29,7 @@ import { AddonPlans } from "@/components/pricing-plans/AddonPlans";
 import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
 import { AddonCheckoutView } from "@/components/pricing-plans/AddonCheckoutView";
 import { useAddons } from "@/hooks/addons";
-import { useFeeSettings } from "@/hooks/fee-settings";
+// import { useFeeSettings } from "@/hooks/fee-settings";
 import {
   Sheet as PricingSheet,
   SheetContent as PricingSheetContent,
@@ -47,7 +47,7 @@ const MobileNavClient = () => {
   // const { appliedFunding } = useGetUserApplyFunding();
   const { data: addons = [] } = useAddons();
   const { data: membership } = useMembership(userData?.id);
-  const { data: feeSettings } = useFeeSettings();
+  // const { data: feeSettings } = useFeeSettings();
   const pathname = usePathname();
   const router = useRouter();
   const { config: systemConfig } = useSystemConfig();
