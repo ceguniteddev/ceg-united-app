@@ -279,7 +279,13 @@ export function MailFlowModal({
         },
         toName: letter.agencyName,
         toAddress: agency
-          ? agency.address
+          ? {
+              line1: agency.address.line1,
+              line2: agency.address.line2 || undefined,
+              city: agency.address.city,
+              state: agency.address.state,
+              zip: agency.address.zip,
+            }
           : { line1: "Unknown", city: "Unknown", state: "XX", zip: "00000" },
         letter,
         attachmentCount: totalAttach,

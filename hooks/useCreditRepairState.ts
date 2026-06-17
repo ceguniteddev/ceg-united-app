@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
 import type {
+  Agency,
   Bureau,
   DisputeReasonAssignment,
   GeneratedLetter,
@@ -614,9 +615,23 @@ export function useCreditRepairState(userId?: string) {
 
   const finishGenerating = useCallback(() => {
     // Build letters now (deterministic).
-    const agencies = allAgencies.filter((a) =>
-      selectedAgencies.includes(a.key),
-    );
+    const agencies: Agency[] = allAgencies
+      .filter((a) => selectedAgencies.includes(a.key))
+      .map((a) => ({
+        key: a.key,
+        name: a.name,
+        category: a.category,
+        emailAddress: a.emailAddress || undefined,
+        isActive: a.isActive ?? undefined,
+        notes: a.notes || undefined,
+        address: {
+          line1: a.address.line1,
+          line2: a.address.line2 || undefined,
+          city: a.address.city,
+          state: a.address.state,
+          zip: a.address.zip,
+        },
+      }));
     const selectedItems = items.filter((i) => selectedItemIds.includes(i.id));
 
     const clientInfo = userData
