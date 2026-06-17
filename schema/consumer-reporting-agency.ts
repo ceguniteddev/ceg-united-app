@@ -20,7 +20,7 @@ export const agencySchema = z.object({
   addressVerification: z
     .object({
       deliverability: z.string(),
-      verifiedAt: z.string(),
+      verifiedAt: z.coerce.date<Date>(),
     })
     .optional()
     .nullable(),

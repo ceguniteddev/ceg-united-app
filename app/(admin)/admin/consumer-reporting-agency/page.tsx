@@ -135,7 +135,18 @@ export default function ConsumerReportingAgencyPage() {
 
   const onFormError = (errors: any) => {
     console.error("Form Validation Errors:", errors);
-    toast.error("Please correct the errors in the form before saving.");
+    const getErrorMessages = (obj: any): string[] => {
+      if (!obj || typeof obj !== "object") return [];
+      if (typeof obj.message === "string") return [obj.message];
+      return Object.values(obj).flatMap((val) => getErrorMessages(val));
+    };
+
+    const messages = getErrorMessages(errors);
+    if (messages.length > 0) {
+      toast.error(`Validation errors: ${messages.join(", ")}`);
+    } else {
+      toast.error("Please correct the errors in the form before saving.");
+    }
   };
 
   const handleVerifyAddressClick = async () => {
@@ -159,7 +170,7 @@ export default function ConsumerReportingAgencyPage() {
 
       form.setValue("addressVerification", {
         deliverability: res.deliverability,
-        verifiedAt: new Date().toISOString(),
+        verifiedAt: new Date(),
       });
 
       if (res.deliverability === "undeliverable") {
