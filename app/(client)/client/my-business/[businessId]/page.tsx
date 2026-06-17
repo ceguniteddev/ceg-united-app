@@ -337,44 +337,46 @@ export default function BusinessDetailPage({ params }: Props) {
             </div>
 
             <div className="flex items-center gap-3">
-              {isPremium ? (
-                <Button
-                  onClick={() => setIsConfirmOpen(true)}
-                  disabled={isGenerating}
-                  className="hidden sm:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Pulling Credit Report...
-                    </>
-                  ) : isEligibleForFreePull ? (
-                    <>
-                      <Sparkles className="w-4 h-4 text-yellow-300" />
-                      Pull Credit Report (Free)
-                    </>
-                  ) : (
-                    <>
-                      <ReceiptIcon className="w-4 h-4" />
-                      Pull Credit Report
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  onClick={() => setPricingModalOpen(true)}
-                  className="hidden sm:flex items-center gap-2 group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold cursor-pointer transition-all border-none shadow-md hover:shadow-lg"
-                >
-                  <span className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-out -skew-x-12 -translate-x-full" />
-                  <IconMenu
-                    icon={
-                      <LockIcon className="h-4 w-4 transition-all group-hover:scale-110" />
-                    }
-                    text="Upgrade to pull Business Credit"
-                  />
-                </Button>
-              )}
+              <div className="hidden sm:flex items-center gap-3">
+                {isPremium ? (
+                  <Button
+                    onClick={() => setIsConfirmOpen(true)}
+                    disabled={isGenerating}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow-sm transition-colors cursor-pointer"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Pulling Credit Report...
+                      </>
+                    ) : isEligibleForFreePull ? (
+                      <>
+                        <Sparkles className="w-4 h-4 text-yellow-300" />
+                        Pull Credit Report (Free)
+                      </>
+                    ) : (
+                      <>
+                        <ReceiptIcon className="w-4 h-4" />
+                        Pull Credit Report
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={() => setPricingModalOpen(true)}
+                    className="flex items-center gap-1.5 sm:gap-2 group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold cursor-pointer transition-all border-none shadow-md hover:shadow-lg"
+                  >
+                    <span className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-out -skew-x-12 -translate-x-full" />
+                    <IconMenu
+                      icon={
+                        <LockIcon className="h-4 w-4 transition-all group-hover:scale-110" />
+                      }
+                      text="Upgrade to pull Business Credit"
+                    />
+                  </Button>
+                )}
+              </div>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -386,47 +388,6 @@ export default function BusinessDetailPage({ params }: Props) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {isPremium ? (
-                    <DropdownMenuItem
-                      className="sm:hidden cursor-pointer"
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setIsConfirmOpen(true);
-                      }}
-                    >
-                      <IconMenu
-                        text={
-                          isGenerating
-                            ? "Pulling..."
-                            : isEligibleForFreePull
-                              ? "Pull Credit Report (Free)"
-                              : "Pull Credit Report"
-                        }
-                        icon={
-                          isGenerating ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : isEligibleForFreePull ? (
-                            <Sparkles className="h-4 w-4 text-yellow-500" />
-                          ) : (
-                            <ReceiptIcon className="h-4 w-4" />
-                          )
-                        }
-                      />
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem
-                      className="sm:hidden cursor-pointer"
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setPricingModalOpen(true);
-                      }}
-                    >
-                      <IconMenu
-                        text="Upgrade"
-                        icon={<LockIcon className="h-4 w-4" />}
-                      />
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuItem asChild>
                     <Button
                       variant="ghost"
@@ -454,6 +415,48 @@ export default function BusinessDetailPage({ params }: Props) {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+          </div>
+
+          {/* Mobile-only action button */}
+          <div className="sm:hidden mt-4 w-full">
+            {isPremium ? (
+              <Button
+                onClick={() => setIsConfirmOpen(true)}
+                disabled={isGenerating}
+                className="w-full justify-center flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2.5 rounded-lg shadow-sm transition-colors cursor-pointer"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Pulling Credit Report...
+                  </>
+                ) : isEligibleForFreePull ? (
+                  <>
+                    <Sparkles className="w-4 h-4 text-yellow-300" />
+                    Pull Credit Report (Free)
+                  </>
+                ) : (
+                  <>
+                    <ReceiptIcon className="w-4 h-4" />
+                    Pull Credit Report
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={() => setPricingModalOpen(true)}
+                className="w-full justify-center flex items-center gap-1.5 group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm py-2.5 rounded-lg font-bold cursor-pointer transition-all border-none shadow-md hover:shadow-lg"
+              >
+                <span className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-out -skew-x-12 -translate-x-full" />
+                <IconMenu
+                  icon={
+                    <LockIcon className="h-4 w-4 transition-all group-hover:scale-110" />
+                  }
+                  text="Upgrade to pull Business Credit"
+                />
+              </Button>
+            )}
           </div>
         </div>
 
