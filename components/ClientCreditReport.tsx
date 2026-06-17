@@ -60,12 +60,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { initiateCRSReportCheckout } from "@/service/crs";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { WhopCheckoutEmbed } from "@whop/checkout/react";
-import { User, UserWithId } from "@/schema/registration";
+import { UserWithId } from "@/schema/registration";
 import { ConfirmButton } from "@/components/Confirmation";
 import { useFeeSettings } from "@/hooks/fee-settings";
 
@@ -321,14 +320,6 @@ const bureauColors: Record<
   },
 };
 
-function getScoreRating(score: number) {
-  if (score >= 800) return { label: "Exceptional", color: "text-emerald-600" };
-  if (score >= 740) return { label: "Very Good", color: "text-blue-600" };
-  if (score >= 670) return { label: "Good", color: "text-teal-600" };
-  if (score >= 580) return { label: "Fair", color: "text-amber-600" };
-  return { label: "Poor", color: "text-red-600" };
-}
-
 import { BureauScoreCard } from "@/components/credit-repair/BureauScoreCard";
 
 // --- Score History Bar Chart ---
@@ -440,7 +431,6 @@ const BureauSection: React.FC<{
   tradelines: Tradeline[];
 }> = ({ bureau, tradelines }) => {
   const [expanded, setExpanded] = useState(true);
-  const colors = bureauColors[bureau];
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-card animate-fade-in-up">
@@ -868,13 +858,12 @@ const BureauSection: React.FC<{
 
 type Props = {
   userId: string;
-  isAdminView?: boolean;
   userData?: UserWithId;
 };
 
 // --- Main Page ---
-const ClientCreditReport = ({ userId, isAdminView, userData }: Props) => {
-  const router = useRouter();
+const ClientCreditReport = ({ userId, userData }: Props) => {
+  // const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
