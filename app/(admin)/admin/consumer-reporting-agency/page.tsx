@@ -14,10 +14,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  verifyAddressViaLob,
-  type VerifyAddressResponse,
-} from "@/lib/credit-repair/lobMailing";
+import { verifyAddressViaLob } from "@/lib/credit-repair/lobMailing";
 
 import {
   useGetConsumerReportingAgencies,
@@ -117,16 +114,28 @@ export default function ConsumerReportingAgencyPage() {
 
   const handleOpenEdit = (agency: AgencySchemaForm) => {
     form.reset({
-      ...agency,
+      key: agency.key,
+      name: agency.name,
+      category: agency.category,
       emailAddress: agency.emailAddress || "",
       notes: agency.notes || "",
       address: {
-        ...agency.address,
-        line2: agency.address.line2 || "",
+        line1: agency.address?.line1 || "",
+        line2: agency.address?.line2 || "",
+        city: agency.address?.city || "",
+        state: agency.address?.state || "",
+        zip: agency.address?.zip || "",
       },
+      addressVerification: agency.addressVerification || undefined,
+      isActive: agency.isActive ?? true,
     });
     setEditingAgency(agency);
     setIsFormModalOpen(true);
+  };
+
+  const onFormError = (errors: any) => {
+    console.error("Form Validation Errors:", errors);
+    toast.error("Please correct the errors in the form before saving.");
   };
 
   const handleVerifyAddressClick = async () => {
@@ -140,7 +149,7 @@ export default function ConsumerReportingAgencyPage() {
     try {
       const addressObject = {
         primary_line: address.line1,
-        secondary_line: address.line2,
+        secondary_line: address.line2 || undefined,
         city: address.city,
         state: address.state,
         zip_code: address.zip,
@@ -447,7 +456,7 @@ export default function ConsumerReportingAgencyPage() {
           </DialogHeader>
           <div>
             <form
-              onSubmit={form.handleSubmit(handleFormSubmit)}
+              onSubmit={form.handleSubmit(handleFormSubmit, onFormError)}
               className="space-y-4"
             >
               <div className="grid grid-cols-2 gap-4">
