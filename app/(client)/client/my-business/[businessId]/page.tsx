@@ -1,7 +1,10 @@
 "use client";
-import { use, useState } from "react";
+import { use, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { useUserQuery } from "@/hooks/user";
+import { GET_USER } from "@/constant/react-query-keys";
 import {
   ArrowLeft,
   MoreHorizontal,
@@ -11,6 +14,7 @@ import {
   Loader2,
   X,
   LockIcon,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/provider/AuthContext";
 import Spinner from "@/components/Spinner";
@@ -45,10 +49,12 @@ import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { useFeeSettings } from "@/hooks/fee-settings";
 
 import { useMembership } from "@/hooks/membership";
+import { checkFreePullEligibility } from "@/lib/crs-eligibility";
 
 // Pricing / Checkout imports
 import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
 import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
+import { AddonCheckoutView } from "@/components/pricing-plans/AddonCheckoutView";
 import {
   Sheet,
   SheetContent,
@@ -73,7 +79,10 @@ function getInitials(name: string) {
 export default function BusinessDetailPage({ params }: Props) {
   const { businessId } = use(params);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, userData } = useAuth();
+  const { userData: queryUserData } = useUserQuery(user?.uid ?? "");
+  const activeUserData = queryUserData || userData;
   const { business, isLoading } = useBusinessByIdQuery(
     user?.uid ?? "",
     businessId,
@@ -114,12 +123,21 @@ export default function BusinessDetailPage({ params }: Props) {
     id: string;
     amount: number;
   } | null>(null);
+  const [isAddonCheckout, setIsAddonCheckout] = useState(false);
+  const [pendingAddons, setPendingAddons] = useState<string[]>([]);
 
   const { data: feeSettings } = useFeeSettings();
   const reportFee = feeSettings?.businessCreditReportFee || 0;
 
   const { data: userMembership } = useMembership(user?.uid);
   const isPremium = userMembership?.status === "active";
+
+  const isEligibleForFreePull = useMemo(() => {
+    return checkFreePullEligibility(
+      userMembership,
+      activeUserData?.lastFreeBusinessPullAt,
+    );
+  }, [userMembership, activeUserData?.lastFreeBusinessPullAt]);
 
   if (!user || isLoading) {
     return <Spinner displayText="Loading business…" />;
@@ -182,6 +200,13 @@ export default function BusinessDetailPage({ params }: Props) {
         toast.success(
           "Credit report generation has started. Please wait a few moments for the new data to appear.",
         );
+        queryClient.invalidateQueries({ queryKey: [GET_USER, user!.uid] });
+        queryClient.invalidateQueries({
+          queryKey: ["GET_BUSINESS_BY_ID", user!.uid, businessId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["GET_BUSINESS_AUDIT", user!.uid, businessId],
+        });
         setIsConfirmOpen(false);
       }
     } catch (error: any) {
@@ -195,13 +220,20 @@ export default function BusinessDetailPage({ params }: Props) {
     }
   };
 
-  const handleSelectPlan = async (planId: string, amount: number) => {
+  const handleSelectPlan = async (
+    planId: string,
+    amount: number,
+    selectedAddons: string[] = [],
+  ) => {
     if (!userData?.id) return;
     try {
       setIsCreatingCheckout(true);
+      setPendingAddons(selectedAddons);
+      setIsAddonCheckout(false);
       const res = await createMembershipCheckoutConfig({
         userId: userData.id,
         planId: planId as any,
+        selectedAddonIds: selectedAddons,
       });
       setMembershipCheckoutId(res.checkoutId);
       setSelectedPlan({ id: planId, amount });
@@ -305,39 +337,46 @@ export default function BusinessDetailPage({ params }: Props) {
             </div>
 
             <div className="flex items-center gap-3">
-              {isPremium ? (
-                <Button
-                  onClick={() => setIsConfirmOpen(true)}
-                  disabled={isGenerating}
-                  className="hidden sm:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Pulling Credit Report...
-                    </>
-                  ) : (
-                    <>
-                      <ReceiptIcon className="w-4 h-4" />
-                      Pull Credit Report
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  onClick={() => setPricingModalOpen(true)}
-                  className="hidden sm:flex items-center gap-2 group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold cursor-pointer transition-all border-none shadow-md hover:shadow-lg"
-                >
-                  <span className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-out -skew-x-12 -translate-x-full" />
-                  <IconMenu
-                    icon={
-                      <LockIcon className="h-4 w-4 transition-all group-hover:scale-110" />
-                    }
-                    text="Upgrade to pull Business Credit"
-                  />
-                </Button>
-              )}
+              <div className="hidden sm:flex items-center gap-3">
+                {isPremium ? (
+                  <Button
+                    onClick={() => setIsConfirmOpen(true)}
+                    disabled={isGenerating}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow-sm transition-colors cursor-pointer"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Pulling Credit Report...
+                      </>
+                    ) : isEligibleForFreePull ? (
+                      <>
+                        <Sparkles className="w-4 h-4 text-yellow-300" />
+                        Pull Credit Report (Free)
+                      </>
+                    ) : (
+                      <>
+                        <ReceiptIcon className="w-4 h-4" />
+                        Pull Credit Report
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={() => setPricingModalOpen(true)}
+                    className="flex items-center gap-1.5 sm:gap-2 group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold cursor-pointer transition-all border-none shadow-md hover:shadow-lg"
+                  >
+                    <span className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-out -skew-x-12 -translate-x-full" />
+                    <IconMenu
+                      icon={
+                        <LockIcon className="h-4 w-4 transition-all group-hover:scale-110" />
+                      }
+                      text="Upgrade to pull Business Credit"
+                    />
+                  </Button>
+                )}
+              </div>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -349,41 +388,6 @@ export default function BusinessDetailPage({ params }: Props) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {isPremium ? (
-                    <DropdownMenuItem
-                      className="sm:hidden cursor-pointer"
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setIsConfirmOpen(true);
-                      }}
-                    >
-                      <IconMenu
-                        text={
-                          isGenerating ? "Pulling..." : "Pull Credit Report"
-                        }
-                        icon={
-                          isGenerating ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <ReceiptIcon className="h-4 w-4" />
-                          )
-                        }
-                      />
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem
-                      className="sm:hidden cursor-pointer"
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setPricingModalOpen(true);
-                      }}
-                    >
-                      <IconMenu
-                        text="Upgrade"
-                        icon={<LockIcon className="h-4 w-4" />}
-                      />
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuItem asChild>
                     <Button
                       variant="ghost"
@@ -411,6 +415,48 @@ export default function BusinessDetailPage({ params }: Props) {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+          </div>
+
+          {/* Mobile-only action button */}
+          <div className="sm:hidden mt-4 w-full">
+            {isPremium ? (
+              <Button
+                onClick={() => setIsConfirmOpen(true)}
+                disabled={isGenerating}
+                className="w-full justify-center flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2.5 rounded-lg shadow-sm transition-colors cursor-pointer"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Pulling Credit Report...
+                  </>
+                ) : isEligibleForFreePull ? (
+                  <>
+                    <Sparkles className="w-4 h-4 text-yellow-300" />
+                    Pull Credit Report (Free)
+                  </>
+                ) : (
+                  <>
+                    <ReceiptIcon className="w-4 h-4" />
+                    Pull Credit Report
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={() => setPricingModalOpen(true)}
+                className="w-full justify-center flex items-center gap-1.5 group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm py-2.5 rounded-lg font-bold cursor-pointer transition-all border-none shadow-md hover:shadow-lg"
+              >
+                <span className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-out -skew-x-12 -translate-x-full" />
+                <IconMenu
+                  icon={
+                    <LockIcon className="h-4 w-4 transition-all group-hover:scale-110" />
+                  }
+                  text="Upgrade to pull Business Credit"
+                />
+              </Button>
+            )}
           </div>
         </div>
 
@@ -464,20 +510,56 @@ export default function BusinessDetailPage({ params }: Props) {
         onConfirm={handleGenerateReport}
         isLoading={isGenerating}
         description={
-          <div className="space-y-3 mt-2 text-sm text-gray-600">
-            <p>Pulling a new business credit report requires a one-time fee.</p>
-            <ul className="list-disc pl-5 font-medium text-gray-800">
-              <li>Fee ${reportFee.toFixed(2)}.</li>
-            </ul>
-            <p>
-              You will be redirected to our secure payment portal to complete
-              your purchase before the report is generated.
-            </p>
-          </div>
+          isEligibleForFreePull ? (
+            <div className="bg-blue-50 text-blue-800 border-blue-100 p-4 rounded-lg border space-y-3 mt-4 text-sm">
+              <div className="flex items-center gap-2 font-semibold">
+                <Sparkles className="w-5 h-5 text-blue-600" />
+                Monthly Free Benefit Available
+              </div>
+              <p>
+                As an active{" "}
+                {userMembership?.tier
+                  ? userMembership.tier
+                      .replace("tier_", "")
+                      .charAt(0)
+                      .toUpperCase() +
+                    userMembership.tier.replace("tier_", "").slice(1)
+                  : "Premium"}{" "}
+                member, you are eligible for 1 free business credit report pull
+                every calendar month.
+              </p>
+              <p>
+                You have not used your free business pull for this month yet.
+                Pulling a new credit report now will use this monthly benefit
+                and will be completely free of charge.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3 mt-2 text-sm text-gray-600">
+              <p>
+                Pulling a new business credit report requires a one-time fee.
+              </p>
+              <ul className="list-disc pl-5 font-medium text-gray-800">
+                <li>Fee ${reportFee.toFixed(2)}.</li>
+              </ul>
+              <p>
+                You will be redirected to our secure payment portal to complete
+                your purchase before the report is generated.
+              </p>
+            </div>
+          )
         }
-        confirmLabel="Proceed to Payment"
+        confirmLabel={
+          isEligibleForFreePull
+            ? "Pull Credit Report for Free"
+            : "Proceed to Payment"
+        }
         classNameAction="bg-blue-600 hover:bg-blue-700 text-white"
-        title="Pull New Credit Report"
+        title={
+          isEligibleForFreePull
+            ? "Free Credit Report Pull"
+            : "Pull New Credit Report"
+        }
       />
 
       {/* Membership Pricing Modal */}
@@ -506,19 +588,37 @@ export default function BusinessDetailPage({ params }: Props) {
             </SheetTitle>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto">
-            {membershipCheckoutId && selectedPlan && userData && (
-              <MembershipCheckoutView
-                checkoutId={membershipCheckoutId}
-                userId={userData.id!}
-                tierId={selectedPlan.id}
-                amount={selectedPlan.amount}
-                prefillEmail={userData.email || ""}
-                onPaymentCompleteAction={() => {
-                  setMembershipSheetOpen(false);
-                  router.refresh();
-                }}
-              />
-            )}
+            {membershipCheckoutId &&
+              selectedPlan &&
+              userData &&
+              (isAddonCheckout ? (
+                <AddonCheckoutView
+                  checkoutId={membershipCheckoutId}
+                  userId={userData.id!}
+                  addonId={selectedPlan.id}
+                  amount={selectedPlan.amount}
+                  prefillEmail={userData.email || ""}
+                  onPaymentCompleteAction={() => {
+                    setMembershipSheetOpen(false);
+                    router.refresh();
+                  }}
+                />
+              ) : (
+                <MembershipCheckoutView
+                  checkoutId={membershipCheckoutId}
+                  userId={userData.id!}
+                  tierId={selectedPlan.id}
+                  amount={selectedPlan.amount}
+                  prefillEmail={userData.email || ""}
+                  pendingAddons={pendingAddons}
+                  membershipAmount={selectedPlan?.amount ?? 0}
+                  onPaymentCompleteAction={() => {
+                    // Checkout is now 1-step, just close the modal
+                    setMembershipSheetOpen(false);
+                    router.refresh();
+                  }}
+                />
+              ))}
           </div>
         </SheetContent>
       </Sheet>
@@ -573,6 +673,15 @@ export default function BusinessDetailPage({ params }: Props) {
                     toast.success(
                       "Payment successful! Generating your business credit report...",
                     );
+                    queryClient.invalidateQueries({
+                      queryKey: [GET_USER, user.uid],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ["GET_BUSINESS_BY_ID", user.uid, businessId],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ["GET_BUSINESS_AUDIT", user.uid, businessId],
+                    });
                     setCrsCheckoutId(null);
                     setCheckoutMetadata(null);
                   } catch (error) {

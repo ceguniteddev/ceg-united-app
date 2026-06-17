@@ -226,7 +226,6 @@ const AdminViewApplication = () => {
         <TabsContent value="credit-report" className="w-full">
           <ClientCreditReport
             userId={userId}
-            isAdminView
             userData={userData as UserWithId}
           />
         </TabsContent>

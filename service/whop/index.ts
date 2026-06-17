@@ -214,10 +214,12 @@ export const createWhopCheckoutConfig = async ({
 export const createMembershipCheckoutConfig = async ({
   userId,
   planId,
+  selectedAddonIds = [],
   isAddon = false,
 }: {
   userId: string;
   planId: "tier_starter" | "tier_pro" | "tier_executive";
+  selectedAddonIds?: string[];
   isAddon?: boolean;
 }): Promise<{
   checkoutId: string;
@@ -256,6 +258,11 @@ export const createMembershipCheckoutConfig = async ({
       targetProductId = WHOP_PRICING_PLAN_EXECUTIVE_ID || productId;
     }
 
+    if (selectedAddonIds.includes("credit_module_pro")) {
+      const addonPrice = feeSettings.creditModuleProAddonPrice ?? 197;
+      amount += addonPrice;
+    }
+
     if (!targetProductId) {
       throw new Error(
         "Server configuration error: Missing Product ID for the selected plan.",
@@ -288,6 +295,7 @@ export const createMembershipCheckoutConfig = async ({
         name: `${user.firstName} ${user.lastName}`,
         planId,
         isAddon: isAddon ? "true" : "false",
+        selectedAddonIds: JSON.stringify(selectedAddonIds),
       },
     });
 
@@ -307,6 +315,7 @@ export const createMembershipCheckoutConfig = async ({
       productId: planDetails.product_id,
       status: "created",
       paymentKey: planId,
+      selectedAddonIds,
       ...checkoutConfig,
     };
 

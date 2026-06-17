@@ -15,6 +15,8 @@ export interface UserAddon {
   checkoutId?: string | null;
   createdAt: string | null;
   canceledAt?: string | null;
+  updatedBy?: string | null;
+  updatedAt?: string | null;
 }
 
 export const activateUserAddon = async ({
@@ -73,6 +75,8 @@ export const getUserAddons = async (userId: string): Promise<UserAddon[]> => {
       checkoutId: data.checkoutId || null,
       createdAt: data.createdAt?.toDate().toISOString() || null,
       canceledAt: data.canceledAt?.toDate().toISOString() || null,
+      updatedBy: data.updatedBy || null,
+      updatedAt: data.updatedAt?.toDate().toISOString() || null,
     };
   });
 };
@@ -94,4 +98,62 @@ export const hasActiveAddon = async (
   } catch {
     return false;
   }
+};
+
+export const toggleUserAddon = async ({
+  userId,
+  addonId,
+  active,
+  amount,
+  updatedBy,
+}: {
+  userId: string;
+  addonId: AddonTier;
+  active: boolean;
+  amount?: number;
+  updatedBy: string;
+}) => {
+  logInfo("Admin toggling user addon", { userId, addonId, active, updatedBy });
+  if (!userId) throw new AppError("User ID is required.");
+  if (!addonId) throw new AppError("Addon ID is required.");
+
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(`${USER_COLLECTION}/${userId}/addons`);
+
+  // Query existing addons of this type
+  const snapshot = await collectionRef.where("addonId", "==", addonId).get();
+
+  if (active) {
+    const activeDoc = snapshot.docs.find(
+      (doc) => doc.data().status === "active",
+    );
+    if (activeDoc) return { success: true }; // Already active
+
+    // Create a new active addon record
+    await collectionRef.add({
+      addonId,
+      amount: amount ?? 0,
+      createdAt: new Date(),
+      status: "active",
+      updatedBy,
+    });
+  } else {
+    // Deactivate/Cancel all active instances of this addon
+    const activeDocs = snapshot.docs.filter(
+      (doc) => doc.data().status === "active",
+    );
+    if (activeDocs.length > 0) {
+      const batch = db.batch();
+      activeDocs.forEach((doc) => {
+        batch.update(doc.ref, {
+          status: "canceled",
+          canceledAt: new Date(),
+          updatedBy,
+        });
+      });
+      await batch.commit();
+    }
+  }
+
+  return { success: true };
 };

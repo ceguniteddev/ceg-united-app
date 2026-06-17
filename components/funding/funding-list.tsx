@@ -60,8 +60,12 @@ import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
 
 import { toast } from "sonner";
-import { createMembershipCheckoutConfig } from "@/service/whop";
+import {
+  createMembershipCheckoutConfig,
+} from "@/service/whop";
 import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
+import { AddonCheckoutView } from "@/components/pricing-plans/AddonCheckoutView";
+// import { useFeeSettings } from "@/hooks/fee-settings";
 import {
   Sheet,
   SheetContent,
@@ -586,6 +590,9 @@ const ActionCell = ({ row }: { row: any }) => {
     id: string;
     amount: number;
   } | null>(null);
+  const [isAddonCheckout, setIsAddonCheckout] = React.useState(false);
+  const [pendingAddons, setPendingAddons] = React.useState<string[]>([]);
+  // const { data: feeSettings } = useFeeSettings();
   const { userData } = useAuth();
   const { data: membership } = useMembership(row?.original?.userId);
 
@@ -625,13 +632,20 @@ const ActionCell = ({ row }: { row: any }) => {
     formSkip.reset();
   };
 
-  const handleSelectPlan = async (planId: string, amount: number) => {
+  const handleSelectPlan = async (
+    planId: string,
+    amount: number,
+    selectedAddons: string[] = [],
+  ) => {
     if (!row.original.userId) return;
     try {
       setIsCreatingCheckout(true);
+      setPendingAddons(selectedAddons);
+      setIsAddonCheckout(false);
       const res = await createMembershipCheckoutConfig({
         userId: row.original.userId,
         planId: planId as any,
+        selectedAddonIds: selectedAddons,
       });
       setCheckoutId(res.checkoutId);
       setSelectedPlan({ id: planId, amount });
@@ -719,19 +733,36 @@ const ActionCell = ({ row }: { row: any }) => {
               </SheetTitle>
             </SheetHeader>
             <div className="flex-1 overflow-y-auto">
-              {checkoutId && selectedPlan && (
-                <MembershipCheckoutView
-                  checkoutId={checkoutId}
-                  userId={row.original.userId}
-                  tierId={selectedPlan.id}
-                  amount={selectedPlan.amount}
-                  prefillEmail={userData?.email || ""}
-                  onPaymentCompleteAction={() => {
-                    setCheckoutSheetOpen(false);
-                    router.refresh();
-                  }}
-                />
-              )}
+              {checkoutId &&
+                selectedPlan &&
+                (isAddonCheckout ? (
+                  <AddonCheckoutView
+                    checkoutId={checkoutId}
+                    userId={row.original.userId}
+                    addonId={selectedPlan.id}
+                    amount={selectedPlan.amount}
+                    prefillEmail={userData?.email || ""}
+                    onPaymentCompleteAction={() => {
+                      setCheckoutSheetOpen(false);
+                      router.refresh();
+                    }}
+                  />
+                ) : (
+                  <MembershipCheckoutView
+                    checkoutId={checkoutId}
+                    userId={row.original.userId}
+                    tierId={selectedPlan.id}
+                    amount={selectedPlan.amount}
+                    prefillEmail={userData?.email || ""}
+                    pendingAddons={pendingAddons}
+                    membershipAmount={selectedPlan?.amount ?? 0}
+                    onPaymentCompleteAction={() => {
+                      // Checkout is now 1-step, just close the modal
+                      setCheckoutSheetOpen(false);
+                      router.refresh();
+                    }}
+                  />
+                ))}
             </div>
           </SheetContent>
         </Sheet>

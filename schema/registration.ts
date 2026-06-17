@@ -86,6 +86,8 @@ export const registrationSchema = z.object({
   businessDetails: z.any().optional(),
   fundingDetails: z.any().optional(),
   leadId: z.string().optional(),
+  lastFreePullAt: z.any().optional(),
+  lastFreeBusinessPullAt: z.any().optional(),
 });
 
 export const UserFundMapStatus = z.enum(["New", "Processing"]);

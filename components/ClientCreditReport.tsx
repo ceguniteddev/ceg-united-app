@@ -1,7 +1,11 @@
 "use client";
 import Spinner from "@/components/Spinner";
+import { checkFreePullEligibility } from "@/lib/crs-eligibility";
 import { useClientCRSReportQuery } from "@/hooks/crs";
 import { useCountUp } from "@/hooks/useCountUp";
+import { useQueryClient } from "@tanstack/react-query";
+import { useUserQuery } from "@/hooks/user";
+import { GET_USER, GET_USER_CRS_REPORT } from "@/constant/react-query-keys";
 import {
   CreditReport,
   CreditReportWithId,
@@ -60,14 +64,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { initiateCRSReportCheckout } from "@/service/crs";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { WhopCheckoutEmbed } from "@whop/checkout/react";
-import { User, UserWithId } from "@/schema/registration";
+import { UserWithId } from "@/schema/registration";
 import { ConfirmButton } from "@/components/Confirmation";
 import { useFeeSettings } from "@/hooks/fee-settings";
+import { useMembership } from "@/hooks/membership";
 
 ChartJS.register(
   CategoryScale,
@@ -321,14 +325,6 @@ const bureauColors: Record<
   },
 };
 
-function getScoreRating(score: number) {
-  if (score >= 800) return { label: "Exceptional", color: "text-emerald-600" };
-  if (score >= 740) return { label: "Very Good", color: "text-blue-600" };
-  if (score >= 670) return { label: "Good", color: "text-teal-600" };
-  if (score >= 580) return { label: "Fair", color: "text-amber-600" };
-  return { label: "Poor", color: "text-red-600" };
-}
-
 import { BureauScoreCard } from "@/components/credit-repair/BureauScoreCard";
 
 // --- Score History Bar Chart ---
@@ -440,7 +436,6 @@ const BureauSection: React.FC<{
   tradelines: Tradeline[];
 }> = ({ bureau, tradelines }) => {
   const [expanded, setExpanded] = useState(true);
-  const colors = bureauColors[bureau];
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-card animate-fade-in-up">
@@ -868,20 +863,35 @@ const BureauSection: React.FC<{
 
 type Props = {
   userId: string;
-  isAdminView?: boolean;
   userData?: UserWithId;
 };
 
 // --- Main Page ---
-const ClientCreditReport = ({ userId, isAdminView, userData }: Props) => {
-  const router = useRouter();
+const ClientCreditReport = ({ userId, userData }: Props) => {
+  // const router = useRouter();
+  const queryClient = useQueryClient();
+  const { userData: queryUserData } = useUserQuery(userId);
+  const activeUserData = queryUserData || userData;
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
   const [checkoutMetadata, setCheckoutMetadata] = useState<any>(null);
   const { crsReport, isLoading } = useClientCRSReportQuery({ userId });
   const { data: feeSettings } = useFeeSettings();
+  const { data: membership } = useMembership(userId);
   const reportFee = feeSettings?.creditReportFee || 49;
+
+  const isEligibleForFreePull = useMemo(() => {
+    return checkFreePullEligibility(membership, activeUserData?.lastFreePullAt);
+  }, [membership, activeUserData?.lastFreePullAt]);
+
+  const membershipTierLabel = useMemo(() => {
+    if (membership?.tier === "tier_starter") return "Starter";
+    if (membership?.tier === "tier_pro") return "Pro";
+    if (membership?.tier === "tier_executive") return "Executive";
+    return "Premium";
+  }, [membership?.tier]);
 
   // Group reports by createdAt timestamp (only for bureau reports)
   const reportsByTimestamp = useMemo(() => {
@@ -956,7 +966,10 @@ const ClientCreditReport = ({ userId, isAdminView, userData }: Props) => {
           "Credit report generation has started. Please wait a few moments for the new data to appear.",
         );
         setIsConfirmOpen(false);
-        // The data will refresh automatically if using real-time listener or we can trigger a refetch here.
+        queryClient.invalidateQueries({ queryKey: [GET_USER, userId] });
+        queryClient.invalidateQueries({
+          queryKey: [GET_USER_CRS_REPORT, userId],
+        });
       }
     } catch (error: any) {
       console.error("Failed to initiate CRS report checkout:", error);
@@ -1195,20 +1208,47 @@ const ClientCreditReport = ({ userId, isAdminView, userData }: Props) => {
               isLoading={isGenerating}
               disabled={isGenerating}
               description={
-                <div className="space-y-3 mt-2 text-sm text-gray-600">
-                  <p>Pulling a new credit report requires a one-time fee.</p>
-                  <ul className="list-disc pl-5 font-medium text-gray-800 text-left">
-                    <li>Fee ${reportFee.toFixed(2)}.</li>
-                  </ul>
-                  <p>
-                    You will be redirected to our secure payment portal to
-                    complete your purchase before the report is generated.
-                  </p>
-                </div>
+                isEligibleForFreePull ? (
+                  <div className="space-y-3 mt-2 text-sm text-blue-800 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <p className="font-semibold flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-blue-600" />
+                      Free Monthly Pull Available!
+                    </p>
+                    <p>
+                      As an active {membershipTierLabel} member, you are
+                      eligible for 1 free credit report pull every calendar
+                      month.
+                    </p>
+                    <p>
+                      You have not used your free pull for this month yet.
+                      Pulling a new credit report now will use this monthly
+                      benefit and will be completely free of charge.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 mt-2 text-sm text-gray-600">
+                    <p>Pulling a new credit report requires a one-time fee.</p>
+                    <ul className="list-disc pl-5 font-medium text-gray-800 text-left">
+                      <li>Fee ${reportFee.toFixed(2)}.</li>
+                    </ul>
+                    <p>
+                      You will be redirected to our secure payment portal to
+                      complete your purchase before the report is generated.
+                    </p>
+                  </div>
+                )
               }
-              confirmLabel="Proceed to Payment"
+              confirmLabel={
+                isEligibleForFreePull
+                  ? "Pull Credit Report for Free"
+                  : "Proceed to Payment"
+              }
               classNameAction="bg-blue-600 hover:bg-blue-700 text-white"
-              title="Pull New Credit Report"
+              title={
+                isEligibleForFreePull
+                  ? "Free Credit Report Pull"
+                  : "Pull New Credit Report"
+              }
               trigger={
                 <button
                   onClick={() => setIsConfirmOpen(true)}
@@ -1222,8 +1262,17 @@ const ClientCreditReport = ({ userId, isAdminView, userData }: Props) => {
                     </>
                   ) : (
                     <>
-                      <ReceiptIcon className="w-4 h-4" />
-                      Pull Credit Report
+                      {isEligibleForFreePull ? (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          Pull Credit Report (Free)
+                        </>
+                      ) : (
+                        <>
+                          <ReceiptIcon className="w-4 h-4" />
+                          Pull Credit Report
+                        </>
+                      )}
                     </>
                   )}
                 </button>
@@ -1794,7 +1843,7 @@ const ClientCreditReport = ({ userId, isAdminView, userData }: Props) => {
               <WhopCheckoutEmbed
                 sessionId={checkoutId}
                 prefill={{
-                  email: userData?.email,
+                  email: activeUserData?.email,
                   address: {
                     country: "US",
                   },

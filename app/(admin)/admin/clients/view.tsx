@@ -6,7 +6,7 @@ import {
   UserActiveStatusEnum,
   UserWithId,
 } from "@/schema/registration";
-import { format } from "date-fns";
+// import { format } from "date-fns";
 import {
   Loader2Icon,
   RefreshCcw,
@@ -17,7 +17,8 @@ import {
   Save,
 } from "lucide-react";
 import type { Metadata } from "next";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useMemo } from "react";
+import { getFreePullStatus } from "@/lib/crs-eligibility";
 import {
   Select,
   SelectContent,
@@ -51,14 +52,16 @@ import {
 import { useRefreshCRSData } from "@/hooks/crs";
 import { MembershipTier } from "@/service/membership";
 import { useAuth } from "@/provider/AuthContext";
+import { useUserAddons, useAdminToggleAddonMutation } from "@/hooks/addons";
+import { AddonTier } from "@/service/addons";
 import { toast } from "sonner";
 import EmptyState from "@/components/EmptyState";
-import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+// import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { CRSAddressInfo, CRSPersonalInfo } from "@/types/crs";
-import { useGetClientApplyFunding } from "@/hooks/apply-funding";
+// import { useGetClientApplyFunding } from "@/hooks/apply-funding";
 import { US_STATES } from "@/constant/common";
 import { Separator } from "@/components/ui/separator";
 import { useBusinessQuery } from "@/hooks/business";
@@ -99,6 +102,7 @@ const ClientData = ({
   isBrokerView?: boolean;
 }) => {
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const { data: membership } = useMembership(user.id);
 
   if (!user) {
     return <EmptyState title="User not found" description="" />;
@@ -108,6 +112,16 @@ const ClientData = ({
   const name = [user.firstName, user.middleName, user.lastName]
     .filter(Boolean)
     .join(" ");
+
+  const personalFreePullStatus = useMemo(
+    () => getFreePullStatus(membership, user.lastFreePullAt, fmtDate),
+    [membership, user.lastFreePullAt],
+  );
+
+  const businessFreePullStatus = useMemo(
+    () => getFreePullStatus(membership, user.lastFreeBusinessPullAt, fmtDate),
+    [membership, user.lastFreeBusinessPullAt],
+  );
 
   return (
     <main className="mx-auto w-full px-2 sm:px-0">
@@ -144,6 +158,14 @@ const ClientData = ({
               )}
 
               <Info label="Registered" value={fmtDate(registered)} />
+              <Info
+                label="Monthly Personal Free Pull"
+                value={personalFreePullStatus}
+              />
+              <Info
+                label="Monthly Business Free Pull"
+                value={businessFreePullStatus}
+              />
             </div>
 
             {!isBrokerView && (
@@ -166,6 +188,7 @@ const ClientData = ({
       />
 
       <MembershipSection user={user} />
+      <AddonSection user={user} />
 
       <DangerZone user={user} />
     </main>
@@ -266,8 +289,8 @@ function MembershipSection({ user }: { user: UserWithId }) {
           )}
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Adjust the client's membership tier and status. This will override
-          their current subscription.
+          {`Adjust the client's membership tier and status. This will override
+          their current subscription.`}
         </p>
       </CardHeader>
       <CardContent className="px-4 sm:px-5 py-4">
@@ -327,6 +350,108 @@ function MembershipSection({ user }: { user: UserWithId }) {
               </p>
             )}
           </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+const AVAILABLE_ADDONS: {
+  id: AddonTier;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: "credit_module_pro",
+    label: "Credit Repair Module",
+    description:
+      "Unlock the self-service AI credit optimization toolkit. Includes AI dispute letters, inquiry workflows, and bureau tracking.",
+  },
+];
+
+function AddonSection({ user }: { user: UserWithId }) {
+  const { user: currentUser } = useAuth();
+  const { data: addons, isLoading } = useUserAddons(user.id);
+  const { mutate: toggleAddon, isPending: isUpdating } =
+    useAdminToggleAddonMutation();
+
+  const currentAdminEmail = currentUser?.email || currentUser?.uid || "Admin";
+
+  const handleToggle = (addonId: AddonTier, currentActive: boolean) => {
+    toggleAddon({
+      userId: user.id,
+      addonId,
+      active: !currentActive,
+      updatedBy: currentAdminEmail,
+    });
+  };
+
+  return (
+    <Card className="mt-6 border-blue-200 shadow-sm bg-blue-50/10">
+      <CardHeader className="pb-3 px-4 sm:px-5 border-b border-blue-100">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900">
+            Add-on Features
+          </CardTitle>
+          {isLoading && (
+            <Loader2Icon className="h-4 w-4 animate-spin text-blue-500" />
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground mt-1">
+          Enable or disable specific premium modules for this client.
+        </p>
+      </CardHeader>
+      <CardContent className="px-4 sm:px-5 py-4">
+        <div className="flex flex-col gap-4">
+          {AVAILABLE_ADDONS.map((addon) => {
+            const currentAddon = addons?.find((a) => a.addonId === addon.id);
+            const isActive = currentAddon?.status === "active";
+
+            return (
+              <div
+                key={addon.id}
+                className="flex items-start sm:items-center justify-between gap-4 p-4 rounded-lg bg-white border border-gray-100 shadow-sm"
+              >
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      className="text-sm sm:text-base font-semibold text-gray-900 cursor-pointer"
+                      htmlFor={`addon-${addon.id}`}
+                    >
+                      {addon.label}
+                    </Label>
+                    {isActive && (
+                      <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    {addon.description}
+                  </p>
+                  {!isUpdating && currentAddon?.updatedBy && (
+                    <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
+                      Last updated by {currentAddon.updatedBy}
+                      {currentAddon.updatedAt
+                        ? ` on ${fmtDate(new Date(currentAddon.updatedAt))}`
+                        : ""}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center shrink-0">
+                  {isUpdating ? (
+                    <Loader2Icon className="h-4 w-4 animate-spin text-blue-500 mr-2" />
+                  ) : null}
+                  <Switch
+                    id={`addon-${addon.id}`}
+                    checked={isActive}
+                    disabled={isUpdating || isLoading}
+                    onCheckedChange={() => handleToggle(addon.id, isActive)}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </CardContent>
     </Card>
@@ -417,7 +542,7 @@ const RefreshCRSData = ({ user }: { user: UserWithId }) => {
   const { isUpdating, refreshCRSData } = useRefreshCRSData();
   const { data: membershipData } = useMembership(user.id);
   const isPremium = membershipData?.status === "active";
-  const { appliedFunding } = useGetClientApplyFunding(user.id);
+  // const { appliedFunding } = useGetClientApplyFunding(user.id);
   const { businessData } = useBusinessQuery(user.id, true);
   const [selectedBureaus, setSelectedBureaus] = React.useState({
     equifax: false,
