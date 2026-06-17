@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
-import { useCountUp } from "@/hooks/useCountUp";
+import React, { useState, useMemo } from "react";
 import Image from "next/image";
-import { Lock } from "lucide-react";
+import { Lock, Sparkles, ReceiptIcon, Loader2, X } from "lucide-react";
 
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
 import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
+import { AddonCheckoutView } from "@/components/pricing-plans/AddonCheckoutView";
 import {
   Sheet,
   SheetContent,
@@ -16,8 +16,25 @@ import {
 } from "@/components/ui/sheet";
 import { useAuth } from "@/provider/AuthContext";
 import { createMembershipCheckoutConfig } from "@/service/whop";
+// import { useFeeSettings } from "@/hooks/fee-settings";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+
+import { useUserQuery } from "@/hooks/user";
+import { useMembership } from "@/hooks/membership";
+import { checkFreePullEligibility } from "@/lib/crs-eligibility";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  GET_USER,
+  GET_USER_CRS_REPORT,
+  GET_CLIENT_STATISTICS,
+} from "@/constant/react-query-keys";
+import { initiateCRSReportCheckout } from "@/service/crs";
+import { ConfirmButton } from "@/components/Confirmation";
+import { useFeeSettings } from "@/hooks/fee-settings";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { WhopCheckoutEmbed } from "@whop/checkout/react";
+import Spinner from "@/components/Spinner";
 
 export interface CreditScore {
   bureau: "experian" | "equifax" | "transunion";
@@ -29,48 +46,48 @@ export interface CreditScore {
   prevScore?: number;
 }
 
-const bureauConfig: Record<
-  string,
-  {
-    label: string;
-    logoPath: string;
-    bgColor: string;
-  }
-> = {
-  experian: {
-    label: "Experian",
-    logoPath: "/icons/experian.jpeg",
-    bgColor: "bg-white",
-  },
-  equifax: {
-    label: "Equifax",
-    logoPath: "/icons/equifax.jpeg",
-    bgColor: "bg-white",
-  },
-  transunion: {
-    label: "TransUnion",
-    logoPath: "/icons/transunion.jpeg",
-    bgColor: "bg-white",
-  },
-};
+// const bureauConfig: Record<
+//   string,
+//   {
+//     label: string;
+//     logoPath: string;
+//     bgColor: string;
+//   }
+// > = {
+//   experian: {
+//     label: "Experian",
+//     logoPath: "/icons/experian.jpeg",
+//     bgColor: "bg-white",
+//   },
+//   equifax: {
+//     label: "Equifax",
+//     logoPath: "/icons/equifax.jpeg",
+//     bgColor: "bg-white",
+//   },
+//   transunion: {
+//     label: "TransUnion",
+//     logoPath: "/icons/transunion.jpeg",
+//     bgColor: "bg-white",
+//   },
+// };
 
-function ratingStyle(rating: string) {
-  switch (rating) {
-    case "Excellent":
-      return {
-        badge: "bg-emerald-100 text-emerald-700",
-        bar: "bg-emerald-500",
-      };
-    case "Very Good":
-      return { badge: "bg-teal-100 text-teal-700", bar: "bg-teal-500" };
-    case "Good":
-      return { badge: "bg-blue-100 text-blue-700", bar: "bg-blue-500" };
-    case "Fair":
-      return { badge: "bg-amber-100 text-amber-700", bar: "bg-amber-500" };
-    default:
-      return { badge: "bg-red-100 text-red-700", bar: "bg-red-500" };
-  }
-}
+// function ratingStyle(rating: string) {
+//   switch (rating) {
+//     case "Excellent":
+//       return {
+//         badge: "bg-emerald-100 text-emerald-700",
+//         bar: "bg-emerald-500",
+//       };
+//     case "Very Good":
+//       return { badge: "bg-teal-100 text-teal-700", bar: "bg-teal-500" };
+//     case "Good":
+//       return { badge: "bg-blue-100 text-blue-700", bar: "bg-blue-500" };
+//     case "Fair":
+//       return { badge: "bg-amber-100 text-amber-700", bar: "bg-amber-500" };
+//     default:
+//       return { badge: "bg-red-100 text-red-700", bar: "bg-red-500" };
+//   }
+// }
 
 function fmtPulled(iso: string): string {
   if (!iso) return "";
@@ -119,7 +136,7 @@ function CreditScoreCard({
   // Re-use logic for styles
   const bureauName =
     score.bureau.charAt(0).toUpperCase() + score.bureau.slice(1);
-  const style = ratingStyle(score.rating);
+  // const style = ratingStyle(score.rating);
 
   return (
     <div
@@ -254,17 +271,104 @@ export function CreditScoresSection({
     id: string;
     amount: number;
   } | null>(null);
+  const [isAddonCheckout, setIsAddonCheckout] = useState(false);
+  const [pendingAddons, setPendingAddons] = useState<string[]>([]);
 
-  const { userData } = useAuth();
+  // State variables for paid checkout/free pull
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [checkoutMetadata, setCheckoutMetadata] = useState<any>(null);
+
+  const queryClient = useQueryClient();
+  const { user, userData } = useAuth();
   const router = useRouter();
 
-  const handleSelectPlan = async (planId: string, amount: number) => {
+  // Load user's membership
+  const { data: userMembership } = useMembership(user?.uid);
+
+  // Query live profile userData
+  const { userData: queryUserData } = useUserQuery(user?.uid ?? "");
+  const activeUserData = queryUserData || userData;
+
+  // Load credit report fee
+  const { data: feeSettings } = useFeeSettings();
+  const creditReportFee = feeSettings?.creditReportFee ?? 49;
+
+  // Determine free pull eligibility
+  const isEligibleForFreePull = useMemo(() => {
+    return checkFreePullEligibility(
+      userMembership,
+      activeUserData?.lastFreePullAt,
+    );
+  }, [userMembership, activeUserData?.lastFreePullAt]);
+
+  // Compute membership tier label
+  const membershipTierLabel = useMemo(() => {
+    if (!userMembership?.tier) return "Premium";
+    const tier = userMembership.tier.toLowerCase();
+    if (tier.includes("starter")) return "Starter";
+    if (tier.includes("pro")) return "Pro";
+    if (tier.includes("executive")) return "Executive";
+    return "Premium";
+  }, [userMembership?.tier]);
+
+  const handleGenerateReport = async () => {
+    if (!user?.uid) return;
+    try {
+      setIsGenerating(true);
+      const res = await initiateCRSReportCheckout({
+        userId: user.uid,
+        reportType: "personal",
+      });
+
+      if (res.checkoutId && res.url) {
+        setCheckoutMetadata({
+          reportType: "personal",
+          referenceNumber:
+            "metadata" in res
+              ? (res as any).metadata?.referenceNumber
+              : undefined,
+        });
+        setCheckoutId(res.checkoutId);
+        setIsConfirmOpen(false);
+      } else if ("success" in res && res.success) {
+        toast.success(
+          "Credit report generation has started. Please wait a few moments for the new data to appear.",
+        );
+        setIsConfirmOpen(false);
+        queryClient.invalidateQueries({ queryKey: [GET_USER, user.uid] });
+        queryClient.invalidateQueries({
+          queryKey: [GET_USER_CRS_REPORT, user.uid],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [GET_CLIENT_STATISTICS, user.uid],
+        });
+      }
+    } catch (error: any) {
+      console.error("Failed to initiate CRS report checkout:", error);
+      toast.error(
+        error.message ||
+          "Failed to generate credit report. Please contact support.",
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSelectPlan = async (
+    planId: string,
+    amount: number,
+    selectedAddons: string[] = [],
+  ) => {
     if (!userData?.id) return;
     try {
       setIsCreatingCheckout(true);
+      setPendingAddons(selectedAddons);
+      setIsAddonCheckout(false);
       const res = await createMembershipCheckoutConfig({
         userId: userData.id,
         planId: planId as any,
+        selectedAddonIds: selectedAddons,
       });
       setCheckoutId(res.checkoutId);
       setSelectedPlan({ id: planId, amount });
@@ -279,6 +383,88 @@ export function CreditScoresSection({
 
   return (
     <>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 w-full">
+        <h2 className="text-lg font-bold text-gray-900">Credit Scores</h2>
+        {isPremium && (
+          <ConfirmButton
+            open={isConfirmOpen}
+            onOpenChange={setIsConfirmOpen}
+            onConfirm={handleGenerateReport}
+            isLoading={isGenerating}
+            disabled={isGenerating}
+            description={
+              isEligibleForFreePull ? (
+                <div className="space-y-3 mt-2 text-sm text-blue-800 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                  <p className="font-semibold flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    Free Monthly Pull Available!
+                  </p>
+                  <p>
+                    As an active {membershipTierLabel} member, you are eligible
+                    for 1 free credit report pull every calendar month.
+                  </p>
+                  <p>
+                    You have not used your free pull for this month yet. Pulling
+                    a new credit report now will use this monthly benefit and
+                    will be completely free of charge.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3 mt-2 text-sm text-gray-600">
+                  <p>Pulling a new credit report requires a one-time fee.</p>
+                  <ul className="list-disc pl-5 font-medium text-gray-800 text-left">
+                    <li>Fee ${creditReportFee.toFixed(2)}.</li>
+                  </ul>
+                  <p>
+                    You will be redirected to our secure payment portal to
+                    complete your purchase before the report is generated.
+                  </p>
+                </div>
+              )
+            }
+            confirmLabel={
+              isEligibleForFreePull
+                ? "Pull Credit Report for Free"
+                : "Proceed to Payment"
+            }
+            classNameAction="bg-blue-600 hover:bg-blue-700 text-white animate-pulse"
+            title={
+              isEligibleForFreePull
+                ? "Free Credit Report Pull"
+                : "Pull New Credit Report"
+            }
+            trigger={
+              <button
+                onClick={() => setIsConfirmOpen(true)}
+                disabled={isGenerating}
+                className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors w-full sm:w-auto justify-center"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Pulling Credit Report...
+                  </>
+                ) : (
+                  <>
+                    {isEligibleForFreePull ? (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Pull Credit Report (Free)
+                      </>
+                    ) : (
+                      <>
+                        <ReceiptIcon className="w-4 h-4" />
+                        Pull Credit Report
+                      </>
+                    )}
+                  </>
+                )}
+              </button>
+            }
+          />
+        )}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {scores.map((s, i) => (
           <CreditScoreCard
@@ -315,22 +501,130 @@ export function CreditScoresSection({
             </SheetTitle>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto">
-            {checkoutId && selectedPlan && userData && (
-              <MembershipCheckoutView
-                checkoutId={checkoutId}
-                userId={userData.id}
-                tierId={selectedPlan.id}
-                amount={selectedPlan.amount}
-                prefillEmail={userData.email || ""}
-                onPaymentCompleteAction={() => {
-                  setCheckoutSheetOpen(false);
-                  router.refresh();
-                }}
-              />
-            )}
+            {checkoutId &&
+              selectedPlan &&
+              userData &&
+              (isAddonCheckout ? (
+                <AddonCheckoutView
+                  checkoutId={checkoutId}
+                  userId={userData.id}
+                  addonId={selectedPlan.id}
+                  amount={selectedPlan.amount}
+                  prefillEmail={userData.email || ""}
+                  onPaymentCompleteAction={() => {
+                    setCheckoutSheetOpen(false);
+                    router.refresh();
+                  }}
+                />
+              ) : (
+                <MembershipCheckoutView
+                  checkoutId={checkoutId}
+                  userId={userData.id}
+                  tierId={selectedPlan.id}
+                  amount={selectedPlan.amount}
+                  prefillEmail={userData.email || ""}
+                  pendingAddons={pendingAddons}
+                  membershipAmount={selectedPlan?.amount ?? 0}
+                  onPaymentCompleteAction={() => {
+                    // Checkout is now 1-step, just close the modal
+                    setCheckoutSheetOpen(false);
+                    router.refresh();
+                  }}
+                />
+              ))}
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Paid Checkout Modal */}
+      <Dialog
+        open={!!checkoutId && !!checkoutMetadata}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCheckoutId(null);
+            setCheckoutMetadata(null);
+          }
+        }}
+      >
+        <DialogContent
+          className="w-[95vw] sm:max-w-[600px] md:max-w-[700px] p-0 overflow-hidden bg-transparent border-none shadow-none"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogTitle className="sr-only">Complete Your Purchase</DialogTitle>
+          {checkoutId && checkoutMetadata && (
+            <div className="bg-white rounded-xl shadow-2xl overflow-y-auto w-full max-h-[90vh] md:max-h-[85vh] relative">
+              <button
+                onClick={() => {
+                  setCheckoutId(null);
+                  setCheckoutMetadata(null);
+                }}
+                className="cursor-pointer absolute top-3 right-3 p-2 bg-gray-100 hover:bg-gray-200 rounded-full z-50 transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4 text-gray-600" />
+              </button>
+              <WhopCheckoutEmbed
+                sessionId={checkoutId}
+                prefill={{
+                  email: activeUserData?.email,
+                  address: {
+                    country: "US",
+                  },
+                }}
+                onComplete={async (planId, receiptId) => {
+                  try {
+                    const response = await fetch(
+                      `/api/user/${user!.uid}/crs/purchase`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          planId,
+                          receiptId,
+                          checkoutId,
+                          metadata: checkoutMetadata,
+                        }),
+                      },
+                    );
+
+                    if (!response.ok) {
+                      throw new Error("Failed to trigger report generation");
+                    }
+
+                    toast.success(
+                      "Payment successful! Generating your credit report...",
+                    );
+                    setCheckoutId(null);
+                    setCheckoutMetadata(null);
+                    queryClient.invalidateQueries({
+                      queryKey: [GET_USER, user!.uid],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: [GET_USER_CRS_REPORT, user!.uid],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: [GET_CLIENT_STATISTICS, user!.uid],
+                    });
+                    router.refresh();
+                  } catch (error) {
+                    console.error(error);
+                    toast.error(
+                      "Payment succeeded but report generation failed. Please contact support.",
+                    );
+                    setCheckoutId(null);
+                    setCheckoutMetadata(null);
+                  }
+                }}
+                fallback={
+                  <div className="flex items-center justify-center h-[400px]">
+                    <Spinner displayText="Loading secure checkout..." />
+                  </div>
+                }
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

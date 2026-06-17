@@ -14,7 +14,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { createMembershipCheckoutConfig } from "@/service/whop";
+import {
+  createMembershipCheckoutConfig,
+  createAddonCheckoutConfig,
+} from "@/service/whop";
+import { useFeeSettings } from "@/hooks/fee-settings";
+import { AddonCheckoutView } from "@/components/pricing-plans/AddonCheckoutView";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import IconMenu from "@/components/icon-menu";
@@ -27,25 +32,35 @@ interface Props {
 export function FundabilityAuditTab({ business, factors = [] }: Props) {
   const { userData } = useAuth();
   const { data: userMembership } = useMembership(userData?.id);
+  const { data: feeSettings } = useFeeSettings();
   const router = useRouter();
 
   // Pricing / Checkout state
   const [isPricingModalOpen, setPricingModalOpen] = useState(false);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [isAddonCheckout, setIsAddonCheckout] = useState(false);
   const [isCheckoutSheetOpen, setCheckoutSheetOpen] = useState(false);
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<{
     id: string;
     amount: number;
   } | null>(null);
+  const [pendingAddons, setPendingAddons] = useState<string[]>([]);
 
-  const handleSelectPlan = async (planId: string, amount: number) => {
+  const handleSelectPlan = async (
+    planId: string,
+    amount: number,
+    selectedAddons: string[] = [],
+  ) => {
     if (!userData?.id) return;
     try {
       setIsCreatingCheckout(true);
+      setPendingAddons(selectedAddons);
+      setIsAddonCheckout(false);
       const res = await createMembershipCheckoutConfig({
         userId: userData.id,
         planId: planId as any,
+        selectedAddonIds: selectedAddons,
       });
       setCheckoutId(res.checkoutId);
       setSelectedPlan({ id: planId, amount });
@@ -203,19 +218,37 @@ export function FundabilityAuditTab({ business, factors = [] }: Props) {
             </SheetTitle>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto">
-            {checkoutId && selectedPlan && userData && (
-              <MembershipCheckoutView
-                checkoutId={checkoutId}
-                userId={userData.id!}
-                tierId={selectedPlan.id}
-                amount={selectedPlan.amount}
-                prefillEmail={userData.email || ""}
-                onPaymentCompleteAction={() => {
-                  setCheckoutSheetOpen(false);
-                  router.refresh();
-                }}
-              />
-            )}
+            {checkoutId &&
+              selectedPlan &&
+              userData &&
+              (isAddonCheckout ? (
+                <AddonCheckoutView
+                  checkoutId={checkoutId}
+                  userId={userData.id!}
+                  addonId={selectedPlan.id}
+                  amount={selectedPlan.amount}
+                  prefillEmail={userData.email || ""}
+                  onPaymentCompleteAction={() => {
+                    setCheckoutSheetOpen(false);
+                    router.refresh();
+                  }}
+                />
+              ) : (
+                <MembershipCheckoutView
+                  checkoutId={checkoutId}
+                  userId={userData.id!}
+                  tierId={selectedPlan.id}
+                  amount={selectedPlan.amount}
+                  prefillEmail={userData.email || ""}
+                  pendingAddons={pendingAddons}
+                  membershipAmount={selectedPlan?.amount ?? 0}
+                  onPaymentCompleteAction={() => {
+                    // Checkout is now 1-step, just close the modal
+                    setCheckoutSheetOpen(false);
+                    router.refresh();
+                  }}
+                />
+              ))}
           </div>
         </SheetContent>
       </Sheet>

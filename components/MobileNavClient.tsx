@@ -29,6 +29,7 @@ import { AddonPlans } from "@/components/pricing-plans/AddonPlans";
 import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
 import { AddonCheckoutView } from "@/components/pricing-plans/AddonCheckoutView";
 import { useAddons } from "@/hooks/addons";
+// import { useFeeSettings } from "@/hooks/fee-settings";
 import {
   Sheet as PricingSheet,
   SheetContent as PricingSheetContent,
@@ -46,6 +47,7 @@ const MobileNavClient = () => {
   // const { appliedFunding } = useGetUserApplyFunding();
   const { data: addons = [] } = useAddons();
   const { data: membership } = useMembership(userData?.id);
+  // const { data: feeSettings } = useFeeSettings();
   const pathname = usePathname();
   const router = useRouter();
   const { config: systemConfig } = useSystemConfig();
@@ -61,16 +63,23 @@ const MobileNavClient = () => {
     id: string;
     amount: number;
   } | null>(null);
+  const [pendingAddons, setPendingAddons] = useState<string[]>([]);
 
   if (!user) return null;
 
-  const handleSelectPlan = async (planId: string, amount: number) => {
+  const handleSelectPlan = async (
+    planId: string,
+    amount: number,
+    selectedAddons: string[] = [],
+  ) => {
     if (!userData?.id) return;
     try {
       setIsCreatingCheckout(true);
+      setPendingAddons(selectedAddons);
       const res = await createMembershipCheckoutConfig({
         userId: userData.id,
         planId: planId as any,
+        selectedAddonIds: selectedAddons,
       });
       setCheckoutId(res.checkoutId);
       setSelectedPlan({ id: planId, amount });
@@ -352,7 +361,10 @@ const MobileNavClient = () => {
                   tierId={selectedPlan.id}
                   amount={selectedPlan.amount}
                   prefillEmail={userData.email || ""}
+                  pendingAddons={pendingAddons}
+                  membershipAmount={selectedPlan?.amount ?? 0}
                   onPaymentCompleteAction={() => {
+                    // Checkout is now 1-step, just close the modal
                     setCheckoutSheetOpen(false);
                     router.refresh();
                   }}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import ClientData from "@/app/(admin)/admin/clients/view";
 import { UserWithId } from "@/schema/registration";
 import AdminViewUserProfile from "@/components/funding/AdminViewUserProfile";
@@ -153,11 +153,7 @@ const ClientProfilePage = () => {
       </TabsContent>
 
       <TabsContent value="credit-report" className="w-full">
-        <ClientCreditReport
-          userId={userId}
-          isAdminView
-          userData={userData as UserWithId}
-        />
+        <ClientCreditReport userId={userId} userData={userData as UserWithId} />
       </TabsContent>
 
       <TabsContent value="business" className="w-full">
