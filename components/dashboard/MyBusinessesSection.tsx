@@ -7,6 +7,7 @@ import {
   Trash2,
   Calendar,
 } from "lucide-react";
+import Link from "next/link";
 
 export interface Business {
   id: string;
@@ -62,9 +63,10 @@ export function MyBusinessesSection({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {businesses.map((biz) => (
-          <div
+          <Link
             key={biz.id}
-            className="card-hover rounded-xl border border-gray-100 bg-white p-5 cursor-pointer"
+            href={`/client/my-business/${biz.id}`}
+            className="card-hover rounded-xl border border-gray-100 bg-white p-5 cursor-pointer block text-left hover:no-underline"
           >
             {/* Header with status */}
             <div className="flex items-start justify-between mb-3">
@@ -147,7 +149,7 @@ export function MyBusinessesSection({
                 </div>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
