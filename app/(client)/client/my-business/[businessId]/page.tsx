@@ -270,7 +270,12 @@ export default function BusinessDetailPage({ params }: Props) {
       case "finance-audit":
         return <FinanceAuditTab metrics={metrics} revenueData={revenueData} />;
       case "tradeline-suggestions":
-        return <TradelineSuggestionsTab />;
+        return (
+          <TradelineSuggestionsTab
+            isPremium={isPremium}
+            onUpgradeClick={() => setPricingModalOpen(true)}
+          />
+        );
       case "fundability-audit":
         return (
           <FundabilityAuditTab
@@ -461,7 +466,11 @@ export default function BusinessDetailPage({ params }: Props) {
         </div>
 
         {/* Tab Navigation */}
-        <BusinessTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        <BusinessTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          isPremium={isPremium}
+        />
 
         {/* Tab Content */}
         <div key={activeTab}>{renderTab()}</div>
