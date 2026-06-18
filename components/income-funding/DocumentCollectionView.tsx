@@ -90,7 +90,8 @@ export function DocumentCollectionView({
           }
         } else if (
           selectedPathwayId === "business_credit_card_stacking" ||
-          selectedPathwayId === "business_lines_of_credit"
+          selectedPathwayId === "business_lines_of_credit" ||
+          selectedPathwayId === "business_loan"
         ) {
           if (
             doc.key === "articles" ||
@@ -117,7 +118,8 @@ export function DocumentCollectionView({
           if (doc.key === "articles") required = false;
         } else if (
           selectedPathwayId === "business_credit_card_stacking" ||
-          selectedPathwayId === "business_lines_of_credit"
+          selectedPathwayId === "business_lines_of_credit" ||
+          selectedPathwayId === "business_loan"
         ) {
           // if (doc.key === "ein") required = true;
           if (doc.key === "bankStatements") required = false;

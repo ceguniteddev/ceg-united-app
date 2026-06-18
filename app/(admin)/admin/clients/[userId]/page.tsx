@@ -12,6 +12,7 @@ import ClientCreditReport from "@/components/ClientCreditReport";
 import BusinessRecordsPage from "@/components/ClientBusinessReport";
 import UserLearningMaterials from "@/components/UserLearningMaterials";
 import AdminLetterFeatureManagement from "@/components/AdminLetterFeatureManagement";
+import CreditRepairView from "@/components/CreditRepairView";
 import LetterList from "@/components/letter-stream/list";
 import LetterForm from "@/components/letter-stream/form";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
@@ -83,7 +84,8 @@ const ClientProfilePage = () => {
       });
     }
 
-    options.push({ value: "letters", label: "Letters" });
+    // options.push({ value: "letters", label: "Letters" });
+    options.push({ value: "credit-repair", label: "Credit Repair" });
 
     if (hasLetterFeatureEnabled) {
       options.push({ value: "dispute-letters", label: "Dispute Letters" });
@@ -197,6 +199,10 @@ const ClientProfilePage = () => {
           />
         </TabsContent>
       )}
+
+      <TabsContent value="credit-repair" className="w-full">
+        <CreditRepairView userId={userId} />
+      </TabsContent>
 
       <TabsContent value="note" className="w-full">
         <ClientNotes userId={userId} />
