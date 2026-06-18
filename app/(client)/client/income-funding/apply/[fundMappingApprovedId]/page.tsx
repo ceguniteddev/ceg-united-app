@@ -18,6 +18,7 @@ import { useAuth } from "@/provider/AuthContext";
 import { useMembership } from "@/hooks/membership";
 import Spinner from "@/components/Spinner";
 import type { ApprovedBankFormData } from "@/schema/bank-products";
+import { RedirectStateCard } from "@/components/funding/v2/RedirectStateCard";
 
 // Instruction steps for online application
 const onlineSteps = [
@@ -69,6 +70,7 @@ export default function FundingApplyPage() {
   const fundMappingApprovedId = params.fundMappingApprovedId as string;
 
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showRedirectModal, setShowRedirectModal] = useState(false);
 
   const { data: userMembership, isLoading: isMembershipLoading } =
     useMembership(user?.uid);
@@ -128,7 +130,11 @@ export default function FundingApplyPage() {
       applicationMethod: method, // Pass the selected method
     });
 
-    setIsSubmitted(true);
+    if (method === "online" && lender.applicationUrl) {
+      setShowRedirectModal(true);
+    } else {
+      setIsSubmitted(true);
+    }
   };
 
   if (isLoading || isMembershipLoading) {
@@ -158,6 +164,10 @@ export default function FundingApplyPage() {
       </div>
     );
   }
+
+  const rawUrl = lender.applicationUrl || "";
+  const sanitizedUrl =
+    rawUrl && !/^https?:\/\//i.test(rawUrl) ? `https://${rawUrl}` : rawUrl;
 
   if (isSubmitted) {
     return (
@@ -292,6 +302,17 @@ export default function FundingApplyPage() {
           isLoading={isApplying}
         />
       </div>
+
+      {showRedirectModal && (
+        <RedirectStateCard
+          lenderName={lender.bankName}
+          applicationUrl={sanitizedUrl}
+          onBack={() => {
+            setShowRedirectModal(false);
+            setIsSubmitted(true);
+          }}
+        />
+      )}
     </div>
   );
 }
