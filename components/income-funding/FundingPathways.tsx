@@ -8,6 +8,7 @@ export type PathwayId =
   | "income_based"
   | "business_credit_card_stacking"
   | "business_lines_of_credit"
+  | "business_loan"
   | "personal_loan"
   | "personal_credit_card";
 
@@ -168,6 +169,17 @@ const DEFAULT_PATHWAYS: FundingPathway[] = [
     route: "/funding/business-line-of-credit/offers",
   },
   {
+    id: "business_loan",
+    title: "Business Loans",
+    maxAmount: 500_000,
+    tagline: "Fixed-rate term loans with predictable monthly payments",
+    bestFor: "1+ years in business, strong revenue",
+    fundingTime: "3-10 days",
+    pullType: "Soft pull first",
+    Icon: IconBank,
+    route: "/funding/business-loans/offers",
+  },
+  {
     id: "personal_loan",
     title: "Personal Loans",
     maxAmount: 400_000,
@@ -243,7 +255,7 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
   if (membership?.status === "active") {
     if (membership.tier === "tier_starter") maxPathways = 1;
     else if (membership.tier === "tier_pro") maxPathways = 2;
-    else if (membership.tier === "tier_executive") maxPathways = 5;
+    else if (membership.tier === "tier_executive") maxPathways = 6;
   }
 
   useEffect(() => {
@@ -280,6 +292,13 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
           ? computationFromBackend.businessLineOfCreditEstimatedApprovalAmount
               .amount
           : (computationFromBackend.businessLineOfCreditEstimatedApprovalAmount ??
+              defaultAmount);
+      case "business_loan":
+        return typeof computationFromBackend.businessLoanEstimatedApprovalAmount ===
+          "object" &&
+          computationFromBackend.businessLoanEstimatedApprovalAmount !== null
+          ? computationFromBackend.businessLoanEstimatedApprovalAmount.amount
+          : (computationFromBackend.businessLoanEstimatedApprovalAmount ??
               defaultAmount);
       case "personal_loan":
         return typeof computationFromBackend.personalLoanEstimatedApprovalAmount ===

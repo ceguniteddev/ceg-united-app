@@ -84,6 +84,14 @@ export function OffersView({
             .amount
         : (computationFromBackend.personalCreditCardEstimatedApprovalAmount ??
           estimatedAmountValue);
+  } else if (selectedPathwayId === "business_loan") {
+    estimatedAmountValue =
+      typeof computationFromBackend.businessLoanEstimatedApprovalAmount ===
+        "object" &&
+      computationFromBackend.businessLoanEstimatedApprovalAmount !== null
+        ? computationFromBackend.businessLoanEstimatedApprovalAmount.amount
+        : (computationFromBackend.businessLoanEstimatedApprovalAmount ??
+          estimatedAmountValue);
   }
 
   const monthlyDepositsValue =
