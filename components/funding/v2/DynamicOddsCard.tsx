@@ -45,9 +45,9 @@ export function DynamicOddsCard({
   isLoading = false,
 }: DynamicOddsCardProps) {
   // Adjust odds slightly based on method (specialist typically has better odds)
-  const baseOdds = lender.approvalOdds || 75;
+  const baseOdds = Math.min(lender.approvalOdds || 75, 98);
   const displayOdds =
-    method === "specialist" ? Math.min(baseOdds, 95) : baseOdds;
+    method === "specialist" ? Math.min(baseOdds, 95) : Math.min(baseOdds, 98);
 
   // Chart configuration
   const chartData = {

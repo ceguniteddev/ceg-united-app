@@ -8,8 +8,8 @@ interface ApprovalOddsBadgeProps {
 }
 
 export function ApprovalOddsBadge({ odds }: ApprovalOddsBadgeProps) {
-  // Default to 0 if odds is undefined/null
-  const percentage = odds ?? 0;
+  // Default to 0 if odds is undefined/null and cap at 98%
+  const percentage = Math.min(odds ?? 0, 98);
 
   // Determine color scheme based on odds
   const getColorClasses = () => {

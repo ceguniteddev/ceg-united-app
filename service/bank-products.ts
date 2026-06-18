@@ -256,7 +256,7 @@ async function calculateApprovalOdds(
     totalScore += 15; // No specific requirements, give average score
   }
 
-  return Math.min(Math.round(totalScore), 100);
+  return Math.min(Math.round(totalScore), 98);
 }
 
 /**
@@ -1104,7 +1104,7 @@ export const getFundMappingAnalysisDetails = async ({
         const overallApprovalOdds =
           productsWithOdds.length > 0
             ? Math.min(
-                100,
+                98,
                 Math.round(
                   productsWithOdds.reduce(
                     (sum, p: any) => sum + (p.approvalOdds || 0),
@@ -1383,7 +1383,7 @@ export const getAutoServedClientFunds = async ({
         const overallApprovalOdds =
           productsWithOdds.length > 0
             ? Math.min(
-                100,
+                98,
                 Math.round(
                   productsWithOdds.reduce(
                     (sum, p: any) => sum + (p.approvalOdds || 0),
