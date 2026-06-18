@@ -41,6 +41,7 @@ interface FundingPathwaysProps {
   selectedPathwayId?: string;
   /** Indicates if the form is currently submitting */
   isSubmitting?: boolean;
+  userId: string;
 }
 
 // -------------------------- Icons (inline SVG, currentColor) --------------------------
@@ -221,7 +222,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/provider/AuthContext";
 import { useMembership } from "@/hooks/membership";
 import { toast } from "sonner";
 
@@ -235,9 +235,9 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
   onSelect,
   selectedPathwayId,
   isSubmitting = false,
+  userId,
 }) => {
-  const { user } = useAuth();
-  const { data: membership } = useMembership(user?.uid);
+  const { data: membership } = useMembership(userId);
 
   const [selectedId, setSelectedId] = useState<PathwayId | null>(
     selectedPathwayId as PathwayId,
