@@ -192,6 +192,17 @@ export function useCreditRepairState(userId?: string) {
       return isNaN(n) ? 0 : n;
     };
 
+    const getInquiryAgeMonths = (dateStr?: string) => {
+      if (!dateStr) return 0;
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return 0;
+      const now = new Date();
+      return (
+        (now.getFullYear() - d.getFullYear()) * 12 +
+        (now.getMonth() - d.getMonth())
+      );
+    };
+
     // Filter negative items
     const negTradelines = allTradelines.filter((t: any) => {
       const late30 = toNum(t._30DayLates) > 0;
@@ -200,7 +211,7 @@ export function useCreditRepairState(userId?: string) {
       return Boolean(t.derogatoryDataIndicator) || late30 || late60 || late90;
     });
 
-    const parsedItems: NegativeItem[] = negTradelines.map(
+    const parsedTradelines: NegativeItem[] = negTradelines.map(
       (t: any, idx: number) => {
         let bKey: Bureau = "experian";
         const s = (t.sourceType || "").toLowerCase();
@@ -228,6 +239,39 @@ export function useCreditRepairState(userId?: string) {
         };
       },
     );
+
+    const parsedInquiries: NegativeItem[] = allInquiries
+      .map((t: any, idx: number) => {
+        let bKey: Bureau = "experian";
+        const s = (t.sourceType || "").toLowerCase();
+        if (s.includes("equifax")) bKey = "equifax";
+        if (s.includes("transunion")) bKey = "transunion";
+
+        const inquiryDate = t.inquiryDate || "";
+        const inquiryAgeMonths = getInquiryAgeMonths(inquiryDate);
+
+        return {
+          id:
+            `inquiry-${t.creditorName || "unknown"}-${bKey}-${inquiryDate || "nodate"}`
+              .replace(/[^a-zA-Z0-9-]/g, "")
+              .toLowerCase() || `live-inquiry-${idx}`,
+          type: "inquiry" as const,
+          creditor: t.creditorName || "Unknown",
+          accountNumber: "—",
+          bureaus: [bKey],
+          amount: 0,
+          dateOpened: inquiryDate,
+          dateReported: inquiryDate,
+          status: "new" as const,
+          inquiryAgeMonths,
+        };
+      })
+      .filter((item) => item.inquiryAgeMonths <= 24);
+
+    const parsedItems: NegativeItem[] = [
+      ...parsedTradelines,
+      ...parsedInquiries,
+    ];
 
     // console.log("Parsed negative items:", parsedItems);
 
