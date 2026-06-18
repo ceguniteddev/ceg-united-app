@@ -80,7 +80,7 @@ export function FundabilityScoreCard({
       )}
     >
       <h3 className="text-sm font-semibold text-gray-900 mb-5">
-        Fundability Score
+        Business Fundability Score
       </h3>
 
       <div className="relative w-[130px] h-[130px]">

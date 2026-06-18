@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 
 import { useUserQuery } from "@/hooks/user";
 import { useMembership } from "@/hooks/membership";
+import { useGetClientApplyFunding } from "@/hooks/apply-funding";
 import { checkFreePullEligibility } from "@/lib/crs-eligibility";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -293,6 +294,9 @@ export function CreditScoresSection({
   const { userData: queryUserData } = useUserQuery(user?.uid ?? "");
   const activeUserData = queryUserData || userData;
 
+  // Load user's latest funding application
+  const { appliedFunding } = useGetClientApplyFunding(user?.uid ?? "");
+
   // Load credit report fee
   const { data: feeSettings } = useFeeSettings();
   const creditReportFee = feeSettings?.creditReportFee ?? 49;
@@ -331,6 +335,9 @@ export function CreditScoresSection({
       return;
     }
 
+    const latestApp = appliedFunding?.[0];
+    const generatedRef = latestApp?.referenceNumber;
+
     if (!isEligibleForFreePull && hasSufficientBalance) {
       try {
         setIsGenerating(true);
@@ -342,10 +349,9 @@ export function CreditScoresSection({
         });
 
         // Upon success, trigger the report generation directly
-        const generatedRef = `crs-req-${Date.now()}`;
         await generateCRSReport({
           userId: user.uid,
-          referenceNumber: generatedRef,
+          referenceNumber: generatedRef!,
           bureaus: { equifax: true, experian: true, transunion: true },
           bypassPremiumCheck: true,
         });
@@ -386,6 +392,7 @@ export function CreditScoresSection({
       const res = await initiateCRSReportCheckout({
         userId: user.uid,
         reportType: "personal",
+        referenceNumber: latestApp?.referenceNumber,
       });
 
       if (res.checkoutId && res.url) {
