@@ -3,7 +3,7 @@ import type { Agency, Bureau } from './credit-repair-types'
 // ============================================
 // Credit Reporting Agencies — Real Mailing Addresses
 // ============================================
-// The Big 3 bureaus + 13 specialty / third-party CRAs. Disputing at the
+// The Main 3 bureaus + 13 specialty / third-party CRAs. Disputing at the
 // source CRA level can remove data before it ever flows to the bureaus.
 
 export const BUREAUS: Record<Bureau, Agency> = {

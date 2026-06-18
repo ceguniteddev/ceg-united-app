@@ -60,12 +60,12 @@ export function AgencySelectionStep({
         </p>
       </div>
 
-      {/* Big 3 Bureaus */}
+      {/* Main 3 Bureaus */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-base font-bold text-gray-900">
-              Big 3 Credit Bureaus
+              Main 3 Credit Bureaus
             </div>
             <div className="text-xs text-gray-500 mt-0.5">
               {bureauCount} of 3 selected
