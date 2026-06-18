@@ -5,7 +5,13 @@ import { useClientCRSReportQuery } from "@/hooks/crs";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUserQuery } from "@/hooks/user";
-import { GET_USER, GET_USER_CRS_REPORT } from "@/constant/react-query-keys";
+import {
+  GET_USER,
+  GET_USER_CRS_REPORT,
+  GET_WALLET,
+} from "@/constant/react-query-keys";
+import { useWalletQuery, useSpendFundsMutation } from "@/hooks/wallet";
+import { TopUpModal } from "@/components/wallet/TopUpModal";
 import {
   CreditReport,
   CreditReportWithId,
@@ -63,7 +69,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { initiateCRSReportCheckout } from "@/service/crs";
+import { initiateCRSReportCheckout, generateCRSReport } from "@/service/crs";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -882,6 +888,12 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
   const { data: membership } = useMembership(userId);
   const reportFee = feeSettings?.creditReportFee || 49;
 
+  const { data: walletData } = useWalletQuery(userId);
+  const currentBalance = walletData?.balance || 0;
+  const hasSufficientBalance = currentBalance >= reportFee;
+  const spendFunds = useSpendFundsMutation();
+  const [topUpModalOpen, setTopUpModalOpen] = useState(false);
+
   const isEligibleForFreePull = useMemo(() => {
     return checkFreePullEligibility(membership, activeUserData?.lastFreePullAt);
   }, [membership, activeUserData?.lastFreePullAt]);
@@ -944,6 +956,58 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
   }, [timestamps, selectedTimestamp]);
 
   const handleGenerateReport = async () => {
+    if (!isEligibleForFreePull && !hasSufficientBalance) {
+      setIsConfirmOpen(false);
+      setTopUpModalOpen(true);
+      return;
+    }
+
+    if (!isEligibleForFreePull && hasSufficientBalance) {
+      try {
+        setIsGenerating(true);
+        // Trigger the fund deduction
+        await spendFunds.mutateAsync({
+          amount: reportFee,
+          description: "Credit Report Pull Fee",
+          metadata: { reportType: "personal" },
+        });
+
+        // Upon success, trigger the report generation directly
+        const generatedRef = `crs-req-${Date.now()}`;
+        await generateCRSReport({
+          userId,
+          referenceNumber: generatedRef,
+          bureaus: { equifax: true, experian: true, transunion: true },
+          bypassPremiumCheck: true,
+        });
+
+        toast.success(
+          "Payment processed and credit report generation started. Please wait a few moments for the data to appear.",
+        );
+
+        // Invalidate the React Query cache
+        queryClient.invalidateQueries({ queryKey: [GET_USER, userId] });
+        queryClient.invalidateQueries({
+          queryKey: [GET_USER_CRS_REPORT, userId],
+        });
+        queryClient.invalidateQueries({ queryKey: [GET_WALLET, userId] });
+
+        setIsConfirmOpen(false);
+      } catch (error: any) {
+        console.error(
+          "Failed to process wallet payment and generate report:",
+          error,
+        );
+        toast.error(
+          error.message ||
+            "Failed to process wallet payment and generate report. Please contact support.",
+        );
+      } finally {
+        setIsGenerating(false);
+      }
+      return;
+    }
+
     try {
       setIsGenerating(true);
       const res = await initiateCRSReportCheckout({
@@ -1225,29 +1289,78 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
                       benefit and will be completely free of charge.
                     </p>
                   </div>
+                ) : hasSufficientBalance ? (
+                  <div className="space-y-3 mt-2 text-sm text-gray-600">
+                    <p>
+                      Pulling a new credit report will deduct from your wallet
+                      balance.
+                    </p>
+                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 space-y-1.5 font-medium text-blue-900 text-left">
+                      <div className="flex justify-between">
+                        <span>Report Fee:</span>
+                        <span className="font-mono">
+                          ${reportFee.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Current Balance:</span>
+                        <span className="font-mono">
+                          ${currentBalance.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between pt-1 border-t border-blue-200">
+                        <span>Remaining Balance:</span>
+                        <span className="font-mono">
+                          ${(currentBalance - reportFee).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                    <p>This report will be generated instantly.</p>
+                  </div>
                 ) : (
                   <div className="space-y-3 mt-2 text-sm text-gray-600">
-                    <p>Pulling a new credit report requires a one-time fee.</p>
-                    <ul className="list-disc pl-5 font-medium text-gray-800 text-left">
-                      <li>Fee ${reportFee.toFixed(2)}.</li>
-                    </ul>
                     <p>
-                      You will be redirected to our secure payment portal to
-                      complete your purchase before the report is generated.
+                      Pulling a new credit report requires a fee of{" "}
+                      <strong>${reportFee.toFixed(2)}</strong>.
                     </p>
+                    <div className="bg-red-50 border border-red-100 rounded-lg p-3 space-y-1.5 font-medium text-red-900 text-left">
+                      <div className="flex justify-between">
+                        <span>Report Fee:</span>
+                        <span className="font-mono">
+                          ${reportFee.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Current Balance:</span>
+                        <span className="font-mono">
+                          ${currentBalance.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between pt-1 border-t border-red-200 font-bold">
+                        <span>Amount Needed:</span>
+                        <span className="font-mono">
+                          ${(reportFee - currentBalance).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                    <p>Please top up your wallet balance to proceed.</p>
                   </div>
                 )
               }
               confirmLabel={
                 isEligibleForFreePull
                   ? "Pull Credit Report for Free"
-                  : "Proceed to Payment"
+                  : hasSufficientBalance
+                    ? `Pay $${reportFee.toFixed(2)} & Pull Report`
+                    : "Top Up Wallet"
               }
               classNameAction="bg-blue-600 hover:bg-blue-700 text-white"
               title={
                 isEligibleForFreePull
                   ? "Free Credit Report Pull"
-                  : "Pull New Credit Report"
+                  : hasSufficientBalance
+                    ? "Pay with Wallet"
+                    : "Insufficient Wallet Balance"
               }
               trigger={
                 <button
@@ -1891,6 +2004,15 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
           )}
         </DialogContent>
       </Dialog>
+
+      {userId && (
+        <TopUpModal
+          isOpen={topUpModalOpen}
+          onClose={() => setTopUpModalOpen(false)}
+          userId={userId}
+          userEmail={activeUserData?.email || ""}
+        />
+      )}
     </div>
   );
 };

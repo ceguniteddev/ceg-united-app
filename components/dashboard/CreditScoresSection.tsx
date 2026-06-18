@@ -28,8 +28,11 @@ import {
   GET_USER,
   GET_USER_CRS_REPORT,
   GET_CLIENT_STATISTICS,
+  GET_WALLET,
 } from "@/constant/react-query-keys";
-import { initiateCRSReportCheckout } from "@/service/crs";
+import { initiateCRSReportCheckout, generateCRSReport } from "@/service/crs";
+import { useWalletQuery, useSpendFundsMutation } from "@/hooks/wallet";
+import { TopUpModal } from "@/components/wallet/TopUpModal";
 import { ConfirmButton } from "@/components/Confirmation";
 import { useFeeSettings } from "@/hooks/fee-settings";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -294,6 +297,13 @@ export function CreditScoresSection({
   const { data: feeSettings } = useFeeSettings();
   const creditReportFee = feeSettings?.creditReportFee ?? 49;
 
+  // Wallet and balance states
+  const { data: walletData } = useWalletQuery(user?.uid ?? "");
+  const currentBalance = walletData?.balance || 0;
+  const hasSufficientBalance = currentBalance >= creditReportFee;
+  const spendFunds = useSpendFundsMutation();
+  const [topUpModalOpen, setTopUpModalOpen] = useState(false);
+
   // Determine free pull eligibility
   const isEligibleForFreePull = useMemo(() => {
     return checkFreePullEligibility(
@@ -314,6 +324,63 @@ export function CreditScoresSection({
 
   const handleGenerateReport = async () => {
     if (!user?.uid) return;
+
+    if (!isEligibleForFreePull && !hasSufficientBalance) {
+      setIsConfirmOpen(false);
+      setTopUpModalOpen(true);
+      return;
+    }
+
+    if (!isEligibleForFreePull && hasSufficientBalance) {
+      try {
+        setIsGenerating(true);
+        // Trigger the fund deduction
+        await spendFunds.mutateAsync({
+          amount: creditReportFee,
+          description: "Credit Report Pull Fee",
+          metadata: { reportType: "personal" },
+        });
+
+        // Upon success, trigger the report generation directly
+        const generatedRef = `crs-req-${Date.now()}`;
+        await generateCRSReport({
+          userId: user.uid,
+          referenceNumber: generatedRef,
+          bureaus: { equifax: true, experian: true, transunion: true },
+          bypassPremiumCheck: true,
+        });
+
+        toast.success(
+          "Payment processed and credit report generation started. Please wait a few moments for the data to appear.",
+        );
+
+        // Invalidate the React Query cache
+        queryClient.invalidateQueries({ queryKey: [GET_USER, user.uid] });
+        queryClient.invalidateQueries({
+          queryKey: [GET_USER_CRS_REPORT, user.uid],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [GET_CLIENT_STATISTICS, user.uid],
+        });
+        queryClient.invalidateQueries({ queryKey: [GET_WALLET, user.uid] });
+
+        setIsConfirmOpen(false);
+        router.refresh();
+      } catch (error: any) {
+        console.error(
+          "Failed to process wallet payment and generate report:",
+          error,
+        );
+        toast.error(
+          error.message ||
+            "Failed to process wallet payment and generate report. Please contact support.",
+        );
+      } finally {
+        setIsGenerating(false);
+      }
+      return;
+    }
+
     try {
       setIsGenerating(true);
       const res = await initiateCRSReportCheckout({
@@ -409,29 +476,78 @@ export function CreditScoresSection({
                     will be completely free of charge.
                   </p>
                 </div>
+              ) : hasSufficientBalance ? (
+                <div className="space-y-3 mt-2 text-sm text-gray-600">
+                  <p>
+                    Pulling a new credit report will deduct from your wallet
+                    balance.
+                  </p>
+                  <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 space-y-1.5 font-medium text-blue-900 text-left">
+                    <div className="flex justify-between">
+                      <span>Report Fee:</span>
+                      <span className="font-mono">
+                        ${creditReportFee.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Current Balance:</span>
+                      <span className="font-mono">
+                        ${currentBalance.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between pt-1 border-t border-blue-200">
+                      <span>Remaining Balance:</span>
+                      <span className="font-mono">
+                        ${(currentBalance - creditReportFee).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                  <p>This report will be generated instantly.</p>
+                </div>
               ) : (
                 <div className="space-y-3 mt-2 text-sm text-gray-600">
-                  <p>Pulling a new credit report requires a one-time fee.</p>
-                  <ul className="list-disc pl-5 font-medium text-gray-800 text-left">
-                    <li>Fee ${creditReportFee.toFixed(2)}.</li>
-                  </ul>
                   <p>
-                    You will be redirected to our secure payment portal to
-                    complete your purchase before the report is generated.
+                    Pulling a new credit report requires a fee of{" "}
+                    <strong>${creditReportFee.toFixed(2)}</strong>.
                   </p>
+                  <div className="bg-red-50 border border-red-100 rounded-lg p-3 space-y-1.5 font-medium text-red-900 text-left">
+                    <div className="flex justify-between">
+                      <span>Report Fee:</span>
+                      <span className="font-mono">
+                        ${creditReportFee.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Current Balance:</span>
+                      <span className="font-mono">
+                        ${currentBalance.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between pt-1 border-t border-red-200 font-bold">
+                      <span>Amount Needed:</span>
+                      <span className="font-mono">
+                        ${(creditReportFee - currentBalance).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                  <p>Please top up your wallet balance to proceed.</p>
                 </div>
               )
             }
             confirmLabel={
               isEligibleForFreePull
                 ? "Pull Credit Report for Free"
-                : "Proceed to Payment"
+                : hasSufficientBalance
+                  ? `Pay $${creditReportFee.toFixed(2)} & Pull Report`
+                  : "Top Up Wallet"
             }
             classNameAction="bg-blue-600 hover:bg-blue-700 text-white animate-pulse"
             title={
               isEligibleForFreePull
                 ? "Free Credit Report Pull"
-                : "Pull New Credit Report"
+                : hasSufficientBalance
+                  ? "Pay with Wallet"
+                  : "Insufficient Wallet Balance"
             }
             trigger={
               <button
@@ -625,6 +741,15 @@ export function CreditScoresSection({
           )}
         </DialogContent>
       </Dialog>
+
+      {user?.uid && (
+        <TopUpModal
+          isOpen={topUpModalOpen}
+          onClose={() => setTopUpModalOpen(false)}
+          userId={user.uid}
+          userEmail={activeUserData?.email || ""}
+        />
+      )}
     </>
   );
 }
