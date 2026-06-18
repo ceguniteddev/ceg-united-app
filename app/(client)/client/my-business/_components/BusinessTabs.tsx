@@ -5,14 +5,13 @@ import {
   BarChart2,
   Zap,
   ShieldCheck,
-  ChevronDown,
+  LockIcon,
 } from "lucide-react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 
 const TABS = [
@@ -28,9 +27,10 @@ export type BusinessTab = (typeof TABS)[number]["id"];
 interface Props {
   activeTab: BusinessTab;
   onTabChange: (tab: BusinessTab) => void;
+  isPremium?: boolean;
 }
 
-export function BusinessTabs({ activeTab, onTabChange }: Props) {
+export function BusinessTabs({ activeTab, onTabChange, isPremium }: Props) {
   const activeTabData = TABS.find((tab) => tab.id === activeTab);
 
   return (
@@ -48,6 +48,9 @@ export function BusinessTabs({ activeTab, onTabChange }: Props) {
                   <activeTabData.icon className="w-5 h-5 text-blue-600 flex-shrink-0" />
                   <span className="font-medium text-gray-900">
                     {activeTabData.label}
+                    {activeTabData.id === "tradeline-suggestions" &&
+                      !isPremium &&
+                      " 🔒"}
                   </span>
                 </>
               )}
@@ -58,7 +61,10 @@ export function BusinessTabs({ activeTab, onTabChange }: Props) {
               <SelectItem key={tab.id} value={tab.id}>
                 <div className="flex items-center gap-2">
                   <tab.icon className="w-4 h-4 flex-shrink-0" />
-                  <span>{tab.label}</span>
+                  <span>
+                    {tab.label}
+                    {tab.id === "tradeline-suggestions" && !isPremium && " 🔒"}
+                  </span>
                 </div>
               </SelectItem>
             ))}
@@ -80,7 +86,12 @@ export function BusinessTabs({ activeTab, onTabChange }: Props) {
               }`}
             >
               <tab.icon className="w-5 h-5 flex-shrink-0" />
-              <span>{tab.label}</span>
+              <span>
+                {tab.label}
+                {tab.id === "tradeline-suggestions" && !isPremium && (
+                  <LockIcon className="text-amber-500 w-3.5 h-3.5 ml-1 inline-block -mt-0.5" />
+                )}
+              </span>
             </button>
           ))}
         </div>
