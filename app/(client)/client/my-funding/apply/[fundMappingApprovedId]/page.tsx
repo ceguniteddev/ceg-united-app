@@ -18,6 +18,7 @@ import {
 } from "@/components/funding/v2/MethodSelectionCard";
 import { InstructionSteps } from "@/components/funding/v2/InstructionSteps";
 import { DynamicOddsCard } from "@/components/funding/v2/DynamicOddsCard";
+import { RedirectStateCard } from "@/components/funding/v2/RedirectStateCard";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
 import { useApprovedMappedFundsMutation } from "@/hooks/admin/funding-application/fund-mapping";
 import { useAuth } from "@/provider/AuthContext";
@@ -74,6 +75,7 @@ export default function FundingApplyPage() {
   const fundMappingApprovedId = params.fundMappingApprovedId as string;
 
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showRedirectModal, setShowRedirectModal] = useState(false);
 
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
     userId: user?.uid,
@@ -112,6 +114,10 @@ export default function FundingApplyPage() {
     }
   }, [lender, supportsOnlineApplication, method]);
 
+  const rawUrl = lender?.applicationUrl || "";
+  const sanitizedUrl =
+    rawUrl && !/^https?:\/\//i.test(rawUrl) ? `https://${rawUrl}` : rawUrl;
+
   const handleApplyNow = async () => {
     if (!lender) return;
 
@@ -122,7 +128,11 @@ export default function FundingApplyPage() {
       applicationMethod: method, // Pass the selected method
     });
 
-    setIsSubmitted(true);
+    if (method === "online" && lender.applicationUrl) {
+      setShowRedirectModal(true);
+    } else {
+      setIsSubmitted(true);
+    }
   };
 
   if (isLoading) {
@@ -282,6 +292,17 @@ export default function FundingApplyPage() {
           isLoading={isApplying}
         />
       </div>
+
+      {showRedirectModal && (
+        <RedirectStateCard
+          lenderName={lender.bankName}
+          applicationUrl={sanitizedUrl}
+          onBack={() => {
+            setShowRedirectModal(false);
+            setIsSubmitted(true);
+          }}
+        />
+      )}
     </div>
   );
 }

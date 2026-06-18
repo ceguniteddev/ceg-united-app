@@ -5,6 +5,7 @@ import { useClientCRSReportQuery } from "@/hooks/crs";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUserQuery } from "@/hooks/user";
+import { useGetClientApplyFunding } from "@/hooks/apply-funding";
 import {
   GET_USER,
   GET_USER_CRS_REPORT,
@@ -879,6 +880,9 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
   const { userData: queryUserData } = useUserQuery(userId);
   const activeUserData = queryUserData || userData;
 
+  // Load user's latest funding application
+  const { appliedFunding } = useGetClientApplyFunding(userId);
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
@@ -956,6 +960,9 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
   }, [timestamps, selectedTimestamp]);
 
   const handleGenerateReport = async () => {
+    const latestApp = appliedFunding?.[0];
+    const generatedRef = latestApp?.referenceNumber;
+
     if (!isEligibleForFreePull && !hasSufficientBalance) {
       setIsConfirmOpen(false);
       setTopUpModalOpen(true);
@@ -973,10 +980,9 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
         });
 
         // Upon success, trigger the report generation directly
-        const generatedRef = `crs-req-${Date.now()}`;
         await generateCRSReport({
           userId,
-          referenceNumber: generatedRef,
+          referenceNumber: generatedRef!,
           bureaus: { equifax: true, experian: true, transunion: true },
           bypassPremiumCheck: true,
         });
@@ -1013,6 +1019,7 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
       const res = await initiateCRSReportCheckout({
         userId,
         reportType: "personal",
+        referenceNumber: latestApp?.referenceNumber,
       });
 
       if (res.checkoutId && res.url) {
