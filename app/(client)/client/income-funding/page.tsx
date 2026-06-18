@@ -155,6 +155,7 @@ export function IncomeFundingContent({
         if (showPathways) {
           return (
             <FundingPathways
+              userId={activeUserId!}
               realDeal={realDeal}
               isSubmitting={isSubmitting || isProcessingSubmit}
               onContinue={async (pathway) => {
