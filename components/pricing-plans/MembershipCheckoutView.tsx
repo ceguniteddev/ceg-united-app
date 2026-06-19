@@ -5,6 +5,7 @@ import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { toast } from "sonner";
 import Spinner from "@/components/Spinner";
 import { useFeeSettings } from "@/hooks/fee-settings";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { activateUserMembership } from "@/service/membership";
 import { activateUserAddon } from "@/service/addons";
@@ -34,6 +35,7 @@ export const MembershipCheckoutView = ({
 }: MembershipCheckoutViewProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const { data: feeSettings } = useFeeSettings();
+  const queryClient = useQueryClient();
 
   const resolvedMembershipAmount =
     tierId === "tier_starter"
@@ -61,6 +63,9 @@ export const MembershipCheckoutView = ({
         amount: resolvedMembershipAmount,
         checkoutId: receipt_id || checkoutId,
       });
+
+      queryClient.invalidateQueries({ queryKey: ["membership", userId] });
+      queryClient.invalidateQueries({ queryKey: ["all-memberships"] });
 
       if (pendingAddons && pendingAddons.includes("credit_module_pro")) {
         await activateUserAddon({

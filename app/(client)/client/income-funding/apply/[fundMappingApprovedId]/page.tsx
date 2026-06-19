@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup } from "@/components/ui/radio-group";
@@ -63,27 +63,42 @@ const specialistSteps = [
   },
 ];
 
-export default function FundingApplyPage() {
+export function FundingApplyContent({
+  userIdOverride: propUserIdOverride,
+  backUrl,
+}: {
+  userIdOverride?: string;
+  backUrl?: string;
+} = {}) {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const fundMappingApprovedId = params.fundMappingApprovedId as string;
+
+  const userIdOverride = propUserIdOverride || searchParams.get("userId");
+  const targetUserId = userIdOverride || user?.uid;
 
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showRedirectModal, setShowRedirectModal] = useState(false);
 
   const { data: userMembership, isLoading: isMembershipLoading } =
-    useMembership(user?.uid);
+    useMembership(targetUserId);
   const isPremium = userMembership?.status === "active";
 
   useEffect(() => {
     if (!isMembershipLoading && !isPremium) {
-      router.push("/client/income-funding");
+      const redirectPath =
+        backUrl ||
+        (userIdOverride
+          ? `/admin/clients/${userIdOverride}/income-funding`
+          : "/client/income-funding");
+      router.push(redirectPath);
     }
-  }, [isMembershipLoading, isPremium, router]);
+  }, [isMembershipLoading, isPremium, router, userIdOverride, backUrl]);
 
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
-    userId: user?.uid,
+    userId: targetUserId,
   });
   // console.log("Mapped Fund Details:", mappedFund, fundMappingApprovedId);
 
@@ -156,7 +171,16 @@ export default function FundingApplyPage() {
             {`The funding application you're looking for doesn't exist or has been
             removed.`}
           </p>
-          <Button onClick={() => router.push(`/client/income-funding`)}>
+          <Button
+            onClick={() => {
+              const redirectPath =
+                backUrl ||
+                (userIdOverride
+                  ? `/admin/clients/${userIdOverride}/income-funding`
+                  : "/client/income-funding");
+              router.push(redirectPath);
+            }}
+          >
             <ArrowLeft className="size-4 mr-2" />
             Back to Funding
           </Button>
@@ -228,7 +252,13 @@ export default function FundingApplyPage() {
 
           <Button
             onClick={() => {
-              window.location.href = `/client/income-funding${lender.pathwayId ? `?pathwayId=${lender.pathwayId}` : ""}`;
+              if (backUrl) {
+                window.location.href = backUrl;
+              } else if (userIdOverride) {
+                window.location.href = `/admin/clients/${userIdOverride}/income-funding`;
+              } else {
+                window.location.href = `/client/income-funding${lender.pathwayId ? `?pathwayId=${lender.pathwayId}` : ""}`;
+              }
             }}
             size="lg"
             className="bg-brand-600 hover:bg-brand-700 text-white px-10 py-6 text-base shadow-md hover:shadow-lg transition-all"
@@ -244,11 +274,17 @@ export default function FundingApplyPage() {
     <div className="max-w-[1400px] mx-auto px-6 py-6">
       {/* Back button */}
       <button
-        onClick={() =>
-          router.push(
-            `/client/income-funding${lender.pathwayId ? `?pathwayId=${lender.pathwayId}&fromApply=true` : "?fromApply=true"}`,
-          )
-        }
+        onClick={() => {
+          if (backUrl) {
+            router.push(backUrl);
+          } else if (userIdOverride) {
+            router.push(`/admin/clients/${userIdOverride}/income-funding`);
+          } else {
+            router.push(
+              `/client/income-funding${lender.pathwayId ? `?pathwayId=${lender.pathwayId}&fromApply=true` : "?fromApply=true"}`,
+            );
+          }
+        }}
         className="cursor-pointer inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 font-medium mb-4 transition-colors"
       >
         <ArrowLeft className="size-4" />
@@ -314,5 +350,19 @@ export default function FundingApplyPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function FundingApplyPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <Spinner />
+        </div>
+      }
+    >
+      <FundingApplyContent />
+    </Suspense>
   );
 }
