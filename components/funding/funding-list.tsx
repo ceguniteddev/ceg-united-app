@@ -60,9 +60,7 @@ import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
 
 import { toast } from "sonner";
-import {
-  createMembershipCheckoutConfig,
-} from "@/service/whop";
+import { createMembershipCheckoutConfig } from "@/service/whop";
 import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
 import { AddonCheckoutView } from "@/components/pricing-plans/AddonCheckoutView";
 // import { useFeeSettings } from "@/hooks/fee-settings";
@@ -593,7 +591,7 @@ const ActionCell = ({ row }: { row: any }) => {
   const [isAddonCheckout, setIsAddonCheckout] = React.useState(false);
   const [pendingAddons, setPendingAddons] = React.useState<string[]>([]);
   // const { data: feeSettings } = useFeeSettings();
-  const { userData } = useAuth();
+  const { userData, role } = useAuth();
   const { data: membership } = useMembership(row?.original?.userId);
 
   // const { denefitsContract } = useGetDenefitsContractsByUserId(
@@ -617,9 +615,15 @@ const ActionCell = ({ row }: { row: any }) => {
   // }, [denefitsContract]);
 
   const handleApproveClickCapture = () => {
-    router.push(
-      `/client/income-funding/apply/${row.original.fundMappingApprovedId}`,
-    );
+    if (role === "Admin") {
+      router.push(
+        `/admin/clients/${row.original.userId}/income-funding/apply/${row.original.fundMappingApprovedId}`,
+      );
+    } else {
+      router.push(
+        `/client/income-funding/apply/${row.original.fundMappingApprovedId}`,
+      );
+    }
   };
 
   const onSkipSubmit = async (data: SkipLenderFormValues) => {

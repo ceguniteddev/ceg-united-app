@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   Bot,
@@ -68,17 +68,21 @@ const specialistSteps = [
   },
 ];
 
-export default function FundingApplyPage() {
+function FundingApplyContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const fundMappingApprovedId = params.fundMappingApprovedId as string;
+  const userIdOverride = searchParams.get("userId") || undefined;
 
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showRedirectModal, setShowRedirectModal] = useState(false);
 
+  const targetUserId = userIdOverride || user?.uid;
+
   const { mappedFund = [], isLoading } = useClientMappedFundingDetailsQuery({
-    userId: user?.uid,
+    userId: targetUserId,
   });
 
   const { applyApprovedMappedFund, isApplying } =
@@ -154,7 +158,15 @@ export default function FundingApplyPage() {
             The funding application you're looking for doesn't exist or has been
             removed.
           </p>
-          <Button onClick={() => router.push("/client/my-funding")}>
+          <Button
+            onClick={() =>
+              router.push(
+                userIdOverride
+                  ? `/admin/clients/${userIdOverride}/income-funding`
+                  : "/client/my-funding",
+              )
+            }
+          >
             <ArrowLeft className="size-4 mr-2" />
             Back to Funding
           </Button>
@@ -222,7 +234,11 @@ export default function FundingApplyPage() {
 
           <Button
             onClick={() => {
-              window.location.href = "/client/my-funding";
+              if (userIdOverride) {
+                router.push(`/admin/clients/${userIdOverride}/income-funding`);
+              } else {
+                window.location.href = "/client/my-funding";
+              }
             }}
             size="lg"
             className="bg-brand-600 hover:bg-brand-700 text-white px-10 py-6 text-base shadow-md hover:shadow-lg transition-all"
@@ -238,7 +254,13 @@ export default function FundingApplyPage() {
     <div className="max-w-[1400px] mx-auto px-6 py-6">
       {/* Back button */}
       <button
-        onClick={() => router.push("/client/my-funding")}
+        onClick={() =>
+          router.push(
+            userIdOverride
+              ? `/admin/clients/${userIdOverride}/income-funding`
+              : "/client/my-funding",
+          )
+        }
         className="cursor-pointer inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 font-medium mb-4 transition-colors"
       >
         <ArrowLeft className="size-4" />
@@ -304,5 +326,19 @@ export default function FundingApplyPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function FundingApplyPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <Spinner />
+        </div>
+      }
+    >
+      <FundingApplyContent />
+    </Suspense>
   );
 }
