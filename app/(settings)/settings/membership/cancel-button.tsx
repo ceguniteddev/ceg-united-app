@@ -6,6 +6,7 @@ import { cancelUserMembership } from "@/service/membership";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,11 +28,14 @@ export function CancelMembershipButton({
 }) {
   const [isCanceling, setIsCanceling] = useState(false);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const handleCancel = async () => {
     setIsCanceling(true);
     try {
       await cancelUserMembership(userId, membershipId);
+      queryClient.invalidateQueries({ queryKey: ["membership", userId] });
+      queryClient.invalidateQueries({ queryKey: ["all-memberships"] });
       toast.success("Membership successfully canceled.");
       router.refresh();
     } catch (error: any) {

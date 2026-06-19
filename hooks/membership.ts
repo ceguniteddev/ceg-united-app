@@ -12,6 +12,8 @@ export const useGetAllMemberships = () => {
   return useQuery({
     queryKey: ["all-memberships"],
     queryFn: () => getAllMemberships(),
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 30,
   });
 };
 
@@ -23,6 +25,8 @@ export const useMembership = (userId?: string) => {
     queryKey: ["membership", targetUserId],
     queryFn: () => getUserMembership(targetUserId!),
     enabled: !!targetUserId,
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 30,
   });
 };
 
@@ -46,6 +50,9 @@ export const useAdminSetMembershipMutation = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["membership", variables.userId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["all-memberships"],
       });
       toast.success("Membership updated successfully");
     },
