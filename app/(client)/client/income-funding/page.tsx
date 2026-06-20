@@ -8,6 +8,7 @@ import { SubmittedView } from "@/components/income-funding/SubmittedView";
 import { OffersView } from "@/components/income-funding/OffersView";
 import { AcceptanceView } from "@/components/income-funding/AcceptanceView";
 import { CompleteView } from "@/components/income-funding/CompleteView";
+import { PsfInvoicesSection } from "@/components/income-funding/PsfInvoicesSection";
 import FundingPathways from "@/components/income-funding/FundingPathways";
 import { useIncomeFundingState } from "@/hooks/useIncomeFundingState";
 import { FundingBankProducts } from "../my-funding/_funding/ApplyFundingList";
@@ -250,6 +251,9 @@ export function IncomeFundingContent({
         if (selectedPathwayId !== "income_based") {
           return (
             <div className="space-y-6 animate-fade-in-up">
+              <section className="mb-8">
+                <PsfInvoicesSection />
+              </section>
               <div className="mb-4">
                 <h2 className="text-xl font-bold text-gray-900">
                   Available Offers

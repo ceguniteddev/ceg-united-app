@@ -332,6 +332,12 @@ const bureauColors: Record<
   },
 };
 
+const bureauIconPaths: Record<"Experian" | "Equifax" | "TransUnion", string> = {
+  Experian: "/icons/Experian.png",
+  Equifax: "/icons/Equifax.png",
+  TransUnion: "/icons/Transunion.png",
+};
+
 import { BureauScoreCard } from "@/components/credit-repair/BureauScoreCard";
 
 // --- Score History Bar Chart ---
@@ -453,7 +459,7 @@ const BureauSection: React.FC<{
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded bg-white border border-gray-100 flex items-center justify-center flex-shrink-0">
             <Image
-              src={`/icons/${bureau}.png`}
+              src={bureauIconPaths[bureau]}
               alt={bureau}
               width={24}
               height={24}
@@ -1637,7 +1643,7 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded bg-white border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                     <Image
-                      src={`/icons/${b}.png`}
+                      src={bureauIconPaths[b]}
                       alt={b}
                       width={24}
                       height={24}

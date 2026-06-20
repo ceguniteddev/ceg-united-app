@@ -5,8 +5,16 @@
 
 "use client";
 
-import { TrendingUp, Loader2, CheckCircle2, SendIcon } from "lucide-react";
+import {
+  TrendingUp,
+  Loader2,
+  CheckCircle2,
+  SendIcon,
+  ScrollText,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import type { ApprovedBankFormData } from "@/schema/bank-products";
 import type { ApplicationMethod } from "./MethodSelectionCard";
 import { Bar } from "react-chartjs-2";
@@ -36,6 +44,8 @@ interface DynamicOddsCardProps {
   method: ApplicationMethod;
   onApplyNow: () => void;
   isLoading?: boolean;
+  hasAgreedToWaiver?: boolean;
+  setHasAgreedToWaiver?: (val: boolean) => void;
 }
 
 export function DynamicOddsCard({
@@ -43,6 +53,8 @@ export function DynamicOddsCard({
   method,
   onApplyNow,
   isLoading = false,
+  hasAgreedToWaiver = false,
+  setHasAgreedToWaiver,
 }: DynamicOddsCardProps) {
   // Adjust odds slightly based on method (specialist typically has better odds)
   const baseOdds = Math.min(lender.approvalOdds || 75, 98);
@@ -173,11 +185,51 @@ export function DynamicOddsCard({
         </div>
       )}
 
+      {/* Specialist Waiver Box */}
+      {method === "specialist" && (
+        <div className="bg-blue-50/70 border border-blue-100 rounded-lg p-3.5 space-y-3 animate-fade-in-up">
+          <div className="flex items-start gap-2.5">
+            <ScrollText className="size-4.5 text-blue-600 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <h4 className="text-sm font-semibold text-blue-900">
+                15% Done-for-You Success Fee
+              </h4>
+              <p className="text-xs text-blue-700 leading-relaxed">
+                By proceeding with our Done-for-You Specialist pathway, you
+                agree to pay a 15% performance success fee upon approval of any
+                funds obtained through this connection.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-blue-100/60">
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="waiver-agreement"
+                checked={hasAgreedToWaiver}
+                onCheckedChange={(checked) =>
+                  setHasAgreedToWaiver?.(checked === true)
+                }
+                className="mt-0.5 border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white"
+              />
+              <Label
+                htmlFor="waiver-agreement"
+                className="text-xs font-medium text-blue-900 leading-tight cursor-pointer"
+              >
+                I agree to the 15% success fee terms
+              </Label>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Apply button */}
       <div className="space-y-3">
         <Button
           onClick={onApplyNow}
-          disabled={isLoading}
+          disabled={
+            isLoading || (method === "specialist" && !hasAgreedToWaiver)
+          }
           size="lg"
           className="group w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm disabled:opacity-50 transition-all"
         >

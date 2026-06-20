@@ -9,6 +9,7 @@ import {
   BROKER_CLIENT_MAPPING,
   BROKER_COMMISSION,
   USER_COLLECTION,
+  PSF_INVOICES_COLLECTION,
 } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
@@ -1877,10 +1878,14 @@ export const applyApprovedMappedFund = async ({
   referenceNumber,
   fundMappingApprovedId,
   applicationMethod,
+  hasSignedSuccessFeeAgreement,
+  successFeePercentage,
 }: {
   referenceNumber: string;
   fundMappingApprovedId: string;
   applicationMethod?: ClientApplicationMethod;
+  hasSignedSuccessFeeAgreement?: boolean;
+  successFeePercentage?: number;
 }): Promise<CommonResponse> => {
   try {
     // 1. Return structured errors for invalid inputs
@@ -1939,6 +1944,13 @@ export const applyApprovedMappedFund = async ({
       {
         clientApplicationStatus: "Sent to Lender",
         applicationMethod: applicationMethod || "Specialist",
+        hasSignedSuccessFeeAgreement: hasSignedSuccessFeeAgreement || false,
+        successFeePercentage: hasSignedSuccessFeeAgreement
+          ? successFeePercentage || 15
+          : 0,
+        signedSuccessFeeAgreementAt: hasSignedSuccessFeeAgreement
+          ? new Date().toISOString()
+          : null,
       },
       { merge: true },
     );
@@ -1990,7 +2002,11 @@ export const approveAppliedBankProduct = async ({
       `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
     );
 
-    await collectionRef.doc(fundMappingApprovedId).set(
+    const docRef = collectionRef.doc(fundMappingApprovedId);
+    const docSnapshot = await docRef.get();
+    const docData = docSnapshot.data();
+
+    await docRef.set(
       {
         clientApplicationStatus: "Approved",
         approvedAmount,
@@ -1998,6 +2014,36 @@ export const approveAppliedBankProduct = async ({
       },
       { merge: true },
     );
+
+    if (docData?.hasSignedSuccessFeeAgreement) {
+      const invoiceQuery = await db
+        .collection(PSF_INVOICES_COLLECTION)
+        .where("fundMappingApprovedId", "==", fundMappingApprovedId)
+        .limit(1)
+        .get();
+
+      if (invoiceQuery.empty) {
+        const successFeePercentage = docData.successFeePercentage || 15;
+        const successFeeAmount = Math.round(
+          approvedAmount * (successFeePercentage / 100),
+        );
+
+        const invoiceData = {
+          userId: docData.userId,
+          referenceNumber,
+          fundMappingApprovedId,
+          bankName: docData.bankName || "Unknown Bank",
+          approvedAmount,
+          successFeePercentage,
+          successFeeAmount,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        await db.collection(PSF_INVOICES_COLLECTION).add(invoiceData);
+      }
+    }
 
     // 4. Return a successful response
     return { success: true };

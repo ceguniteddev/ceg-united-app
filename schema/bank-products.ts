@@ -154,6 +154,9 @@ export type ApprovedBankFormData = BankFormData & {
   fundedRemarks?: string;
   userId: string;
   applicationMethod?: ClientApplicationMethod; // Track selected application method (specialist/online)
+  hasSignedSuccessFeeAgreement?: boolean;
+  successFeePercentage?: number;
+  signedSuccessFeeAgreementAt?: string | null;
   // New fields for enhanced UI
   approvalOdds?: number; // 0-100 percentage
   rank?: number; // Ranking position for display
