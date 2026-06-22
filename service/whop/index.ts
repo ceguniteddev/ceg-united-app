@@ -615,7 +615,7 @@ export const createPsfInvoiceCheckoutConfig = async ({
     const user = await getUserById(userId);
     if (!user) throw new Error("User not found");
 
-    const feeInCents = Math.round(feeAmount);
+    const feeInCents = Math.round(feeAmount * 100);
 
     const planDetails: CheckoutConfigurationCreateParams.CreateCheckoutSessionInputModePaymentWithPlan.Plan =
       {
