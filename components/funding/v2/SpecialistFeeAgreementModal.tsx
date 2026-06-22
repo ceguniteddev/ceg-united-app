@@ -22,6 +22,7 @@ interface SpecialistFeeAgreementModalProps {
   userId: string;
   bankName: string;
   onSignComplete: () => void;
+  fundMappingApprovedId: string;
 }
 
 export function SpecialistFeeAgreementModal({
@@ -31,6 +32,7 @@ export function SpecialistFeeAgreementModal({
   userId,
   bankName,
   onSignComplete,
+  fundMappingApprovedId,
 }: SpecialistFeeAgreementModalProps) {
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [signatureMode, setSignatureMode] = useState<"type" | "draw">("type");
@@ -187,6 +189,7 @@ export function SpecialistFeeAgreementModal({
           type: signatureMode,
           value: signatureValue,
         },
+        fundMappingApprovedId,
       });
 
       if (result.success) {

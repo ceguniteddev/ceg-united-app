@@ -105,6 +105,15 @@ function FundingApplyContent() {
     supportsOnlineApplication ? "online" : "specialist",
   );
 
+  const [hasAgreedToWaiver, setHasAgreedToWaiver] = useState(false);
+
+  // Sync with database record state on load or refresh
+  useEffect(() => {
+    if (lender?.hasSignedSuccessFeeAgreement) {
+      setHasAgreedToWaiver(true);
+    }
+  }, [lender]);
+
   const isOnline = method === "online";
   const stepsTitle = isOnline
     ? "Your Steps to Apply Online"
@@ -318,6 +327,8 @@ function FundingApplyContent() {
           method={method}
           onApplyNow={handleApplyNow}
           isLoading={isApplying}
+          hasAgreedToWaiver={hasAgreedToWaiver}
+          setHasAgreedToWaiver={setHasAgreedToWaiver}
         />
       </div>
 

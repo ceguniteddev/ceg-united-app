@@ -6,7 +6,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/provider/AuthContext";
+import { useUserDocumentsQuery } from "@/hooks/document";
 import { cn } from "@/lib/utils";
 import { SpecialistFeeAgreementModal } from "./SpecialistFeeAgreementModal";
 import {
@@ -50,6 +50,7 @@ interface DynamicOddsCardProps {
   isLoading?: boolean;
   hasAgreedToWaiver?: boolean;
   setHasAgreedToWaiver?: (val: boolean) => void;
+  userId: string;
 }
 
 export function DynamicOddsCard({
@@ -57,12 +58,30 @@ export function DynamicOddsCard({
   method,
   onApplyNow,
   isLoading = false,
-  hasAgreedToWaiver = false,
+  hasAgreedToWaiver,
   setHasAgreedToWaiver,
+  userId,
 }: DynamicOddsCardProps) {
-  const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [localHasAgreed, setLocalHasAgreed] = useState(false);
+
+  const { userDocuments, refetch } = useUserDocumentsQuery({
+    userId,
+  });
+
+  const cleanRef = lender.referenceNumber
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  const signedAgreementDoc = userDocuments?.find((doc: UserDoc) => {
+    const lowerName = doc.name.toLowerCase();
+    const hasAgreement =
+      lowerName.includes("fee_agreement") ||
+      lowerName.includes("fee agreement");
+    const matchesRef =
+      lowerName.includes(lender.referenceNumber.toLowerCase()) ||
+      lowerName.replace(/[^a-z0-9]/g, "").includes(cleanRef);
+    return hasAgreement && matchesRef;
+  });
 
   // Sync with database record state if the lender was already signed previously
   useEffect(() => {
@@ -71,8 +90,15 @@ export function DynamicOddsCard({
     }
   }, [lender]);
 
-  const isAgreed = hasAgreedToWaiver ?? localHasAgreed;
-  const setIsAgreed = setHasAgreedToWaiver || setLocalHasAgreed;
+  const isAgreed =
+    hasAgreedToWaiver !== undefined ? hasAgreedToWaiver : localHasAgreed;
+  const setIsAgreed = (val: boolean) => {
+    if (setHasAgreedToWaiver) {
+      setHasAgreedToWaiver(val);
+    } else {
+      setLocalHasAgreed(val);
+    }
+  };
 
   // Adjust odds slightly based on method (specialist typically has better odds)
   const baseOdds = Math.min(lender.approvalOdds || 75, 98);
@@ -219,7 +245,7 @@ export function DynamicOddsCard({
             ) : (
               <ScrollText className="size-4.5 text-blue-600 mt-0.5 shrink-0" />
             )}
-            <div className="space-y-1">
+            <div className="space-y-1 flex-1">
               <h4
                 className={cn(
                   "text-sm font-semibold",
@@ -238,6 +264,19 @@ export function DynamicOddsCard({
                 agree to pay a 15% performance success fee upon approval of any
                 funds obtained through this connection.
               </p>
+              {isAgreed && signedAgreementDoc && (
+                <div className="pt-2">
+                  <a
+                    href={signedAgreementDoc.signedUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-900 hover:underline transition-colors cursor-pointer"
+                  >
+                    <ScrollText className="size-3.5" />
+                    View Signed Agreement (PDF)
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 
@@ -305,15 +344,17 @@ export function DynamicOddsCard({
         </p>
       </div>
 
-      {user && (
+      {userId && (
         <SpecialistFeeAgreementModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           referenceNumber={lender.referenceNumber}
-          userId={user.uid}
+          userId={userId}
           bankName={lender.bankName}
+          fundMappingApprovedId={lender.fundMappingApprovedId}
           onSignComplete={() => {
             setIsAgreed(true);
+            refetch();
           }}
         />
       )}

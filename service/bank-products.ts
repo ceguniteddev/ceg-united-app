@@ -24,6 +24,7 @@ import {
 import { getCurrentUser, getUserById } from "./user";
 import { getBanks } from "./bank-management";
 import { Timestamp } from "firebase-admin/firestore";
+import { headers } from "next/headers";
 
 import { normalizeAllDates } from "@/lib/date-parser";
 import {
@@ -1039,6 +1040,12 @@ export const getFundMappingAnalysisDetails = async ({
         fundedRemarks: bankProductId.fundedRemarks || "",
         userId: bankProductId.userId,
         underwritingNotes: bankProductId.approvedRemarks || "",
+        hasSignedSuccessFeeAgreement:
+          bankProductId.hasSignedSuccessFeeAgreement || false,
+        successFeePercentage: bankProductId.successFeePercentage || 0,
+        signedSuccessFeeAgreementAt:
+          bankProductId.signedSuccessFeeAgreementAt || null,
+        applicationMethod: bankProductId.applicationMethod || null,
         products: [
           {
             productName: bankProductId.manualProductName || "Manual Entry",
@@ -1133,6 +1140,12 @@ export const getFundMappingAnalysisDetails = async ({
           applicationUrl, // Add applicationUrl to top level
           approvalOdds: overallApprovalOdds, // Add calculated approval odds
           pathwayId: bankProductId.pathwayId || pathwayId,
+          hasSignedSuccessFeeAgreement:
+            bankProductId.hasSignedSuccessFeeAgreement || false,
+          successFeePercentage: bankProductId.successFeePercentage || 0,
+          signedSuccessFeeAgreementAt:
+            bankProductId.signedSuccessFeeAgreementAt || null,
+          applicationMethod: bankProductId.applicationMethod || null,
         });
       }
     }
@@ -1331,6 +1344,10 @@ export const getAutoServedClientFunds = async ({
         fundedRemarks: r.fundedRemarks || "",
         userId: r.userId || userId,
         underwritingNotes: r.approvedRemarks || "",
+        hasSignedSuccessFeeAgreement: r.hasSignedSuccessFeeAgreement || false,
+        successFeePercentage: r.successFeePercentage || 0,
+        signedSuccessFeeAgreementAt: r.signedSuccessFeeAgreementAt || null,
+        applicationMethod: r.applicationMethod || null,
         products: [
           {
             productName: r.manualProductName || "Manual Entry",
@@ -1410,6 +1427,10 @@ export const getAutoServedClientFunds = async ({
           applicationUrl,
           approvalOdds: overallApprovalOdds,
           pathwayId: r.pathwayId || pathwayId,
+          hasSignedSuccessFeeAgreement: r.hasSignedSuccessFeeAgreement || false,
+          successFeePercentage: r.successFeePercentage || 0,
+          signedSuccessFeeAgreementAt: r.signedSuccessFeeAgreementAt || null,
+          applicationMethod: r.applicationMethod || null,
         });
       }
     }
@@ -1945,13 +1966,18 @@ export const applyApprovedMappedFund = async ({
       {
         clientApplicationStatus: "Sent to Lender",
         applicationMethod: applicationMethod || "Specialist",
-        hasSignedSuccessFeeAgreement: hasSignedSuccessFeeAgreement || false,
-        successFeePercentage: hasSignedSuccessFeeAgreement
-          ? successFeePercentage || 15
-          : 0,
-        signedSuccessFeeAgreementAt: hasSignedSuccessFeeAgreement
-          ? new Date().toISOString()
-          : null,
+        hasSignedSuccessFeeAgreement:
+          hasSignedSuccessFeeAgreement ||
+          docData?.hasSignedSuccessFeeAgreement ||
+          false,
+        successFeePercentage:
+          hasSignedSuccessFeeAgreement || docData?.hasSignedSuccessFeeAgreement
+            ? successFeePercentage || docData?.successFeePercentage || 15
+            : 0,
+        signedSuccessFeeAgreementAt:
+          hasSignedSuccessFeeAgreement || docData?.hasSignedSuccessFeeAgreement
+            ? docData?.signedSuccessFeeAgreementAt || new Date().toISOString()
+            : null,
       },
       { merge: true },
     );
@@ -2455,6 +2481,7 @@ export const signSpecialistFeeAgreement = async ({
   referenceNumber,
   userId,
   signature,
+  fundMappingApprovedId,
 }: {
   referenceNumber: string;
   userId: string;
@@ -2464,6 +2491,7 @@ export const signSpecialistFeeAgreement = async ({
     ipAddress?: string;
     macAddress?: string;
   };
+  fundMappingApprovedId?: string;
 }): Promise<CommonResponse & { pdfUrl?: string }> => {
   try {
     // Validate inputs
@@ -2475,15 +2503,56 @@ export const signSpecialistFeeAgreement = async ({
       };
     }
 
+    // Resolve client's IP address if not provided in signature.ipAddress (or fallback using standard headers() from "next/headers")
+    let ipAddress = signature.ipAddress;
+    if (!ipAddress || ipAddress === "Unknown") {
+      try {
+        const headersList = await headers();
+        const forwardedFor = headersList.get("x-forwarded-for");
+        ipAddress = forwardedFor
+          ? forwardedFor.split(",")[0].trim()
+          : headersList.get("x-real-ip") || "Unknown";
+      } catch (e) {
+        ipAddress = "Unknown";
+      }
+    }
+
     // Generate and save the PDF agreement (fundingAmount and feeAmount are 0 during pre-application)
     const uploadResult = await saveFeeAgreementToPDF(
       referenceNumber,
       userId,
-      signature,
+      {
+        ...signature,
+        ipAddress: ipAddress || "Unknown",
+      },
       0, // fundingAmount
       0, // feeAmount
       15, // percentageFee
     );
+
+    if (fundMappingApprovedId) {
+      const db = firestoreAdmin();
+      const docRef = db
+        .collection(
+          `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
+        )
+        .doc(fundMappingApprovedId);
+
+      await docRef.set(
+        {
+          hasSignedSuccessFeeAgreement: true,
+          successFeePercentage: 15,
+          signedSuccessFeeAgreementAt: new Date().toISOString(),
+          specialistSignature: {
+            type: signature.type,
+            value: signature.value,
+            ipAddress: ipAddress || "Unknown",
+            signedAt: new Date().toISOString(),
+          },
+        },
+        { merge: true },
+      );
+    }
 
     return {
       success: true,
