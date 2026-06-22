@@ -130,6 +130,12 @@ function FundingApplyContent() {
       fundMappingApprovedId: lender.fundMappingApprovedId,
       referenceNumber: lender.referenceNumber,
       applicationMethod: method, // Pass the selected method
+      ...(method === "specialist"
+        ? {
+            hasSignedSuccessFeeAgreement: true,
+            successFeePercentage: 15,
+          }
+        : {}),
     });
 
     if (method === "online" && lender.applicationUrl) {

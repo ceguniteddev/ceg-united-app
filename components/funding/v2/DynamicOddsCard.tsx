@@ -5,6 +5,10 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
+import { useAuth } from "@/provider/AuthContext";
+import { cn } from "@/lib/utils";
+import { SpecialistFeeAgreementModal } from "./SpecialistFeeAgreementModal";
 import {
   TrendingUp,
   Loader2,
@@ -56,6 +60,20 @@ export function DynamicOddsCard({
   hasAgreedToWaiver = false,
   setHasAgreedToWaiver,
 }: DynamicOddsCardProps) {
+  const { user } = useAuth();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [localHasAgreed, setLocalHasAgreed] = useState(false);
+
+  // Sync with database record state if the lender was already signed previously
+  useEffect(() => {
+    if (lender?.hasSignedSuccessFeeAgreement) {
+      setLocalHasAgreed(true);
+    }
+  }, [lender]);
+
+  const isAgreed = hasAgreedToWaiver ?? localHasAgreed;
+  const setIsAgreed = setHasAgreedToWaiver || setLocalHasAgreed;
+
   // Adjust odds slightly based on method (specialist typically has better odds)
   const baseOdds = Math.min(lender.approvalOdds || 75, 98);
   const displayOdds =
@@ -187,14 +205,35 @@ export function DynamicOddsCard({
 
       {/* Specialist Waiver Box */}
       {method === "specialist" && (
-        <div className="bg-blue-50/70 border border-blue-100 rounded-lg p-3.5 space-y-3 animate-fade-in-up">
+        <div
+          className={cn(
+            "rounded-lg p-3.5 space-y-3 animate-fade-in-up border transition-all duration-200",
+            isAgreed
+              ? "bg-emerald-50/50 border-emerald-100"
+              : "bg-blue-50/70 border-blue-100",
+          )}
+        >
           <div className="flex items-start gap-2.5">
-            <ScrollText className="size-4.5 text-blue-600 mt-0.5 shrink-0" />
+            {isAgreed ? (
+              <CheckCircle2 className="size-4.5 text-emerald-600 mt-0.5 shrink-0" />
+            ) : (
+              <ScrollText className="size-4.5 text-blue-600 mt-0.5 shrink-0" />
+            )}
             <div className="space-y-1">
-              <h4 className="text-sm font-semibold text-blue-900">
+              <h4
+                className={cn(
+                  "text-sm font-semibold",
+                  isAgreed ? "text-emerald-900" : "text-blue-900",
+                )}
+              >
                 15% Done-for-You Success Fee
               </h4>
-              <p className="text-xs text-blue-700 leading-relaxed">
+              <p
+                className={cn(
+                  "text-xs leading-relaxed",
+                  isAgreed ? "text-emerald-700" : "text-blue-700",
+                )}
+              >
                 By proceeding with our Done-for-You Specialist pathway, you
                 agree to pay a 15% performance success fee upon approval of any
                 funds obtained through this connection.
@@ -202,19 +241,35 @@ export function DynamicOddsCard({
             </div>
           </div>
 
-          <div className="pt-2 border-t border-blue-100/60">
+          <div
+            className={cn(
+              "pt-2 border-t",
+              isAgreed ? "border-emerald-100/60" : "border-blue-100/60",
+            )}
+          >
             <div className="flex items-start space-x-2">
               <Checkbox
                 id="waiver-agreement"
-                checked={hasAgreedToWaiver}
-                onCheckedChange={(checked) =>
-                  setHasAgreedToWaiver?.(checked === true)
-                }
-                className="mt-0.5 border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white"
+                checked={isAgreed}
+                disabled={isAgreed}
+                onCheckedChange={() => {
+                  if (!isAgreed) {
+                    setIsModalOpen(true);
+                  }
+                }}
+                className={cn(
+                  "mt-0.5 transition-colors",
+                  isAgreed
+                    ? "border-emerald-300 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 data-[state=checked]:text-white"
+                    : "border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white",
+                )}
               />
               <Label
                 htmlFor="waiver-agreement"
-                className="text-xs font-medium text-blue-900 leading-tight cursor-pointer"
+                className={cn(
+                  "text-xs font-medium leading-tight cursor-pointer",
+                  isAgreed ? "text-emerald-900" : "text-blue-900",
+                )}
               >
                 I agree to the 15% success fee terms
               </Label>
@@ -227,9 +282,7 @@ export function DynamicOddsCard({
       <div className="space-y-3">
         <Button
           onClick={onApplyNow}
-          disabled={
-            isLoading || (method === "specialist" && !hasAgreedToWaiver)
-          }
+          disabled={isLoading || (method === "specialist" && !isAgreed)}
           size="lg"
           className="group w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm disabled:opacity-50 transition-all"
         >
@@ -251,6 +304,19 @@ export function DynamicOddsCard({
           {buttonSubtext}
         </p>
       </div>
+
+      {user && (
+        <SpecialistFeeAgreementModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          referenceNumber={lender.referenceNumber}
+          userId={user.uid}
+          bankName={lender.bankName}
+          onSignComplete={() => {
+            setIsAgreed(true);
+          }}
+        />
+      )}
     </div>
   );
 }

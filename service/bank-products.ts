@@ -35,6 +35,7 @@ import { ApplyFunding } from "@/schema/apply-funding";
 import NotFoundError from "@/error/NotFoundError";
 import { createAsanaCustomerServiceTask } from "./n8n";
 import { getCRSReport, getCRSBusinessProfile } from "@/service/crs";
+import { saveFeeAgreementToPDF } from "@/service/fee-agreement-pdf";
 
 // Cache for bank websites (5 minute TTL)
 let banksCache: Awaited<ReturnType<typeof getBanks>> | null = null;
@@ -2446,6 +2447,58 @@ export const manuallyAddFundedBankProduct = async ({
       success: false,
       error: "error",
       message: "An unexpected error occurred while adding funded bank product.",
+    };
+  }
+};
+
+export const signSpecialistFeeAgreement = async ({
+  referenceNumber,
+  userId,
+  signature,
+}: {
+  referenceNumber: string;
+  userId: string;
+  signature: {
+    type: "type" | "draw";
+    value: string;
+    ipAddress?: string;
+    macAddress?: string;
+  };
+}): Promise<CommonResponse & { pdfUrl?: string }> => {
+  try {
+    // Validate inputs
+    if (!referenceNumber || !userId || !signature || !signature.value) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Reference number, user ID, and signature are required.",
+      };
+    }
+
+    // Generate and save the PDF agreement (fundingAmount and feeAmount are 0 during pre-application)
+    const uploadResult = await saveFeeAgreementToPDF(
+      referenceNumber,
+      userId,
+      signature,
+      0, // fundingAmount
+      0, // feeAmount
+      15, // percentageFee
+    );
+
+    return {
+      success: true,
+      pdfUrl: uploadResult?.publicUrl || "",
+    };
+  } catch (error: any) {
+    console.error(
+      "Error signing specialist fee agreement Server Action:",
+      error,
+    );
+    return {
+      success: false,
+      error: "error",
+      message:
+        "An error occurred while generating or uploading your agreement PDF.",
     };
   }
 };
