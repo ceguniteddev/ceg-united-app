@@ -329,6 +329,7 @@ function FundingApplyContent() {
           isLoading={isApplying}
           hasAgreedToWaiver={hasAgreedToWaiver}
           setHasAgreedToWaiver={setHasAgreedToWaiver}
+          userId={targetUserId || ""}
         />
       </div>
 
