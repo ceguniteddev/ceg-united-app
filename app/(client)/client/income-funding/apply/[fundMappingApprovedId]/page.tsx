@@ -122,6 +122,15 @@ export function FundingApplyContent({
     supportsOnlineApplication ? "online" : "specialist",
   );
 
+  const [hasAgreedToWaiver, setHasAgreedToWaiver] = useState(false);
+
+  // Sync with database record state on load or refresh
+  useEffect(() => {
+    if (lender?.hasSignedSuccessFeeAgreement) {
+      setHasAgreedToWaiver(true);
+    }
+  }, [lender]);
+
   const isOnline = method === "online";
   const stepsTitle = isOnline
     ? "Your Steps to Apply Online"
@@ -143,6 +152,12 @@ export function FundingApplyContent({
       fundMappingApprovedId: lender.fundMappingApprovedId,
       referenceNumber: lender.referenceNumber,
       applicationMethod: method, // Pass the selected method
+      ...(method === "specialist"
+        ? {
+            hasSignedSuccessFeeAgreement: true,
+            successFeePercentage: 15,
+          }
+        : {}),
     });
 
     if (method === "online" && lender.applicationUrl) {
@@ -326,7 +341,7 @@ export function FundingApplyContent({
       </div>
 
       {/* BOTTOM: Steps + Odds card */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_450px] gap-6">
         {/* Left: Instruction steps */}
         <InstructionSteps title={stepsTitle} steps={steps} />
 
@@ -336,6 +351,9 @@ export function FundingApplyContent({
           method={method}
           onApplyNow={handleApplyNow}
           isLoading={isApplying}
+          hasAgreedToWaiver={hasAgreedToWaiver}
+          setHasAgreedToWaiver={setHasAgreedToWaiver}
+          userId={targetUserId || ""}
         />
       </div>
 

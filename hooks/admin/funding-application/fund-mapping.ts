@@ -430,10 +430,14 @@ export const useApprovedMappedFundsMutation = () => {
       referenceNumber,
       fundMappingApprovedId,
       applicationMethod,
+      hasSignedSuccessFeeAgreement,
+      successFeePercentage,
     }: {
       referenceNumber: string;
       fundMappingApprovedId: string;
       applicationMethod?: ClientApplicationMethod;
+      hasSignedSuccessFeeAgreement?: boolean;
+      successFeePercentage?: number;
     }) => {
       if (!user) throw new Error("User not authenticated");
 
@@ -441,6 +445,8 @@ export const useApprovedMappedFundsMutation = () => {
         referenceNumber,
         fundMappingApprovedId,
         applicationMethod,
+        hasSignedSuccessFeeAgreement,
+        successFeePercentage,
       });
     },
     onSuccess: (_data, variable) => {

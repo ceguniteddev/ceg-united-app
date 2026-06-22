@@ -10,6 +10,7 @@ import {
   WHOP_CHECKOUTS_COLLECTION,
   USER_WALLET,
   USER_WALLET_TRANSACTIONS,
+  PSF_INVOICES_COLLECTION,
 } from "@/constant/collection-name";
 import { whopSdk } from "@/lib/whop-sdk";
 import {
@@ -584,6 +585,102 @@ export const createWalletCheckoutConfig = async ({
   }
 };
 
+export const createPsfInvoiceCheckoutConfig = async ({
+  userId,
+  invoiceId,
+  feeAmount,
+}: {
+  userId: string;
+  invoiceId: string;
+  feeAmount: number;
+}): Promise<{
+  checkoutId: string;
+  url: string;
+}> => {
+  if (!whopSdk) {
+    throw new Error("Whop SDK is not initialized. Check API Key.");
+  }
+
+  const WHOP_WALLET_PRODUCT_ID = process.env.WHOP_WALLET_PRODUCT_ID;
+  const WHOP_PSF_PRODUCT_ID =
+    process.env.WHOP_PSF_PRODUCT_ID || WHOP_WALLET_PRODUCT_ID;
+
+  if (!WHOP_COMPANY_ID || !WHOP_PSF_PRODUCT_ID) {
+    throw new Error(
+      "Payment Server configuration error. Missing Whop Product ID.",
+    );
+  }
+
+  try {
+    const user = await getUserById(userId);
+    if (!user) throw new Error("User not found");
+
+    const feeInCents = Math.round(feeAmount * 100);
+
+    const planDetails: CheckoutConfigurationCreateParams.CreateCheckoutSessionInputModePaymentWithPlan.Plan =
+      {
+        company_id: WHOP_COMPANY_ID,
+        currency: "usd" as const,
+        initial_price: feeInCents,
+        plan_type: "one_time" as const,
+        product_id: WHOP_PSF_PRODUCT_ID,
+        visibility: "hidden" as const,
+        payment_method_configuration: {
+          enabled: ["card", "apple_pay", "google_pay"],
+          disabled: ["crypto", "splitit", "cashapp", "paypal"],
+          include_platform_defaults: false,
+        },
+      };
+
+    const checkoutConfig = await whopSdk.checkoutConfigurations.create({
+      plan: planDetails,
+      metadata: {
+        userId: userId,
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        invoiceId,
+        paymentKey: "PSF_INVOICE",
+        type: "PSF_INVOICE",
+        planId: "PSF_INVOICE",
+      },
+    });
+
+    if (!checkoutConfig.id) {
+      throw new Error(
+        "Failed to create checkout link for PSF success fee invoice.",
+      );
+    }
+
+    const checkoutId = checkoutConfig.id;
+
+    // Save checkout details to Firestore
+    const checkoutDoc = {
+      userId,
+      checkoutId,
+      url: checkoutConfig.purchase_url,
+      createdAt: new Date(),
+      initialPrice: planDetails.initial_price,
+      planType: planDetails.plan_type,
+      productId: planDetails.product_id,
+      status: "created",
+      paymentKey: "PSF_INVOICE",
+      invoiceId,
+      ...checkoutConfig,
+    };
+
+    await firestoreAdmin()
+      .collection(WHOP_CHECKOUTS_COLLECTION)
+      .add(checkoutDoc);
+
+    return { checkoutId, url: checkoutConfig.purchase_url };
+  } catch (error: any) {
+    logError(
+      new Error(`createPsfInvoiceCheckoutConfig error: ${error.message}`),
+    );
+    throw error;
+  }
+};
+
 export const recordPaymentSucceeded = async ({
   payment,
 }: {
@@ -693,6 +790,57 @@ export const recordPaymentSucceeded = async ({
       logError(
         new Error(
           `Failed to credit wallet during recordPaymentSucceeded transaction: ${txError.message}`,
+        ),
+      );
+    }
+  }
+
+  // Check if the payment belongs to a PSF (Performance Success Fee) Invoice
+  const isPsfInvoice = checkoutDetail?.paymentKey === "PSF_INVOICE";
+  const invoiceId =
+    checkoutDetail?.metadata?.invoiceId || (checkoutDetail as any)?.invoiceId;
+
+  if (isPsfInvoice && invoiceId) {
+    try {
+      await db.collection(PSF_INVOICES_COLLECTION).doc(invoiceId).set(
+        {
+          status: "paid",
+          whopPaymentId: payment.id,
+          paidAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
+
+      logInfo("Successfully marked PSF Success Fee Invoice as paid", {
+        invoiceId,
+        paymentId: payment.id,
+      });
+
+      // Optional: We can also update the corresponding funding application status to "Funded" or log the transaction
+      const invoiceSnap = await db
+        .collection(PSF_INVOICES_COLLECTION)
+        .doc(invoiceId)
+        .get();
+      const invoiceData = invoiceSnap.data();
+      if (invoiceData?.fundMappingApprovedId && invoiceData?.referenceNumber) {
+        await db
+          .collection(
+            `user-funding-application/${invoiceData.referenceNumber}/fund-mapping-approved`,
+          )
+          .doc(invoiceData.fundMappingApprovedId)
+          .set(
+            {
+              clientApplicationStatus: "Funded",
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true },
+          );
+      }
+    } catch (err: any) {
+      logError(
+        new Error(
+          `Failed to update PSF Invoice ${invoiceId} to paid: ${err.message}`,
         ),
       );
     }

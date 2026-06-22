@@ -37,3 +37,5 @@ export const GET_CONSUMER_REPORTING_AGENCIES =
   "get-consumer-reporting-agencies";
 
 export const GET_WALLET = "get-wallet";
+
+export const GET_USER_PSF_INVOICES = "psf-invoices";

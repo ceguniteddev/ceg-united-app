@@ -5,8 +5,20 @@
 
 "use client";
 
-import { TrendingUp, Loader2, CheckCircle2, SendIcon } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useUserDocumentsQuery } from "@/hooks/document";
+import { cn } from "@/lib/utils";
+import { SpecialistFeeAgreementModal } from "./SpecialistFeeAgreementModal";
+import {
+  TrendingUp,
+  Loader2,
+  CheckCircle2,
+  SendIcon,
+  ScrollText,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import type { ApprovedBankFormData } from "@/schema/bank-products";
 import type { ApplicationMethod } from "./MethodSelectionCard";
 import { Bar } from "react-chartjs-2";
@@ -36,6 +48,9 @@ interface DynamicOddsCardProps {
   method: ApplicationMethod;
   onApplyNow: () => void;
   isLoading?: boolean;
+  hasAgreedToWaiver?: boolean;
+  setHasAgreedToWaiver?: (val: boolean) => void;
+  userId: string;
 }
 
 export function DynamicOddsCard({
@@ -43,7 +58,48 @@ export function DynamicOddsCard({
   method,
   onApplyNow,
   isLoading = false,
+  hasAgreedToWaiver,
+  setHasAgreedToWaiver,
+  userId,
 }: DynamicOddsCardProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [localHasAgreed, setLocalHasAgreed] = useState(false);
+
+  const { userDocuments, refetch } = useUserDocumentsQuery({
+    userId,
+  });
+
+  const cleanRef = lender.referenceNumber
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  const signedAgreementDoc = userDocuments?.find((doc: UserDoc) => {
+    const lowerName = doc.name.toLowerCase();
+    const hasAgreement =
+      lowerName.includes("fee_agreement") ||
+      lowerName.includes("fee agreement");
+    const matchesRef =
+      lowerName.includes(lender.referenceNumber.toLowerCase()) ||
+      lowerName.replace(/[^a-z0-9]/g, "").includes(cleanRef);
+    return hasAgreement && matchesRef;
+  });
+
+  // Sync with database record state if the lender was already signed previously
+  useEffect(() => {
+    if (lender?.hasSignedSuccessFeeAgreement) {
+      setLocalHasAgreed(true);
+    }
+  }, [lender]);
+
+  const isAgreed =
+    hasAgreedToWaiver !== undefined ? hasAgreedToWaiver : localHasAgreed;
+  const setIsAgreed = (val: boolean) => {
+    if (setHasAgreedToWaiver) {
+      setHasAgreedToWaiver(val);
+    } else {
+      setLocalHasAgreed(val);
+    }
+  };
+
   // Adjust odds slightly based on method (specialist typically has better odds)
   const baseOdds = Math.min(lender.approvalOdds || 75, 98);
   const displayOdds =
@@ -173,11 +229,99 @@ export function DynamicOddsCard({
         </div>
       )}
 
+      {/* Specialist Waiver Box */}
+      {method === "specialist" && (
+        <div
+          className={cn(
+            "rounded-lg p-3.5 space-y-3 animate-fade-in-up border transition-all duration-200",
+            isAgreed
+              ? "bg-emerald-50/50 border-emerald-100"
+              : "bg-blue-50/70 border-blue-100",
+          )}
+        >
+          <div className="flex items-start gap-2.5">
+            {isAgreed ? (
+              <CheckCircle2 className="size-4.5 text-emerald-600 mt-0.5 shrink-0" />
+            ) : (
+              <ScrollText className="size-4.5 text-blue-600 mt-0.5 shrink-0" />
+            )}
+            <div className="space-y-1 flex-1">
+              <h4
+                className={cn(
+                  "text-sm font-semibold",
+                  isAgreed ? "text-emerald-900" : "text-blue-900",
+                )}
+              >
+                15% Done-for-You Success Fee
+              </h4>
+              <p
+                className={cn(
+                  "text-xs leading-relaxed",
+                  isAgreed ? "text-emerald-700" : "text-blue-700",
+                )}
+              >
+                By proceeding with our Done-for-You Specialist pathway, you
+                agree to pay a 15% performance success fee upon approval of any
+                funds obtained through this connection.
+              </p>
+              {isAgreed && signedAgreementDoc && (
+                <div className="pt-2">
+                  <a
+                    href={signedAgreementDoc.signedUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-900 hover:underline transition-colors cursor-pointer"
+                  >
+                    <ScrollText className="size-3.5" />
+                    View Signed Agreement (PDF)
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div
+            className={cn(
+              "pt-2 border-t",
+              isAgreed ? "border-emerald-100/60" : "border-blue-100/60",
+            )}
+          >
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="waiver-agreement"
+                checked={isAgreed}
+                disabled={isAgreed}
+                onCheckedChange={() => {
+                  if (!isAgreed) {
+                    setIsModalOpen(true);
+                  }
+                }}
+                className={cn(
+                  "mt-0.5 transition-colors",
+                  isAgreed
+                    ? "border-emerald-300 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 data-[state=checked]:text-white"
+                    : "border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white",
+                )}
+              />
+              <Label
+                htmlFor="waiver-agreement"
+                className={cn(
+                  "text-xs font-medium leading-tight cursor-pointer",
+                  isAgreed ? "text-emerald-900" : "text-blue-900",
+                )}
+              >
+                I agree to the 15% success fee terms
+              </Label>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Apply button */}
       <div className="space-y-3">
         <Button
           onClick={onApplyNow}
-          disabled={isLoading}
+          disabled={isLoading || (method === "specialist" && !isAgreed)}
           size="lg"
           className="group w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm disabled:opacity-50 transition-all"
         >
@@ -199,6 +343,21 @@ export function DynamicOddsCard({
           {buttonSubtext}
         </p>
       </div>
+
+      {userId && (
+        <SpecialistFeeAgreementModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          referenceNumber={lender.referenceNumber}
+          userId={userId}
+          bankName={lender.bankName}
+          fundMappingApprovedId={lender.fundMappingApprovedId}
+          onSignComplete={() => {
+            setIsAgreed(true);
+            refetch();
+          }}
+        />
+      )}
     </div>
   );
 }
