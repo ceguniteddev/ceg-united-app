@@ -12,14 +12,9 @@ import {
   FileSignature,
   CreditCard,
   Building,
-  DollarSign,
+  Loader2,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogHeader,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { PsfAcceptanceView } from "./PsfAcceptanceView";
 
@@ -33,11 +28,36 @@ export function PsfInvoicesSection() {
     null,
   );
 
-  if (isLoading) return null;
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100 shadow-card">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <p className="mt-4 text-sm text-gray-500 font-medium">
+          Loading invoices...
+        </p>
+      </div>
+    );
+  }
 
   // Filter out voided invoices
   const activeInvoices = invoices.filter((inv) => inv.status !== "void");
-  if (activeInvoices.length === 0) return null;
+
+  if (activeInvoices.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-8 md:p-12 flex flex-col items-center justify-center text-center">
+        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6">
+          <FileSignature className="w-8 h-8 text-blue-600" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">
+          No Invoices Found
+        </h3>
+        <p className="text-gray-500 max-w-md">
+          You do not have any pending or settled Performance Success Fee
+          invoices at this time.
+        </p>
+      </div>
+    );
+  }
 
   const hasPending = activeInvoices.some((inv) => inv.status === "pending");
 

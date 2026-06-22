@@ -334,7 +334,7 @@ export function FundingApplyContent({
       </div>
 
       {/* BOTTOM: Steps + Odds card */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_450px] gap-6">
         {/* Left: Instruction steps */}
         <InstructionSteps title={stepsTitle} steps={steps} />
 

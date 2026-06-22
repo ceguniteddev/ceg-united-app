@@ -2028,11 +2028,21 @@ export const approveAppliedBankProduct = async ({
           approvedAmount * (successFeePercentage / 100),
         );
 
+        let bankName = "Unknown Bank";
+        if (docData.isManualEntry) {
+          bankName = docData.manualBankName || "Unknown Bank";
+        } else if (docData.bankProductId) {
+          const bankProduct = await getBankProduct(docData.bankProductId);
+          if (bankProduct) {
+            bankName = bankProduct.bankName;
+          }
+        }
+
         const invoiceData = {
           userId: docData.userId,
           referenceNumber,
           fundMappingApprovedId,
-          bankName: docData.bankName || "Unknown Bank",
+          bankName,
           approvedAmount,
           successFeePercentage,
           successFeeAmount,

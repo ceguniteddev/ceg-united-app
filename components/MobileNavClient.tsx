@@ -41,6 +41,7 @@ import {
   createAddonCheckoutConfig,
 } from "@/service/whop";
 import { toast } from "sonner";
+import { useUserPsfInvoicesQuery } from "@/hooks/psf-invoices";
 
 const MobileNavClient = () => {
   const { user, userData } = useAuth();
@@ -51,6 +52,11 @@ const MobileNavClient = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { config: systemConfig } = useSystemConfig();
+
+  const { data: invoices = [] } = useUserPsfInvoicesQuery(user?.uid || "");
+  const unpaidInvoicesCount = invoices.filter(
+    (inv) => inv.status === "pending" || inv.status === "signed",
+  ).length;
 
   // Pricing / Checkout state
   const [isPricingModalOpen, setPricingModalOpen] = useState(false);
@@ -216,13 +222,31 @@ const MobileNavClient = () => {
                         />
                       </div>
                       <div className="flex items-center justify-between flex-1 pr-2">
-                        <p
-                          className={cn("text-16 font-semibold text-black-2", {
-                            "text-white": isActive,
-                          })}
-                        >
-                          {item.label}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p
+                            className={cn(
+                              "text-16 font-semibold text-black-2",
+                              {
+                                "text-white": isActive,
+                              },
+                            )}
+                          >
+                            {item.label}
+                          </p>
+                          {item.route === "/client/my-invoices" &&
+                            unpaidInvoicesCount > 0 && (
+                              <span
+                                className={cn(
+                                  "flex h-5 min-w-[20px] px-1 items-center justify-center rounded-full text-[11px] font-bold shadow-sm",
+                                  isActive
+                                    ? "bg-white text-blue-600"
+                                    : "bg-red-500 text-white",
+                                )}
+                              >
+                                {unpaidInvoicesCount}
+                              </span>
+                            )}
+                        </div>
                         {isLocked && (
                           <button
                             type="button"

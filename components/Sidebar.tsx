@@ -12,6 +12,7 @@ import { WhatsNewAccordion } from "./WhatsNewAccordion";
 import { LockIcon } from "lucide-react";
 import React, { useState } from "react";
 import { useSystemConfig } from "@/hooks/system-config";
+import { useUserPsfInvoicesQuery } from "@/hooks/psf-invoices";
 
 // Pricing / Checkout imports
 import { ResponsiveDialog } from "@/components/responsive-dialog";
@@ -37,9 +38,14 @@ const Sidebar = () => {
   const { user, userData } = useAuth();
   const { data: addons = [] } = useAddons();
   const { data: membership } = useMembership(userData?.id);
+  const { data: invoices = [] } = useUserPsfInvoicesQuery(user?.uid || "");
   const pathname = usePathname();
   const router = useRouter();
   const { config: systemConfig } = useSystemConfig();
+
+  const unpaidInvoicesCount = invoices.filter(
+    (inv) => inv.status === "pending" || inv.status === "signed",
+  ).length;
   // const { data: feeSettings } = useFeeSettings();
 
   // Pricing / Checkout state
@@ -188,13 +194,28 @@ const Sidebar = () => {
                   />
                 </div>
                 <div className="flex items-center justify-between flex-1 pr-2">
-                  <p
-                    className={cn("text-16 font-semibold text-black-2", {
-                      "!text-white": isActive,
-                    })}
-                  >
-                    {item.label}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p
+                      className={cn("text-16 font-semibold text-black-2", {
+                        "!text-white": isActive,
+                      })}
+                    >
+                      {item.label}
+                    </p>
+                    {item.route === "/client/my-invoices" &&
+                      unpaidInvoicesCount > 0 && (
+                        <span
+                          className={cn(
+                            "flex h-5 min-w-[20px] px-1 items-center justify-center rounded-full text-[11px] font-bold shadow-sm",
+                            isActive
+                              ? "bg-white text-brand-600"
+                              : "bg-red-500 text-white",
+                          )}
+                        >
+                          {unpaidInvoicesCount}
+                        </span>
+                      )}
+                  </div>
                   {isLocked && (
                     <button
                       type="button"

@@ -73,6 +73,12 @@ export const sidebarLinks = [
   //   route: "/client/my-funding",
   //   label: "My Funding",
   // },
+
+  {
+    imgURL: "/icons/files.svg",
+    route: "/client/my-invoices",
+    label: "My Invoice",
+  },
   {
     imgURL: "/icons/money-send.svg",
     route: "/client/income-funding",

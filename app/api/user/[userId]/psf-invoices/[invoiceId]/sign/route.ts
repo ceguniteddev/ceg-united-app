@@ -56,11 +56,21 @@ export const POST = withAuth(
         });
       }
 
+      let resolvedIp = ipAddress || signature.ipAddress;
+      if (!resolvedIp || resolvedIp === "Unknown") {
+        const forwardedFor = request.headers.get("x-forwarded-for");
+        resolvedIp =
+          (request as any).ip ||
+          (forwardedFor ? forwardedFor.split(",")[0].trim() : null) ||
+          request.headers.get("x-real-ip") ||
+          "Unknown";
+      }
+
       // Prepare signature object for PDF compilation
       const pdfSignature = {
         type: signature.type as "type" | "draw",
         value: signature.value,
-        ipAddress: ipAddress || signature.ipAddress || "",
+        ipAddress: resolvedIp,
         macAddress: signature.macAddress || "",
       };
 
@@ -108,7 +118,7 @@ export const POST = withAuth(
         type: signature.type,
         value: signature.value,
         signedAt,
-        ipAddress: ipAddress || signature.ipAddress || null,
+        ipAddress: resolvedIp,
       };
 
       await invoiceRef.update({
