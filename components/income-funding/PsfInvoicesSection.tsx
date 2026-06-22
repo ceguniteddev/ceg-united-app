@@ -7,7 +7,6 @@ import {
 import { useAuth } from "@/provider/AuthContext";
 import { PsfInvoice } from "@/schema/psf-invoice";
 import {
-  AlertCircle,
   CheckCircle2,
   FileSignature,
   CreditCard,
@@ -17,6 +16,7 @@ import {
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { PsfAcceptanceView } from "./PsfAcceptanceView";
+import { Button } from "../ui/button";
 
 export function PsfInvoicesSection() {
   const { user } = useAuth();
@@ -79,26 +79,19 @@ export function PsfInvoicesSection() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden">
         {/* Header */}
         <div
-          className={`p-5 md:p-6 border-b border-gray-100 flex items-start sm:items-center justify-between flex-col sm:flex-row gap-4 ${hasPending ? "bg-amber-50/50" : "bg-gray-50/30"}`}
+          className={`p-5 md:p-6 border-b border-gray-100 flex items-start sm:items-center justify-between flex-col sm:flex-row gap-4 ${hasPending ? "bg-blue-50/30" : "bg-gray-50/30"}`}
         >
           <div className="flex items-center gap-3">
-            <div
-              className={`p-2.5 rounded-xl ${hasPending ? "bg-amber-100 text-amber-600" : "bg-blue-50 text-blue-600"}`}
-            >
-              {hasPending ? (
-                <AlertCircle className="w-5 h-5" />
-              ) : (
-                <FileSignature className="w-5 h-5" />
-              )}
+            <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
+              <FileSignature className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
                 Performance Success Fee Invoices
               </h2>
               <p className="text-sm text-gray-500">
-                {hasPending
-                  ? "You have invoices awaiting your signature and payment."
-                  : "View your success fee invoices and payment status."}
+                View and pay your success fee invoices to proceed with your
+                funding.
               </p>
             </div>
           </div>
@@ -119,9 +112,6 @@ export function PsfInvoicesSection() {
                   <div>
                     <p className="font-medium text-gray-900">
                       {invoice.bankName}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Ref: {invoice.referenceNumber}
                     </p>
                   </div>
                 </div>
@@ -158,15 +148,15 @@ export function PsfInvoicesSection() {
                 )}
 
                 {invoice.status === "signed" && invoice.whopCheckoutUrl && (
-                  <button
+                  <Button
                     onClick={() =>
                       window.open(invoice.whopCheckoutUrl, "_blank")
                     }
-                    className="w-full sm:w-auto px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
                   >
                     <CreditCard className="w-4 h-4" />
-                    Complete Payment on Whop
-                  </button>
+                    Complete Payment
+                  </Button>
                 )}
 
                 {invoice.status === "paid" && (
@@ -211,15 +201,15 @@ function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case "pending":
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium border border-amber-200/50">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200/50">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
           Awaiting Signature
         </span>
       );
     case "signed":
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-700 text-xs font-medium border border-yellow-200/50">
-          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium border border-indigo-200/50">
+          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
           Signed - Unpaid
         </span>
       );

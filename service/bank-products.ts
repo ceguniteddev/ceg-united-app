@@ -37,6 +37,7 @@ import NotFoundError from "@/error/NotFoundError";
 import { createAsanaCustomerServiceTask } from "./n8n";
 import { getCRSReport, getCRSBusinessProfile } from "@/service/crs";
 import { saveFeeAgreementToPDF } from "@/service/fee-agreement-pdf";
+import { createPsfInvoiceCheckoutConfig } from "./whop";
 
 // Cache for bank websites (5 minute TTL)
 let banksCache: Awaited<ReturnType<typeof getBanks>> | null = null;
@@ -2065,20 +2066,86 @@ export const approveAppliedBankProduct = async ({
           }
         }
 
-        const invoiceData = {
-          userId: docData.userId,
-          referenceNumber,
-          fundMappingApprovedId,
-          bankName,
-          approvedAmount,
-          successFeePercentage,
-          successFeeAmount,
-          status: "pending",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+        if (docData.specialistSignature) {
+          const invoiceRef = db.collection(PSF_INVOICES_COLLECTION).doc();
+          const invoiceId = invoiceRef.id;
 
-        await db.collection(PSF_INVOICES_COLLECTION).add(invoiceData);
+          // Regenerate Final Agreement PDF
+          try {
+            await saveFeeAgreementToPDF(
+              referenceNumber,
+              docData.userId,
+              {
+                type: docData.specialistSignature.type,
+                value: docData.specialistSignature.value,
+                ipAddress: docData.specialistSignature.ipAddress || "Unknown",
+              },
+              approvedAmount,
+              successFeeAmount,
+              successFeePercentage,
+            );
+          } catch (pdfError) {
+            console.error(
+              "Failed to regenerate Final Agreement PDF:",
+              pdfError,
+            );
+          }
+
+          // Create Whop Link
+          let checkoutId: string | undefined;
+          let checkoutUrl: string | undefined;
+          try {
+            const whopConfig = await createPsfInvoiceCheckoutConfig({
+              userId: docData.userId,
+              invoiceId,
+              feeAmount: successFeeAmount,
+            });
+            checkoutId = whopConfig?.checkoutId;
+            checkoutUrl = whopConfig?.url;
+          } catch (whopError) {
+            console.error("Failed to create Whop checkout link:", whopError);
+          }
+
+          const invoiceData = {
+            userId: docData.userId,
+            referenceNumber,
+            fundMappingApprovedId,
+            bankName,
+            approvedAmount,
+            successFeePercentage,
+            successFeeAmount,
+            status: checkoutUrl ? "signed" : "pending",
+            signature: {
+              type: docData.specialistSignature.type,
+              value: docData.specialistSignature.value,
+              signedAt:
+                docData.specialistSignature.signedAt ||
+                new Date().toISOString(),
+              ipAddress: docData.specialistSignature.ipAddress || "Unknown",
+            },
+            ...(checkoutId ? { whopCheckoutId: checkoutId } : {}),
+            ...(checkoutUrl ? { whopCheckoutUrl: checkoutUrl } : {}),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          await invoiceRef.set(invoiceData);
+        } else {
+          const invoiceData = {
+            userId: docData.userId,
+            referenceNumber,
+            fundMappingApprovedId,
+            bankName,
+            approvedAmount,
+            successFeePercentage,
+            successFeeAmount,
+            status: "pending",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          await db.collection(PSF_INVOICES_COLLECTION).add(invoiceData);
+        }
       }
     }
 
