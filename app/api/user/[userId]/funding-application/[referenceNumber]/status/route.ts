@@ -55,6 +55,17 @@ export const PUT = withAuth(
       });
 
       if (signature) {
+        if (!signature.ipAddress || signature.ipAddress === "Unknown") {
+          const forwardedFor = request.headers.get("x-forwarded-for");
+          signature.ipAddress =
+            (request as any).ip ||
+            (forwardedFor ? forwardedFor.split(",")[0].trim() : null) ||
+            request.headers.get("x-real-ip") ||
+            "Unknown";
+        }
+      }
+
+      if (signature) {
         const db = firestoreAdmin();
         await db
           .collection(USER_FUNDING_APPLICATION)

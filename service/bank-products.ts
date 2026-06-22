@@ -9,6 +9,7 @@ import {
   BROKER_CLIENT_MAPPING,
   BROKER_COMMISSION,
   USER_COLLECTION,
+  PSF_INVOICES_COLLECTION,
 } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
@@ -23,6 +24,7 @@ import {
 import { getCurrentUser, getUserById } from "./user";
 import { getBanks } from "./bank-management";
 import { Timestamp } from "firebase-admin/firestore";
+import { headers } from "next/headers";
 
 import { normalizeAllDates } from "@/lib/date-parser";
 import {
@@ -34,6 +36,8 @@ import { ApplyFunding } from "@/schema/apply-funding";
 import NotFoundError from "@/error/NotFoundError";
 import { createAsanaCustomerServiceTask } from "./n8n";
 import { getCRSReport, getCRSBusinessProfile } from "@/service/crs";
+import { saveFeeAgreementToPDF } from "@/service/fee-agreement-pdf";
+import { createPsfInvoiceCheckoutConfig } from "./whop";
 
 // Cache for bank websites (5 minute TTL)
 let banksCache: Awaited<ReturnType<typeof getBanks>> | null = null;
@@ -1037,6 +1041,12 @@ export const getFundMappingAnalysisDetails = async ({
         fundedRemarks: bankProductId.fundedRemarks || "",
         userId: bankProductId.userId,
         underwritingNotes: bankProductId.approvedRemarks || "",
+        hasSignedSuccessFeeAgreement:
+          bankProductId.hasSignedSuccessFeeAgreement || false,
+        successFeePercentage: bankProductId.successFeePercentage || 0,
+        signedSuccessFeeAgreementAt:
+          bankProductId.signedSuccessFeeAgreementAt || null,
+        applicationMethod: bankProductId.applicationMethod || null,
         products: [
           {
             productName: bankProductId.manualProductName || "Manual Entry",
@@ -1131,6 +1141,12 @@ export const getFundMappingAnalysisDetails = async ({
           applicationUrl, // Add applicationUrl to top level
           approvalOdds: overallApprovalOdds, // Add calculated approval odds
           pathwayId: bankProductId.pathwayId || pathwayId,
+          hasSignedSuccessFeeAgreement:
+            bankProductId.hasSignedSuccessFeeAgreement || false,
+          successFeePercentage: bankProductId.successFeePercentage || 0,
+          signedSuccessFeeAgreementAt:
+            bankProductId.signedSuccessFeeAgreementAt || null,
+          applicationMethod: bankProductId.applicationMethod || null,
         });
       }
     }
@@ -1329,6 +1345,10 @@ export const getAutoServedClientFunds = async ({
         fundedRemarks: r.fundedRemarks || "",
         userId: r.userId || userId,
         underwritingNotes: r.approvedRemarks || "",
+        hasSignedSuccessFeeAgreement: r.hasSignedSuccessFeeAgreement || false,
+        successFeePercentage: r.successFeePercentage || 0,
+        signedSuccessFeeAgreementAt: r.signedSuccessFeeAgreementAt || null,
+        applicationMethod: r.applicationMethod || null,
         products: [
           {
             productName: r.manualProductName || "Manual Entry",
@@ -1408,6 +1428,10 @@ export const getAutoServedClientFunds = async ({
           applicationUrl,
           approvalOdds: overallApprovalOdds,
           pathwayId: r.pathwayId || pathwayId,
+          hasSignedSuccessFeeAgreement: r.hasSignedSuccessFeeAgreement || false,
+          successFeePercentage: r.successFeePercentage || 0,
+          signedSuccessFeeAgreementAt: r.signedSuccessFeeAgreementAt || null,
+          applicationMethod: r.applicationMethod || null,
         });
       }
     }
@@ -1877,10 +1901,14 @@ export const applyApprovedMappedFund = async ({
   referenceNumber,
   fundMappingApprovedId,
   applicationMethod,
+  hasSignedSuccessFeeAgreement,
+  successFeePercentage,
 }: {
   referenceNumber: string;
   fundMappingApprovedId: string;
   applicationMethod?: ClientApplicationMethod;
+  hasSignedSuccessFeeAgreement?: boolean;
+  successFeePercentage?: number;
 }): Promise<CommonResponse> => {
   try {
     // 1. Return structured errors for invalid inputs
@@ -1939,6 +1967,18 @@ export const applyApprovedMappedFund = async ({
       {
         clientApplicationStatus: "Sent to Lender",
         applicationMethod: applicationMethod || "Specialist",
+        hasSignedSuccessFeeAgreement:
+          hasSignedSuccessFeeAgreement ||
+          docData?.hasSignedSuccessFeeAgreement ||
+          false,
+        successFeePercentage:
+          hasSignedSuccessFeeAgreement || docData?.hasSignedSuccessFeeAgreement
+            ? successFeePercentage || docData?.successFeePercentage || 15
+            : 0,
+        signedSuccessFeeAgreementAt:
+          hasSignedSuccessFeeAgreement || docData?.hasSignedSuccessFeeAgreement
+            ? docData?.signedSuccessFeeAgreementAt || new Date().toISOString()
+            : null,
       },
       { merge: true },
     );
@@ -1990,7 +2030,11 @@ export const approveAppliedBankProduct = async ({
       `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
     );
 
-    await collectionRef.doc(fundMappingApprovedId).set(
+    const docRef = collectionRef.doc(fundMappingApprovedId);
+    const docSnapshot = await docRef.get();
+    const docData = docSnapshot.data();
+
+    await docRef.set(
       {
         clientApplicationStatus: "Approved",
         approvedAmount,
@@ -1998,6 +2042,112 @@ export const approveAppliedBankProduct = async ({
       },
       { merge: true },
     );
+
+    if (docData?.hasSignedSuccessFeeAgreement) {
+      const invoiceQuery = await db
+        .collection(PSF_INVOICES_COLLECTION)
+        .where("fundMappingApprovedId", "==", fundMappingApprovedId)
+        .limit(1)
+        .get();
+
+      if (invoiceQuery.empty) {
+        const successFeePercentage = docData.successFeePercentage || 15;
+        const successFeeAmount = Math.round(
+          approvedAmount * (successFeePercentage / 100),
+        );
+
+        let bankName = "Unknown Bank";
+        if (docData.isManualEntry) {
+          bankName = docData.manualBankName || "Unknown Bank";
+        } else if (docData.bankProductId) {
+          const bankProduct = await getBankProduct(docData.bankProductId);
+          if (bankProduct) {
+            bankName = bankProduct.bankName;
+          }
+        }
+
+        if (docData.specialistSignature) {
+          const invoiceRef = db.collection(PSF_INVOICES_COLLECTION).doc();
+          const invoiceId = invoiceRef.id;
+
+          // Regenerate Final Agreement PDF
+          try {
+            await saveFeeAgreementToPDF(
+              referenceNumber,
+              docData.userId,
+              {
+                type: docData.specialistSignature.type,
+                value: docData.specialistSignature.value,
+                ipAddress: docData.specialistSignature.ipAddress || "Unknown",
+              },
+              approvedAmount,
+              successFeeAmount,
+              successFeePercentage,
+            );
+          } catch (pdfError) {
+            console.error(
+              "Failed to regenerate Final Agreement PDF:",
+              pdfError,
+            );
+          }
+
+          // Create Whop Link
+          let checkoutId: string | undefined;
+          let checkoutUrl: string | undefined;
+          try {
+            const whopConfig = await createPsfInvoiceCheckoutConfig({
+              userId: docData.userId,
+              invoiceId,
+              feeAmount: successFeeAmount,
+            });
+            checkoutId = whopConfig?.checkoutId;
+            checkoutUrl = whopConfig?.url;
+          } catch (whopError) {
+            console.error("Failed to create Whop checkout link:", whopError);
+          }
+
+          const invoiceData = {
+            userId: docData.userId,
+            referenceNumber,
+            fundMappingApprovedId,
+            bankName,
+            approvedAmount,
+            successFeePercentage,
+            successFeeAmount,
+            status: checkoutUrl ? "signed" : "pending",
+            signature: {
+              type: docData.specialistSignature.type,
+              value: docData.specialistSignature.value,
+              signedAt:
+                docData.specialistSignature.signedAt ||
+                new Date().toISOString(),
+              ipAddress: docData.specialistSignature.ipAddress || "Unknown",
+            },
+            ...(checkoutId ? { whopCheckoutId: checkoutId } : {}),
+            ...(checkoutUrl ? { whopCheckoutUrl: checkoutUrl } : {}),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          await invoiceRef.set(invoiceData);
+        } else {
+          const invoiceData = {
+            userId: docData.userId,
+            referenceNumber,
+            fundMappingApprovedId,
+            bankName,
+            approvedAmount,
+            successFeePercentage,
+            successFeeAmount,
+            status: "pending",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          await db.collection(PSF_INVOICES_COLLECTION).add(invoiceData);
+        }
+      }
+    }
 
     // 4. Return a successful response
     return { success: true };
@@ -2390,6 +2540,101 @@ export const manuallyAddFundedBankProduct = async ({
       success: false,
       error: "error",
       message: "An unexpected error occurred while adding funded bank product.",
+    };
+  }
+};
+
+export const signSpecialistFeeAgreement = async ({
+  referenceNumber,
+  userId,
+  signature,
+  fundMappingApprovedId,
+}: {
+  referenceNumber: string;
+  userId: string;
+  signature: {
+    type: "type" | "draw";
+    value: string;
+    ipAddress?: string;
+    macAddress?: string;
+  };
+  fundMappingApprovedId?: string;
+}): Promise<CommonResponse & { pdfUrl?: string }> => {
+  try {
+    // Validate inputs
+    if (!referenceNumber || !userId || !signature || !signature.value) {
+      return {
+        success: false,
+        error: "warning",
+        message: "Reference number, user ID, and signature are required.",
+      };
+    }
+
+    // Resolve client's IP address if not provided in signature.ipAddress (or fallback using standard headers() from "next/headers")
+    let ipAddress = signature.ipAddress;
+    if (!ipAddress || ipAddress === "Unknown") {
+      try {
+        const headersList = await headers();
+        const forwardedFor = headersList.get("x-forwarded-for");
+        ipAddress = forwardedFor
+          ? forwardedFor.split(",")[0].trim()
+          : headersList.get("x-real-ip") || "Unknown";
+      } catch (e) {
+        ipAddress = "Unknown";
+      }
+    }
+
+    // Generate and save the PDF agreement (fundingAmount and feeAmount are 0 during pre-application)
+    const uploadResult = await saveFeeAgreementToPDF(
+      referenceNumber,
+      userId,
+      {
+        ...signature,
+        ipAddress: ipAddress || "Unknown",
+      },
+      0, // fundingAmount
+      0, // feeAmount
+      15, // percentageFee
+    );
+
+    if (fundMappingApprovedId) {
+      const db = firestoreAdmin();
+      const docRef = db
+        .collection(
+          `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
+        )
+        .doc(fundMappingApprovedId);
+
+      await docRef.set(
+        {
+          hasSignedSuccessFeeAgreement: true,
+          successFeePercentage: 15,
+          signedSuccessFeeAgreementAt: new Date().toISOString(),
+          specialistSignature: {
+            type: signature.type,
+            value: signature.value,
+            ipAddress: ipAddress || "Unknown",
+            signedAt: new Date().toISOString(),
+          },
+        },
+        { merge: true },
+      );
+    }
+
+    return {
+      success: true,
+      pdfUrl: uploadResult?.publicUrl || "",
+    };
+  } catch (error: any) {
+    console.error(
+      "Error signing specialist fee agreement Server Action:",
+      error,
+    );
+    return {
+      success: false,
+      error: "error",
+      message:
+        "An error occurred while generating or uploading your agreement PDF.",
     };
   }
 };

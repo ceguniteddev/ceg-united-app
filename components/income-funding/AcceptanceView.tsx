@@ -251,15 +251,15 @@ export function AcceptanceView({
         {/* Scrollable legal */}
         <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 max-h-44 overflow-y-auto custom-scrollbar text-xs leading-relaxed text-gray-600 space-y-2">
           <p>
-            This Performance Success Fee Agreement ("Agreement") is entered into
-            between the Client and Credit Experts Group LLC ("CEG") as of the
+            This Performance Success Fee Agreement (&quot;Agreement&quot;) is entered into
+            between the Client and Credit Experts Group LLC (&quot;CEG&quot;) as of the
             date of execution.
           </p>
           <p>
             <span className="font-semibold text-gray-800">1. Success Fee.</span>{" "}
             Client agrees to pay CEG a success fee equal to{" "}
             <strong>{percentageFee}%</strong> of the gross funding amount
-            approved and accepted through CEG's lender network.
+            approved and accepted through CEG&apos;s lender network.
           </p>
           <p>
             <span className="font-semibold text-gray-800">2. Payment.</span> The
@@ -270,7 +270,7 @@ export function AcceptanceView({
           <p>
             <span className="font-semibold text-gray-800">3. Disclosure.</span>{" "}
             CEG is a consulting and brokerage firm and is not a lender. Final
-            approval, terms, and disbursement are subject to the lender's
+            approval, terms, and disbursement are subject to the lender&apos;s
             underwriting standards.
           </p>
           <p>
@@ -325,7 +325,7 @@ export function AcceptanceView({
                 </strong>
                 . You must say:{" "}
                 <em className="bg-red-100 px-1 py-0.5 rounded font-bold">
-                  "No, I only need the amount you are funding me."
+                  &quot;No, I only need the amount you are funding me.&quot;
                 </em>
               </p>
             </div>
@@ -463,7 +463,7 @@ export function AcceptanceView({
                 Offer Accepted!
               </h2>
               <p className="text-sm text-gray-500 text-center">
-                We've secured your offer. The lender will email you the
+                We&apos;ve secured your offer. The lender will email you the
                 contracts shortly.
               </p>
             </>

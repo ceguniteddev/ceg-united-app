@@ -149,13 +149,22 @@ export const FeeAgreementDocument = ({
       </View>
 
       <View style={styles.callout}>
-        <Text>
-          You agree to pay a success fee of{" "}
-          <Text style={styles.bold}>{percentageFee}%</Text> based on the
-          approved funding amount of{" "}
-          <Text style={styles.bold}>{formatUSD(fundingAmount)}</Text> ={" "}
-          <Text style={styles.bold}>{formatUSD(feeAmount)}</Text> fee.
-        </Text>
+        {fundingAmount > 0 ? (
+          <Text>
+            You agree to pay a success fee of{" "}
+            <Text style={styles.bold}>{percentageFee}%</Text> based on the
+            approved funding amount of{" "}
+            <Text style={styles.bold}>{formatUSD(fundingAmount)}</Text> ={" "}
+            <Text style={styles.bold}>{formatUSD(feeAmount)}</Text> fee.
+          </Text>
+        ) : (
+          <Text>
+            You agree to pay a success fee of{" "}
+            <Text style={styles.bold}>{percentageFee}%</Text> based on any
+            approved and accepted funding amount obtained through this
+            connection.
+          </Text>
+        )}
       </View>
 
       <View style={styles.signatureContainer}>
