@@ -28,7 +28,7 @@ import { getUserById } from "./user";
 import { RegistrationType } from "@/schema/users";
 import { uploadDocument } from "./documents";
 import { calculateBusinessIncomePreApproved } from "./n8n";
-import { getUserMembership } from "./membership";
+import { getAllMemberships, getUserMembership } from "./membership";
 
 export const processAndUploadDocuments = async ({
   userId,
@@ -359,6 +359,12 @@ export const getFundingApplications = async ({
     };
   });
 
+  const membershipSnaps = await getAllMemberships({ isActive: true });
+  const membershipsMap = new Map<string, any>();
+  membershipSnaps.forEach((m: any) => {
+    membershipsMap.set(m.userId, m);
+  });
+
   let results = snapshot.docs.map((doc) => {
     const data = normalizeAllDates(doc.data());
     const userId = data.userId;
@@ -366,6 +372,7 @@ export const getFundingApplications = async ({
       referenceNumber: doc.id,
       ...data,
       user: usersMap[userId] ?? null,
+      membership: membershipsMap.get(userId) ?? null,
     };
   });
 

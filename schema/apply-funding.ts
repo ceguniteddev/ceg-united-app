@@ -1,6 +1,7 @@
 import z from "zod";
 import { registrationSchema } from "./registration";
 import { ClientApplicationMethodEnum } from "./bank-products";
+import { UserMembership } from "./users";
 
 export const FundingApplicationSatus = [
   "New",
@@ -1202,6 +1203,7 @@ export type ApplyFunding = z.infer<typeof applyFundingSchema>;
 
 export type ApplyFundingWithUser = ApplyFunding & {
   user?: z.infer<typeof registrationSchema> | null;
+  membership?: UserMembership | null;
 };
 
 export type FundingProductEnumType = {
