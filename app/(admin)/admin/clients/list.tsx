@@ -48,6 +48,14 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useGetWhopPayments } from "@/hooks/admin/payments/whop";
 import { useGetAllMemberships } from "@/hooks/membership";
+import { MultiSelect } from "@/components/multi-select";
+
+const MEMBERSHIP_OPTIONS = [
+  { label: "None", value: "None" },
+  { label: "Starter", value: "Starter" },
+  { label: "Pro", value: "Pro" },
+  { label: "Executive", value: "Executive" },
+];
 
 const membershipFilterFn: FilterFn<UserWithId> = (
   row,
@@ -55,10 +63,16 @@ const membershipFilterFn: FilterFn<UserWithId> = (
   filterValue,
 ) => {
   const value = row.getValue<string>(columnId);
-  const selectedFilter = String(filterValue);
-  if (!selectedFilter || selectedFilter === "all") return true;
-
-  return value === selectedFilter;
+  if (
+    !filterValue ||
+    (Array.isArray(filterValue) && filterValue.length === 0)
+  ) {
+    return true;
+  }
+  if (Array.isArray(filterValue)) {
+    return filterValue.includes(value);
+  }
+  return value === String(filterValue);
 };
 
 const denefitsStatusFilterFn: FilterFn<UserWithId> = (
@@ -90,7 +104,7 @@ const whopPaymentFilterFn: FilterFn<UserWithId> = (
 };
 
 const ClientsList = () => {
-  const [membershipFilter, setMembershipFilter] = useState("all");
+  const [membershipFilter, setMembershipFilter] = useState<string[]>([]);
   const [denefitsStatusFilter, setDenefitsStatusFilter] = useState("all");
   const [whopPaymentFilter, setWhopPaymentFilter] = useState("all");
 
@@ -293,7 +307,7 @@ const ClientsList = () => {
     const col = table.getColumn("membershipType");
     if (!col) return;
 
-    if (membershipFilter === "all") {
+    if (membershipFilter.length === 0) {
       col.setFilterValue(undefined);
     } else {
       col.setFilterValue(membershipFilter);
@@ -346,41 +360,13 @@ const ClientsList = () => {
             <label className="text-sm font-medium text-muted-foreground">
               Membership
             </label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-9 w-full justify-between"
-                >
-                  <span>
-                    {membershipFilter === "all"
-                      ? "All Membership"
-                      : membershipFilter}
-                  </span>
-                  <ChevronDownIcon className="h-4 w-4 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[200px]">
-                <DropdownMenuRadioGroup
-                  value={membershipFilter}
-                  onValueChange={setMembershipFilter}
-                >
-                  <DropdownMenuRadioItem value="all">
-                    All Membership
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="None">
-                    None
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="Starter">
-                    Starter
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="Pro">Pro</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="Executive">
-                    Executive
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <MultiSelect
+              options={MEMBERSHIP_OPTIONS}
+              onValueChange={setMembershipFilter}
+              value={membershipFilter}
+              placeholder="All Membership"
+              className="h-9"
+            />
           </div>
 
           {/* Denefits Filter */}

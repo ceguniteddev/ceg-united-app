@@ -58,11 +58,37 @@ async function getBankWebsite(bankName: string): Promise<string | undefined> {
   }
 
   // Case-insensitive lookup
-  const bank = banksCache.find(
-    (b) => b.bankName.toLowerCase() === bankName.toLowerCase(),
-  );
+  const bank = Array.isArray(banksCache)
+    ? banksCache.find(
+        (b) => b.bankName.toLowerCase() === bankName.toLowerCase(),
+      )
+    : undefined;
 
   return bank?.website;
+}
+
+/**
+ * Helper function to get bank ID by bank name
+ * Uses cached bank data with 5-minute TTL for performance
+ */
+async function getBankIdByName(bankName: string): Promise<string | undefined> {
+  if (!bankName) return undefined;
+  const now = Date.now();
+
+  // Refresh cache if expired or not yet loaded
+  if (!banksCache || now - banksCacheTime > CACHE_TTL) {
+    banksCache = await getBanks();
+    banksCacheTime = now;
+  }
+
+  // Case-insensitive lookup
+  const bank = Array.isArray(banksCache)
+    ? banksCache.find(
+        (b) => b.bankName.toLowerCase() === bankName.toLowerCase(),
+      )
+    : undefined;
+
+  return bank?.id;
 }
 
 /**
@@ -80,9 +106,11 @@ async function getBankSuccessFee(bankName: string): Promise<number> {
   }
 
   // Case-insensitive lookup
-  const bank = banksCache.find(
-    (b) => b.bankName.toLowerCase() === bankName.toLowerCase(),
-  );
+  const bank = Array.isArray(banksCache)
+    ? banksCache.find(
+        (b) => b.bankName.toLowerCase() === bankName.toLowerCase(),
+      )
+    : undefined;
 
   return bank?.successFeePercentage ?? 15;
 }
@@ -440,8 +468,12 @@ export const getBankProducts = async (): Promise<GetBankFormDataResponse> => {
       };
     }
 
-    const result = snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() }) as BankFormData,
+    const result = await Promise.all(
+      snapshot.docs.map(async (doc) => {
+        const data = doc.data() as BankFormData;
+        const bankId = data.bankId || (await getBankIdByName(data.bankName));
+        return { id: doc.id, ...data, bankId } as BankFormData;
+      }),
     );
 
     // console.log("getBankProducts", result.length);
@@ -462,7 +494,9 @@ export const getBankProduct = async (id: string) => {
   const collectionRef = db.collection(BANK_PRODUCTS_COLLECTION).doc(id);
   const doc = await collectionRef.get();
   if (!doc.exists) return null;
-  return { id: doc.id, ...doc.data() } as BankFormData;
+  const data = doc.data() as BankFormData;
+  const bankId = data.bankId || (await getBankIdByName(data.bankName));
+  return { id: doc.id, ...data, bankId } as BankFormData;
 };
 
 export const deleteBankProduct = async (id: string) => {
@@ -805,18 +839,52 @@ export const getFundMappingAnalysis = async (
   const bankProductIds = docs.map((doc) => ({
     bank_products: doc.data()?.bank_products || [],
   }));
+
   // console.log("bankProductIds", JSON.stringify(bankProductIds));
   if (!bankProductIds || bankProductIds.length === 0) return null;
 
-  const result: BankFormData[] = [];
-  for (const bankProductId of bankProductIds) {
-    for (const id of bankProductId.bank_products) {
-      const bankProduct = await getBankProduct(id.id);
-      if (bankProduct) {
-        result.push(bankProduct);
+  // 1. De-duplicate and gather all unique bank product IDs from bankProductIds
+  const uniqueIds = Array.from(
+    new Set(
+      bankProductIds
+        .flatMap((bp) => bp.bank_products.map((item: any) => item?.id))
+        .filter((id): id is string => typeof id === "string" && !!id),
+    ),
+  );
+
+  const productMap = new Map<string, BankFormData>();
+
+  // 2. Fetch them in batches/chunks of 100 via db.getAll(...docRefs)
+  const chunkSize = 100;
+  for (let i = 0; i < uniqueIds.length; i += chunkSize) {
+    const chunkIds = uniqueIds.slice(i, i + chunkSize);
+    const docRefs = chunkIds.map((id) =>
+      db.collection(BANK_PRODUCTS_COLLECTION).doc(id),
+    );
+
+    const docSnapshots = await db.getAll(...docRefs);
+    for (const doc of docSnapshots) {
+      if (doc.exists) {
+        const data = doc.data() as BankFormData;
+        const bankId = data.bankId || (await getBankIdByName(data.bankName));
+        productMap.set(doc.id, { id: doc.id, ...data, bankId } as BankFormData);
       }
     }
   }
+
+  // 3. Re-construct the ordered list based on the original structure and return
+  const result: BankFormData[] = [];
+  for (const bankProductId of bankProductIds) {
+    for (const id of bankProductId.bank_products) {
+      if (id?.id) {
+        const bankProduct = productMap.get(id.id);
+        if (bankProduct) {
+          result.push(bankProduct);
+        }
+      }
+    }
+  }
+
   return result;
 };
 
@@ -839,30 +907,39 @@ export const removeBankProductFromMapping = async (
   if (!bankProductId) throw new AppError("Bank product ID is required.");
 
   const db = firestoreAdmin();
-  const docRef = db
-    .collection(
-      `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`,
-    )
-    .doc(referenceNumber);
+  const subcollectionRef = db.collection(
+    `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING}`,
+  );
 
-  const doc = await docRef.get();
-  if (!doc.exists) {
+  const snapshot = await subcollectionRef.get();
+  if (snapshot.empty || snapshot.docs.length === 0) {
     throw new AppError("Fund mapping document not found.");
   }
 
-  const data = doc.data();
-  const bankProducts = (data?.bank_products || []) as { id: string }[];
+  let updatedAny = false;
 
-  // Filter out the bank product to remove
-  const updatedBankProducts = bankProducts.filter(
-    (product) => product.id !== bankProductId,
-  );
+  for (const doc of snapshot.docs) {
+    const data = doc.data();
+    const bankProducts = (data?.bank_products || []) as { id: string }[];
 
-  // Update the document with the filtered array
-  await docRef.update({
-    bank_products: updatedBankProducts,
-    updatedAt: Timestamp.now(),
-  });
+    const hasProduct = bankProducts.some(
+      (product) => product.id === bankProductId,
+    );
+    if (hasProduct) {
+      const updatedBankProducts = bankProducts.filter(
+        (product) => product.id !== bankProductId,
+      );
+      await doc.ref.update({
+        bank_products: updatedBankProducts,
+        updatedAt: Timestamp.now(),
+      });
+      updatedAny = true;
+    }
+  }
+
+  if (!updatedAny) {
+    throw new AppError("Bank product not found in any fund mappings.");
+  }
 };
 
 export const getFundMappingAnalysisDetails = async ({
@@ -1153,8 +1230,11 @@ export const getFundMappingAnalysisDetails = async ({
         // console.log(
         //   `Calculated overall approval odds for reference ${bankProductId.referenceNumber}: ${overallApprovalOdds}%`,
         // );
+        const bankId =
+          bankProduct.bankId || (await getBankIdByName(bankProduct.bankName));
         result.push({
           ...bankProduct,
+          bankId,
           products: productsWithOdds,
           fundMappingApprovedId: bankProductId.id,
           clientApplicationStatus: bankProductId.clientApplicationStatus,
@@ -1443,8 +1523,11 @@ export const getAutoServedClientFunds = async ({
               )
             : undefined;
 
+        const bankId =
+          bankProduct.bankId || (await getBankIdByName(bankProduct.bankName));
         result.push({
           ...bankProduct,
+          bankId,
           products: productsWithOdds,
           fundMappingApprovedId: r.id,
           clientApplicationStatus: r.clientApplicationStatus,

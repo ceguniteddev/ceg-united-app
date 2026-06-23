@@ -235,18 +235,24 @@ describe("removeBankProductFromMapping", () => {
   });
 
   it("throws AppError when fund mapping document is not found", async () => {
-    mockGet.mockResolvedValueOnce({ exists: false });
+    mockGet.mockResolvedValueOnce({ empty: true, docs: [] });
     await expect(
       removeBankProductFromMapping("REF-001", "bp1"),
     ).rejects.toThrow("Fund mapping document not found.");
   });
 
   it("removes the specified bank product from the mapping array", async () => {
-    mockGet.mockResolvedValueOnce({
-      exists: true,
+    const mockDoc = {
       data: () => ({
         bank_products: [{ id: "bp1" }, { id: "bp2" }, { id: "bp3" }],
       }),
+      ref: {
+        update: mockUpdate,
+      },
+    };
+    mockGet.mockResolvedValueOnce({
+      empty: false,
+      docs: [mockDoc],
     });
     mockUpdate.mockResolvedValueOnce(undefined);
 
@@ -256,6 +262,25 @@ describe("removeBankProductFromMapping", () => {
       bank_products: [{ id: "bp2" }, { id: "bp3" }],
       updatedAt: "mock-ts",
     });
+  });
+
+  it("throws AppError when bank product not found in any fund mappings", async () => {
+    const mockDoc = {
+      data: () => ({
+        bank_products: [{ id: "bp2" }, { id: "bp3" }],
+      }),
+      ref: {
+        update: mockUpdate,
+      },
+    };
+    mockGet.mockResolvedValueOnce({
+      empty: false,
+      docs: [mockDoc],
+    });
+
+    await expect(
+      removeBankProductFromMapping("REF-001", "bp1"),
+    ).rejects.toThrow("Bank product not found in any fund mappings.");
   });
 });
 
