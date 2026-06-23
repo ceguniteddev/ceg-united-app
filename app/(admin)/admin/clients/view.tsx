@@ -50,7 +50,6 @@ import {
   useAdminSetMembershipMutation,
 } from "@/hooks/membership";
 import { useRefreshCRSData } from "@/hooks/crs";
-import { MembershipTier } from "@/service/membership";
 import { useAuth } from "@/provider/AuthContext";
 import { useUserAddons, useAdminToggleAddonMutation } from "@/hooks/addons";
 import { AddonTier } from "@/service/addons";
@@ -75,6 +74,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { registrationSchema } from "@/schema/registration";
 import { sendPaymentLink } from "@/service/whop";
 import { cn } from "@/lib/utils";
+import { MembershipTier } from "@/schema/users";
 
 function toDate(d?: string | Date) {
   if (!d) return undefined;
