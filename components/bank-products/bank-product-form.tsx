@@ -270,12 +270,20 @@ const BankProductsForm = ({
   const onSubmit: SubmitHandler<BankFormData> = useCallback(
     async (values) => {
       try {
+        const selectedBank = banks?.find(
+          (b) => b.bankName.toLowerCase() === values.bankName.toLowerCase(),
+        );
+        const payload = {
+          ...values,
+          bankId: selectedBank?.id || values.bankId,
+        };
+
         if (data && data.id) {
-          await updateBankProduct({ id: data.id!, values });
+          await updateBankProduct({ id: data.id!, values: payload });
           form.reset();
           toast.success("Bank product updated successfully!");
         } else {
-          await createBankProduct(values);
+          await createBankProduct(payload);
           form.reset();
           toast.success("Bank product created successfully!");
         }
@@ -284,7 +292,7 @@ const BankProductsForm = ({
         toast.error(error?.message || "Failed to save bank product");
       }
     },
-    [createBankProduct, updateBankProduct, form, setOpen, data],
+    [createBankProduct, updateBankProduct, form, setOpen, data, banks],
   );
 
   const isSubmitting = isCreating || isUpdating || isApproving;
