@@ -66,6 +66,28 @@ async function getBankWebsite(bankName: string): Promise<string | undefined> {
 }
 
 /**
+ * Helper function to get bank success fee percentage by bank name
+ * Uses cached bank data with 5-minute TTL for performance
+ */
+async function getBankSuccessFee(bankName: string): Promise<number> {
+  if (!bankName) return 15;
+  const now = Date.now();
+
+  // Refresh cache if expired or not yet loaded
+  if (!banksCache || now - banksCacheTime > CACHE_TTL) {
+    banksCache = await getBanks();
+    banksCacheTime = now;
+  }
+
+  // Case-insensitive lookup
+  const bank = banksCache.find(
+    (b) => b.bankName.toLowerCase() === bankName.toLowerCase(),
+  );
+
+  return bank?.successFeePercentage ?? 15;
+}
+
+/**
  * Calculate approval odds (0-100%) based on how well client meets bank requirements
  * Factors in:
  * - Credit score strength (30%)
@@ -1027,6 +1049,9 @@ export const getFundMappingAnalysisDetails = async ({
 
     // Check if this is a manual entry or has a valid bankProductId
     if (bankProductId.isManualEntry || !bankProductId.bankProductId) {
+      const bankSuccessFee = await getBankSuccessFee(
+        bankProductId.manualBankName || "",
+      );
       // For manual entries, construct a valid ApprovedBankFormData object
       result.push({
         id: bankProductId.id,
@@ -1043,7 +1068,8 @@ export const getFundMappingAnalysisDetails = async ({
         underwritingNotes: bankProductId.approvedRemarks || "",
         hasSignedSuccessFeeAgreement:
           bankProductId.hasSignedSuccessFeeAgreement || false,
-        successFeePercentage: bankProductId.successFeePercentage || 0,
+        successFeePercentage:
+          bankProductId.successFeePercentage || bankSuccessFee,
         signedSuccessFeeAgreementAt:
           bankProductId.signedSuccessFeeAgreementAt || null,
         applicationMethod: bankProductId.applicationMethod || null,
@@ -1089,6 +1115,7 @@ export const getFundMappingAnalysisDetails = async ({
       if (bankProduct) {
         // Get applicationUrl from bank management collection
         const applicationUrl = await getBankWebsite(bankProduct.bankName);
+        const bankSuccessFee = await getBankSuccessFee(bankProduct.bankName);
 
         // Calculate approval odds for each product
         const productsWithOdds = clientFundingData
@@ -1143,7 +1170,8 @@ export const getFundMappingAnalysisDetails = async ({
           pathwayId: bankProductId.pathwayId || pathwayId,
           hasSignedSuccessFeeAgreement:
             bankProductId.hasSignedSuccessFeeAgreement || false,
-          successFeePercentage: bankProductId.successFeePercentage || 0,
+          successFeePercentage:
+            bankProductId.successFeePercentage || bankSuccessFee,
           signedSuccessFeeAgreementAt:
             bankProductId.signedSuccessFeeAgreementAt || null,
           applicationMethod: bankProductId.applicationMethod || null,
@@ -1332,6 +1360,7 @@ export const getAutoServedClientFunds = async ({
 
     if (r.isManualEntry || !r.bankProductId) {
       // Manual entry
+      const bankSuccessFee = await getBankSuccessFee(r.manualBankName || "");
       result.push({
         id: r.id,
         bankName: r.manualBankName || "",
@@ -1346,7 +1375,7 @@ export const getAutoServedClientFunds = async ({
         userId: r.userId || userId,
         underwritingNotes: r.approvedRemarks || "",
         hasSignedSuccessFeeAgreement: r.hasSignedSuccessFeeAgreement || false,
-        successFeePercentage: r.successFeePercentage || 0,
+        successFeePercentage: r.successFeePercentage || bankSuccessFee,
         signedSuccessFeeAgreementAt: r.signedSuccessFeeAgreementAt || null,
         applicationMethod: r.applicationMethod || null,
         products: [
@@ -1386,6 +1415,7 @@ export const getAutoServedClientFunds = async ({
       const bankProduct = await getBankProduct(r.bankProductId);
       if (bankProduct) {
         const applicationUrl = await getBankWebsite(bankProduct.bankName);
+        const bankSuccessFee = await getBankSuccessFee(bankProduct.bankName);
 
         const productsWithOdds = clientFundingData
           ? await Promise.all(
@@ -1429,7 +1459,7 @@ export const getAutoServedClientFunds = async ({
           approvalOdds: overallApprovalOdds,
           pathwayId: r.pathwayId || pathwayId,
           hasSignedSuccessFeeAgreement: r.hasSignedSuccessFeeAgreement || false,
-          successFeePercentage: r.successFeePercentage || 0,
+          successFeePercentage: r.successFeePercentage || bankSuccessFee,
           signedSuccessFeeAgreementAt: r.signedSuccessFeeAgreementAt || null,
           applicationMethod: r.applicationMethod || null,
         });
@@ -1963,6 +1993,16 @@ export const applyApprovedMappedFund = async ({
       fundMappingApprovedId,
     });
 
+    let bankSuccessFee = 15;
+    if (bankProductId) {
+      const bankProduct = await getBankProduct(bankProductId);
+      if (bankProduct) {
+        bankSuccessFee = await getBankSuccessFee(bankProduct.bankName);
+      }
+    } else if (docData?.manualBankName) {
+      bankSuccessFee = await getBankSuccessFee(docData.manualBankName);
+    }
+
     await collectionRef.doc(fundMappingApprovedId).set(
       {
         clientApplicationStatus: "Sent to Lender",
@@ -1973,7 +2013,9 @@ export const applyApprovedMappedFund = async ({
           false,
         successFeePercentage:
           hasSignedSuccessFeeAgreement || docData?.hasSignedSuccessFeeAgreement
-            ? successFeePercentage || docData?.successFeePercentage || 15
+            ? successFeePercentage ||
+              docData?.successFeePercentage ||
+              bankSuccessFee
             : 0,
         signedSuccessFeeAgreementAt:
           hasSignedSuccessFeeAgreement || docData?.hasSignedSuccessFeeAgreement
@@ -2051,7 +2093,19 @@ export const approveAppliedBankProduct = async ({
         .get();
 
       if (invoiceQuery.empty) {
-        const successFeePercentage = docData.successFeePercentage || 15;
+        let bankSuccessFee = 15;
+        if (docData?.isManualEntry) {
+          bankSuccessFee = await getBankSuccessFee(
+            docData.manualBankName || "",
+          );
+        } else if (docData?.bankProductId) {
+          const bankProduct = await getBankProduct(docData.bankProductId);
+          if (bankProduct) {
+            bankSuccessFee = await getBankSuccessFee(bankProduct.bankName);
+          }
+        }
+        const successFeePercentage =
+          docData?.successFeePercentage || bankSuccessFee;
         const successFeeAmount = Math.round(
           approvedAmount * (successFeePercentage / 100),
         );
@@ -2549,6 +2603,7 @@ export const signSpecialistFeeAgreement = async ({
   userId,
   signature,
   fundMappingApprovedId,
+  successFeePercentage = 15,
 }: {
   referenceNumber: string;
   userId: string;
@@ -2559,6 +2614,7 @@ export const signSpecialistFeeAgreement = async ({
     macAddress?: string;
   };
   fundMappingApprovedId?: string;
+  successFeePercentage?: number;
 }): Promise<CommonResponse & { pdfUrl?: string }> => {
   try {
     // Validate inputs
@@ -2594,7 +2650,7 @@ export const signSpecialistFeeAgreement = async ({
       },
       0, // fundingAmount
       0, // feeAmount
-      15, // percentageFee
+      successFeePercentage, // percentageFee
     );
 
     if (fundMappingApprovedId) {
@@ -2608,7 +2664,7 @@ export const signSpecialistFeeAgreement = async ({
       await docRef.set(
         {
           hasSignedSuccessFeeAgreement: true,
-          successFeePercentage: 15,
+          successFeePercentage: successFeePercentage,
           signedSuccessFeeAgreementAt: new Date().toISOString(),
           specialistSignature: {
             type: signature.type,

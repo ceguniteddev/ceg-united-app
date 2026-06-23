@@ -69,6 +69,8 @@ export function DynamicOddsCard({
     userId,
   });
 
+  const psfPercentage = lender.successFeePercentage ?? 15;
+
   const cleanRef = lender.referenceNumber
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "");
@@ -252,7 +254,7 @@ export function DynamicOddsCard({
                   isAgreed ? "text-emerald-900" : "text-blue-900",
                 )}
               >
-                15% Done-for-You Success Fee
+                {`${psfPercentage}% Done-for-You Success Fee`}
               </h4>
               <p
                 className={cn(
@@ -260,9 +262,7 @@ export function DynamicOddsCard({
                   isAgreed ? "text-emerald-700" : "text-blue-700",
                 )}
               >
-                By proceeding with our Done-for-You Specialist pathway, you
-                agree to pay a 15% performance success fee upon approval of any
-                funds obtained through this connection.
+                {`By proceeding with our Done-for-You Specialist pathway, you agree to pay a ${psfPercentage}% performance success fee upon approval of any funds obtained through this connection.`}
               </p>
               {isAgreed && signedAgreementDoc && (
                 <div className="pt-2">
@@ -310,7 +310,7 @@ export function DynamicOddsCard({
                   isAgreed ? "text-emerald-900" : "text-blue-900",
                 )}
               >
-                I agree to the 15% success fee terms
+                {`I agree to the ${psfPercentage}% success fee terms`}
               </Label>
             </div>
           </div>
@@ -352,6 +352,7 @@ export function DynamicOddsCard({
           userId={userId}
           bankName={lender.bankName}
           fundMappingApprovedId={lender.fundMappingApprovedId}
+          successFeePercentage={psfPercentage}
           onSignComplete={() => {
             setIsAgreed(true);
             refetch();

@@ -23,6 +23,7 @@ interface SpecialistFeeAgreementModalProps {
   bankName: string;
   onSignComplete: () => void;
   fundMappingApprovedId: string;
+  successFeePercentage?: number;
 }
 
 export function SpecialistFeeAgreementModal({
@@ -33,6 +34,7 @@ export function SpecialistFeeAgreementModal({
   bankName,
   onSignComplete,
   fundMappingApprovedId,
+  successFeePercentage = 15,
 }: SpecialistFeeAgreementModalProps) {
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [signatureMode, setSignatureMode] = useState<"type" | "draw">("type");
@@ -190,6 +192,7 @@ export function SpecialistFeeAgreementModal({
           value: signatureValue,
         },
         fundMappingApprovedId,
+        successFeePercentage,
       });
 
       if (result.success) {
@@ -257,9 +260,10 @@ export function SpecialistFeeAgreementModal({
                   <strong className="text-gray-900 block mb-1">
                     1. FEE ACKNOWLEDGEMENT:
                   </strong>
-                  Client agrees to pay a 15% performance success fee based on
-                  any approved and accepted funding amount obtained through
-                  CEG&apos;s lender connection with {bankName || "the lender"}.
+                  Client agrees to pay a {successFeePercentage}% performance
+                  success fee based on any approved and accepted funding amount
+                  obtained through CEG&apos;s lender connection with{" "}
+                  {bankName || "the lender"}.
                 </p>
                 <p>
                   <strong className="text-gray-900 block mb-1">
@@ -296,7 +300,8 @@ export function SpecialistFeeAgreementModal({
                   htmlFor="terms"
                   className="text-sm font-medium leading-tight text-gray-700 cursor-pointer select-none"
                 >
-                  I have read and agree to the 15% Success Fee terms.
+                  I have read and agree to the {successFeePercentage}% Success
+                  Fee terms.
                 </label>
               </div>
 
