@@ -233,9 +233,12 @@ const getBaseColumns = (
 type Props = {
   appliedFunding: ApprovedBankFormData[] | undefined;
   isAdminView?: boolean;
+  viewColumns?: {
+    columnId: string;
+  }[];
 };
 
-const FundingList = ({ appliedFunding, isAdminView }: Props) => {
+const FundingList = ({ appliedFunding, isAdminView, viewColumns }: Props) => {
   // const { userData } = useAuth();
   const { data: membership } = useMembership(appliedFunding?.[0]?.userId);
   const hasPaidContract = membership?.status === "active" || !!isAdminView;
@@ -267,6 +270,11 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
     // 2. Filter the base columns based on all conditions.
     const baseCols = getBaseColumns(hasPaidContract);
     return baseCols.filter((column) => {
+      if (viewColumns && viewColumns.length > 0) {
+        const isVisible = viewColumns.some((vc) => vc.columnId === column.id);
+        if (!isVisible) return false;
+      }
+
       // Hide clientActions for admins
       if (isAdminView && column.id === "clientActions") {
         return false;
@@ -303,7 +311,7 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
       // If none of the above conditions are met, keep the column
       return true;
     });
-  }, [isAdminView, appliedFunding, hasPaidContract]);
+  }, [isAdminView, appliedFunding, hasPaidContract, viewColumns]);
 
   const table = useReactTable({
     data: appliedFunding || [],
@@ -408,7 +416,7 @@ const FundingList = ({ appliedFunding, isAdminView }: Props) => {
                 key={row.id}
                 row={row}
                 isAdminView={isAdminView}
-                appliedFunding={appliedFunding}
+                columns={columns}
               />
             ))
         ) : (
@@ -425,11 +433,11 @@ export default FundingList;
 const FundingCard = ({
   row,
   isAdminView,
-  appliedFunding,
+  columns,
 }: {
   row: any;
   isAdminView?: boolean;
-  appliedFunding: ApprovedBankFormData[] | undefined;
+  columns: ColumnDef<any>[];
 }) => {
   // const { userData } = useAuth();
   const { data: membership } = useMembership(row?.original?.userId);
@@ -439,87 +447,88 @@ const FundingCard = ({
     ? data.bankName
     : `Bank ${row.index + 1}`;
 
-  const showApprovedFields =
-    appliedFunding?.some(
-      (fund) =>
-        fund.clientApplicationStatus === "Approved" ||
-        fund.clientApplicationStatus === "Funded",
-    ) || false;
-
-  const showFundedFields =
-    appliedFunding?.some((fund) => fund.clientApplicationStatus === "Funded") ||
-    false;
+  const isColumnVisible = (columnId: string) => {
+    return columns.some((col) => col.id === columnId);
+  };
 
   return (
     <div className="border rounded-lg p-4 bg-white shadow-sm space-y-3">
-      {isAdminView && data.referenceNumber && (
+      {isColumnVisible("referenceNumber") && data.referenceNumber && (
         <div className="pb-2 border-b">
           <p className="text-xs text-gray-500">Reference Number</p>
           <p className="font-semibold text-sm">{data.referenceNumber}</p>
         </div>
       )}
 
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3 flex-1">
-          <LenderLogo
-            initial={
-              hasPaidContract
-                ? data.logoInitial || data.bankName.trim()[0]
-                : "B"
-            }
-            bgClass={data.logoBg || "bg-blue-100"}
-            colorClass={data.logoColor || "text-blue-600"}
-            size="md"
-          />
-          <div>
-            <p className="text-xs text-gray-500">Bank Name</p>
-            <p className="font-semibold">{displayBankName}</p>
-            {data.clientApplicationStatus === "Funded" && data.fundedAmount && (
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <CheckCircle2 className="size-3.5 text-blue-500" />
-                <span className="text-xs text-gray-500">
-                  Funded ${data.fundedAmount.toLocaleString()}
-                </span>
-              </div>
-            )}
+      {isColumnVisible("bankName") && (
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3 flex-1">
+            <LenderLogo
+              initial={
+                hasPaidContract
+                  ? data.logoInitial || data.bankName.trim()[0]
+                  : "B"
+              }
+              bgClass={data.logoBg || "bg-blue-100"}
+              colorClass={data.logoColor || "text-blue-600"}
+              size="md"
+            />
+            <div>
+              <p className="text-xs text-gray-500">Bank Name</p>
+              <p className="font-semibold">{displayBankName}</p>
+              {isColumnVisible("fundedAmount") &&
+                data.clientApplicationStatus === "Funded" &&
+                data.fundedAmount && (
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <CheckCircle2 className="size-3.5 text-blue-500" />
+                    <span className="text-xs text-gray-500">
+                      Funded ${data.fundedAmount.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+            </div>
           </div>
+          {isAdminView && data.rank && (
+            <div className="size-7 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0">
+              <span className="text-xs font-bold">{data.rank}</span>
+            </div>
+          )}
         </div>
-        {isAdminView && data.rank && (
-          <div className="size-7 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-bold">{data.rank}</span>
+      )}
+
+      {isColumnVisible("approvalOdds") &&
+        data.approvalOdds &&
+        data.approvalOdds > 0 && (
+          <div>
+            <p className="text-xs text-gray-500">Approval Odds</p>
+            <div className="mt-1">
+              <ApprovalOddsBadge odds={data.approvalOdds} />
+            </div>
           </div>
         )}
-      </div>
 
-      {data.approvalOdds && data.approvalOdds > 0 && (
-        <div>
-          <p className="text-xs text-gray-500">Approval Odds</p>
-          <div className="mt-1">
-            <ApprovalOddsBadge odds={data.approvalOdds} />
+      {isColumnVisible("requirements") &&
+        data.products &&
+        data.products.length > 0 && (
+          <div>
+            <p className="text-xs text-gray-500">Requirements</p>
+            <div className="space-y-2 mt-1">
+              {data.products.map((product: any, idx: number) => {
+                const parts: string[] = [];
+
+                if (product.productName) parts.push(product.productName);
+                if (product.minimumFicoScore)
+                  parts.push(`FICO ${product.minimumFicoScore}+`);
+
+                return (
+                  <div key={idx} className="text-sm text-gray-700">
+                    {parts.length > 0 ? parts.join(" • ") : "—"}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
-
-      {data.products && data.products.length > 0 && (
-        <div>
-          <p className="text-xs text-gray-500">Requirements</p>
-          <div className="space-y-2 mt-1">
-            {data.products.map((product: any, idx: number) => {
-              const parts: string[] = [];
-
-              if (product.productName) parts.push(product.productName);
-              if (product.minimumFicoScore)
-                parts.push(`FICO ${product.minimumFicoScore}+`);
-
-              return (
-                <div key={idx} className="text-sm text-gray-700">
-                  {parts.length > 0 ? parts.join(" • ") : "—"}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+        )}
 
       {/* <div>
         <p className="text-xs text-gray-500">Product Name</p>
@@ -532,34 +541,32 @@ const FundingCard = ({
         </div>
       </div> */}
 
-      <div>
-        <p className="text-xs text-gray-500">Application Status</p>
-        <div className="mt-1">
-          <CategoryBadge category={data.clientApplicationStatus} />
+      {isColumnVisible("clientApplicationStatus") && (
+        <div>
+          <p className="text-xs text-gray-500">Application Status</p>
+          <div className="mt-1">
+            <CategoryBadge category={data.clientApplicationStatus} />
+          </div>
         </div>
-      </div>
-
-      {showApprovedFields && (
-        <>
-          {data.approvedAmount > 0 && (
-            <div>
-              <p className="text-xs text-gray-500">Approved Amount</p>
-              <p className="font-semibold text-green-600">
-                {formatAmount(data.approvedAmount)}
-              </p>
-            </div>
-          )}
-
-          {data.approvedRemarks && (
-            <div>
-              <p className="text-xs text-gray-500">Approved Remarks</p>
-              <p className="text-sm">{data.approvedRemarks}</p>
-            </div>
-          )}
-        </>
       )}
 
-      {showFundedFields && data.fundedAmount > 0 && (
+      {isColumnVisible("approvedAmount") && data.approvedAmount > 0 && (
+        <div>
+          <p className="text-xs text-gray-500">Approved Amount</p>
+          <p className="font-semibold text-green-600">
+            {formatAmount(data.approvedAmount)}
+          </p>
+        </div>
+      )}
+
+      {isColumnVisible("approvedRemarks") && data.approvedRemarks && (
+        <div>
+          <p className="text-xs text-gray-500">Approved Remarks</p>
+          <p className="text-sm">{data.approvedRemarks}</p>
+        </div>
+      )}
+
+      {isColumnVisible("fundedAmount") && data.fundedAmount > 0 && (
         <div>
           <p className="text-xs text-gray-500">Funded Amount</p>
           <p className="font-semibold text-blue-600">
@@ -569,8 +576,8 @@ const FundingCard = ({
       )}
 
       <div className="pt-2 flex gap-2">
-        {!isAdminView && <ActionCell row={row} />}
-        {isAdminView && <AdminActionCell row={row} />}
+        {isColumnVisible("clientActions") && <ActionCell row={row} />}
+        {isColumnVisible("adminActions") && <AdminActionCell row={row} />}
       </div>
     </div>
   );
