@@ -155,7 +155,7 @@ export function FundingApplyContent({
       ...(method === "specialist"
         ? {
             hasSignedSuccessFeeAgreement: true,
-            successFeePercentage: 15,
+            successFeePercentage: lender.successFeePercentage ?? 15,
           }
         : {}),
     });

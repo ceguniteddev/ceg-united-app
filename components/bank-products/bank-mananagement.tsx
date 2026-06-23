@@ -201,6 +201,19 @@ const BankManagement = () => {
           return nameA.localeCompare(nameB);
         },
       }),
+      columnHelper.accessor("successFeePercentage", {
+        header: ({ column }) => (
+          <SortableHeader column={column} title="PSF %" />
+        ),
+        cell: (info) => {
+          const value = info.getValue();
+          return (
+            <Badge variant="outline" className="text-xs font-mono">
+              {value ?? 15}%
+            </Badge>
+          );
+        },
+      }),
       columnHelper.display({
         id: "actions",
         header: () => <div className="text-right">Actions</div>,
@@ -376,6 +389,12 @@ const BankManagement = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-3">
+                  <div className="flex items-center gap-2 text-sm mb-3">
+                    <span className="text-muted-foreground">PSF %:</span>
+                    <Badge variant="outline" className="text-xs font-mono">
+                      {bank.successFeePercentage ?? 15}%
+                    </Badge>
+                  </div>
                   {bank.contacts && bank.contacts.length > 0 ? (
                     <div className="space-y-3">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -511,6 +530,7 @@ const ActionMenu = ({
 };
 
 import { CustomFormCheckbox } from "@/components/CustomFormCheckbox";
+import { z } from "zod";
 
 const BankForm = ({
   initialData,
@@ -522,13 +542,16 @@ const BankForm = ({
   const { createBank, updateBank, isCreating, isUpdating } =
     useBankManagementMutation();
 
-  const form = useForm<BankManagementType>({
+  type BankFormValues = z.input<typeof bankManagementSchema>;
+
+  const form = useForm<BankFormValues>({
     resolver: zodResolver(bankManagementSchema),
     defaultValues: initialData || {
       bankName: "",
       website: "",
       contacts: [],
       isBrokerage: false,
+      successFeePercentage: 15,
     },
   });
 
@@ -544,15 +567,19 @@ const BankForm = ({
         website: "",
         contacts: [],
         isBrokerage: false,
+        successFeePercentage: 15,
       },
     );
   }, [initialData, form]);
 
-  const onSubmit = async (data: BankManagementType) => {
+  const onSubmit = async (data: BankFormValues) => {
     if (initialData?.id) {
-      await updateBank({ id: initialData.id, data });
+      await updateBank({
+        id: initialData.id,
+        data: data as BankManagementType,
+      });
     } else {
-      await createBank(data);
+      await createBank(data as BankManagementType);
     }
     onClose();
   };
@@ -567,7 +594,7 @@ const BankForm = ({
           label="Set as Brokerage"
           className="bg-blue-50 border-blue-200 text-blue-900"
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <CustomFormField
             name="bankName"
             label="Bank Name"
@@ -577,6 +604,12 @@ const BankForm = ({
             name="website"
             label="Website"
             placeholder="https://..."
+          />
+          <CustomFormField
+            name="successFeePercentage"
+            label="PSF %"
+            placeholder="15"
+            type="number"
           />
         </div>
 
