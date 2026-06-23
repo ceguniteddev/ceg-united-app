@@ -3,11 +3,7 @@ import { DataTablePagination } from "@/components/funding/pagination";
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { useUsersQuery } from "@/hooks/user";
-import {
-  UserActiveStatusEnum,
-  UserFundMapStatus,
-  UserWithId,
-} from "@/schema/registration";
+import { UserFundMapStatus, UserWithId } from "@/schema/registration";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -243,7 +239,7 @@ const ClientsList = () => {
         if (membership.tier === "tier_starter") return "Starter";
         if (membership.tier === "tier_pro") return "Pro";
         if (membership.tier === "tier_executive") return "Executive";
-        return "Active";
+        return "None";
       },
       cell: ({ row }) => {
         const val = row.getValue("membershipType") as string;

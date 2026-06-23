@@ -68,11 +68,6 @@ export const sidebarLinks = [
     route: "/client/home",
     label: "Home",
   },
-  // {
-  //   imgURL: "/icons/money-send.svg",
-  //   route: "/client/my-funding",
-  //   label: "My Funding",
-  // },
 
   {
     imgURL: "/icons/files.svg",
@@ -84,6 +79,12 @@ export const sidebarLinks = [
     route: "/client/income-funding",
     label: "Income Funding",
   },
+
+  // {
+  //   imgURL: "/icons/money-send.svg",
+  //   route: "/client/my-funding",
+  //   label: "My Funding",
+  // },
   {
     imgURL: "/icons/file-chart-column.svg",
     route: "/client/my-analysis",

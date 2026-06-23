@@ -845,6 +845,7 @@ export const useClientMappedFundingDetailsQuery = ({
 
       const queryString = queryParams.toString();
       const url = `${baseUrl}${queryString ? `?${queryString}` : ""}`;
+      console.log("Fetching client mapped funding details with URL:", url);
 
       const response = await fetch(url);
 

@@ -6,20 +6,8 @@ import AppError from "@/error/AppError";
 import { logInfo } from "@/lib/logger";
 import { fundAnalysis, generateCRSReport } from "@/service/crs";
 import { getApplyFunding } from "./apply-funding";
-
-export type MembershipTier = "tier_starter" | "tier_pro" | "tier_executive";
-
-export interface UserMembership {
-  id: string;
-  tier: MembershipTier;
-  amount: number;
-  status: string;
-  checkoutId?: string | null;
-  createdAt: string | null;
-  canceledAt?: string | null;
-  updatedBy?: string | null;
-  updatedAt?: string | null;
-}
+import { Query } from "firebase-admin/firestore";
+import { MembershipTier, UserMembership } from "@/schema/users";
 
 export const activateUserMembership = async ({
   userId,
@@ -142,14 +130,24 @@ export const adminSetUserMembership = async ({
   return { success: true };
 };
 
-export const getAllMemberships = async (): Promise<UserMembership[]> => {
+export const getAllMemberships = async ({
+  isActive,
+}: {
+  isActive?: boolean;
+}): Promise<UserMembership[]> => {
   logInfo("Fetching all user memberships");
   const db = firestoreAdmin();
 
   // We use a collection group query to fetch all membership documents
   // Since we only want the active ones, we could filter by status or sort
   // But a simple collection group might require an index, so let's just fetch them and filter
-  const snapshot = await db.collectionGroup("membership").get();
+  let referenceDoc: Query = db.collectionGroup("membership");
+
+  if (isActive === true) {
+    referenceDoc = referenceDoc.where("status", "==", "active");
+  }
+
+  const snapshot = await referenceDoc.get();
 
   const memberships: UserMembership[] = [];
   snapshot.docs.forEach((doc) => {

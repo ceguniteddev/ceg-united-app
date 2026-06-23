@@ -802,7 +802,7 @@ export const getUsers = async ({
 
   if (includeMembership) {
     const { getAllMemberships } = await import("./membership");
-    const memberships = await getAllMemberships();
+    const memberships = await getAllMemberships({});
     const membershipMap = new Map();
     memberships.forEach((m) => {
       membershipMap.set((m as any).userId, m);

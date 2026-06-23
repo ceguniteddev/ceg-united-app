@@ -5,7 +5,6 @@ import FundingList from "@/components/funding/funding-list";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
 import {
   ApprovedBankFormData,
-  BankFormData,
   ClientApplicationStatus,
 } from "@/schema/bank-products";
 import EmptyState from "./EmptyState";

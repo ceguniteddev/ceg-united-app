@@ -12,17 +12,24 @@ import { GradeBadge } from "./GradeBadge";
 import { PreApprovalHeroCard } from "./PreApprovalHeroCard";
 import { formatUSD } from "@/lib/underwriting";
 import type { IncomeFundingDeal } from "@/types/income-funding-types";
+import ClientActiveFundingList from "@/components/funding/ClientActiveFundingList";
 
 interface PreApprovalViewProps {
   deal: IncomeFundingDeal;
   realDeal: any;
   onContinue: () => void;
+  userId?: string;
+  referenceNumber?: string;
+  isAdminView?: boolean;
 }
 
 export function PreApprovalView({
   deal,
   realDeal,
   onContinue,
+  userId,
+  referenceNumber,
+  isAdminView,
 }: PreApprovalViewProps) {
   // Fallback to mock data if real data is not available yet
   const computationFromBackend = realDeal?.businessIncomeComputation || {};
@@ -139,7 +146,7 @@ export function PreApprovalView({
             <div className="animate-fade-in-up stagger-2">
               <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5 card-hover h-full">
                 <div className="flex items-start justify-between">
-                  <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                     <CheckCircle2 className="w-[18px] h-[18px]" />
                   </div>
                   <GradeBadge grade={computation.assignedGrade} size="sm" />
@@ -229,11 +236,11 @@ export function PreApprovalView({
           {/* Underwriting breakdown */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-6 md:p-7 animate-fade-in-up stagger-7">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-brand-600">
+                <div className="text-xs font-semibold uppercase tracking-wide text-blue-600">
                   Underwriting Summary
                 </div>
                 <h2 className="text-base font-bold text-gray-900">
@@ -242,7 +249,7 @@ export function PreApprovalView({
               </div>
             </div>
 
-            <div className="mt-5 bg-gradient-to-br from-brand-50 to-white border border-brand-100 rounded-xl p-5">
+            <div className="mt-5 bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-xl p-5">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                 Calculation
               </div>
@@ -258,6 +265,24 @@ export function PreApprovalView({
           </div>
         </>
       )}
+      {/* Matched Funding Products */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-6 md:p-7 animate-fade-in-up stagger-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-lg font-semibold uppercase tracking-wide text-blue-600">
+              Your Applied Funding Products
+            </div>
+          </div>
+        </div>
+
+        <ClientActiveFundingList
+          userId={userId}
+          referenceNumber={referenceNumber}
+        />
+      </div>
     </div>
   );
 }

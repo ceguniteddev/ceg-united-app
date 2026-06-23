@@ -3,15 +3,15 @@ import {
   getUserMembership,
   adminSetUserMembership,
   getAllMemberships,
-  MembershipTier,
 } from "@/service/membership";
 import { useAuth } from "@/provider/AuthContext";
 import { toast } from "sonner";
+import { MembershipTier } from "@/schema/users";
 
 export const useGetAllMemberships = () => {
   return useQuery({
     queryKey: ["all-memberships"],
-    queryFn: () => getAllMemberships(),
+    queryFn: () => getAllMemberships({}),
     staleTime: 1000 * 60 * 15,
     gcTime: 1000 * 60 * 30,
   });

@@ -39,8 +39,20 @@ const mockBucket = {
   deleteFiles: vi.fn().mockResolvedValue(undefined),
 };
 
+const mockCollectionGroupGet = vi.fn();
+const mockCollectionGroupRef: any = {
+  where: vi.fn(),
+  orderBy: vi.fn(),
+  limit: vi.fn(),
+  get: mockCollectionGroupGet,
+};
+mockCollectionGroupRef.where.mockReturnValue(mockCollectionGroupRef);
+mockCollectionGroupRef.orderBy.mockReturnValue(mockCollectionGroupRef);
+mockCollectionGroupRef.limit.mockReturnValue(mockCollectionGroupRef);
+
 const mockDb: any = {
   collection: vi.fn().mockReturnValue(mockCollectionRef),
+  collectionGroup: vi.fn().mockReturnValue(mockCollectionGroupRef),
   recursiveDelete: vi.fn().mockResolvedValue(undefined),
 };
 
@@ -112,6 +124,11 @@ describe("service/apply-funding", () => {
       success: true,
       data: {},
     } as any);
+    mockCollectionGroupGet.mockReset();
+    mockCollectionGroupGet.mockResolvedValue({ docs: [] });
+    mockCollectionGroupRef.where.mockReturnValue(mockCollectionGroupRef);
+    mockCollectionGroupRef.orderBy.mockReturnValue(mockCollectionGroupRef);
+    mockCollectionGroupRef.limit.mockReturnValue(mockCollectionGroupRef);
   });
 
   // ── getApplyFunding ───────────────────────────────────────────────────────
