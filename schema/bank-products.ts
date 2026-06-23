@@ -131,6 +131,7 @@ export type BankProductCriteria = z.infer<typeof bankProductCriteriaSchema>;
 // Main Zod Schema (Bank Level)
 export const bankDataSchema = z.object({
   id: z.string().optional(),
+  bankId: z.string().optional(),
   isApproved: z.boolean().optional(),
   bankName: z.string().min(1, "Required"),
   underwritingNotes: z.string().optional(),
