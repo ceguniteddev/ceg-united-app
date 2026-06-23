@@ -13,7 +13,7 @@ export function PreApprovalHeroCard({
   return (
     <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-100 shadow-card p-8 md:p-10 animate-fade-in-up mb-6">
       {/* Soft brand glow */}
-      <div className="absolute -top-32 -right-32 w-80 h-80 bg-brand-100/60 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-32 -right-32 w-80 h-80 bg-blue-100/60 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-emerald-100/40 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative">
@@ -44,7 +44,7 @@ export function PreApprovalHeroCard({
         <div className="mt-6 flex flex-wrap gap-3">
           <button
             onClick={onContinue}
-            className="cursor-pointer inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all"
+            className="cursor-pointer inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all"
           >
             Continue to select your offer
             <ArrowRight className="w-4 h-4" />

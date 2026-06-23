@@ -223,6 +223,9 @@ export function IncomeFundingContent({
             deal={deal}
             realDeal={realDeal}
             onContinue={() => setShowPathways(true)}
+            userId={activeUserId}
+            referenceNumber={selectedReference}
+            isAdminView={!!userIdOverride}
           />
         );
       case "collecting-documents":

@@ -16,6 +16,7 @@ import {
 } from "@tanstack/react-table";
 
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -71,6 +72,7 @@ export const columns: ColumnDef<ApplyFundingWithUser>[] = [
       return <div>{[u.firstName, u.lastName].filter(Boolean).join(" ")}</div>;
     },
   },
+
   {
     id: "interestedProduct",
     accessorKey: "interestedProduct",
@@ -123,6 +125,41 @@ export const columns: ColumnDef<ApplyFundingWithUser>[] = [
       const date = new Date(raw);
 
       return <div>{formatDateTime(date).dateTime}</div>;
+    },
+  },
+  {
+    // Build a single string for filtering/sorting
+    id: "membership",
+    accessorFn: (row) => {
+      const membership = row.membership;
+      // const parts = u?.tier;
+      // return parts;
+
+      if (!membership || membership.status !== "active") return "None";
+      if (membership.tier === "tier_starter") return "Starter";
+      if (membership.tier === "tier_pro") return "Pro";
+      if (membership.tier === "tier_executive") return "Executive";
+      return "None";
+    },
+    filterFn: nameFilterFn,
+
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Membership" />
+    ),
+    cell: ({ row }) => {
+      const membership = row.getValue("membership") as string;
+      if (membership === "None") {
+        return (
+          <Badge variant="secondary" className="text-xs">
+            None
+          </Badge>
+        );
+      }
+      return (
+        <Badge className="bg-blue-100 hover:bg-blue-200 text-blue-800 border-blue-300">
+          {membership}
+        </Badge>
+      );
     },
   },
   {

@@ -2638,3 +2638,25 @@ export const signSpecialistFeeAgreement = async ({
     };
   }
 };
+
+export const getActiveClientFundingDetails = async ({
+  userId,
+  referenceNumber,
+  pathwayId,
+}: {
+  userId?: string;
+  referenceNumber?: string;
+  pathwayId?: string;
+}) => {
+  return await getFundMappingAnalysisDetails({
+    userId,
+    referenceNumber,
+    pathwayId,
+    clientApplicationStatus: [
+      "Sent to Lender",
+      "Approved",
+      "Declined",
+      "Funded",
+    ],
+  });
+};
