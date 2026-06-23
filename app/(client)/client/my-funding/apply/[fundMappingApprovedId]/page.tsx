@@ -2,13 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import {
-  ArrowLeft,
-  Bot,
-  CheckCircle2,
-  Mail,
-  MessageSquare,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { SelectedLenderCard } from "@/components/funding/v2/SelectedLenderCard";
@@ -170,8 +164,8 @@ function FundingApplyContent() {
             Lender Not Found
           </h1>
           <p className="text-gray-600 mb-6">
-            The funding application you're looking for doesn't exist or has been
-            removed.
+            The funding application you&apos;re looking for doesn&apos;t exist
+            or has been removed.
           </p>
           <Button
             onClick={() =>
@@ -285,10 +279,10 @@ function FundingApplyContent() {
       {/* Page heading */}
       <div className="mb-6 animate-fade-in-up">
         <h1 className="text-xl font-bold text-gray-900">
-          You've Started Your Application
+          You&apos;ve Started Your Application
         </h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          Next, choose how you'd like to apply for funding from{" "}
+          Next, choose how you&apos;d like to apply for funding from{" "}
           {lender.bankName}.
         </p>
       </div>
