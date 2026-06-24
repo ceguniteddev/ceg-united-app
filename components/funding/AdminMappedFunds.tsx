@@ -4,7 +4,7 @@ import {
   useFundingApplicationsMappedFundsQuery,
   useApprovedMappedFundsMutation,
 } from "@/hooks/admin/funding-application/fund-mapping";
-import { useAuth } from "@/provider/AuthContext";
+// import { useAuth } from "@/provider/AuthContext";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 
 import Spinner from "@/components/Spinner";
@@ -32,7 +32,6 @@ import {
   VisibilityState,
 } from "@tanstack/react-table";
 import {
-  ArrowUpDown,
   BanIcon,
   CheckCircle,
   MoreHorizontal,
@@ -82,7 +81,7 @@ import { formatAmount } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import BankProductsForm from "@/components/bank-products/bank-product-form";
 import { useMembership } from "@/hooks/membership";
-import { useUserQuery } from "@/hooks/user";
+// import { useUserQuery } from "@/hooks/user";
 import { DataTablePagination } from "./pagination";
 
 type Props = {
@@ -795,7 +794,7 @@ const ActionCell = ({
   const { applyApprovedMappedFund, isApplying } =
     useApprovedMappedFundsMutation();
   const [isDenefitsPaid, setIsDenefitsPaid] = useState(false);
-  const { userData } = useUserQuery(userId);
+  // const { userData } = useUserQuery(userId);
   const { data: userMembership } = useMembership(userId);
 
   const { denefitsContract } = useGetDenefitsContractsByUserId(userId);

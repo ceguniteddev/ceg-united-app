@@ -39,10 +39,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { US_STATES } from "@/constant/common";
 import { Input } from "@/components/ui/input";
@@ -68,17 +67,74 @@ import SortableHeader from "@/components/SortableHeader";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 
 const bureauFilterFn: FilterFn<BankFormData> = (row, columnId, filterValue) => {
-  const value = row.getValue<string>(columnId);
-  const selectedFilter = String(filterValue);
-  if (!selectedFilter || selectedFilter === "all") return true;
-  return value.includes(selectedFilter);
+  const selectedFilters = filterValue as string[];
+  if (!selectedFilters || selectedFilters.length === 0) return true;
+
+  const products = row.original.products || [];
+  const bureaus = products
+    .map((p) => {
+      if (Array.isArray(p.creditBureauPulled)) {
+        return p.creditBureauPulled.join(", ");
+      }
+      return p.creditBureauPulled || "";
+    })
+    .filter(Boolean);
+  const uniqueBureaus = Array.from(
+    new Set(
+      bureaus
+        .join(", ")
+        .split(", ")
+        .map((b) => b.trim()),
+    ),
+  ).filter(Boolean);
+
+  return selectedFilters.some((selected) => uniqueBureaus.includes(selected));
 };
 
 const stateFilterFn: FilterFn<BankFormData> = (row, columnId, filterValue) => {
-  const value = row.getValue<string>(columnId);
-  const selectedFilter = String(filterValue);
-  if (!selectedFilter || selectedFilter === "all") return true;
-  return value.includes(selectedFilter) || value.includes("Nationwide");
+  const selectedFilters = filterValue as string[];
+  if (!selectedFilters || selectedFilters.length === 0) return true;
+
+  const products = row.original.products || [];
+  const statesList = products
+    .map((p) => {
+      if (Array.isArray(p.stateAvailability)) {
+        return p.stateAvailability.join(", ");
+      }
+      return p.stateAvailability || "";
+    })
+    .filter(Boolean);
+  const uniqueStates = Array.from(
+    new Set(
+      statesList
+        .join(", ")
+        .split(", ")
+        .map((s) => s.trim()),
+    ),
+  ).filter(Boolean);
+
+  // If the bank is Nationwide, it is available in all states
+  if (uniqueStates.includes("Nationwide")) return true;
+
+  return selectedFilters.some((selected) => uniqueStates.includes(selected));
+};
+
+const productFilterFn: FilterFn<BankFormData> = (
+  row,
+  columnId,
+  filterValue,
+) => {
+  const selectedFilters = filterValue as string[];
+  if (!selectedFilters || selectedFilters.length === 0) return true;
+
+  const products = row.original.products || [];
+  return products.some(
+    (p) =>
+      p.productName &&
+      selectedFilters.some((selected) =>
+        p.productName.toLowerCase().includes(selected.toLowerCase()),
+      ),
+  );
 };
 
 const columns: ColumnDef<BankFormData>[] = [
@@ -234,6 +290,7 @@ const columns: ColumnDef<BankFormData>[] = [
         </div>
       );
     },
+    filterFn: productFilterFn,
   },
   {
     id: "priorityLevel",
@@ -263,8 +320,9 @@ const columns: ColumnDef<BankFormData>[] = [
 const BankProductManagement = () => {
   const { products, isLoading } = useBankProductsQuery();
   const [open, setOpen] = useState(false);
-  const [bureauFilter, setBureauFilter] = useState("all");
-  const [stateFilter, setStateFilter] = useState("all");
+  const [bureauFilter, setBureauFilter] = useState<string[]>([]);
+  const [stateFilter, setStateFilter] = useState<string[]>([]);
+  const [productFilter, setProductFilter] = useState<string[]>([]);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -285,7 +343,7 @@ const BankProductManagement = () => {
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getColumnCanGlobalFilter: (column) => {
+    getColumnCanGlobalFilter: () => {
       return true;
     },
     onColumnVisibilityChange: setColumnVisibility,
@@ -302,16 +360,81 @@ const BankProductManagement = () => {
   useEffect(() => {
     const col = table.getColumn("bureau");
     if (!col) return;
-    if (bureauFilter === "all") col.setFilterValue(undefined);
+    if (bureauFilter.length === 0) col.setFilterValue(undefined);
     else col.setFilterValue(bureauFilter);
   }, [bureauFilter, table]);
 
   useEffect(() => {
     const col = table.getColumn("stateAvailability");
     if (!col) return;
-    if (stateFilter === "all") col.setFilterValue(undefined);
+    if (stateFilter.length === 0) col.setFilterValue(undefined);
     else col.setFilterValue(stateFilter);
   }, [stateFilter, table]);
+
+  useEffect(() => {
+    const col = table.getColumn("products");
+    if (!col) return;
+    if (productFilter.length === 0) col.setFilterValue(undefined);
+    else col.setFilterValue(productFilter);
+  }, [productFilter, table]);
+
+  const uniqueProductNames = useMemo(() => {
+    if (!products) return [];
+    const namesSet = new Set<string>();
+    products.forEach((bank) => {
+      (bank.products || []).forEach((prod) => {
+        if (prod.productName) {
+          namesSet.add(prod.productName.trim());
+        }
+      });
+    });
+    return Array.from(namesSet).sort();
+  }, [products]);
+
+  const handleBureauToggle = (bureau: string) => {
+    setBureauFilter((prev) =>
+      prev.includes(bureau)
+        ? prev.filter((b) => b !== bureau)
+        : [...prev, bureau],
+    );
+  };
+
+  const handleStateToggle = (stateVal: string) => {
+    setStateFilter((prev) =>
+      prev.includes(stateVal)
+        ? prev.filter((s) => s !== stateVal)
+        : [...prev, stateVal],
+    );
+  };
+
+  const handleProductToggle = (productName: string) => {
+    setProductFilter((prev) =>
+      prev.includes(productName)
+        ? prev.filter((p) => p !== productName)
+        : [...prev, productName],
+    );
+  };
+
+  const bureauLabel =
+    bureauFilter.length === 0
+      ? "All Bureaus"
+      : bureauFilter.length <= 2
+        ? bureauFilter.join(", ")
+        : `${bureauFilter.length} Bureaus Selected`;
+
+  const stateLabel =
+    stateFilter.length === 0
+      ? "All States"
+      : stateFilter.length <= 2
+        ? stateFilter.join(", ")
+        : `${stateFilter.length} States Selected`;
+
+  const productLabel =
+    productFilter.length === 0
+      ? "All Products"
+      : productFilter.length <= 1
+        ? productFilter[0]
+        : `${productFilter.length} Products Selected`;
 
   const handleExportCSV = () => {
     if (!products) return;
@@ -504,26 +627,28 @@ const BankProductManagement = () => {
                   variant="outline"
                   className="h-9 w-full justify-between"
                 >
-                  <span>
-                    {bureauFilter === "all" ? "All Bureaus" : bureauFilter}
-                  </span>
+                  <span className="truncate">{bureauLabel}</span>
                   <ChevronDownIcon className="h-4 w-4 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-[200px]">
-                <DropdownMenuRadioGroup
-                  value={bureauFilter}
-                  onValueChange={setBureauFilter}
+                <DropdownMenuCheckboxItem
+                  checked={bureauFilter.length === 0}
+                  onCheckedChange={() => setBureauFilter([])}
                 >
-                  <DropdownMenuRadioItem value="all">
-                    All Bureaus
-                  </DropdownMenuRadioItem>
-                  {CreditBureauEnum.options.map((bureau) => (
-                    <DropdownMenuRadioItem key={bureau} value={bureau}>
-                      {bureau}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
+                  All Bureaus
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuSeparator />
+                {CreditBureauEnum.options.map((bureau) => (
+                  <DropdownMenuCheckboxItem
+                    key={bureau}
+                    checked={bureauFilter.includes(bureau)}
+                    onCheckedChange={() => handleBureauToggle(bureau)}
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    {bureau}
+                  </DropdownMenuCheckboxItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -539,12 +664,7 @@ const BankProductManagement = () => {
                   variant="outline"
                   className="h-9 w-full justify-between"
                 >
-                  <span>
-                    {stateFilter === "all"
-                      ? "All States"
-                      : US_STATES.find((s) => s.value === stateFilter)?.label ||
-                        stateFilter}
-                  </span>
+                  <span className="truncate">{stateLabel}</span>
                   <ChevronDownIcon className="h-4 w-4 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
@@ -552,22 +672,64 @@ const BankProductManagement = () => {
                 align="start"
                 className="w-[200px] max-h-[300px] overflow-y-auto"
               >
-                <DropdownMenuRadioGroup
-                  value={stateFilter}
-                  onValueChange={setStateFilter}
+                <DropdownMenuCheckboxItem
+                  checked={stateFilter.length === 0}
+                  onCheckedChange={() => setStateFilter([])}
                 >
-                  <DropdownMenuRadioItem value="all">
-                    All States
-                  </DropdownMenuRadioItem>
-                  {US_STATES.map((state) => (
-                    <DropdownMenuRadioItem
-                      key={state.value}
-                      value={state.value}
-                    >
-                      {state.label}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
+                  All States
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuSeparator />
+                {US_STATES.map((state) => (
+                  <DropdownMenuCheckboxItem
+                    key={state.value}
+                    checked={stateFilter.includes(state.value)}
+                    onCheckedChange={() => handleStateToggle(state.value)}
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    {state.label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Product Filter */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-muted-foreground">
+              Product
+            </label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-9 w-full justify-between"
+                >
+                  <span className="truncate">{productLabel}</span>
+                  <ChevronDownIcon className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="w-[240px] max-h-[300px] overflow-y-auto"
+              >
+                <DropdownMenuCheckboxItem
+                  checked={productFilter.length === 0}
+                  onCheckedChange={() => setProductFilter([])}
+                >
+                  All Products
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuSeparator />
+                {uniqueProductNames.map((name) => (
+                  <DropdownMenuCheckboxItem
+                    key={name}
+                    checked={productFilter.includes(name)}
+                    onCheckedChange={() => handleProductToggle(name)}
+                    onSelect={(e) => e.preventDefault()}
+                    className="text-xs"
+                  >
+                    {name}
+                  </DropdownMenuCheckboxItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
