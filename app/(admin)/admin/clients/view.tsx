@@ -170,6 +170,15 @@ const ClientData = ({
                 label="Monthly Business Free Pull"
                 value={businessFreePullStatus}
               />
+              <Info
+                label="PSF % Override"
+                value={
+                  user.successFeePercentage !== undefined &&
+                  user.successFeePercentage !== null
+                    ? `${user.successFeePercentage}%`
+                    : "Not Set"
+                }
+              />
             </div>
 
             {!isBrokerView && (
@@ -1266,6 +1275,7 @@ const EditClientModal = ({
       lastName: user.lastName || "",
       phoneNumber: user.phoneNumber || "",
       ssn: user.ssn || "",
+      successFeePercentage: user.successFeePercentage || "",
     },
   });
 
@@ -1352,6 +1362,12 @@ const EditClientModal = ({
                 type="ssn"
                 label="SSN"
                 placeholder="XXX-XX-XXXX"
+              />
+              <CustomFormField
+                name="successFeePercentage"
+                type="number"
+                label="PSF % Override"
+                placeholder="e.g. 15"
               />
             </div>
 

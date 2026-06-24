@@ -64,6 +64,10 @@ export const registrationSchema = z.object({
     .max(100)
     .default(10)
     .optional(),
+  successFeePercentage: z.preprocess(
+    emptyToUndefined,
+    z.coerce.number().min(0).max(100).optional(),
+  ),
   // Feature flags
   letterFeatureEnabled: z.boolean().default(false).optional(),
   latePaymentRemovalEnabled: z.boolean().default(false).optional(),
