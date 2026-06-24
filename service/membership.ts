@@ -8,6 +8,7 @@ import { fundAnalysis, generateCRSReport } from "@/service/crs";
 import { getApplyFunding } from "./apply-funding";
 import { Query } from "firebase-admin/firestore";
 import { MembershipTier, UserMembership } from "@/schema/users";
+import membershipCache from "@/lib/membership-cache";
 
 export const activateUserMembership = async ({
   userId,
@@ -81,6 +82,7 @@ export const activateUserMembership = async ({
     // We don't throw the error here so that the membership activation itself still succeeds
   }
 
+  membershipCache.invalidate(userId);
   return { success: true };
 };
 
@@ -127,6 +129,7 @@ export const adminSetUserMembership = async ({
       updatedAt: new Date(),
     });
   }
+  membershipCache.invalidate(userId);
   return { success: true };
 };
 
@@ -197,10 +200,18 @@ export const getAllMemberships = async ({
 
 export const getUserMembership = async (
   userId: string,
+  options?: { bypassCache?: boolean },
 ): Promise<UserMembership | null> => {
-  logInfo("Fetching user membership", { userId });
   if (!userId) throw new AppError("User ID is required.");
 
+  if (!options?.bypassCache) {
+    const cached = membershipCache.get(userId);
+    if (cached !== undefined) {
+      logInfo("getUserMembership cache hit", { userId });
+      return cached;
+    }
+  }
+  logInfo("Fetching user membership", { userId, options });
   const db = firestoreAdmin();
   const snapshot = await db
     .collection(`${USER_COLLECTION}/${userId}/membership`)
@@ -208,13 +219,16 @@ export const getUserMembership = async (
     .limit(1)
     .get();
 
-  if (snapshot.empty) return null;
+  if (snapshot.empty) {
+    membershipCache.set(userId, null);
+    return null;
+  }
 
   const doc = snapshot.docs[0];
   const data = doc.data();
 
   // Convert Firestore Timestamp to string for the client component
-  return {
+  const result: UserMembership = {
     id: doc.id,
     tier: data.tier || "unknown",
     amount: data.amount || 0,
@@ -225,6 +239,9 @@ export const getUserMembership = async (
     updatedBy: data.updatedBy || null,
     updatedAt: data.updatedAt?.toDate().toISOString() || null,
   };
+
+  membershipCache.set(userId, result);
+  return result;
 };
 
 export const cancelUserMembership = async (
@@ -246,7 +263,8 @@ export const cancelUserMembership = async (
     });
 
   // Revert user premium status if needed, but typically they keep access until end of billing cycle.
-  // For now, let's keep it simple and just update the document status.
+  // For now, let-s keep it simple and just update the document status.
 
+  membershipCache.invalidate(userId);
   return { success: true };
 };
