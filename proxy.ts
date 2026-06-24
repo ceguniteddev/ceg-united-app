@@ -203,6 +203,10 @@ export async function proxy(req: NextRequest) {
     const user = await getUserById(sessionCookie.uid);
     role = (user?.role as any) ?? "Client";
 
+    console.log(
+      "proxy.ts - Calling getUserMembership for userId:",
+      sessionCookie.uid,
+    );
     const membership = await getUserMembership(sessionCookie.uid);
     hasPaidContract = membership?.status === "active";
 
