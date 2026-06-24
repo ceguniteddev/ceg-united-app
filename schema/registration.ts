@@ -81,6 +81,7 @@ export const registrationSchema = z.object({
   addressCity: z.string().optional(),
   addressState: z.string().optional(),
   addressPostal: z.string().optional(),
+  asanaURL: z.string().url().or(z.literal("")).optional(),
 
   // Temporary onboarding storage
   businessDetails: z.any().optional(),
