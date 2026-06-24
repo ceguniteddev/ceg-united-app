@@ -116,6 +116,36 @@ async function getBankSuccessFee(bankName: string): Promise<number> {
 }
 
 /**
+ * Helper function to resolve success fee percentage for a specific user and bank.
+ * Prioritizes user override > bank-specific fee > default (15%).
+ */
+async function resolveSuccessFee(
+  userId: string,
+  bankName: string,
+): Promise<number> {
+  // 1. Check for client-specific override in user profile
+  if (userId) {
+    const user = await getUserById(userId);
+    if (
+      user &&
+      user.successFeePercentage !== undefined &&
+      user.successFeePercentage !== null &&
+      user.successFeePercentage !== ""
+    ) {
+      return Number(user.successFeePercentage);
+    }
+  }
+
+  // 2. Check for bank-specific fee
+  if (bankName) {
+    return await getBankSuccessFee(bankName);
+  }
+
+  // 3. Fallback to default
+  return 15;
+}
+
+/**
  * Calculate approval odds (0-100%) based on how well client meets bank requirements
  * Factors in:
  * - Credit score strength (30%)
@@ -1126,7 +1156,8 @@ export const getFundMappingAnalysisDetails = async ({
 
     // Check if this is a manual entry or has a valid bankProductId
     if (bankProductId.isManualEntry || !bankProductId.bankProductId) {
-      const bankSuccessFee = await getBankSuccessFee(
+      const bankSuccessFee = await resolveSuccessFee(
+        bankProductId.userId,
         bankProductId.manualBankName || "",
       );
       // For manual entries, construct a valid ApprovedBankFormData object
@@ -1192,7 +1223,10 @@ export const getFundMappingAnalysisDetails = async ({
       if (bankProduct) {
         // Get applicationUrl from bank management collection
         const applicationUrl = await getBankWebsite(bankProduct.bankName);
-        const bankSuccessFee = await getBankSuccessFee(bankProduct.bankName);
+        const bankSuccessFee = await resolveSuccessFee(
+          bankProductId.userId,
+          bankProduct.bankName,
+        );
 
         // Calculate approval odds for each product
         const productsWithOdds = clientFundingData
@@ -1440,7 +1474,10 @@ export const getAutoServedClientFunds = async ({
 
     if (r.isManualEntry || !r.bankProductId) {
       // Manual entry
-      const bankSuccessFee = await getBankSuccessFee(r.manualBankName || "");
+      const bankSuccessFee = await resolveSuccessFee(
+        r.userId || userId,
+        r.manualBankName || "",
+      );
       result.push({
         id: r.id,
         bankName: r.manualBankName || "",
@@ -1495,7 +1532,10 @@ export const getAutoServedClientFunds = async ({
       const bankProduct = await getBankProduct(r.bankProductId);
       if (bankProduct) {
         const applicationUrl = await getBankWebsite(bankProduct.bankName);
-        const bankSuccessFee = await getBankSuccessFee(bankProduct.bankName);
+        const bankSuccessFee = await resolveSuccessFee(
+          r.userId || userId,
+          bankProduct.bankName,
+        );
 
         const productsWithOdds = clientFundingData
           ? await Promise.all(
@@ -2077,13 +2117,16 @@ export const applyApprovedMappedFund = async ({
     });
 
     let bankSuccessFee = 15;
-    if (bankProductId) {
-      const bankProduct = await getBankProduct(bankProductId);
-      if (bankProduct) {
-        bankSuccessFee = await getBankSuccessFee(bankProduct.bankName);
+    const docUserId = docData?.userId;
+    if (docUserId) {
+      let bankName = "";
+      if (bankProductId) {
+        const bankProduct = await getBankProduct(bankProductId);
+        bankName = bankProduct?.bankName || "";
+      } else if (docData?.manualBankName) {
+        bankName = docData.manualBankName;
       }
-    } else if (docData?.manualBankName) {
-      bankSuccessFee = await getBankSuccessFee(docData.manualBankName);
+      bankSuccessFee = await resolveSuccessFee(docUserId, bankName);
     }
 
     await collectionRef.doc(fundMappingApprovedId).set(
@@ -2177,15 +2220,16 @@ export const approveAppliedBankProduct = async ({
 
       if (invoiceQuery.empty) {
         let bankSuccessFee = 15;
-        if (docData?.isManualEntry) {
-          bankSuccessFee = await getBankSuccessFee(
-            docData.manualBankName || "",
-          );
-        } else if (docData?.bankProductId) {
-          const bankProduct = await getBankProduct(docData.bankProductId);
-          if (bankProduct) {
-            bankSuccessFee = await getBankSuccessFee(bankProduct.bankName);
+        const docUserId = docData?.userId;
+        if (docUserId) {
+          let bankName = "";
+          if (docData.isManualEntry) {
+            bankName = docData.manualBankName || "";
+          } else if (docData.bankProductId) {
+            const bankProduct = await getBankProduct(docData.bankProductId);
+            bankName = bankProduct?.bankName || "";
           }
+          bankSuccessFee = await resolveSuccessFee(docUserId, bankName);
         }
         const successFeePercentage =
           docData?.successFeePercentage || bankSuccessFee;
