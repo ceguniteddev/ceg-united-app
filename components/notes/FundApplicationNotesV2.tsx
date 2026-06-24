@@ -14,7 +14,9 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
+import { BankTaggingTextarea } from "@/components/notes/BankTaggingTextarea";
+import { renderCommentText } from "@/components/notes/renderCommentText";
+import { useBankManagementQuery } from "@/hooks/admin/bank-management";
 import { useGetNoteQuery, useUpdateNoteMutation } from "@/hooks/apply-funding";
 import { useAuth } from "@/provider/AuthContext";
 import { NoteSchema, noteSchema } from "@/schema/notes";
@@ -38,7 +40,8 @@ type Props = {
 };
 
 const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
+  const { banks } = useBankManagementQuery();
   const {
     data: noteData,
     isLoading,
@@ -46,7 +49,7 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
   } = useGetNoteQuery(applicationReferenceNumber);
 
   const { mutate: saveNote, isPending: isSaving } = useUpdateNoteMutation(
-    applicationReferenceNumber
+    applicationReferenceNumber,
   );
 
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -97,10 +100,13 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
   };
 
   const onAddNewComment = (data: { text: string }) => {
+    const authorName = userData
+      ? `${userData.firstName} ${userData.lastName}`.trim()
+      : (user?.displayName ?? "Anonymous");
     append({
       id: `comment-${Date.now()}`,
       text: data.text,
-      author: user?.displayName ?? "Anonymous",
+      author: authorName,
       authorEmail: user?.email ?? "",
       createdAt: new Date(),
     });
@@ -134,7 +140,7 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <Textarea
+                        <BankTaggingTextarea
                           placeholder="Add a detailed description..."
                           className="min-h-[120px]"
                           {...field}
@@ -176,7 +182,7 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
               {form.watch("description") ? (
                 // Use a whitespace-preerving style to show line breaks
                 <p style={{ whiteSpace: "pre-wrap" }}>
-                  {form.watch("description")}
+                  {renderCommentText(form.watch("description") || "", banks)}
                 </p>
               ) : (
                 <p className="text-muted-foreground">
@@ -214,7 +220,10 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
-                                <Textarea {...field} className="w-full" />
+                                <BankTaggingTextarea
+                                  {...field}
+                                  className="w-full"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -263,7 +272,7 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
                         <span className="text-[10px] sm:text-xs text-muted-foreground ml-1 sm:ml-2 block sm:inline">
                           {format(
                             new Date(comment.createdAt),
-                            "MMM d, yyyy 'at' h:mm a"
+                            "MMM d, yyyy 'at' h:mm a",
                           )}
                         </span>
                       </div>
@@ -299,11 +308,11 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
                       className="text-xs sm:text-sm mt-1 break-words"
                       style={{ whiteSpace: "pre-wrap" }}
                     >
-                      {comment.text}
+                      {renderCommentText(comment.text, banks)}
                     </p>
                   </div>
                 </div>
-              )
+              ),
             )}
           </div>
           {/* Add New Comment Form */}
@@ -323,7 +332,7 @@ const FundApplicationNotesV2 = ({ applicationReferenceNumber }: Props) => {
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <Textarea
+                          <BankTaggingTextarea
                             {...field}
                             placeholder="Add a comment..."
                             className="w-full"

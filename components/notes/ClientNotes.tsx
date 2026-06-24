@@ -15,12 +15,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { useGetClientApplyFunding } from "@/hooks/apply-funding";
 import { useGetUserNoteQuery, useUpdateUserNoteMutation } from "@/hooks/user";
 import { useAuth } from "@/provider/AuthContext";
 import { NoteSchema, noteSchema } from "@/schema/notes";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useBankManagementQuery } from "@/hooks/admin/bank-management";
+import BankTaggingTextarea from "@/components/notes/BankTaggingTextarea";
+import { renderCommentText } from "@/components/notes/renderCommentText";
 
 import { format } from "date-fns";
 import {
@@ -42,7 +44,8 @@ type Props = {
 };
 
 const ClientNotes = ({ userId }: Props) => {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
+  const { banks } = useBankManagementQuery();
   // --- STATE MANAGEMENT ---
   const { data: noteData, isLoading, isError } = useGetUserNoteQuery(userId);
   const { appliedFunding, isLoading: isLoadingFunding } =
@@ -92,12 +95,14 @@ const ClientNotes = ({ userId }: Props) => {
   };
 
   const onAddNewComment = (data: { text: string }) => {
+    const authorName = userData
+      ? `${userData.firstName} ${userData.lastName}`.trim()
+      : (user?.displayName ?? "Anonymous");
     append({
       id: `comment-${Date.now()}`,
       text: data.text,
-      author: user?.displayName ?? "Anonymous",
+      author: authorName,
       authorEmail: user?.email ?? "",
-      // avatar: "https://github.com/shadcn.png",
       createdAt: new Date(),
     });
     form.handleSubmit(handleSaveNote)();
@@ -139,7 +144,7 @@ const ClientNotes = ({ userId }: Props) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Textarea
+                            <BankTaggingTextarea
                               placeholder="Add a detailed description..."
                               className="min-h-[120px]"
                               {...field}
@@ -179,7 +184,10 @@ const ClientNotes = ({ userId }: Props) => {
                 >
                   {form.watch("description") ? (
                     <p style={{ whiteSpace: "pre-wrap" }}>
-                      {form.watch("description")}
+                      {renderCommentText(
+                        form.watch("description") || "",
+                        banks,
+                      )}
                     </p>
                   ) : (
                     <p className="text-muted-foreground">
@@ -219,7 +227,10 @@ const ClientNotes = ({ userId }: Props) => {
                               render={({ field }) => (
                                 <FormItem>
                                   <FormControl>
-                                    <Textarea {...field} className="w-full" />
+                                    <BankTaggingTextarea
+                                      {...field}
+                                      className="w-full"
+                                    />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -268,7 +279,7 @@ const ClientNotes = ({ userId }: Props) => {
                             <span className="text-xs text-muted-foreground ml-2">
                               {format(
                                 new Date(comment.createdAt),
-                                "MMM d, yyyy 'at' h:mm a"
+                                "MMM d, yyyy 'at' h:mm a",
                               )}
                             </span>
                           </div>
@@ -304,11 +315,11 @@ const ClientNotes = ({ userId }: Props) => {
                           className="text-sm mt-1"
                           style={{ whiteSpace: "pre-wrap" }}
                         >
-                          {comment.text}
+                          {renderCommentText(comment.text, banks)}
                         </p>
                       </div>
                     </div>
-                  )
+                  ),
                 )}
               </div>
               {/* Add New Comment */}
@@ -330,7 +341,7 @@ const ClientNotes = ({ userId }: Props) => {
                         render={({ field }) => (
                           <FormItem>
                             <FormControl>
-                              <Textarea
+                              <BankTaggingTextarea
                                 {...field}
                                 placeholder="Add a comment..."
                                 className="w-full"

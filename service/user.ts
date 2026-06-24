@@ -854,6 +854,24 @@ export const updateUserProfile = async ({
   // Remove fields that shouldn't be updated via this endpoint
   const { password, email, role, ...updateData } = data;
 
+  // Validate asanaURL if present: allow empty string or a valid URL
+  if (Object.prototype.hasOwnProperty.call(updateData, "asanaURL")) {
+    const asanaVal = (updateData as any).asanaURL;
+    if (typeof asanaVal !== "string") {
+      throw new AppError("Invalid asanaURL");
+    }
+
+    if (asanaVal !== "") {
+      try {
+        // Node's global URL constructor will throw if invalid
+        // eslint-disable-next-line no-new
+        new URL(asanaVal);
+      } catch (err) {
+        throw new AppError("Invalid asanaURL");
+      }
+    }
+  }
+
   const db = firestoreAdmin();
   const collectionRef = db.collection(USER_COLLECTION);
   const docRef = collectionRef.doc(userId);

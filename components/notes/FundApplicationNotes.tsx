@@ -1,7 +1,13 @@
-import { CustomFormField } from "@/components/CustomFormField";
+import { BankTaggingTextarea } from "@/components/notes/BankTaggingTextarea";
 import IconMenu from "@/components/icon-menu";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   useAddFundApplicationNotesMutation,
   useAddFundApplicationNotesQuery,
@@ -21,7 +27,7 @@ const notesSchema = z.object({
   notes: z.array(
     z.object({
       note: z.string().min(1, "Required"),
-    })
+    }),
   ),
 });
 
@@ -49,7 +55,7 @@ const FundApplicationNotes = ({ applicationReferenceNumber }: Props) => {
           if (Array.isArray(n)) return n.map((s) => ({ note: s }));
           if (n != null) return [{ note: String(n) }];
           return [];
-        }
+        },
       );
 
       form.reset({ notes: formattedNotes });
@@ -68,7 +74,7 @@ const FundApplicationNotes = ({ applicationReferenceNumber }: Props) => {
         console.log(error);
       }
     },
-    [addNotes, applicationReferenceNumber]
+    [addNotes, applicationReferenceNumber],
   );
 
   return (
@@ -102,10 +108,20 @@ const FundApplicationNotes = ({ applicationReferenceNumber }: Props) => {
                 key={field.id}
                 className="flex flex-row space-x-2 space-y-2 items-start"
               >
-                <CustomFormField
+                <FormField
+                  control={form.control}
                   name={`notes.${index}.note`}
-                  className="col-span-3 w-full"
-                  type="textarea"
+                  render={({ field }) => (
+                    <FormItem className="col-span-3 w-full">
+                      <FormControl>
+                        <BankTaggingTextarea
+                          {...field}
+                          placeholder="Add a note... Type @ to tag a bank"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
                 <Button
                   variant={"destructive"}

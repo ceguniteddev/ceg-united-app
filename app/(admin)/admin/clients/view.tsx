@@ -102,6 +102,10 @@ const ClientData = ({
   isBrokerView?: boolean;
 }) => {
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [asanaURL, setAsanaURL] = useState<string>(user.asanaURL || "");
+  const { updateUserProfile, isUpdating } = useUpdateUserProfileMutation({
+    userId: user.id,
+  });
   const { data: membership } = useMembership(user.id);
 
   if (!user) {
@@ -186,6 +190,56 @@ const ClientData = ({
         setIsOpen={setEditModalOpen}
         user={user}
       />
+
+      <Card className="mt-6 border-blue-200 shadow-sm bg-blue-50/10">
+        <CardHeader className="pb-3 px-4 sm:px-5 border-b border-blue-100">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900">
+              Asana Settings
+            </CardTitle>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            Configure Asana project URL for this client.
+          </p>
+        </CardHeader>
+        <CardContent className="px-4 sm:px-5 py-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">
+              Asana Project URL
+            </Label>
+            <div className="flex items-center gap-3">
+              <Input
+                value={asanaURL}
+                onChange={(e) => setAsanaURL(e.target.value)}
+                className="flex-1 h-9 bg-white border-gray-200"
+                placeholder="https://app.asana.com/..."
+              />
+              <Button
+                onClick={async () => {
+                  try {
+                    await updateUserProfile({ asanaURL: asanaURL || "" });
+                    toast.success("Asana URL saved.");
+                  } catch (error) {
+                    console.error(error);
+                    toast.error("Failed to save Asana URL.");
+                  }
+                }}
+                disabled={!!isUpdating}
+                className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer h-9 px-4 shadow-sm font-medium flex items-center justify-center transition-colors shrink-0"
+              >
+                {isUpdating ? (
+                  <IconMenu
+                    text="Saving..."
+                    icon={<Loader2Icon className="h-4 w-4 animate-spin" />}
+                  />
+                ) : (
+                  <IconMenu text="Save" icon={<Save className="h-4 w-4" />} />
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <MembershipSection user={user} />
       <AddonSection user={user} />
