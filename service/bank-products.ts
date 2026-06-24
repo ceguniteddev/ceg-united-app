@@ -129,8 +129,7 @@ async function resolveSuccessFee(
     if (
       user &&
       user.successFeePercentage !== undefined &&
-      user.successFeePercentage !== null &&
-      user.successFeePercentage !== ""
+      user.successFeePercentage !== null
     ) {
       return Number(user.successFeePercentage);
     }
