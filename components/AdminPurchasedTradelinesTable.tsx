@@ -28,7 +28,6 @@ import SortableHeader from "@/components/SortableHeader";
 import { DataTablePagination } from "@/components/funding/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ConfirmModal } from "@/components/confirm-modal";
 import Spinner from "./Spinner";
 import { Textarea } from "./ui/textarea";
@@ -222,6 +221,12 @@ export default function AdminPurchasedTradelinesTable() {
           <SortableHeader column={column} title="Card ID" />
         ),
         cell: (info) => info.getValue(),
+      }),
+      columnHelper.accessor("credit_limit", {
+        header: ({ column }) => (
+          <SortableHeader column={column} title="Credit Limit" />
+        ),
+        cell: (info) => formatCurrency(info.getValue()),
       }),
       columnHelper.accessor("createdAt", {
         header: ({ column }) => (
