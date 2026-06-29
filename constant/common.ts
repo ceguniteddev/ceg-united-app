@@ -213,6 +213,11 @@ export const adminSidebarLinks: AdminSidebarGroup[] = [
         route: "/admin/brokers",
         label: "Brokers",
       },
+      {
+        imgURL: "/icons/users.svg",
+        route: "/admin/team",
+        label: "Admins",
+      },
     ],
   },
   {

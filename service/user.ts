@@ -321,7 +321,7 @@ export const registerUser = async ({
       brokerName: brokerName,
       verificationLink: verificationLink,
     });
-  } else if (registrationType === "Admin") {
+  } else if (registrationType === "Admin" && user.role !== "Admin") {
     requestBody = getAdminInvitationToClientBody({
       clientName: `${user.firstName} ${user.middleName ? user.middleName + " " : ""}${user.lastName}`,
       email: user.email,
@@ -728,6 +728,28 @@ export const getUsers = async ({
     }
   }
 
+  // Fetch Auth records in batches of 100 to retrieve emailVerified status
+  if (users.length > 0) {
+    const identifiers = users.map((u) => ({ uid: u.id }));
+    for (let i = 0; i < identifiers.length; i += 100) {
+      const batch = identifiers.slice(i, i + 100);
+      try {
+        const authUsers = await authenticationAdmin().getUsers(batch);
+        authUsers.users.forEach((authUser) => {
+          const userIndex = users.findIndex((u) => u.id === authUser.uid);
+          if (userIndex !== -1) {
+            users[userIndex].emailVerified = authUser.emailVerified;
+          }
+        });
+      } catch (err) {
+        console.error(
+          "Failed to fetch email verification status for batch:",
+          err,
+        );
+      }
+    }
+  }
+
   // If getting clients, fetch broker mappings
   if (role === "Client") {
     const clientIds = users.map((u) => u.id);
@@ -864,7 +886,7 @@ export const updateUserProfile = async ({
     if (asanaVal !== "") {
       try {
         // Node's global URL constructor will throw if invalid
-        // eslint-disable-next-line no-new
+
         new URL(asanaVal);
       } catch (err) {
         throw new AppError("Invalid asanaURL");
@@ -1467,4 +1489,66 @@ export const consumeClientInvitationToken = async (tokenId: string) => {
     status: "Accepted",
     acceptedAt: new Date(),
   });
+};
+
+export const resendVerificationEmail = async (userId: string) => {
+  logInfo(`Resending verification email for user: ${userId}`);
+  const db = firestoreAdmin();
+
+  const userDoc = await db.collection(USER_COLLECTION).doc(userId).get();
+  if (!userDoc.exists) {
+    throw new AppError("User not found");
+  }
+
+  const userData = userDoc.data();
+  if (!userData) {
+    throw new AppError("User data is empty");
+  }
+
+  const authUser = await authenticationAdmin().getUser(userId);
+  if (authUser.emailVerified) {
+    throw new AppError("Email is already verified");
+  }
+
+  const fundingAppsSnapshot = await db
+    .collection(USER_FUNDING_APPLICATION)
+    .where("userId", "==", userId)
+    .limit(1)
+    .get();
+
+  const referenceNumber = !fundingAppsSnapshot.empty
+    ? fundingAppsSnapshot.docs[0].id
+    : undefined;
+
+  let registrationType: RegistrationType = "Self";
+  if (userData.isBrokerInvite) {
+    registrationType = "Broker";
+  } else if (userData.role === "Admin") {
+    registrationType = "Admin";
+  } else if (userData.role === "Broker") {
+    registrationType = "Broker";
+  }
+
+  const token = await generateEmailVerificationToken({
+    userId,
+    email: authUser.email!,
+    referenceNumber,
+    registrationType,
+  });
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const verificationLink = `${appUrl}/verify-email/${token}`;
+
+  const emailBody = getVerifyEmailBody(verificationLink);
+
+  await sendTriggerEmail({
+    to: authUser.email!,
+    message: {
+      subject: "Verify your email",
+      html: emailBody,
+    },
+    job: EmailJobs.EMAIL_VERIFICATION,
+  });
+
+  return { success: true };
 };

@@ -54,6 +54,7 @@ export const USER_COURSE_ENROLLMENT = "user-course-enrollment";
 export const MAIL_COLLECTION = "mail";
 
 export const BROKER_INVITATION = "broker-invitation";
+export const ADMIN_INVITATION = "admin-invitation";
 export const CLIENT_INVITATION = "client-invitation";
 export const BROKER_CLIENT_MAPPING = "broker-client-mapping";
 export const BROKER_COMMISSION = "broker-commission";

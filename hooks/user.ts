@@ -87,7 +87,7 @@ export const useDeleteUserMutation = ({
   return { deleteUser, isDeleting, isError, error };
 };
 
-export const useUsersQuery = (role?: Role) => {
+export const useUsersQuery = (role: Role = "Client") => {
   const { user } = useAuth();
 
   const { data: users, isLoading } = useQuery({
@@ -516,4 +516,25 @@ export const useAdminAddClientMutation = () => {
   });
 
   return mutation;
+};
+
+export const useResendVerificationMutation = () => {
+  const queryClient = useQueryClient();
+  const { mutateAsync: resendVerification, isPending: isResending } =
+    useMutation({
+      mutationFn: async (userId: string) => {
+        const response = await fetch(
+          `/api/user/${userId}/resend-verification`,
+          {
+            method: "POST",
+          },
+        );
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.message || "Failed to resend verification email");
+        }
+        return response.json();
+      },
+    });
+  return { resendVerification, isResending };
 };
