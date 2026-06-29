@@ -222,7 +222,7 @@ export default function AdminPurchasedTradelinesTable() {
         ),
         cell: (info) => info.getValue(),
       }),
-      columnHelper.accessor("credit_limit", {
+      columnHelper.accessor("credit_limit_original", {
         header: ({ column }) => (
           <SortableHeader column={column} title="Credit Limit" />
         ),
