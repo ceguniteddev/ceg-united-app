@@ -336,13 +336,14 @@ const BankProductsList = ({
               clientApplicationStatus={status || "Not Applied"}
               approvedMappedFund={approvedMappedFund}
               userId={userId}
+              selectedPathwayId={selectedPathwayId}
             />
           );
         },
         size: 80,
       },
     ],
-    [referenceNumber, approvedMappedFunds],
+    [referenceNumber, approvedMappedFunds, selectedPathwayId],
   );
 
   const table = useReactTable({
@@ -647,6 +648,7 @@ const BankProductsList = ({
                         clientApplicationStatus={status}
                         approvedMappedFund={approvedFund}
                         userId={userId}
+                        selectedPathwayId={selectedPathwayId}
                       />
                     )}
                   </div>
@@ -775,6 +777,7 @@ const ActionCell = ({
   clientApplicationStatus,
   approvedMappedFund,
   userId,
+  selectedPathwayId,
 }: {
   row: any;
   referenceNumber: string;
@@ -782,6 +785,7 @@ const ActionCell = ({
   clientApplicationStatus: ClientApplicationStatus;
   approvedMappedFund?: ApprovedBankFormData;
   userId: string;
+  selectedPathwayId?: string;
 }) => {
   const [open, setOpen] = useState(false);
   const {
@@ -863,6 +867,7 @@ const ActionCell = ({
           data={row.original}
           isAdminViewing={true}
           referenceNumber={referenceNumber}
+          selectedPathwayId={selectedPathwayId}
         />
       </ResponsiveDialog>
 

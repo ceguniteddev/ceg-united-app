@@ -179,10 +179,12 @@ export const useFundingApplicationsMappedFundsMutation = () => {
       bankProductId,
       referenceNumber,
       products,
+      selectedPathwayId,
     }: {
       bankProductId: string;
       referenceNumber: string;
       products: BankProductCriteria[];
+      selectedPathwayId: string;
     }) => {
       if (!user) throw new Error("User not authenticated");
 
@@ -190,6 +192,7 @@ export const useFundingApplicationsMappedFundsMutation = () => {
         referenceNumber,
         bankProductId: bankProductId,
         products,
+        selectedPathwayId,
       });
 
       if (!result.success && result.message) {
@@ -388,14 +391,21 @@ export const useFundingApplicationsMappedFundsMutationOld = () => {
       bankProductId,
       referenceNumber,
       products,
+      selectedPathwayId,
     }: {
       bankProductId: string;
       referenceNumber: string;
       products: BankProductCriteria[];
+      selectedPathwayId: string;
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      await approveMappedFund({ referenceNumber, bankProductId, products });
+      await approveMappedFund({
+        referenceNumber,
+        bankProductId,
+        products,
+        selectedPathwayId,
+      });
     },
     onSuccess: (_data, variable) => {
       queryClient.invalidateQueries({
