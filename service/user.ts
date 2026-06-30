@@ -864,7 +864,7 @@ export const updateUserProfile = async ({
     if (asanaVal !== "") {
       try {
         // Node's global URL constructor will throw if invalid
-        // eslint-disable-next-line no-new
+         
         new URL(asanaVal);
       } catch (err) {
         throw new AppError("Invalid asanaURL");
