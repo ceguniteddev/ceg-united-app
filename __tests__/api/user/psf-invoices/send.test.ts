@@ -27,8 +27,25 @@ vi.mock("@/lib/api-validation", () => ({
 }));
 
 const mockGetCurrentUser = vi.fn();
+const mockGetUserById = vi.fn();
 vi.mock("@/service/user", () => ({
   getCurrentUser: () => mockGetCurrentUser(),
+  getUserById: (...args: any[]) => mockGetUserById(...args),
+}));
+
+const mockGenerateInvoicePDF = vi.fn();
+vi.mock("@/service/invoice-pdf", () => ({
+  generateInvoicePDF: (...args: any[]) => mockGenerateInvoicePDF(...args),
+}));
+
+const mockSendTriggerEmail = vi.fn();
+vi.mock("@/service/trigger-email", () => ({
+  sendTriggerEmail: (...args: any[]) => mockSendTriggerEmail(...args),
+}));
+
+const mockUploadDocument = vi.fn();
+vi.mock("@/service/documents", () => ({
+  uploadDocument: (...args: any[]) => mockUploadDocument(...args),
 }));
 
 const mockCreatePsfInvoiceCheckoutConfig = vi.fn();
@@ -156,6 +173,17 @@ describe("POST /api/user/[userId]/psf-invoices/[invoiceId]/send", () => {
       checkoutId: "whop-checkout-123",
       url: "https://whop.com/checkout/123",
     });
+    mockGetUserById.mockResolvedValue({
+      email: "user@example.com",
+      firstName: "John",
+      lastName: "Doe",
+    });
+    mockGenerateInvoicePDF.mockResolvedValue({
+      filename: "invoice_invoice-1.pdf",
+      pdfBuffer: Buffer.from("pdf-content"),
+    });
+    mockSendTriggerEmail.mockResolvedValue("email-job-id");
+    mockUploadDocument.mockResolvedValue(undefined);
     mockUpdate.mockResolvedValue(undefined);
 
     const res = await POST(makeRequest(), params("user-1", "invoice-1"));

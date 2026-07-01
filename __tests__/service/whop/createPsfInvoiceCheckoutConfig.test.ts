@@ -108,7 +108,7 @@ describe("createPsfInvoiceCheckoutConfig", () => {
       plan: {
         company_id: "test-company-id",
         currency: "usd",
-        initial_price: 25050, // 250.5 * 100
+        initial_price: 251, // 250.5
         plan_type: "one_time",
         product_id: "test-wallet-product-id",
         visibility: "hidden",
@@ -136,7 +136,7 @@ describe("createPsfInvoiceCheckoutConfig", () => {
         userId: "user-1",
         checkoutId: "psf-checkout-id",
         url: "https://whop.com/checkout/psf",
-        initialPrice: 25050,
+        initialPrice: 251,
         planType: "one_time",
         productId: "test-wallet-product-id",
         status: "created",
