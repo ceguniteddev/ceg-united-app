@@ -268,8 +268,9 @@ export function PsfAcceptanceView({
           {isCustom ? (
             <>
               <p>
-                This Custom Invoice Agreement ("Agreement") is entered into by
-                and between Credit Elevation Group LLC ("CEG") and the Client.
+                This Custom Invoice Agreement (&quot;Agreement&quot;) is entered
+                into by and between CEG United LLC (&quot;CEG&quot;) and the
+                Client.
               </p>
               <div className="text-sm text-gray-600 mb-4">
                 1. <strong>INVOICE:</strong> This custom invoice for{" "}
@@ -311,9 +312,9 @@ export function PsfAcceptanceView({
           ) : (
             <>
               <p>
-                This Performance Success Fee Agreement ("Agreement") is entered
-                into by and between Credit Elevation Group LLC ("CEG") and the
-                Client.
+                This Performance Success Fee Agreement (&quot;Agreement&quot;)
+                is entered into by and between CEG United LLC (&quot;CEG&quot;)
+                and the Client.
               </p>
               <p>
                 1. <strong>FEE ACKNOWLEDGEMENT:</strong> Client acknowledges
