@@ -1227,10 +1227,15 @@ export const getFundMappingAnalysisDetails = async ({
           bankProduct.bankName,
         );
 
+        const targetProducts =
+          bankProductId.products && Array.isArray(bankProductId.products)
+            ? bankProductId.products
+            : bankProduct.products || [];
+
         // Calculate approval odds for each product
         const productsWithOdds = clientFundingData
           ? await Promise.all(
-              (bankProduct.products || []).map(async (product) => ({
+              targetProducts.map(async (product: any) => ({
                 ...product,
                 approvalOdds: await calculateApprovalOdds(
                   bankProductId.userId,
@@ -1239,7 +1244,7 @@ export const getFundMappingAnalysisDetails = async ({
                 ),
               })),
             )
-          : bankProduct.products || [];
+          : targetProducts;
         // console.log(
         //   `Calculated approval odds for products of reference ${bankProductId.referenceNumber}:`,
         //   productsWithOdds.map((p) => ({
@@ -1254,7 +1259,7 @@ export const getFundMappingAnalysisDetails = async ({
                 98,
                 Math.round(
                   productsWithOdds.reduce(
-                    (sum, p: any) => sum + (p.approvalOdds || 0),
+                    (sum: number, p: any) => sum + (p.approvalOdds || 0),
                     0,
                   ) / productsWithOdds.length,
                 ) + 25,
@@ -1536,9 +1541,14 @@ export const getAutoServedClientFunds = async ({
           bankProduct.bankName,
         );
 
+        const targetProducts =
+          r.products && Array.isArray(r.products)
+            ? r.products
+            : bankProduct.products || [];
+
         const productsWithOdds = clientFundingData
           ? await Promise.all(
-              (bankProduct.products || []).map(async (product) => ({
+              targetProducts.map(async (product: any) => ({
                 ...product,
                 approvalOdds: await calculateApprovalOdds(
                   r.userId || userId,
@@ -1547,7 +1557,7 @@ export const getAutoServedClientFunds = async ({
                 ),
               })),
             )
-          : bankProduct.products || [];
+          : targetProducts;
 
         const overallApprovalOdds =
           productsWithOdds.length > 0
@@ -1555,7 +1565,7 @@ export const getAutoServedClientFunds = async ({
                 98,
                 Math.round(
                   productsWithOdds.reduce(
-                    (sum, p: any) => sum + (p.approvalOdds || 0),
+                    (sum: number, p: any) => sum + (p.approvalOdds || 0),
                     0,
                   ) / productsWithOdds.length,
                 ) + 25,

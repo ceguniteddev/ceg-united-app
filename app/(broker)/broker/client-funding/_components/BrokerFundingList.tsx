@@ -92,26 +92,32 @@ const columns: ColumnDef<BrokerFundingData>[] = [
     ),
     size: 180,
   },
-  // {
-  //   accessorKey: "products",
-  //   id: "products",
-  //   header: ({ column }) => (
-  //     <SortableHeader column={column} title="Product Name" />
-  //   ),
-  //   cell: ({ row }) => {
-  //     const products = row.original.products;
-  //     return (
-  //       <div className="flex flex-col gap-1">
-  //         {products?.map((product, index) => (
-  //           <span key={index} className="whitespace-nowrap">
-  //             {product.productName}
-  //           </span>
-  //         ))}
-  //       </div>
-  //     );
-  //   },
-  //   size: 200,
-  // },
+  {
+    accessorKey: "products",
+    id: "products",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Approved Products" />
+    ),
+    cell: ({ row }) => {
+      const products = row.original.products;
+      if (!products || products.length === 0) {
+        return <div className="text-xs text-gray-400">—</div>;
+      }
+      return (
+        <div className="flex flex-wrap gap-1.5 max-w-[250px]">
+          {products.map((product, index) => (
+            <span
+              key={index}
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200"
+            >
+              {product.productName}
+            </span>
+          ))}
+        </div>
+      );
+    },
+    size: 200,
+  },
   {
     accessorKey: "personalAmountFunding",
     id: "personalAmountFunding",

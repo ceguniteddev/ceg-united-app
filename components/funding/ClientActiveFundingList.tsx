@@ -29,6 +29,7 @@ export default function ClientActiveFundingList({
         isAdminView={false}
         viewColumns={[
           { columnId: "bankName" },
+          { columnId: "approvedProducts" },
           { columnId: "clientApplicationStatus" },
           { columnId: "approvedAmount" },
           { columnId: "approvedRemarks" },
