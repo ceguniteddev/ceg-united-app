@@ -4,6 +4,7 @@ import { badRequest, internalServerError } from "@/app/api/helpers";
 import { withAuth } from "@/lib/api-validation";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { PSF_INVOICES_COLLECTION } from "@/constant/collection-name";
+import { psfInvoiceSchema } from "@/schema/psf-invoice";
 
 /**
  * GET /api/user/[userId]/psf-invoices
@@ -46,6 +47,59 @@ export const GET = withAuth(
     } catch (error: any) {
       console.error("Failed to get PSF invoices:", error);
       return internalServerError("Failed to get PSF invoices");
+    }
+  },
+);
+
+/**
+ * POST /api/user/[userId]/psf-invoices
+ * Create a custom invoice for a user (admin-only in practice)
+ */
+export const POST = withAuth(
+  async (
+    request: NextRequest,
+    { params }: { params?: Promise<{ userId: string }> },
+  ) => {
+    try {
+      const resolvedParams = params ? await params : undefined;
+      const userId = resolvedParams?.userId;
+
+      if (!userId) {
+        return badRequest({ errors: "User ID is required" });
+      }
+
+      const body = await request.json();
+
+      const parseResult = psfInvoiceSchema.safeParse({
+        ...body,
+        userId,
+        status: body.status || "pending",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      if (!parseResult.success) {
+        return badRequest({
+          errors: parseResult.error.issues.map(
+            (issue: { message: string }) => issue.message,
+          ),
+        });
+      }
+
+      const invoiceData = parseResult.data;
+
+      const db = firestoreAdmin();
+      const docRef = await db
+        .collection(PSF_INVOICES_COLLECTION)
+        .add(invoiceData);
+
+      return NextResponse.json(
+        { success: true, id: docRef.id },
+        { status: 201 },
+      );
+    } catch (error: any) {
+      console.error("Failed to create PSF invoice:", error);
+      return internalServerError("Failed to create invoice");
     }
   },
 );

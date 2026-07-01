@@ -500,7 +500,7 @@ export default function ConsumerReportingAgencyPage() {
                 control={form.control}
                 name="emailAddress"
                 label="Email Address (Optional)"
-                placeholder="support@agency.com"
+                placeholder="info@agency.com"
                 type="email"
               />
 
