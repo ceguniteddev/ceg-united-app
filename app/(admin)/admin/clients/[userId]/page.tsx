@@ -16,7 +16,7 @@ import CreditRepairView from "@/components/CreditRepairView";
 import LetterList from "@/components/letter-stream/list";
 import LetterForm from "@/components/letter-stream/form";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useUserQuery } from "@/hooks/user";
 import { useMembership } from "@/hooks/membership";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
@@ -33,12 +33,16 @@ import AdminFundingList from "@/components/funding/admin-funding-list";
 import { useGetClientApplyFunding } from "@/hooks/apply-funding";
 import { RowActions } from "@/app/(admin)/admin/funding-application/_components/RowActions";
 import { ApplyFundingWithUser } from "@/schema/apply-funding";
+import { PsfInvoicesSection } from "@/components/income-funding/PsfInvoicesSection";
 
 const ClientProfilePage = () => {
   const params = useParams();
+  const searchParams = useSearchParams();
   const userId = params.userId as string;
   const [isLetterFormOpen, setIsLetterFormOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("personal-information");
+  const [activeTab, setActiveTab] = useState(
+    () => searchParams.get("tab") || "personal-information",
+  );
 
   const { userData, isLoading: isUserLoading } = useUserQuery(userId);
   const { data: membershipData } = useMembership(userId);
@@ -69,6 +73,7 @@ const ClientProfilePage = () => {
   const tabOptions = useMemo(() => {
     const options = [
       { value: "personal-information", label: "Personal Information" },
+      { value: "invoice", label: "Invoice" },
       { value: "dashboard", label: "Dashboard" },
       { value: "documents", label: "Documents" },
       { value: "credit-report", label: "Credit Report" },
@@ -144,6 +149,10 @@ const ClientProfilePage = () => {
 
       <TabsContent value="personal-information" className="w-full">
         <ClientData user={userData as UserWithId} />
+      </TabsContent>
+
+      <TabsContent value="invoice" className="w-full">
+        <PsfInvoicesSection userId={userId} isAdminView />
       </TabsContent>
 
       <TabsContent value="dashboard" className="w-full">

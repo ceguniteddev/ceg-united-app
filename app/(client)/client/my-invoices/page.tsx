@@ -51,7 +51,7 @@ function MyInvoicesContent() {
       </div>
 
       <div className="space-y-6">
-        <PsfInvoicesSection />
+        <PsfInvoicesSection userId={user.uid} />
       </div>
     </section>
   );

@@ -615,7 +615,7 @@ export const createPsfInvoiceCheckoutConfig = async ({
     const user = await getUserById(userId);
     if (!user) throw new Error("User not found");
 
-    const feeInCents = Math.round(feeAmount * 100);
+    const feeInCents = Math.round(feeAmount);
 
     const planDetails: CheckoutConfigurationCreateParams.CreateCheckoutSessionInputModePaymentWithPlan.Plan =
       {
@@ -1028,7 +1028,7 @@ export const sendPaymentLink = async ({ userId }: { userId: string }) => {
               </p>
 
               <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.6;">
-                If you have any questions, please contact us at <a href="mailto:contact@cegunited.com" style="color: #0179FE; text-decoration: none;">contact@cegunited.com</a>. We’re here to help!
+                If you have any questions, please contact us at <a href="mailto:info@cegunited.com" style="color: #0179FE; text-decoration: none;">info@cegunited.com</a>. We're here to help!
               </p>
               
               <p style="margin: 0; color: #333333; font-size: 16px; line-height: 1.6;">
