@@ -178,7 +178,7 @@ export const POST = withAuth(
     <div style="background: white; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
       <div style="text-align: center; margin-bottom: 24px;">
         <h1 style="color: #1e40af; font-size: 24px; margin: 0;">CEG United LLC</h1>
-        <p style="color: #6b7280; font-size: 14px; margin: 4px 0 0;">Invoice from Credit Elevation Group</p>
+        <p style="color: #6b7280; font-size: 14px; margin: 4px 0 0;">Invoice from CEG United LLC</p>
       </div>
       
       <p style="color: #111827; font-size: 16px; margin: 0 0 8px;">Hello ${clientName},</p>
