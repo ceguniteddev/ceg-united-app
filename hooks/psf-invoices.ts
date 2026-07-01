@@ -158,3 +158,38 @@ export const useSendPsfInvoiceMutation = (userId: string) => {
     },
   });
 };
+
+/**
+ * Hook for admin to manually mark a PSF invoice as paid
+ */
+export const useManualPayPsfInvoiceMutation = (userId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ invoiceId }: { invoiceId: string }) => {
+      const response = await fetch(
+        `/api/user/${userId}/psf-invoices/${invoiceId}/manual-pay`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.errors || "Failed to mark invoice as paid");
+      }
+
+      return response.json() as Promise<{ success: boolean; message: string }>;
+    },
+    onSuccess: () => {
+      toast.success("Invoice marked as paid successfully!");
+      queryClient.invalidateQueries({
+        queryKey: [GET_USER_PSF_INVOICES, userId],
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to mark invoice as paid");
+    },
+  });
+};

@@ -5,6 +5,7 @@ import {
   useUserPsfInvoicesQuery,
   useSignPsfInvoiceMutation,
   useSendPsfInvoiceMutation,
+  useManualPayPsfInvoiceMutation,
 } from "@/hooks/psf-invoices";
 import { PsfInvoice } from "@/schema/psf-invoice";
 import {
@@ -19,6 +20,16 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { PsfAcceptanceView } from "./PsfAcceptanceView";
 import { Button } from "../ui/button";
@@ -47,6 +58,7 @@ export function PsfInvoicesSection({
   const router = useRouter();
   const signMutation = useSignPsfInvoiceMutation(userId);
   const sendMutation = useSendPsfInvoiceMutation(userId);
+  const manualPayMutation = useManualPayPsfInvoiceMutation(userId);
   const [selectedInvoice, setSelectedInvoice] = useState<PsfInvoice | null>(
     null,
   );
@@ -83,6 +95,10 @@ export function PsfInvoicesSection({
 
   const handleSend = async (invoiceId: string) => {
     await sendMutation.mutateAsync({ invoiceId });
+  };
+
+  const handleManualPay = async (invoiceId: string) => {
+    await manualPayMutation.mutateAsync({ invoiceId });
   };
 
   const emptyState = (
@@ -160,6 +176,7 @@ export function PsfInvoicesSection({
                 isAdminView={isAdminView}
                 onSign={() => setSelectedInvoice(invoice)}
                 onSend={handleSend}
+                onManualPay={handleManualPay}
               />
             ))}
           </div>
@@ -196,15 +213,19 @@ function InvoiceRow({
   isAdminView = false,
   onSign,
   onSend,
+  onManualPay,
 }: {
   invoice: PsfInvoice;
   isAdminView?: boolean;
   onSign: () => void;
   onSend: (invoiceId: string) => void;
+  onManualPay: (invoiceId: string) => Promise<void>;
 }) {
   const isCustom = invoice.type === "custom";
   const [expanded, setExpanded] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
+  const [isPayConfirmOpen, setIsPayConfirmOpen] = useState(false);
 
   const displayTitle = isCustom
     ? invoice.title || "Custom Invoice"
@@ -315,48 +336,78 @@ function InvoiceRow({
             <>
               {/* Admin view: no Sign button, use Send instead */}
               {invoice.status === "pending" && !invoice.sentAt && (
-                <button
-                  onClick={async () => {
-                    setIsSending(true);
-                    try {
-                      await onSend(invoice.id!);
-                    } finally {
-                      setIsSending(false);
-                    }
-                  }}
-                  disabled={isSending}
-                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  {isSending ? (
-                    <>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={async () => {
+                      setIsSending(true);
+                      try {
+                        await onSend(invoice.id!);
+                      } finally {
+                        setIsSending(false);
+                      }
+                    }}
+                    disabled={isSending || isPaying}
+                    className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 text-center"
+                  >
+                    {isSending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Send Invoice
+                      </>
+                    )}
+                  </button>
+                  <Button
+                    onClick={() => setIsPayConfirmOpen(true)}
+                    disabled={isSending || isPaying}
+                    variant="outline"
+                    className="w-full sm:w-auto px-4 py-2 border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800 disabled:bg-gray-100 flex items-center justify-center gap-2"
+                  >
+                    {isPaying ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Send Invoice
-                    </>
-                  )}
-                </button>
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4" />
+                    )}
+                    Mark as Paid
+                  </Button>
+                </div>
               )}
 
               {invoice.status === "pending" && invoice.sentAt && (
-                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <CalendarClock className="w-3.5 h-3.5" />
-                  <span>
-                    Sent:{" "}
-                    {new Date(invoice.sentAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </span>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <CalendarClock className="w-3.5 h-3.5" />
+                    <span>
+                      Sent:{" "}
+                      {new Date(invoice.sentAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <Button
+                    onClick={() => setIsPayConfirmOpen(true)}
+                    disabled={isPaying}
+                    variant="outline"
+                    className="w-full sm:w-auto px-4 py-2 border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800 disabled:bg-gray-100 flex items-center justify-center gap-2"
+                  >
+                    {isPaying ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4" />
+                    )}
+                    Mark as Paid
+                  </Button>
                 </div>
               )}
 
               {invoice.status === "signed" && invoice.whopCheckoutUrl && (
-                <>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
                   {invoice.sentAt && (
                     <div className="flex items-center gap-1.5 text-xs text-gray-500">
                       <CalendarClock className="w-3.5 h-3.5" />
@@ -370,16 +421,31 @@ function InvoiceRow({
                       </span>
                     </div>
                   )}
-                  <Button
-                    onClick={() =>
-                      window.open(invoice.whopCheckoutUrl!, "_blank")
-                    }
-                    className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    Complete Payment
-                  </Button>
-                </>
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <Button
+                      onClick={() =>
+                        window.open(invoice.whopCheckoutUrl!, "_blank")
+                      }
+                      className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      Complete Payment
+                    </Button>
+                    <Button
+                      onClick={() => setIsPayConfirmOpen(true)}
+                      disabled={isPaying}
+                      variant="outline"
+                      className="w-full sm:w-auto px-4 py-2 border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800 disabled:bg-gray-100 flex items-center justify-center gap-2"
+                    >
+                      {isPaying ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4" />
+                      )}
+                      Mark as Paid
+                    </Button>
+                  </div>
+                </div>
               )}
 
               {invoice.status === "paid" && (
@@ -461,6 +527,42 @@ function InvoiceRow({
           </div>
         </div>
       )}
+
+      {/* Manual Pay Confirmation Dialog */}
+      <AlertDialog open={isPayConfirmOpen} onOpenChange={setIsPayConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Manually Mark as Paid?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to mark this invoice as paid manually? This
+              will bypass Whop payment gateways and tag the invoice as settled
+              in the system.
+              {secondaryAmount !== undefined && (
+                <span className="block mt-2 font-medium text-amber-600">
+                  Warning: The linked bank funding application status will also
+                  be updated to &quot;Funded&quot;.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setIsPaying(true);
+                try {
+                  await onManualPay(invoice.id!);
+                } finally {
+                  setIsPaying(false);
+                }
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Confirm Payment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
