@@ -235,7 +235,12 @@ const AdminViewApplication = () => {
         </TabsContent>
 
         <TabsContent value="applied-funding" className="w-full">
-          <ClientAppliedFunding userId={userId} isAdminView={true} />
+          <ClientAppliedFunding
+            userId={userId}
+            referenceNumber={formData?.referenceNumber ?? ""}
+            appliedPathways={(formData as any)?.appliedPathways || []}
+            isAdminView={true}
+          />
         </TabsContent>
 
         {hasLearningMaterialsAccess && (
