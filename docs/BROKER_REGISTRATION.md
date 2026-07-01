@@ -316,7 +316,7 @@ Contact CEG United LLC support:
 ### CEG United LLC Support
 
 - **Phone**: [Contact number]
-- **Email**: support@cegunited.com
+- **Email**: info@cegunited.com
 - **Live Chat**: Available on website
 - **Hours**: Monday-Friday, 9am-5pm
 

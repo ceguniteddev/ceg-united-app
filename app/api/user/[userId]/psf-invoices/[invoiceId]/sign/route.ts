@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
-import { badRequest, internalServerError } from "@/app/api/helpers";
+import {
+  badRequest,
+  internalServerError,
+  unauthorized,
+} from "@/app/api/helpers";
 import { withAuth } from "@/lib/api-validation";
+import { getCurrentUser } from "@/service/user";
 import { saveFeeAgreementToPDF } from "@/service/fee-agreement-pdf";
 import { createPsfInvoiceCheckoutConfig } from "@/service/whop";
 import { PSF_INVOICES_COLLECTION } from "@/constant/collection-name";
@@ -20,6 +25,15 @@ export const POST = withAuth(
       const resolvedParams = params ? await params : undefined;
       const userId = resolvedParams?.userId;
       const invoiceId = resolvedParams?.invoiceId;
+
+      // Verify the authenticated user matches the route userId (or is admin)
+      const currentUser = await getCurrentUser();
+      if (!currentUser) {
+        return unauthorized();
+      }
+      if (currentUser.role !== "Admin" && currentUser.uid !== userId) {
+        return unauthorized();
+      }
 
       if (!userId || !invoiceId) {
         return badRequest({
@@ -75,20 +89,22 @@ export const POST = withAuth(
       };
 
       // 1. Save fee agreement to PDF
-      try {
-        await saveFeeAgreementToPDF(
-          invoiceData.referenceNumber,
-          userId,
-          pdfSignature,
-          invoiceData.approvedAmount,
-          invoiceData.successFeeAmount,
-          invoiceData.successFeePercentage,
-        );
-      } catch (pdfError: any) {
-        console.error("Error generating/saving fee agreement PDF:", pdfError);
-        return internalServerError(
-          "Failed to generate and save fee agreement PDF.",
-        );
+      if (invoiceData.type !== "custom") {
+        try {
+          await saveFeeAgreementToPDF(
+            invoiceData.referenceNumber,
+            userId,
+            pdfSignature,
+            invoiceData.approvedAmount,
+            invoiceData.successFeeAmount,
+            invoiceData.successFeePercentage,
+          );
+        } catch (pdfError: any) {
+          console.error("Error generating/saving fee agreement PDF:", pdfError);
+          return internalServerError(
+            "Failed to generate and save fee agreement PDF.",
+          );
+        }
       }
 
       // 2. Generate a Whop checkout link for successFeeAmount
@@ -99,7 +115,7 @@ export const POST = withAuth(
         const whopConfig = await createPsfInvoiceCheckoutConfig({
           userId,
           invoiceId,
-          feeAmount: invoiceData.successFeeAmount,
+          feeAmount: invoiceData.amount ?? invoiceData.successFeeAmount,
         });
         checkoutId = whopConfig.checkoutId;
         checkoutUrl = whopConfig.url;

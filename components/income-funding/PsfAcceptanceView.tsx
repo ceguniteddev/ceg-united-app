@@ -156,6 +156,14 @@ export function PsfAcceptanceView({
     );
   }
 
+  const isCustom = invoice.type === "custom";
+  const displayTitle = isCustom
+    ? invoice.title || "Custom Invoice"
+    : "Performance Success Fee Invoice";
+  const displayAmount = isCustom
+    ? (invoice.amount ?? 0)
+    : (invoice.successFeeAmount ?? 0);
+
   return (
     <div className="space-y-6">
       <div className="animate-fade-in-up">
@@ -164,31 +172,83 @@ export function PsfAcceptanceView({
             <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
               <ScrollText className="w-5 h-5" />
             </div>
-            <h3 className="font-semibold text-gray-900">
-              Performance Success Fee Invoice
-            </h3>
+            <h3 className="font-semibold text-gray-900">{displayTitle}</h3>
           </div>
           <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Bank</span>
-              <span className="font-medium text-gray-900">
-                {invoice.bankName}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Approved Amount</span>
-              <span className="font-medium text-gray-900">
-                {formatUSD(invoice.approvedAmount)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">
-                Success Fee ({invoice.successFeePercentage}%)
-              </span>
-              <span className="font-semibold text-blue-600">
-                {formatUSD(invoice.successFeeAmount)}
-              </span>
-            </div>
+            {isCustom ? (
+              <>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Title</span>
+                  <span className="font-medium text-gray-900">
+                    {invoice.title || "—"}
+                  </span>
+                </div>
+                {invoice.description && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Description</span>
+                    <span className="font-medium text-gray-900 max-w-[60%] text-right">
+                      {invoice.description}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Amount Due</span>
+                  <span className="font-semibold text-blue-600">
+                    {formatUSD(displayAmount)}
+                  </span>
+                </div>
+                {invoice.items && invoice.items.length > 0 && (
+                  <div className="border-t border-gray-100 pt-3 mt-3 space-y-2">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      Line Items
+                    </p>
+                    <div className="max-h-40 overflow-y-auto space-y-2 pr-1">
+                      {invoice.items.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex justify-between items-start text-xs"
+                        >
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-gray-700 font-medium break-words">
+                              {item.description}
+                            </span>
+                            <span className="text-gray-400 text-[10px]">
+                              {item.quantity} &times; {formatUSD(item.rate)}
+                            </span>
+                          </div>
+                          <span className="font-medium text-gray-900">
+                            {formatUSD(item.amount)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Bank</span>
+                  <span className="font-medium text-gray-900">
+                    {invoice.bankName}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Approved Amount</span>
+                  <span className="font-medium text-gray-900">
+                    {formatUSD(invoice.approvedAmount ?? 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">
+                    Success Fee ({invoice.successFeePercentage ?? 0}%)
+                  </span>
+                  <span className="font-semibold text-blue-600">
+                    {formatUSD(invoice.successFeeAmount ?? 0)}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -196,40 +256,91 @@ export function PsfAcceptanceView({
       <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
         <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
           <FileSignature className="w-4 h-4 text-blue-600" />
-          CEG Performance Success Fee Agreement
+          {isCustom
+            ? "CEG Custom Invoice Agreement"
+            : "CEG Performance Success Fee Agreement"}
         </h4>
 
         <div className="h-48 overflow-y-auto bg-white border border-gray-200 rounded-xl p-5 text-sm text-gray-600 space-y-4 mb-6 shadow-sm">
           <p>
             <strong>Date:</strong> {today}
           </p>
-          <p>
-            This Performance Success Fee Agreement ("Agreement") is entered into
-            by and between Credit Elevation Group LLC ("CEG") and the Client.
-          </p>
-          <p>
-            1. <strong>FEE ACKNOWLEDGEMENT:</strong> Client acknowledges that
-            CEG has successfully secured funding in the amount of{" "}
-            {formatUSD(invoice.approvedAmount)} from {invoice.bankName}.
-          </p>
-          <p>
-            2. <strong>PERFORMANCE FEE:</strong> Pursuant to the original terms
-            of service, Client agrees to pay CEG a success fee of{" "}
-            {invoice.successFeePercentage}%, which amounts to{" "}
-            <strong>{formatUSD(invoice.successFeeAmount)}</strong>.
-          </p>
-          <p>
-            3. <strong>PAYMENT TERMS:</strong> Client agrees to process this
-            payment immediately upon signing this agreement via the secure
-            payment portal. Failure to pay may result in collection actions or
-            reporting to credit bureaus.
-          </p>
-          <p>
-            4. <strong>AUTHORIZATION:</strong> By signing below, Client
-            authorizes CEG to process this performance success fee and agrees to
-            all terms outlined in this agreement and the general Terms of
-            Service.
-          </p>
+          {isCustom ? (
+            <>
+              <p>
+                This Custom Invoice Agreement ("Agreement") is entered into by
+                and between Credit Elevation Group LLC ("CEG") and the Client.
+              </p>
+              <div className="text-sm text-gray-600 mb-4">
+                1. <strong>INVOICE:</strong> This custom invoice for{" "}
+                <strong>{invoice.title || "services rendered"}</strong>
+                {invoice.description && <> — {invoice.description}</>}
+                {invoice.items && invoice.items.length > 0 ? (
+                  <>
+                    {" "}
+                    includes the following itemized breakdown:
+                    <span className="block mt-2 pl-4 border-l-2 border-gray-200 space-y-1 text-xs text-gray-500 font-mono">
+                      {invoice.items.map((item, idx) => (
+                        <span key={idx} className="block">
+                          &bull; {item.description} (x{item.quantity} @{" "}
+                          {formatUSD(item.rate)}) = {formatUSD(item.amount)}
+                        </span>
+                      ))}
+                    </span>
+                  </>
+                ) : (
+                  "."
+                )}
+              </div>
+              <p>
+                2. <strong>AMOUNT DUE:</strong> Client agrees to pay CEG the
+                amount of <strong>{formatUSD(displayAmount)}</strong>.
+              </p>
+              <p>
+                3. <strong>PAYMENT TERMS:</strong> Client agrees to process this
+                payment immediately upon signing this agreement via the secure
+                payment portal. Failure to pay may result in collection actions
+                or reporting to credit bureaus.
+              </p>
+              <p>
+                4. <strong>AUTHORIZATION:</strong> By signing below, Client
+                authorizes CEG to process this payment and agrees to all terms
+                outlined in this agreement and the general Terms of Service.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                This Performance Success Fee Agreement ("Agreement") is entered
+                into by and between Credit Elevation Group LLC ("CEG") and the
+                Client.
+              </p>
+              <p>
+                1. <strong>FEE ACKNOWLEDGEMENT:</strong> Client acknowledges
+                that CEG has successfully secured funding in the amount of{" "}
+                {formatUSD(invoice.approvedAmount ?? 0)} from {invoice.bankName}
+                .
+              </p>
+              <p>
+                2. <strong>PERFORMANCE FEE:</strong> Pursuant to the original
+                terms of service, Client agrees to pay CEG a success fee of{" "}
+                {invoice.successFeePercentage ?? 0}%, which amounts to{" "}
+                <strong>{formatUSD(invoice.successFeeAmount ?? 0)}</strong>.
+              </p>
+              <p>
+                3. <strong>PAYMENT TERMS:</strong> Client agrees to process this
+                payment immediately upon signing this agreement via the secure
+                payment portal. Failure to pay may result in collection actions
+                or reporting to credit bureaus.
+              </p>
+              <p>
+                4. <strong>AUTHORIZATION:</strong> By signing below, Client
+                authorizes CEG to process this performance success fee and
+                agrees to all terms outlined in this agreement and the general
+                Terms of Service.
+              </p>
+            </>
+          )}
         </div>
 
         <div className="flex items-start gap-3 mb-8">
@@ -300,7 +411,6 @@ export function PsfAcceptanceView({
                   onChange={(e) => setTypedSignature(e.target.value)}
                   placeholder="Type your full legal name"
                   className="w-full text-center text-4xl border-0 border-b border-dashed border-gray-300 focus:ring-0 focus:border-blue-500 bg-transparent py-4 font-signature placeholder:font-sans placeholder:text-lg placeholder:text-gray-300 transition-colors"
-                  style={{ fontFamily: "'Dancing Script', cursive" }}
                 />
               </div>
             ) : (
