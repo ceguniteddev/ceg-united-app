@@ -263,15 +263,15 @@ describe("transformClientDataToDashboard()", () => {
       expect(result.nextSteps).toHaveLength(3);
     });
 
-    it("should mark upload bank step incomplete with no Plaid data", () => {
+    it("should mark upload bank step incomplete with no bank data", () => {
       const result = transformClientDataToDashboard(makeClientData())!;
       const step = result.nextSteps.find((s) => s.id === "step-1")!;
       expect(step.completed).toBe(false);
     });
 
-    it("should mark upload bank step complete with Plaid data", () => {
+    it("should mark upload bank step complete with documents data", () => {
       const clientData = makeClientData({
-        getPlaidCompleteData: [{ transaction: [] }],
+        userDocuments: [{ name: "PERSONAL_BANK_STATEMENTS" }],
       });
       const result = transformClientDataToDashboard(clientData)!;
       const step = result.nextSteps.find((s) => s.id === "step-1")!;

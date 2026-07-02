@@ -14,7 +14,6 @@ import { AlertCircle } from "lucide-react";
 // --- IMPORT YOUR ACTUAL APPLICATION TYPES ---
 import { UserWithId } from "@/schema/registration";
 import { ApplyFunding } from "@/schema/apply-funding";
-import { PlaidCompleteRow } from "@/service/plaid/data";
 import { Business } from "@/schema";
 import { CreditScore } from "@/types/crs";
 import { ApprovedBankFormData } from "@/schema/bank-products";
@@ -110,7 +109,7 @@ export interface ClientData {
   fundingApplications: ApplyFunding[] | null;
   approvedFunds?: ApprovedBankFormData[] | null;
   businessesWithCrsData: BusinessWithCRSData[];
-  getPlaidCompleteData: PlaidCompleteRow[] | null;
+  getPlaidCompleteData: any[] | null;
   userDocuments?: any[];
 }
 

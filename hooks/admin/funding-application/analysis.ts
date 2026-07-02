@@ -71,6 +71,7 @@ export const useAnalysisMutation = () => {
 
 export const useRefreshAnalysisData = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const refreshAnalysisDataMutation = useMutation({
     mutationFn: async ({ referenceNumber }: { referenceNumber: string }) => {
@@ -90,6 +91,14 @@ export const useRefreshAnalysisData = () => {
         console.error("Error refreshing Analysis data:", data);
         throw new AppError("Failed to refresh Analysis data.");
       }
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["GET_FUNDING_APPLICATIONS", variables.referenceNumber],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["GET_APPLICATION_ANALYSIS", variables.referenceNumber],
+      });
     },
 
     onError: (error: any) => {

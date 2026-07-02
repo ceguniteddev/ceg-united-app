@@ -8,7 +8,6 @@ import {
   getCRSReport,
 } from "./crs";
 import { Business } from "@/schema";
-import { getPlaidCompleteDataForUser } from "./plaid/data";
 import { getFundMappingAnalysisDetails } from "./bank-products";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED } from "@/constant/collection-name";
@@ -212,7 +211,6 @@ export const getClientStatistics = async (userId: string) => {
     }),
   );
 
-  const getPlaidCompleteData = await getPlaidCompleteDataForUser(userId);
   const userDocuments = await getUserDocuments({ userId });
 
   return {
@@ -221,7 +219,7 @@ export const getClientStatistics = async (userId: string) => {
     fundingApplications,
     approvedFunds,
     businessesWithCrsData,
-    getPlaidCompleteData,
+    getPlaidCompleteData: null,
     userDocuments,
   };
 };

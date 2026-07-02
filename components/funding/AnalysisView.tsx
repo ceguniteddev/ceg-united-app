@@ -55,6 +55,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import PricingPlansGrid from "@/components/funding/PricingPlansGrid";
 import { DOCUMENT_TYPES } from "@/lib/document-types";
 import UploadFile from "@/components/UploadFileV2";
+import { useQueryClient } from "@tanstack/react-query";
 
 // const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -64,6 +65,7 @@ type Props = {
 type Item = { id: string; analysis?: string };
 
 const AnalysisView = ({ referenceNumber }: Props) => {
+  const queryClient = useQueryClient();
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
   const { updateAnalysis } = useAnalysisMutation();
   const { isAdmin, role, userData } = useAuth();
@@ -71,6 +73,14 @@ const AnalysisView = ({ referenceNumber }: Props) => {
   const { appliedFunding } = useGetApplyFundingByReferenceNumber({
     referenceNumber,
   });
+
+  React.useEffect(() => {
+    if (appliedFunding?.analysisStatus !== "In Progress") {
+      queryClient.invalidateQueries({
+        queryKey: ["GET_APPLICATION_ANALYSIS", referenceNumber],
+      });
+    }
+  }, [appliedFunding?.analysisStatus, referenceNumber, queryClient]);
 
   if (isLoading) return <Spinner displayText="Loading analysis..." />;
   // console.log("Analysis data:", appliedFunding);
