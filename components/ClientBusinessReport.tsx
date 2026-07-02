@@ -241,9 +241,12 @@ export default function BusinessRecordsPage({ userId }: { userId: string }) {
     setEditingBusiness(null);
   };
 
-  const list = businessData?.map((r: Business) =>
-    businessRecordSchema.parse(r),
-  );
+  const list = businessData
+    ?.map((r: Business) => {
+      const result = businessRecordSchema.safeParse(r);
+      return result.success ? result.data : null;
+    })
+    .filter((r): r is Business => r !== null);
 
   if (isLoading) {
     return <Spinner displayText="Loading data…" />;
