@@ -34,6 +34,7 @@ import { useGetClientApplyFunding } from "@/hooks/apply-funding";
 import { RowActions } from "@/app/(admin)/admin/funding-application/_components/RowActions";
 import { ApplyFundingWithUser } from "@/schema/apply-funding";
 import { PsfInvoicesSection } from "@/components/income-funding/PsfInvoicesSection";
+import ClientBusiness from "@/app/(client)/client/my-business/_components/ClientBusiness";
 
 const ClientProfilePage = () => {
   const params = useParams();
@@ -168,7 +169,7 @@ const ClientProfilePage = () => {
       </TabsContent>
 
       <TabsContent value="business" className="w-full">
-        <BusinessRecordsPage userId={userId} />
+        <ClientBusiness userId={userId} isAdminView={true} />
       </TabsContent>
 
       <TabsContent value="applied-funding" className="w-full">

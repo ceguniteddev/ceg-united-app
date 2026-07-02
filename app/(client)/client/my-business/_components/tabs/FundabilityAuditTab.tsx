@@ -14,10 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  createMembershipCheckoutConfig,
-  createAddonCheckoutConfig,
-} from "@/service/whop";
+import { createMembershipCheckoutConfig } from "@/service/whop";
 import { useFeeSettings } from "@/hooks/fee-settings";
 import { AddonCheckoutView } from "@/components/pricing-plans/AddonCheckoutView";
 import { toast } from "sonner";
@@ -27,12 +24,19 @@ import IconMenu from "@/components/icon-menu";
 interface Props {
   business: Business;
   factors?: CompatibilityFactor[];
+  userId?: string;
+  isAdminView?: boolean;
 }
 
-export function FundabilityAuditTab({ business, factors = [] }: Props) {
-  const { userData } = useAuth();
-  const { data: userMembership } = useMembership(userData?.id);
-  const { data: feeSettings } = useFeeSettings();
+export function FundabilityAuditTab({
+  business,
+  factors = [],
+  userId,
+  isAdminView = false,
+}: Props) {
+  const { userData: authUserData } = useAuth();
+  const targetUserId = userId || authUserData?.id;
+  const { data: userMembership } = useMembership(targetUserId);
   const router = useRouter();
 
   // Pricing / Checkout state
@@ -52,13 +56,13 @@ export function FundabilityAuditTab({ business, factors = [] }: Props) {
     amount: number,
     selectedAddons: string[] = [],
   ) => {
-    if (!userData?.id) return;
+    if (!targetUserId) return;
     try {
       setIsCreatingCheckout(true);
       setPendingAddons(selectedAddons);
       setIsAddonCheckout(false);
       const res = await createMembershipCheckoutConfig({
-        userId: userData.id,
+        userId: targetUserId,
         planId: planId as any,
         selectedAddonIds: selectedAddons,
       });
@@ -194,64 +198,69 @@ export function FundabilityAuditTab({ business, factors = [] }: Props) {
       )}
 
       {/* Pricing Modals */}
-      <ResponsiveDialog
-        isOpen={isPricingModalOpen}
-        setIsOpen={setPricingModalOpen}
-        title="Upgrade to Resolve Factors"
-        description=""
-        className="sm:max-w-[90vw] md:max-w-6xl max-h-[90vh] overflow-y-auto p-0 border-0 z-[100]"
-      >
-        <PricingPlans
-          isLoading={isCreatingCheckout}
-          onSelectPlan={handleSelectPlan}
-        />
-      </ResponsiveDialog>
+      {!isAdminView && (
+        <>
+          <ResponsiveDialog
+            isOpen={isPricingModalOpen}
+            setIsOpen={setPricingModalOpen}
+            title="Upgrade to Resolve Factors"
+            description=""
+            className="sm:max-w-[90vw] md:max-w-6xl max-h-[90vh] overflow-y-auto p-0 border-0 z-[100]"
+          >
+            <PricingPlans
+              isLoading={isCreatingCheckout}
+              onSelectPlan={handleSelectPlan}
+            />
+          </ResponsiveDialog>
 
-      <Sheet open={isCheckoutSheetOpen} onOpenChange={setCheckoutSheetOpen}>
-        <SheetContent
-          side="right"
-          className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden z-[100]"
-        >
-          <SheetHeader className="px-6 py-4 border-b border-gray-200">
-            <SheetTitle className="text-xl font-bold">
-              Secure Checkout
-            </SheetTitle>
-          </SheetHeader>
-          <div className="flex-1 overflow-y-auto">
-            {checkoutId &&
-              selectedPlan &&
-              userData &&
-              (isAddonCheckout ? (
-                <AddonCheckoutView
-                  checkoutId={checkoutId}
-                  userId={userData.id!}
-                  addonId={selectedPlan.id}
-                  amount={selectedPlan.amount}
-                  prefillEmail={userData.email || ""}
-                  onPaymentCompleteAction={() => {
-                    setCheckoutSheetOpen(false);
-                    router.refresh();
-                  }}
-                />
-              ) : (
-                <MembershipCheckoutView
-                  checkoutId={checkoutId}
-                  userId={userData.id!}
-                  tierId={selectedPlan.id}
-                  amount={selectedPlan.amount}
-                  prefillEmail={userData.email || ""}
-                  pendingAddons={pendingAddons}
-                  membershipAmount={selectedPlan?.amount ?? 0}
-                  onPaymentCompleteAction={() => {
-                    // Checkout is now 1-step, just close the modal
-                    setCheckoutSheetOpen(false);
-                    router.refresh();
-                  }}
-                />
-              ))}
-          </div>
-        </SheetContent>
-      </Sheet>
+          <Sheet open={isCheckoutSheetOpen} onOpenChange={setCheckoutSheetOpen}>
+            <SheetContent
+              side="right"
+              className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden z-[100]"
+            >
+              <SheetHeader className="px-6 py-4 border-b border-gray-200">
+                <SheetTitle className="text-xl font-bold">
+                  Secure Checkout
+                </SheetTitle>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto">
+                {checkoutId &&
+                  selectedPlan &&
+                  authUserData &&
+                  targetUserId &&
+                  (isAddonCheckout ? (
+                    <AddonCheckoutView
+                      checkoutId={checkoutId}
+                      userId={targetUserId}
+                      addonId={selectedPlan.id}
+                      amount={selectedPlan.amount}
+                      prefillEmail={authUserData.email || ""}
+                      onPaymentCompleteAction={() => {
+                        setCheckoutSheetOpen(false);
+                        router.refresh();
+                      }}
+                    />
+                  ) : (
+                    <MembershipCheckoutView
+                      checkoutId={checkoutId}
+                      userId={targetUserId}
+                      tierId={selectedPlan.id}
+                      amount={selectedPlan.amount}
+                      prefillEmail={authUserData.email || ""}
+                      pendingAddons={pendingAddons}
+                      membershipAmount={selectedPlan?.amount ?? 0}
+                      onPaymentCompleteAction={() => {
+                        // Checkout is now 1-step, just close the modal
+                        setCheckoutSheetOpen(false);
+                        router.refresh();
+                      }}
+                    />
+                  ))}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </>
+      )}
     </div>
   );
 }
