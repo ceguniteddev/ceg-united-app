@@ -116,7 +116,7 @@ Monitor critical alerts:
 
 - System response times
 - Error rates
-- Integration status (Plaid, Mux, etc.)
+- Integration status (Mux, etc.)
 - Storage usage
 - API call volumes
 

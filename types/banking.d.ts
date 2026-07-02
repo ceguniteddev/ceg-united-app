@@ -1,5 +1,3 @@
- 
-
 declare type SearchParamProps = {
   params: { [key: string]: string };
   searchParams: { [key: string]: string | string[] | undefined };
@@ -94,7 +92,12 @@ declare type Bank = {
   shareableId: string;
 };
 
-declare type AccountTypes = "depository" | "credit" | "loan " | "investment" | "other";
+declare type AccountTypes =
+  | "depository"
+  | "credit"
+  | "loan "
+  | "investment"
+  | "other";
 
 declare type Category = "Food and Drink" | "Travel" | "Transfer";
 
@@ -169,12 +172,6 @@ declare interface PageHeaderProps {
 declare interface PaginationProps {
   page: number;
   totalPages: number;
-}
-
-declare interface PlaidLinkProps {
-  user: User;
-  variant?: "primary" | "ghost";
-  dwollaCustomerId?: string;
 }
 
 // declare type User = sdk.Models.Document & {
@@ -277,7 +274,6 @@ declare interface getTransactionsProps {
 declare interface CreateFundingSourceOptions {
   customerId: string; // Dwolla Customer ID
   fundingSourceName: string; // Dwolla Funding Source Name
-  plaidToken: string; // Plaid Account Processor Token
   _links: object; // Dwolla On Demand Authorization Link
 }
 

@@ -38,7 +38,7 @@ describe("admin/funding-application/documents hooks", () => {
 
       expect(result.current.documents).toEqual(mockData);
       expect(global.fetch).toHaveBeenCalledWith(
-        "/api/plaid/u1/document/REF-001",
+        "/api/user/u1/document/REF-001",
         { method: "GET" },
       );
     });

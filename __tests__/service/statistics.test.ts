@@ -76,10 +76,6 @@ vi.mock("@/service/crs", () => ({
   getCRSBusinessProfile: vi.fn(),
 }));
 
-vi.mock("@/service/plaid/data", () => ({
-  getPlaidCompleteDataForUser: vi.fn(),
-}));
-
 vi.mock("@/lib/date-parser", () => ({
   normalizeAllDates: vi.fn((x: any) => x),
 }));
@@ -106,7 +102,6 @@ import {
   getCRSBusinessScore,
   getCRSBusinessProfile,
 } from "@/service/crs";
-import { getPlaidCompleteDataForUser } from "@/service/plaid/data";
 
 describe("service/statistics", () => {
   beforeEach(() => {
@@ -230,7 +225,6 @@ describe("service/statistics", () => {
       vi.mocked(getFundMappingAnalysisDetails).mockResolvedValue([] as any);
       vi.mocked(getCRSReport).mockResolvedValue([] as any);
       vi.mocked(getBusiness).mockResolvedValue([] as any);
-      vi.mocked(getPlaidCompleteDataForUser).mockResolvedValue(null as any);
     });
 
     it("returns object with expected keys", async () => {
@@ -241,7 +235,6 @@ describe("service/statistics", () => {
       expect(result).toHaveProperty("fundingApplications");
       expect(result).toHaveProperty("approvedFunds");
       expect(result).toHaveProperty("businessesWithCrsData");
-      expect(result).toHaveProperty("getPlaidCompleteData");
     });
 
     it("fetches user data by userId", async () => {
@@ -267,13 +260,6 @@ describe("service/statistics", () => {
     it("fetches CRS report for the user", async () => {
       await getClientStatistics("user-1");
       expect(vi.mocked(getCRSReport)).toHaveBeenCalledWith("user-1");
-    });
-
-    it("fetches plaid data for the user", async () => {
-      await getClientStatistics("user-1");
-      expect(vi.mocked(getPlaidCompleteDataForUser)).toHaveBeenCalledWith(
-        "user-1",
-      );
     });
 
     it("returns empty businessesWithCrsData when user has no businesses", async () => {

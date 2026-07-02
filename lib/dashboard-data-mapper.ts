@@ -68,12 +68,8 @@ export function transformClientDataToDashboard(
 ): DashboardData | null {
   if (!clientData) return null;
 
-  const {
-    fundingApplications,
-    crsReportData,
-    businessesWithCrsData,
-    getPlaidCompleteData,
-  } = clientData;
+  const { fundingApplications, crsReportData, businessesWithCrsData } =
+    clientData;
 
   // 1. Funding Metrics
   const totalRequested =
@@ -277,13 +273,11 @@ export function transformClientDataToDashboard(
   // 6. Next Steps (hardcoded for now - TODO: integrate with user onboarding state)
 
   const hasBankStatements =
-    (getPlaidCompleteData?.length || 0) > 0 ||
     clientData.userDocuments?.some(
       (doc) =>
         doc.name.includes("PERSONAL_BANK_STATEMENTS") ||
         doc.name.includes("BANK_STATEMENTS"),
-    ) ||
-    false;
+    ) || false;
 
   const hasBusiness = businessesWithCrsData.length > 0;
   const hasApplied = (fundingApplications?.length || 0) > 0;
