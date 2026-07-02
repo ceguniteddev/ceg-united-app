@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   business: Business;
+  userId?: string;
+  isAdminView?: boolean;
 }
 
 function getInitials(name: string) {
@@ -17,10 +19,15 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export function BusinessCard({ business }: Props) {
+export function BusinessCard({ business, userId, isAdminView = false }: Props) {
+  const href =
+    isAdminView && userId
+      ? `/admin/clients/${userId}/business/${business.id}`
+      : `/client/my-business/${business.id}`;
+
   return (
     <Link
-      href={`/client/my-business/${business.id}`}
+      href={href}
       className="block text-left bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 w-full"
     >
       {/* Header */}
