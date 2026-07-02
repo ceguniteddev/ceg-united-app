@@ -246,7 +246,7 @@ export default function BusinessRecordsPage({ userId }: { userId: string }) {
       const result = businessRecordSchema.safeParse(r);
       return result.success ? result.data : null;
     })
-    .filter((r): r is Business => r !== null);
+    .filter((r: Business | null): r is Business => r !== null);
 
   if (isLoading) {
     return <Spinner displayText="Loading data…" />;
