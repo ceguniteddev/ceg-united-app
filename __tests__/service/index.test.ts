@@ -6,7 +6,7 @@ vi.mock("next/headers", () => ({
 }));
 
 import { headers } from "next/headers";
-import { getBaseUrl, getAppPlaidWebhookURL } from "@/service/index";
+import { getBaseUrl } from "@/service/index";
 
 describe("service/index", () => {
   const mockHeadersGet = vi.fn();
@@ -70,30 +70,6 @@ describe("service/index", () => {
       const result = await getBaseUrl();
 
       expect(result).toBe("http://localhost:3000");
-    });
-  });
-
-  describe("getAppPlaidWebhookURL", () => {
-    it("returns base URL + /api/plaid/webhook in development", async () => {
-      process.env.ENVIRONMENT = "development";
-
-      const result = await getAppPlaidWebhookURL();
-
-      expect(result).toBe(
-        "https://hare-smashing-basically.ngrok-free.app/api/plaid/webhook",
-      );
-    });
-
-    it("returns constructed URL + /api/plaid/webhook using headers", async () => {
-      mockHeadersGet.mockImplementation((key: string) => {
-        if (key === "x-forwarded-proto") return "https";
-        if (key === "x-forwarded-host") return "api.cegunited.com";
-        return null;
-      });
-
-      const result = await getAppPlaidWebhookURL();
-
-      expect(result).toBe("https://api.cegunited.com/api/plaid/webhook");
     });
   });
 });

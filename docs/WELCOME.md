@@ -23,7 +23,7 @@ Unlock premium learning materials designed to empower you with financial knowled
 ## Getting Started
 
 1. **Complete Your Profile** - Ensure your information is up-to-date for the best experience
-2. **Link Your Accounts** - Connect your bank accounts securely through Plaid
+2. **Link Your Accounts** - Connect your bank accounts securely
 3. **Explore Your Dashboard** - View your financial overview and available opportunities
 4. **Apply for Funding** - Submit funding applications when you're ready
 

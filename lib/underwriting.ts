@@ -2,7 +2,7 @@
 // CEG Brain — Income-Based Funding — Underwriting Engine
 // ============================================
 // Pure, testable functions. No React, no Firebase imports.
-// Plug in real Plaid + bureau data and call calculateMaxFunding(input).
+// Plug in real bank data + bureau data and call calculateMaxFunding(input).
 
 import type {
   RiskGrade,

@@ -18,10 +18,6 @@ vi.mock("@/service/user", () => ({
   getUserById: vi.fn(),
 }));
 
-vi.mock("@/lib/plaid", () => ({
-  isPlaidProductionReady: vi.fn(),
-}));
-
 describe("proxy middleware API validation", () => {
   let nextSpy: any;
   let jsonSpy: any;

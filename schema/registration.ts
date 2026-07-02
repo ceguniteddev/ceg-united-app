@@ -104,5 +104,3 @@ export type UserWithId = User & {
   brokerName: string;
   paymentAmount?: number;
 };
-
-export type UserPlaid = User & { plaidData?: PlaidAccessToken[]; id: string };
