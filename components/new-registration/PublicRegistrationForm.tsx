@@ -24,7 +24,6 @@ import {
   UserPlus,
   Loader2,
   CheckCircle,
-  CircleCheck,
   CircleCheckBigIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -133,7 +132,6 @@ export function PublicRegistrationForm() {
         employmentType: businessDetailsData.employmentType,
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHydrated]);
 
   // Sync business details to formStep3 when moving to step 3
@@ -674,7 +672,7 @@ export function PublicRegistrationForm() {
                   <div className="grid grid-cols-1 gap-y-2 text-sm">
                     <div>
                       <span className="text-gray-500 font-medium">
-                        Driver's License:
+                        {`Driver's License:`}
                       </span>{" "}
                       <span className="font-medium text-gray-900">
                         {documentUploadData.driverLicense?.uploaded
