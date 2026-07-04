@@ -2,7 +2,6 @@
 
 import { useFormContext } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CustomFormField } from "@/components/CustomFormField";
 import { Separator } from "@/components/ui/separator";
 import UploadFile from "@/components/UploadFileV2";
 import { useAuth } from "@/provider/AuthContext";

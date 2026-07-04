@@ -1,5 +1,4 @@
 import {
-  useAnalysisMutation,
   useAnalysisQuery,
   useEmailClientAnalysisData,
   useRefreshAnalysisData,
@@ -67,7 +66,6 @@ type Item = { id: string; analysis?: string };
 const AnalysisView = ({ referenceNumber }: Props) => {
   const queryClient = useQueryClient();
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
-  const { updateAnalysis } = useAnalysisMutation();
   const { isAdmin, role, userData } = useAuth();
   const { data: userMembership } = useMembership(userData?.id);
   const { appliedFunding } = useGetApplyFundingByReferenceNumber({
@@ -122,22 +120,14 @@ const AnalysisView = ({ referenceNumber }: Props) => {
             <UploadBankStatementsButton userId={appliedFunding.userId} />
           )}
           {role === "Client" && userMembership?.status !== "active" && (
-            <PricingDetailsButton referenceNumber={referenceNumber} />
+            <PricingDetailsButton />
           )}
         </div>
       </div>
       <Card className="w-full border-none shadow-none sm:border-solid sm:border sm:shadow-sm bg-transparent sm:bg-card">
         <CardContent className="p-0 sm:p-6 space-y-4 sm:space-y-8">
           {(analysisData as Item[])?.map((item) => (
-            <AnalysisDetailsView
-              key={item.id}
-              updateAnalysis={({ referenceNumber, id, analysis }) =>
-                updateAnalysis({ referenceNumber, id, analysis })
-              }
-              referenceNumber={referenceNumber}
-              id={item.id}
-              analysis={item.analysis ?? ""}
-            />
+            <AnalysisDetailsView key={item.id} analysis={item.analysis ?? ""} />
           ))}
         </CardContent>
       </Card>
@@ -393,11 +383,7 @@ const RefreshAnalysisData = ({
   );
 };
 
-const PricingDetailsButton = ({
-  referenceNumber,
-}: {
-  referenceNumber: string;
-}) => {
+const PricingDetailsButton = () => {
   const [isOpen, setIsOpen] = React.useState(false);
 
   return (
@@ -457,26 +443,10 @@ export function extractHtmlFromFence(input: string): string {
 }
 
 type PropsView = {
-  id: string;
   analysis: string;
-  referenceNumber: string;
-  updateAnalysis: ({
-    referenceNumber,
-    id,
-    analysis,
-  }: {
-    analysis: string;
-    id: string;
-    referenceNumber: string;
-  }) => Promise<unknown> | void;
 };
 
-const AnalysisDetailsView = ({
-  referenceNumber,
-  analysis,
-  id,
-  updateAnalysis,
-}: PropsView) => {
+const AnalysisDetailsView = ({ analysis }: PropsView) => {
   // const { role } = useAuth();
   const initial = React.useMemo(
     () => extractHtmlFromFence(analysis),

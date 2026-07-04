@@ -24,7 +24,6 @@ import {
   UserPlus,
   Loader2,
   CheckCircle,
-  CircleCheck,
   CircleCheckBigIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -100,7 +99,10 @@ export function PublicRegistrationForm() {
 
   const formStep2 = useForm<any>({
     resolver: zodResolver(businessDetailsSchema),
-    defaultValues: businessDetailsData,
+    defaultValues: {
+      ...businessDetailsData,
+      businessPhoneNumber: businessDetailsData.businessPhoneNumber || "",
+    },
   });
 
   const formStep3 = useForm<any>({
@@ -133,7 +135,6 @@ export function PublicRegistrationForm() {
         employmentType: businessDetailsData.employmentType,
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHydrated]);
 
   // Sync business details to formStep3 when moving to step 3
@@ -163,9 +164,14 @@ export function PublicRegistrationForm() {
       if (businessData.fundingType === FundingType.Personal) {
         businessData.timeInBusiness = null;
         businessData.businessName = null;
+        businessData.businessPhoneNumber = null;
         businessData.ein = null;
         businessData.businessIndustry = null;
         businessData.businessCreditScore = null;
+        businessData.businessStreetAddress = null;
+        businessData.businessCityAddress = null;
+        businessData.businessStateAddress = null;
+        businessData.businessPostalAddress = null;
       } else if (businessData.fundingType === FundingType.Business) {
         businessData.creditScore = null;
         businessData.employmentType = null;
@@ -241,9 +247,14 @@ export function PublicRegistrationForm() {
       if (businessData.fundingType === FundingType.Personal) {
         businessData.timeInBusiness = null;
         businessData.businessName = null;
+        businessData.businessPhoneNumber = null;
         businessData.ein = null;
         businessData.businessIndustry = null;
         businessData.businessCreditScore = null;
+        businessData.businessStreetAddress = null;
+        businessData.businessCityAddress = null;
+        businessData.businessStateAddress = null;
+        businessData.businessPostalAddress = null;
       } else if (businessData.fundingType === FundingType.Business) {
         businessData.creditScore = null;
         businessData.employmentType = null;
@@ -338,9 +349,14 @@ export function PublicRegistrationForm() {
       if (latestBusinessData.fundingType === FundingType.Personal) {
         latestBusinessData.timeInBusiness = null;
         latestBusinessData.businessName = null;
+        latestBusinessData.businessPhoneNumber = null;
         latestBusinessData.ein = null;
         latestBusinessData.businessIndustry = null;
         latestBusinessData.businessCreditScore = null;
+        latestBusinessData.businessStreetAddress = null;
+        latestBusinessData.businessCityAddress = null;
+        latestBusinessData.businessStateAddress = null;
+        latestBusinessData.businessPostalAddress = null;
       } else if (latestBusinessData.fundingType === FundingType.Business) {
         latestBusinessData.creditScore = null;
         latestBusinessData.employmentType = null;
@@ -640,6 +656,14 @@ export function PublicRegistrationForm() {
                         </div>
                         <div>
                           <span className="text-gray-500 font-medium">
+                            Business Contact Number:
+                          </span>{" "}
+                          <span className="font-medium text-gray-900">
+                            {businessDetailsData.businessPhoneNumber}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 font-medium">
                             EIN:
                           </span>{" "}
                           <span className="font-medium text-gray-900">
@@ -662,6 +686,20 @@ export function PublicRegistrationForm() {
                             {businessDetailsData.businessIndustry}
                           </span>
                         </div>
+                        {businessDetailsData.businessStreetAddress && (
+                          <div className="col-span-1 sm:col-span-2">
+                            <span className="text-gray-500 font-medium">
+                              Business Address:
+                            </span>{" "}
+                            <span className="font-medium text-gray-900 block">
+                              {businessDetailsData.businessStreetAddress}
+                              <br />
+                              {businessDetailsData.businessCityAddress},{" "}
+                              {businessDetailsData.businessStateAddress}{" "}
+                              {businessDetailsData.businessPostalAddress}
+                            </span>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
@@ -674,7 +712,7 @@ export function PublicRegistrationForm() {
                   <div className="grid grid-cols-1 gap-y-2 text-sm">
                     <div>
                       <span className="text-gray-500 font-medium">
-                        Driver's License:
+                        {`Driver's License:`}
                       </span>{" "}
                       <span className="font-medium text-gray-900">
                         {documentUploadData.driverLicense?.uploaded
