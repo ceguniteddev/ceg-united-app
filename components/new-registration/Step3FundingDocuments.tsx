@@ -529,6 +529,23 @@ export function Step3Funding() {
   };
 
   const extractBusinessBankStatementData = async (files: any[]) => {
+    const {
+      businessStreetAddress,
+      businessCityAddress,
+      businessStateAddress,
+      businessPostalAddress,
+    } = getValues();
+
+    // Only run OCR if the business address fields are all empty.
+    if (
+      businessStreetAddress ||
+      businessCityAddress ||
+      businessStateAddress ||
+      businessPostalAddress
+    ) {
+      return;
+    }
+
     try {
       toast.info("Extracting business address from bank statement...", {
         id: "ocr-toast-business",

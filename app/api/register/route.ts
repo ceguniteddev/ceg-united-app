@@ -3,7 +3,11 @@ import { authSchema } from "@/schema/new-registration";
 import { registerUser } from "@/service/user";
 import { User } from "@/schema/registration";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
-import { ApplyFunding, FUNDING_PRODUCTS_BY_CATEGORY } from "@/schema/apply-funding";
+import {
+  ApplyFunding,
+  FundingApplicationType,
+  FUNDING_PRODUCTS_BY_CATEGORY,
+} from "@/schema/apply-funding";
 
 function mapFundingData(body: any): ApplyFunding | undefined {
   if (!body.business || !body.business.fundingType) {
@@ -16,7 +20,9 @@ function mapFundingData(body: any): ApplyFunding | undefined {
     Both: "Personal And Business",
   };
 
-  const mappedType = typeMap[body.business.fundingType];
+  const mappedType = typeMap[
+    body.business.fundingType
+  ] as FundingApplicationType;
 
   if (!mappedType) {
     return undefined;
@@ -57,6 +63,8 @@ function mapFundingData(body: any): ApplyFunding | undefined {
     appliedDate: new Date(),
     status: "New",
     analysisStatus: "Completed",
+    consentConfirmTerms: body.auth.consentConfirmTerms,
+    consentConfirmPrivacy: body.auth.consentConfirmPrivacy,
   };
 
   if (body.documents) {
