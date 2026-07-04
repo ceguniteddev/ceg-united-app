@@ -52,7 +52,12 @@ export const businessDetailsSchema = z
     timeInBusiness: z.string().nullable().optional(),
     businessIndustry: z.string().nullable().optional(),
     businessName: z.string().nullable().optional(),
+    businessPhoneNumber: z.string().nullable().optional(),
     ein: z.string().nullable().optional(),
+    businessStreetAddress: z.string().nullable().optional(),
+    businessCityAddress: z.string().nullable().optional(),
+    businessStateAddress: z.string().nullable().optional(),
+    businessPostalAddress: z.string().nullable().optional(),
   })
   .superRefine((data, ctx) => {
     if (!data.fundingAmount || data.fundingAmount <= 0) {

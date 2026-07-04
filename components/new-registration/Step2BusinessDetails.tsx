@@ -8,6 +8,7 @@ import { FundingType } from "@/schema/new-registration";
 import { FormInput } from "../forms/form-input";
 import { FormSelect } from "../forms/form-select";
 import { FormEINInput } from "../forms/form-ein-number-input";
+import { FormPhoneNumberInput } from "../forms/form-phone-number-input";
 
 export function Step2BusinessDetails() {
   const form = useFormContext();
@@ -214,6 +215,14 @@ export function Step2BusinessDetails() {
                 type="text"
                 required
                 placeholder="e.g. Acme Corp"
+              />
+
+              <FormPhoneNumberInput
+                control={form.control}
+                name="businessPhoneNumber"
+                label="Business Contact Number"
+                required
+                placeholder="e.g. (123) 456-7890"
               />
 
               <FormEINInput

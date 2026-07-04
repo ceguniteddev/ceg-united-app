@@ -3,9 +3,9 @@ import { authSchema } from "@/schema/new-registration";
 import { registerUser } from "@/service/user";
 import { User } from "@/schema/registration";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
-import { FUNDING_PRODUCTS_BY_CATEGORY } from "@/schema/apply-funding";
+import { ApplyFunding, FUNDING_PRODUCTS_BY_CATEGORY } from "@/schema/apply-funding";
 
-function mapFundingData(body: any) {
+function mapFundingData(body: any): ApplyFunding | undefined {
   if (!body.business || !body.business.fundingType) {
     return undefined;
   }
@@ -27,7 +27,7 @@ function mapFundingData(body: any) {
       ? "Personal & Business Funding"
       : `${mappedType} Funding`;
 
-  const fundingData: any = {
+  const fundingData: ApplyFunding = {
     fundingType: mappedType,
     interestedProduct: interestedProduct,
     fundingProducts: FUNDING_PRODUCTS_BY_CATEGORY[interestedProduct] || [],
@@ -41,8 +41,13 @@ function mapFundingData(body: any) {
         : undefined,
     howDoYouGetPaid: body.business.employmentType,
     businessName: body.business.businessName,
+    businessPhoneNumber: body.business.businessContactNumber,
     employerIdentificationNumber: body.business.ein,
     industryField: body.business.businessIndustry,
+    businessStreetAddress: body.business.businessStreetAddress,
+    businessCityAddress: body.business.businessCityAddress,
+    businessStateAddress: body.business.businessStateAddress,
+    businessPostalAddress: body.business.businessPostalAddress,
     ficoCreditScore:
       mappedType === "Personal" || mappedType === "Personal And Business"
         ? body.business.creditScore
@@ -127,19 +132,6 @@ export async function POST(req: Request) {
     // Call service to register the user
     const fundingData = mapFundingData(body);
 
-    // logInfo("Parsed Auth Data:", parsedAuth);
-
-    // let fundingDataLog = undefined;
-    // if (fundingData) {
-    //   const {
-    //     driverLicenseDocuments,
-    //     bankStatements,
-    //     paystubs,
-    //     ...restFundingData
-    //   } = fundingData;
-    //   fundingDataLog = restFundingData;
-    // }
-    // logInfo("Mapped Funding Data:", fundingDataLog);
     await registerUser({
       user: {
         ...parsedAuth,
