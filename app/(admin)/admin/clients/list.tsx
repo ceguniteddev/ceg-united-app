@@ -25,7 +25,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ChevronDownIcon, MoreHorizontal, ViewIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  MoreHorizontal,
+  ViewIcon,
+  DownloadIcon,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import IconMenu from "@/components/icon-menu";
 
@@ -336,6 +341,73 @@ const ClientsList = () => {
     }
   }, [whopPaymentFilter, table]);
 
+  const exportToExcel = () => {
+    const rows = table.getFilteredRowModel().rows;
+
+    const headers = [
+      "Client Name",
+      "Email",
+      "Phone Number",
+      "Broker",
+      "Date Added",
+      "Denefits Contract",
+      "Whop Payment",
+      "Membership",
+    ];
+
+    const csvData = rows.map((row) => {
+      const client = row.original;
+
+      const contract = denefitsContractsMap.get(client.id);
+      const denefitsStatus = contract ? "Active" : "InActive";
+
+      const whopPayment = whopPaymentsMap.get(client.id);
+      const whopPaymentStatus = whopPayment ? "Active" : "InActive";
+
+      const membership = membershipsMap.get(client.id);
+      let membershipType = "None";
+      if (membership && membership.status === "active") {
+        if (membership.tier === "tier_starter") membershipType = "Starter";
+        else if (membership.tier === "tier_pro") membershipType = "Pro";
+        else if (membership.tier === "tier_executive")
+          membershipType = "Executive";
+      }
+
+      const name = [client.firstName, client.middleName, client.lastName]
+        .filter(Boolean)
+        .join(" ");
+      const brokerName = client.brokerName || "";
+      const regDate = client.registrationDate
+        ? new Date(client.registrationDate).toLocaleDateString()
+        : "";
+
+      return [
+        `"${name}"`,
+        `"${client.email || ""}"`,
+        `"${client.phoneNumber || ""}"`,
+        `"${brokerName}"`,
+        `"${regDate}"`,
+        `"${denefitsStatus}"`,
+        `"${whopPaymentStatus}"`,
+        `"${membershipType}"`,
+      ].join(",");
+    });
+
+    const csv = [headers.join(","), ...csvData].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `clients_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (
     isLoading ||
     denefitsContractsLoading ||
@@ -348,12 +420,23 @@ const ClientsList = () => {
   return (
     <div className="mx-auto w-full">
       <div className="py-4 space-y-3">
-        <Input
-          placeholder="Filter"
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="w-full"
-        />
+        <div className="flex flex-col sm:flex-row gap-3 items-center">
+          <Input
+            placeholder="Filter"
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="w-full"
+          />
+          <Button
+            onClick={exportToExcel}
+            className="cursor-pointer w-full sm:w-auto whitespace-nowrap bg-green-600 hover:bg-green-700 text-white"
+          >
+            <IconMenu
+              text="Export to Excel"
+              icon={<DownloadIcon className="h-4 w-4" />}
+            />
+          </Button>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Membership Filter */}
           <div className="flex flex-col gap-1.5">
