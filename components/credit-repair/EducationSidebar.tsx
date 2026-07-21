@@ -46,7 +46,7 @@ export function EducationSidebar() {
       </ul>
 
       <a
-        href="https://www.consumer.ftc.gov/articles/0151-disputing-errors-credit-reports"
+        href="https://consumer.ftc.gov/articles/disputing-errors-your-credit-reports"
         target="_blank"
         rel="noreferrer"
         className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-800"
