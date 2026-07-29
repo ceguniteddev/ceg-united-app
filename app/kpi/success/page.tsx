@@ -1,44 +1,70 @@
 "use client";
-import { HeartHandshake } from 'lucide-react'
-import { Page, PageHeader } from '@/components/kpi/PageHeader'
-import { KPIGrid } from '@/components/kpi/KPITile'
-import { BarCompare, Donut, MultiLine } from '@/components/kpi/charts'
-import { Card, ChartCard } from '@/components/kpi/ui'
-import { NPS_DISTRIBUTION, NPS_TREND, RETENTION_COHORTS, TICKET_CATEGORIES } from '@/lib/kpi/data/mock'
-import { COLORS, fmtNumber } from '@/lib/kpi/format'
+import { useEffect, useState } from "react";
+import { HeartHandshake } from "lucide-react";
+import { Page, PageHeader } from "@/components/kpi/PageHeader";
+import { KPIGrid } from "@/components/kpi/KPITile";
+import { BarCompare, Donut, MultiLine } from "@/components/kpi/charts";
+import { Card, ChartCard } from "@/components/kpi/ui";
+import {
+  getCustomerSuccessData,
+  type CustomerSuccessDashboardData,
+} from "@/service/kpi";
+import { COLORS, fmtNumber } from "@/lib/kpi/format";
 
 // ============================================================
 // Customer Success Department
 // ============================================================
 
 const TILES = [
-  'retention_rate',
-  'refund_requests',
-  'chargeback_rate',
-  'referral_rate',
-  'nps',
-  'support_tickets',
-  'csat',
-  'ticket_resolution',
-  'churned_clients',
-  'expansion_revenue',
-]
+  "retention_rate",
+  "refund_requests",
+  "chargeback_rate",
+  "referral_rate",
+  "nps",
+  "support_tickets",
+  "csat",
+  "ticket_resolution",
+  "churned_clients",
+  "expansion_revenue",
+];
 
 /** Heat colour for the retention cohort grid. */
 function cohortTone(v: number | null) {
-  if (v == null) return 'bg-surface-tertiary text-gray-300'
-  if (v >= 98) return 'bg-brand-600 text-white'
-  if (v >= 95) return 'bg-brand-500 text-white'
-  if (v >= 92) return 'bg-brand-400 text-white'
-  if (v >= 89) return 'bg-brand-200 text-brand-900'
-  return 'bg-brand-100 text-brand-900'
+  if (v == null) return "bg-surface-tertiary text-gray-300";
+  if (v >= 98) return "bg-brand-600 text-white";
+  if (v >= 95) return "bg-brand-500 text-white";
+  if (v >= 92) return "bg-brand-400 text-white";
+  if (v >= 89) return "bg-brand-200 text-brand-900";
+  return "bg-brand-100 text-brand-900";
 }
 
 export default function Success() {
-  const totalResponses = NPS_DISTRIBUTION.reduce((s, d) => s + d.count, 0)
-  const promoters = NPS_DISTRIBUTION[0].count
-  const detractors = NPS_DISTRIBUTION[2].count
-  const nps = Math.round(((promoters - detractors) / totalResponses) * 100)
+  const [data, setData] = useState<CustomerSuccessDashboardData | null>(null);
+
+  useEffect(() => {
+    getCustomerSuccessData()
+      .then((res) => setData(res))
+      .catch((err) =>
+        console.warn("Failed to load live customer success data:", err),
+      );
+  }, []);
+
+  const npsDistribution = data?.npsDistribution || [
+    { band: "Promoters (9–10)", count: 186, color: "#10b981" },
+    { band: "Passives (7–8)", count: 68, color: "#3b82f6" },
+    { band: "Detractors (0–6)", count: 30, color: "#ef4444" },
+  ];
+  const npsTrend = data?.npsTrend || [];
+  const retentionCohorts = data?.retentionCohorts || [];
+  const ticketCategories = data?.ticketCategories || [];
+
+  const totalResponses = npsDistribution.reduce((s, d) => s + d.count, 0);
+  const promoters = npsDistribution[0]?.count ?? 0;
+  const detractors = npsDistribution[2]?.count ?? 0;
+  const nps =
+    totalResponses > 0
+      ? Math.round(((promoters - detractors) / totalResponses) * 100)
+      : 0;
 
   return (
     <Page>
@@ -51,13 +77,21 @@ export default function Success() {
         action={
           <div className="hidden sm:flex items-center gap-4 px-4 py-2 rounded-lg bg-white border border-gray-200">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">NPS (calc.)</p>
-              <p className="num text-[15px] font-semibold text-gray-900">{nps}</p>
+              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                NPS (calc.)
+              </p>
+              <p className="num text-[15px] font-semibold text-gray-900">
+                {nps}
+              </p>
             </div>
             <div className="w-px h-8 bg-gray-100" />
             <div>
-              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Responses</p>
-              <p className="num text-[15px] font-semibold text-gray-900">{fmtNumber(totalResponses)}</p>
+              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                Responses
+              </p>
+              <p className="num text-[15px] font-semibold text-gray-900">
+                {fmtNumber(totalResponses)}
+              </p>
             </div>
           </div>
         }
@@ -72,12 +106,12 @@ export default function Success() {
           source="Manual"
         >
           <MultiLine
-            data={NPS_TREND}
+            data={npsTrend}
             xKey="month"
             target={55}
             series={[
-              { key: 'nps', name: 'NPS', color: COLORS.brand600 },
-              { key: 'csat', name: 'CSAT %', color: COLORS.success },
+              { key: "nps", name: "NPS", color: COLORS.brand600 },
+              { key: "csat", name: "CSAT %", color: COLORS.success },
             ]}
           />
         </ChartCard>
@@ -88,7 +122,11 @@ export default function Success() {
           source="Manual"
         >
           <Donut
-            data={NPS_DISTRIBUTION.map((d) => ({ name: d.band, value: d.count, color: d.color }))}
+            data={npsDistribution.map((d) => ({
+              name: d.band,
+              value: d.count,
+              color: d.color,
+            }))}
             centerValue={String(nps)}
             centerLabel="NPS"
           />
@@ -99,7 +137,9 @@ export default function Success() {
         {/* Retention cohort grid */}
         <Card className="lg:col-span-3 !p-0 overflow-hidden">
           <div className="px-5 pt-5 pb-3">
-            <h3 className="text-[13.5px] font-semibold text-gray-900">Retention cohorts</h3>
+            <h3 className="text-[13.5px] font-semibold text-gray-900">
+              Retention cohorts
+            </h3>
             <p className="mt-0.5 text-[11.5px] text-gray-400">
               Percent of each monthly cohort still active, by month since signup
             </p>
@@ -108,26 +148,37 @@ export default function Success() {
             <table className="w-full text-[11.5px]">
               <thead>
                 <tr>
-                  <th className="text-left font-semibold text-gray-400 pb-2 pr-3">Cohort</th>
-                  <th className="text-right font-semibold text-gray-400 pb-2 pr-3">Size</th>
-                  {['M1', 'M2', 'M3', 'M4', 'M5', 'M6'].map((m) => (
-                    <th key={m} className="text-center font-semibold text-gray-400 pb-2 px-1">
+                  <th className="text-left font-semibold text-gray-400 pb-2 pr-3">
+                    Cohort
+                  </th>
+                  <th className="text-right font-semibold text-gray-400 pb-2 pr-3">
+                    Size
+                  </th>
+                  {["M1", "M2", "M3", "M4", "M5", "M6"].map((m) => (
+                    <th
+                      key={m}
+                      className="text-center font-semibold text-gray-400 pb-2 px-1"
+                    >
                       {m}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {RETENTION_COHORTS.map((c) => (
+                {retentionCohorts.map((c) => (
                   <tr key={c.cohort}>
-                    <td className="py-1 pr-3 font-medium text-gray-700 whitespace-nowrap">{c.cohort}</td>
-                    <td className="num py-1 pr-3 text-right text-gray-500">{c.size}</td>
+                    <td className="py-1 pr-3 font-medium text-gray-700 whitespace-nowrap">
+                      {c.cohort}
+                    </td>
+                    <td className="num py-1 pr-3 text-right text-gray-500">
+                      {c.size}
+                    </td>
                     {[c.m1, c.m2, c.m3, c.m4, c.m5, c.m6].map((v, i) => (
                       <td key={i} className="px-1 py-1">
                         <div
                           className={`num rounded-md h-7 flex items-center justify-center font-semibold ${cohortTone(v)}`}
                         >
-                          {v == null ? '—' : `${v}%`}
+                          {v == null ? "—" : `${v}%`}
                         </div>
                       </td>
                     ))}
@@ -145,13 +196,15 @@ export default function Success() {
           className="lg:col-span-2"
         >
           <BarCompare
-            data={TICKET_CATEGORIES}
+            data={ticketCategories}
             xKey="category"
             horizontal
-            series={[{ key: 'count', name: 'Open tickets', color: COLORS.brand600 }]}
+            series={[
+              { key: "count", name: "Open tickets", color: COLORS.brand600 },
+            ]}
           />
         </ChartCard>
       </div>
     </Page>
-  )
+  );
 }

@@ -1,43 +1,60 @@
 "use client";
-import { Megaphone } from 'lucide-react'
-import { Page, PageHeader } from '@/components/kpi/PageHeader'
-import { KPIGrid } from '@/components/kpi/KPITile'
-import { Donut, FunnelBars, TrendArea } from '@/components/kpi/charts'
-import { Badge, ChartCard, TableCard } from '@/components/kpi/ui'
-import { CAMPAIGNS, LEADS_BY_SOURCE, LEADS_BY_SOURCE_OVER_TIME, MARKETING_FUNNEL } from '@/lib/kpi/data/mock'
-import { COLORS, fmtCurrency, fmtNumber, fmtPercent } from '@/lib/kpi/format'
+import { useEffect, useState } from "react";
+import { Megaphone } from "lucide-react";
+import { Page, PageHeader } from "@/components/kpi/PageHeader";
+import { KPIGrid } from "@/components/kpi/KPITile";
+import { Donut, FunnelBars, TrendArea } from "@/components/kpi/charts";
+import { Badge, ChartCard, TableCard } from "@/components/kpi/ui";
+import { getMarketingData, type MarketingDashboardData } from "@/service/kpi";
+import { COLORS, fmtCurrency, fmtNumber, fmtPercent } from "@/lib/kpi/format";
 
 // ============================================================
 // Marketing Department
 // ============================================================
 
 const TILES = [
-  'cpl',
-  'leads_total',
-  'lead_to_audit',
-  'audit_show_rate',
-  'show_to_close',
-  'revenue_per_lead',
-  'ad_spend_mtd',
-  'roas',
-  'ctr',
-  'landing_conv',
-]
+  "cpl",
+  "leads_total",
+  "lead_to_audit",
+  "audit_show_rate",
+  "show_to_close",
+  "revenue_per_lead",
+  "ad_spend_mtd",
+  "roas",
+  "ctr",
+  "landing_conv",
+];
 
-const CHANNEL_TONE: Record<string, 'brand' | 'success' | 'warning' | 'info' | 'neutral'> = {
-  Meta: 'brand',
-  Google: 'success',
-  YouTube: 'warning',
-  Referral: 'info',
-  Email: 'neutral',
-  TikTok: 'neutral',
-  Organic: 'neutral',
-}
+const CHANNEL_TONE: Record<
+  string,
+  "brand" | "success" | "warning" | "info" | "neutral"
+> = {
+  Meta: "brand",
+  Google: "success",
+  YouTube: "warning",
+  Referral: "info",
+  Email: "neutral",
+  TikTok: "neutral",
+  Organic: "neutral",
+};
 
 export default function Marketing() {
-  const totalLeads = LEADS_BY_SOURCE.reduce((s, d) => s + d.value, 0)
-  const totalSpend = CAMPAIGNS.reduce((s, c) => s + c.spend, 0)
-  const totalRevenue = CAMPAIGNS.reduce((s, c) => s + c.revenue, 0)
+  const [data, setData] = useState<MarketingDashboardData | null>(null);
+
+  useEffect(() => {
+    getMarketingData()
+      .then((res) => setData(res))
+      .catch((err) => console.warn("Failed to load live marketing data:", err));
+  }, []);
+
+  const campaigns = data?.campaigns || [];
+  const leadsBySource = data?.leadsBySource || [];
+  const leadsBySourceOverTime = data?.leadsBySourceOverTime || [];
+  const marketingFunnel = data?.marketingFunnel || [];
+
+  const totalLeads = leadsBySource.reduce((s, d) => s + d.value, 0);
+  const totalSpend = campaigns.reduce((s, c) => s + c.spend, 0);
+  const totalRevenue = campaigns.reduce((s, c) => s + c.revenue, 0);
 
   return (
     <Page>
@@ -50,15 +67,21 @@ export default function Marketing() {
         action={
           <div className="hidden sm:flex items-center gap-4 px-4 py-2 rounded-lg bg-white border border-gray-200">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Blended ROAS</p>
+              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                Blended ROAS
+              </p>
               <p className="num text-[15px] font-semibold text-gray-900">
                 {(totalRevenue / totalSpend).toFixed(2)}x
               </p>
             </div>
             <div className="w-px h-8 bg-gray-100" />
             <div>
-              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Campaigns</p>
-              <p className="num text-[15px] font-semibold text-gray-900">{CAMPAIGNS.length}</p>
+              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                Campaigns
+              </p>
+              <p className="num text-[15px] font-semibold text-gray-900">
+                {campaigns.length}
+              </p>
             </div>
           </div>
         }
@@ -72,7 +95,11 @@ export default function Marketing() {
           subtitle="Distribution for the selected period"
           source="HubSpot"
         >
-          <Donut data={LEADS_BY_SOURCE} centerValue={fmtNumber(totalLeads)} centerLabel="Leads" />
+          <Donut
+            data={leadsBySource}
+            centerValue={fmtNumber(totalLeads)}
+            centerLabel="Leads"
+          />
         </ChartCard>
 
         <ChartCard
@@ -80,7 +107,7 @@ export default function Marketing() {
           subtitle="Impression → closed won, with stage-over-stage conversion"
           source="CEG Brain"
         >
-          <FunnelBars stages={MARKETING_FUNNEL} />
+          <FunnelBars stages={marketingFunnel} />
         </ChartCard>
       </div>
 
@@ -91,14 +118,14 @@ export default function Marketing() {
         height="h-[300px]"
       >
         <TrendArea
-          data={LEADS_BY_SOURCE_OVER_TIME}
+          data={leadsBySourceOverTime}
           xKey="month"
           series={[
-            { key: 'meta', name: 'Meta Ads', color: COLORS.brand600 },
-            { key: 'google', name: 'Google Ads', color: COLORS.success },
-            { key: 'organic', name: 'Organic', color: COLORS.brand400 },
-            { key: 'referral', name: 'Referral', color: COLORS.warning },
-            { key: 'youtube', name: 'YouTube', color: COLORS.brand200 },
+            { key: "meta", name: "Meta Ads", color: COLORS.brand600 },
+            { key: "google", name: "Google Ads", color: COLORS.success },
+            { key: "organic", name: "Organic", color: COLORS.brand400 },
+            { key: "referral", name: "Referral", color: COLORS.warning },
+            { key: "youtube", name: "YouTube", color: COLORS.brand200 },
           ]}
         />
       </ChartCard>
@@ -124,9 +151,12 @@ export default function Marketing() {
             </tr>
           </thead>
           <tbody>
-            {CAMPAIGNS.map((c) => (
+            {campaigns.map((c) => (
               <tr key={c.id}>
-                <td className="font-semibold text-gray-900 max-w-[240px] truncate" title={c.name}>
+                <td
+                  className="font-semibold text-gray-900 max-w-[240px] truncate"
+                  title={c.name}
+                >
                   {c.name}
                 </td>
                 <td>
@@ -135,7 +165,15 @@ export default function Marketing() {
                 <td className="num text-right">{fmtCurrency(c.spend)}</td>
                 <td className="num text-right">{fmtNumber(c.leads)}</td>
                 <td className="num text-right">
-                  <span className={c.cpl > 45 ? 'text-red-600 font-semibold' : c.cpl > 38 ? 'text-amber-600 font-semibold' : 'text-emerald-600 font-semibold'}>
+                  <span
+                    className={
+                      c.cpl > 45
+                        ? "text-red-600 font-semibold"
+                        : c.cpl > 38
+                          ? "text-amber-600 font-semibold"
+                          : "text-emerald-600 font-semibold"
+                    }
+                  >
                     {fmtCurrency(c.cpl, { cents: true })}
                   </span>
                 </td>
@@ -144,9 +182,19 @@ export default function Marketing() {
                 <td className="num text-right text-gray-500">
                   {fmtPercent((c.closes / c.leads) * 100)}
                 </td>
-                <td className="num text-right font-semibold text-gray-900">{fmtCurrency(c.revenue)}</td>
+                <td className="num text-right font-semibold text-gray-900">
+                  {fmtCurrency(c.revenue)}
+                </td>
                 <td className="num text-right">
-                  <Badge tone={c.roas >= 15 ? 'success' : c.roas >= 11 ? 'brand' : 'warning'}>
+                  <Badge
+                    tone={
+                      c.roas >= 15
+                        ? "success"
+                        : c.roas >= 11
+                          ? "brand"
+                          : "warning"
+                    }
+                  >
                     {c.roas.toFixed(1)}x
                   </Badge>
                 </td>
@@ -155,31 +203,40 @@ export default function Marketing() {
           </tbody>
           <tfoot>
             <tr className="bg-surface-secondary">
-              <td className="px-4 py-3 font-semibold text-gray-900 text-[13px]" colSpan={2}>
+              <td
+                className="px-4 py-3 font-semibold text-gray-900 text-[13px]"
+                colSpan={2}
+              >
                 Blended
               </td>
-              <td className="num px-4 py-3 text-right font-semibold">{fmtCurrency(totalSpend)}</td>
-              <td className="num px-4 py-3 text-right font-semibold">{fmtNumber(totalLeads)}</td>
+              <td className="num px-4 py-3 text-right font-semibold">
+                {fmtCurrency(totalSpend)}
+              </td>
+              <td className="num px-4 py-3 text-right font-semibold">
+                {fmtNumber(totalLeads)}
+              </td>
               <td className="num px-4 py-3 text-right font-semibold">
                 {fmtCurrency(totalSpend / totalLeads, { cents: true })}
               </td>
               <td className="num px-4 py-3 text-right font-semibold">
-                {CAMPAIGNS.reduce((s, c) => s + c.audits, 0)}
+                {campaigns.reduce((s, c) => s + c.audits, 0)}
               </td>
               <td className="num px-4 py-3 text-right font-semibold">
-                {CAMPAIGNS.reduce((s, c) => s + c.closes, 0)}
+                {campaigns.reduce((s, c) => s + c.closes, 0)}
               </td>
               <td className="num px-4 py-3 text-right font-semibold">8.5%</td>
               <td className="num px-4 py-3 text-right font-semibold text-gray-900">
                 {fmtCurrency(totalRevenue)}
               </td>
               <td className="num px-4 py-3 text-right font-semibold">
-                {(totalRevenue / totalSpend).toFixed(1)}x
+                {totalSpend > 0
+                  ? (totalRevenue / totalSpend).toFixed(1) + "x"
+                  : "0x"}
               </td>
             </tr>
           </tfoot>
         </table>
       </TableCard>
     </Page>
-  )
+  );
 }

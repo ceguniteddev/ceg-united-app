@@ -1,42 +1,60 @@
 "use client";
-import { Landmark } from 'lucide-react'
-import { Page, PageHeader } from '@/components/kpi/PageHeader'
-import { KPIGrid } from '@/components/kpi/KPITile'
-import { BarCompare, Histogram } from '@/components/kpi/charts'
-import { Badge, ChartCard, TableCard } from '@/components/kpi/ui'
-import { APPROVALS_BY_PRODUCT, DAYS_IN_STAGE_HISTOGRAM, FUNDING_DEALS } from '@/lib/kpi/data/mock'
-import { COLORS, fmtCurrency, fmtPercent } from '@/lib/kpi/format'
+import { useEffect, useState } from "react";
+import { Landmark } from "lucide-react";
+import { Page, PageHeader } from "@/components/kpi/PageHeader";
+import { KPIGrid } from "@/components/kpi/KPITile";
+import { BarCompare, Histogram } from "@/components/kpi/charts";
+import { Badge, ChartCard, TableCard } from "@/components/kpi/ui";
+import { getFundingData, type FundingDashboardData } from "@/service/kpi";
+import { COLORS, fmtCurrency, fmtPercent } from "@/lib/kpi/format";
 
 // ============================================================
 // Funding Department
 // ============================================================
 
 const TILES = [
-  'funding_approval_rate',
-  'avg_approval_amount',
-  'capital_approved_mtd',
-  'days_audit_to_approval',
-  'days_approval_to_funding',
-  'funding_map_accuracy',
-  'apps_submitted',
-  'decline_rate',
-  'lender_response_time',
-  'stacking_efficiency',
-]
+  "funding_approval_rate",
+  "avg_approval_amount",
+  "capital_approved_mtd",
+  "days_audit_to_approval",
+  "days_approval_to_funding",
+  "funding_map_accuracy",
+  "apps_submitted",
+  "decline_rate",
+  "lender_response_time",
+  "stacking_efficiency",
+];
 
-const STAGE_TONE: Record<string, 'neutral' | 'info' | 'brand' | 'warning' | 'success' | 'danger'> = {
-  Audit: 'neutral',
-  'Funding Map': 'info',
-  Submitted: 'brand',
-  Underwriting: 'warning',
-  Approved: 'success',
-  Funded: 'success',
-  Declined: 'danger',
-}
+const STAGE_TONE: Record<
+  string,
+  "neutral" | "info" | "brand" | "warning" | "success" | "danger"
+> = {
+  Audit: "neutral",
+  "Funding Map": "info",
+  Submitted: "brand",
+  Underwriting: "warning",
+  Approved: "success",
+  Funded: "success",
+  Declined: "danger",
+};
 
 export default function Funding() {
-  const openDeals = FUNDING_DEALS.filter((d) => d.stage !== 'Funded' && d.stage !== 'Declined')
-  const openValue = openDeals.reduce((s, d) => s + d.requested, 0)
+  const [data, setData] = useState<FundingDashboardData | null>(null);
+
+  useEffect(() => {
+    getFundingData()
+      .then((res) => setData(res))
+      .catch((err) => console.warn("Failed to load live funding data:", err));
+  }, []);
+
+  const approvalsByProduct = data?.approvalsByProduct || [];
+  const daysInStageHistogram = data?.daysInStageHistogram || [];
+  const fundingDeals = data?.fundingDeals || [];
+
+  const openDeals = fundingDeals.filter(
+    (d) => d.stage !== "Funded" && d.stage !== "Declined",
+  );
+  const openValue = openDeals.reduce((s, d) => s + d.requested, 0);
 
   return (
     <Page>
@@ -49,15 +67,21 @@ export default function Funding() {
         action={
           <div className="hidden sm:flex items-center gap-4 px-4 py-2 rounded-lg bg-white border border-gray-200">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Open requests</p>
+              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                Open requests
+              </p>
               <p className="num text-[15px] font-semibold text-gray-900">
                 {fmtCurrency(openValue, { compact: true })}
               </p>
             </div>
             <div className="w-px h-8 bg-gray-100" />
             <div>
-              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Open deals</p>
-              <p className="num text-[15px] font-semibold text-gray-900">{openDeals.length}</p>
+              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                Open deals
+              </p>
+              <p className="num text-[15px] font-semibold text-gray-900">
+                {openDeals.length}
+              </p>
             </div>
           </div>
         }
@@ -72,15 +96,15 @@ export default function Funding() {
           source="CEG Brain"
         >
           <BarCompare
-            data={APPROVALS_BY_PRODUCT.map((p) => ({
+            data={approvalsByProduct.map((p) => ({
               ...p,
-              product: p.product.replace('Business ', '').replace(' Loan', ''),
+              product: p.product.replace("Business ", "").replace(" Loan", ""),
             }))}
             xKey="product"
             horizontal
             series={[
-              { key: 'approved', name: 'Approved', color: COLORS.success },
-              { key: 'declined', name: 'Declined', color: COLORS.danger },
+              { key: "approved", name: "Approved", color: COLORS.success },
+              { key: "declined", name: "Declined", color: COLORS.danger },
             ]}
           />
         </ChartCard>
@@ -90,17 +114,20 @@ export default function Funding() {
           subtitle="All applications by elapsed time in current stage — 21d+ needs intervention"
           source="CEG Brain"
         >
-          <Histogram data={DAYS_IN_STAGE_HISTOGRAM} highlightIndex={6} />
+          <Histogram data={daysInStageHistogram} highlightIndex={6} />
         </ChartCard>
       </div>
 
       {/* Product economics strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {APPROVALS_BY_PRODUCT.map((p) => {
-          const rate = (p.approved / (p.approved + p.declined)) * 100
+        {approvalsByProduct.map((p) => {
+          const rate = (p.approved / (p.approved + p.declined)) * 100;
           return (
             <div key={p.product} className="card p-4">
-              <p className="text-[11.5px] font-medium text-gray-500 truncate" title={p.product}>
+              <p
+                className="text-[11.5px] font-medium text-gray-500 truncate"
+                title={p.product}
+              >
                 {p.product}
               </p>
               <p className="num text-[24px] font-semibold text-gray-900 mt-1.5 leading-none">
@@ -116,7 +143,7 @@ export default function Funding() {
                 </span>
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -139,9 +166,11 @@ export default function Funding() {
             </tr>
           </thead>
           <tbody>
-            {FUNDING_DEALS.map((d) => (
+            {fundingDeals.map((d) => (
               <tr key={d.id}>
-                <td className="font-semibold text-gray-900 whitespace-nowrap">{d.client}</td>
+                <td className="font-semibold text-gray-900 whitespace-nowrap">
+                  {d.client}
+                </td>
                 <td className="text-gray-500 whitespace-nowrap">{d.product}</td>
                 <td className="text-gray-500 whitespace-nowrap">{d.lender}</td>
                 <td>
@@ -149,16 +178,20 @@ export default function Funding() {
                 </td>
                 <td className="num text-right">{fmtCurrency(d.requested)}</td>
                 <td className="num text-right font-semibold text-gray-900">
-                  {d.approved != null ? fmtCurrency(d.approved) : <span className="text-gray-300">—</span>}
+                  {d.approved != null ? (
+                    fmtCurrency(d.approved)
+                  ) : (
+                    <span className="text-gray-300">—</span>
+                  )}
                 </td>
                 <td className="num text-right">
                   <span
                     className={
                       d.daysInStage >= 9
-                        ? 'text-red-600 font-semibold'
+                        ? "text-red-600 font-semibold"
                         : d.daysInStage >= 6
-                        ? 'text-amber-600 font-semibold'
-                        : 'text-gray-600'
+                          ? "text-amber-600 font-semibold"
+                          : "text-gray-600"
                     }
                   >
                     {d.daysInStage}d
@@ -171,5 +204,5 @@ export default function Funding() {
         </table>
       </TableCard>
     </Page>
-  )
+  );
 }

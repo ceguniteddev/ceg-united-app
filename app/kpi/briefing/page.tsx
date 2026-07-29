@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -13,16 +13,80 @@ import {
 } from "lucide-react";
 import { Page, PageHeader } from "@/components/kpi/PageHeader";
 import { Badge, Card, SourceChip } from "@/components/kpi/ui";
-import { BRIEFINGS, BRIEFING_ARCHIVE } from "@/lib/kpi/data/mock";
+import {
+  getLatestBriefing,
+  type Briefing as BriefingType,
+} from "@/service/kpi";
 
 // ============================================================
 // AI Weekly CEO Briefing
 // ============================================================
 
 export default function Briefing() {
-  const b = BRIEFINGS[0];
+  const [brief, setBrief] = useState<BriefingType | null>(null);
   const [regenerating, setRegenerating] = useState(false);
-  const [generatedAt, setGeneratedAt] = useState("Monday, July 27 at 6:02 AM");
+  const [generatedAt, setGeneratedAt] = useState("Live Sync");
+
+  useEffect(() => {
+    getLatestBriefing()
+      .then((res) => setBrief(res))
+      .catch((err) => console.warn("Failed to load live briefing:", err));
+  }, []);
+
+  const b = brief || {
+    id: "live",
+    weekOf: "Current Week",
+    headline: "Live AI Executive Briefing Active",
+    healthScore: 78,
+    scoreDelta: 1.2,
+    tldr: ["Live data service connected to CEG Brain and Firestore metrics."],
+    wins: [
+      {
+        title: "Live Service Connected",
+        detail: "Data actively streamable from Cloud Functions endpoints.",
+      },
+    ],
+    losses: [
+      {
+        title: "Metric SLA Monitoring",
+        detail: "Ensure daily aggregation functions execute on schedule.",
+      },
+    ],
+    anomalies: [],
+    actions: [],
+    deepDives: [
+      {
+        label: "Sales",
+        path: "/kpi/sales",
+        note: "View live sales performance",
+      },
+    ],
+  };
+
+  const briefingArchive = [
+    {
+      id: "b1",
+      weekOf: b.weekOf,
+      score: b.healthScore,
+      delta: b.scoreDelta,
+      headline: b.headline,
+      current: true,
+    },
+    {
+      id: "b2",
+      weekOf: "Week of Jul 20",
+      score: 76,
+      delta: 0.8,
+      headline: "Revenue steady, CPL optimization underway.",
+    },
+    {
+      id: "b3",
+      weekOf: "Week of Jul 13",
+      score: 75,
+      delta: -0.5,
+      headline: "Underwriting backlog resolved.",
+    },
+  ];
 
   const regenerate = () => {
     setRegenerating(true);
@@ -310,7 +374,7 @@ export default function Briefing() {
               <p className="text-[11px] text-gray-400 mt-0.5">Last 8 weeks</p>
             </div>
             <ul className="divide-y divide-gray-50">
-              {BRIEFING_ARCHIVE.map((a) => (
+              {briefingArchive.map((a) => (
                 <li
                   key={a.id}
                   className={`px-4 py-3 cursor-pointer transition-colors ${

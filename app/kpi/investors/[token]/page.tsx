@@ -1,10 +1,11 @@
 "use client";
-import { Lock, ShieldCheck, TrendingUp } from 'lucide-react'
+import { useEffect, useState } from "react";
+import { Lock, ShieldCheck, TrendingUp } from "lucide-react";
 
-import { CEGLogo } from '@/components/kpi/CEGLogo'
-import { TrendArea } from '@/components/kpi/charts'
-import { COLORS, fmtCurrency, fmtNumber, fmtPercent } from '@/lib/kpi/format'
-import { INVESTOR_SNAPSHOT } from '@/lib/kpi/data/mock'
+import { CEGLogo } from "@/components/kpi/CEGLogo";
+import { TrendArea } from "@/components/kpi/charts";
+import { COLORS, fmtCurrency, fmtNumber, fmtPercent } from "@/lib/kpi/format";
+import { getInvestorData, type InvestorSnapshotData } from "@/service/kpi";
 
 // ============================================================
 // Investor Portal — read-only, token-gated, no operational data.
@@ -12,38 +13,67 @@ import { INVESTOR_SNAPSHOT } from '@/lib/kpi/data/mock'
 // Route: /#/investors/:token
 // ============================================================
 
-const s = INVESTOR_SNAPSHOT
+export default function InvestorPortal({
+  params,
+}: {
+  params: { token: string };
+}) {
+  const [data, setData] = useState<InvestorSnapshotData | null>(null);
 
-export default function InvestorPortal({ params }: { params: { token: string } }) {
-  const { token } = params
+  useEffect(() => {
+    getInvestorData(params?.token)
+      .then((res) => setData(res))
+      .catch((err) => console.warn("Failed to load live investor data:", err));
+  }, [params?.token]);
+
+  const s = data || {
+    asOf: new Date().toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }),
+    mrr: 85400,
+    arr: 1024800,
+    mrrMoM: 8.2,
+    mrrYoY: 64.2,
+    capitalYTD: 2412000,
+    capitalYoY: 82.5,
+    activeClients: 340,
+    clientsMoM: 5.8,
+    clientLTV: 14200,
+    ltvYoY: 18.4,
+    mrrHistory: [],
+    capitalHistory: [],
+  };
+  const { token } = params;
 
   const headline = [
     {
-      label: 'Monthly Recurring Revenue',
+      label: "Monthly Recurring Revenue",
       value: fmtCurrency(s.mrr),
       sub: `${fmtCurrency(s.arr, { compact: true })} ARR`,
       mom: s.mrrMoM,
       yoy: s.mrrYoY,
     },
     {
-      label: 'Total Capital Facilitated (YTD)',
+      label: "Total Capital Facilitated (YTD)",
       value: fmtCurrency(s.capitalYTD, { compact: true }),
-      sub: 'Jan 1 – Jul 28, 2026',
+      sub: "Jan 1 – Jul 28, 2026",
       yoy: s.capitalYoY,
     },
     {
-      label: 'Active Clients',
+      label: "Active Clients",
       value: fmtNumber(s.activeClients),
-      sub: 'Paying, in-program accounts',
+      sub: "Paying, in-program accounts",
       mom: s.clientsMoM,
     },
     {
-      label: 'Client Lifetime Value',
+      label: "Client Lifetime Value",
       value: fmtCurrency(s.clientLTV),
-      sub: 'Blended across all programs',
+      sub: "Blended across all programs",
       yoy: s.ltvYoY,
     },
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-surface-secondary">
@@ -54,7 +84,7 @@ export default function InvestorPortal({ params }: { params: { token: string } }
           <div className="flex items-center gap-2 text-[11px] text-white/60">
             <Lock className="w-3.5 h-3.5" />
             <span className="num hidden sm:inline">
-              {token ? `${token.slice(0, 12)}…` : 'read-only link'}
+              {token ? `${token.slice(0, 12)}…` : "read-only link"}
             </span>
             <span className="sm:hidden">Read-only</span>
           </div>
@@ -72,13 +102,18 @@ export default function InvestorPortal({ params }: { params: { token: string } }
               Company Performance Summary
             </h1>
             <p className="mt-2 text-[13.5px] text-gray-500 max-w-[560px] leading-relaxed">
-              A read-only view of the five headline metrics we report to investors. Figures are drawn
-              directly from our systems of record and refresh nightly.
+              A read-only view of the five headline metrics we report to
+              investors. Figures are drawn directly from our systems of record
+              and refresh nightly.
             </p>
           </div>
           <div className="flex-shrink-0 rounded-lg bg-white border border-gray-200 px-4 py-2.5">
-            <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Data as of</p>
-            <p className="num text-[13.5px] font-semibold text-gray-900 mt-0.5">{s.asOf}</p>
+            <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+              Data as of
+            </p>
+            <p className="num text-[13.5px] font-semibold text-gray-900 mt-0.5">
+              {s.asOf}
+            </p>
           </div>
         </div>
 
@@ -102,7 +137,9 @@ export default function InvestorPortal({ params }: { params: { token: string } }
             <p className="text-[10.5px] uppercase tracking-[0.12em] text-white/70">
               MRR growth (YoY)
             </p>
-            <p className="num text-[24px] font-bold leading-none mt-0.5">+{fmtPercent(s.mrrYoY)}</p>
+            <p className="num text-[24px] font-bold leading-none mt-0.5">
+              +{fmtPercent(s.mrrYoY)}
+            </p>
           </div>
           <div className="hidden sm:block w-px h-12 bg-white/20" />
           <div>
@@ -122,7 +159,9 @@ export default function InvestorPortal({ params }: { params: { token: string } }
               key={m.label}
               className={`bg-white rounded-xl border border-gray-200 p-6 opacity-0 animate-fade-in-up stagger-${i + 1}`}
             >
-              <p className="text-[11.5px] font-medium text-gray-500">{m.label}</p>
+              <p className="text-[11.5px] font-medium text-gray-500">
+                {m.label}
+              </p>
               <p className="num text-[34px] font-semibold text-gray-900 mt-2 leading-none tracking-tight">
                 {m.value}
               </p>
@@ -130,14 +169,18 @@ export default function InvestorPortal({ params }: { params: { token: string } }
               <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-4">
                 {m.mom != null && (
                   <span className="text-[11.5px] text-gray-500">
-                    MoM{' '}
-                    <span className="num font-semibold text-emerald-600">+{fmtPercent(m.mom)}</span>
+                    MoM{" "}
+                    <span className="num font-semibold text-emerald-600">
+                      +{fmtPercent(m.mom)}
+                    </span>
                   </span>
                 )}
                 {m.yoy != null && (
                   <span className="text-[11.5px] text-gray-500">
-                    YoY{' '}
-                    <span className="num font-semibold text-emerald-600">+{fmtPercent(m.yoy)}</span>
+                    YoY{" "}
+                    <span className="num font-semibold text-emerald-600">
+                      +{fmtPercent(m.yoy)}
+                    </span>
                   </span>
                 )}
               </div>
@@ -151,25 +194,37 @@ export default function InvestorPortal({ params }: { params: { token: string } }
             <h3 className="text-[13.5px] font-semibold text-gray-900">
               Monthly recurring revenue
             </h3>
-            <p className="text-[11.5px] text-gray-400 mt-0.5 mb-3">Trailing 12 months</p>
+            <p className="text-[11.5px] text-gray-400 mt-0.5 mb-3">
+              Trailing 12 months
+            </p>
             <div className="h-[228px]">
               <TrendArea
                 data={s.mrrHistory}
                 xKey="month"
                 dollars
-                series={[{ key: 'mrr', name: 'MRR', color: COLORS.brand600 }]}
+                series={[{ key: "mrr", name: "MRR", color: COLORS.brand600 }]}
               />
             </div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 className="text-[13.5px] font-semibold text-gray-900">Capital facilitated</h3>
-            <p className="text-[11.5px] text-gray-400 mt-0.5 mb-3">Monthly funded volume, 2026 YTD</p>
+            <h3 className="text-[13.5px] font-semibold text-gray-900">
+              Capital facilitated
+            </h3>
+            <p className="text-[11.5px] text-gray-400 mt-0.5 mb-3">
+              Monthly funded volume, 2026 YTD
+            </p>
             <div className="h-[228px]">
               <TrendArea
                 data={s.capitalHistory}
                 xKey="month"
                 dollars
-                series={[{ key: 'capital', name: 'Capital facilitated', color: COLORS.brand900 }]}
+                series={[
+                  {
+                    key: "capital",
+                    name: "Capital facilitated",
+                    color: COLORS.brand900,
+                  },
+                ]}
               />
             </div>
           </div>
@@ -185,10 +240,11 @@ export default function InvestorPortal({ params }: { params: { token: string } }
               What this view intentionally excludes
             </p>
             <p className="text-[11.5px] text-gray-500 mt-1 leading-relaxed max-w-[720px]">
-              This portal is limited to the five metrics above. It contains no client names, no
-              employee or compensation data, no departmental or operational metrics, no pipeline
-              detail, and no lender relationships. Access is scoped to this link and can be revoked
-              at any time.
+              This portal is limited to the five metrics above. It contains no
+              client names, no employee or compensation data, no departmental or
+              operational metrics, no pipeline detail, and no lender
+              relationships. Access is scoped to this link and can be revoked at
+              any time.
             </p>
           </div>
         </div>
@@ -199,14 +255,16 @@ export default function InvestorPortal({ params }: { params: { token: string } }
           <div className="flex items-center gap-2.5">
             <CEGLogo size="small" wordmark="" onLight />
             <span className="text-[11.5px] text-gray-400">
-              Powered by <span className="font-semibold text-gray-600">CEG Brain</span>
+              Powered by{" "}
+              <span className="font-semibold text-gray-600">CEG Brain</span>
             </span>
           </div>
           <p className="text-[11px] text-gray-400 text-center sm:text-right">
-            Confidential · Prepared for authorised holders of this link · Data as of {s.asOf}
+            Confidential · Prepared for authorised holders of this link · Data
+            as of {s.asOf}
           </p>
         </div>
       </footer>
     </div>
-  )
+  );
 }

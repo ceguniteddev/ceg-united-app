@@ -1,32 +1,47 @@
 "use client";
-import { AlertTriangle, Settings2 } from 'lucide-react'
-import { Page, PageHeader } from '@/components/kpi/PageHeader'
-import { KPIGrid } from '@/components/kpi/KPITile'
-import { BarCompare } from '@/components/kpi/charts'
-import { Badge, Card, ChartCard, Meter, TableCard } from '@/components/kpi/ui'
-import { AM_LOAD, AT_RISK_CLIENTS, TASK_COMPLETION } from '@/lib/kpi/data/mock'
-import { COLORS, fmtCurrency } from '@/lib/kpi/format'
+import { useEffect, useState } from "react";
+import { AlertTriangle, Settings2 } from "lucide-react";
+import { Page, PageHeader } from "@/components/kpi/PageHeader";
+import { KPIGrid } from "@/components/kpi/KPITile";
+import { BarCompare } from "@/components/kpi/charts";
+import { Badge, Card, ChartCard, Meter, TableCard } from "@/components/kpi/ui";
+import { getOperationsData, type OperationsDashboardData } from "@/service/kpi";
+import { COLORS, fmtCurrency } from "@/lib/kpi/format";
 
 // ============================================================
 // Operations Department
 // ============================================================
 
 const TILES = [
-  'tasks_on_time',
-  'clients_stuck',
-  'docs_pending',
-  'clients_per_am',
-  'apps_processed',
-  'employee_sla',
-  'first_response_time',
-  'onboarding_time',
-  'doc_rejection_rate',
-  'automation_coverage',
-]
+  "tasks_on_time",
+  "clients_stuck",
+  "docs_pending",
+  "clients_per_am",
+  "apps_processed",
+  "employee_sla",
+  "first_response_time",
+  "onboarding_time",
+  "doc_rejection_rate",
+  "automation_coverage",
+];
 
 export default function Operations() {
-  const highRisk = AT_RISK_CLIENTS.filter((c) => c.severity === 'high')
-  const atRiskValue = AT_RISK_CLIENTS.reduce((s, c) => s + c.value, 0)
+  const [data, setData] = useState<OperationsDashboardData | null>(null);
+
+  useEffect(() => {
+    getOperationsData()
+      .then((res) => setData(res))
+      .catch((err) =>
+        console.warn("Failed to load live operations data:", err),
+      );
+  }, []);
+
+  const amLoad = data?.amLoad || [];
+  const atRiskClients = data?.atRiskClients || [];
+  const taskCompletion = data?.taskCompletion || [];
+
+  const highRisk = atRiskClients.filter((c) => c.severity === "high");
+  const atRiskValue = atRiskClients.reduce((s, c) => s + c.value, 0);
 
   return (
     <Page>
@@ -39,15 +54,21 @@ export default function Operations() {
         action={
           <div className="hidden sm:flex items-center gap-4 px-4 py-2 rounded-lg bg-white border border-gray-200">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Value at risk</p>
+              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                Value at risk
+              </p>
               <p className="num text-[15px] font-semibold text-red-600">
                 {fmtCurrency(atRiskValue, { compact: true })}
               </p>
             </div>
             <div className="w-px h-8 bg-gray-100" />
             <div>
-              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Stalled</p>
-              <p className="num text-[15px] font-semibold text-gray-900">{AT_RISK_CLIENTS.length}</p>
+              <p className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                Stalled
+              </p>
+              <p className="num text-[15px] font-semibold text-gray-900">
+                {atRiskClients.length}
+              </p>
             </div>
           </div>
         }
@@ -60,10 +81,15 @@ export default function Operations() {
         </span>
         <div className="min-w-0">
           <p className="text-[12.5px] font-semibold text-red-900">
-            {highRisk.length} clients stalled 72+ hours — {fmtCurrency(highRisk.reduce((s, c) => s + c.value, 0), { compact: true })} in requested capital
+            {highRisk.length} clients stalled 72+ hours —{" "}
+            {fmtCurrency(
+              highRisk.reduce((s, c) => s + c.value, 0),
+              { compact: true },
+            )}{" "}
+            in requested capital
           </p>
           <p className="text-[11.5px] text-red-700/80 mt-0.5">
-            {highRisk.map((c) => `${c.name} (${c.hoursStuck}h)`).join(' · ')}
+            {highRisk.map((c) => `${c.name} (${c.hoursStuck}h)`).join(" · ")}
           </p>
         </div>
       </div>
@@ -77,34 +103,40 @@ export default function Operations() {
           source="Firebase"
         >
           <BarCompare
-            data={TASK_COMPLETION}
+            data={taskCompletion}
             xKey="week"
             stacked
             series={[
-              { key: 'onTime', name: 'On time', color: COLORS.success },
-              { key: 'late', name: 'Late', color: COLORS.danger },
+              { key: "onTime", name: "On time", color: COLORS.success },
+              { key: "late", name: "Late", color: COLORS.danger },
             ]}
           />
         </ChartCard>
 
         <Card className="!p-0 overflow-hidden">
           <div className="px-5 pt-5 pb-3">
-            <h3 className="text-[13.5px] font-semibold text-gray-900">Account manager load</h3>
+            <h3 className="text-[13.5px] font-semibold text-gray-900">
+              Account manager load
+            </h3>
             <p className="mt-0.5 text-[11.5px] text-gray-400">
               Active clients against a 55-client capacity line
             </p>
           </div>
           <div className="px-5 pb-5 space-y-3">
-            {AM_LOAD.map((am) => {
-              const over = am.clients > am.capacity
+            {amLoad.map((am) => {
+              const over = am.clients > am.capacity;
               return (
                 <div key={am.name}>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[12px] font-medium text-gray-700">{am.name}</span>
+                    <span className="text-[12px] font-medium text-gray-700">
+                      {am.name}
+                    </span>
                     <div className="flex items-center gap-2">
-                      <span className="num text-[11px] text-gray-400">{am.onTime}% on time</span>
+                      <span className="num text-[11px] text-gray-400">
+                        {am.onTime}% on time
+                      </span>
                       <span
-                        className={`num text-[12px] font-semibold ${over ? 'text-red-600' : 'text-gray-900'}`}
+                        className={`num text-[12px] font-semibold ${over ? "text-red-600" : "text-gray-900"}`}
                       >
                         {am.clients}
                         <span className="text-gray-300">/{am.capacity}</span>
@@ -114,10 +146,16 @@ export default function Operations() {
                   <Meter
                     value={am.clients}
                     max={Math.max(am.capacity, am.clients)}
-                    tone={over ? 'danger' : am.clients >= am.capacity * 0.9 ? 'warning' : 'success'}
+                    tone={
+                      over
+                        ? "danger"
+                        : am.clients >= am.capacity * 0.9
+                          ? "warning"
+                          : "success"
+                    }
                   />
                 </div>
-              )
+              );
             })}
           </div>
         </Card>
@@ -142,29 +180,41 @@ export default function Operations() {
             </tr>
           </thead>
           <tbody>
-            {AT_RISK_CLIENTS.map((c) => (
+            {atRiskClients.map((c) => (
               <tr key={c.id}>
-                <td className="font-semibold text-gray-900 whitespace-nowrap">{c.name}</td>
+                <td className="font-semibold text-gray-900 whitespace-nowrap">
+                  {c.name}
+                </td>
                 <td className="text-gray-500 whitespace-nowrap">{c.company}</td>
                 <td className="text-gray-500 whitespace-nowrap">{c.stage}</td>
                 <td className="num text-right">
                   <span
                     className={
                       c.hoursStuck >= 72
-                        ? 'text-red-600 font-bold'
+                        ? "text-red-600 font-bold"
                         : c.hoursStuck >= 56
-                        ? 'text-amber-600 font-semibold'
-                        : 'text-gray-600'
+                          ? "text-amber-600 font-semibold"
+                          : "text-gray-600"
                     }
                   >
                     {c.hoursStuck}h
                   </span>
                 </td>
                 <td className="text-gray-500">{c.reason}</td>
-                <td className="num text-right font-semibold text-gray-900">{fmtCurrency(c.value)}</td>
+                <td className="num text-right font-semibold text-gray-900">
+                  {fmtCurrency(c.value)}
+                </td>
                 <td className="text-gray-500 whitespace-nowrap">{c.owner}</td>
                 <td>
-                  <Badge tone={c.severity === 'high' ? 'danger' : c.severity === 'medium' ? 'warning' : 'neutral'}>
+                  <Badge
+                    tone={
+                      c.severity === "high"
+                        ? "danger"
+                        : c.severity === "medium"
+                          ? "warning"
+                          : "neutral"
+                    }
+                  >
                     {c.severity}
                   </Badge>
                 </td>
@@ -174,5 +224,5 @@ export default function Operations() {
         </table>
       </TableCard>
     </Page>
-  )
+  );
 }
