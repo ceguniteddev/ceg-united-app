@@ -13,10 +13,8 @@ import {
 } from "lucide-react";
 import { Page, PageHeader } from "@/components/kpi/PageHeader";
 import { Badge, Card, SourceChip } from "@/components/kpi/ui";
-import {
-  getLatestBriefing,
-  type Briefing as BriefingType,
-} from "@/service/kpi";
+import { getLatestBriefing } from "@/service/kpi";
+import type { Briefing as BriefingType } from "@/lib/kpi/types";
 
 // ============================================================
 // AI Weekly CEO Briefing
@@ -424,8 +422,8 @@ export default function Briefing() {
             </ul>
             <div className="px-4 py-3 border-t border-gray-100">
               <p className="text-[10.5px] text-gray-400 leading-snug">
-                Briefings generate every Monday at 6:00 AM ET from the prior
-                week's closed data.
+                {`Briefings generate every Monday at 6:00 AM ET from the prior
+                week's closed data.`}
               </p>
             </div>
           </Card>

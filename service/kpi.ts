@@ -922,7 +922,8 @@ export interface LeadSourceOverTimePoint {
 export interface MarketingFunnelStage {
   stage: string;
   count: number;
-  conversion: number | null;
+  conversion?: number | null;
+  pct?: number | null;
 }
 
 export interface MarketingDashboardData {
@@ -1407,7 +1408,7 @@ export interface CashTrendPoint {
 export interface MRRWaterfallItem {
   label: string;
   value: number;
-  type: "total" | "positive" | "negative";
+  type: "total" | "positive" | "negative" | "inc" | "dec";
 }
 
 export interface FinanceDashboardData {

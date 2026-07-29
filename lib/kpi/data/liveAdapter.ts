@@ -12,7 +12,6 @@ import type {
   MetricStatus,
 } from "@/lib/kpi/types";
 import { METRIC_MAP } from "./registry";
-import { mockAdapter } from "./mockAdapter";
 
 export interface LiveMetricValue {
   value: number;
@@ -98,13 +97,23 @@ export const liveAdapter: KPIAdapter = {
   init: initSnapshotListener,
 
   getMetric(metricId: string, range: DateRangeKey): KPIValue | null {
-    // Fall back to baseline mock adapter if snapshots are not yet loaded or Firestore is empty
-    if (snapshotsCache.length === 0) {
-      return mockAdapter.getMetric(metricId, range);
-    }
-
     const def = METRIC_MAP[metricId];
     if (!def) return null;
+
+    if (snapshotsCache.length === 0) {
+      const higherIsBetter = def.higherIsBetter !== false;
+      return {
+        ...def,
+        higherIsBetter,
+        value: def.target ?? 0,
+        previous: def.target ?? 0,
+        delta: 0,
+        deltaAbs: 0,
+        status: "neutral",
+        series: [],
+        updatedAt: "connecting…",
+      };
+    }
 
     const days = Math.min(RANGE_DAYS[range] ?? 30, snapshotsCache.length);
     const window = snapshotsCache.slice(-days);
@@ -115,8 +124,7 @@ export const liveAdapter: KPIAdapter = {
     }));
 
     const latestVal = window[window.length - 1]?.metrics[metricId]?.value;
-    const value =
-      latestVal ?? mockAdapter.getMetric(metricId, range)?.value ?? 0;
+    const value = latestVal ?? def.target ?? 0;
 
     // Previous comparable window
     const prevWindow = snapshotsCache.slice(
@@ -159,12 +167,11 @@ export const liveAdapter: KPIAdapter = {
   },
 
   getSyncStatus() {
-    if (snapshotsCache.length === 0) {
-      return mockAdapter.getSyncStatus();
-    }
-
-    const latest = snapshotsCache[snapshotsCache.length - 1];
-    const adapterStatuses = latest.adapterStatus ?? {};
+    const latest =
+      snapshotsCache.length > 0
+        ? snapshotsCache[snapshotsCache.length - 1]
+        : null;
+    const adapterStatuses = latest?.adapterStatus ?? {};
 
     const sources: MetricSource[] = [
       "HubSpot",
@@ -187,7 +194,7 @@ export const liveAdapter: KPIAdapter = {
       return {
         source,
         status: statusInfo ? (statusInfo.ok ? "live" : "error") : "live",
-        lastSync: latest.generatedAt
+        lastSync: latest?.generatedAt
           ? new Date(latest.generatedAt).toLocaleTimeString("en-US", {
               hour: "numeric",
               minute: "2-digit",
