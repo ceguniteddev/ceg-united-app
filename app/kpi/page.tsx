@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -19,12 +20,9 @@ import { MoneyFunnel } from "@/components/kpi/charts";
 import { Badge, Card, ChartCard, SourceChip } from "@/components/kpi/ui";
 import { useKPI } from "@/hooks/kpi/useKPI";
 import {
-  ALERTS,
-  BRIEFINGS,
-  MONEY_WATERFALL,
-  WEEK_MOVERS,
-  seriesFor,
-} from "@/lib/kpi/data/mock";
+  getExecutiveDashboardData,
+  type ExecutiveDashboardData,
+} from "@/service/kpi";
 import { fmtCurrency, relativeAge } from "@/lib/kpi/format";
 
 // ============================================================
@@ -42,24 +40,54 @@ const TOP_TILES = [
 
 export default function Executive() {
   const health = useKPI("health_score");
-  const brief = BRIEFINGS[0];
+  const [dashData, setDashData] = useState<ExecutiveDashboardData | null>(null);
+
+  useEffect(() => {
+    getExecutiveDashboardData()
+      .then((res) => setDashData(res))
+      .catch((err) =>
+        console.warn("Failed to load executive dashboard live data:", err),
+      );
+  }, []);
 
   const score = Math.max(0, Math.min(100, Math.round(health.value)));
-  const scoreDelta = +health.delta.toFixed(1);
+  const scoreDelta = +(health.delta?.toFixed(1) ?? 0);
 
-  // 12-week sparkline: sample the 90-day daily series weekly.
+  // 12-week sparkline: sample the daily series from health KPI weekly.
   const weekly = (() => {
-    const daily = seriesFor("health_score");
+    const daily = health.series || [];
+    if (daily.length === 0) return [];
     const out = [];
-    for (let i = daily.length - 1; i >= 0 && out.length < 12; i -= 7)
+    for (let i = daily.length - 1; i >= 0 && out.length < 12; i -= 7) {
       out.unshift(daily[i]);
+    }
     return out.map((p) => ({
       ...p,
       value: Math.max(0, Math.min(100, p.value)),
     }));
   })();
 
-  const alerts = ALERTS;
+  const brief = dashData?.briefing || {
+    id: "loading",
+    weekOf: "Current Week",
+    headline: "Loading live AI executive briefing...",
+    healthScore: score,
+    scoreDelta,
+    tldr: [
+      "Fetching real-time metrics and briefings from Firestore...",
+      "Connecting to live system of record adapters...",
+      "Aggregating cross-departmental metrics...",
+    ],
+    wins: [],
+    losses: [],
+    anomalies: [],
+    actions: [],
+    deepDives: [],
+  };
+
+  const alerts = dashData?.alerts || [];
+  const weekMovers = dashData?.weekMovers || [];
+  const moneyWaterfall = dashData?.moneyWaterfall || [];
 
   const scoreTone =
     score >= 80
@@ -170,7 +198,7 @@ export default function Executive() {
                   Last 12 weeks
                 </span>
                 <span className="num text-[10.5px] text-gray-400">
-                  {weekly[0]?.value.toFixed(0)} → {score}
+                  {weekly[0]?.value.toFixed(0) ?? score} → {score}
                 </span>
               </div>
               <div className="h-[148px]">
@@ -229,7 +257,7 @@ export default function Executive() {
             ))}
           </ul>
           <Link
-            href="/briefing"
+            href="/kpi/briefing"
             className="mt-4 inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-brand-600 text-white text-[12.5px] font-semibold hover:bg-brand-700 transition-colors"
           >
             Read full brief
@@ -267,7 +295,7 @@ export default function Executive() {
           </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-x divide-y lg:divide-y-0 divide-gray-100">
-          {WEEK_MOVERS.map((m: any) => (
+          {weekMovers.map((m: any) => (
             <div key={m.metricId} className="px-4 py-3.5">
               <p className="text-[11px] text-gray-500 truncate">{m.label}</p>
               <p className="num text-[19px] font-semibold text-gray-900 mt-1 leading-none">
@@ -310,7 +338,7 @@ export default function Executive() {
           className="xl:col-span-2"
           height="h-[300px]"
         >
-          <MoneyFunnel stages={MONEY_WATERFALL} />
+          <MoneyFunnel stages={moneyWaterfall} />
         </ChartCard>
 
         <Card className="!p-0 flex flex-col">
@@ -335,58 +363,64 @@ export default function Executive() {
             </span>
           </div>
           <ul className="divide-y divide-gray-50 overflow-y-auto custom-scrollbar max-h-[420px]">
-            {alerts.map((a) => {
-              const Icon =
-                a.severity === "critical"
-                  ? AlertTriangle
-                  : a.severity === "warning"
+            {alerts.length === 0 ? (
+              <li className="px-4 py-8 text-center text-gray-400 text-[12px]">
+                No active critical alerts.
+              </li>
+            ) : (
+              alerts.map((a) => {
+                const Icon =
+                  a.severity === "critical"
                     ? AlertTriangle
-                    : a.severity === "success"
-                      ? CheckCircle2
-                      : Info;
-              const tone =
-                a.severity === "critical"
-                  ? "text-red-600 bg-red-50"
-                  : a.severity === "warning"
-                    ? "text-amber-600 bg-amber-50"
-                    : a.severity === "success"
-                      ? "text-emerald-600 bg-emerald-50"
-                      : "text-blue-600 bg-blue-50";
-              return (
-                <li
-                  key={a.id}
-                  className="px-4 py-3 hover:bg-surface-secondary transition-colors"
-                >
-                  <div className="flex gap-2.5">
-                    <span
-                      className={`inline-flex items-center justify-center w-6 h-6 rounded-md flex-shrink-0 ${tone}`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[12.5px] font-semibold text-gray-900 leading-snug">
-                        {a.title}
-                      </p>
-                      <p className="mt-1 text-[11.5px] text-gray-500 leading-relaxed">
-                        {a.detail}
-                      </p>
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <Link
-                          href={`/${a.dept === "brain" ? "brain" : a.dept}`}
-                          className="text-[10.5px] font-semibold text-brand-600 hover:text-brand-700 capitalize"
-                        >
-                          {a.dept} →
-                        </Link>
-                        <span className="text-[10.5px] text-gray-300">·</span>
-                        <span className="text-[10.5px] text-gray-400">
-                          {relativeAge(a.ageMinutes)}
-                        </span>
+                    : a.severity === "warning"
+                      ? AlertTriangle
+                      : a.severity === "success"
+                        ? CheckCircle2
+                        : Info;
+                const tone =
+                  a.severity === "critical"
+                    ? "text-red-600 bg-red-50"
+                    : a.severity === "warning"
+                      ? "text-amber-600 bg-amber-50"
+                      : a.severity === "success"
+                        ? "text-emerald-600 bg-emerald-50"
+                        : "text-blue-600 bg-blue-50";
+                return (
+                  <li
+                    key={a.id}
+                    className="px-4 py-3 hover:bg-surface-secondary transition-colors"
+                  >
+                    <div className="flex gap-2.5">
+                      <span
+                        className={`inline-flex items-center justify-center w-6 h-6 rounded-md flex-shrink-0 ${tone}`}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[12.5px] font-semibold text-gray-900 leading-snug">
+                          {a.title}
+                        </p>
+                        <p className="mt-1 text-[11.5px] text-gray-500 leading-relaxed">
+                          {a.detail}
+                        </p>
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <Link
+                            href={`/kpi/${a.dept === "brain" ? "brain" : a.dept}`}
+                            className="text-[10.5px] font-semibold text-brand-600 hover:text-brand-700 capitalize"
+                          >
+                            {a.dept} →
+                          </Link>
+                          <span className="text-[10.5px] text-gray-300">·</span>
+                          <span className="text-[10.5px] text-gray-400">
+                            {relativeAge(a.ageMinutes)}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </li>
-              );
-            })}
+                  </li>
+                );
+              })
+            )}
           </ul>
           <div className="px-4 py-3 border-t border-gray-100">
             <p className="text-[10.5px] text-gray-400">
@@ -420,7 +454,7 @@ export default function Executive() {
               </tr>
             </thead>
             <tbody>
-              {MONEY_WATERFALL.map((s, i) => (
+              {moneyWaterfall.map((s, i) => (
                 <tr key={s.stage}>
                   <td className="font-semibold text-gray-900">{s.stage}</td>
                   <td className="num text-right">{s.count.toLocaleString()}</td>
@@ -445,7 +479,9 @@ export default function Executive() {
                     )}
                   </td>
                   <td className="num text-right text-gray-500">
-                    {fmtCurrency(Math.round(s.dollars / s.count))}
+                    {fmtCurrency(
+                      s.count > 0 ? Math.round(s.dollars / s.count) : 0,
+                    )}
                   </td>
                   <td className="text-gray-500">
                     {
