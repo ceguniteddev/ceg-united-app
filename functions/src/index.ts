@@ -1,3 +1,5 @@
+import { setGlobalOptions } from "firebase-functions/v2";
+setGlobalOptions({ memory: "512MiB" });
 import { onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { defineSecret } from "firebase-functions/params";
@@ -132,3 +134,5 @@ export * from "./mailLetter";
 export * from "./lobWebhook";
 export * from "./verifyAddress";
 export * from "./wallet";
+
+export * from './kpi/functions';

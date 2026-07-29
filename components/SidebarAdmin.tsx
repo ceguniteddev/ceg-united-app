@@ -64,53 +64,17 @@ const SidebarAdmin = () => {
       </SidebarHeader>
 
       <SidebarContent>
-        {adminSidebarLinks.map((group) => (
-          <Collapsible
-            defaultOpen={false}
-            key={group.group}
-            className="group/collapsible"
-          >
-            <SidebarGroup>
-              <SidebarGroupLabel
-                asChild
-                className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:bg-transparent cursor-pointer"
-              >
-                <CollapsibleTrigger className="flex items-center w-full gap-2">
-                  <group.icon className="size-4" />
-                  {group.group}
-                  <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-                </CollapsibleTrigger>
-              </SidebarGroupLabel>
-              <CollapsibleContent>
+        {adminSidebarLinks.map((group) => {
+          if (group.isStandalone) {
+            return (
+              <SidebarGroup key={group.group} className="py-0">
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {group.links.map((item) => {
                       const isActive = pathname.startsWith(item.route);
 
-                      let badgeIndicator = false;
-                      if (
-                        item.route === "/admin/funding-application" &&
-                        (appliedFunding?.length ?? 0) > 0
-                      )
-                        badgeIndicator = true;
-                      if (
-                        item.route === "/admin/call-requests" &&
-                        (requestCallsOpen?.length ?? 0) > 0
-                      )
-                        badgeIndicator = true;
-                      if (
-                        item.route === "/admin/coordinator" &&
-                        coordinatorNeedsAttention
-                      )
-                        badgeIndicator = true;
-                      if (
-                        item.route === "/admin/tradelines" &&
-                        pendingTradelinesCount > 0
-                      )
-                        badgeIndicator = true;
-
                       return (
-                        <SidebarMenuItem key={item.label} className="px-2 ">
+                        <SidebarMenuItem key={item.label} className="px-2">
                           <SidebarMenuButton
                             asChild
                             isActive={isActive}
@@ -133,9 +97,6 @@ const SidebarAdmin = () => {
                                     "brightness-[3] invert-0": isActive,
                                   })}
                                 />
-                                {badgeIndicator && (
-                                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
-                                )}
                               </div>
                               <span
                                 className={cn(
@@ -154,10 +115,105 @@ const SidebarAdmin = () => {
                     })}
                   </SidebarMenu>
                 </SidebarGroupContent>
-              </CollapsibleContent>
-            </SidebarGroup>
-          </Collapsible>
-        ))}
+              </SidebarGroup>
+            );
+          }
+
+          return (
+            <Collapsible
+              defaultOpen={false}
+              key={group.group}
+              className="group/collapsible"
+            >
+              <SidebarGroup>
+                <SidebarGroupLabel
+                  asChild
+                  className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:bg-transparent cursor-pointer"
+                >
+                  <CollapsibleTrigger className="flex items-center w-full gap-2">
+                    <group.icon className="size-4" />
+                    {group.group}
+                    <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                  </CollapsibleTrigger>
+                </SidebarGroupLabel>
+                <CollapsibleContent>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {group.links.map((item) => {
+                        const isActive = pathname.startsWith(item.route);
+
+                        let badgeIndicator = false;
+                        if (
+                          item.route === "/admin/funding-application" &&
+                          (appliedFunding?.length ?? 0) > 0
+                        )
+                          badgeIndicator = true;
+                        if (
+                          item.route === "/admin/call-requests" &&
+                          (requestCallsOpen?.length ?? 0) > 0
+                        )
+                          badgeIndicator = true;
+                        if (
+                          item.route === "/admin/coordinator" &&
+                          coordinatorNeedsAttention
+                        )
+                          badgeIndicator = true;
+                        if (
+                          item.route === "/admin/tradelines" &&
+                          pendingTradelinesCount > 0
+                        )
+                          badgeIndicator = true;
+
+                        return (
+                          <SidebarMenuItem key={item.label} className="px-2 ">
+                            <SidebarMenuButton
+                              asChild
+                              isActive={isActive}
+                              tooltip={item.label}
+                              className={cn({
+                                "bg-bank-gradient text-white hover:bg-bank-gradient hover:text-white":
+                                  isActive,
+                              })}
+                            >
+                              <Link
+                                href={item.route}
+                                className="flex gap-3 items-center w-full"
+                              >
+                                <div className="relative size-5 shrink-0 flex items-center justify-center">
+                                  <Image
+                                    src={item.imgURL}
+                                    alt={item.label}
+                                    fill
+                                    className={cn("object-contain", {
+                                      "brightness-[3] invert-0": isActive,
+                                    })}
+                                  />
+                                  {badgeIndicator && (
+                                    <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                                  )}
+                                </div>
+                                <span
+                                  className={cn(
+                                    "text-sm font-semibold text-black-2 truncate",
+                                    {
+                                      "!text-white": isActive,
+                                    },
+                                  )}
+                                >
+                                  {item.label}
+                                </span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </CollapsibleContent>
+              </SidebarGroup>
+            </Collapsible>
+          );
+        })}
       </SidebarContent>
 
       <SidebarFooter className="p-4">

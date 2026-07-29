@@ -74,82 +74,127 @@ const MobileNavAdmin = () => {
             </Link>
 
             <nav className="flex-1 flex flex-col px-2 overflow-y-auto">
-              {adminSidebarLinks.map((group) => (
-                <Collapsible
-                  defaultOpen={false}
-                  key={group.group}
-                  className="group/collapsible mb-2"
-                >
-                  <CollapsibleTrigger className="flex items-center w-full px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider gap-2">
-                    <group.icon className="size-4" />
-                    {group.group}
-                    <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-1">
-                    {group.links.map((item) => {
-                      const isActive = pathname.startsWith(item.route);
+              {adminSidebarLinks.map((group) => {
+                if (group.isStandalone) {
+                  return (
+                    <div key={group.group} className="mb-2">
+                      {group.links.map((item) => {
+                        const isActive = pathname.startsWith(item.route);
 
-                      let badgeIndicator = false;
-                      if (
-                        item.route === "/admin/funding-application" &&
-                        (appliedFunding?.length ?? 0) > 0
-                      )
-                        badgeIndicator = true;
-                      if (
-                        item.route === "/admin/call-requests" &&
-                        (requestCallsOpen?.length ?? 0) > 0
-                      )
-                        badgeIndicator = true;
-                      if (
-                        item.route === "/admin/coordinator" &&
-                        coordinatorNeedsAttention
-                      )
-                        badgeIndicator = true;
-                      if (
-                        item.route === "/admin/tradelines" &&
-                        pendingTradelinesCount > 0
-                      )
-                        badgeIndicator = true;
-
-                      return (
-                        <SheetClose asChild key={item.route}>
-                          <Link
-                            href={item.route}
-                            className={cn(
-                              "flex gap-3 items-center py-1 px-4 rounded-lg",
-                              { "bg-bank-gradient": isActive },
-                            )}
-                          >
-                            <div className="relative size-5 shrink-0 flex items-center justify-center">
-                              <Image
-                                src={item.imgURL}
-                                alt={item.label}
-                                fill
-                                className={cn("object-contain", {
-                                  "brightness-[3] invert-0": isActive,
-                                })}
-                              />
-                              {badgeIndicator && (
-                                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
-                              )}
-                            </div>
-                            <span
+                        return (
+                          <SheetClose asChild key={item.route}>
+                            <Link
+                              href={item.route}
                               className={cn(
-                                "text-sm font-semibold text-black-2 truncate",
-                                {
-                                  "!text-white": isActive,
-                                },
+                                "flex gap-3 items-center py-2 px-4 rounded-lg",
+                                { "bg-bank-gradient": isActive },
                               )}
                             >
-                              {item.label}
-                            </span>
-                          </Link>
-                        </SheetClose>
-                      );
-                    })}
-                  </CollapsibleContent>
-                </Collapsible>
-              ))}
+                              <div className="relative size-5 shrink-0 flex items-center justify-center">
+                                <Image
+                                  src={item.imgURL}
+                                  alt={item.label}
+                                  fill
+                                  className={cn("object-contain", {
+                                    "brightness-[3] invert-0": isActive,
+                                  })}
+                                />
+                              </div>
+                              <span
+                                className={cn(
+                                  "text-sm font-semibold text-black-2 truncate",
+                                  {
+                                    "!text-white": isActive,
+                                  },
+                                )}
+                              >
+                                {item.label}
+                              </span>
+                            </Link>
+                          </SheetClose>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+
+                return (
+                  <Collapsible
+                    defaultOpen={false}
+                    key={group.group}
+                    className="group/collapsible mb-2"
+                  >
+                    <CollapsibleTrigger className="flex items-center w-full px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider gap-2">
+                      <group.icon className="size-4" />
+                      {group.group}
+                      <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-1">
+                      {group.links.map((item) => {
+                        const isActive = pathname.startsWith(item.route);
+
+                        let badgeIndicator = false;
+                        if (
+                          item.route === "/admin/funding-application" &&
+                          (appliedFunding?.length ?? 0) > 0
+                        )
+                          badgeIndicator = true;
+                        if (
+                          item.route === "/admin/call-requests" &&
+                          (requestCallsOpen?.length ?? 0) > 0
+                        )
+                          badgeIndicator = true;
+                        if (
+                          item.route === "/admin/coordinator" &&
+                          coordinatorNeedsAttention
+                        )
+                          badgeIndicator = true;
+                        if (
+                          item.route === "/admin/tradelines" &&
+                          pendingTradelinesCount > 0
+                        )
+                          badgeIndicator = true;
+
+                        return (
+                          <SheetClose asChild key={item.route}>
+                            <Link
+                              href={item.route}
+                              className={cn(
+                                "flex gap-3 items-center py-1 px-4 rounded-lg",
+                                { "bg-bank-gradient": isActive },
+                              )}
+                            >
+                              <div className="relative size-5 shrink-0 flex items-center justify-center">
+                                <Image
+                                  src={item.imgURL}
+                                  alt={item.label}
+                                  fill
+                                  className={cn("object-contain", {
+                                    "brightness-[3] invert-0": isActive,
+                                  })}
+                                />
+                                {badgeIndicator && (
+                                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                                )}
+                              </div>
+                              <span
+                                className={cn(
+                                  "text-sm font-semibold text-black-2 truncate",
+                                  {
+                                    "!text-white": isActive,
+                                  },
+                                )}
+                              >
+                                {item.label}
+                              </span>
+                            </Link>
+                          </SheetClose>
+                        );
+                      })}
+                    </CollapsibleContent>
+                  </Collapsible>
+                );
+              })}
             </nav>
 
             <Footer type="mobile" />

@@ -69,7 +69,12 @@ function isPublic(pathname: string) {
 }
 
 function isAdminRoute(pathname: string) {
-  return pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
+  return (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/api/admin") ||
+    pathname.startsWith("/kpi") ||
+    pathname.startsWith("/api/kpi")
+  );
 }
 
 function isClientRoute(pathname: string) {
@@ -316,6 +321,7 @@ export const config = {
     "/support-service/:path*",
     "/client/:path*", // client area
     "/admin/:path*", // admin area
+    "/kpi/:path*", // KPI dashboard (admin only)
     "/broker/:path*", // broker area
     "/payment/:path*", // payment area
     "/api/:path*", // api guarding

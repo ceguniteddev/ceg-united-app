@@ -165,11 +165,13 @@ import {
   MessageSquare,
   LucideIcon,
   Settings,
+  TrendingUp,
 } from "lucide-react";
 
 export type AdminSidebarGroup = {
   group: string;
   icon: LucideIcon;
+  isStandalone?: boolean;
   links: {
     imgURL: string;
     route: string;
@@ -291,6 +293,19 @@ export const adminSidebarLinks: AdminSidebarGroup[] = [
         imgURL: "/icons/settings.svg",
         route: "/admin/consumer-reporting-agency",
         label: "Consumer Reporting Agency",
+      },
+    ],
+  },
+
+  {
+    group: "KPI Operating System",
+    icon: TrendingUp,
+    isStandalone: true,
+    links: [
+      {
+        imgURL: "/icons/chart-no-axes-combined.svg",
+        route: "/kpi",
+        label: "KPI Operating System",
       },
     ],
   },
