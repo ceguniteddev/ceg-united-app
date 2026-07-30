@@ -734,6 +734,45 @@
   font-family: var(--font-caveat), "Caveat", cursive;
 }
 
+/* ============================================
+   CEG Table Styles
+   ============================================ */
+.ceg-table {
+  width: 100%;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  border-collapse: collapse;
+}
+.ceg-table thead th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  white-space: nowrap;
+}
+.ceg-table thead th.text-right {
+  text-align: right;
+}
+.ceg-table tbody td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f8fafc;
+  color: #334155;
+  vertical-align: middle;
+}
+.ceg-table tbody td.text-right {
+  text-align: right;
+}
+.ceg-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+.ceg-table tbody tr:last-child td {
+  border-bottom-width: 0;
+}
+
 @theme inline {
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
