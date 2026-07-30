@@ -1,9 +1,11 @@
 "use client";
-import { useKPI } from '@/hooks/kpi/useKPI'
-import { fmtMetric } from '@/lib/kpi/format'
-import { Delta, SourceChip, StatusDot } from './ui'
-import { Sparkline } from './charts/Sparkline'
-import type { DateRangeKey } from '@/lib/kpi/types'
+import { useKPI } from "@/hooks/kpi/useKPI";
+import { fmtMetric } from "@/lib/kpi/format";
+import { Delta, SourceChip, StatusDot } from "./ui";
+import { Sparkline } from "./charts/Sparkline";
+import type { DateRangeKey } from "@/lib/kpi/types";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 // ============================================
 // KPITile — the atom of the whole KPI OS.
@@ -12,18 +14,18 @@ import type { DateRangeKey } from '@/lib/kpi/types'
 // ============================================
 
 interface Props {
-  metricId: string
+  metricId: string;
   /** Override the registry label (e.g. shorter on dense grids). */
-  label?: string
+  label?: string;
   /** Show the inline 90-day sparkline. */
-  sparkline?: boolean
+  sparkline?: boolean;
   /** Show the "vs target" footer row. */
-  showTarget?: boolean
-  range?: DateRangeKey
-  className?: string
-  stagger?: number
+  showTarget?: boolean;
+  range?: DateRangeKey;
+  className?: string;
+  stagger?: number;
   /** Optional supporting line under the value. */
-  note?: string
+  note?: string;
 }
 
 export function KPITile({
@@ -32,40 +34,40 @@ export function KPITile({
   sparkline = true,
   showTarget = true,
   range,
-  className = '',
+  className = "",
   stagger,
   note,
 }: Props) {
-  const kpi = useKPI(metricId, range)
+  const kpi = useKPI(metricId, range);
 
   const toneColor =
-    kpi.status === 'danger'
-      ? '#ef4444'
-      : kpi.status === 'warn'
-      ? '#f59e0b'
-      : kpi.status === 'ok'
-      ? '#10b981'
-      : '#2563eb'
+    kpi.status === "danger"
+      ? "#ef4444"
+      : kpi.status === "warn"
+        ? "#f59e0b"
+        : kpi.status === "ok"
+          ? "#10b981"
+          : "#2563eb";
 
   const targetPct =
     kpi.target != null && kpi.target !== 0
       ? kpi.higherIsBetter
         ? (kpi.value / kpi.target) * 100
         : (kpi.target / kpi.value) * 100
-      : null
+      : null;
 
   return (
-    <div
-      className={`card card-hover p-4 relative opacity-0 animate-fade-in-up ${
-        stagger ? `stagger-${Math.min(stagger, 12)}` : ''
-      } ${className}`}
+    <Card
+      className={cn(
+        "card-hover p-4 py-4 gap-0 relative opacity-0 animate-fade-in-up",
+        stagger && `stagger-${Math.min(stagger, 12)}`,
+        className,
+      )}
       data-testid={`tile-${metricId}`}
     >
       {/* Label — wraps to two lines so nothing truncates on dense grids */}
-      <div className="flex items-start gap-1.5 mb-3 min-h-[30px]">
-        <span className="mt-[4.5px] flex-shrink-0 leading-none">
-          <StatusDot status={kpi.status} />
-        </span>
+      <div className="flex items-center gap-1.5 mb-3 min-h-[30px]">
+        <StatusDot status={kpi.status} />
         <span
           className="text-[11.5px] font-medium text-gray-500 leading-[1.3]"
           title={kpi.description}
@@ -92,7 +94,7 @@ export function KPITile({
         <span className="text-[10.5px] text-gray-400">vs prior</span>
         {showTarget && kpi.target != null && (
           <span className="text-[10.5px] text-gray-300">
-            · target{' '}
+            · target{" "}
             <span className="num text-gray-400">
               {fmtMetric(kpi.target, kpi.format, kpi.unit)}
             </span>
@@ -100,7 +102,9 @@ export function KPITile({
         )}
       </div>
 
-      {note && <p className="mt-2 text-[11px] text-gray-400 leading-snug">{note}</p>}
+      {note && (
+        <p className="mt-2 text-[11px] text-gray-400 leading-snug">{note}</p>
+      )}
 
       {/* Footer: data lineage + attainment */}
       <div className="mt-3 pt-2.5 border-t border-gray-50 flex items-center justify-between gap-2">
@@ -109,18 +113,18 @@ export function KPITile({
           <span
             className={`num text-[10.5px] font-semibold whitespace-nowrap ${
               targetPct >= 98
-                ? 'text-emerald-600'
+                ? "text-emerald-600"
                 : targetPct >= 88
-                ? 'text-amber-600'
-                : 'text-red-600'
+                  ? "text-amber-600"
+                  : "text-red-600"
             }`}
           >
             {targetPct.toFixed(0)}% of target
           </span>
         )}
       </div>
-    </div>
-  )
+    </Card>
+  );
 }
 
 /** Grid wrapper so every page has identical tile rhythm. */
@@ -130,22 +134,28 @@ export function KPIGrid({
   sparkline = true,
   showTarget = true,
 }: {
-  metricIds: string[]
-  cols?: 3 | 4 | 5 | 6
-  sparkline?: boolean
-  showTarget?: boolean
+  metricIds: string[];
+  cols?: 3 | 4 | 5 | 6;
+  sparkline?: boolean;
+  showTarget?: boolean;
 }) {
   const colClass = {
-    3: 'sm:grid-cols-2 lg:grid-cols-3',
-    4: 'sm:grid-cols-2 lg:grid-cols-4',
-    5: 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
-    6: 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6',
-  }[cols]
+    3: "sm:grid-cols-2 lg:grid-cols-3",
+    4: "sm:grid-cols-2 lg:grid-cols-4",
+    5: "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5",
+    6: "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6",
+  }[cols];
   return (
     <div className={`grid grid-cols-1 ${colClass} gap-4`}>
       {metricIds.map((id, i) => (
-        <KPITile key={id} metricId={id} stagger={i + 1} sparkline={sparkline} showTarget={showTarget} />
+        <KPITile
+          key={id}
+          metricId={id}
+          stagger={i + 1}
+          sparkline={sparkline}
+          showTarget={showTarget}
+        />
       ))}
     </div>
-  )
+  );
 }

@@ -17,7 +17,8 @@ import { Page, PageHeader } from "@/components/kpi/PageHeader";
 import { KPITile } from "@/components/kpi/KPITile";
 import { Sparkline } from "@/components/kpi/charts/Sparkline";
 import { MoneyFunnel } from "@/components/kpi/charts";
-import { Badge, Card, ChartCard, SourceChip } from "@/components/kpi/ui";
+import { Badge, ChartCard, SourceChip } from "@/components/kpi/ui";
+import { Card } from "@/components/ui/card";
 import { useKPI } from "@/hooks/kpi/useKPI";
 import {
   getExecutiveDashboardData,
@@ -126,10 +127,10 @@ export default function Executive() {
 
       {/* ---------------- Hero: Company Health Score ---------------- */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <Card className="xl:col-span-2 relative overflow-hidden !p-0">
+        <Card className="xl:col-span-2 relative overflow-hidden p-0">
           <div className="absolute inset-0 bg-gradient-to-br from-brand-50/70 via-white to-white" />
-          <div className="relative h-full p-6 flex flex-col sm:flex-row items-start sm:items-center justify-center gap-6">
-            <div className="flex-shrink-0">
+          <div className="relative h-full p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="flex-shrink-0 w-full sm:w-auto">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-gray-400">
                   Company Health Score
@@ -141,12 +142,12 @@ export default function Executive() {
               </div>
               <div className="flex items-end gap-3">
                 <span
-                  className={`num text-[68px] font-bold leading-none ${scoreTone}`}
+                  className={`num text-[56px] sm:text-[68px] font-bold leading-none ${scoreTone}`}
                 >
                   {score}
                 </span>
                 <div className="pb-2">
-                  <span className="num text-[18px] font-medium text-gray-300">
+                  <span className="num text-[16px] sm:text-[18px] font-medium text-gray-300">
                     /100
                   </span>
                   <div className="flex items-center gap-1.5 mt-1">
@@ -204,7 +205,7 @@ export default function Executive() {
               <div className="h-[148px]">
                 <Sparkline data={weekly} color="#2563eb" />
               </div>
-              <div className="grid grid-cols-3 gap-3 mt-2 pt-3 border-t border-gray-100">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-2 pt-3 border-t border-gray-100">
                 {[
                   { label: "Revenue", v: 82 },
                   { label: "Delivery", v: 74 },
@@ -225,40 +226,42 @@ export default function Executive() {
         </Card>
 
         {/* AI Weekly Briefing preview */}
-        <Card className="flex flex-col">
-          <div className="flex items-start justify-between gap-2 mb-3">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-brand-600">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </span>
-              <div>
-                <h3 className="text-[13px] font-semibold text-gray-900 leading-tight">
-                  AI Weekly Briefing
-                </h3>
-                <p className="text-[10.5px] text-gray-400">{brief.weekOf}</p>
-              </div>
-            </div>
-            <SourceChip source="CEG Brain" />
-          </div>
-          <p className="text-[13px] font-medium text-gray-800 leading-snug mb-3">
-            {brief.headline}
-          </p>
-          <ul className="space-y-2 flex-1">
-            {brief.tldr.slice(0, 3).map((t: string, i: number) => (
-              <li
-                key={i}
-                className="flex gap-2 text-[12px] text-gray-600 leading-relaxed"
-              >
-                <span className="num text-brand-600 font-semibold flex-shrink-0">
-                  {i + 1}.
+        <Card className="p-5 sm:p-6 flex flex-col justify-between gap-0">
+          <div>
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-brand-600">
+                  <Sparkles className="w-3.5 h-3.5 text-white" />
                 </span>
-                <span className="line-clamp-3">{t}</span>
-              </li>
-            ))}
-          </ul>
+                <div>
+                  <h3 className="text-[13px] font-semibold text-gray-900 leading-tight">
+                    AI Weekly Briefing
+                  </h3>
+                  <p className="text-[10.5px] text-gray-400">{brief.weekOf}</p>
+                </div>
+              </div>
+              <SourceChip source="CEG Brain" />
+            </div>
+            <p className="text-[13px] font-medium text-gray-800 leading-snug mb-3">
+              {brief.headline}
+            </p>
+            <ul className="space-y-2 flex-1">
+              {brief.tldr.slice(0, 3).map((t: string, i: number) => (
+                <li
+                  key={i}
+                  className="flex gap-2 text-[12px] text-gray-600 leading-relaxed"
+                >
+                  <span className="num text-brand-600 font-semibold flex-shrink-0">
+                    {i + 1}.
+                  </span>
+                  <span className="line-clamp-3">{t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
           <Link
             href="/kpi/briefing"
-            className="mt-4 inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-brand-600 text-white text-[12.5px] font-semibold hover:bg-brand-700 transition-colors"
+            className="mt-4 inline-flex items-center justify-center gap-1.5 h-9 w-full rounded-lg bg-brand-600 text-white text-[12.5px] font-semibold hover:bg-brand-700 transition-colors"
           >
             Read full brief
             <ArrowRight className="w-3.5 h-3.5" />
@@ -272,9 +275,6 @@ export default function Executive() {
           <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight">
             Top-line KPIs
           </h2>
-          <span className="text-[11px] text-gray-400">
-            6 of 78 tracked metrics
-          </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {TOP_TILES.map((id, i) => (

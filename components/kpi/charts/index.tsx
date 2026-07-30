@@ -561,7 +561,8 @@ export function MoneyFunnel({
     conversionFromPrev: number | null;
   }[];
 }) {
-  const maxCount = Math.max(...stages.map((s) => s.count));
+  if (!stages || stages.length === 0) return null;
+  const maxCount = Math.max(...stages.map((s) => s.count), 1);
   return (
     <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 h-full">
       {stages.map((s, i) => {

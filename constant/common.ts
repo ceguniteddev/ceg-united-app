@@ -260,7 +260,7 @@ export const adminSidebarLinks: AdminSidebarGroup[] = [
     ],
   },
   {
-    group: "Communication & Resources",
+    group: "Communication",
     icon: MessageSquare,
     links: [
       {
