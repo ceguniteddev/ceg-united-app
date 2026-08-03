@@ -7,7 +7,6 @@ import { hasActiveAddon } from "@/service/addons";
 import { getUserMembership } from "@/service/membership";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { getSystemConfig } from "@/service/system-config";
-import { isPlaidProductionReady } from "./lib/plaid";
 
 const PUBLIC_ROUTES = new Set<string>([
   "/",
@@ -233,13 +232,6 @@ export async function proxy(req: NextRequest) {
     else if (role !== "Client") dest = ADMIN_HOME;
     // else if (!isOnboarded) dest = "/onboarding"; // Route to onboarding if client is not onboarded
     return NextResponse.redirect(new URL(dest, origin));
-  }
-
-  if (pathname === "/client/my-accounts" && role === "Client") {
-    const isPlaidProdReady = isPlaidProductionReady();
-    if (!isPlaidProdReady) {
-      return NextResponse.redirect(new URL(CLIENT_HOME, origin));
-    }
   }
 
   // CLIENT ROLE: Can only access client routes

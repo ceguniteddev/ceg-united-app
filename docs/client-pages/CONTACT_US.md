@@ -162,7 +162,7 @@ Multiple ways to reach us:
 
 - **Live Chat** - Instant support during business hours
 - **Phone** - Call our support line
-- **Email** - support@cegunitedllc.com
+- **Email** - info@cegunitedllc.com
 - **Appointment** - Schedule video or phone consultation
 - **Help Center** - Browse articles and tutorials
 

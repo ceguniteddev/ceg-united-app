@@ -114,7 +114,7 @@ await logInfo("User logged in", {
 });
 
 // Function entry logging (common pattern)
-await logInfo("getPlaidLinkToken::entry data", {
+await logInfo("getLinkToken::entry data", {
   userId,
   userToken,
   incomeSourceType,
@@ -138,7 +138,7 @@ try {
 }
 
 // With context
-await logError(new Error("Plaid API failed"), {
+await logError(new Error("External API failed"), {
   userId,
   itemId,
   endpoint: "/accounts/get",
@@ -328,7 +328,7 @@ Logs appear in terminal with prefix:
 
 ```
 [INFO] User logged in { userId: 'user123' }
-[ERROR] Plaid API failed { stack: '...', userId: 'user123' }
+[ERROR] External API failed { stack: '...', userId: 'user123' }
 [WARN] Rate limit approaching { remaining: 10 }
 [DEBUG] Token validation { token: 'eyJhbG...' }
 ```

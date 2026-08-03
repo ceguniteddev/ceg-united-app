@@ -101,8 +101,10 @@ export const useGetFundingApplications = ({ state }: { state?: string }) => {
 
 export const useGetApplyFundingByReferenceNumber = ({
   referenceNumber,
+  refetchInterval,
 }: {
   referenceNumber: string;
+  refetchInterval?: number | false | ((query: any) => number | false);
 }) => {
   const { user } = useAuth();
 
@@ -118,6 +120,14 @@ export const useGetApplyFundingByReferenceNumber = ({
       return data;
     },
     enabled: !!user && !!referenceNumber,
+    refetchInterval:
+      refetchInterval !== undefined
+        ? refetchInterval
+        : (query) => {
+            return query.state.data?.analysisStatus === "In Progress"
+              ? 60000
+              : false;
+          },
   });
 
   return {

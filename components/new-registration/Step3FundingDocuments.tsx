@@ -318,8 +318,12 @@ const LocalDocumentList = ({
 
 export function Step3Funding() {
   const { watch, setValue, getValues, control } = useFormContext();
-  const { businessDetailsData, authData, updateAuthData } =
-    useNewRegistrationStore();
+  const {
+    businessDetailsData,
+    authData,
+    updateAuthData,
+    updateBusinessDetailsData,
+  } = useNewRegistrationStore();
 
   const fundingType = watch("fundingType") || businessDetailsData.fundingType;
   const employmentType =
@@ -364,6 +368,67 @@ export function Step3Funding() {
       setValue("addressPostal", authData.addressPostal);
   }, []);
 
+  // Sync business address fields to the store when user edits them
+  const businessStreetAddress = watch("businessStreetAddress");
+  const businessCityAddress = watch("businessCityAddress");
+  const businessStateAddress = watch("businessStateAddress");
+  const businessPostalAddress = watch("businessPostalAddress");
+
+  React.useEffect(() => {
+    if (
+      businessStreetAddress !== undefined ||
+      businessCityAddress !== undefined ||
+      businessStateAddress !== undefined ||
+      businessPostalAddress !== undefined
+    ) {
+      updateBusinessDetailsData({
+        ...(businessStreetAddress !== undefined && { businessStreetAddress }),
+        ...(businessCityAddress !== undefined && { businessCityAddress }),
+        ...(businessStateAddress !== undefined && { businessStateAddress }),
+        ...(businessPostalAddress !== undefined && { businessPostalAddress }),
+      });
+    }
+  }, [
+    businessStreetAddress,
+    businessCityAddress,
+    businessStateAddress,
+    businessPostalAddress,
+    updateBusinessDetailsData,
+  ]);
+
+  // Set initial business address values from store if not already set (e.g. going back/forth)
+  React.useEffect(() => {
+    if (
+      businessDetailsData.businessStreetAddress &&
+      !getValues("businessStreetAddress")
+    )
+      setValue(
+        "businessStreetAddress",
+        businessDetailsData.businessStreetAddress,
+      );
+    if (
+      businessDetailsData.businessCityAddress &&
+      !getValues("businessCityAddress")
+    )
+      setValue("businessCityAddress", businessDetailsData.businessCityAddress);
+    if (
+      businessDetailsData.businessStateAddress &&
+      !getValues("businessStateAddress")
+    )
+      setValue(
+        "businessStateAddress",
+        businessDetailsData.businessStateAddress,
+      );
+    if (
+      businessDetailsData.businessPostalAddress &&
+      !getValues("businessPostalAddress")
+    )
+      setValue(
+        "businessPostalAddress",
+        businessDetailsData.businessPostalAddress,
+      );
+  }, []);
+
   const handleUploadComplete = async (fieldName: string, newFiles: any[]) => {
     const currentVal = getValues(fieldName);
     const existingFiles = currentVal?.files || [];
@@ -381,6 +446,11 @@ export function Step3Funding() {
 
     if (fieldName === "driverLicense" && allFiles.length > 0) {
       extractDriverLicenseData(allFiles);
+    } else if (
+      fieldName === "businessDocs.bankStatements" &&
+      allFiles.length > 0
+    ) {
+      extractBusinessBankStatementData(allFiles);
     }
   };
 
@@ -454,6 +524,102 @@ export function Step3Funding() {
       console.error(err);
       toast.error("Failed to extract data from driver's license", {
         id: "ocr-toast",
+      });
+    }
+  };
+
+  const extractBusinessBankStatementData = async (files: any[]) => {
+    const {
+      businessStreetAddress,
+      businessCityAddress,
+      businessStateAddress,
+      businessPostalAddress,
+    } = getValues();
+
+    // Only run OCR if the business address fields are all empty.
+    if (
+      businessStreetAddress ||
+      businessCityAddress ||
+      businessStateAddress ||
+      businessPostalAddress
+    ) {
+      return;
+    }
+
+    try {
+      toast.info("Extracting business address from bank statement...", {
+        id: "ocr-toast-business",
+      });
+      const captchaToken = await getCaptchaTokenRegistration("ocr");
+      if (!captchaToken) {
+        throw new Error("Could not verify CAPTCHA");
+      }
+
+      const response = await fetch("/api/ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documents: files, captchaToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to extract data");
+      }
+
+      const { data } = await response.json();
+      if (data?.business) {
+        const { updateBusinessDetailsData } =
+          useNewRegistrationStore.getState();
+
+        const newData: any = {};
+        if (data.business.businessStreetAddress)
+          newData.businessStreetAddress = data.business.businessStreetAddress;
+        if (data.business.businessCityAddress)
+          newData.businessCityAddress = data.business.businessCityAddress;
+        if (data.business.businessStateAddress)
+          newData.businessStateAddress = data.business.businessStateAddress;
+        if (data.business.businessPostalAddress)
+          newData.businessPostalAddress = data.business.businessPostalAddress;
+
+        // Let's only update fields that were actually found
+        if (Object.keys(newData).length > 0) {
+          // Update react-hook-form values so UI reflects the changes immediately
+          Object.entries(newData).forEach(([key, value]) => {
+            setValue(key, value, { shouldValidate: true, shouldDirty: true });
+          });
+
+          updateBusinessDetailsData(newData);
+
+          // Instantly sync the newly extracted address to the user-lead collection
+          const { leadId, businessDetailsData } =
+            useNewRegistrationStore.getState();
+          if (leadId) {
+            try {
+              const updatedBusinessData = {
+                ...businessDetailsData,
+                ...newData,
+              };
+              const encodedData = btoa(JSON.stringify(updatedBusinessData));
+              await fetch("/api/leads", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ leadId, data: encodedData }),
+              });
+            } catch (syncErr) {
+              console.error("Failed to sync OCR data to lead", syncErr);
+            }
+          }
+        }
+
+        toast.success("Business data extracted successfully", {
+          id: "ocr-toast-business",
+        });
+      } else {
+        toast.dismiss("ocr-toast-business");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to extract data from business bank statements", {
+        id: "ocr-toast-business",
       });
     }
   };
@@ -609,6 +775,55 @@ export function Step3Funding() {
                 fieldName="businessDocs.bankStatements"
                 documentType={bankStatementsType}
               />
+
+              <div className="mt-8 border border-blue-200 bg-blue-50/60 rounded-xl p-5 shadow-sm">
+                <div className="flex items-start gap-3 mb-5">
+                  <div className="mt-0.5 bg-blue-100 p-1.5 rounded-full text-blue-700 flex-shrink-0">
+                    <InfoIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-blue-900 mb-1">
+                      Verify Your Business Address
+                    </h4>
+                    <p className="text-sm text-blue-800/90 leading-relaxed">
+                      This address will auto-populate once you upload your
+                      Business Bank Statements.{" "}
+                      <strong>
+                        Please carefully review and correct any errors.
+                      </strong>{" "}
+                      Accuracy is critical to process your business funding
+                      application successfully.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-5 rounded-lg border border-blue-100 shadow-sm">
+                  <FormInput
+                    control={control}
+                    name="businessStreetAddress"
+                    label="Business Street Address"
+                    placeholder="123 Business St"
+                  />
+                  <FormInput
+                    control={control}
+                    name="businessCityAddress"
+                    label="Business City"
+                    placeholder="New York"
+                  />
+                  <FormSelect
+                    control={control}
+                    name="businessStateAddress"
+                    label="Business State"
+                    placeholder="NY"
+                    options={US_STATES}
+                  />
+                  <FormInput
+                    control={control}
+                    name="businessPostalAddress"
+                    label="Business Zip / Postal Code"
+                    placeholder="10001"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}

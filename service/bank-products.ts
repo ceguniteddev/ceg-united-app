@@ -1227,10 +1227,15 @@ export const getFundMappingAnalysisDetails = async ({
           bankProduct.bankName,
         );
 
+        const targetProducts =
+          bankProductId.products && Array.isArray(bankProductId.products)
+            ? bankProductId.products
+            : bankProduct.products || [];
+
         // Calculate approval odds for each product
         const productsWithOdds = clientFundingData
           ? await Promise.all(
-              (bankProduct.products || []).map(async (product) => ({
+              targetProducts.map(async (product: any) => ({
                 ...product,
                 approvalOdds: await calculateApprovalOdds(
                   bankProductId.userId,
@@ -1239,7 +1244,7 @@ export const getFundMappingAnalysisDetails = async ({
                 ),
               })),
             )
-          : bankProduct.products || [];
+          : targetProducts;
         // console.log(
         //   `Calculated approval odds for products of reference ${bankProductId.referenceNumber}:`,
         //   productsWithOdds.map((p) => ({
@@ -1254,7 +1259,7 @@ export const getFundMappingAnalysisDetails = async ({
                 98,
                 Math.round(
                   productsWithOdds.reduce(
-                    (sum, p: any) => sum + (p.approvalOdds || 0),
+                    (sum: number, p: any) => sum + (p.approvalOdds || 0),
                     0,
                   ) / productsWithOdds.length,
                 ) + 25,
@@ -1536,9 +1541,14 @@ export const getAutoServedClientFunds = async ({
           bankProduct.bankName,
         );
 
+        const targetProducts =
+          r.products && Array.isArray(r.products)
+            ? r.products
+            : bankProduct.products || [];
+
         const productsWithOdds = clientFundingData
           ? await Promise.all(
-              (bankProduct.products || []).map(async (product) => ({
+              targetProducts.map(async (product: any) => ({
                 ...product,
                 approvalOdds: await calculateApprovalOdds(
                   r.userId || userId,
@@ -1547,7 +1557,7 @@ export const getAutoServedClientFunds = async ({
                 ),
               })),
             )
-          : bankProduct.products || [];
+          : targetProducts;
 
         const overallApprovalOdds =
           productsWithOdds.length > 0
@@ -1555,7 +1565,7 @@ export const getAutoServedClientFunds = async ({
                 98,
                 Math.round(
                   productsWithOdds.reduce(
-                    (sum, p: any) => sum + (p.approvalOdds || 0),
+                    (sum: number, p: any) => sum + (p.approvalOdds || 0),
                     0,
                   ) / productsWithOdds.length,
                 ) + 25,
@@ -1604,10 +1614,12 @@ export const approveMappedFund = async ({
   referenceNumber,
   bankProductId,
   products,
+  selectedPathwayId,
 }: {
   referenceNumber: string;
   bankProductId: string;
   products: BankProductCriteria[];
+  selectedPathwayId: string;
 }): Promise<CommonResponse> => {
   try {
     if (!referenceNumber) {
@@ -1624,12 +1636,22 @@ export const approveMappedFund = async ({
         message: "At least one product must be selected for approval.",
       };
     }
-    logInfo("approveMappedFund", { referenceNumber, bankProductId, products });
+    logInfo("approveMappedFund", {
+      referenceNumber,
+      bankProductId,
+      products,
+      selectedPathwayId,
+    });
 
     const fundingApplication = await getApplyFundingByReferenceNumber({
       referenceNumber,
     });
     if (!fundingApplication) {
+      logInfo("approveMappedFund fundingApplication not found", {
+        referenceNumber,
+        bankProductId,
+        selectedPathwayId,
+      });
       return {
         success: false,
         error: "warning",
@@ -1639,6 +1661,11 @@ export const approveMappedFund = async ({
 
     const productData = await getBankProduct(bankProductId);
     if (!productData) {
+      logInfo("approveMappedFund productData not found", {
+        referenceNumber,
+        bankProductId,
+        selectedPathwayId,
+      });
       return {
         success: false,
         error: "warning",
@@ -1648,6 +1675,11 @@ export const approveMappedFund = async ({
 
     const currentUser = await getCurrentUser();
     if (!currentUser) {
+      logInfo("approveMappedFund currentUser not found", {
+        referenceNumber,
+        bankProductId,
+        selectedPathwayId,
+      });
       return { success: false, error: "warning", message: "User not found." };
     }
 
@@ -1656,10 +1688,17 @@ export const approveMappedFund = async ({
       `${USER_FUNDING_APPLICATION}/${referenceNumber}/${USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED}`,
     );
 
-    const q = collectionRef.where("bankProductId", "==", bankProductId);
+    const q = collectionRef
+      .where("bankProductId", "==", bankProductId)
+      .where("pathwayId", "==", selectedPathwayId);
     const querySnapshot = await q.get();
 
     if (querySnapshot.empty) {
+      logInfo("Creating new approval document", {
+        referenceNumber,
+        bankProductId,
+        selectedPathwayId,
+      });
       // Create a new approval document
       await collectionRef.add({
         bankProductId,
@@ -1669,14 +1708,22 @@ export const approveMappedFund = async ({
         clientApplicationStatus: "Not Applied",
         userId: fundingApplication.userId,
         referenceNumber,
+        ...(selectedPathwayId && { pathwayId: selectedPathwayId }),
       });
     } else {
+      logInfo("Updating products for existing approval document", {
+        referenceNumber,
+        bankProductId,
+        selectedPathwayId,
+        products,
+      });
       // Update existing approval document to overwrite products
       const docRef = querySnapshot.docs[0].ref;
       await docRef.update({
         products: products, // Overwrite with new products
         updatedAt: Timestamp.now(),
         approvedById: currentUser.uid,
+        ...(selectedPathwayId && { pathwayId: selectedPathwayId }),
       });
     }
 

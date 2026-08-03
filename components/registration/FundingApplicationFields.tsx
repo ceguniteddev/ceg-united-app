@@ -28,7 +28,6 @@ import { Plus, Trash2, CircleX } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Business } from "@/schema";
 import { toast } from "sonner";
-import PlaidLink from "../PlaidLink";
 import { Separator } from "../ui/separator";
 import {
   Dropzone,
@@ -1008,9 +1007,6 @@ export function FundingApplicationFields({
                   <div className="flex items-center gap-2">
                     <span>💼</span> Employment Information
                   </div>
-                  {howDoYouGetPaidSelectedBank && false && (
-                    <PlaidLink displayText="Link Personal Account" />
-                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-5 px-4 md:px-6">
@@ -1198,9 +1194,6 @@ export function FundingApplicationFields({
                 <div className="flex items-center gap-2">
                   <span>💼</span> Employment Information
                 </div>
-                {howDoYouGetPaidSelectedBank && (
-                  <PlaidLink displayText="Link Personal Account" />
-                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5 px-4 md:px-6">

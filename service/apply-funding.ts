@@ -437,7 +437,7 @@ export const deleteApplyFunding = async (
       prefix: `documents/${data.userId}/${referenceNumber}`,
     });
   } catch (error: any) {
-    console.error("unlinkPlaidItem::error", error);
+    console.error("deleteFiles::error", error);
     logError(error, { userId: data.userId, referenceNumber });
   }
 };

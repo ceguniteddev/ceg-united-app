@@ -48,6 +48,7 @@ type Props = {
   data?: any; // Relaxed type to handle migration from old data
   isAdminViewing?: boolean;
   referenceNumber?: string;
+  selectedPathwayId?: string;
 };
 
 const BankProductsForm = ({
@@ -55,6 +56,7 @@ const BankProductsForm = ({
   data,
   isAdminViewing,
   referenceNumber,
+  selectedPathwayId,
 }: Props) => {
   const { products: allFundingProducts } = useFundingProducts();
   const [selectedProductIndex, setSelectedProductIndex] = useState<
@@ -86,12 +88,13 @@ const BankProductsForm = ({
 
   const { approvedMappedFunds } = useApproveMappedFundsQuery(
     referenceNumber ?? "",
+    selectedPathwayId,
   );
 
   useEffect(() => {
     if (isAdminViewing && data && approvedMappedFunds) {
       const approvedFund = approvedMappedFunds.find(
-        (fund) => fund.id === data.id,
+        (fund) => String(fund.id) === String(data.id),
       );
       if (approvedFund?.products) {
         setProductsToApprove(approvedFund.products);
@@ -261,6 +264,7 @@ const BankProductsForm = ({
         bankProductId: data.id!,
         referenceNumber: referenceNumber,
         products: productsToApprove,
+        selectedPathwayId: selectedPathwayId!,
       });
 
       setOpen(false);

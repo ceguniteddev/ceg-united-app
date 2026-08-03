@@ -83,7 +83,7 @@ export const mockDocuments: DocumentRecord[] = [
     description: "Last 4 months of business bank statements.",
     required: true,
     status: "synced",
-    fileName: "Connected via Plaid",
+    fileName: "Bank Statements",
     fileSize: "4 months",
   },
 ];

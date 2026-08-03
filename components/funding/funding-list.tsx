@@ -124,6 +124,31 @@ const getBaseColumns = (
     },
   },
   {
+    accessorKey: "products",
+    id: "approvedProducts",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Approved Products" />
+    ),
+    cell: ({ row }) => {
+      const data = row.original as ApprovedBankFormData;
+      if (!data.products || data.products.length === 0) {
+        return <div className="text-xs text-gray-400">—</div>;
+      }
+      return (
+        <div className="flex flex-wrap gap-1.5 max-w-[250px]">
+          {data.products.map((product: any, idx: number) => (
+            <span
+              key={idx}
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 animate-fade-in"
+            >
+              {product.productName}
+            </span>
+          ))}
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "approvalOdds",
     id: "approvalOdds",
     header: ({ column }) => (
@@ -503,6 +528,24 @@ const FundingCard = ({
             <p className="text-xs text-gray-500">Approval Odds</p>
             <div className="mt-1">
               <ApprovalOddsBadge odds={data.approvalOdds} />
+            </div>
+          </div>
+        )}
+
+      {isColumnVisible("approvedProducts") &&
+        data.products &&
+        data.products.length > 0 && (
+          <div>
+            <p className="text-xs text-gray-500">Approved Products</p>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {data.products.map((product: any, idx: number) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200"
+                >
+                  {product.productName}
+                </span>
+              ))}
             </div>
           </div>
         )}

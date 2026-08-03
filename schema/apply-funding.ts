@@ -268,6 +268,17 @@ export const applyFundingSchema = z
         }),
       )
       .optional(),
+    paystubs: z
+      .array(
+        z.object({
+          name: z.string(),
+          size: z.number(),
+          type: z.string(),
+          base64: z.string().optional(),
+          storagePath: z.string().optional(),
+        }),
+      )
+      .optional(),
     consentConfirmTerms: z.boolean(),
     consentConfirmPrivacy: z.boolean(),
     // Application method selection (Specialist vs Online)

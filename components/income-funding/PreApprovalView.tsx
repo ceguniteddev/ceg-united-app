@@ -139,7 +139,6 @@ export function PreApprovalView({
                 icon={TrendingUp}
                 label="Monthly Revenue"
                 value={formatUSD(u.monthlyDeposits)}
-                // badge={{ text: "Plaid synced", tone: "info" }}
                 hint="Avg. of last 4 months"
               />
             </div>
