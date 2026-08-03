@@ -49,6 +49,7 @@ export const registrationSchema = z.object({
   middleName: z.string().optional(),
   lastName: z.string().min(1, { error: "Required" }),
   email: z.email().min(1, { error: "Required" }),
+  emailVerified: z.boolean().optional(),
   password: passwordSchema.optional().or(z.literal("")),
   phoneNumber: z.string().min(1, { error: "Required" }),
   role: ROLESEnum.optional(),
