@@ -168,7 +168,6 @@ export const registerUser = async ({
   brokerName,
   brokerId,
   fundingData,
-  isBrokerInvite = false,
 }: {
   user: User;
   registrationType: RegistrationType;
@@ -279,8 +278,15 @@ export const registerUser = async ({
     password: user.password,
     displayName: `${user.firstName} ${user.middleName ? user.middleName + " " : ""}${user.lastName}`,
     disabled: false,
-    emailVerified: false,
+    emailVerified: user.role === "Admin",
   });
+
+  if (user.role === "Admin") {
+    return {
+      id: docRef.id,
+      ...normalizeAllDates(data),
+    };
+  }
 
   // Link client to broker if brokerId is provided
   if (brokerId && user.role === "Client") {
@@ -321,7 +327,7 @@ export const registerUser = async ({
       brokerName: brokerName,
       verificationLink: verificationLink,
     });
-  } else if (registrationType === "Admin" && user.role !== "Admin") {
+  } else if (registrationType === "Admin") {
     requestBody = getAdminInvitationToClientBody({
       clientName: `${user.firstName} ${user.middleName ? user.middleName + " " : ""}${user.lastName}`,
       email: user.email,
@@ -798,7 +804,7 @@ export const getUsers = async ({
           }`.trim();
 
           // Update all mappings for this broker
-          brokerMappings.forEach((mapping, clientId) => {
+          brokerMappings.forEach((mapping) => {
             if (mapping.brokerId === doc.id) {
               mapping.brokerName = brokerName;
             }
@@ -874,7 +880,7 @@ export const updateUserProfile = async ({
   if (!userData) throw new AppError("User not found.");
 
   // Remove fields that shouldn't be updated via this endpoint
-  const { password, email, role, ...updateData } = data;
+  const { ...updateData } = data;
 
   // Validate asanaURL if present: allow empty string or a valid URL
   if (Object.prototype.hasOwnProperty.call(updateData, "asanaURL")) {
@@ -1103,7 +1109,7 @@ export const changePassword = async (data: ChangePassword) => {
     throw new AppError("User not authenticated.");
   }
 
-  const { newPassword, confirmPassword, currentPassword } = data;
+  const { newPassword, confirmPassword } = data;
   const uid = user.uid;
 
   // 2. Input Validation: Ensure required data is present.
