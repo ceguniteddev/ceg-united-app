@@ -11,6 +11,8 @@ import { getSystemConfig } from "@/service/system-config";
 const PUBLIC_ROUTES = new Set<string>([
   "/",
   "/register",
+  "/admin-registration",
+  "/broker-registration",
   "/verify-email",
   "/api/auth/login",
   "/api/register",
@@ -19,6 +21,8 @@ const PUBLIC_ROUTES = new Set<string>([
   "/api/auth/verify-session",
   "/api/auth/verify-email",
   "/api/auth/validate-invitation",
+  "/api/admin/validate-token",
+  "/api/admin/register",
   "/api/broker/validate-token",
   "/api/broker/register",
   "/api/payments/whop",
@@ -57,6 +61,18 @@ function isPublic(pathname: string) {
   if (PUBLIC_ROUTES.has(pathname)) return true;
   // Allow all verify-email paths
   if (pathname.startsWith("/verify-email")) return true;
+
+  if (pathname.startsWith("/admin-registration")) return true;
+
+  if (pathname.startsWith("/broker-registration")) return true;
+
+  if (pathname.startsWith("/api/admin/validate-token")) return true;
+
+  if (pathname.startsWith("/api/admin/register")) return true;
+
+  if (pathname.startsWith("/api/broker/validate-token")) return true;
+
+  if (pathname.startsWith("/api/broker/register")) return true;
 
   if (pathname.startsWith("/api/auth/verify-email")) return true;
 
@@ -306,6 +322,8 @@ export const config = {
   matcher: [
     "/", // root (we fan out to role home)
     "/register", // public page
+    "/admin-registration",
+    "/broker-registration",
     "/verify-email/:path*", // email verification page
     "/onboarding", // onboarding flow
     // "/my-funding/:path*",

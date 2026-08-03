@@ -7,6 +7,10 @@ export function normalizeDate(value: any): Date | null {
     date = value;
   } else if (typeof value?.toDate === "function") {
     date = value.toDate();
+  } else if (typeof value?._seconds === "number") {
+    date = new Date(value._seconds * 1000);
+  } else if (typeof value?.seconds === "number") {
+    date = new Date(value.seconds * 1000);
   } else if (typeof value === "string") {
     date = new Date(value);
   }
@@ -30,6 +34,8 @@ export function normalizeAllDates(obj: any): any {
       if (
         value instanceof Date ||
         typeof value?.toDate === "function" ||
+        typeof value?._seconds === "number" ||
+        typeof value?.seconds === "number" ||
         (typeof value === "string" && isValidDateString(value))
       ) {
         normalized[key] = normalizeDate(value);

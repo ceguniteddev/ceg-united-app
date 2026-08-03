@@ -27,6 +27,10 @@ describe("EmailJobs enum", () => {
     expect(EmailJobs.BROKER_INVITATION).toBe("BROKER_INVITATION");
   });
 
+  it("has ADMIN_INVITATION", () => {
+    expect(EmailJobs.ADMIN_INVITATION).toBe("ADMIN_INVITATION");
+  });
+
   it("has GENERAL", () => {
     expect(EmailJobs.GENERAL).toBe("GENERAL");
   });
@@ -154,6 +158,7 @@ describe("triggerEmailSchema", () => {
     EmailJobs.SEND_PAYMENT_LINK,
     EmailJobs.CLIENT_INVITATION,
     EmailJobs.BROKER_INVITATION,
+    EmailJobs.ADMIN_INVITATION,
     EmailJobs.GENERAL,
   ])("accepts job value %s", (job) => {
     expect(triggerEmailSchema.safeParse({ ...baseEmail, job }).success).toBe(
