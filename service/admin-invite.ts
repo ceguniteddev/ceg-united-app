@@ -78,9 +78,12 @@ export const getAdminInvitationByToken = async (
   token: string,
 ): Promise<(AdminInvitation & { id: string }) | null> => {
   const db = firestoreAdmin();
+  const trimmedToken = token ? token.trim() : "";
+  if (!trimmedToken) return null;
+
   const snapshot = await db
     .collection(ADMIN_INVITATION)
-    .where("token", "==", token)
+    .where("token", "==", trimmedToken)
     .where("status", "==", "Pending")
     .get();
 
@@ -93,7 +96,8 @@ export const getAdminInvitationByToken = async (
   const data = normalizeAllDates(doc.data()) as AdminInvitation;
 
   // Check if expired
-  if (data.expiresAt < new Date()) {
+  const expiresAtMs = data.expiresAt ? new Date(data.expiresAt).getTime() : 0;
+  if (expiresAtMs > 0 && expiresAtMs < Date.now()) {
     await doc.ref.update({ status: "Expired" });
     return null;
   }
@@ -106,9 +110,10 @@ export const getAdminInvitationByToken = async (
  */
 export const acceptAdminInvitation = async (token: string): Promise<void> => {
   const db = firestoreAdmin();
+  const trimmedToken = token ? token.trim() : "";
   const snapshot = await db
     .collection(ADMIN_INVITATION)
-    .where("token", "==", token)
+    .where("token", "==", trimmedToken)
     .get();
 
   if (snapshot.empty) {
