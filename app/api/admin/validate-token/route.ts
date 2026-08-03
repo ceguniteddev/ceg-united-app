@@ -5,7 +5,8 @@ import { badRequest, handleApiError } from "@/app/api/helpers";
 export const GET = async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
-    const token = searchParams.get("token");
+    const token = searchParams.get("token")?.trim();
+    console.log("Token received for validation:", token);
 
     if (!token) {
       return badRequest({

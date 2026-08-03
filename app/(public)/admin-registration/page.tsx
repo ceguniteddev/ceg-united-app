@@ -16,10 +16,8 @@ import { passwordSchema } from "@/schema/registration";
 import {
   AlertCircle,
   ArrowLeft,
-  CheckCircle2,
   ShieldCheck,
   Mail,
-  Phone,
   Loader2,
 } from "lucide-react";
 
@@ -39,7 +37,8 @@ type AdminRegisterValues = z.infer<typeof adminRegisterSchema>;
 function AdminRegistrationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const rawToken = searchParams.get("token");
+  const token = rawToken ? rawToken.trim() : null;
 
   const [isValidating, setIsValidating] = useState(true);
   const [isValid, setIsValid] = useState(false);
@@ -70,7 +69,7 @@ function AdminRegistrationForm() {
     const validateToken = async () => {
       try {
         const response = await fetch(
-          `/api/admin/validate-token?token=${token}`,
+          `/api/admin/validate-token?token=${encodeURIComponent(token)}`,
         );
         if (!response.ok) {
           throw new Error("Validation request failed");
@@ -129,7 +128,7 @@ function AdminRegistrationForm() {
 
       // Redirect to login after a brief delay
       setTimeout(() => {
-        router.push("/login");
+        router.push("/");
       }, 2000);
     } catch (err: any) {
       toast.error("Registration Failed", {
@@ -190,7 +189,7 @@ function AdminRegistrationForm() {
           <div className="flex flex-col gap-3">
             <Button
               className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
-              onClick={() => router.push("/login")}
+              onClick={() => router.push("/")}
             >
               Go to Login
             </Button>
@@ -322,7 +321,7 @@ function AdminRegistrationForm() {
                   type="button"
                   variant="ghost"
                   disabled={isSubmitting}
-                  onClick={() => router.push("/login")}
+                  onClick={() => router.push("/")}
                   className="w-full h-11 text-gray-500 hover:text-gray-900 font-medium rounded-lg"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />

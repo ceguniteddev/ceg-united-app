@@ -12,6 +12,8 @@ import { Loader2 } from "lucide-react";
 import { CustomFormField } from "@/components/CustomFormField";
 import { useQueryClient } from "@tanstack/react-query";
 import { GET_USERS } from "@/constant/react-query-keys";
+import { useUsersQuery } from "@/hooks/user";
+import { UserWithId } from "@/schema/registration";
 
 const inviteAdminSchema = z.object({
   email: z
@@ -29,6 +31,7 @@ export default function InviteAdminForm({ setOpen }: InviteAdminFormProps) {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
+  const { users } = useUsersQuery("Admin");
 
   const form = useForm<InviteAdminFormValues>({
     resolver: zodResolver(inviteAdminSchema),
@@ -40,6 +43,21 @@ export default function InviteAdminForm({ setOpen }: InviteAdminFormProps) {
   const onSubmit = async (data: InviteAdminFormValues) => {
     if (!user) {
       toast.error("You must be logged in to invite admins");
+      return;
+    }
+
+    const trimmedEmail = data.email.trim().toLowerCase();
+
+    // Check if an admin with this email already exists in the fetched list
+    const existingAdmin = (users as UserWithId[] | null)?.find(
+      (u) => u.email?.trim().toLowerCase() === trimmedEmail,
+    );
+
+    if (existingAdmin) {
+      form.setError("email", {
+        type: "manual",
+        message: "An administrator with this email address already exists",
+      });
       return;
     }
 
@@ -58,9 +76,20 @@ export default function InviteAdminForm({ setOpen }: InviteAdminFormProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          error.message || error.errors?.[0] || "Failed to send invitation",
-        );
+        const errorMessage =
+          error.message || error.errors?.[0] || "Failed to send invitation";
+
+        if (
+          errorMessage.toLowerCase().includes("already exists") ||
+          errorMessage.toLowerCase().includes("already in use")
+        ) {
+          form.setError("email", {
+            type: "manual",
+            message: errorMessage,
+          });
+        }
+
+        throw new Error(errorMessage);
       }
 
       toast.success("Admin invitation sent successfully!", {
