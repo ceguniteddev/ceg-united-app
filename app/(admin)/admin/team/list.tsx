@@ -7,6 +7,7 @@ import {
   useUsersQuery,
   useUpdateUserStatusMutation,
   useResendVerificationMutation,
+  useDeleteUserMutation,
 } from "@/hooks/user";
 import { UserWithId, UserActiveStatus } from "@/schema/registration";
 import {
@@ -30,7 +31,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -93,6 +104,11 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
   });
 
   const { resendVerification, isResending } = useResendVerificationMutation();
+  const { deleteUser, isDeleting } = useDeleteUserMutation({
+    userId: user.id,
+  });
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   const handleStatusChange = React.useCallback(
     async (value: string) => {
@@ -113,6 +129,15 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
       toast.error(err.message || "Failed to resend verification email");
     }
   }, [resendVerification, user.id]);
+
+  const handleDeleteUser = React.useCallback(async () => {
+    try {
+      await deleteUser(user.id);
+      setIsDeleteDialogOpen(false);
+    } catch {
+      // Error is handled in toast within mutation
+    }
+  }, [deleteUser, user.id]);
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
@@ -177,6 +202,52 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
           {isResending ? "Resending..." : "Resend Link"}
         </Button>
       )}
+
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={isDeleting}
+        onClick={() => setIsDeleteDialogOpen(true)}
+        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+        title="Delete User"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!isDeleting) {
+            setIsDeleteDialogOpen(open);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete{" "}
+              <span className="font-semibold text-gray-900">
+                {user.firstName} {user.lastName}
+              </span>{" "}
+              ({user.email}) from the User collection and Firebase Auth.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteUser();
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeleting ? "Deleting..." : "Delete User"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
@@ -287,7 +358,7 @@ export default function AdminsList() {
     },
     {
       id: "actions",
-      header: "Status Control",
+      header: "Actions",
       cell: ({ row }) => {
         return <StatusPicker user={row.original} />;
       },
