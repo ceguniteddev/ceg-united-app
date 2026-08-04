@@ -230,7 +230,7 @@ const StatusPicker = ({ user }: { user: UserWithId }) => {
               <span className="font-semibold text-gray-900">
                 {user.firstName} {user.lastName}
               </span>{" "}
-              ({user.email}) from the User collection and Firebase Auth.
+              ({user.email}) as Administrator.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
