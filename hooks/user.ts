@@ -48,13 +48,11 @@ export const useSendClientServiceAgreementMutation = ({
   return { sendClientServiceAgreement, isSending, isError, error };
 };
 
-export const useDeleteUserMutation = ({
-  userId,
-  onSuccess,
-}: {
-  userId: string;
+export const useDeleteUserMutation = (options?: {
+  userId?: string;
   onSuccess?: () => void;
 }) => {
+  const { userId, onSuccess } = options || {};
   const queryClient = useQueryClient();
 
   const {
@@ -63,8 +61,13 @@ export const useDeleteUserMutation = ({
     isError,
     error,
   } = useMutation({
-    mutationFn: async () => {
-      const response = await fetch(`/api/user/${userId}`, {
+    mutationFn: async (overrideUserId?: string | void) => {
+      const idToDelete =
+        (typeof overrideUserId === "string" && overrideUserId) || userId;
+      if (!idToDelete) {
+        throw new Error("User ID is required");
+      }
+      const response = await fetch(`/api/user/${idToDelete}`, {
         method: "DELETE",
       });
       if (!response.ok) {
