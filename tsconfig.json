@@ -29,5 +29,10 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "functions", "ceg-income-funding-module"]
+  "exclude": [
+    "node_modules",
+    "functions",
+    "ceg-income-funding-module",
+    "new-feature"
+  ]
 }
