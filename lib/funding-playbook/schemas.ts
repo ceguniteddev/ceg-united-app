@@ -68,9 +68,19 @@ export type AIReconsiderationScriptOutputParsed = z.infer<
 >;
 
 export function validateApprovalRangeWithinBand(
-  aiRange: [number, number],
-  documentedRange: [number, number],
+  aiRange: [number, number] | undefined | null,
+  documentedRange: [number, number] | undefined | null,
 ): boolean {
+  if (
+    !documentedRange ||
+    !Array.isArray(documentedRange) ||
+    documentedRange.length < 2
+  ) {
+    return false;
+  }
+  if (!aiRange || !Array.isArray(aiRange) || aiRange.length < 2) {
+    return false;
+  }
   const [docLo, docHi] = documentedRange;
   const bandLo = docLo * 0.7;
   const bandHi = docHi * 1.3;

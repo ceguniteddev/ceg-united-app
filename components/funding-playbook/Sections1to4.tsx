@@ -23,12 +23,6 @@ import {
   EmptyState,
   ActionButton,
 } from "./Primitives";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: (string | undefined | null | false)[]) {
-  return twMerge(clsx(inputs));
-}
 
 // 01 — Best Application Method
 export function BestMethodSection({ pb }: { pb: Playbook }) {
@@ -45,7 +39,8 @@ export function BestMethodSection({ pb }: { pb: Playbook }) {
       subtitle={`How to submit your application for this product`}
       aside={
         <Chip tone="blue" icon={Clock}>
-          Online or Branch
+          Instant decision in ~60 seconds, or 2–5 business days if referred to
+          manual review
         </Chip>
       }
     >

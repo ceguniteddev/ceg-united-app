@@ -105,6 +105,7 @@ export interface ClientProfile {
   city?: string;
   state?: string;
   fundingPath: FundingPath;
+  leadData?: any;
   fundingGoalAmount?: number;
   creditReports: CreditReportSummary[];
   income: IncomeProfile;
@@ -317,6 +318,8 @@ export interface PlaybookMeta {
   clientId: string;
   lenderId: string;
   productId: string;
+  lenderDisplayName?: string;
+  productDisplayName?: string;
   generatedAt: string;
   expiresAt: string;
   reasoningModel: string;

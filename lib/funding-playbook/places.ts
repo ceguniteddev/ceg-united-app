@@ -45,14 +45,16 @@ export async function findNearestBranches(
 }
 
 function buildStateMappedBranches(
-  lenderDisplayName: string,
+  lenderDisplayName: string | undefined,
   zip: string,
   limit = 5,
 ): Branch[] {
+  const name = lenderDisplayName || "Lender";
+  const slug = name.toLowerCase().replace(/\s+/g, "_");
   return Array.from({ length: limit }).map((_, idx) => ({
-    placeId: `state_mapped_${lenderDisplayName.toLowerCase().replace(/\s+/g, "_")}_${idx + 1}`,
-    name: `${lenderDisplayName} Branch #${idx + 1}`,
-    address: `Local ${lenderDisplayName} Branch (Serving ZIP ${zip})`,
+    placeId: `state_mapped_${slug}_${idx + 1}`,
+    name: `${name} Branch #${idx + 1}`,
+    address: `Local ${name} Branch (Serving ZIP ${zip})`,
     lat: 29.6516 + idx * 0.01,
     lng: -82.3248 + idx * 0.01,
     distanceMiles: Math.round((idx + 1) * 2.3 * 10) / 10,
@@ -68,7 +70,7 @@ function buildStateMappedBranches(
     ],
     openNow: true,
     rating: 4.5,
-    googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lenderDisplayName} ${zip}`)}`,
+    googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name} ${zip}`)}`,
   }));
 }
 
