@@ -339,8 +339,8 @@ export async function POST(req: Request) {
 
     await checkAndIncrementRateLimit(clientId, "generatePlaybook");
 
-    const id = playbookId(clientId, lenderId, productId);
-    const cached = await getCachedPlaybook(id);
+    const cacheId = playbookId(clientId, lenderId, productId);
+    const cached = await getCachedPlaybook(cacheId);
     if (cached) {
       return NextResponse.json({ cached: true, playbook: cached });
     }

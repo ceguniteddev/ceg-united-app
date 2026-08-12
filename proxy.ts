@@ -39,6 +39,7 @@ const CLIENT_ALLOWED_API_PREFIXES = [
   "/api/pricing",
   "/api/contact/schedule",
   "/api/funding-application",
+  "/api/funding-playbook",
   "/api/auth/refresh-session",
   "/api/ocr",
 ];
