@@ -11,18 +11,18 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 
 export const SECTIONS = [
   { n: 1, id: "best-method", label: "Best Application Method" },
-  { n: 2, id: "relationship", label: "Lender Relationship" },
-  { n: 3, id: "banking-requirements", label: "Banking Requirements" },
-  { n: 4, id: "bureau", label: "Bureau & Inquiries" },
-  { n: 5, id: "income", label: "Income Structuring" },
-  { n: 6, id: "housing", label: "Housing & DTI Math" },
-  { n: 7, id: "approval", label: "Approval Estimate" },
-  { n: 8, id: "double-dip", label: "Double-Dip Strategy" },
-  { n: 9, id: "booking", label: "Reservation & Booking" },
-  { n: 10, id: "branches", label: "Nearest Branches" },
-  { n: 11, id: "denied", label: "Denial Mitigation" },
-  { n: 12, id: "improve-odds", label: "Improve Your Odds" },
-  { n: 13, id: "need-help", label: "Need Support Now" },
+  // { n: 2, id: "relationship", label: "Lender Relationship" },
+  // { n: 3, id: "banking-requirements", label: "Banking Requirements" },
+  { n: 2, id: "bureau", label: "Bureau & Inquiries" },
+  { n: 3, id: "income", label: "Income Structuring" },
+  { n: 4, id: "housing", label: "Housing & DTI Math" },
+  { n: 5, id: "approval", label: "Approval Estimate" },
+  { n: 6, id: "double-dip", label: "Double-Dip Strategy" },
+  { n: 7, id: "booking", label: "Reservation & Booking" },
+  { n: 8, id: "branches", label: "Nearest Branches" },
+  { n: 9, id: "denied", label: "Denial Mitigation" },
+  { n: 10, id: "improve-odds", label: "Improve Your Odds" },
+  { n: 11, id: "need-help", label: "Need Support Now" },
 ];
 
 function scrollToSection(id: string) {
@@ -44,9 +44,6 @@ export function SectionRail({ active }: { active: string }) {
         <div className="flex items-center justify-between mb-3 px-2">
           <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400">
             Your playbook
-          </span>
-          <span className="font-mono text-[10px] font-semibold text-gray-400 tabular-nums">
-            {activeIndex + 1}/{SECTIONS.length}
           </span>
         </div>
 
@@ -77,18 +74,6 @@ export function SectionRail({ active }: { active: string }) {
                       : "text-gray-500 hover:bg-gray-100 hover:text-gray-800",
                   )}
                 >
-                  <span
-                    className={cn(
-                      "text-[11px] font-semibold w-4 text-right flex-shrink-0 tabular-nums",
-                      isActive
-                        ? "text-blue-600"
-                        : isPast
-                          ? "text-gray-400"
-                          : "text-gray-300 group-hover:text-gray-400",
-                    )}
-                  >
-                    {String(s.n).padStart(2, "0")}
-                  </span>
                   <span
                     className={cn(
                       "text-[12.5px] leading-snug truncate",
@@ -122,14 +107,8 @@ export function SectionAccordionNav({ active }: { active: string }) {
         aria-expanded={open}
       >
         <ListOrdered className="w-4 h-4 text-blue-600 flex-shrink-0" />
-        <span className="font-mono text-[10.5px] font-semibold text-gray-400 tabular-nums">
-          {String(activeSection.n).padStart(2, "0")}
-        </span>
         <span className="text-[13px] font-semibold text-gray-800 truncate flex-1">
           {activeSection.label}
-        </span>
-        <span className="font-mono text-[10.5px] text-gray-400 tabular-nums flex-shrink-0">
-          {activeSection.n}/{SECTIONS.length}
         </span>
         <ChevronDown
           className={cn(
@@ -155,9 +134,6 @@ export function SectionAccordionNav({ active }: { active: string }) {
                     : "text-gray-600",
                 )}
               >
-                <span className="text-[11px] font-semibold w-4 text-right text-gray-400 tabular-nums">
-                  {String(s.n).padStart(2, "0")}
-                </span>
                 <span className="text-[13px] font-medium truncate">
                   {s.label}
                 </span>

@@ -32,6 +32,7 @@ import type {
   Product,
   Branch,
   CegProductLift,
+  ExistingLenderRelationship,
 } from "@/types/funding-playbook";
 
 const PLAYBOOK_TTL_HOURS = 24;
@@ -87,9 +88,71 @@ function buildFallbackAIOutput(
     ? client.cegServicesEnrolled
     : ["tradelines", "credit_repair", "income_coaching"];
 
+  const recommendedChannel: "online" | "in_branch" =
+    product?.inBranchApplicationRecommended ? "in_branch" : "online";
+
+  const otherChannels: {
+    channel: "online" | "phone" | "in_branch" | "mobile_app";
+    recommended: boolean;
+    note: string;
+  }[] =
+    recommendedChannel === "in_branch"
+      ? [
+          {
+            channel: "online",
+            recommended: false,
+            note: "The standard online application is available, but an in-branch banker can note your relationship on file before submitting.",
+          },
+          {
+            channel: "phone",
+            recommended: false,
+            note: lender?.generalCustomerService
+              ? `Call ${lender.generalCustomerService} only if the online application errors out or asks you to call.`
+              : "Use the phone channel only if the online application errors out or asks you to call.",
+          },
+        ]
+      : [
+          {
+            channel: "in_branch",
+            recommended: false,
+            note: "Only worth it if you want a banker to note your relationship on file before applying — ask them to submit while you sit with them.",
+          },
+          {
+            channel: "phone",
+            recommended: false,
+            note: lender?.generalCustomerService
+              ? `Call ${lender.generalCustomerService} only if the online application errors out or asks you to call.`
+              : "Use the phone channel only if the online application errors out or asks you to call.",
+          },
+        ];
+
   return {
     section1_aiPersonalizedNote:
       "Personalized guidance is temporarily unavailable — the curated recommendation above still applies.",
+    section1_recommendedChannel: recommendedChannel,
+    section1_recommendedHeadline:
+      recommendedChannel === "in_branch"
+        ? "Apply in branch — a banker can strengthen your file before submitting"
+        : "Apply online — you'll likely get a fast decision",
+    section1_reasoning:
+      recommendedChannel === "in_branch"
+        ? `${displayName}'s curated data indicates in-branch applications perform better for this product. A banker can review your file and note your relationship before submitting.`
+        : `${displayName}'s curated data indicates the standard online application channel is sufficient for this product and typically returns the fastest decision.`,
+    section1_keyTakeaways: [
+      "This recommendation is based on the lender's documented application behavior for this product.",
+      "Apply on a weekday morning (Tue–Thu) so any manual review is picked up the same day.",
+      "Have your income and identity details ready to reduce manual review triggers.",
+    ],
+    section1_otherChannels: otherChannels,
+    section1_decisionSpeedNote:
+      "Decision timing varies — many applications receive an instant decision, or 2–5 business days if referred to manual review.",
+    section2_whyThisMatters:
+      client?.existingLenderRelationships &&
+      client.existingLenderRelationships.length > 0
+        ? `Sign in to ${displayName} first — your application will pre-fill from your existing profile and your relationship is visible to underwriting. Applications submitted while signed in show a measurably higher approval rate than cold public applications.`
+        : `You're applying to ${displayName} as a new customer, which is completely fine. Building a checking or deposit relationship over time can boost your approval odds on future applications.`,
+    section3_ourRead:
+      "This lender pulls the bureau shown above. To keep your file clean, avoid applying for other credit that pulls the same bureau in the 30 days before this application.",
     section4_aiPersonalizedRange: [lo, hi],
     section4_confidenceLevel: "low",
     section4_aiReasoning:
@@ -200,6 +263,152 @@ function assessRelationshipDepth(
   return "deep";
 }
 
+const RELATIONSHIP_TYPE_LABEL: Record<string, string> = {
+  checking: "Checking",
+  savings: "Savings",
+  credit_card: "Credit Card",
+  loan: "Loan",
+  business_banking: "Business Banking",
+};
+
+function formatCurrency(amount: number): string {
+  return `$${Math.round(amount).toLocaleString("en-US")}`;
+}
+
+/** Build display-ready account cards from a client's relationships with a lender. */
+function buildRelationshipAccounts(
+  relationships: ExistingLenderRelationship[],
+): {
+  label: string;
+  detail: string;
+  openedYear: number | null;
+  balanceOrLimit: string;
+}[] {
+  const now = new Date();
+  return relationships.map((rel) => {
+    const typeLabel =
+      RELATIONSHIP_TYPE_LABEL[rel.relationshipType] ?? rel.relationshipType;
+    const openedYear =
+      rel.accountAgeMonths > 0
+        ? now.getFullYear() - Math.floor(rel.accountAgeMonths / 12)
+        : null;
+
+    const isRevolving = rel.relationshipType === "credit_card";
+    const balanceOrLimit =
+      rel.averageBalance && rel.averageBalance > 0
+        ? isRevolving
+          ? `${formatCurrency(rel.averageBalance)} limit`
+          : `${formatCurrency(rel.averageBalance)} avg balance`
+        : "Active";
+
+    return {
+      label: `${rel.lenderDisplayName} ${typeLabel}`,
+      detail: isRevolving ? "personal, never late" : typeLabel,
+      openedYear,
+      balanceOrLimit,
+    };
+  });
+}
+
+const BUREAU_DISPLAY: Record<string, "experian" | "equifax" | "transunion"> = {
+  experian: "experian",
+  equifax: "equifax",
+  transunion: "transunion",
+};
+
+function normalizeBureauKey(
+  bureau: string,
+): "experian" | "equifax" | "transunion" {
+  const key = (bureau || "").toLowerCase().replace(/[^a-z]/g, "");
+  return BUREAU_DISPLAY[key] ?? "experian";
+}
+
+function inquiryRiskTier(count: number): "optimal" | "caution" | "high-risk" {
+  if (count <= 3) return "optimal";
+  if (count <= 6) return "caution";
+  return "high-risk";
+}
+
+function inquiryRiskLabel(tier: "optimal" | "caution" | "high-risk"): string {
+  if (tier === "optimal") return "Optimal";
+  if (tier === "caution") return "Caution";
+  return "High risk";
+}
+
+/** Read a credit report's 6-month inquiry count regardless of field naming. */
+function reportInquiries6mo(report: any): number {
+  return Number(
+    report?.recentInquiriesCountLast6Months ??
+      report?.inquiriesLast6Months ??
+      0,
+  );
+}
+
+/** Build the per-bureau inquiry breakdown for section 3. */
+function buildBureauInquiries(
+  client: ClientProfile,
+  primaryBureau: string,
+): {
+  bureauInquiries: {
+    bureau: "experian" | "equifax" | "transunion";
+    score: number | null;
+    inquiries6mo: number;
+    riskTier: "optimal" | "caution" | "high-risk";
+    riskLabel: string;
+    isPrimary: boolean;
+  }[];
+  primaryInfo: {
+    inquiries: number;
+    tier: "optimal" | "caution" | "high-risk";
+    label: string;
+    score: number | null;
+  };
+} {
+  const primaryKey = normalizeBureauKey(primaryBureau);
+  const order: ("experian" | "equifax" | "transunion")[] = [
+    "experian",
+    "equifax",
+    "transunion",
+  ];
+
+  const reports = Array.isArray(client?.creditReports)
+    ? client.creditReports
+    : [];
+
+  const bureauInquiries = order.map((bureauKey) => {
+    const report = reports.find(
+      (r) => normalizeBureauKey((r as any).bureau) === bureauKey,
+    );
+    const inquiries6mo = report ? reportInquiries6mo(report) : 0;
+    const score =
+      report && typeof (report as any).score === "number"
+        ? (report as any).score
+        : null;
+    const riskTier = inquiryRiskTier(inquiries6mo);
+    return {
+      bureau: bureauKey,
+      score,
+      inquiries6mo,
+      riskTier,
+      riskLabel: inquiryRiskLabel(riskTier),
+      isPrimary: bureauKey === primaryKey,
+    };
+  });
+
+  const primary =
+    bureauInquiries.find((b) => b.isPrimary) ?? bureauInquiries[0];
+
+  return {
+    bureauInquiries,
+    primaryInfo: {
+      inquiries: primary.inquiries6mo,
+      tier: primary.riskTier,
+      label: primary.riskLabel,
+      score: primary.score,
+    },
+  };
+}
+
 async function buildPlaybook(
   client: ClientProfile,
   lender: Omit<Lender, "products">,
@@ -215,11 +424,26 @@ async function buildPlaybook(
   );
 
   const clientBureauReport =
-    client?.creditReports?.find((r) => r.bureau === lender.primaryBureau) ??
-    null;
-  const existingRelationship = client?.existingLenderRelationships?.find(
-    (r) => r.lenderId === lender.id,
+    client?.creditReports?.find(
+      (r) =>
+        normalizeBureauKey((r as any).bureau) ===
+        normalizeBureauKey(lender.primaryBureau),
+    ) ?? null;
+
+  const bureauData = buildBureauInquiries(client, lender.primaryBureau);
+  const lenderRelationships =
+    client?.existingLenderRelationships?.filter(
+      (r) => r.lenderId === lender.id,
+    ) ?? [];
+  const existingRelationship = lenderRelationships[0];
+  const lenderDisplayName =
+    lender.displayName || (lender as any).bankName || lender.id;
+  const maxAccountAgeMonths = lenderRelationships.reduce(
+    (max, r) => Math.max(max, r.accountAgeMonths || 0),
+    0,
   );
+  const yearsWithLender =
+    maxAccountAgeMonths > 0 ? Math.floor(maxAccountAgeMonths / 12) : null;
 
   const dtiWithHousing =
     client?.dti?.dtiPct ?? (client?.dti as any)?.dtiRatioPercent ?? 25;
@@ -263,15 +487,21 @@ async function buildPlaybook(
       },
     },
     section1_bestMethod: {
-      recommendedChannel: product.inBranchApplicationRecommended
-        ? "in_branch"
-        : "online",
-      reasoning: product.inBranchApplicationRecommended
-        ? "Curated data indicates in-branch applications perform better for this product."
-        : "Curated data indicates the standard online application channel is sufficient for this product.",
+      recommendedChannel:
+        ai.output.section1_recommendedChannel ??
+        (product.inBranchApplicationRecommended ? "in_branch" : "online"),
+      recommendedHeadline: ai.output.section1_recommendedHeadline,
+      reasoning:
+        ai.output.section1_reasoning ||
+        (product.inBranchApplicationRecommended
+          ? "Curated data indicates in-branch applications perform better for this product."
+          : "Curated data indicates the standard online application channel is sufficient for this product."),
       applicationUrl: product.applicationUrl,
       inBranchRecommended: !!product.inBranchApplicationRecommended,
       aiPersonalizedNote: ai.output.section1_aiPersonalizedNote,
+      keyTakeaways: ai.output.section1_keyTakeaways ?? [],
+      otherChannels: ai.output.section1_otherChannels ?? [],
+      decisionSpeedNote: ai.output.section1_decisionSpeedNote,
     },
     section2_relationship: {
       hasExistingRelationship: !!existingRelationship,
@@ -285,6 +515,13 @@ async function buildPlaybook(
       howRelationshipHelpsApproval:
         lender?.bankingRelationshipRequirements?.notes ??
         "No prior banking relationship required.",
+      lenderDisplayName,
+      yearsWithLender,
+      accounts: buildRelationshipAccounts(lenderRelationships),
+      applicationUrlLabel: existingRelationship
+        ? `Open your pre-filled ${lenderDisplayName} application`
+        : `Open the ${lenderDisplayName} application`,
+      whyThisMatters: ai.output.section2_whyThisMatters,
     },
     section3_bureauPull: {
       primaryBureau: lender.primaryBureau,
@@ -293,6 +530,12 @@ async function buildPlaybook(
       bureauPullNotes: lender.bureauPullNotes,
       doubleDipFriendly: lender.doubleDipFriendly,
       doubleDipRules: lender.doubleDipRules,
+      bureauInquiries: bureauData.bureauInquiries,
+      primaryBureauInquiries: bureauData.primaryInfo.inquiries,
+      primaryRiskTier: bureauData.primaryInfo.tier,
+      primaryRiskLabel: bureauData.primaryInfo.label,
+      favorable: bureauData.primaryInfo.tier === "optimal",
+      ourRead: ai.output.section3_ourRead,
     },
     section4_approvalEstimate: {
       lenderDocumentedRange: product.typicalApprovalRange,

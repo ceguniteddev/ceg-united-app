@@ -97,6 +97,14 @@ Using ONLY the DATA above plus general public knowledge of lending mechanics, pr
 
 {
   "section1_aiPersonalizedNote": string (1-2 sentences, personalized note on WHY the recommended application channel suits this client),
+  "section1_recommendedChannel": "online" | "phone" | "in_branch" | "mobile_app" (the single best channel for THIS client — favor in_branch only when CURATED_LENDER_DATA.product.inBranchApplicationRecommended is true or an existing relationship makes it clearly better),
+  "section1_recommendedHeadline": string (short punchy headline for the recommended method, e.g. "Apply online — you'll likely get an instant decision" — reference the client's actual advantage),
+  "section1_reasoning": string (2-3 sentences under a "Why this method" heading, explaining the underwriting behavior of THIS lender/product for THIS client's credit tier and relationship — cite real numbers where possible),
+  "section1_keyTakeaways": string[] (3-4 concise, concrete bullet points supporting the recommendation — reference this client's FICO tier, relationship, offers, or best day/time to apply; 1-6 items),
+  "section1_otherChannels": array of the NON-recommended channels the client could still use, each item: { "channel": "online"|"phone"|"in_branch"|"mobile_app", "recommended": boolean, "note": string (1-2 sentences on when/why to use or avoid this channel, referencing lender data like phone numbers or branch behavior) } (0-4 items, do NOT repeat section1_recommendedChannel),
+  "section1_decisionSpeedNote": string (1 sentence on expected decision speed, e.g. "Instant decision in ~60 seconds, or 2-5 business days if referred to manual review"),
+  "section2_whyThisMatters": string (2-3 sentences on why the client's existing relationship with this lender — or lack of one — matters for THIS application; if the client has existing accounts, explain how signing in pre-fills the application and how their tenure/relationship is visible to underwriting; if no relationship exists, explain that applying as a new customer is fine and how building a deposit relationship can boost future odds),
+  "section3_ourRead": string (2-3 sentences comparing this client's inquiry counts across all three bureaus — cite the real numbers from CLIENT_DATA.creditReports — and explain whether the lender's primaryBureau works in the client's favor; advise on avoiding other applications that pull the same bureau in the 30 days before this one),
   "section4_aiPersonalizedRange": [number, number] (must be within CURATED_LENDER_DATA.product.typicalApprovalRange expanded by at most ±30%),
   "section4_confidenceLevel": "low" | "medium" | "high",
   "section4_aiReasoning": string (explain the range using this client's actual FICO, utilization, inquiries, income — cite real numbers from CLIENT_DATA),

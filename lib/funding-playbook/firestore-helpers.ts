@@ -486,6 +486,14 @@ export async function getCachedPlaybook(id: string): Promise<Playbook | null> {
   const data = snap.data() as Playbook;
   const expiresAt = new Date(data.meta.expiresAt).getTime();
   if (Date.now() >= expiresAt) return null;
+
+  // Reject playbooks generated before the multi-bureau Section 04 schema.
+  // These lack the bureauInquiries array, so we force a fresh generation.
+  const bureauInquiries = (data as any)?.section3_bureauPull?.bureauInquiries;
+  if (!Array.isArray(bureauInquiries) || bureauInquiries.length === 0) {
+    return null;
+  }
+
   return data;
 }
 

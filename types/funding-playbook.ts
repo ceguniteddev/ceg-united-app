@@ -201,12 +201,35 @@ export interface BranchCacheDoc {
   expiresAt: string;
 }
 
+export type ApplicationChannel =
+  | "online"
+  | "phone"
+  | "in_branch"
+  | "mobile_app";
+
+export interface OtherChannel {
+  channel: ApplicationChannel;
+  recommended: boolean;
+  note: string;
+}
+
 export interface Section1_BestMethod {
-  recommendedChannel: "online" | "phone" | "in_branch" | "mobile_app";
+  recommendedChannel: ApplicationChannel;
+  recommendedHeadline: string;
   reasoning: string;
   applicationUrl: string;
   inBranchRecommended: boolean;
   aiPersonalizedNote: string;
+  keyTakeaways: string[];
+  otherChannels: OtherChannel[];
+  decisionSpeedNote: string;
+}
+
+export interface RelationshipAccount {
+  label: string;
+  detail: string;
+  openedYear: number | null;
+  balanceOrLimit: string;
 }
 
 export interface Section2_Relationship {
@@ -214,6 +237,22 @@ export interface Section2_Relationship {
   relationshipDetails?: ExistingLenderRelationship;
   relationshipDepthAssessment: "none" | "light" | "moderate" | "deep";
   howRelationshipHelpsApproval: string;
+  lenderDisplayName: string;
+  yearsWithLender: number | null;
+  accounts: RelationshipAccount[];
+  applicationUrlLabel: string;
+  whyThisMatters: string;
+}
+
+export type BureauRiskTier = "optimal" | "caution" | "high-risk";
+
+export interface BureauInquiryInfo {
+  bureau: Bureau;
+  score: number | null;
+  inquiries6mo: number;
+  riskTier: BureauRiskTier;
+  riskLabel: string;
+  isPrimary: boolean;
 }
 
 export interface Section3_BureauPull {
@@ -223,6 +262,12 @@ export interface Section3_BureauPull {
   bureauPullNotes: string;
   doubleDipFriendly: boolean;
   doubleDipRules: string;
+  bureauInquiries: BureauInquiryInfo[];
+  primaryBureauInquiries: number;
+  primaryRiskTier: BureauRiskTier;
+  primaryRiskLabel: string;
+  favorable: boolean;
+  ourRead: string;
 }
 
 export interface Section4_ApprovalEstimate {
@@ -378,6 +423,14 @@ export interface LenderHistoryEntry {
 
 export interface AIPlaybookReasoningOutput {
   section1_aiPersonalizedNote: string;
+  section1_recommendedChannel: ApplicationChannel;
+  section1_recommendedHeadline: string;
+  section1_reasoning: string;
+  section1_keyTakeaways: string[];
+  section1_otherChannels: OtherChannel[];
+  section1_decisionSpeedNote: string;
+  section2_whyThisMatters: string;
+  section3_ourRead: string;
   section4_aiPersonalizedRange: [number, number];
   section4_confidenceLevel: "low" | "medium" | "high";
   section4_aiReasoning: string;

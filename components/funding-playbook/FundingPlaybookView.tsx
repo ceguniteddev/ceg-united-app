@@ -156,8 +156,8 @@ export function FundingPlaybookView({
             </div>
 
             <BestMethodSection pb={playbook} />
-            <RelationshipSection pb={playbook} />
-            <BankingRequirementSection pb={playbook} />
+            {/* <RelationshipSection pb={playbook} /> */}
+            {/* <BankingRequirementSection pb={playbook} /> */}
             <BureauSection pb={playbook} />
             <IncomeSection pb={playbook} />
             <HousingSection pb={playbook} />

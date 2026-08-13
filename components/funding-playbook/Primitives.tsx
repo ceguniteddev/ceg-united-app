@@ -50,9 +50,6 @@ export function SectionCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <span className="font-mono text-[10px] font-semibold tracking-wider text-gray-400 flex-shrink-0">
-              {String(n).padStart(2, "0")}
-            </span>
             <h2 className="text-[15px] sm:text-base font-bold text-gray-900 tracking-tight leading-snug">
               {title}
             </h2>

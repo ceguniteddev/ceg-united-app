@@ -9,8 +9,29 @@ export const CegServiceEnum = z.enum([
 
 export const ConfidenceLevelEnum = z.enum(["low", "medium", "high"]);
 
+export const ApplicationChannelEnum = z.enum([
+  "online",
+  "phone",
+  "in_branch",
+  "mobile_app",
+]);
+
+export const OtherChannelSchema = z.object({
+  channel: ApplicationChannelEnum,
+  recommended: z.boolean(),
+  note: z.string().min(1).max(400),
+});
+
 export const AIPlaybookReasoningOutputSchema = z.object({
   section1_aiPersonalizedNote: z.string().min(1).max(600),
+  section1_recommendedChannel: ApplicationChannelEnum,
+  section1_recommendedHeadline: z.string().min(1).max(200),
+  section1_reasoning: z.string().min(1).max(800),
+  section1_keyTakeaways: z.array(z.string().min(1)).min(1).max(6),
+  section1_otherChannels: z.array(OtherChannelSchema).min(0).max(4),
+  section1_decisionSpeedNote: z.string().min(1).max(300),
+  section2_whyThisMatters: z.string().min(1).max(600),
+  section3_ourRead: z.string().min(1).max(600),
 
   section4_aiPersonalizedRange: z
     .tuple([z.number().nonnegative(), z.number().nonnegative()])
