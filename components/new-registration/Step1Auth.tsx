@@ -5,7 +5,6 @@ import { FormInput } from "@/components/forms/form-input";
 import { FormPhoneInput } from "@/components/forms/form-phone-input";
 import { PasswordStrength } from "@/components/PasswordStrength";
 import { useFormContext, useWatch } from "react-hook-form";
-import Link from "next/link";
 import { FormSSNInput } from "../forms/form-ssn-input";
 import { FormCheckbox } from "../forms/form-checkbox";
 import { Label } from "../ui/label";
@@ -131,18 +130,6 @@ export function Step1Auth() {
               </div>
             }
           />
-        </div>
-
-        <div className="mt-8 -mx-6 -mb-6 p-6 border-t border-blue-100 bg-blue-50/50 text-center rounded-b-xl">
-          <p className="text-sm text-slate-700 font-medium">
-            Already have an account?{" "}
-            <Link
-              href="/"
-              className="text-blue-700 hover:text-blue-900 font-bold hover:underline transition-all"
-            >
-              Log in
-            </Link>
-          </p>
         </div>
       </CardContent>
     </Card>
