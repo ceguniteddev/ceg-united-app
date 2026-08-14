@@ -487,10 +487,14 @@ export async function getCachedPlaybook(id: string): Promise<Playbook | null> {
   const expiresAt = new Date(data.meta.expiresAt).getTime();
   if (Date.now() >= expiresAt) return null;
 
-  // Reject playbooks generated before the multi-bureau Section 04 schema.
-  // These lack the bureauInquiries array, so we force a fresh generation.
+  // Reject playbooks generated before the multi-bureau Section 03 or enriched Section 04 schema.
+  // These lack bureauInquiries or topDrivers, so we force a fresh generation.
   const bureauInquiries = (data as any)?.section3_bureauPull?.bureauInquiries;
   if (!Array.isArray(bureauInquiries) || bureauInquiries.length === 0) {
+    return null;
+  }
+  const topDrivers = (data as any)?.section4_approvalEstimate?.topDrivers;
+  if (!Array.isArray(topDrivers) || topDrivers.length === 0) {
     return null;
   }
 

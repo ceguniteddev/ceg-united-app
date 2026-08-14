@@ -11,6 +11,7 @@ import {
   NearestBranchesRequestSchema,
   ReconsiderationScriptRequestSchema,
   SavePlaybookFeedbackRequestSchema,
+  AIPlaybookReasoningOutputSchema,
   validateApprovalRangeWithinBand,
 } from "@/lib/funding-playbook/schemas";
 
@@ -83,5 +84,58 @@ describe("Funding Playbook Schemas & Validation", () => {
     expect(
       validateApprovalRangeWithinBand([12000, 70000], documentedBand),
     ).toBe(false);
+  });
+
+  it("validates AIPlaybookReasoningOutputSchema with Section 4 enriched fields", () => {
+    const validOutput = {
+      section1_aiPersonalizedNote: "Note",
+      section1_recommendedChannel: "online",
+      section1_recommendedHeadline: "Headline",
+      section1_reasoning: "Reasoning",
+      section1_keyTakeaways: ["Takeaway 1"],
+      section1_otherChannels: [],
+      section1_decisionSpeedNote: "Speed note",
+      section2_whyThisMatters: "Why it matters",
+      section3_ourRead: "Our read",
+      section4_aiPersonalizedRange: [18000, 32000],
+      section4_confidenceLevel: "high",
+      section4_confidencePct: 82,
+      section4_aiReasoning: "Based on 742 FICO...",
+      section4_estimateNote: "Product starting limit $5,000...",
+      section4_topDrivers: [
+        {
+          label: "742 FICO (Experian)",
+          detail: "Very Good tier",
+          weightPct: 38,
+          impact: "positive",
+        },
+        {
+          label: "5-year relationship",
+          detail: "Strong",
+          weightPct: 31,
+          impact: "positive",
+        },
+        {
+          label: "Thin credit file",
+          detail: "Caps the high end",
+          weightPct: 19,
+          impact: "negative",
+        },
+      ],
+      section5_aiRecommendedStatedIncome: 145000,
+      section5_aiReasoning: "Reasoning",
+      section6_aiStructuringMath: "Math",
+      section6_aiRecommendation: "Recommendation",
+      section7_aiClientSpecificRisks: ["Risk 1"],
+      section7_aiMitigationSteps: ["Step 1"],
+      section8_recommendations: [],
+      section10_aiPhoneScript: "Script",
+      section11_aiTimingRationale: "Rationale",
+      section13_aiClosingNote: "Closing",
+    };
+
+    expect(AIPlaybookReasoningOutputSchema.safeParse(validOutput).success).toBe(
+      true,
+    );
   });
 });

@@ -155,8 +155,30 @@ function buildFallbackAIOutput(
       "This lender pulls the bureau shown above. To keep your file clean, avoid applying for other credit that pulls the same bureau in the 30 days before this application.",
     section4_aiPersonalizedRange: [lo, hi],
     section4_confidenceLevel: "low",
+    section4_confidencePct: 35,
     section4_aiReasoning:
       "This is the lender's documented approval range. Personalized narrowing based on your profile is temporarily unavailable.",
+    section4_estimateNote: `${displayName} typical approval range is $${lo.toLocaleString()}–$${hi.toLocaleString()}. Detailed profile clustering is temporarily unavailable.`,
+    section4_topDrivers: [
+      {
+        label: `${(client as any)?.creditScores?.experian || client?.creditReports?.[0]?.score || 680} FICO (${lender?.primaryBureau || "Experian"})`,
+        detail: "Primary credit profile input",
+        weightPct: 40,
+        impact: "neutral",
+      },
+      {
+        label: `${displayName} relationship & profile history`,
+        detail: "Banking & application history",
+        weightPct: 35,
+        impact: "neutral",
+      },
+      {
+        label: "Credit file depth & revolving utilization",
+        detail: "Underwriting factors",
+        weightPct: 25,
+        impact: "neutral",
+      },
+    ],
     section5_aiRecommendedStatedIncome: statedIncome,
     section5_aiReasoning:
       "Using your most recently recorded stated income; personalized guidance is temporarily unavailable.",
@@ -207,7 +229,7 @@ async function getAIPlaybookOutput(
       systemPrompt,
       userPrompt,
       temperature: 0.3,
-      maxOutputTokens: 2200,
+      maxOutputTokens: 8000,
     });
     const jsonText = extractJsonBlock(result.rawText);
     const parsed = JSON.parse(jsonText);
@@ -221,6 +243,7 @@ async function getAIPlaybookOutput(
     ) {
       validated.section4_aiPersonalizedRange = product.typicalApprovalRange;
       validated.section4_confidenceLevel = "low";
+      validated.section4_confidencePct = 30;
     }
 
     return {
@@ -541,7 +564,16 @@ async function buildPlaybook(
       lenderDocumentedRange: product.typicalApprovalRange,
       aiPersonalizedRange: ai.output.section4_aiPersonalizedRange,
       confidenceLevel: ai.output.section4_confidenceLevel,
+      confidencePct:
+        ai.output.section4_confidencePct ??
+        (ai.output.section4_confidenceLevel === "high"
+          ? 82
+          : ai.output.section4_confidenceLevel === "medium"
+            ? 65
+            : 35),
       aiReasoning: ai.output.section4_aiReasoning,
+      estimateNote: ai.output.section4_estimateNote,
+      topDrivers: ai.output.section4_topDrivers,
       minFICORequired: product.minFICO,
       clientMeetsMinFICO: (clientBureauReport?.score ?? 0) >= product.minFICO,
     },

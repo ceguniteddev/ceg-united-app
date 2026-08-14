@@ -21,8 +21,33 @@ STRICT RULES:
 3. The script must be exactly 4 sentences: (1) a polite opener stating purpose, (2) a concise, honest explanation addressing the specific denial reason, (3) one concrete compensating factor from the client's real profile, (4) a clear, courteous ask (reconsideration or specific accommodation).
 4. Return ONLY a single valid JSON object: { "script": "..." }. No markdown, no extra keys.`;
 
-function serializeClientForPrompt(client: ClientProfile) {
+function serializeClientForPrompt(
+  client: ClientProfile,
+  primaryBureau?: string,
+) {
+  const reports = Array.isArray(client.creditReports)
+    ? client.creditReports
+    : [];
+  const primaryKey = (primaryBureau || "").toLowerCase().replace(/[^a-z]/g, "");
+  const primaryReport =
+    reports.find(
+      (r) =>
+        (r as any).bureau?.toLowerCase().replace(/[^a-z]/g, "") === primaryKey,
+    ) ?? reports[0];
+
+  const primaryFicoScore =
+    primaryReport?.score ||
+    (client as any).creditScores?.[primaryKey] ||
+    (client as any).ficoCreditScore ||
+    0;
+  const primaryFicoBureau =
+    primaryReport?.bureau || primaryBureau || "Experian";
+  const ficoSource = primaryReport?.score ? "crs-report-data" : "user-leads";
+
   return {
+    primaryFicoScore,
+    primaryFicoBureau,
+    ficoSource,
     zip: client.zip,
     state: client.state,
     fundingPath: client.fundingPath,
@@ -85,7 +110,7 @@ export function buildPlaybookPrompt(inputs: PlaybookPromptInputs): {
   const { client, lender, product } = inputs;
 
   const dataBlock = {
-    CLIENT_DATA: serializeClientForPrompt(client),
+    CLIENT_DATA: serializeClientForPrompt(client, lender.primaryBureau),
     CURATED_LENDER_DATA: serializeLenderForPrompt(lender, product),
   };
 
@@ -105,9 +130,19 @@ Using ONLY the DATA above plus general public knowledge of lending mechanics, pr
   "section1_decisionSpeedNote": string (1 sentence on expected decision speed, e.g. "Instant decision in ~60 seconds, or 2-5 business days if referred to manual review"),
   "section2_whyThisMatters": string (2-3 sentences on why the client's existing relationship with this lender — or lack of one — matters for THIS application; if the client has existing accounts, explain how signing in pre-fills the application and how their tenure/relationship is visible to underwriting; if no relationship exists, explain that applying as a new customer is fine and how building a deposit relationship can boost future odds),
   "section3_ourRead": string (2-3 sentences comparing this client's inquiry counts across all three bureaus — cite the real numbers from CLIENT_DATA.creditReports — and explain whether the lender's primaryBureau works in the client's favor; advise on avoiding other applications that pull the same bureau in the 30 days before this one),
-  "section4_aiPersonalizedRange": [number, number] (must be within CURATED_LENDER_DATA.product.typicalApprovalRange expanded by at most ±30%),
+  "section4_aiPersonalizedRange": [number, number] (must anchor on CLIENT_DATA.primaryFicoScore tier and profile, within CURATED_LENDER_DATA.product.typicalApprovalRange expanded by at most ±30%),
   "section4_confidenceLevel": "low" | "medium" | "high",
-  "section4_aiReasoning": string (explain the range using this client's actual FICO, utilization, inquiries, income — cite real numbers from CLIENT_DATA),
+  "section4_confidencePct": number (integer 0-100 representing confidence percentage, e.g. 82 for high confidence),
+  "section4_aiReasoning": string (1-2 sentences explaining the estimate, referencing real numbers e.g. "Based on your 742 FICO, $145K household income... and lender typical approval band..."),
+  "section4_estimateNote": string (1-2 sentences explaining product minimum starting limit, profile band cluster, and long tail conditions e.g. "Product has a $5,000 minimum starting limit. Approvals in your profile band cluster at $18K–$32K, with a long tail to $45K for applicants carrying 2+ seasoned business tradelines."),
+  "section4_topDrivers": array of EXACTLY 3 objects driving this estimate, ordered by impact rank: [
+    {
+      "label": string (short punchy title, e.g. "742 FICO (Experian)" or "5-year Chase relationship + $18.9K avg business balance" or "Thin business credit file"),
+      "detail": string (short status/assessment, e.g. "Very Good tier" or "Strong" or "Caps the high end"),
+      "weightPct": number (integer 1-100 relative impact weight, total summing to ~100),
+      "impact": "positive" | "negative" | "neutral" ("positive" for green status bar, "negative" for red status bar)
+    }
+  ],
   "section5_aiRecommendedStatedIncome": number (a specific dollar figure this client could honestly state, based on CLIENT_DATA.income),
   "section5_aiReasoning": string,
   "section5_regulationBNote": string (OPTIONAL — only include if household income plausibly applies; frame as "may allow", cite Reg B 12 CFR 1002.6(b)(8)),

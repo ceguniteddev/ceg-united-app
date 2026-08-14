@@ -184,25 +184,37 @@ async function callGeminiPro(
         contents: [{ parts: [{ text: prompt.userPrompt }] }],
         generationConfig: {
           temperature: prompt.temperature ?? 0.3,
-          maxOutputTokens: prompt.maxOutputTokens ?? 2000,
+          maxOutputTokens: prompt.maxOutputTokens ?? 8000,
           responseMimeType: "application/json",
         },
       }),
     });
 
     if (!res.ok) {
-      throw new Error(`Google Gemini API returned status ${res.status}`);
+      const errorText = await res.text();
+      console.error("Google Gemini API Error Body:", errorText);
+      throw new Error(
+        `Google Gemini API returned status ${res.status}: ${errorText}`,
+      );
     }
 
     const data = (await res.json()) as {
-      candidates?: Array<{ content?: { parts?: Array<{ text: string }> } }>;
+      candidates?: Array<{
+        content?: { parts?: Array<{ text: string }> };
+        finishReason?: string;
+      }>;
       usageMetadata?: {
         promptTokenCount?: number;
         candidatesTokenCount?: number;
       };
     };
 
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const candidate = data.candidates?.[0];
+    if (candidate?.finishReason && candidate.finishReason !== "STOP") {
+      console.warn(`Gemini returned finishReason: ${candidate.finishReason}`);
+    }
+
+    const rawText = candidate?.content?.parts?.[0]?.text ?? "";
     const usage = data.usageMetadata;
     const estimatedCostUsd = usage
       ? ((usage.promptTokenCount ?? 0) / 1_000_000) * 1.25 +

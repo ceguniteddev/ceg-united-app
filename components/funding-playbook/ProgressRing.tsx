@@ -111,9 +111,18 @@ export function ConfidenceBar({
   pct,
   confidence,
 }: {
-  pct: number;
+  pct?: number;
   confidence: "high" | "medium" | "low";
 }) {
+  const displayPct =
+    typeof pct === "number"
+      ? pct
+      : confidence === "high"
+        ? 82
+        : confidence === "medium"
+          ? 65
+          : 35;
+
   const tone =
     confidence === "high"
       ? {
@@ -141,14 +150,14 @@ export function ConfidenceBar({
           {tone.label}
         </span>
         <span className="font-mono text-[11px] font-semibold text-gray-500 tabular-nums">
-          {pct}%
+          {displayPct}%
         </span>
       </div>
       <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
         <div
           className={cn("h-full rounded-full", tone.bar)}
           style={{
-            width: `${pct}%`,
+            width: `${displayPct}%`,
             transition: "width 900ms cubic-bezier(0.16,1,0.3,1)",
           }}
         />

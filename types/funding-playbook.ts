@@ -270,11 +270,21 @@ export interface Section3_BureauPull {
   ourRead: string;
 }
 
+export interface TopDriver {
+  label: string;
+  detail: string;
+  weightPct: number;
+  impact: "positive" | "negative" | "neutral";
+}
+
 export interface Section4_ApprovalEstimate {
   lenderDocumentedRange: [number, number];
   aiPersonalizedRange: [number, number];
   confidenceLevel: "low" | "medium" | "high";
+  confidencePct?: number;
   aiReasoning: string;
+  estimateNote?: string;
+  topDrivers?: TopDriver[];
   minFICORequired: number;
   clientMeetsMinFICO: boolean;
 }
@@ -433,7 +443,10 @@ export interface AIPlaybookReasoningOutput {
   section3_ourRead: string;
   section4_aiPersonalizedRange: [number, number];
   section4_confidenceLevel: "low" | "medium" | "high";
+  section4_confidencePct?: number;
   section4_aiReasoning: string;
+  section4_estimateNote?: string;
+  section4_topDrivers?: TopDriver[];
   section5_aiRecommendedStatedIncome: number;
   section5_aiReasoning: string;
   section5_regulationBNote?: string;

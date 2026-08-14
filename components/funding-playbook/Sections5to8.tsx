@@ -169,6 +169,61 @@ export function HousingSection({ pb }: { pb: Playbook }) {
 export function ApprovalSection({ pb }: { pb: Playbook }) {
   const a = pb.section4_approvalEstimate;
   const [lo, hi] = a.aiPersonalizedRange;
+  const [docLo, docHi] = a.lenderDocumentedRange || [5000, 50000];
+
+  const lenderName = pb.meta?.lenderDisplayName || "Lender";
+  const productName = pb.meta?.productDisplayName || "Product";
+
+  // Compute slider track percentages relative to documented range
+  const minLimit = docLo;
+  const maxLimit = Math.max(docHi, hi * 1.05);
+  const totalSpan = maxLimit - minLimit || 1;
+  const leftPct = Math.max(
+    0,
+    Math.min(100, ((lo - minLimit) / totalSpan) * 100),
+  );
+  const widthPct = Math.max(
+    5,
+    Math.min(100 - leftPct, ((hi - lo) / totalSpan) * 100),
+  );
+
+  const midpoint = Math.round((lo + hi) / 2);
+
+  const confidencePct =
+    a.confidencePct ??
+    (a.confidenceLevel === "high"
+      ? 82
+      : a.confidenceLevel === "medium"
+        ? 65
+        : 35);
+
+  const drivers =
+    a.topDrivers && a.topDrivers.length > 0
+      ? a.topDrivers.slice(0, 3)
+      : [
+          {
+            label: `${pb.section3_bureauPull?.clientScoreOnPrimaryBureau || 680} FICO (${pb.section3_bureauPull?.primaryBureau || "Primary Bureau"})`,
+            detail: "Primary credit profile input",
+            weightPct: 40,
+            impact: "positive" as const,
+          },
+          {
+            label: `${lenderName} banking & account tenure`,
+            detail: "Relationship factors",
+            weightPct: 35,
+            impact: "positive" as const,
+          },
+          {
+            label: "Revolving utilization & credit file depth",
+            detail: "Underwriting factors",
+            weightPct: 25,
+            impact: "neutral" as const,
+          },
+        ];
+
+  const noteText =
+    a.estimateNote ||
+    `${productName} has a ${usd(docLo)} minimum starting limit. Approvals in your profile band cluster at ${usd(lo)}–${usd(hi)}, with a tail up to ${usd(docHi)} for well-established profiles.`;
 
   return (
     <SectionCard
@@ -176,8 +231,8 @@ export function ApprovalSection({ pb }: { pb: Playbook }) {
       id="approval"
       icon={Wallet}
       accent="brand"
-      title="Personalized Approval Estimate"
-      subtitle="Estimated credit limit range based on your profile"
+      title="Estimated Approval Amount"
+      subtitle={`What ${lenderName} is likely to extend on ${productName}`}
       aside={
         <Chip
           tone={
@@ -188,50 +243,126 @@ export function ApprovalSection({ pb }: { pb: Playbook }) {
                 : "red"
           }
         >
-          {a.confidenceLevel.toUpperCase()} Confidence
+          {a.confidenceLevel === "high"
+            ? "High confidence"
+            : a.confidenceLevel === "medium"
+              ? "Medium confidence"
+              : "Low confidence"}
         </Chip>
       }
     >
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        {/* Left Column */}
         <div className="space-y-4">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-900 to-[#2a4f7c] px-5 py-6 text-white">
-            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/60">
-              Estimated Personalized Range
+          {/* Dark Blue Estimated Approval Range Card */}
+          <div className="relative overflow-hidden rounded-2xl bg-[#1b3459] px-6 py-6 text-white shadow-sm">
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">
+              Estimated Approval Range
             </div>
-            <div className="font-mono text-[34px] sm:text-[44px] font-bold tracking-tight leading-none mt-2 tabular-nums">
-              {usd(lo)} <span className="text-white/40 font-normal">–</span>{" "}
+            <div className="font-mono text-[36px] sm:text-[46px] font-bold tracking-tight leading-none mt-2 tabular-nums">
+              {usd(lo)}{" "}
+              <span className="text-slate-400 font-normal mx-1">–</span>{" "}
               {usd(hi)}
             </div>
-            <div className="mt-3 text-[11px] text-white/70">
-              Lender documented range: {usd(a.lenderDocumentedRange[0])} –{" "}
-              {usd(a.lenderDocumentedRange[1])}
+
+            {/* Slider track visualization */}
+            <div className="mt-6 space-y-2">
+              <div className="relative h-2.5 w-full rounded-full bg-slate-700/70 overflow-hidden">
+                <div
+                  className="absolute h-full rounded-full bg-slate-200/90 shadow-sm"
+                  style={{
+                    left: `${leftPct}%`,
+                    width: `${widthPct}%`,
+                  }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-slate-300 font-mono tabular-nums pt-1">
+                <span>{usd(minLimit)} min</span>
+                <span className="text-slate-300">midpoint {usd(midpoint)}</span>
+                <span>{usd(maxLimit)} tail</span>
+              </div>
             </div>
           </div>
 
-          <RationaleBlock label="Reasoning">{a.aiReasoning}</RationaleBlock>
+          {/* Confidence Bar & Reasoning */}
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 space-y-3">
+            <ConfidenceBar pct={confidencePct} confidence={a.confidenceLevel} />
+            <p className="text-[12.5px] text-gray-700 leading-relaxed pt-1">
+              {a.aiReasoning}
+            </p>
+          </div>
+
+          {/* Estimate Note Box */}
+          <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
+            <Layers className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+            <p className="text-[12px] text-blue-900 leading-relaxed">
+              {noteText}
+            </p>
+          </div>
         </div>
 
+        {/* Right Column: Top 3 Inputs */}
         <div className="space-y-3">
-          <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">
-            FICO Requirement
+          <div className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-gray-400 px-0.5">
+            Top 3 Inputs Driving This Estimate
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white px-3.5 py-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[12.5px] font-semibold text-gray-700">
-                Minimum FICO
-              </span>
-              <span className="font-mono font-bold text-gray-900">
-                {a.minFICORequired}
-              </span>
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-[12px] text-gray-500">
-                You meet minimum
-              </span>
-              <Chip tone={a.clientMeetsMinFICO ? "green" : "red"}>
-                {a.clientMeetsMinFICO ? "Yes" : "No"}
-              </Chip>
-            </div>
+
+          <div className="space-y-2.5">
+            {drivers.map((driver, idx) => {
+              const isPos = driver.impact === "positive";
+              const isNeg = driver.impact === "negative";
+              return (
+                <div
+                  key={idx}
+                  className="rounded-xl border border-gray-200/80 bg-white p-3.5 space-y-2"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <span className="font-mono text-[11px] font-semibold text-gray-300 shrink-0 pt-0.5">
+                        {idx + 1}
+                      </span>
+                      <h4 className="text-[12.5px] font-bold text-gray-900 leading-snug truncate">
+                        {driver.label}
+                      </h4>
+                    </div>
+                    <span className="font-mono text-[11px] font-medium text-gray-400 shrink-0">
+                      {driver.weightPct}%
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span
+                      className={cn(
+                        "font-semibold",
+                        isPos
+                          ? "text-emerald-700"
+                          : isNeg
+                            ? "text-red-600"
+                            : "text-gray-600",
+                      )}
+                    >
+                      {driver.detail}
+                    </span>
+                  </div>
+
+                  <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full rounded-full",
+                        isPos
+                          ? "bg-emerald-500"
+                          : isNeg
+                            ? "bg-red-500"
+                            : "bg-blue-500",
+                      )}
+                      style={{
+                        width: `${Math.min(100, Math.max(5, driver.weightPct))}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

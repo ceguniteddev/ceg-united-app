@@ -37,7 +37,27 @@ export const AIPlaybookReasoningOutputSchema = z.object({
     .tuple([z.number().nonnegative(), z.number().nonnegative()])
     .refine(([lo, hi]) => lo <= hi, { message: "range min must be <= max" }),
   section4_confidenceLevel: ConfidenceLevelEnum,
+  section4_confidencePct: z
+    .number()
+    .int()
+    .min(0)
+    .max(100)
+    .optional()
+    .default(75),
   section4_aiReasoning: z.string().min(1).max(800),
+  section4_estimateNote: z.string().min(1).max(800).optional(),
+  section4_topDrivers: z
+    .array(
+      z.object({
+        label: z.string().min(1).max(200),
+        detail: z.string().min(1).max(200),
+        weightPct: z.number().int().min(1).max(100),
+        impact: z.enum(["positive", "negative", "neutral"]),
+      }),
+    )
+    .min(0)
+    .max(5)
+    .optional(),
 
   section5_aiRecommendedStatedIncome: z.number().nonnegative(),
   section5_aiReasoning: z.string().min(1).max(800),
