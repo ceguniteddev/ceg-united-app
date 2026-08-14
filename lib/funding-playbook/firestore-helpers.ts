@@ -225,19 +225,73 @@ export async function getClient(clientId: string): Promise<ClientProfile> {
     data.payPerMonth ||
     data.dti?.rentOrMortgageMonthly ||
     0;
-  const annualIncome =
+
+  // ── Compute verified income from W2 / paystubs ──
+  const primaryPayMonthly = Number(data.employmentPayPerMonth || 0);
+  const additionalPayMonthlyFromEmployments = Array.isArray(data.employments)
+    ? data.employments.reduce(
+        (sum: number, emp: any) => sum + Number(emp.employmentPayPerMonth || 0),
+        0,
+      )
+    : 0;
+  const totalVerifiedPayMonthly =
+    primaryPayMonthly + additionalPayMonthlyFromEmployments;
+
+  const verifiableIncomeMonthly =
+    data.income?.verifiableIncomeMonthly ||
+    (totalVerifiedPayMonthly > 0 ? totalVerifiedPayMonthly : 0);
+  const verifiableAnnualIncome =
+    data.income?.verifiableAnnualIncome ||
+    (verifiableIncomeMonthly > 0
+      ? verifiableIncomeMonthly * 12
+      : (data.income?.verifiableAnnualIncome ?? 0));
+
+  // ── Additional & corrected stated income ──
+  const correctedStatedAnnual = Number(data.statedAnnualIncomeCorrected || 0);
+  const additionalMonthly = Number(data.additionalMonthlyIncome || 0);
+  const additionalAnnual = additionalMonthly * 12;
+
+  const rawStated =
     data.income?.statedAnnualIncome ||
-    leadData?.householdIncome ||
+    Number(data.annualIncome || 0) ||
     leadData?.annualIncome ||
-    leadData?.fundingAmount ||
-    (data.employmentPayPerMonth ? data.employmentPayPerMonth * 12 : 0);
+    0;
+
+  const statedAnnualIncome =
+    correctedStatedAnnual > 0
+      ? correctedStatedAnnual
+      : rawStated > 0
+        ? rawStated
+        : verifiableAnnualIncome > 0
+          ? verifiableAnnualIncome
+          : additionalAnnual;
 
   const householdIncome =
-    data.income?.householdIncome || leadData?.householdIncome || annualIncome;
+    data.income?.householdIncome ||
+    leadData?.householdIncome ||
+    (verifiableAnnualIncome > 0
+      ? verifiableAnnualIncome + additionalAnnual
+      : statedAnnualIncome + (additionalAnnual > 0 ? additionalAnnual : 0));
+
+  // ── Business Revenue & Run-rate calculation ──
+  const computation = data.businessIncomeComputation || {};
+  const monthlyBusinessRevenue =
+    Number(
+      computation.monthlyBusinessRevenue || computation.monthlyDeposits || 0,
+    ) ||
+    (data.annualBusinessRevenue ? Number(data.annualBusinessRevenue) / 12 : 0);
+
+  const trailing3MonthRevenue =
+    monthlyBusinessRevenue > 0 ? monthlyBusinessRevenue * 3 : 0;
+  const annualizedBusinessRunRate =
+    trailing3MonthRevenue > 0
+      ? trailing3MonthRevenue * 4
+      : Number(data.annualBusinessRevenue || 0);
+
   const monthlyGross =
     crsDTI?.monthlyGrossIncome ||
     data.dti?.monthlyGrossIncome ||
-    (annualIncome ? Math.round(annualIncome / 12) : 0);
+    (statedAnnualIncome ? Math.round(statedAnnualIncome / 12) : 0);
   const monthlyDebt =
     crsDTI?.monthlyDebtPayments ||
     data.dti?.monthlyDebtPayments ||
@@ -259,10 +313,18 @@ export async function getClient(clientId: string): Promise<ClientProfile> {
     ...data,
     leadData,
     income: {
-      statedAnnualIncome: annualIncome,
+      statedAnnualIncome,
       householdIncome,
-      verifiableIncomeMonthly:
-        data.income?.verifiableIncomeMonthly || Math.round(annualIncome / 12),
+      verifiableIncomeMonthly,
+      verifiableAnnualIncome,
+      additionalMonthlyIncome: additionalMonthly,
+      additionalAnnualIncome: additionalAnnual,
+      additionalIncomeSource: data.additionalIncomeSource || "",
+      trailing3MonthRevenue,
+      annualizedBusinessRunRate,
+      businessAnnualRevenue: Number(
+        data.annualBusinessRevenue || annualizedBusinessRunRate || 0,
+      ),
       hasW2Employment: data.income?.hasW2Employment ?? true,
       hasTaxReturns: data.income?.hasTaxReturns ?? true,
       incomeDocumentationType:

@@ -62,6 +62,8 @@ export const AIPlaybookReasoningOutputSchema = z.object({
   section5_aiRecommendedStatedIncome: z.number().nonnegative(),
   section5_aiReasoning: z.string().min(1).max(800),
   section5_regulationBNote: z.string().max(500).optional(),
+  section5_businessRevenueReasoning: z.string().max(600).optional(),
+  section5_personalHouseholdReasoning: z.string().max(600).optional(),
 
   section6_aiStructuringMath: z.string().min(1).max(800),
   section6_aiRecommendation: z.string().min(1).max(500),

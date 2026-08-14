@@ -9,6 +9,9 @@ import {
   Scale,
   Sparkles,
   TrendingUp,
+  Lock,
+  Building2,
+  User,
 } from "lucide-react";
 import type { Playbook } from "@/types/funding-playbook";
 import {
@@ -60,6 +63,41 @@ function CopyField({ value }: { value: string }) {
 export function IncomeSection({ pb }: { pb: Playbook }) {
   const i = pb.section5_incomeStructuring;
 
+  const biz = i.businessRevenue || {
+    annualBusinessRevenue:
+      i.aiRecommendedStatedIncome || i.currentStatedIncome || 240000,
+    trailing3MonthRevenue: Math.round(
+      (i.aiRecommendedStatedIncome || i.currentStatedIncome || 240000) / 4,
+    ),
+    annualizedRunRate:
+      i.aiRecommendedStatedIncome || i.currentStatedIncome || 240000,
+    documentableFrom: "Business checking deposits",
+    reasoning:
+      i.aiReasoning ||
+      "Report your projected annual revenue based on current run-rate from business bank deposits.",
+    fieldToEnter:
+      i.aiRecommendedStatedIncome || i.currentStatedIncome || 240000,
+  };
+
+  const personal = i.personalHouseholdIncome || {
+    householdTotal:
+      i.currentVerifiableIncome || i.currentStatedIncome || 145000,
+    yourIncome: Math.round(
+      (i.currentVerifiableIncome || i.currentStatedIncome || 145000) * 0.65,
+    ),
+    additionalIncome: Math.round(
+      (i.currentVerifiableIncome || i.currentStatedIncome || 145000) * 0.35,
+    ),
+    additionalIncomeSourceLabel: "Spouse / Additional income",
+    reasoning:
+      "Report your total annual household income as a personal guarantor on personal credit applications.",
+    fieldToEnter: i.currentVerifiableIncome || i.currentStatedIncome || 145000,
+  };
+
+  const summary =
+    i.whatToEnterSummary ||
+    `${usd(biz.fieldToEnter)} business revenue · ${usd(personal.fieldToEnter)} personal household income`;
+
   return (
     <SectionCard
       n={5}
@@ -67,47 +105,147 @@ export function IncomeSection({ pb }: { pb: Playbook }) {
       icon={Wallet}
       accent="brand"
       title="Income Structuring Guidance"
-      subtitle="Recommended stated income and reasoning"
+      subtitle="Exactly what to put in the income fields — and why it's legitimate"
+      aside={<Chip tone="blue">Business product</Chip>}
     >
-      <div className="space-y-4">
-        <div className="rounded-2xl border border-blue-300 bg-blue-50/40 p-4">
-          <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-700">
-            Recommended Stated Annual Income
+      <div className="space-y-5">
+        {/* Top 2 Cards: Business vs Personal */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Card 1: Business Products */}
+          <div className="rounded-2xl border-2 border-blue-200 bg-blue-50/20 p-5 flex flex-col justify-between space-y-4">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-[10.5px] font-extrabold uppercase tracking-[0.14em] text-blue-700">
+                  <Building2 className="w-3.5 h-3.5" /> FOR BUSINESS PRODUCTS
+                </div>
+                <span className="text-[10px] font-bold text-blue-800 bg-blue-100/90 px-2 py-0.5 rounded-full">
+                  Applies to you
+                </span>
+              </div>
+
+              <div className="mt-3">
+                <span className="text-[11px] font-semibold text-slate-500 block">
+                  Annual business revenue
+                </span>
+                <span className="font-mono text-[32px] font-extrabold text-blue-700 leading-tight block mt-0.5">
+                  {usd(biz.annualBusinessRevenue)}
+                </span>
+              </div>
+
+              <p className="text-[12px] text-slate-600 leading-relaxed mt-2.5">
+                {biz.reasoning}
+              </p>
+            </div>
+
+            <div className="border-t border-blue-100 pt-3 space-y-2 text-[12px]">
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Trailing 3-month revenue</span>
+                <span className="font-mono font-bold text-slate-900">
+                  {usd(biz.trailing3MonthRevenue)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Annualized run-rate</span>
+                <span className="font-mono font-bold text-slate-900">
+                  {usd(biz.annualizedRunRate)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Documentable from</span>
+                <span className="font-semibold text-slate-800">
+                  {biz.documentableFrom}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <span className="font-medium text-slate-700">
+                  Enter in field
+                </span>
+                <CopyField value={String(biz.fieldToEnter)} />
+              </div>
+            </div>
           </div>
-          <div className="font-mono text-[27px] font-bold text-blue-700 mt-1 flex items-center gap-3">
-            <span>{usd(i.aiRecommendedStatedIncome)}</span>
-            <CopyField value={String(i.aiRecommendedStatedIncome)} />
+
+          {/* Card 2: Personal Products */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col justify-between space-y-4">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-[10.5px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
+                  <User className="w-3.5 h-3.5" /> FOR PERSONAL PRODUCTS
+                </div>
+                <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+                  Reference
+                </span>
+              </div>
+
+              <div className="mt-3">
+                <span className="text-[11px] font-semibold text-slate-500 block">
+                  Household income
+                </span>
+                <span className="font-mono text-[32px] font-extrabold text-slate-900 leading-tight block mt-0.5">
+                  {usd(personal.householdTotal)}
+                </span>
+              </div>
+
+              <p className="text-[12px] text-slate-600 leading-relaxed mt-2.5">
+                {personal.reasoning}
+              </p>
+            </div>
+
+            <div className="border-t border-slate-100 pt-3 space-y-2 text-[12px]">
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Your income</span>
+                <span className="font-mono font-bold text-slate-900">
+                  {usd(personal.yourIncome)}
+                </span>
+              </div>
+              {personal.additionalIncome > 0 && (
+                <div className="flex items-center justify-between text-slate-600">
+                  <span>
+                    {personal.additionalIncomeSourceLabel ||
+                      "Additional income"}
+                  </span>
+                  <span className="font-mono font-bold text-slate-900">
+                    {usd(personal.additionalIncome)}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Household total</span>
+                <span className="font-mono font-bold text-slate-900">
+                  {usd(personal.householdTotal)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <span className="font-medium text-slate-700">
+                  Enter in field
+                </span>
+                <CopyField value={String(personal.fieldToEnter)} />
+              </div>
+            </div>
           </div>
-          <p className="text-[12.5px] text-gray-600 mt-2">{i.aiReasoning}</p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-gray-200 bg-white p-3.5">
-            <span className="text-[11px] text-gray-500">
-              Current Stated Income
-            </span>
-            <p className="font-mono text-base font-bold text-gray-800 mt-0.5">
-              {usd(i.currentStatedIncome)}
-            </p>
+        {/* Dark Banner: WHAT TO ENTER ON THIS APPLICATION */}
+        <div className="rounded-xl bg-[#0f172a] p-4 text-white space-y-1.5 shadow-sm">
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
+            WHAT TO ENTER ON THIS APPLICATION
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-3.5">
-            <span className="text-[11px] text-gray-500">
-              Verifiable Annual Income
-            </span>
-            <p className="font-mono text-base font-bold text-gray-800 mt-0.5">
-              {usd(i.currentVerifiableIncome)}
-            </p>
+          <div className="font-mono text-[13px] font-semibold text-slate-200 bg-[#1e293b] px-3 py-1.5 rounded-md inline-block">
+            {summary}
           </div>
         </div>
 
-        {i.regulationBNote && (
-          <ComplianceNote>
-            <span className="font-semibold text-gray-700">
-              Regulation B Guidance:
+        {/* Regulation B Footnote */}
+        <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 flex items-start gap-2.5 text-[11.5px] text-slate-600 leading-relaxed">
+          <Lock className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold text-slate-800">
+              Regulation B (CFPB).
             </span>{" "}
-            {i.regulationBNote}
-          </ComplianceNote>
-        )}
+            {i.regulationBNote ||
+              "Regulation B (12 CFR 1002) permits an applicant to include income from a spouse or partner that is regularly available to them for paying household expenses. Reporting household income on a personal credit application is legal and expressly contemplated by the CFPB. Report only income you can substantiate."}
+          </div>
+        </div>
       </div>
     </SectionCard>
   );

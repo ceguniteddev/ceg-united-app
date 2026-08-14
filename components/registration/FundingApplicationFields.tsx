@@ -11,6 +11,7 @@ import { useFormContext, useFieldArray } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CustomFormField } from "@/components/CustomFormField";
+import { AdditionalIncomeFields } from "@/components/funding/AdditionalIncomeFields";
 import {
   ApplyFunding,
   FUNDING_PRODUCTS_BY_CATEGORY,
@@ -1183,6 +1184,7 @@ export function FundingApplicationFields({
                     )}
                   </>
                 )}
+                <AdditionalIncomeFields />
               </CardContent>
             </Card>
           )}

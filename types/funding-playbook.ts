@@ -67,6 +67,11 @@ export interface IncomeProfile {
   businessAnnualRevenue?: number;
   taxReturnsAvailable: boolean;
   bankStatementsAvailableMonths: number;
+  additionalMonthlyIncome?: number;
+  additionalAnnualIncome?: number;
+  additionalIncomeSource?: string;
+  trailing3MonthRevenue?: number;
+  annualizedBusinessRunRate?: number;
 }
 
 export interface DTIProfile {
@@ -296,6 +301,24 @@ export interface Section5_IncomeStructuring {
   aiReasoning: string;
   regulationBNote?: string;
   householdIncomeEligible: boolean;
+
+  businessRevenue?: {
+    annualBusinessRevenue: number;
+    trailing3MonthRevenue: number;
+    annualizedRunRate: number;
+    documentableFrom: string;
+    reasoning: string;
+    fieldToEnter: number;
+  };
+  personalHouseholdIncome?: {
+    householdTotal: number;
+    yourIncome: number;
+    additionalIncome: number;
+    additionalIncomeSourceLabel?: string;
+    reasoning: string;
+    fieldToEnter: number;
+  };
+  whatToEnterSummary?: string;
 }
 
 export interface Section6_HousingStructuring {
@@ -450,6 +473,8 @@ export interface AIPlaybookReasoningOutput {
   section5_aiRecommendedStatedIncome: number;
   section5_aiReasoning: string;
   section5_regulationBNote?: string;
+  section5_businessRevenueReasoning?: string;
+  section5_personalHouseholdReasoning?: string;
   section6_aiStructuringMath: string;
   section6_aiRecommendation: string;
   section7_aiClientSpecificRisks: string[];

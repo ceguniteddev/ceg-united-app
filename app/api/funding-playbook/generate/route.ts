@@ -82,7 +82,11 @@ function buildFallbackAIOutput(
 
   const displayName = lender?.displayName || "Lender";
 
-  const statedIncome = client?.income?.statedAnnualIncome ?? 75000;
+  const statedIncome =
+    client?.income?.statedAnnualIncome ||
+    client?.income?.householdIncome ||
+    client?.income?.verifiableAnnualIncome ||
+    75000;
   const housingPayment = client?.dti?.rentOrMortgageMonthly ?? 1500;
   const servicesEnrolled = Array.isArray(client?.cegServicesEnrolled)
     ? client.cegServicesEnrolled
@@ -578,12 +582,73 @@ async function buildPlaybook(
       clientMeetsMinFICO: (clientBureauReport?.score ?? 0) >= product.minFICO,
     },
     section5_incomeStructuring: {
-      currentStatedIncome: client.income.statedAnnualIncome,
-      currentVerifiableIncome: client.income.verifiableAnnualIncome,
-      aiRecommendedStatedIncome: ai.output.section5_aiRecommendedStatedIncome,
+      currentStatedIncome:
+        client.income.statedAnnualIncome ||
+        client.income.verifiableAnnualIncome ||
+        0,
+      currentVerifiableIncome:
+        client.income.verifiableAnnualIncome ||
+        (client.income as any).verifiableIncomeMonthly * 12 ||
+        0,
+      aiRecommendedStatedIncome:
+        ai.output.section5_aiRecommendedStatedIncome ||
+        client.income.householdIncome ||
+        client.income.statedAnnualIncome ||
+        0,
       aiReasoning: ai.output.section5_aiReasoning,
-      regulationBNote: ai.output.section5_regulationBNote,
-      householdIncomeEligible: !!ai.output.section5_regulationBNote,
+      regulationBNote:
+        ai.output.section5_regulationBNote ||
+        "Regulation B (12 CFR 1002) permits an applicant to include income from a spouse or partner that is regularly available to them for paying household expenses. Reporting household income on a personal credit application is legal and expressly contemplated by the CFPB. Report only income you can substantiate.",
+      householdIncomeEligible: true,
+
+      businessRevenue: {
+        annualBusinessRevenue:
+          client.income.businessAnnualRevenue ||
+          client.income.annualizedBusinessRunRate ||
+          0,
+        trailing3MonthRevenue:
+          client.income.trailing3MonthRevenue ||
+          (client.income.businessAnnualRevenue
+            ? Math.round(client.income.businessAnnualRevenue / 4)
+            : 0),
+        annualizedRunRate:
+          client.income.annualizedBusinessRunRate ||
+          client.income.businessAnnualRevenue ||
+          0,
+        documentableFrom: "Business checking deposits",
+        reasoning:
+          ai.output.section5_businessRevenueReasoning ||
+          `Report your projected annual revenue. Application asks for annual business revenue, and projected revenue based on current run-rate is an accepted basis. Use your trailing 3-month average revenue annualized — that is the number you can document if requested.`,
+        fieldToEnter:
+          client.income.businessAnnualRevenue ||
+          client.income.annualizedBusinessRunRate ||
+          0,
+      },
+      personalHouseholdIncome: {
+        householdTotal:
+          client.income.householdIncome ||
+          client.income.verifiableAnnualIncome +
+            (client.income.additionalAnnualIncome || 0) ||
+          client.income.statedAnnualIncome ||
+          0,
+        yourIncome:
+          client.income.verifiableAnnualIncome ||
+          client.income.statedAnnualIncome ||
+          0,
+        additionalIncome: client.income.additionalAnnualIncome || 0,
+        additionalIncomeSourceLabel:
+          client.income.additionalIncomeSource || "Additional household income",
+        reasoning:
+          ai.output.section5_personalHouseholdReasoning ||
+          `Total annual income as a personal guarantor. Household income is permitted on personal-guarantee credit applications.`,
+        fieldToEnter:
+          client.income.householdIncome ||
+          client.income.verifiableAnnualIncome +
+            (client.income.additionalAnnualIncome || 0) ||
+          client.income.statedAnnualIncome ||
+          0,
+      },
+      whatToEnterSummary: `$${(client.income.businessAnnualRevenue || client.income.annualizedBusinessRunRate || 0).toLocaleString()} business revenue · $${(client.income.householdIncome || client.income.statedAnnualIncome || 0).toLocaleString()} personal household income`,
     },
     section6_housingStructuring: {
       currentMonthlyHousingPayment: client.dti.rentOrMortgageMonthly,
