@@ -4,7 +4,7 @@ import {
   useFundingApplicationsMappedFundsQuery,
   useApprovedMappedFundsMutation,
 } from "@/hooks/admin/funding-application/fund-mapping";
-// import { useAuth } from "@/provider/AuthContext";
+import { useAuth } from "@/provider/AuthContext";
 import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 
 import Spinner from "@/components/Spinner";
@@ -42,6 +42,7 @@ import {
   XIcon,
   Loader2Icon,
   BanknoteIcon,
+  Send,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import {
@@ -81,7 +82,7 @@ import { formatAmount } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import BankProductsForm from "@/components/bank-products/bank-product-form";
 import { useMembership } from "@/hooks/membership";
-// import { useUserQuery } from "@/hooks/user";
+import { useSendClientServiceAgreementMutation } from "@/hooks/user";
 import { DataTablePagination } from "./pagination";
 
 type Props = {
@@ -118,6 +119,7 @@ const BankProductsList = ({
   userId: string;
   appliedPathways?: { pathwayId: string; status: string }[];
 }) => {
+  const { isAdmin, role } = useAuth();
   const [selectedPathwayId, setSelectedPathwayId] = useState<string>(
     appliedPathways && appliedPathways.length > 0
       ? appliedPathways[0].pathwayId
@@ -189,8 +191,8 @@ const BankProductsList = ({
     }
   };
 
-  const columns: ColumnDef<BankFormData>[] = useMemo(
-    () => [
+  const columns: ColumnDef<BankFormData>[] = useMemo(() => {
+    const cols: ColumnDef<BankFormData>[] = [
       {
         id: "status",
         header: "Status",
@@ -308,43 +310,59 @@ const BankProductsList = ({
           return <div>{approvedRemarks}</div>;
         },
       },
+    ];
 
-      {
-        id: "actions",
-        cell: ({ row }) => {
-          const approvedMappedFund = approvedMappedFunds?.find(
-            (fund) => String(fund.id) === String(row.original.id),
-          );
-          const isApproved = !!approvedMappedFund || false;
+    if (isAdmin || role === "Admin") {
+      cols.push({
+        id: "sendPsfAgreement",
+        header: "Send PSF Agreement",
+        cell: () => <SendPsfAgreementCell userId={userId} />,
+      });
+    }
 
-          const funds = approvedMappedFunds?.find(
-            (fund) => String(fund.id) === String(row.original.id),
-          );
+    cols.push({
+      id: "actions",
+      cell: ({ row }) => {
+        const approvedMappedFund = approvedMappedFunds?.find(
+          (fund) => String(fund.id) === String(row.original.id),
+        );
+        const isApproved = !!approvedMappedFund || false;
 
-          const status = funds?.clientApplicationStatus;
+        const funds = approvedMappedFunds?.find(
+          (fund) => String(fund.id) === String(row.original.id),
+        );
 
-          // Hide actions if status is Approved or Funded
-          if (status === "Approved" || status === "Funded") {
-            return null;
-          }
+        const status = funds?.clientApplicationStatus;
 
-          return (
-            <ActionCell
-              row={row}
-              referenceNumber={referenceNumber}
-              isAdminApproved={isApproved}
-              clientApplicationStatus={status || "Not Applied"}
-              approvedMappedFund={approvedMappedFund}
-              userId={userId}
-              selectedPathwayId={selectedPathwayId}
-            />
-          );
-        },
-        size: 80,
+        // Hide actions if status is Approved or Funded
+        if (status === "Approved" || status === "Funded") {
+          return null;
+        }
+
+        return (
+          <ActionCell
+            row={row}
+            referenceNumber={referenceNumber}
+            isAdminApproved={isApproved}
+            clientApplicationStatus={status || "Not Applied"}
+            approvedMappedFund={approvedMappedFund}
+            userId={userId}
+            selectedPathwayId={selectedPathwayId}
+          />
+        );
       },
-    ],
-    [referenceNumber, approvedMappedFunds, selectedPathwayId],
-  );
+      size: 80,
+    });
+
+    return cols;
+  }, [
+    referenceNumber,
+    approvedMappedFunds,
+    selectedPathwayId,
+    isAdmin,
+    role,
+    userId,
+  ]);
 
   const table = useReactTable({
     data: mappedFund || [],
@@ -696,6 +714,15 @@ const BankProductsList = ({
                       <p className="text-xs break-words">{approvedRemarks}</p>
                     </div>
                   )}
+
+                  {(isAdmin || role === "Admin") && (
+                    <div className="flex justify-between items-center gap-2 pt-2 border-t">
+                      <span className="text-muted-foreground text-xs">
+                        Send PSF Agreement:
+                      </span>
+                      <SendPsfAgreementCell userId={userId} />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
@@ -766,6 +793,90 @@ const BankProductsList = ({
       </div>
 
       <DataTablePagination table={table} />
+    </div>
+  );
+};
+
+const SendPsfAgreementCell = ({ userId }: { userId: string }) => {
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const { sendClientServiceAgreement, isSending } =
+    useSendClientServiceAgreementMutation({
+      userId,
+    });
+
+  const handleSend = async () => {
+    try {
+      await sendClientServiceAgreement();
+      setIsAlertOpen(false);
+    } catch (error) {
+      console.error("Error sending PSF agreement:", error);
+    }
+  };
+
+  return (
+    <div className="flex items-center">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={isSending}
+        className="cursor-pointer bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 h-8 px-3 text-xs font-medium"
+        onClick={() => setIsAlertOpen(true)}
+      >
+        {isSending ? (
+          <IconMenu
+            text="Sending..."
+            icon={<Loader2Icon className="h-3.5 w-3.5 animate-spin mr-1" />}
+          />
+        ) : (
+          <IconMenu
+            text="Send Agreement"
+            icon={<Send className="h-3.5 w-3.5 mr-1" />}
+          />
+        )}
+      </Button>
+
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base sm:text-lg">
+              Send PSF Agreement?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              This will send the Performance Success Fee Agreement to the
+              client.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel
+              disabled={isSending}
+              className="cursor-pointer w-full sm:w-auto"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                await handleSend();
+              }}
+              disabled={isSending}
+              className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer w-full sm:w-auto"
+            >
+              {isSending ? (
+                <IconMenu
+                  text="Sending..."
+                  icon={<Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
+                />
+              ) : (
+                <IconMenu
+                  text="Yes, Send Agreement"
+                  icon={<Send className="h-4 w-4 mr-2" />}
+                />
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
