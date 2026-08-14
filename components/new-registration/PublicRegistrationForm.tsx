@@ -175,6 +175,9 @@ export function PublicRegistrationForm() {
       } else if (businessData.fundingType === FundingType.Business) {
         businessData.creditScore = null;
         businessData.employmentType = null;
+        businessData.statedAnnualIncomeCorrected = null;
+        businessData.additionalMonthlyIncome = null;
+        businessData.additionalIncomeSource = null;
       } else if (businessData.fundingType === FundingType.Both) {
         businessData.businessCreditScore = null;
       }
@@ -258,6 +261,9 @@ export function PublicRegistrationForm() {
       } else if (businessData.fundingType === FundingType.Business) {
         businessData.creditScore = null;
         businessData.employmentType = null;
+        businessData.statedAnnualIncomeCorrected = null;
+        businessData.additionalMonthlyIncome = null;
+        businessData.additionalIncomeSource = null;
       } else if (businessData.fundingType === FundingType.Both) {
         businessData.businessCreditScore = null;
       }
