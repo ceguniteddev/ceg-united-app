@@ -240,6 +240,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: REASONING_MODEL
+    value: gemini-2.5-pro
+    availability:
+      - BUILD
+      - RUNTIME
 
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
@@ -278,3 +283,5 @@ env:
       - RUNTIME
   - variable: GEMINI_API_KEY
     secret: GEMINI_API_KEY_STAGING
+  - variable: GOOGLE_PLACES_API_KEY
+    secret: GOOGLE_PLACES_API_KEY
