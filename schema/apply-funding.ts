@@ -5,6 +5,7 @@ import { UserMembership } from "./users";
 
 export const FundingApplicationSatus = [
   "New",
+  "Submitted",
   "Processing",
   "Pre-Approved",
   "Approved",
