@@ -84,6 +84,8 @@ export function normalizeN8nOutput(raw: any): any {
         if (!rec || typeof rec !== "object") return rec;
         return {
           service: normalizeServiceEnum(rec.service),
+          serviceLabel:
+            typeof rec.service === "string" ? rec.service : undefined,
           rank: Number(rec.rank) || idx + 1,
           aiApplicability: String(rec.aiApplicability || ""),
           estimatedTimeToImpactDays:
@@ -154,6 +156,7 @@ export interface AssemblyInputs {
   lender: Omit<Lender, "products">;
   product: Product;
   branches: Branch[];
+  allLenderProducts?: Product[];
 }
 
 /**
@@ -161,7 +164,8 @@ export interface AssemblyInputs {
  * and deterministic Firestore data (Client, Lender, Product, Branches).
  */
 export function assemblePlaybook(inputs: AssemblyInputs): Playbook {
-  const { aiOutput, client, lender, product, branches } = inputs;
+  const { aiOutput, client, lender, product, branches, allLenderProducts } =
+    inputs;
 
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -257,6 +261,57 @@ export function assemblePlaybook(inputs: AssemblyInputs): Playbook {
     recommendedStated * 2;
 
   const housingPayment = client.dti?.rentOrMortgageMonthly ?? 1500;
+
+  // Build double-dip section by merging listProducts with AI decisions
+  const allProducts =
+    allLenderProducts && allLenderProducts.length > 0
+      ? allLenderProducts
+      : [product];
+
+  const aiDdProducts = Array.isArray(aiOutput.section8dd_products)
+    ? aiOutput.section8dd_products
+    : [];
+
+  const doubleDipProducts = allProducts.map((p) => {
+    const aiProduct = aiDdProducts.find(
+      (a: any) =>
+        a.productId === p.id ||
+        (a.displayName &&
+          a.displayName.toLowerCase().includes(p.displayName.toLowerCase())),
+    );
+
+    const [lo, hi] = p.typicalApprovalRange || [5000, 25000];
+
+    return {
+      productId: p.id,
+      displayName: p.displayName,
+      note:
+        aiProduct?.note ||
+        p.structuringAdvice ||
+        "Product option for double-dip sequence.",
+      bundleRecommended: aiProduct?.bundleRecommended ?? true,
+      estLimitLow: aiProduct?.estLimitLow ?? lo,
+      estLimitHigh: aiProduct?.estLimitHigh ?? hi,
+    };
+  });
+
+  const section8_doubleDip = {
+    friendly: aiOutput.section8dd_friendly ?? lender.doubleDipFriendly ?? true,
+    intro:
+      aiOutput.section8dd_intro ||
+      lender.doubleDipRules ||
+      `${lender.displayName} processes multiple applications submitted on the same day against a single credit pull.`,
+    combinedExposureLow:
+      aiOutput.section8dd_combinedExposureLow ??
+      doubleDipProducts.reduce((sum, p) => sum + (p.estLimitLow || 0), 0),
+    combinedExposureHigh:
+      aiOutput.section8dd_combinedExposureHigh ??
+      doubleDipProducts.reduce((sum, p) => sum + (p.estLimitHigh || 0), 0),
+    howToRunSequence:
+      aiOutput.section8dd_howToRunSequence ||
+      `Submit your primary ${product.displayName} application first and let it decision. Immediately after, in the same browser session, submit the second application. Do not wait more than a few hours — a fresh session can trigger a second pull.`,
+    products: doubleDipProducts,
+  };
 
   const playbook: Playbook = {
     meta: {
@@ -419,20 +474,46 @@ export function assemblePlaybook(inputs: AssemblyInputs): Playbook {
       recommendations: Array.isArray(aiOutput.section8_recommendations)
         ? aiOutput.section8_recommendations.map((r: any) => ({
             service: r.service,
+            serviceLabel: r.serviceLabel,
             rank: r.rank,
             curatedImpactEstimate:
               cegProductLiftFor(product.cegProductLift, r.service) ??
-              "High impact service for approval readiness.",
+              `+${r.rank === 1 ? 40 : r.rank === 2 ? 25 : 15} pts / lift`,
             aiApplicability: r.aiApplicability,
             estimatedTimeToImpactDays: r.estimatedTimeToImpactDays,
           }))
         : [],
     },
 
+    section8_doubleDip,
+
     section9_nearestBranches: {
       zip: client.zip || "32601",
       radiusMiles: 25,
       branches: branches || [],
+    },
+
+    booking: {
+      available: true,
+      primaryPhone:
+        branches?.[0]?.phone || lender.reconsiderationPhone || "3523751161",
+      primaryPhoneLabel:
+        branches?.[0]?.phone || lender.reconsiderationPhone || "(352) 375-1161",
+      branchName: branches?.[0]?.name
+        ? `${lender.displayName || "Lender"} — ${branches[0].name}, ${branches[0].address}`
+        : `${lender.displayName || "Lender"} — Local Branch`,
+      onlineSchedulerUrl: branches?.[0]?.googleMapsUrl || null,
+      onlineSchedulerLabel: `Book with a ${lender.displayName || "Lender"} business banker`,
+      bestTimeToCall:
+        "Tuesday–Thursday, 10:00am–11:30am — lowest branch call volume",
+      callScript: [
+        `Hi, my name is ${client.fullName?.split(" ")[0] || "Client"} — I've banked with ${lender.displayName || "Lender"} and want to discuss account options for my business.`,
+        `I'd like to book 20 minutes with a business banker this week to review the ${product.displayName || "business card"} before I submit my application.`,
+        `If the banker has any availability Tuesday through Thursday morning, that works best for me — and could you note on my profile that I came in through the business side?`,
+      ],
+      scriptGoal:
+        "Goal of the call: get 20 minutes on the calendar with a business banker, not a general teller, and have them note your relationship before you apply.",
+      unavailableNote: null,
     },
 
     section10_reconsiderationScript: {
@@ -455,6 +536,36 @@ export function assemblePlaybook(inputs: AssemblyInputs): Playbook {
     section12_alternatives: {
       alternatives: [],
     },
+
+    improvers: (Array.isArray(aiOutput.section8_recommendations)
+      ? aiOutput.section8_recommendations
+      : []
+    ).map((r: any, idx: number) => {
+      const serviceName =
+        r.serviceLabel || (r.service ? r.service.replace("_", " ") : "Service");
+      const serviceType = r.service || "credit_repair";
+
+      let icon: "tradeline" | "repair" | "income" | "mentor" = "repair";
+      if (serviceType === "tradelines") icon = "tradeline";
+      else if (serviceType === "income_coaching") icon = "income";
+      else if (serviceType === "business_formation") icon = "mentor";
+
+      return {
+        rank: r.rank || idx + 1,
+        title: `${serviceName} Strategy`,
+        cegProduct: `CEG ${serviceName}`,
+        description: r.aiApplicability || "Recommended optimization strategy.",
+        impactScore:
+          cegProductLiftFor(product.cegProductLift, serviceType) ??
+          `+${r.rank === 1 ? 40 : 25} pts`,
+        impactApproval: `+${r.rank === 1 ? 35 : 20}% odds`,
+        timeline: `${r.estimatedTimeToImpactDays || 30} days`,
+        investment: "Program Service",
+        ctaLabel: `Explore ${serviceName}`,
+        href: "https://cegunited.com",
+        icon,
+      };
+    }),
 
     section13_helpOptions: {
       cegSupportPhone: process.env.CEG_SUPPORT_PHONE ?? "1-800-555-0100",

@@ -534,22 +534,52 @@ export async function writeLenderHistoryEntry(
     .set(entry);
 }
 
-// Playbooks (keyed by userId)
+// Playbooks (keyed by userId_lenderId_productId)
+export function playbookId(
+  userId: string,
+  lenderId?: string,
+  productId?: string,
+): string {
+  return `${userId}_${lenderId || "general"}_${productId || "general"}`;
+}
+
+export async function getCachedPlaybook(id: string): Promise<Playbook | null> {
+  const snap = await db().collection(PLAYBOOKS_COLLECTION).doc(id).get();
+  if (!snap.exists) return null;
+  const data = snap.data() as Playbook;
+  if (
+    data?.meta?.expiresAt &&
+    Date.now() >= new Date(data.meta.expiresAt).getTime()
+  ) {
+    return null;
+  }
+  return data ?? null;
+}
+
 export async function getPlaybook(
   userId: string,
-): Promise<Record<string, any> | null> {
-  const snap = await db().collection(PLAYBOOKS_COLLECTION).doc(userId).get();
-  if (!snap.exists) return null;
-  return snap.data() ?? null;
+  lenderId?: string,
+  productId?: string,
+): Promise<Playbook | null> {
+  const id = playbookId(userId, lenderId, productId);
+  return getCachedPlaybook(id);
 }
 
 export async function savePlaybook(
   userId: string,
   playbookData: Record<string, any>,
 ): Promise<void> {
+  const docId =
+    playbookData?.meta?.id ||
+    playbookId(
+      userId,
+      playbookData?.meta?.lenderId,
+      playbookData?.meta?.productId,
+    );
+
   await db()
     .collection(PLAYBOOKS_COLLECTION)
-    .doc(userId)
+    .doc(docId)
     .set(playbookData, { merge: true });
 }
 

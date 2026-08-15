@@ -18,6 +18,7 @@ import {
   HousingSection,
   ApprovalSection,
   DoubleDipSection,
+  CegProductLiftSection,
 } from "./Sections5to8";
 import {
   BookingSection,
@@ -163,8 +164,9 @@ export function FundingPlaybookView({
             <HousingSection pb={playbook} />
             <ApprovalSection pb={playbook} />
             <DoubleDipSection pb={playbook} />
-            <BookingSection pb={playbook} />
+            <CegProductLiftSection pb={playbook} />
             <BranchesSection pb={playbook} />
+            <BookingSection pb={playbook} />
             <DeniedSection pb={playbook} />
             <ImproveOddsSection pb={playbook} />
             <NeedHelpSection pb={playbook} />

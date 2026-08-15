@@ -83,6 +83,24 @@ export const AIPlaybookReasoningOutputSchema = z.object({
     .min(0)
     .max(4),
 
+  section8dd_friendly: z.boolean().optional(),
+  section8dd_intro: z.string().max(1000).optional(),
+  section8dd_combinedExposureLow: z.number().nonnegative().optional(),
+  section8dd_combinedExposureHigh: z.number().nonnegative().optional(),
+  section8dd_howToRunSequence: z.string().max(1000).optional(),
+  section8dd_products: z
+    .array(
+      z.object({
+        productId: z.string().optional(),
+        displayName: z.string().optional(),
+        note: z.string().max(500).optional(),
+        bundleRecommended: z.boolean().optional(),
+        estLimitLow: z.number().nonnegative().optional(),
+        estLimitHigh: z.number().nonnegative().optional(),
+      }),
+    )
+    .optional(),
+
   section10_aiPhoneScript: z.string().min(1).max(1200),
   section11_aiTimingRationale: z.string().min(1).max(600),
   section13_aiClosingNote: z.string().min(1).max(400),
@@ -157,6 +175,7 @@ export const PlaybookSchema = z
     section6_housingStructuring: z.object({}).passthrough(),
     section7_denialPathReasoning: z.object({}).passthrough(),
     section8_cegRecommendations: z.object({}).passthrough(),
+    section8_doubleDip: z.object({}).passthrough().optional(),
     section9_nearestBranches: z.object({}).passthrough(),
     section10_reconsiderationScript: z.object({}).passthrough(),
     section11_timingStrategy: z.object({}).passthrough(),

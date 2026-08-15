@@ -242,6 +242,18 @@ describe("playbook-mapper", () => {
       expect(playbook.section10_reconsiderationScript.aiPhoneScript).toContain(
         "Congratulations",
       );
+
+      // Verify double-dip assembly
+      expect(playbook.section8_doubleDip).toBeDefined();
+      expect(playbook.section8_doubleDip?.products[0].displayName).toBe(
+        "Chase Sapphire Preferred",
+      );
+      expect(playbook.section8_doubleDip?.friendly).toBe(true);
+
+      // Verify CEG recommendations service labels
+      expect(
+        playbook.section8_cegRecommendations.recommendations[0].service,
+      ).toBe("credit_repair");
     });
   });
 });

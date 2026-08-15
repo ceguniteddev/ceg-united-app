@@ -5,22 +5,17 @@ import {
   Layers,
   Check,
   Copy,
-  ArrowRight,
-  Scale,
-  Sparkles,
   TrendingUp,
   Lock,
   Building2,
   User,
+  CheckCircle2,
+  XCircle,
+  ShieldCheck,
+  AlertTriangle,
 } from "lucide-react";
 import type { Playbook } from "@/types/funding-playbook";
-import {
-  SectionCard,
-  Chip,
-  RationaleBlock,
-  ComplianceNote,
-  StatRow,
-} from "./Primitives";
+import { SectionCard, Chip, RationaleBlock } from "./Primitives";
 import { ConfidenceBar } from "./ProgressRing";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -508,41 +503,187 @@ export function ApprovalSection({ pb }: { pb: Playbook }) {
   );
 }
 
-// 08 — CEG Product Recommendations
+// 08 — Double-Dip Strategy (Image #1 Design)
 export function DoubleDipSection({ pb }: { pb: Playbook }) {
-  const c = pb.section8_cegRecommendations;
+  const dd = pb.section8_doubleDip || {
+    friendly: true,
+    intro:
+      "Submit multiple products back-to-back within the same session for the price of one hard credit inquiry.",
+    howToRunSequence:
+      "Submit your primary application first. Immediately after, in the same browser session, submit the second application.",
+    products: [],
+  };
+
+  const friendly = dd.friendly ?? true;
 
   return (
     <SectionCard
       n={8}
       id="double-dip"
+      icon={Layers}
+      accent={friendly ? "success" : "default"}
+      title="Double-Dip Potential"
+      subtitle="Can you get more than one product from a single credit pull?"
+      aside={
+        <Chip
+          tone={friendly ? "green" : "gray"}
+          icon={friendly ? ShieldCheck : AlertTriangle}
+        >
+          {friendly ? "Double-dip friendly" : "Single pull unavailable"}
+        </Chip>
+      }
+    >
+      <div className="space-y-4">
+        {/* Intro banner */}
+        <div
+          className={cn(
+            "rounded-2xl border p-4 sm:p-5 space-y-2",
+            friendly
+              ? "border-emerald-200 bg-emerald-50/40"
+              : "border-gray-200 bg-gray-50/60",
+          )}
+        >
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider",
+                friendly
+                  ? "bg-emerald-600 text-white"
+                  : "bg-gray-700 text-white",
+              )}
+            >
+              {friendly ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Double-dip friendly
+                </>
+              ) : (
+                "Single pull not available"
+              )}
+            </span>
+          </div>
+          <p className="text-[12.5px] sm:text-[13px] text-gray-800 leading-relaxed pt-1">
+            {dd.intro}
+          </p>
+        </div>
+
+        {/* Grid of Product Cards */}
+        {dd.products && dd.products.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {dd.products.map((p, idx) => {
+              const isRec = p.bundleRecommended;
+              return (
+                <div
+                  key={`${p.productId}-${idx}`}
+                  className={cn(
+                    "rounded-2xl border p-4 flex flex-col justify-between space-y-3 transition-all",
+                    isRec
+                      ? "border-emerald-300 bg-white ring-1 ring-emerald-100 shadow-2xs"
+                      : "border-gray-200/80 bg-gray-50/50 opacity-90",
+                  )}
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="text-[13.5px] font-bold text-gray-900 leading-snug">
+                        {p.displayName}
+                      </h4>
+                      {isRec ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-gray-300 shrink-0 mt-0.5" />
+                      )}
+                    </div>
+                    <p className="text-[12px] text-gray-600 mt-2 leading-relaxed">
+                      {p.note}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-100">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 block">
+                      EST. LIMIT
+                    </span>
+                    <span
+                      className={cn(
+                        "font-mono text-[14px] font-bold leading-tight block mt-0.5",
+                        isRec
+                          ? "text-emerald-700"
+                          : "text-gray-400 font-normal text-[12px]",
+                      )}
+                    >
+                      {isRec && (p.estLimitLow || p.estLimitHigh)
+                        ? `${usd(p.estLimitLow || 5000)} – ${usd(p.estLimitHigh || 15000)}`
+                        : "Not part of the double-dip"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* How to run the double-dip sequence banner */}
+        {dd.howToRunSequence && (
+          <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/30 p-4 space-y-2">
+            <div className="text-[10.5px] font-extrabold uppercase tracking-[0.16em] text-emerald-800">
+              HOW TO RUN THE DOUBLE-DIP
+            </div>
+            <p className="text-[12.5px] text-gray-700 leading-relaxed">
+              {dd.howToRunSequence}
+            </p>
+            {(dd.combinedExposureLow || dd.combinedExposureHigh) && (
+              <p className="text-[12px] font-semibold text-emerald-900 pt-1">
+                Total combined exposure potential:{" "}
+                <span className="font-mono font-extrabold">
+                  {usd(dd.combinedExposureLow || 0)} –{" "}
+                  {usd(dd.combinedExposureHigh || 0)}
+                </span>
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </SectionCard>
+  );
+}
+
+// 09 — CEG Product Lift & Recommendations (Image #2 Design)
+export function CegProductLiftSection({ pb }: { pb: Playbook }) {
+  const c = pb.section8_cegRecommendations;
+
+  return (
+    <SectionCard
+      n={9}
+      id="ceg-lift"
       icon={TrendingUp}
       accent="success"
       title="CEG Product Lift & Recommendations"
       subtitle="Recommended services to maximize approval odds"
     >
       <div className="space-y-3">
-        {c.recommendations.map((rec, idx) => (
-          <div
-            key={`${rec.service}-${rec.rank || idx}`}
-            className="rounded-xl border border-gray-200 bg-white p-4"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[14px] font-bold text-gray-900 capitalize">
-                #{rec.rank} - {rec.service.replace("_", " ")}
-              </span>
-              <Chip tone="blue">
-                {rec.estimatedTimeToImpactDays} days impact
-              </Chip>
+        {c.recommendations.map((rec, idx) => {
+          const displayTitle =
+            rec.serviceLabel || rec.service.replace("_", " ");
+          return (
+            <div
+              key={`${rec.service}-${rec.rank || idx}`}
+              className="rounded-xl border border-gray-200 bg-white p-4 space-y-2"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[14px] font-bold text-gray-900 capitalize">
+                  #{rec.rank} - {displayTitle}
+                </span>
+                <Chip tone="blue">
+                  {rec.estimatedTimeToImpactDays} days impact
+                </Chip>
+              </div>
+              <p className="text-[12.5px] text-gray-600 leading-relaxed">
+                {rec.aiApplicability}
+              </p>
+              <div className="text-[11.5px] font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg inline-block">
+                Lift: {rec.curatedImpactEstimate}
+              </div>
             </div>
-            <p className="text-[12.5px] text-gray-600 mt-2">
-              {rec.aiApplicability}
-            </p>
-            <div className="mt-2 text-[11.5px] font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg">
-              Lift: {rec.curatedImpactEstimate}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </SectionCard>
   );

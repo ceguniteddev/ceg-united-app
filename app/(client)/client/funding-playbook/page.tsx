@@ -154,11 +154,52 @@ export default function ClientFundingPlaybookPage() {
   // ── 4. Playbook generation ─────────────────────────────────────────
   const [playbook, setPlaybook] = useState<Playbook | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isFetchingCache, setIsFetchingCache] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   // Derive lenderId & productId from the selected fund
   const lenderId = selectedFund?.bankId ?? "";
   const productId = selectedFund?.id ?? "";
+
+  // Auto-fetch cached playbook on lender/product selection
+  useEffect(() => {
+    if (!user || !lenderId || !productId) {
+      setPlaybook(null);
+      setError(null);
+      return;
+    }
+
+    let isMounted = true;
+    setIsFetchingCache(true);
+    setError(null);
+
+    fetch(
+      `/api/funding-playbook/fetch?userId=${encodeURIComponent(user.uid)}&lenderId=${encodeURIComponent(lenderId)}&productId=${encodeURIComponent(productId)}`,
+    )
+      .then(async (res) => {
+        if (!isMounted) return;
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.playbook?.section1_bestMethod) {
+            setPlaybook(data.playbook);
+          } else {
+            setPlaybook(null);
+          }
+        } else {
+          setPlaybook(null);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setPlaybook(null);
+      })
+      .finally(() => {
+        if (isMounted) setIsFetchingCache(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, lenderId, productId]);
 
   // Explicit handler to generate / fetch cached playbook
   const handleGeneratePlaybook = useCallback(async () => {
@@ -223,8 +264,8 @@ export default function ClientFundingPlaybookPage() {
             <span>No Funding Applications Found</span>
           </div>
           <p className="text-xs text-amber-800">
-            You haven&apos;t submitted any funding applications yet. Please
-            apply for funding first.
+            {`You haven't submitted any funding applications yet. Please apply for
+            funding first.`}
           </p>
         </div>
       </div>
@@ -372,11 +413,13 @@ export default function ClientFundingPlaybookPage() {
             </div>
           )}
 
-          {/* Generate Button: Full width on mobile, inline on tablet/desktop */}
+          {/* Generate Button: Full width on mobile, inline on tablet/desktop (shown when no cached playbook exists) */}
           {selectedPathwayId &&
             !isLoadingFunds &&
             approvedFunds &&
-            (approvedFunds as ApprovedBankFormData[]).length > 0 && (
+            (approvedFunds as ApprovedBankFormData[]).length > 0 &&
+            !playbook &&
+            !isFetchingCache && (
               <div className="w-full lg:w-auto">
                 <button
                   onClick={handleGeneratePlaybook}
@@ -411,9 +454,9 @@ export default function ClientFundingPlaybookPage() {
       </div>
 
       {/* ── Playbook View & States ──────────────────────────────────── */}
-      {isGenerating && <Spinner />}
+      {(isGenerating || isFetchingCache) && <Spinner />}
 
-      {!isGenerating && error && (
+      {!isGenerating && !isFetchingCache && error && (
         <div className="p-6 sm:p-8 max-w-xl mx-auto text-center space-y-4">
           <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm shadow-xs space-y-2">
             <p className="font-bold">Unable to generate playbook</p>
@@ -428,7 +471,7 @@ export default function ClientFundingPlaybookPage() {
         </div>
       )}
 
-      {!isGenerating && !error && playbook && (
+      {!isGenerating && !isFetchingCache && !error && playbook && (
         <FundingPlaybookView
           playbook={playbook}
           clientName={user.displayName || user.email?.split("@")[0] || "Client"}
@@ -438,25 +481,30 @@ export default function ClientFundingPlaybookPage() {
         />
       )}
 
-      {!selectedFundId && !isGenerating && (
+      {!selectedFundId && !isGenerating && !isFetchingCache && (
         <div className="p-8 sm:p-12 text-center text-xs sm:text-sm text-gray-400 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
           {selectedPathwayId
-            ? "Select a lender above and click Generate Playbook to view your playbook."
+            ? "Select a lender above to view your playbook."
             : selectedReference
               ? "Select a funding pathway to continue."
               : "Select a funding application to get started."}
         </div>
       )}
 
-      {selectedFundId && !playbook && !isGenerating && !error && (
-        <div className="p-8 sm:p-12 text-center text-xs sm:text-sm text-gray-400 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
-          Click{" "}
-          <span className="font-semibold text-gray-600">
-            &quot;Generate Playbook&quot;
-          </span>{" "}
-          above to view or generate your personalized Funding Playbook.
-        </div>
-      )}
+      {selectedFundId &&
+        !playbook &&
+        !isGenerating &&
+        !isFetchingCache &&
+        !error && (
+          <div className="p-8 sm:p-12 text-center text-xs sm:text-sm text-gray-400 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+            No saved playbook found for this lender.
+            <br /> Click{" "}
+            <span className="font-semibold text-gray-600">
+              Generate Playbook
+            </span>{" "}
+            above to generate your personalized Funding Playbook.
+          </div>
+        )}
     </section>
   );
 }

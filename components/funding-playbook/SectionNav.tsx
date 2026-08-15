@@ -11,18 +11,17 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 
 export const SECTIONS = [
   { n: 1, id: "best-method", label: "Best Application Method" },
-  // { n: 2, id: "relationship", label: "Lender Relationship" },
-  // { n: 3, id: "banking-requirements", label: "Banking Requirements" },
   { n: 2, id: "bureau", label: "Bureau & Inquiries" },
   { n: 3, id: "income", label: "Income Structuring" },
   { n: 4, id: "housing", label: "Housing & DTI Math" },
   { n: 5, id: "approval", label: "Approval Estimate" },
   { n: 6, id: "double-dip", label: "Double-Dip Strategy" },
-  { n: 7, id: "booking", label: "Reservation & Booking" },
+  { n: 7, id: "ceg-lift", label: "CEG Product Lift" },
   { n: 8, id: "branches", label: "Nearest Branches" },
-  { n: 9, id: "denied", label: "Denial Mitigation" },
-  { n: 10, id: "improve-odds", label: "Improve Your Odds" },
-  { n: 11, id: "need-help", label: "Need Support Now" },
+  { n: 9, id: "booking", label: "Reservation & Booking" },
+  { n: 10, id: "denied", label: "Denial Mitigation" },
+  { n: 11, id: "improve-odds", label: "Improve Your Odds" },
+  { n: 12, id: "need-help", label: "Need Support Now" },
 ];
 
 function scrollToSection(id: string) {
@@ -60,8 +59,7 @@ export function SectionRail({ active }: { active: string }) {
         <ul className="space-y-0.5">
           {SECTIONS.map((s) => {
             const isActive = s.id === active;
-            const isPast =
-              SECTIONS.findIndex((x) => x.id === s.id) < activeIndex;
+            SECTIONS.findIndex((x) => x.id === s.id) < activeIndex;
             return (
               <li key={s.id}>
                 <button

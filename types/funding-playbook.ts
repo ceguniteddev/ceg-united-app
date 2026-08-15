@@ -344,10 +344,29 @@ export interface CegRecommendation {
     | "credit_repair"
     | "income_coaching"
     | "business_formation";
+  serviceLabel?: string;
   rank: number;
   curatedImpactEstimate: string;
   aiApplicability: string;
   estimatedTimeToImpactDays: number;
+}
+
+export interface DoubleDipProduct {
+  productId: string;
+  displayName: string;
+  note: string;
+  bundleRecommended: boolean;
+  estLimitLow?: number;
+  estLimitHigh?: number;
+}
+
+export interface SectionDoubleDip {
+  friendly: boolean;
+  intro: string;
+  combinedExposureLow?: number;
+  combinedExposureHigh?: number;
+  howToRunSequence: string;
+  products: DoubleDipProduct[];
 }
 
 export interface Section8_CegRecommendations {
@@ -358,6 +377,19 @@ export interface Section9_NearestBranches {
   zip: string;
   radiusMiles: number;
   branches: Branch[];
+}
+
+export interface BookingAssist {
+  available: boolean;
+  primaryPhone: string;
+  primaryPhoneLabel: string;
+  branchName: string;
+  onlineSchedulerUrl: string | null;
+  onlineSchedulerLabel: string | null;
+  bestTimeToCall: string;
+  callScript: string[];
+  scriptGoal: string;
+  unavailableNote: string | null;
 }
 
 export interface Section10_ReconsiderationScript {
@@ -381,6 +413,20 @@ export interface AlternativeProduct {
 
 export interface Section12_Alternatives {
   alternatives: AlternativeProduct[];
+}
+
+export interface OddsImprover {
+  rank: number;
+  title: string;
+  cegProduct: string;
+  description: string;
+  impactScore: string;
+  impactApproval: string;
+  timeline: string;
+  investment: string;
+  ctaLabel: string;
+  href: string;
+  icon: "tradeline" | "repair" | "income" | "mentor";
 }
 
 export interface Section13_HelpOptions {
@@ -420,11 +466,14 @@ export interface Playbook {
   section6_housingStructuring: Section6_HousingStructuring;
   section7_denialPathReasoning: Section7_DenialPathReasoning;
   section8_cegRecommendations: Section8_CegRecommendations;
+  section8_doubleDip?: SectionDoubleDip;
   section9_nearestBranches: Section9_NearestBranches;
   section10_reconsiderationScript: Section10_ReconsiderationScript;
   section11_timingStrategy: Section11_TimingStrategy;
   section12_alternatives: Section12_Alternatives;
+  improvers?: OddsImprover[];
   section13_helpOptions: Section13_HelpOptions;
+  booking?: BookingAssist;
 }
 
 export interface PlaybookFeedback {

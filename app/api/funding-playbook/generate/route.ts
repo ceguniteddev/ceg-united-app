@@ -7,7 +7,10 @@ import {
   getClient,
   getLender,
   getProduct,
+  listProducts,
   savePlaybook,
+  getCachedPlaybook,
+  playbookId,
   NotFoundError,
 } from "@/lib/funding-playbook/firestore-helpers";
 import { findNearestBranches } from "@/lib/funding-playbook/places";
@@ -43,17 +46,26 @@ export async function POST(req: Request) {
 
     await checkAndIncrementRateLimit(userId, "generatePlaybook");
 
+    // Check cache before calling n8n
+    const id = playbookId(userId, lenderId, productId);
+    const cached = await getCachedPlaybook(id);
+    if (cached) {
+      return NextResponse.json({ cached: true, playbook: cached });
+    }
+
     // Fetch deterministic data and AI playbook generation in parallel
-    const [client, lender, product, rawResult] = await Promise.all([
-      getClient(userId),
-      getLender(lenderId),
-      getProduct(lenderId, productId),
-      generateFundingPlaybook({
-        userId,
-        lenderId,
-        productId,
-      }),
-    ]);
+    const [client, lender, product, allLenderProducts, rawResult] =
+      await Promise.all([
+        getClient(userId),
+        getLender(lenderId),
+        getProduct(lenderId, productId),
+        listProducts(lenderId).catch(() => []),
+        generateFundingPlaybook({
+          userId,
+          lenderId,
+          productId,
+        }),
+      ]);
 
     // Check for 400 response status from n8n / AI service
     if (
@@ -125,6 +137,7 @@ export async function POST(req: Request) {
       lender,
       product,
       branches,
+      allLenderProducts,
     });
 
     // Strict schema validation of final assembled playbook
