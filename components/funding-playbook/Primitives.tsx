@@ -39,7 +39,7 @@ export function SectionCard({
       id={id}
       className="scroll-mt-[132px] bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:break-inside-avoid print:shadow-none print:border-gray-300"
     >
-      <div className="flex flex-wrap sm:flex-nowrap items-start gap-x-3 gap-y-2 px-5 sm:px-6 pt-5 pb-4 border-b border-gray-100">
+      <div className="flex flex-wrap sm:flex-nowrap items-start gap-x-3 gap-y-2.5 px-4 sm:px-6 pt-4 sm:pt-5 pb-3.5 sm:pb-4 border-b border-gray-100">
         <div
           className={cn(
             "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0",
@@ -61,12 +61,10 @@ export function SectionCard({
           )}
         </div>
         {aside && (
-          <div className="flex-shrink-0 pt-0.5 basis-full sm:basis-auto">
-            {aside}
-          </div>
+          <div className="flex-shrink-0 pt-0.5 max-w-full">{aside}</div>
         )}
       </div>
-      <div className="px-5 sm:px-6 py-5">{children}</div>
+      <div className="px-4 sm:px-6 py-4 sm:py-5">{children}</div>
     </section>
   );
 }
@@ -177,31 +175,36 @@ export function ScriptBlock({
   label?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50/70 overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-2.5 bg-white border-b border-gray-200">
-        <PhoneCall className="w-3.5 h-3.5 text-blue-600" />
-        <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-gray-600">
-          {label}
-        </span>
-        <span className="ml-auto font-mono text-[10px] text-gray-400">
-          {lines.length} lines
-        </span>
+    <div className="rounded-2xl border border-gray-200 bg-gray-50/70 overflow-hidden shadow-xs h-full flex flex-col justify-between">
+      <div>
+        <div className="flex items-center gap-2 px-4 py-3 bg-white border-b border-gray-200">
+          <PhoneCall className="w-4 h-4 text-blue-600 flex-shrink-0" />
+          <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-gray-700">
+            {label}
+          </span>
+          <span className="ml-auto font-mono text-[10.5px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+            {lines.length} lines
+          </span>
+        </div>
+        <ol className="divide-y divide-gray-200/80 bg-white/40">
+          {lines.map((line, i) => (
+            <li
+              key={i}
+              className="flex items-start gap-3 px-4 py-3.5 sm:px-5 sm:py-4"
+            >
+              <span className="w-5 h-5 rounded-full bg-blue-100/80 text-blue-700 flex items-center justify-center font-mono text-[11px] font-bold flex-shrink-0 mt-0.5">
+                {i + 1}
+              </span>
+              <p className="text-[13px] sm:text-[13.5px] text-gray-800 leading-relaxed italic">
+                “{line}”
+              </p>
+            </li>
+          ))}
+        </ol>
       </div>
-      <ol className="divide-y divide-gray-200">
-        {lines.map((line, i) => (
-          <li key={i} className="flex gap-3 px-4 py-3">
-            <span className="font-mono text-[10px] font-semibold text-gray-400 pt-0.5 flex-shrink-0">
-              {i + 1}
-            </span>
-            <p className="text-[13px] text-gray-700 leading-relaxed italic">
-              “{line}”
-            </p>
-          </li>
-        ))}
-      </ol>
       {goal && (
-        <div className="px-4 py-2.5 bg-white border-t border-gray-200 flex items-start gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+        <div className="px-4 py-3 bg-white border-t border-gray-200 flex items-start gap-2.5">
+          <Sparkles className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
           <p className="text-[12px] text-gray-600 leading-snug">{goal}</p>
         </div>
       )}
@@ -285,12 +288,12 @@ export function ActionButton({
     success: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm",
   };
   const sizes: Record<string, string> = {
-    sm: "h-8 px-3 text-[12px] rounded-lg gap-1.5",
-    default: "h-10 px-4 text-[13px] rounded-xl gap-2",
-    lg: "h-11 px-5 text-sm rounded-xl gap-2",
+    sm: "min-h-8 py-1 px-3 text-[12px] rounded-lg gap-1.5",
+    default: "min-h-10 py-2 px-4 text-[13px] rounded-xl gap-2",
+    lg: "min-h-11 py-2.5 px-4 sm:px-5 text-xs sm:text-sm rounded-xl gap-2",
   };
   const classes = cn(
-    "inline-flex items-center justify-center font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40",
+    "inline-flex items-center justify-center text-center font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 leading-snug",
     variants[variant],
     sizes[size],
     className,

@@ -108,7 +108,16 @@ export function FundingPlaybookView({
     ? productName
     : `${lenderName} ${productName}`;
 
-  const clientFirstName = clientName?.split(" ")[0] || "Client";
+  const rawClientName = clientName || playbook.meta.clientName;
+  const clientFirstName = (() => {
+    if (!rawClientName) return "Client";
+    const trimmed = rawClientName.trim();
+    if (/^[a-zA-Z0-9_-]{15,}$/.test(trimmed) && !trimmed.includes(" "))
+      return "Client";
+    const first = trimmed.split(" ")[0];
+    if (/^[a-zA-Z0-9_-]{15,}$/.test(first)) return "Client";
+    return first || "Client";
+  })();
 
   const generatedDate = new Date(playbook.meta.generatedAt).toLocaleString(
     "en-US",

@@ -440,6 +440,7 @@ export interface Section13_HelpOptions {
 export interface PlaybookMeta {
   id: string;
   clientId: string;
+  clientName?: string;
   lenderId: string;
   productId: string;
   lenderDisplayName?: string;

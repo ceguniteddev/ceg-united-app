@@ -58,26 +58,45 @@ export function BranchesSection({ pb }: { pb: Playbook }) {
 
 // 09 — Reservation & Booking Assistance
 export function BookingSection({ pb }: { pb: Playbook }) {
+  const lenderDisplayName = pb.meta?.lenderDisplayName || "Lender";
+  const firstBranch = pb.section9_nearestBranches?.branches?.[0];
+
+  const clientDisplayName = (() => {
+    if (pb.meta?.clientName) return pb.meta.clientName;
+    const id = pb.meta?.clientId?.trim();
+    if (!id || (/^[a-zA-Z0-9_-]{15,}$/.test(id) && !id.includes(" ")))
+      return "Client";
+    return id.split(" ")[0] || "Client";
+  })();
+
+  const defaultBranchName = (() => {
+    if (!firstBranch?.name) return `${lenderDisplayName} — Local Branch`;
+    const hasLender = firstBranch.name
+      .toLowerCase()
+      .includes(lenderDisplayName.toLowerCase());
+    const base = hasLender
+      ? firstBranch.name
+      : `${lenderDisplayName} — ${firstBranch.name}`;
+    return firstBranch.address ? `${base}, ${firstBranch.address}` : base;
+  })();
+
   const b = pb.booking || {
     available: true,
     primaryPhone:
-      pb.section9_nearestBranches?.branches?.[0]?.phone ||
+      firstBranch?.phone ||
       pb.section10_reconsiderationScript?.reconsiderationPhone ||
       "3523751161",
     primaryPhoneLabel:
-      pb.section9_nearestBranches?.branches?.[0]?.phone ||
+      firstBranch?.phone ||
       pb.section10_reconsiderationScript?.reconsiderationPhone ||
       "(352) 375-1161",
-    branchName: pb.section9_nearestBranches?.branches?.[0]?.name
-      ? `${pb.meta?.lenderDisplayName || "Lender"} — ${pb.section9_nearestBranches.branches[0].name}, ${pb.section9_nearestBranches.branches[0].address}`
-      : `${pb.meta?.lenderDisplayName || "Lender"} — Local Branch`,
-    onlineSchedulerUrl:
-      pb.section9_nearestBranches?.branches?.[0]?.googleMapsUrl || null,
-    onlineSchedulerLabel: `Book with a ${pb.meta?.lenderDisplayName || "Lender"} business banker`,
+    branchName: defaultBranchName,
+    onlineSchedulerUrl: firstBranch?.googleMapsUrl || null,
+    onlineSchedulerLabel: `Book with a ${lenderDisplayName} business banker`,
     bestTimeToCall:
       "Tuesday–Thursday, 10:00am–11:30am — lowest branch call volume",
     callScript: [
-      `Hi, my name is ${pb.meta?.clientId || "Client"} — I've banked with ${pb.meta?.lenderDisplayName || "Lender"} and want to discuss account options for my business.`,
+      `Hi, my name is ${clientDisplayName} — I've banked with ${lenderDisplayName} and want to discuss account options for my business.`,
       `I'd like to book 20 minutes with a business banker this week to review the ${pb.meta?.productDisplayName || "business card"} before I submit my application.`,
       `If the banker has any availability Tuesday through Thursday morning, that works best for me — and could you note on my profile that I came in through the business side?`,
     ],
@@ -85,6 +104,11 @@ export function BookingSection({ pb }: { pb: Playbook }) {
       "Goal of the call: get 20 minutes on the calendar with a business banker, not a general teller, and have them note your relationship before you apply.",
     unavailableNote: null,
   };
+
+  // Ensure raw UIDs in script lines are safely replaced with clean client display name
+  const sanitizedCallScript = (b.callScript || []).map((line) =>
+    line.replace(/\b[a-zA-Z0-9_-]{15,}\b/g, clientDisplayName),
+  );
 
   const timeSlotChip = b.bestTimeToCall
     ? b.bestTimeToCall.split("—")[0].trim()
@@ -106,13 +130,13 @@ export function BookingSection({ pb }: { pb: Playbook }) {
     >
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-4">
-          <div className="rounded-2xl border-2 border-blue-600/20 bg-blue-50/40 px-5 py-5">
+          <div className="rounded-2xl border-2 border-blue-600/20 bg-blue-50/40 p-4 sm:p-5">
             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
               Call this number
             </div>
             <a
               href={`tel:${b.primaryPhone.replace(/[^\d+]/g, "")}`}
-              className="block font-mono text-[28px] sm:text-[32px] font-bold text-gray-900 tracking-tight leading-none mt-2 hover:text-blue-700 transition-colors"
+              className="block font-mono text-[24px] sm:text-[28px] md:text-[32px] font-bold text-gray-900 tracking-tight leading-none mt-2 hover:text-blue-700 transition-colors break-words"
             >
               {b.primaryPhoneLabel}
             </a>
@@ -120,11 +144,12 @@ export function BookingSection({ pb }: { pb: Playbook }) {
               {b.branchName}
             </p>
 
-            <div className="flex flex-wrap gap-2 mt-4">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 mt-4">
               <ActionButton
                 href={`tel:${b.primaryPhone.replace(/[^\d+]/g, "")}`}
                 icon={PhoneCall}
                 size="lg"
+                className="w-full sm:w-auto flex-1 sm:flex-initial justify-center"
               >
                 Tap to call
               </ActionButton>
@@ -135,6 +160,7 @@ export function BookingSection({ pb }: { pb: Playbook }) {
                   variant="secondary"
                   icon={CalendarCheck}
                   size="lg"
+                  className="w-full sm:w-auto flex-1 sm:flex-initial text-xs sm:text-sm text-center justify-center"
                 >
                   {b.onlineSchedulerLabel || "Book with a business banker"}
                 </ActionButton>
@@ -152,7 +178,7 @@ export function BookingSection({ pb }: { pb: Playbook }) {
             </RationaleBlock>
           )}
 
-          <div className="flex items-start gap-2.5 rounded-xl bg-gray-50 border border-gray-200 px-4 py-3">
+          <div className="flex items-start gap-2.5 rounded-xl bg-gray-50 border border-gray-200 px-3.5 py-3 sm:px-4">
             <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <p className="text-[12.5px] text-gray-600 leading-relaxed">
               <span className="font-semibold text-gray-800">
@@ -165,7 +191,7 @@ export function BookingSection({ pb }: { pb: Playbook }) {
 
         <div>
           <ScriptBlock
-            lines={b.callScript}
+            lines={sanitizedCallScript}
             goal={b.scriptGoal}
             label="3-sentence call script"
           />

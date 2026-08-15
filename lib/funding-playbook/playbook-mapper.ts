@@ -313,10 +313,40 @@ export function assemblePlaybook(inputs: AssemblyInputs): Playbook {
     products: doubleDipProducts,
   };
 
+  const cleanFirstName = (() => {
+    const raw = client.fullName?.trim();
+    if (!raw) return "Client";
+    if (/^[a-zA-Z0-9_-]{15,}$/.test(raw) && !raw.includes(" ")) return "Client";
+    const first = raw.split(" ")[0];
+    if (/^[a-zA-Z0-9_-]{15,}$/.test(first)) return "Client";
+    return first || "Client";
+  })();
+
+  const formatBranchDisplayName = () => {
+    const lenderName = lender.displayName || "Lender";
+    const branch = branches?.[0];
+    if (!branch?.name) return `${lenderName} — Local Branch`;
+
+    // Deduplicate if branch name already starts with or contains lender name
+    const branchNameLower = branch.name.toLowerCase();
+    const lenderNameLower = lenderName.toLowerCase();
+
+    let displayName = branch.name;
+    if (!branchNameLower.includes(lenderNameLower)) {
+      displayName = `${lenderName} — ${branch.name}`;
+    }
+
+    if (branch.address) {
+      displayName += `, ${branch.address}`;
+    }
+    return displayName;
+  };
+
   const playbook: Playbook = {
     meta: {
       id: `${client.id}_${lender.id}_${product.id}`,
       clientId: client.id,
+      clientName: cleanFirstName,
       lenderId: lender.id,
       productId: product.id,
       lenderDisplayName: lender.displayName,
@@ -499,15 +529,13 @@ export function assemblePlaybook(inputs: AssemblyInputs): Playbook {
         branches?.[0]?.phone || lender.reconsiderationPhone || "3523751161",
       primaryPhoneLabel:
         branches?.[0]?.phone || lender.reconsiderationPhone || "(352) 375-1161",
-      branchName: branches?.[0]?.name
-        ? `${lender.displayName || "Lender"} — ${branches[0].name}, ${branches[0].address}`
-        : `${lender.displayName || "Lender"} — Local Branch`,
+      branchName: formatBranchDisplayName(),
       onlineSchedulerUrl: branches?.[0]?.googleMapsUrl || null,
       onlineSchedulerLabel: `Book with a ${lender.displayName || "Lender"} business banker`,
       bestTimeToCall:
         "Tuesday–Thursday, 10:00am–11:30am — lowest branch call volume",
       callScript: [
-        `Hi, my name is ${client.fullName?.split(" ")[0] || "Client"} — I've banked with ${lender.displayName || "Lender"} and want to discuss account options for my business.`,
+        `Hi, my name is ${cleanFirstName} — I've banked with ${lender.displayName || "Lender"} and want to discuss account options for my business.`,
         `I'd like to book 20 minutes with a business banker this week to review the ${product.displayName || "business card"} before I submit my application.`,
         `If the banker has any availability Tuesday through Thursday morning, that works best for me — and could you note on my profile that I came in through the business side?`,
       ],
