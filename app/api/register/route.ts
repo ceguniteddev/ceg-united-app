@@ -60,6 +60,9 @@ function mapFundingData(body: any): ApplyFunding | undefined {
         : undefined,
     businessCreditScore:
       mappedType === "Business" ? body.business.businessCreditScore : undefined,
+    statedAnnualIncomeCorrected: body.business.statedAnnualIncomeCorrected,
+    additionalMonthlyIncome: body.business.additionalMonthlyIncome,
+    additionalIncomeSource: body.business.additionalIncomeSource,
     appliedDate: new Date(),
     status: "New",
     analysisStatus: "Completed",

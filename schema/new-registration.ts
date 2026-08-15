@@ -58,6 +58,12 @@ export const businessDetailsSchema = z
     businessCityAddress: z.string().nullable().optional(),
     businessStateAddress: z.string().nullable().optional(),
     businessPostalAddress: z.string().nullable().optional(),
+    statedAnnualIncomeCorrected: z.coerce
+      .number<number>()
+      .nullable()
+      .optional(),
+    additionalMonthlyIncome: z.coerce.number<number>().nullable().optional(),
+    additionalIncomeSource: z.string().nullable().optional(),
   })
   .superRefine((data, ctx) => {
     if (!data.fundingAmount || data.fundingAmount <= 0) {

@@ -8,6 +8,9 @@ vi.mock("@/lib/n8n", () => ({
   createAsanaCustomerServiceTaskN8N: vi
     .fn()
     .mockResolvedValue("webhook-path-2" as any),
+  getFundingPlaybookN8N: vi
+    .fn()
+    .mockResolvedValue("funding-playbook-prod" as any),
   // getFundingAnalysisNewRegistrationFlow: vi.fn(),
   mapBankProductsN8nNewRegistration: vi.fn(),
   sendClientCongratsMessageN8NNewRegistration: vi.fn(),
@@ -19,6 +22,7 @@ vi.stubGlobal("fetch", mockFetch);
 import {
   sendClientServiceAgreement,
   createAsanaCustomerServiceTask,
+  generateFundingPlaybook,
 } from "@/service/n8n";
 
 describe("service/n8n", () => {
@@ -99,6 +103,52 @@ describe("service/n8n", () => {
       const result = await createAsanaCustomerServiceTask(taskParams);
 
       expect(result).toBe(mockResponse);
+    });
+  });
+
+  // ── generateFundingPlaybook ───────────────────────────────────────────────
+  describe("generateFundingPlaybook", () => {
+    it("calls fetch with correct URL, headers, and returns JSON payload", async () => {
+      const mockPlaybook = { section1_recommendedChannel: "online" };
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => mockPlaybook,
+      });
+
+      const result = await generateFundingPlaybook({
+        userId: "123",
+        lenderId: "chase",
+        productId: "pdt-1",
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "https://n8n.example.com/funding-playbook-prod",
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            ADMIN_ACCESS_KEY: "test-admin-key",
+          }),
+          body: JSON.stringify({
+            userId: "123",
+            lenderId: "chase",
+            productId: "pdt-1",
+          }),
+        }),
+      );
+      expect(result).toEqual(mockPlaybook);
+    });
+
+    it("throws error when response is not ok", async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: async () => "Internal Server Error",
+      });
+
+      await expect(generateFundingPlaybook({ userId: "123" })).rejects.toThrow(
+        "n8n webhook error (500): Internal Server Error",
+      );
     });
   });
 });

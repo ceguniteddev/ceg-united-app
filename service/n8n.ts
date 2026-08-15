@@ -2,6 +2,7 @@ import { logInfo } from "@/lib/logger";
 import {
   calculateBusinessIncomePreApprovedN8N,
   createAsanaCustomerServiceTaskN8N,
+  getFundingPlaybookN8N,
   sendClientServiceAgreementN8N,
 } from "@/lib/n8n";
 
@@ -90,4 +91,40 @@ export const calculateBusinessIncomePreApproved = async ({
       referenceNumber,
     }),
   });
+};
+
+export const generateFundingPlaybook = async ({
+  userId,
+  lenderId,
+  productId,
+}: {
+  userId: string;
+  lenderId?: string;
+  productId?: string;
+}) => {
+  logInfo("Generating funding playbook via n8n...", {
+    userId,
+    lenderId,
+    productId,
+  });
+  const url = `${process.env.n8n_HOST}/${await getFundingPlaybookN8N()}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ADMIN_ACCESS_KEY: process.env.ADMIN_ACCESS_KEY!,
+    },
+    body: JSON.stringify({
+      userId,
+      ...(lenderId ? { lenderId } : {}),
+      ...(productId ? { productId } : {}),
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`n8n webhook error (${response.status}): ${errorText}`);
+  }
+
+  return await response.json();
 };

@@ -1,4 +1,5 @@
 "use client";
+import { AdditionalIncomeFields } from "@/components/funding/AdditionalIncomeFields";
 import { CustomFormField } from "@/components/CustomFormField";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
@@ -1626,6 +1627,7 @@ const ApplyFundingForm = ({
                               )}
                             </>
                           )}
+                          <AdditionalIncomeFields />
                         </CardContent>
                       </Card>
                     )}

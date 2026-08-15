@@ -50,7 +50,9 @@ export const mapBankProductsN8n = async () =>
   isProd() ? "bank-product-mapping-prod" : "bank-product-mapping";
 
 export const mapBankProductsN8nNewRegistration = async () =>
-  isProd() ? "bank-product-mapping-new-registration-prod" : "bank-product-mapping-new-registration";
+  isProd()
+    ? "bank-product-mapping-new-registration-prod"
+    : "bank-product-mapping-new-registration";
 
 export const sendClientServiceAgreementN8N = async () =>
   isProd()
@@ -66,3 +68,6 @@ export const calculateBusinessIncomePreApprovedN8N = async () =>
   isProd()
     ? "business-income-preapprove-computation-prod"
     : "business-income-preapprove-computation";
+
+export const getFundingPlaybookN8N = async () =>
+  isProd() ? "funding-playbook-prod" : "funding-playbook";
