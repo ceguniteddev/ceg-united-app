@@ -13,6 +13,13 @@ import {
   GraduationCap,
   CalendarCheck,
   Info,
+  ShieldAlert,
+  FileWarning,
+  MessageCircle,
+  Wrench,
+  Headphones,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import type { Playbook } from "@/types/funding-playbook";
 import {
@@ -201,36 +208,289 @@ export function BookingSection({ pb }: { pb: Playbook }) {
   );
 }
 
-// 11 — Timing Strategy
+// 11 — If You're Denied
 export function DeniedSection({ pb }: { pb: Playbook }) {
-  const t = pb.section11_timingStrategy;
+  const d = pb.section7_denialPathReasoning;
+  const recon = pb.section10_reconsiderationScript;
+  const timing = pb.section11_timingStrategy;
+  const help = pb.section13_helpOptions;
+
+  const lenderShortName = pb.meta?.lenderDisplayName || "Lender";
+  const productName = pb.meta?.productDisplayName || "Product";
+
+  const rawRate = d?.reconsiderationSuccessRateForProduct;
+  const reconRatePct =
+    typeof rawRate === "number"
+      ? rawRate <= 1
+        ? Math.round(rawRate * 100)
+        : Math.round(rawRate)
+      : 65;
+
+  const combinedReasons = Array.from(
+    new Set([
+      ...(d?.lenderCommonDenialReasons || []),
+      ...(d?.productSpecificDenialReasons || []),
+    ]),
+  );
+
+  const clientRisks = d?.aiClientSpecificRisks || [];
+  const mitigations = d?.aiMitigationSteps || [];
+
+  const rawScript = recon?.aiPhoneScript || "";
+  const scriptLines =
+    rawScript
+      .match(/[^.!?]+[.!?]+/g)
+      ?.map((s) => s.trim())
+      .filter(Boolean) || (rawScript ? [rawScript] : []);
 
   return (
     <SectionCard
       n={11}
       id="denied"
-      icon={CalendarClock}
-      accent="brand"
-      title="Timing & Application Sequencing"
-      subtitle="Best timing and application order to maximize approval"
+      icon={ShieldAlert}
+      accent="danger"
+      title="If You're Denied"
+      subtitle="A six-step recovery path — most denials are reversible"
+      aside={<Chip tone="amber">Reconsideration playbook</Chip>}
     >
-      <div className="space-y-4">
-        <RationaleBlock label="Timing Rationale" tone="brand">
-          {t.aiTimingRationale}
-        </RationaleBlock>
+      <div className="space-y-3">
+        {/* Step 1 */}
+        <DenialStep
+          n={1}
+          title="Check your adverse action notice for exact reasons"
+          icon={FileWarning}
+        >
+          <p className="text-[13px] text-gray-600 leading-relaxed">
+            By law under Regulation B, lenders must issue an Adverse Action
+            Notice detailing the principal reasons for a decline or counteroffer
+            within 30 days. Review the letter upon arrival to confirm which
+            credit factors triggered the decision.
+          </p>
+        </DenialStep>
 
-        {t.threeDayRuleNotes && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
-            <h4 className="text-[12.5px] font-bold text-amber-900">
-              3-Day Velocity Rule Notes
-            </h4>
-            <p className="text-[12px] text-amber-800 mt-1 leading-relaxed">
-              {t.threeDayRuleNotes}
-            </p>
+        {/* Step 2 */}
+        <DenialStep
+          n={2}
+          title={`Common denial factors & risks for ${lenderShortName} ${productName}`}
+          icon={Layers}
+        >
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50/70 p-3">
+              <div className="text-[12px] font-semibold text-gray-700">
+                Typical reconsideration success rate on this product
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-[16px] font-bold text-emerald-600">
+                  {reconRatePct}%
+                </span>
+                <Chip tone="green" className="!px-1.5 !py-0.5 !text-[9.5px]">
+                  Recon Odds
+                </Chip>
+              </div>
+            </div>
+
+            {combinedReasons.length > 0 && (
+              <div>
+                <h4 className="text-[11.5px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
+                  Lender & Product Denial Triggers
+                </h4>
+                <ul className="space-y-1.5">
+                  {combinedReasons.map((reason, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2 text-[12.5px] text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                    >
+                      <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <span>{reason}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {clientRisks.length > 0 && (
+              <div>
+                <h4 className="text-[11.5px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
+                  Your Profile Specific Risks
+                </h4>
+                <ul className="space-y-1.5">
+                  {clientRisks.map((risk, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2 text-[12.5px] text-gray-700 bg-red-50/50 border border-red-100 rounded-lg px-3 py-2"
+                    >
+                      <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                      <span>{risk}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-        )}
+        </DenialStep>
+
+        {/* Step 3 */}
+        <DenialStep
+          n={3}
+          title="Fix underlying issues & application timing"
+          icon={Wrench}
+        >
+          <div className="space-y-3">
+            {mitigations.length > 0 && (
+              <ul className="space-y-1.5">
+                {mitigations.map((step, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-start gap-2 text-[12.5px] text-gray-700 bg-emerald-50/40 border border-emerald-100 rounded-lg px-3 py-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {timing?.aiTimingRationale && (
+              <RationaleBlock label="Timing Strategy" tone="brand">
+                {timing.aiTimingRationale}
+              </RationaleBlock>
+            )}
+
+            {timing?.threeDayRuleNotes && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3.5">
+                <h4 className="text-[12px] font-bold text-amber-900">
+                  3-Day Velocity Rule Notes
+                </h4>
+                <p className="text-[12px] text-amber-800 mt-1 leading-relaxed">
+                  {timing.threeDayRuleNotes}
+                </p>
+              </div>
+            )}
+          </div>
+        </DenialStep>
+
+        {/* Step 4 */}
+        <DenialStep
+          n={4}
+          title="Call the reconsideration department"
+          icon={PhoneCall}
+        >
+          <div className="rounded-xl border-2 border-blue-600/20 bg-blue-50/40 p-4">
+            <a
+              href={`tel:${recon?.reconsiderationPhone?.replace(/[^\d+]/g, "") || "18005550100"}`}
+              className="font-mono text-[22px] sm:text-[26px] font-bold text-gray-900 tracking-tight leading-none hover:text-blue-700 transition-colors"
+            >
+              {recon?.reconsiderationPhone || "1-800-555-0100"}
+            </a>
+            {recon?.reconsiderationHours && (
+              <p className="text-[11.5px] text-gray-600 mt-1.5">
+                Hours: {recon.reconsiderationHours}
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2 mt-3">
+              <ActionButton
+                href={`tel:${recon?.reconsiderationPhone?.replace(/[^\d+]/g, "") || "18005550100"}`}
+                icon={PhoneCall}
+                size="sm"
+              >
+                Tap to call reconsideration
+              </ActionButton>
+            </div>
+          </div>
+          {recon?.reconsiderationTips && (
+            <p className="text-[12px] text-gray-600 mt-2.5 leading-relaxed">
+              <span className="font-semibold text-gray-800">Pro Tip:</span>{" "}
+              {recon.reconsiderationTips}
+            </p>
+          )}
+        </DenialStep>
+
+        {/* Step 5 */}
+        <DenialStep
+          n={5}
+          title="Use this reconsideration script"
+          icon={MessageCircle}
+        >
+          {scriptLines.length > 0 ? (
+            <ScriptBlock
+              lines={scriptLines}
+              label="Reconsideration Call Script"
+              goal="Goal: Stay calm, be specific, and highlight your existing relationship, deposit history, or compensating factors."
+            />
+          ) : (
+            <p className="text-[12.5px] text-gray-500 italic">
+              No personalized script generated for this application.
+            </p>
+          )}
+        </DenialStep>
+
+        {/* Step 6 */}
+        <DenialStep
+          n={6}
+          title="Talk to a CEG coach before reapplying"
+          icon={Headphones}
+          last
+        >
+          <div className="rounded-xl bg-gradient-to-r from-blue-900 to-[#2a4f7c] p-4 flex flex-wrap items-center gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold text-white leading-snug">
+                {help?.aiClosingNote ||
+                  "Our funding strategists can review your file and help present your compensating factors to underwriting."}
+              </p>
+              <p className="text-[11.5px] text-white/70 mt-1">
+                Support: {help?.cegSupportPhone || "1-800-555-0100"} ·{" "}
+                {help?.cegSupportEmail || "support@cegunited.com"}
+              </p>
+            </div>
+            {help?.scheduleConsultUrl && (
+              <ActionButton
+                href={help.scheduleConsultUrl}
+                external
+                variant="secondary"
+                icon={Headphones}
+                size="lg"
+              >
+                Talk to a coach
+              </ActionButton>
+            )}
+          </div>
+        </DenialStep>
       </div>
     </SectionCard>
+  );
+}
+
+function DenialStep({
+  n,
+  title,
+  icon: Icon,
+  children,
+  last,
+}: {
+  n: number;
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+  last?: boolean;
+}) {
+  return (
+    <div className="flex gap-3.5">
+      <div className="flex flex-col items-center flex-shrink-0">
+        <div className="w-8 h-8 rounded-xl bg-gray-900 text-white flex items-center justify-center font-mono text-[12px] font-bold">
+          {n}
+        </div>
+        {!last && <div className="w-px flex-1 bg-gray-200 mt-1.5" />}
+      </div>
+      <div className={cn("min-w-0 flex-1", last ? "pb-0" : "pb-4")}>
+        <div className="flex items-center gap-2 mb-2">
+          <Icon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <h3 className="text-[13.5px] font-bold text-gray-900 leading-snug">
+            {title}
+          </h3>
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }
 

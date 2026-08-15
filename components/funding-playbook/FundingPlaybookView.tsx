@@ -5,14 +5,9 @@ import { Sparkles } from "lucide-react";
 import type { Playbook } from "@/types/funding-playbook";
 import { useBankProductsQueryById } from "@/hooks/admin/bank-products";
 import { PlaybookSkeleton } from "./PlaybookSkeleton";
-import { PlaybookTopBar, ClientIdentityBar } from "./PlaybookHeader";
+import { ClientIdentityBar } from "./PlaybookHeader";
 import { SectionRail, SectionAccordionNav, SECTIONS } from "./SectionNav";
-import {
-  BestMethodSection,
-  RelationshipSection,
-  BankingRequirementSection,
-  BureauSection,
-} from "./Sections1to4";
+import { BestMethodSection, BureauSection } from "./Sections1to4";
 import {
   IncomeSection,
   HousingSection,
@@ -27,7 +22,7 @@ import {
   ImproveOddsSection,
   NeedHelpSection,
 } from "./Sections9to13";
-import { StickyHelpBar, ChatWidget } from "./StickyHelpBar";
+import { StickyHelpBar } from "./StickyHelpBar";
 
 export function FundingPlaybookView({
   playbook,
@@ -35,14 +30,12 @@ export function FundingPlaybookView({
   clientName,
   clientZip,
   selectedFundingPath,
-  onBack,
 }: {
   playbook: Playbook | null;
   isLoading?: boolean;
   clientName?: string;
   clientZip?: string;
   selectedFundingPath?: string;
-  onBack?: () => void;
 }) {
   const [active, setActive] = useState(SECTIONS[0].id);
 
@@ -119,16 +112,6 @@ export function FundingPlaybookView({
     return first || "Client";
   })();
 
-  const generatedDate = new Date(playbook.meta.generatedAt).toLocaleString(
-    "en-US",
-    {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    },
-  );
-
   return (
     <div className="flex flex-col h-full min-h-0 bg-gray-50">
       <ClientIdentityBar
@@ -191,7 +174,6 @@ export function FundingPlaybookView({
       </main>
 
       <StickyHelpBar pb={playbook} />
-      <ChatWidget pb={playbook} />
     </div>
   );
 }

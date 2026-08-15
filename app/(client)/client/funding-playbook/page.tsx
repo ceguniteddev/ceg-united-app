@@ -477,7 +477,6 @@ export default function ClientFundingPlaybookPage() {
           clientName={user.displayName || user.email?.split("@")[0] || "Client"}
           clientZip=""
           selectedFundingPath={getPathwayLabel(selectedPathwayId)}
-          onBack={() => history.back()}
         />
       )}
 

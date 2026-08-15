@@ -105,18 +105,6 @@ export function ChatWidget({ pb }: { pb: Playbook }) {
           </div>
         </div>
       )}
-
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-[52px] h-[52px] rounded-full shadow-xl flex items-center justify-center transition-all duration-200 active:scale-95 ml-auto bg-blue-600 text-white hover:bg-blue-700"
-        aria-label="Chat assistant"
-      >
-        {open ? (
-          <X className="w-5 h-5" />
-        ) : (
-          <MessageCircle className="w-[22px] h-[22px]" />
-        )}
-      </button>
     </div>
   );
 }

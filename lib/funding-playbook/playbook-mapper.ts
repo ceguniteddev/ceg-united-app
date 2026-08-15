@@ -596,10 +596,10 @@ export function assemblePlaybook(inputs: AssemblyInputs): Playbook {
     }),
 
     section13_helpOptions: {
-      cegSupportPhone: process.env.CEG_SUPPORT_PHONE ?? "1-800-555-0100",
-      cegSupportEmail: process.env.CEG_SUPPORT_EMAIL ?? "support@cegunited.com",
+      cegSupportPhone: process.env.CEG_SUPPORT_PHONE ?? "(954) 367-9787",
+      cegSupportEmail: process.env.CEG_SUPPORT_EMAIL ?? "contact@cegunited.com",
       scheduleConsultUrl:
-        process.env.CEG_CONSULT_URL ?? "https://cegunited.com/schedule",
+        process.env.CEG_CONSULT_URL ?? "https://www.cegunited.com/contact",
       relevantLearningModules: [],
       aiClosingNote: aiOutput.section13_aiClosingNote || "",
     },

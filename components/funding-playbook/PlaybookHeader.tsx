@@ -36,17 +36,17 @@ function formatCurrency(amount: number): string {
 
 export function PlaybookTopBar({
   pb,
-  onBack,
+  onBackAction,
 }: {
   pb: Playbook;
-  onBack?: () => void;
+  onBackAction?: () => void;
 }) {
   return (
     <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 print:static print:bg-white">
       <div className="max-w-[1500px] mx-auto px-4 sm:px-6 h-[62px] flex items-center gap-3">
-        {onBack && (
+        {onBackAction && (
           <button
-            onClick={onBack}
+            onClick={onBackAction}
             className="flex items-center gap-1.5 h-9 px-2.5 -ml-1 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors flex-shrink-0 print:hidden"
             title="Back"
           >
@@ -178,28 +178,6 @@ export function ClientIdentityBar({
   const dtiPct = pb?.section6_housingStructuring?.dtiImpactIfIncluded ?? 0;
 
   // Readiness Calculation
-  const requiredDataPoints = [
-    !!clientName,
-    !!(userData?.email || pb?.meta?.clientId),
-    !!(
-      clientZip ||
-      pb?.section9_nearestBranches?.zip ||
-      userData?.addressPostal
-    ),
-    ficoScore > 0,
-    rawIncome > 0,
-    !!(primaryBusiness?.businessName || userData?.leadData?.businessName),
-    !!(
-      primaryBusiness?.employerIdentificationNumber || userData?.leadData?.ein
-    ),
-    !!pb?.section1_bestMethod?.applicationUrl,
-    !!pb?.section3_bureauPull?.primaryBureau,
-    !!pb?.section4_approvalEstimate?.minFICORequired,
-  ];
-
-  const filledPoints = requiredDataPoints.filter(Boolean).length;
-  const totalPoints = requiredDataPoints.length;
-  const readinessPct = Math.round((filledPoints / totalPoints) * 100);
 
   // Dynamic Next Steps
   const pendingItems: string[] = [];
@@ -221,7 +199,6 @@ export function ClientIdentityBar({
       "EIN verification letter",
     );
   }
-  const requirementsText = pendingItems.join(" · ");
 
   // Initials for Avatar
   const nameParts = clientName.split(" ").filter(Boolean);
