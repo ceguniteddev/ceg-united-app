@@ -1,0 +1,215 @@
+import { z } from "zod";
+
+export const CegServiceEnum = z.enum([
+  "tradelines",
+  "credit_repair",
+  "income_coaching",
+  "business_formation",
+]);
+
+export const ConfidenceLevelEnum = z.enum(["low", "medium", "high"]);
+
+export const ApplicationChannelEnum = z.enum([
+  "online",
+  "phone",
+  "in_branch",
+  "mobile_app",
+]);
+
+export const OtherChannelSchema = z.object({
+  channel: ApplicationChannelEnum,
+  recommended: z.boolean(),
+  note: z.string().min(1).max(400),
+});
+
+export const AIPlaybookReasoningOutputSchema = z.object({
+  section1_aiPersonalizedNote: z.string().min(1).max(600),
+  section1_recommendedChannel: ApplicationChannelEnum,
+  section1_recommendedHeadline: z.string().min(1).max(200),
+  section1_reasoning: z.string().min(1).max(800),
+  section1_keyTakeaways: z.array(z.string().min(1)).min(1).max(6),
+  section1_otherChannels: z.array(OtherChannelSchema).min(0).max(4),
+  section1_decisionSpeedNote: z.string().min(1).max(300),
+  section2_whyThisMatters: z.string().min(1).max(600),
+  section3_ourRead: z.string().min(1).max(600),
+
+  section4_aiPersonalizedRange: z
+    .tuple([z.number().nonnegative(), z.number().nonnegative()])
+    .refine(([lo, hi]) => lo <= hi, { message: "range min must be <= max" }),
+  section4_confidenceLevel: ConfidenceLevelEnum,
+  section4_confidencePct: z
+    .number()
+    .int()
+    .min(0)
+    .max(100)
+    .optional()
+    .default(75),
+  section4_aiReasoning: z.string().min(1).max(800),
+  section4_estimateNote: z.string().min(1).max(800).optional(),
+  section4_topDrivers: z
+    .array(
+      z.object({
+        label: z.string().min(1).max(200),
+        detail: z.string().min(1).max(200),
+        weightPct: z.number().int().min(1).max(100),
+        impact: z.enum(["positive", "negative", "neutral"]),
+      }),
+    )
+    .min(0)
+    .max(5)
+    .optional(),
+
+  section5_aiRecommendedStatedIncome: z.number().nonnegative(),
+  section5_aiReasoning: z.string().min(1).max(800),
+  section5_regulationBNote: z.string().max(500).optional(),
+  section5_businessRevenueReasoning: z.string().max(600).optional(),
+  section5_personalHouseholdReasoning: z.string().max(600).optional(),
+
+  section6_aiStructuringMath: z.string().min(1).max(800),
+  section6_aiRecommendation: z.string().min(1).max(500),
+
+  section7_aiClientSpecificRisks: z.array(z.string().min(1)).min(1).max(8),
+  section7_aiMitigationSteps: z.array(z.string().min(1)).min(1).max(8),
+
+  section8_recommendations: z
+    .array(
+      z.object({
+        service: CegServiceEnum,
+        rank: z.number().int().min(1),
+        aiApplicability: z.string().min(1).max(500),
+        estimatedTimeToImpactDays: z.number().int().nonnegative().max(365),
+      }),
+    )
+    .min(0)
+    .max(4),
+
+  section8dd_friendly: z.boolean().optional(),
+  section8dd_intro: z.string().max(1000).optional(),
+  section8dd_combinedExposureLow: z.number().nonnegative().optional(),
+  section8dd_combinedExposureHigh: z.number().nonnegative().optional(),
+  section8dd_howToRunSequence: z.string().max(1000).optional(),
+  section8dd_products: z
+    .array(
+      z.object({
+        productId: z.string().optional(),
+        displayName: z.string().optional(),
+        note: z.string().max(500).optional(),
+        bundleRecommended: z.boolean().optional(),
+        estLimitLow: z.number().nonnegative().optional(),
+        estLimitHigh: z.number().nonnegative().optional(),
+      }),
+    )
+    .optional(),
+
+  section10_aiPhoneScript: z.string().min(1).max(1200),
+  section11_aiTimingRationale: z.string().min(1).max(600),
+  section13_aiClosingNote: z.string().min(1).max(400),
+});
+
+export type AIPlaybookReasoningOutputParsed = z.infer<
+  typeof AIPlaybookReasoningOutputSchema
+>;
+
+export const AIReconsiderationScriptOutputSchema = z.object({
+  script: z
+    .string()
+    .min(1)
+    .max(1000)
+    .refine(
+      (s) => {
+        const sentenceCount = (s.match(/[.!?]+(\s|$)/g) ?? []).length;
+        return sentenceCount >= 3 && sentenceCount <= 6;
+      },
+      { message: "script must be approximately 4 sentences" },
+    ),
+});
+
+export type AIReconsiderationScriptOutputParsed = z.infer<
+  typeof AIReconsiderationScriptOutputSchema
+>;
+
+export function validateApprovalRangeWithinBand(
+  aiRange: [number, number] | undefined | null,
+  documentedRange: [number, number] | undefined | null,
+): boolean {
+  if (
+    !documentedRange ||
+    !Array.isArray(documentedRange) ||
+    documentedRange.length < 2
+  ) {
+    return false;
+  }
+  if (!aiRange || !Array.isArray(aiRange) || aiRange.length < 2) {
+    return false;
+  }
+  const [docLo, docHi] = documentedRange;
+  const bandLo = docLo * 0.7;
+  const bandHi = docHi * 1.3;
+  const [aiLo, aiHi] = aiRange;
+  return aiLo >= bandLo && aiHi <= bandHi;
+}
+
+export const GeneratePlaybookRequestSchema = z.object({
+  userId: z.string().min(1),
+  lenderId: z.string().optional(),
+  productId: z.string().optional(),
+});
+
+export const PlaybookSchema = z
+  .object({
+    meta: z
+      .object({
+        id: z.string().optional(),
+        clientId: z.string().optional(),
+        lenderId: z.string().optional(),
+        productId: z.string().optional(),
+        generatedAt: z.string().optional(),
+        expiresAt: z.string().optional(),
+      })
+      .passthrough(),
+    section1_bestMethod: z.object({}).passthrough(),
+    section2_relationship: z.object({}).passthrough(),
+    section3_bureauPull: z.object({}).passthrough(),
+    section4_approvalEstimate: z.object({}).passthrough(),
+    section5_incomeStructuring: z.object({}).passthrough(),
+    section6_housingStructuring: z.object({}).passthrough(),
+    section7_denialPathReasoning: z.object({}).passthrough(),
+    section8_cegRecommendations: z.object({}).passthrough(),
+    section8_doubleDip: z.object({}).passthrough().optional(),
+    section9_nearestBranches: z.object({}).passthrough(),
+    section10_reconsiderationScript: z.object({}).passthrough(),
+    section11_timingStrategy: z.object({}).passthrough(),
+    section12_alternatives: z.object({}).passthrough(),
+    section13_helpOptions: z.object({}).passthrough(),
+  })
+  .passthrough();
+
+export const NearestBranchesRequestSchema = z.object({
+  zip: z.string().regex(/^\d{5}(-\d{4})?$/, "zip must be a valid US ZIP code"),
+  lenderId: z.string().min(1),
+  radiusMiles: z.number().positive().max(100).optional().default(25),
+});
+
+export const ReconsiderationScriptRequestSchema = z.object({
+  clientId: z.string().min(1),
+  lenderId: z.string().min(1),
+  denialReason: z.string().min(1).max(300),
+});
+
+export const SavePlaybookFeedbackRequestSchema = z.object({
+  playbookId: z.string().min(1),
+  clientId: z.string().min(1),
+  rating: z.union([
+    z.literal(1),
+    z.literal(2),
+    z.literal(3),
+    z.literal(4),
+    z.literal(5),
+  ]),
+  notes: z.string().max(2000).optional(),
+  sectionRatings: z.record(z.string(), z.number().min(1).max(5)).optional(),
+  outcomeReported: z
+    .enum(["approved", "denied", "not_yet_applied", "unknown"])
+    .optional(),
+  approvedAmount: z.number().nonnegative().optional(),
+});

@@ -9,6 +9,7 @@ import { FormInput } from "../forms/form-input";
 import { FormSelect } from "../forms/form-select";
 import { FormEINInput } from "../forms/form-ein-number-input";
 import { FormPhoneNumberInput } from "../forms/form-phone-number-input";
+import { IncomeSourceSection } from "./IncomeSourceSection";
 
 export function Step2BusinessDetails() {
   const form = useFormContext();
@@ -141,6 +142,8 @@ export function Step2BusinessDetails() {
                 ]}
                 placeholder="Select employment type"
               />
+
+              <IncomeSourceSection />
             </CardContent>
           </Card>
         )}

@@ -5,6 +5,7 @@ import { UserMembership } from "./users";
 
 export const FundingApplicationSatus = [
   "New",
+  "Submitted",
   "Processing",
   "Pre-Approved",
   "Approved",
@@ -103,6 +104,11 @@ export const applyFundingSchema = z
       .optional(),
     payPerMonth: z.coerce.number<number>().optional(),
     rentOrMortgage: z.string().optional(),
+
+    // Additional income & corrected stated income fields
+    statedAnnualIncomeCorrected: z.coerce.number<number>().optional(),
+    additionalMonthlyIncome: z.coerce.number<number>().optional(),
+    additionalIncomeSource: z.string().optional(),
 
     howDoYouGetPaid: z.string().optional(),
     // howDoYouGetPaid: z.string().min(1, { error: "Required" }),

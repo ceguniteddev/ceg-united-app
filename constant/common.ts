@@ -68,7 +68,6 @@ export const sidebarLinks = [
     route: "/client/home",
     label: "Home",
   },
-
   {
     imgURL: "/icons/files.svg",
     route: "/client/my-invoices",
@@ -79,42 +78,26 @@ export const sidebarLinks = [
     route: "/client/income-funding",
     label: "Income Funding",
   },
-
-  // {
-  //   imgURL: "/icons/money-send.svg",
-  //   route: "/client/my-funding",
-  //   label: "My Funding",
-  // },
+  {
+    imgURL: "/icons/file-chart-column.svg",
+    route: "/client/funding-playbook",
+    label: "Funding Playbook",
+  },
   {
     imgURL: "/icons/file-chart-column.svg",
     route: "/client/my-analysis",
     label: "My Funding Analysis",
   },
-  // {
-  //   imgURL: "/icons/credit-card.svg",
-  //   route: "/client/my-accounts",
-  //   label: "My Accounts",
-  // },
   {
     imgURL: "/icons/building-2.svg",
     route: "/client/my-business",
     label: "My Business",
   },
-  // {
-  //   imgURL: "/icons/transaction.svg",
-  //   route: "/transaction-history",
-  //   label: "Transaction History",
-  // },
   {
     imgURL: "/icons/dollar-circle.svg",
     route: "/client/my-credit",
     label: "My Credit",
   },
-  // {
-  //   imgURL: "/icons/dollar-circle.svg",
-  //   route: "/my-tradelines",
-  //   label: "My Tradelines",
-  // },
   {
     imgURL: "/icons/files.svg",
     route: "/client/my-documents",
@@ -145,11 +128,6 @@ export const sidebarLinks = [
     route: "/client/tradelines",
     label: "Tradelines",
   },
-  // {
-  //   imgURL: "/icons/dollar-circle.svg",
-  //   route: "/whats-new",
-  //   label: "What's New",
-  // },
   {
     imgURL: "/icons/headset.svg",
     route: "/client/support-service",
@@ -343,21 +321,6 @@ export const settingsSidebarAdmin = [
     route: "/settings/personal",
     label: "Personal",
   },
-  // {
-  //   imgURL: "/icons/credit-card.svg",
-  //   route: "/settings/membership",
-  //   label: "Membership",
-  // },
-  // {
-  //   imgURL: "/icons/circle-user-round.svg",
-  //   route: "/settings/users",
-  //   label: "Users",
-  // },
-  // {
-  //   imgURL: "/icons/handshake.svg",
-  //   route: "/settings/broker",
-  //   label: "Broker Invitations",
-  // },
 ];
 
 export const transactionCategoryStyles = {
@@ -477,234 +440,63 @@ export const courseCategories = [
 ];
 
 export const US_STATES = [
-  {
-    label: "Nationwide",
-    value: "Nationwide",
-  },
-  {
-    label: "Alabama",
-    value: "AL",
-  },
-  {
-    label: "Alaska",
-    value: "AK",
-  },
-  {
-    label: "American Samoa",
-    value: "AS",
-  },
-  {
-    label: "Arizona",
-    value: "AZ",
-  },
-  {
-    label: "Arkansas",
-    value: "AR",
-  },
-  {
-    label: "California",
-    value: "CA",
-  },
-  {
-    label: "Colorado",
-    value: "CO",
-  },
-  {
-    label: "Connecticut",
-    value: "CT",
-  },
-  {
-    label: "Delaware",
-    value: "DE",
-  },
-  {
-    label: "District Of Columbia",
-    value: "DC",
-  },
-  {
-    label: "Florida",
-    value: "FL",
-  },
-  {
-    label: "Georgia",
-    value: "GA",
-  },
-  {
-    label: "Guam",
-    value: "GU",
-  },
-  {
-    label: "Hawaii",
-    value: "HI",
-  },
-  {
-    label: "Idaho",
-    value: "ID",
-  },
-  {
-    label: "Illinois",
-    value: "IL",
-  },
-  {
-    label: "Indiana",
-    value: "IN",
-  },
-  {
-    label: "Iowa",
-    value: "IA",
-  },
-  {
-    label: "Kansas",
-    value: "KS",
-  },
-  {
-    label: "Kentucky",
-    value: "KY",
-  },
-  {
-    label: "Louisiana",
-    value: "LA",
-  },
-  {
-    label: "Maine",
-    value: "ME",
-  },
-  {
-    label: "Maryland",
-    value: "MD",
-  },
-  {
-    label: "Massachusetts",
-    value: "MA",
-  },
-  {
-    label: "Michigan",
-    value: "MI",
-  },
-  {
-    label: "Minnesota",
-    value: "MN",
-  },
-  {
-    label: "Mississippi",
-    value: "MS",
-  },
-  {
-    label: "Missouri",
-    value: "MO",
-  },
-  {
-    label: "Montana",
-    value: "MT",
-  },
-  {
-    label: "Nebraska",
-    value: "NE",
-  },
-  {
-    label: "Nevada",
-    value: "NV",
-  },
-  {
-    label: "New Hampshire",
-    value: "NH",
-  },
-  {
-    label: "New Jersey",
-    value: "NJ",
-  },
-  {
-    label: "New Mexico",
-    value: "NM",
-  },
-  {
-    label: "New York",
-    value: "NY",
-  },
-  {
-    label: "North Carolina",
-    value: "NC",
-  },
-  {
-    label: "North Dakota",
-    value: "ND",
-  },
-  {
-    label: "Northern Mariana Islands",
-    value: "MP",
-  },
-  {
-    label: "Ohio",
-    value: "OH",
-  },
-  {
-    label: "Oklahoma",
-    value: "OK",
-  },
-  {
-    label: "Oregon",
-    value: "OR",
-  },
-  {
-    label: "Pennsylvania",
-    value: "PA",
-  },
-  {
-    label: "Puerto Rico",
-    value: "PR",
-  },
-  {
-    label: "Rhode Island",
-    value: "RI",
-  },
-  {
-    label: "South Carolina",
-    value: "SC",
-  },
-  {
-    label: "South Dakota",
-    value: "SD",
-  },
-  {
-    label: "Tennessee",
-    value: "TN",
-  },
-  {
-    label: "Texas",
-    value: "TX",
-  },
-  {
-    label: "U.S. Virgin Islands",
-    value: "VI",
-  },
-  {
-    label: "Utah",
-    value: "UT",
-  },
-  {
-    label: "Vermont",
-    value: "VT",
-  },
-  {
-    label: "Virginia",
-    value: "VA",
-  },
-  {
-    label: "Washington",
-    value: "WA",
-  },
-  {
-    label: "West Virginia",
-    value: "WV",
-  },
-  {
-    label: "Wisconsin",
-    value: "WI",
-  },
-  {
-    label: "Wyoming",
-    value: "WY",
-  },
+  { label: "Nationwide", value: "Nationwide" },
+  { label: "Alabama", value: "AL" },
+  { label: "Alaska", value: "AK" },
+  { label: "American Samoa", value: "AS" },
+  { label: "Arizona", value: "AZ" },
+  { label: "Arkansas", value: "AR" },
+  { label: "California", value: "CA" },
+  { label: "Colorado", value: "CO" },
+  { label: "Connecticut", value: "CT" },
+  { label: "Delaware", value: "DE" },
+  { label: "District Of Columbia", value: "DC" },
+  { label: "Florida", value: "FL" },
+  { label: "Georgia", value: "GA" },
+  { label: "Guam", value: "GU" },
+  { label: "Hawaii", value: "HI" },
+  { label: "Idaho", value: "ID" },
+  { label: "Illinois", value: "IL" },
+  { label: "Indiana", value: "IN" },
+  { label: "Iowa", value: "IA" },
+  { label: "Kansas", value: "KS" },
+  { label: "Kentucky", value: "KY" },
+  { label: "Louisiana", value: "LA" },
+  { label: "Maine", value: "ME" },
+  { label: "Maryland", value: "MD" },
+  { label: "Massachusetts", value: "MA" },
+  { label: "Michigan", value: "MI" },
+  { label: "Minnesota", value: "MN" },
+  { label: "Mississippi", value: "MS" },
+  { label: "Missouri", value: "MO" },
+  { label: "Montana", value: "MT" },
+  { label: "Nebraska", value: "NE" },
+  { label: "Nevada", value: "NV" },
+  { label: "New Hampshire", value: "NH" },
+  { label: "New Jersey", value: "NJ" },
+  { label: "New Mexico", value: "NM" },
+  { label: "New York", value: "NY" },
+  { label: "North Carolina", value: "NC" },
+  { label: "North Dakota", value: "ND" },
+  { label: "Northern Mariana Islands", value: "MP" },
+  { label: "Ohio", value: "OH" },
+  { label: "Oklahoma", value: "OK" },
+  { label: "Oregon", value: "OR" },
+  { label: "Pennsylvania", value: "PA" },
+  { label: "Puerto Rico", value: "PR" },
+  { label: "Rhode Island", value: "RI" },
+  { label: "South Carolina", value: "SC" },
+  { label: "South Dakota", value: "SD" },
+  { label: "Tennessee", value: "TN" },
+  { label: "Texas", value: "TX" },
+  { label: "U.S. Virgin Islands", value: "VI" },
+  { label: "Utah", value: "UT" },
+  { label: "Vermont", value: "VT" },
+  { label: "Virginia", value: "VA" },
+  { label: "Washington", value: "WA" },
+  { label: "West Virginia", value: "WV" },
+  { label: "Wisconsin", value: "WI" },
+  { label: "Wyoming", value: "WY" },
 ];
 
 export const frequencyOfIncome = [
@@ -718,35 +510,23 @@ export const frequencyOfIncome = [
   label: f,
 }));
 
-export const howDoYouGetPaid: DropdownOption[] = [
+export const howDoYouGetPaid = [
   {
     value: "yes_direct_deposit",
     label: "Yes, I get paid direct deposit.",
     type: "yes",
   },
-  {
-    value: "yes_checks",
-    label: "Yes, I get paid checks.",
-    type: "yes",
-  },
-  {
-    value: "yes_cash",
-    label: "Yes, I get paid cash.",
-    type: "yes",
-  },
+  { value: "yes_checks", label: "Yes, I get paid checks.", type: "yes" },
+  { value: "yes_cash", label: "Yes, I get paid cash.", type: "yes" },
   {
     value: "no_assistance",
     label: "No, I'm on disability or other government assistance.",
     type: "no",
   },
-  {
-    value: "no_work",
-    label: "No, I don't.",
-    type: "no",
-  },
+  { value: "no_work", label: "No, I don't.", type: "no" },
 ];
 
-export const personalTaxes: DropdownOption[] = [
+export const personalTaxes = [
   {
     value: "yes_every_year",
     label: "Yes, I file them every year.",
@@ -757,14 +537,10 @@ export const personalTaxes: DropdownOption[] = [
     label: "Yes, I have filed at some point in my life.",
     type: "yes",
   },
-  {
-    value: "no",
-    label: "No.",
-    type: "no",
-  },
+  { value: "no", label: "No.", type: "no" },
 ];
 
-export const businessTaxes: DropdownOption[] = [
+export const businessTaxes = [
   {
     value: "yes_every_year",
     label: "Yes, I file them every year.",
@@ -775,26 +551,10 @@ export const businessTaxes: DropdownOption[] = [
     label: "Yes, I have filed at some point in my life.",
     type: "yes",
   },
-  {
-    value: "no",
-    label: "No.",
-    type: "no",
-  },
+  { value: "no", label: "No.", type: "no" },
 ];
 
-// Us citizen
-// Permanent resident
-// Visa/ other legal status
-// Work permit
-// Undocumented
-export const legalResident: DropdownOption[] = [
-  // { value: "Yes, I'm a citizen", label: "Yes, I'm a citizen" },
-  // { value: "Yes, I have green card", label: "Yes, I have green card" },
-  // {
-  //   value: "No, I don't have legal status",
-  //   label: "No, I don't have legal status",
-  // },
-  // { value: "Other", label: "Other" },
+export const legalResident = [
   { value: "US Citizen", label: "US Citizen" },
   { value: "Permanent Resident", label: "Permanent Resident" },
   { value: "Visa/ Other Legal Status", label: "Visa/ Other Legal Status" },

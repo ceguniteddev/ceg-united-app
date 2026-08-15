@@ -13,6 +13,7 @@ import {
   mapBankProductsN8n,
   sendClientServiceAgreementN8N,
   createAsanaCustomerServiceTaskN8N,
+  getFundingPlaybookN8N,
 } from "@/lib/n8n";
 
 afterEach(() => {
@@ -183,5 +184,16 @@ describe("createAsanaCustomerServiceTaskN8N", () => {
     expect(await createAsanaCustomerServiceTaskN8N()).toBe(
       "create-asana-customer-service-task-prod",
     );
+  });
+});
+
+describe("getFundingPlaybookN8N", () => {
+  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+    expect(await getFundingPlaybookN8N()).toBe("funding-playbook");
+  });
+
+  it("returns prod webhook name when ENVIRONMENT=production", async () => {
+    process.env.ENVIRONMENT = "production";
+    expect(await getFundingPlaybookN8N()).toBe("funding-playbook-prod");
   });
 });
