@@ -27,7 +27,7 @@ import {
 
 // ── Channel display helpers ──────────────────────────────────────────
 const CHANNEL_ICON: Record<
-  ApplicationChannel,
+  string,
   React.ComponentType<{ className?: string }>
 > = {
   online: Globe,
@@ -36,7 +36,7 @@ const CHANNEL_ICON: Record<
   mobile_app: Smartphone,
 };
 
-const CHANNEL_LABEL: Record<ApplicationChannel, string> = {
+const CHANNEL_LABEL: Record<string, string> = {
   online: "Online",
   in_branch: "In branch",
   phone: "By phone",
@@ -68,11 +68,9 @@ export function BestMethodSection({ pb }: { pb: Playbook }) {
       title="Best Application Method"
       subtitle={`How to submit your ${productName} application`}
       aside={
-        m.decisionSpeedNote ? (
-          <Chip tone="blue" icon={Clock}>
-            {m.decisionSpeedNote}
-          </Chip>
-        ) : undefined
+        <Chip tone="blue" icon={Clock}>
+          1–3 Days Decision
+        </Chip>
       }
     >
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -126,11 +124,11 @@ export function BestMethodSection({ pb }: { pb: Playbook }) {
           </div>
 
           {m.otherChannels && m.otherChannels.length > 0 ? (
-            m.otherChannels.map((oc) => {
+            m.otherChannels.map((oc, idx) => {
               const OcIcon = CHANNEL_ICON[oc.channel] ?? Globe;
               return (
                 <div
-                  key={oc.channel}
+                  key={`${oc.channel}-${idx}`}
                   className="rounded-xl border border-gray-200 bg-gray-50/60 px-3.5 py-3"
                 >
                   <div className="flex items-center gap-2">

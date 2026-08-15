@@ -144,9 +144,9 @@ export function ImproveOddsSection({ pb }: { pb: Playbook }) {
             No alternative products specified for this path.
           </p>
         ) : (
-          a.alternatives.map((alt) => (
+          a.alternatives.map((alt, idx) => (
             <div
-              key={alt.productId}
+              key={`${alt.productId}-${idx}`}
               className="rounded-xl border border-gray-200 p-3.5 bg-white"
             >
               <h4 className="text-[13px] font-bold text-gray-900">

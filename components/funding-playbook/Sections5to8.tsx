@@ -522,9 +522,9 @@ export function DoubleDipSection({ pb }: { pb: Playbook }) {
       subtitle="Recommended services to maximize approval odds"
     >
       <div className="space-y-3">
-        {c.recommendations.map((rec) => (
+        {c.recommendations.map((rec, idx) => (
           <div
-            key={rec.service}
+            key={`${rec.service}-${rec.rank || idx}`}
             className="rounded-xl border border-gray-200 bg-white p-4"
           >
             <div className="flex items-center justify-between">

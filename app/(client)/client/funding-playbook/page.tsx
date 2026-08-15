@@ -162,7 +162,7 @@ export default function ClientFundingPlaybookPage() {
 
   // Explicit handler to generate / fetch cached playbook
   const handleGeneratePlaybook = useCallback(async () => {
-    if (!user || !lenderId || !productId) return;
+    if (!user) return;
 
     setIsGenerating(true);
     setError(null);
@@ -172,7 +172,7 @@ export default function ClientFundingPlaybookPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clientId: user.uid,
+          userId: user.uid,
           lenderId,
           productId,
         }),
@@ -184,8 +184,14 @@ export default function ClientFundingPlaybookPage() {
       }
 
       const data = await res.json();
-      if (data.playbook) {
+      if (
+        data.playbook &&
+        typeof data.playbook === "object" &&
+        data.playbook.section1_bestMethod
+      ) {
         setPlaybook(data.playbook);
+      } else {
+        throw new Error("Received invalid playbook response format.");
       }
     } catch (err: any) {
       setError(err.message || "Failed to load playbook");

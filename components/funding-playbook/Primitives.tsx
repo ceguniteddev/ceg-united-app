@@ -93,7 +93,7 @@ export function Chip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ring-1 ring-inset whitespace-nowrap",
+        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ring-1 ring-inset max-w-full sm:max-w-xs truncate",
         tones[tone],
         className,
       )}

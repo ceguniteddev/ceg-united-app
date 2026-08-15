@@ -4,6 +4,7 @@ import {
   BANK_MANAGEMENT_COLLECTION,
   BANK_PRODUCTS_COLLECTION,
   CRS_REPORT_DATA,
+  PLAYBOOKS_COLLECTION,
 } from "@/constant/collection-name";
 import { normalizeAllDates } from "@/lib/date-parser";
 import type {
@@ -533,38 +534,23 @@ export async function writeLenderHistoryEntry(
     .set(entry);
 }
 
-// Playbooks (cache, 24h TTL)
-export function playbookId(
-  clientId: string,
-  lenderId: string,
-  productId: string,
-): string {
-  return `${clientId}_${lenderId}_${productId}`;
-}
-
-export async function getCachedPlaybook(id: string): Promise<Playbook | null> {
-  const snap = await db().collection("playbooks").doc(id).get();
+// Playbooks (keyed by userId)
+export async function getPlaybook(
+  userId: string,
+): Promise<Record<string, any> | null> {
+  const snap = await db().collection(PLAYBOOKS_COLLECTION).doc(userId).get();
   if (!snap.exists) return null;
-  const data = snap.data() as Playbook;
-  const expiresAt = new Date(data.meta.expiresAt).getTime();
-  if (Date.now() >= expiresAt) return null;
-
-  // Reject playbooks generated before the multi-bureau Section 03 or enriched Section 04 schema.
-  // These lack bureauInquiries or topDrivers, so we force a fresh generation.
-  const bureauInquiries = (data as any)?.section3_bureauPull?.bureauInquiries;
-  if (!Array.isArray(bureauInquiries) || bureauInquiries.length === 0) {
-    return null;
-  }
-  const topDrivers = (data as any)?.section4_approvalEstimate?.topDrivers;
-  if (!Array.isArray(topDrivers) || topDrivers.length === 0) {
-    return null;
-  }
-
-  return data;
+  return snap.data() ?? null;
 }
 
-export async function cachePlaybook(playbook: Playbook): Promise<void> {
-  await db().collection("playbooks").doc(playbook.meta.id).set(playbook);
+export async function savePlaybook(
+  userId: string,
+  playbookData: Record<string, any>,
+): Promise<void> {
+  await db()
+    .collection(PLAYBOOKS_COLLECTION)
+    .doc(userId)
+    .set(playbookData, { merge: true });
 }
 
 export async function savePlaybookFeedback(
@@ -572,7 +558,7 @@ export async function savePlaybookFeedback(
   feedback: Record<string, unknown>,
 ): Promise<string> {
   const ref = db()
-    .collection("playbooks")
+    .collection(PLAYBOOKS_COLLECTION)
     .doc(playbookId)
     .collection("feedback")
     .doc();

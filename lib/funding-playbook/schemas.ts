@@ -132,10 +132,38 @@ export function validateApprovalRangeWithinBand(
 }
 
 export const GeneratePlaybookRequestSchema = z.object({
-  clientId: z.string().min(1),
-  lenderId: z.string().min(1),
-  productId: z.string().min(1),
+  userId: z.string().min(1),
+  lenderId: z.string().optional(),
+  productId: z.string().optional(),
 });
+
+export const PlaybookSchema = z
+  .object({
+    meta: z
+      .object({
+        id: z.string().optional(),
+        clientId: z.string().optional(),
+        lenderId: z.string().optional(),
+        productId: z.string().optional(),
+        generatedAt: z.string().optional(),
+        expiresAt: z.string().optional(),
+      })
+      .passthrough(),
+    section1_bestMethod: z.object({}).passthrough(),
+    section2_relationship: z.object({}).passthrough(),
+    section3_bureauPull: z.object({}).passthrough(),
+    section4_approvalEstimate: z.object({}).passthrough(),
+    section5_incomeStructuring: z.object({}).passthrough(),
+    section6_housingStructuring: z.object({}).passthrough(),
+    section7_denialPathReasoning: z.object({}).passthrough(),
+    section8_cegRecommendations: z.object({}).passthrough(),
+    section9_nearestBranches: z.object({}).passthrough(),
+    section10_reconsiderationScript: z.object({}).passthrough(),
+    section11_timingStrategy: z.object({}).passthrough(),
+    section12_alternatives: z.object({}).passthrough(),
+    section13_helpOptions: z.object({}).passthrough(),
+  })
+  .passthrough();
 
 export const NearestBranchesRequestSchema = z.object({
   zip: z.string().regex(/^\d{5}(-\d{4})?$/, "zip must be a valid US ZIP code"),

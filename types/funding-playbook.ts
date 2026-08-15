@@ -504,9 +504,9 @@ export type ReasoningModelName =
   | "gemini-2.5-pro";
 
 export interface GeneratePlaybookRequest {
-  clientId: string;
-  lenderId: string;
-  productId: string;
+  userId: string;
+  lenderId?: string;
+  productId?: string;
 }
 
 export interface NearestBranchesRequest {

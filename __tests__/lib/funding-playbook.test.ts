@@ -18,13 +18,11 @@ import {
 describe("Funding Playbook Schemas & Validation", () => {
   it("validates GeneratePlaybookRequestSchema correctly", () => {
     const valid = {
-      clientId: "client_123",
-      lenderId: "chase",
-      productId: "ink-business-preferred",
+      userId: "user_123",
     };
     expect(GeneratePlaybookRequestSchema.safeParse(valid).success).toBe(true);
 
-    const invalid = { clientId: "" };
+    const invalid = { userId: "" };
     expect(GeneratePlaybookRequestSchema.safeParse(invalid).success).toBe(
       false,
     );
