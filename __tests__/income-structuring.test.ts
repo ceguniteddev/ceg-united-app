@@ -6,7 +6,7 @@ describe("Income Structuring Schema & Calculations", () => {
     const data = {
       status: "Submitted",
       appliedDate: new Date(),
-      interestedProduct: "Business Funding",
+      interestedProduct: "Tradelines",
       fundingType: "Tradelines",
       consentConfirmTerms: true,
       consentConfirmPrivacy: true,

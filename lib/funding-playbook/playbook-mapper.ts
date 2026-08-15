@@ -104,8 +104,7 @@ export function normalizeChannelEnum(channelInput: any): ApplicationChannel {
   if (lower.includes("phone") || lower.includes("call")) return "phone";
   if (lower.includes("app") || lower.includes("mobile")) return "mobile_app";
   if (lower.includes("online") || lower.includes("web")) return "online";
-  // Preserve original channel string (e.g. "Business Credit Cards", "SBA Loans", "CEG Credit Suite")
-  return channelInput as ApplicationChannel;
+  return "online";
 }
 
 export function normalizeServiceEnum(
