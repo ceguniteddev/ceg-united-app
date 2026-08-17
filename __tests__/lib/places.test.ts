@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const findNearestBranchesN8N = vi.fn();
+const { findNearestBranchesN8N } = vi.hoisted(() => ({
+  findNearestBranchesN8N: vi.fn(),
+}));
+
 vi.mock("@/service/n8n", () => ({
-  findNearestBranchesN8N: (...args: any[]) => findNearestBranchesN8N(...args),
+  findNearestBranchesN8N,
 }));
 
 import { findNearestBranches } from "@/lib/funding-playbook/places";
@@ -27,14 +30,11 @@ describe("findNearestBranches", () => {
   it("passes mapped parameters to the n8n service", async () => {
     findNearestBranchesN8N.mockResolvedValue([{ branches: [] }]);
 
-    await findNearestBranches(
-      "Chase",
-      "Chase bank branch",
-      "60045",
-      25,
-      5,
-      "user-123",
-    );
+    await findNearestBranches({
+      lenderDisplayName: "Chase",
+      limit: 5,
+      userId: "user-123",
+    });
 
     expect(findNearestBranchesN8N).toHaveBeenCalledWith({
       userId: "user-123",
@@ -45,7 +45,7 @@ describe("findNearestBranches", () => {
   it("falls back to 'Lender' when displayName is empty", async () => {
     findNearestBranchesN8N.mockResolvedValue([{ branches: [] }]);
 
-    await findNearestBranches("", undefined, "60045", 25, 5);
+    await findNearestBranches({ lenderDisplayName: "", limit: 5 });
 
     expect(findNearestBranchesN8N).toHaveBeenCalledWith(
       expect.objectContaining({ lenderDisplayName: "Lender" }),
@@ -55,7 +55,10 @@ describe("findNearestBranches", () => {
   it("unwraps the array-wrapped { branches } response shape", async () => {
     findNearestBranchesN8N.mockResolvedValue([{ branches: [sampleBranch] }]);
 
-    const result = await findNearestBranches("CCU", undefined, "60045", 25, 5);
+    const result = await findNearestBranches({
+      lenderDisplayName: "CCU",
+      limit: 5,
+    });
 
     expect(result).toEqual([sampleBranch]);
   });
@@ -63,7 +66,10 @@ describe("findNearestBranches", () => {
   it("unwraps a direct { branches } object response shape", async () => {
     findNearestBranchesN8N.mockResolvedValue({ branches: [sampleBranch] });
 
-    const result = await findNearestBranches("CCU", undefined, "60045", 25, 5);
+    const result = await findNearestBranches({
+      lenderDisplayName: "CCU",
+      limit: 5,
+    });
 
     expect(result).toEqual([sampleBranch]);
   });
@@ -71,7 +77,10 @@ describe("findNearestBranches", () => {
   it("accepts a bare array of branch objects", async () => {
     findNearestBranchesN8N.mockResolvedValue([sampleBranch]);
 
-    const result = await findNearestBranches("CCU", undefined, "60045", 25, 5);
+    const result = await findNearestBranches({
+      lenderDisplayName: "CCU",
+      limit: 5,
+    });
 
     expect(result).toEqual([sampleBranch]);
   });
@@ -83,7 +92,10 @@ describe("findNearestBranches", () => {
     }));
     findNearestBranchesN8N.mockResolvedValue([{ branches: many }]);
 
-    const result = await findNearestBranches("CCU", undefined, "60045", 25, 3);
+    const result = await findNearestBranches({
+      lenderDisplayName: "CCU",
+      limit: 3,
+    });
 
     expect(result).toHaveLength(3);
     expect(result[0].placeId).toBe("place-0");
@@ -108,13 +120,10 @@ describe("findNearestBranches", () => {
       },
     ]);
 
-    const [branch] = await findNearestBranches(
-      "CCU",
-      undefined,
-      "60045",
-      25,
-      5,
-    );
+    const [branch] = await findNearestBranches({
+      lenderDisplayName: "CCU",
+      limit: 5,
+    });
 
     expect(branch).toEqual({
       placeId: "p1",
@@ -134,7 +143,10 @@ describe("findNearestBranches", () => {
   it("returns an empty array for an unrecognized response shape", async () => {
     findNearestBranchesN8N.mockResolvedValue({ unexpected: true });
 
-    const result = await findNearestBranches("CCU", undefined, "60045", 25, 5);
+    const result = await findNearestBranches({
+      lenderDisplayName: "CCU",
+      limit: 5,
+    });
 
     expect(result).toEqual([]);
   });
@@ -143,7 +155,7 @@ describe("findNearestBranches", () => {
     findNearestBranchesN8N.mockRejectedValue(new Error("n8n webhook error"));
 
     await expect(
-      findNearestBranches("CCU", undefined, "60045", 25, 5),
+      findNearestBranches({ lenderDisplayName: "CCU", limit: 5 }),
     ).rejects.toThrow("n8n webhook error");
   });
 });

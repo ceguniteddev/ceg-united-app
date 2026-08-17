@@ -1,6 +1,6 @@
 import type { Branch } from "@/types/funding-playbook";
 import { findNearestBranchesN8N } from "@/service/n8n";
-import { logInfo } from "../logger";
+import { logInfo } from "@/lib/logger";
 
 export class PlacesApiError extends Error {
   constructor(
@@ -24,11 +24,11 @@ export class PlacesApiError extends Error {
 export async function findNearestBranches({
   lenderDisplayName,
   limit = 5,
-  userId,
+  userId = "",
 }: {
   lenderDisplayName: string;
-  limit: number;
-  userId: string;
+  limit?: number;
+  userId?: string;
 }): Promise<Branch[]> {
   const raw = await findNearestBranchesN8N({
     userId,
