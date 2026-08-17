@@ -42,19 +42,39 @@ export function BranchesSection({ pb }: { pb: Playbook }) {
   const b = pb.section9_nearestBranches;
   const [active, setActive] = useState<number | null>(1);
 
+  const lenderDisplayName = pb.meta?.lenderDisplayName || "Lender";
+  const branchCount = b?.branches?.length || 0;
+
+  const locationLabel = (() => {
+    const firstBranchAddr = b?.branches?.[0]?.address;
+    if (firstBranchAddr) {
+      const parts = firstBranchAddr.split(",").map((p) => p.trim());
+      if (parts.length >= 3) {
+        const city = parts[parts.length - 2];
+        const stateZip = parts[parts.length - 1].split(" ")[0];
+        if (city && stateZip) return `${city}, ${stateZip}`;
+      }
+    }
+    return b?.zip ? `ZIP ${b.zip}` : "your area";
+  })();
+
+  const subtitle = `${branchCount} closest ${lenderDisplayName} location${
+    branchCount === 1 ? "" : "s"
+  } to ${locationLabel}`;
+
   return (
     <SectionCard
-      n={8}
+      n={10}
       id="branches"
       icon={MapPin}
       accent="brand"
-      title="Nearest Branch Locations"
-      subtitle="Google Places 5 nearest branch locations"
+      title="Nearest Branches"
+      subtitle={subtitle}
       aside={<Chip tone="blue">Sorted by distance</Chip>}
     >
       <div className="space-y-4">
         <BranchMap
-          branches={b.branches}
+          branches={b?.branches || []}
           activeRank={active}
           onSelect={setActive}
         />

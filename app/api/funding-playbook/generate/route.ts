@@ -44,14 +44,15 @@ export async function POST(req: Request) {
     const lenderId = reqLenderId || "chase";
     const productId = reqProductId || "chase-sapphire-preferred";
 
-    await checkAndIncrementRateLimit(userId, "generatePlaybook");
-
     // Check cache before calling n8n
     const id = playbookId(userId, lenderId, productId);
     const cached = await getCachedPlaybook(id);
     if (cached) {
       return NextResponse.json({ cached: true, playbook: cached });
     }
+
+    // Only check and increment rate limit when calling n8n service
+    await checkAndIncrementRateLimit(userId, "generatePlaybook");
 
     // Fetch deterministic data and AI playbook generation in parallel
     const [client, lender, product, allLenderProducts, rawResult] =
@@ -116,13 +117,12 @@ export async function POST(req: Request) {
     // Fetch nearest branches (fail silently to empty list if search fails)
     let branches: Branch[] = [];
     try {
-      branches = await findNearestBranches(
-        lender.displayName || (lender as any).bankName || "Lender",
-        lender.placesSearchQuery,
-        client.zip || "32601",
-        25,
-        5,
-      );
+      branches = await findNearestBranches({
+        lenderDisplayName:
+          lender.displayName || (lender as any).bankName || "Lender",
+        userId,
+        limit: 5,
+      });
     } catch (err) {
       console.warn(
         "Places lookup failed — continuing with empty branch list.",
