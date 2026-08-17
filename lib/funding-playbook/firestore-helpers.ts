@@ -547,12 +547,6 @@ export async function getCachedPlaybook(id: string): Promise<Playbook | null> {
   const snap = await db().collection(PLAYBOOKS_COLLECTION).doc(id).get();
   if (!snap.exists) return null;
   const data = snap.data() as Playbook;
-  if (
-    data?.meta?.expiresAt &&
-    Date.now() >= new Date(data.meta.expiresAt).getTime()
-  ) {
-    return null;
-  }
   return data ?? null;
 }
 

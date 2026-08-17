@@ -11,6 +11,9 @@ vi.mock("@/lib/n8n", () => ({
   getFundingPlaybookN8N: vi
     .fn()
     .mockResolvedValue("funding-playbook-prod" as any),
+  getBranchesNearMeN8N: vi
+    .fn()
+    .mockResolvedValue("branches-near-me-prod" as any),
   // getFundingAnalysisNewRegistrationFlow: vi.fn(),
   mapBankProductsN8nNewRegistration: vi.fn(),
   sendClientCongratsMessageN8NNewRegistration: vi.fn(),
@@ -23,6 +26,7 @@ import {
   sendClientServiceAgreement,
   createAsanaCustomerServiceTask,
   generateFundingPlaybook,
+  findNearestBranchesN8N,
 } from "@/service/n8n";
 
 describe("service/n8n", () => {
@@ -148,6 +152,69 @@ describe("service/n8n", () => {
 
       await expect(generateFundingPlaybook({ userId: "123" })).rejects.toThrow(
         "n8n webhook error (500): Internal Server Error",
+      );
+    });
+  });
+
+  // ── findNearestBranchesN8N ────────────────────────────────────────────────
+  describe("findNearestBranchesN8N", () => {
+    const params = {
+      userId: "user-123",
+      lenderDisplayName: "Chase",
+    };
+
+    it("calls fetch with correct URL, headers, body, and returns JSON", async () => {
+      const mockData = [{ branches: [{ placeId: "abc" }] }];
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => mockData,
+      });
+
+      const result = await findNearestBranchesN8N(params);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "https://n8n.example.com/branches-near-me-prod",
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            ADMIN_ACCESS_KEY: "test-admin-key",
+          }),
+          body: JSON.stringify({
+            userId: "user-123",
+            lenderDisplayName: "Chase",
+          }),
+        }),
+      );
+      expect(result).toEqual(mockData);
+    });
+
+    it("omits userId from the body when not provided", async () => {
+      mockFetch.mockResolvedValue({ ok: true, json: async () => [] });
+
+      await findNearestBranchesN8N({
+        lenderDisplayName: "Chase",
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          body: JSON.stringify({
+            lenderDisplayName: "Chase",
+          }),
+        }),
+      );
+    });
+
+    it("throws error when response is not ok", async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 502,
+        text: async () => "Bad Gateway",
+      });
+
+      await expect(findNearestBranchesN8N(params)).rejects.toThrow(
+        "n8n webhook error (502): Bad Gateway",
       );
     });
   });

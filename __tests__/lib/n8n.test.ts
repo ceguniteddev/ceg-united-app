@@ -14,6 +14,7 @@ import {
   sendClientServiceAgreementN8N,
   createAsanaCustomerServiceTaskN8N,
   getFundingPlaybookN8N,
+  getBranchesNearMeN8N,
 } from "@/lib/n8n";
 
 afterEach(() => {
@@ -195,5 +196,16 @@ describe("getFundingPlaybookN8N", () => {
   it("returns prod webhook name when ENVIRONMENT=production", async () => {
     process.env.ENVIRONMENT = "production";
     expect(await getFundingPlaybookN8N()).toBe("funding-playbook-prod");
+  });
+});
+
+describe("getBranchesNearMeN8N", () => {
+  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+    expect(await getBranchesNearMeN8N()).toBe("branches-near-me");
+  });
+
+  it("returns prod webhook name when ENVIRONMENT=production", async () => {
+    process.env.ENVIRONMENT = "production";
+    expect(await getBranchesNearMeN8N()).toBe("branches-near-me-prod");
   });
 });
