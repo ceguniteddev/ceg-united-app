@@ -30,6 +30,7 @@ import {
   ActionButton,
 } from "./Primitives";
 import { BranchMap } from "./BranchMap";
+import { formatPhoneHref } from "./branch-utils";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -162,7 +163,7 @@ export function BookingSection({ pb }: { pb: Playbook }) {
               Call this number
             </div>
             <a
-              href={`tel:${b.primaryPhone.replace(/[^\d+]/g, "")}`}
+              href={formatPhoneHref(b.primaryPhone)}
               className="block font-mono text-[24px] sm:text-[28px] md:text-[32px] font-bold text-gray-900 tracking-tight leading-none mt-2 hover:text-blue-700 transition-colors break-words"
             >
               {b.primaryPhoneLabel}
@@ -173,7 +174,7 @@ export function BookingSection({ pb }: { pb: Playbook }) {
 
             <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 mt-4">
               <ActionButton
-                href={`tel:${b.primaryPhone.replace(/[^\d+]/g, "")}`}
+                href={formatPhoneHref(b.primaryPhone)}
                 icon={PhoneCall}
                 size="lg"
                 className="w-full sm:w-auto flex-1 sm:flex-initial justify-center"
@@ -397,7 +398,9 @@ export function DeniedSection({ pb }: { pb: Playbook }) {
         >
           <div className="rounded-xl border-2 border-blue-600/20 bg-blue-50/40 p-4">
             <a
-              href={`tel:${recon?.reconsiderationPhone?.replace(/[^\d+]/g, "") || "18005550100"}`}
+              href={formatPhoneHref(
+                recon?.reconsiderationPhone || "1-800-555-0100",
+              )}
               className="font-mono text-[22px] sm:text-[26px] font-bold text-gray-900 tracking-tight leading-none hover:text-blue-700 transition-colors"
             >
               {recon?.reconsiderationPhone || "1-800-555-0100"}
@@ -409,7 +412,9 @@ export function DeniedSection({ pb }: { pb: Playbook }) {
             )}
             <div className="flex flex-wrap gap-2 mt-3">
               <ActionButton
-                href={`tel:${recon?.reconsiderationPhone?.replace(/[^\d+]/g, "") || "18005550100"}`}
+                href={formatPhoneHref(
+                  recon?.reconsiderationPhone || "1-800-555-0100",
+                )}
                 icon={PhoneCall}
                 size="sm"
               >

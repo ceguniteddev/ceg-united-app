@@ -63,6 +63,7 @@ function extractBranches(raw: unknown): unknown[] {
 
 /**
  * Coerces a raw branch object from the webhook into the canonical Branch type.
+ * Maps phone number (retrieved via Google Place Details in n8n) and strips internal metadata.
  */
 function normalizeBranch(item: unknown): Branch {
   const b = (item ?? {}) as Record<string, unknown>;
