@@ -7,6 +7,7 @@ import type { Branch } from "@/types/funding-playbook";
 import {
   estimateDriveMinutes,
   formatHoursSummary,
+  formatPhoneHref,
   getDirectionsUrl,
   getOpenStatus,
 } from "./branch-utils";
@@ -115,7 +116,7 @@ export function BranchMap({
                 <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-gray-500">
                   {b.phone && (
                     <a
-                      href={`tel:${b.phone}`}
+                      href={formatPhoneHref(b.phone)}
                       onClick={(e) => e.stopPropagation()}
                       className="inline-flex items-center gap-1 text-blue-600 hover:underline font-mono font-medium"
                     >

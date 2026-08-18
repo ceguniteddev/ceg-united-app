@@ -99,7 +99,7 @@ export function PlaybookTopBar({
 
 export function ClientIdentityBar({
   pb,
-  clientName = "Client",
+  clientName = "",
   clientZip = "",
   selectedFundingPath = "",
 }: {
@@ -200,12 +200,19 @@ export function ClientIdentityBar({
     );
   }
 
+  // Resolve the display name, preferring the authenticated user's real name.
+  const resolvedClientName =
+    clientName ||
+    [userData?.firstName, userData?.lastName].filter(Boolean).join(" ") ||
+    userData?.firstName ||
+    "there";
+
   // Initials for Avatar
-  const nameParts = clientName.split(" ").filter(Boolean);
+  const nameParts = resolvedClientName.split(" ").filter(Boolean);
   const initials =
     nameParts.length >= 2
       ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
-      : clientName.slice(0, 2).toUpperCase();
+      : resolvedClientName.slice(0, 2).toUpperCase();
 
   return (
     <div className="bg-[#18365d] text-white print:bg-[#18365d]">
@@ -218,7 +225,7 @@ export function ClientIdentityBar({
             </div>
             <div className="min-w-0">
               <div className="text-[17px] font-bold text-white leading-snug truncate">
-                {clientName}
+                {resolvedClientName}
               </div>
               <div className="text-[12.5px] font-medium text-slate-300 leading-tight truncate">
                 {subtitle}
