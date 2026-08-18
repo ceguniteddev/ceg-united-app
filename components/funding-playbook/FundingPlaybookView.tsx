@@ -168,7 +168,7 @@ export function FundingPlaybookView({
               activeRank={activeBranchRank}
               clientFirstName={clientFirstName}
             />
-            <DeniedSection pb={playbook} />
+            <DeniedSection pb={playbook} clientFirstName={clientFirstName} />
             <ImproveOddsSection pb={playbook} />
             <NeedHelpSection pb={playbook} />
 

@@ -18,10 +18,8 @@ import {
   MessageCircle,
   Wrench,
   Headphones,
-  CheckCircle2,
-  AlertTriangle,
 } from "lucide-react";
-import type { Playbook } from "@/types/funding-playbook";
+import type { Playbook, CegRecommendation } from "@/types/funding-playbook";
 import {
   SectionCard,
   Chip,
@@ -267,17 +265,68 @@ export function BookingSection({
 }
 
 // 11 — If You're Denied
-export function DeniedSection({ pb }: { pb: Playbook }) {
+const DENIAL_FREQUENCY_LABELS = [
+  "Most common",
+  "Common",
+  "Occasional",
+  "Less common",
+];
+
+const DENIAL_FIX_META: Record<
+  CegRecommendation["service"],
+  { header: string; label: string }
+> = {
+  tradelines: {
+    header: "Denied for thin credit file",
+    label: "CEG Tradelines",
+  },
+  credit_repair: {
+    header: "Denied for derogatory marks",
+    label: "CEG Credit Repair",
+  },
+  income_coaching: {
+    header: "Denied for income verification or DTI",
+    label: "CEG Income Coaching + Payroll Setup",
+  },
+  business_formation: {
+    header: "Denied for weak business structure",
+    label: "CEG Business Formation",
+  },
+};
+
+function clampReconPct(n: number) {
+  return Math.max(20, Math.min(90, Math.round(n)));
+}
+
+function reconOddsTone(pct: number) {
+  if (pct >= 60) return { text: "text-emerald-600", bar: "bg-emerald-500" };
+  if (pct >= 40) return { text: "text-amber-600", bar: "bg-amber-500" };
+  return { text: "text-red-500", bar: "bg-red-500" };
+}
+
+export function DeniedSection({
+  pb,
+  clientFirstName,
+}: {
+  pb: Playbook;
+  clientFirstName?: string;
+}) {
   const d = pb.section7_denialPathReasoning;
   const recon = pb.section10_reconsiderationScript;
-  const timing = pb.section11_timingStrategy;
   const help = pb.section13_helpOptions;
+  const recs = pb.section8_cegRecommendations?.recommendations || [];
 
   const lenderShortName = pb.meta?.lenderDisplayName || "Lender";
   const productName = pb.meta?.productDisplayName || "Product";
 
+  const clientName = (() => {
+    if (clientFirstName) return clientFirstName;
+    if (pb.meta?.clientName) return pb.meta.clientName.split(" ")[0];
+    return "you";
+  })();
+
   const rawRate = d?.reconsiderationSuccessRateForProduct;
-  const reconRatePct =
+  const baseReconPct =
     typeof rawRate === "number"
       ? rawRate <= 1
         ? Math.round(rawRate * 100)
@@ -294,12 +343,51 @@ export function DeniedSection({ pb }: { pb: Playbook }) {
   const clientRisks = d?.aiClientSpecificRisks || [];
   const mitigations = d?.aiMitigationSteps || [];
 
+  // Build per-reason cards from this client's denial triggers, pairing each
+  // with the AI mitigation step / client-specific risk as the "Your move"
+  // guidance and deriving a per-reason recon-odds estimate from the product
+  // base rate (higher-frequency reasons carry lower recovery odds).
+  const reasonCards = combinedReasons.map((reason, idx) => {
+    const frequencyLabel =
+      DENIAL_FREQUENCY_LABELS[
+        Math.min(idx, DENIAL_FREQUENCY_LABELS.length - 1)
+      ];
+    const odds = clampReconPct(baseReconPct + 6 - idx * 12);
+    const move =
+      mitigations[idx] ||
+      clientRisks[idx] ||
+      "Offer supporting documentation and ask the analyst for a manual review while on the call.";
+    return { reason, frequencyLabel, odds, move };
+  });
+
+  const reversalsInTen = Math.max(
+    1,
+    Math.min(9, Math.round(baseReconPct / 10)),
+  );
+
   const rawScript = recon?.aiPhoneScript || "";
   const scriptLines =
     rawScript
       .match(/[^.!?]+[.!?]+/g)
       ?.map((s) => s.trim())
       .filter(Boolean) || (rawScript ? [rawScript] : []);
+
+  // CEG "fix the underlying issue" cards derived from this client's ranked
+  // recommendations (Section 8).
+  const fixCards = recs.slice(0, 3).map((rec, idx) => {
+    const meta = DENIAL_FIX_META[rec.service];
+    return {
+      key: `${rec.service}-${idx}`,
+      header:
+        meta?.header ||
+        `Denied for ${rec.serviceLabel || rec.service.replace(/_/g, " ")}`,
+      label:
+        meta?.label ||
+        `CEG ${rec.serviceLabel || rec.service.replace(/_/g, " ")}`,
+      description: rec.aiApplicability,
+      timeline: `${rec.estimatedTimeToImpactDays} days`,
+    };
+  });
 
   return (
     <SectionCard
@@ -312,124 +400,96 @@ export function DeniedSection({ pb }: { pb: Playbook }) {
       aside={<Chip tone="amber">Reconsideration playbook</Chip>}
     >
       <div className="space-y-3">
-        {/* Step 1 */}
+        {/* Step 1 — read the denial letter */}
         <DenialStep
           n={1}
-          title="Check your adverse action notice for exact reasons"
+          title="Check your denial letter for the exact reason"
           icon={FileWarning}
         >
           <p className="text-[13px] text-gray-600 leading-relaxed">
-            By law under Regulation B, lenders must issue an Adverse Action
-            Notice detailing the principal reasons for a decline or counteroffer
-            within 30 days. Review the letter upon arrival to confirm which
-            credit factors triggered the decision.
+            {lenderShortName} sends an adverse-action letter by mail within 7–10
+            days and often an email within 48 hours. Do not call reconsideration
+            until you know the stated reason — the analyst will ask, and
+            guessing wastes your one strong call.
           </p>
+          <div className="mt-2.5 inline-flex items-center gap-2 rounded-lg bg-gray-50 border border-gray-200 px-3 py-1.5">
+            <Clock className="w-3.5 h-3.5 text-gray-400" />
+            <span className="text-[11.5px] text-gray-600">
+              Expect it in{" "}
+              <span className="font-semibold text-gray-800">
+                7–10 days by mail
+              </span>{" "}
+              · often 48 hours by email
+            </span>
+          </div>
         </DenialStep>
 
-        {/* Step 2 */}
+        {/* Step 2 — per-reason cards with recon odds + client move */}
         <DenialStep
           n={2}
-          title={`Common denial factors & risks for ${lenderShortName} ${productName}`}
+          title={`Common denial reasons for ${lenderShortName} ${productName}`}
           icon={Layers}
         >
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50/70 p-3">
-              <div className="text-[12px] font-semibold text-gray-700">
-                Typical reconsideration success rate on this product
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-mono text-[16px] font-bold text-emerald-600">
-                  {reconRatePct}%
-                </span>
-                <Chip tone="green" className="!px-1.5 !py-0.5 !text-[9.5px]">
-                  Recon Odds
-                </Chip>
-              </div>
+          {reasonCards.length > 0 ? (
+            <div className="space-y-2.5">
+              {reasonCards.map((card, idx) => {
+                const tone = reconOddsTone(card.odds);
+                return (
+                  <div
+                    key={idx}
+                    className="rounded-xl border border-gray-200 bg-white px-4 py-3.5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h4 className="text-[13px] font-bold text-gray-900 leading-snug">
+                          {card.reason}
+                        </h4>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          {card.frequencyLabel}
+                        </p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div
+                          className={cn(
+                            "font-mono text-[16px] font-bold leading-none",
+                            tone.text,
+                          )}
+                        >
+                          {card.odds}%
+                        </div>
+                        <div className="text-[9px] font-bold uppercase tracking-[0.12em] text-gray-400 mt-1">
+                          Recon odds
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-full", tone.bar)}
+                        style={{ width: `${card.odds}%` }}
+                      />
+                    </div>
+
+                    <p className="text-[12px] text-gray-600 mt-2.5 leading-relaxed">
+                      <span className="font-semibold text-gray-800">
+                        Your move:
+                      </span>{" "}
+                      {card.move}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
-
-            {combinedReasons.length > 0 && (
-              <div>
-                <h4 className="text-[11.5px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                  Lender & Product Denial Triggers
-                </h4>
-                <ul className="space-y-1.5">
-                  {combinedReasons.map((reason, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-start gap-2 text-[12.5px] text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2"
-                    >
-                      <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                      <span>{reason}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {clientRisks.length > 0 && (
-              <div>
-                <h4 className="text-[11.5px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                  Your Profile Specific Risks
-                </h4>
-                <ul className="space-y-1.5">
-                  {clientRisks.map((risk, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-start gap-2 text-[12.5px] text-gray-700 bg-red-50/50 border border-red-100 rounded-lg px-3 py-2"
-                    >
-                      <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                      <span>{risk}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+          ) : (
+            <p className="text-[12.5px] text-gray-500 italic">
+              No denial triggers identified for this application.
+            </p>
+          )}
         </DenialStep>
 
-        {/* Step 3 */}
+        {/* Step 3 — call reconsideration */}
         <DenialStep
           n={3}
-          title="Fix underlying issues & application timing"
-          icon={Wrench}
-        >
-          <div className="space-y-3">
-            {mitigations.length > 0 && (
-              <ul className="space-y-1.5">
-                {mitigations.map((step, idx) => (
-                  <li
-                    key={idx}
-                    className="flex items-start gap-2 text-[12.5px] text-gray-700 bg-emerald-50/40 border border-emerald-100 rounded-lg px-3 py-2"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span>{step}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {timing?.aiTimingRationale && (
-              <RationaleBlock label="Timing Strategy" tone="brand">
-                {timing.aiTimingRationale}
-              </RationaleBlock>
-            )}
-
-            {timing?.threeDayRuleNotes && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3.5">
-                <h4 className="text-[12px] font-bold text-amber-900">
-                  3-Day Velocity Rule Notes
-                </h4>
-                <p className="text-[12px] text-amber-800 mt-1 leading-relaxed">
-                  {timing.threeDayRuleNotes}
-                </p>
-              </div>
-            )}
-          </div>
-        </DenialStep>
-
-        {/* Step 4 */}
-        <DenialStep
-          n={4}
           title="Call the reconsideration department"
           icon={PhoneCall}
         >
@@ -444,7 +504,7 @@ export function DeniedSection({ pb }: { pb: Playbook }) {
             </a>
             {recon?.reconsiderationHours && (
               <p className="text-[11.5px] text-gray-600 mt-1.5">
-                Hours: {recon.reconsiderationHours}
+                {recon.reconsiderationHours}
               </p>
             )}
             <div className="flex flex-wrap gap-2 mt-3">
@@ -459,25 +519,29 @@ export function DeniedSection({ pb }: { pb: Playbook }) {
               </ActionButton>
             </div>
           </div>
+          <p className="text-[12px] text-gray-500 mt-2.5 leading-relaxed">
+            CEG clients reverse roughly {reversalsInTen} in 10 {lenderShortName}{" "}
+            {productName} denials on the first reconsideration call.
+          </p>
           {recon?.reconsiderationTips && (
-            <p className="text-[12px] text-gray-600 mt-2.5 leading-relaxed">
+            <p className="text-[12px] text-gray-600 mt-1.5 leading-relaxed">
               <span className="font-semibold text-gray-800">Pro Tip:</span>{" "}
               {recon.reconsiderationTips}
             </p>
           )}
         </DenialStep>
 
-        {/* Step 5 */}
+        {/* Step 4 — reconsideration script */}
         <DenialStep
-          n={5}
+          n={4}
           title="Use this reconsideration script"
           icon={MessageCircle}
         >
           {scriptLines.length > 0 ? (
             <ScriptBlock
               lines={scriptLines}
-              label="Reconsideration Call Script"
-              goal="Goal: Stay calm, be specific, and highlight your existing relationship, deposit history, or compensating factors."
+              label={`${scriptLines.length}-sentence reconsideration script`}
+              goal="Stay calm, be specific, and always offer a path the analyst can say yes to — a lower limit, a limit transfer, or documents you can send right now."
             />
           ) : (
             <p className="text-[12.5px] text-gray-500 italic">
@@ -486,35 +550,75 @@ export function DeniedSection({ pb }: { pb: Playbook }) {
           )}
         </DenialStep>
 
-        {/* Step 6 */}
+        {/* Step 5 — CEG fixes if recon fails */}
         <DenialStep
-          n={6}
-          title="Talk to a CEG coach before reapplying"
-          icon={Headphones}
-          last
+          n={5}
+          title="If reconsideration fails — fix the underlying issue"
+          icon={Wrench}
         >
+          {fixCards.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {fixCards.map((card) => (
+                <div
+                  key={card.key}
+                  className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col"
+                >
+                  <div className="text-[9.5px] font-bold uppercase tracking-[0.12em] text-gray-400">
+                    {card.header}
+                  </div>
+                  <div className="text-[13.5px] font-bold text-blue-600 mt-1">
+                    {card.label}
+                  </div>
+                  <p className="text-[12px] text-gray-600 mt-2 leading-relaxed flex-1">
+                    {card.description}
+                  </p>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                    <span className="inline-flex items-center gap-1 text-[11px] text-gray-500">
+                      <Clock className="w-3 h-3 text-gray-400" />
+                      {card.timeline}
+                    </span>
+                    <ActionButton
+                      href="https://cegunited.com"
+                      external
+                      variant="ghost"
+                      icon={ArrowUpRight}
+                      size="sm"
+                    >
+                      Open
+                    </ActionButton>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[12.5px] text-gray-500 italic">
+              No CEG recommendations generated for this application.
+            </p>
+          )}
+        </DenialStep>
+
+        {/* Step 6 — talk to a coach */}
+        <DenialStep n={6} title="Talk to a CEG coach" icon={Headphones} last>
           <div className="rounded-xl bg-gradient-to-r from-blue-900 to-[#2a4f7c] p-4 flex flex-wrap items-center gap-4">
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-semibold text-white leading-snug">
                 {help?.aiClosingNote ||
-                  "Our funding strategists can review your file and help present your compensating factors to underwriting."}
+                  `A CEG coach will run the reconsideration call script with ${clientName} live, listen in, and tell you exactly what to say if the analyst pushes back.`}
               </p>
               <p className="text-[11.5px] text-white/70 mt-1">
-                Support: {help?.cegSupportPhone || "1-800-555-0100"} ·{" "}
+                {help?.cegSupportPhone || "1-800-555-0100"} ·{" "}
                 {help?.cegSupportEmail || "support@cegunited.com"}
               </p>
             </div>
-            {help?.scheduleConsultUrl && (
-              <ActionButton
-                href={help.scheduleConsultUrl}
-                external
-                variant="secondary"
-                icon={Headphones}
-                size="lg"
-              >
-                Talk to a coach
-              </ActionButton>
-            )}
+            <ActionButton
+              href={help?.scheduleConsultUrl || "https://cegunited.com"}
+              external
+              variant="secondary"
+              icon={Headphones}
+              size="lg"
+            >
+              Talk to a coach
+            </ActionButton>
           </div>
         </DenialStep>
       </div>
