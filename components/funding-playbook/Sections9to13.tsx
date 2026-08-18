@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   CalendarClock,
   PhoneCall,
@@ -39,9 +39,16 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 }
 
 // 08 — Nearest Branches
-export function BranchesSection({ pb }: { pb: Playbook }) {
+export function BranchesSection({
+  pb,
+  activeRank,
+  onSelect,
+}: {
+  pb: Playbook;
+  activeRank: number | null;
+  onSelect: (rank: number) => void;
+}) {
   const b = pb.section9_nearestBranches;
-  const [active, setActive] = useState<number | null>(1);
 
   const lenderDisplayName = pb.meta?.lenderDisplayName || "Lender";
   const branchCount = b?.branches?.length || 0;
@@ -76,8 +83,8 @@ export function BranchesSection({ pb }: { pb: Playbook }) {
       <div className="space-y-4">
         <BranchMap
           branches={b?.branches || []}
-          activeRank={active}
-          onSelect={setActive}
+          activeRank={activeRank}
+          onSelect={onSelect}
         />
       </div>
     </SectionCard>
@@ -85,41 +92,55 @@ export function BranchesSection({ pb }: { pb: Playbook }) {
 }
 
 // 09 — Reservation & Booking Assistance
-export function BookingSection({ pb }: { pb: Playbook }) {
+export function BookingSection({
+  pb,
+  activeRank = 1,
+  clientFirstName,
+}: {
+  pb: Playbook;
+  activeRank?: number | null;
+  clientFirstName?: string;
+}) {
   const lenderDisplayName = pb.meta?.lenderDisplayName || "Lender";
-  const firstBranch = pb.section9_nearestBranches?.branches?.[0];
+  const branches = pb.section9_nearestBranches?.branches || [];
+
+  // Branch selected in the map/list above (Section 10). Falls back to the
+  // first branch when nothing is selected yet.
+  const selectedBranch =
+    (activeRank != null ? branches[activeRank - 1] : undefined) || branches[0];
 
   const clientDisplayName = (() => {
+    if (clientFirstName) return clientFirstName;
     if (pb.meta?.clientName) return pb.meta.clientName;
     const id = pb.meta?.clientId?.trim();
     if (!id || (/^[a-zA-Z0-9_-]{15,}$/.test(id) && !id.includes(" ")))
-      return "Client";
-    return id.split(" ")[0] || "Client";
+      return "there";
+    return id.split(" ")[0] || "there";
   })();
 
-  const defaultBranchName = (() => {
-    if (!firstBranch?.name) return `${lenderDisplayName} — Local Branch`;
-    const hasLender = firstBranch.name
+  const selectedBranchName = (() => {
+    if (!selectedBranch?.name) return `${lenderDisplayName} — Local Branch`;
+    const hasLender = selectedBranch.name
       .toLowerCase()
       .includes(lenderDisplayName.toLowerCase());
     const base = hasLender
-      ? firstBranch.name
-      : `${lenderDisplayName} — ${firstBranch.name}`;
-    return firstBranch.address ? `${base}, ${firstBranch.address}` : base;
+      ? selectedBranch.name
+      : `${lenderDisplayName} — ${selectedBranch.name}`;
+    return selectedBranch.address ? `${base}, ${selectedBranch.address}` : base;
   })();
 
-  const b = pb.booking || {
+  const base = pb.booking || {
     available: true,
     primaryPhone:
-      firstBranch?.phone ||
+      selectedBranch?.phone ||
       pb.section10_reconsiderationScript?.reconsiderationPhone ||
       "3523751161",
     primaryPhoneLabel:
-      firstBranch?.phone ||
+      selectedBranch?.phone ||
       pb.section10_reconsiderationScript?.reconsiderationPhone ||
       "(352) 375-1161",
-    branchName: defaultBranchName,
-    onlineSchedulerUrl: firstBranch?.googleMapsUrl || null,
+    branchName: selectedBranchName,
+    onlineSchedulerUrl: selectedBranch?.googleMapsUrl || null,
     onlineSchedulerLabel: `Book with a ${lenderDisplayName} business banker`,
     bestTimeToCall:
       "Tuesday–Thursday, 10:00am–11:30am — lowest branch call volume",
@@ -131,6 +152,22 @@ export function BookingSection({ pb }: { pb: Playbook }) {
     scriptGoal:
       "Goal of the call: get 20 minutes on the calendar with a business banker, not a general teller, and have them note your relationship before you apply.",
     unavailableNote: null,
+  };
+
+  // Booking details always follow the branch selected above. When a branch is
+  // chosen, override the phone, label, name/address, and scheduler URL so the
+  // displayed number and details track every card click.
+  const b = {
+    ...base,
+    ...(selectedBranch
+      ? {
+          primaryPhone: selectedBranch.phone || base.primaryPhone,
+          primaryPhoneLabel: selectedBranch.phone || base.primaryPhoneLabel,
+          branchName: selectedBranchName,
+          onlineSchedulerUrl:
+            selectedBranch.googleMapsUrl || base.onlineSchedulerUrl,
+        }
+      : {}),
   };
 
   // Ensure raw UIDs in script lines are safely replaced with clean client display name

@@ -38,6 +38,7 @@ export function FundingPlaybookView({
   selectedFundingPath?: string;
 }) {
   const [active, setActive] = useState(SECTIONS[0].id);
+  const [activeBranchRank, setActiveBranchRank] = useState<number | null>(1);
 
   useEffect(() => {
     // The client layout uses a div with overflow-y-auto as the scroll
@@ -103,13 +104,13 @@ export function FundingPlaybookView({
 
   const rawClientName = clientName || playbook.meta.clientName;
   const clientFirstName = (() => {
-    if (!rawClientName) return "Client";
+    if (!rawClientName) return "there";
     const trimmed = rawClientName.trim();
     if (/^[a-zA-Z0-9_-]{15,}$/.test(trimmed) && !trimmed.includes(" "))
-      return "Client";
+      return "there";
     const first = trimmed.split(" ")[0];
-    if (/^[a-zA-Z0-9_-]{15,}$/.test(first)) return "Client";
-    return first || "Client";
+    if (/^[a-zA-Z0-9_-]{15,}$/.test(first)) return "there";
+    return first || "there";
   })();
 
   return (
@@ -157,8 +158,16 @@ export function FundingPlaybookView({
             <ApprovalSection pb={playbook} />
             <DoubleDipSection pb={playbook} />
             <CegProductLiftSection pb={playbook} />
-            <BranchesSection pb={playbook} />
-            <BookingSection pb={playbook} />
+            <BranchesSection
+              pb={playbook}
+              activeRank={activeBranchRank}
+              onSelect={setActiveBranchRank}
+            />
+            <BookingSection
+              pb={playbook}
+              activeRank={activeBranchRank}
+              clientFirstName={clientFirstName}
+            />
             <DeniedSection pb={playbook} />
             <ImproveOddsSection pb={playbook} />
             <NeedHelpSection pb={playbook} />
