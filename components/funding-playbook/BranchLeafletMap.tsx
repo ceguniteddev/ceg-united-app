@@ -5,7 +5,11 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Branch } from "@/types/funding-playbook";
-import { estimateDriveMinutes, getDirectionsUrl } from "./branch-utils";
+import {
+  estimateDriveMinutes,
+  formatPhoneHref,
+  getDirectionsUrl,
+} from "./branch-utils";
 
 function MapController({
   branches,
@@ -171,7 +175,7 @@ export default function BranchLeafletMap({
 
                   {b.phone && (
                     <a
-                      href={`tel:${b.phone}`}
+                      href={formatPhoneHref(b.phone)}
                       className="block text-[11px] font-mono font-medium text-blue-600 hover:underline mt-1"
                     >
                       {b.phone}

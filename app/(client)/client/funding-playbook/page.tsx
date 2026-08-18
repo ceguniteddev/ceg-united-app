@@ -54,7 +54,7 @@ const QUALIFYING_STATUSES: FundingApplicationSatus[] = [
 ];
 
 export default function ClientFundingPlaybookPage() {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
 
   // ── 1. Funding Applications ────────────────────────────────────────
   const { appliedFunding, isLoading: isLoadingApplications } =
@@ -474,7 +474,12 @@ export default function ClientFundingPlaybookPage() {
       {!isGenerating && !isFetchingCache && !error && playbook && (
         <FundingPlaybookView
           playbook={playbook}
-          clientName={user.displayName || user.email?.split("@")[0] || "Client"}
+          clientName={
+            userData?.firstName ||
+            user.displayName ||
+            user.email?.split("@")[0] ||
+            ""
+          }
           clientZip=""
           selectedFundingPath={getPathwayLabel(selectedPathwayId)}
         />

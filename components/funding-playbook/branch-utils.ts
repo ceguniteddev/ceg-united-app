@@ -1,6 +1,16 @@
 import type { Branch } from "@/types/funding-playbook";
 
 /**
+ * Strips non-digit and non-plus characters from a phone number string for use in tel: links.
+ * e.g., "(718) 266-2204" -> "tel:7182662204" or "+1 (718) 266-2204" -> "tel:+17182662204"
+ */
+export function formatPhoneHref(phone?: string): string {
+  if (!phone) return "";
+  const sanitized = phone.replace(/[^\d+]/g, "");
+  return sanitized ? `tel:${sanitized}` : "";
+}
+
+/**
  * Estimates drive time in minutes based on distance in miles.
  * e.g., 3.9 mi -> 11 min, 2.7 mi -> 8 min, 1.5 mi -> 5 min
  */
