@@ -36,6 +36,11 @@ export const authSchema = z.object({
 
 export type AuthForm = z.infer<typeof authSchema>;
 
+export enum RegistrationPurpose {
+  Funding = "Funding",
+  FinancialEducation = "Financial Education",
+}
+
 export enum FundingType {
   Personal = "Personal",
   Business = "Business",
@@ -185,6 +190,7 @@ export type FundingPageForm = z.infer<typeof fundingPageSchema>;
 
 export const documentUploadSchema = z
   .object({
+    registrationPurpose: z.enum(RegistrationPurpose).optional(),
     fundingType: z.string().nullable().optional(),
     employmentType: z.enum(["W2", "Self-employed", ""]).nullable().optional(),
 

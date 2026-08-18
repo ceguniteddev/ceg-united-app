@@ -38,6 +38,10 @@ export const passwordSchema = z
   .regex(/[^\w\s]/, { message: "Require special character" });
 
 export const UserActiveStatusEnum = z.enum(["Active", "InActive", "Paused"]);
+export const RegistrationPurposeEnum = z.enum([
+  "Funding",
+  "Financial Education",
+]);
 
 export type UserActiveStatus = z.infer<typeof UserActiveStatusEnum>;
 const emptyToUndefined = (v: unknown) =>
@@ -59,6 +63,7 @@ export const registrationSchema = z.object({
   activeStatus: UserActiveStatusEnum.optional(),
   denefitsSignedUp: z.boolean().optional(),
   isBrokerInvite: z.boolean().optional(),
+  registrationPurpose: RegistrationPurposeEnum.optional(),
   commissionRate: z.coerce
     .number<number>()
     .min(0)
