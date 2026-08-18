@@ -1,0 +1,570 @@
+{
+  "name": "Search Branches Near Me",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d6ac2f2e-614e-4e35-8f29-46e349669370",
+              "name": "GOOGLE_PLACES_API_KEY",
+              "value": "AIzaSyClDnt3BDUd1rFWZTBwd2LaHwEDTrJdRn4",
+              "type": "string"
+            },
+            {
+              "id": "0cf028fd-e557-4ae1-a442-077337b03732",
+              "name": "BASE_URL1",
+              "value": "https://raccoon-robust-likely.ngrok-free.app",
+              "type": "string"
+            },
+            {
+              "id": "bfe47795-4cf1-4a93-b2a0-6a43d6ba1b42",
+              "name": "BASE_URL",
+              "value": "https://app.cegunited.com",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "57169d13-5c6c-4f73-810a-5512c296a04d",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "branches-near-me-prod",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1473a34a-4051-44a0-b495-59bf945ff4de",
+      "name": "Webhook",
+      "webhookId": "8143b0a2-7cd5-400a-8519-d718d873b6fd"
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        640,
+        80
+      ],
+      "id": "374899d4-610d-495a-a420-4345145cd781",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Config').item.json.BASE_URL }}/api/user/{{ $('Webhook').item.json.body.userId }}/funding-application",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "31fc809e-ded8-44a9-8c58-4141af937036",
+      "name": "GET Funding Applications",
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "5EWuPD9Othp2eRfy",
+          "name": "WEB SERVER ACCESS KEY"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\n\n// 1. Check if json object is empty OR if addressPostal is missing\nconst isJsonEmpty = !item.json || Object.keys(item.json).length === 0;\n\nif (isJsonEmpty || !item.json.addressPostal) {\n  return [];\n}\n\nconst zip = item.json.addressPostal\nconst apiKey = $('Config').first().json.GOOGLE_PLACES_API_KEY\n\nconst url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(zip)}&components=country:US&key=${apiKey}`\n\n// 2. Return postal address when JSON is valid and present\nreturn [\n  {\n    json: {\n      url\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -96
+      ],
+      "id": "9f867e78-740d-4f7c-9a57-ac8fea6e0ecc",
+      "name": "Get First Element",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "83f4a333-6ee9-4092-bf43-6f62e569ada8",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        640,
+        -144
+      ],
+      "id": "bb9a6e07-4f99-4e11-9ac9-a048527e8e55",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 404
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        880,
+        -272
+      ],
+      "id": "1556434f-af34-4594-a231-fc93a7a09ca8",
+      "name": "Not Found"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1104,
+        -96
+      ],
+      "id": "241133ef-4312-48d4-bf7d-8db44b640dff",
+      "name": "Google Geocoding API"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1cb8bc3e-00cf-46d7-b892-0bfa7bb296a8",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "180b621e-15a4-4a0b-9df0-e7f0174eb625",
+              "leftValue": "={{ $json.body.status }}",
+              "rightValue": "OK",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "97e205ca-8344-48fe-b715-e2f4621c17ee",
+              "leftValue": "={{ $json.body.results?.[0]?.geometry?.location?.lat }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "c01d7cdb-fbe7-4d77-80e6-71fcb6f9d962",
+      "name": "Validate Geocode Response",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"error\": \"PlacesApiError\",\n  \"message\": {{ $json.statusCode !== 200 ? '\"Geocoding HTTP ' + $json.statusCode + '\"' : '\"Geocoding failed for ' + $('Webhook').item.json.body.zip + '\"' }}\n}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "43aae3a7-9784-4f26-ab4d-8c9ab3bf0b69",
+      "name": "Geocoding Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1568,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookBody = $('Webhook').first().json.body || {};\nconst geocodeBody = $input.first().json.body || $input.first().json;\n\nconst center = geocodeBody.results[0].geometry.location;\nconst lenderDisplayName = (webhookBody.lenderDisplayName || \"\").trim();\n\n// Use strict query with bank name quotes or custom search query to avoid general category match\nconst query = webhookBody.placesSearchQuery || (lenderDisplayName ? `\"${lenderDisplayName}\"` : \"bank branch\");\nconst radiusMiles = Number(webhookBody.radiusMiles) || 25;\nconst radiusMeters = Math.round(radiusMiles * 1609.34);\nconst limit = typeof webhookBody.limit === 'number' ? webhookBody.limit : (Number(webhookBody.limit) || 5);\n\nreturn [{\n  json: {\n    center,\n    query,\n    radiusMeters,\n    limit,\n    zip: webhookBody.zip,\n    lenderDisplayName\n  }\n}];"
+      },
+      "id": "b32cd546-73d1-4091-9b3a-bd72b051a143",
+      "name": "Prepare Search Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/place/textsearch/json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.query }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json.center.lat }},{{ $json.center.lng }}"
+            },
+            {
+              "name": "radius",
+              "value": "={{ $json.radiusMeters }}"
+            },
+            {
+              "name": "key",
+              "value": "={{ $('Config').item.json.GOOGLE_PLACES_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "5bd38b92-51ed-40b5-879b-19e08e3c7bcf",
+      "name": "Google Places Text Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1776,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "81f185ef-c8da-43bc-b127-ae4901f4c718",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "cb1c7df0-f818-47bc-ba92-f38b2d18449c",
+              "leftValue": "={{ ['OK', 'ZERO_RESULTS'].includes($json.body.status) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d7c3b28a-dfe4-4be4-b377-e694b0be453e",
+      "name": "Validate Search Response",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"error\": \"PlacesApiError\",\n  \"message\": {{ $json.statusCode !== 200 ? '\"Text Search HTTP ' + $json.statusCode + '\"' : '\"Places Search status ' + $json.body.status + '\"' }}\n}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "b24c217f-cf39-4d2a-b401-a5e2b65ab6f9",
+      "name": "Places Search Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2272,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const searchBody = $input.first().json.body || $input.first().json;\nconst prepData = $('Prepare Search Query').first().json;\nconst limit = prepData.limit || 5;\nconst results = searchBody.results || [];\n\nconst branches = results.slice(0, limit).map((c, idx) => ({\n  placeId: c.place_id,\n  name: c.name,\n  address: c.formatted_address,\n  lat: c.geometry?.location?.lat,\n  lng: c.geometry?.location?.lng,\n  distanceMiles: Math.round((idx + 1) * 1.5 * 10) / 10,\n  rating: c.rating,\n  googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=Google&query_place_id=${c.place_id}`\n}));\n\nreturn [{\n  json: {\n    branches\n  }\n}];"
+      },
+      "id": "0226271e-c67e-4c0e-b58f-64ad9f5a4100",
+      "name": "Format Branches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.branches) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "26ee4a46-163e-4d62-a22e-26f9eab18a0c",
+      "name": "Respond with Branches",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2464,
+        -224
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "GET Funding Applications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Funding Applications": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Not Found",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get First Element",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get First Element": {
+      "main": [
+        [
+          {
+            "node": "Google Geocoding API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Geocoding API": {
+      "main": [
+        [
+          {
+            "node": "Validate Geocode Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Geocode Response": {
+      "main": [
+        [
+          {
+            "node": "Prepare Search Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Geocoding Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Search Query": {
+      "main": [
+        [
+          {
+            "node": "Google Places Text Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Places Text Search": {
+      "main": [
+        [
+          {
+            "node": "Validate Search Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Search Response": {
+      "main": [
+        [
+          {
+            "node": "Format Branches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Places Search Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Branches": {
+      "main": [
+        [
+          {
+            "node": "Respond with Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "3lvOj0Eujqz2M2Al",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "a3261b92-e0c7-4579-b743-b81063085205",
+  "meta": {
+    "instanceId": "bdaab3510e6bdcb02381d9695349c391c435eb29f33c1df6a6dba116f9e51a3b"
+  },
+  "nodeGroups": [],
+  "id": "PyxXUJv6ih0e6Gtf",
+  "tags": [
+    {
+      "updatedAt": "2026-08-14T15:02:07.050Z",
+      "createdAt": "2026-08-14T15:02:07.050Z",
+      "id": "bybBwGs1It8Hub4V",
+      "name": "Production"
+    }
+  ]
+}
