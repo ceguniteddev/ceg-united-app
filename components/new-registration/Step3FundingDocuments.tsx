@@ -103,7 +103,7 @@ const PublicFileUpload = ({
       base64: string;
       docType?: string;
     }[],
-  ) => void;
+  ) => void | Promise<void>;
   titleOverride?: string;
   descriptionOverride?: string;
   maxFiles?: number;
@@ -142,7 +142,7 @@ const PublicFileUpload = ({
       );
 
       if (onUploadComplete) {
-        onUploadComplete(processedFiles);
+        await onUploadComplete(processedFiles);
       }
     } catch (error) {
       console.error(error);
@@ -449,12 +449,12 @@ export function Step3Funding() {
     );
 
     if (fieldName === "driverLicense" && allFiles.length > 0) {
-      extractDriverLicenseData(allFiles);
+      await extractDriverLicenseData(allFiles);
     } else if (
       fieldName === "businessDocs.bankStatements" &&
       allFiles.length > 0
     ) {
-      extractBusinessBankStatementData(allFiles);
+      await extractBusinessBankStatementData(allFiles);
     }
   };
 
