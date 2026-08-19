@@ -351,7 +351,6 @@ export function CreditScoresSection({
         // Upon success, trigger the report generation directly
         await generateCRSReport({
           userId: user.uid,
-          referenceNumber: generatedRef!,
           bureaus: { equifax: true, experian: true, transunion: true },
           bypassPremiumCheck: true,
         });

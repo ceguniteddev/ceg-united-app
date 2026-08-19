@@ -77,7 +77,6 @@ export const initiateCRSReportCheckout = async ({
         // Generate the CRS Report directly
         await generateCRSReport({
           userId,
-          referenceNumber: generatedRef,
           bureaus: { equifax: true, experian: true, transunion: true },
           bypassPremiumCheck: true,
         });
@@ -119,12 +118,11 @@ export const initiateCRSReportCheckout = async ({
         });
 
         // Generate the CRS Business Report directly
-        await generateCRSReportBusiness(
+        await generateCRSReportBusiness({
           userId,
-          generatedRef,
           businessId,
-          true, // bypassPremiumCheck
-        );
+          bypassPremiumCheck: true,
+        });
 
         return { success: true, url: null, checkoutId: null };
       }
@@ -299,14 +297,12 @@ export const getCRSBusinessScore = async (businessId: string) => {
 
 export const generateCRSReport = async ({
   userId,
-  referenceNumber,
   bureaus,
   personalInfo,
   addressInfo,
   bypassPremiumCheck = false,
 }: {
   userId: string;
-  referenceNumber: string;
   bureaus: { equifax: boolean; experian: boolean; transunion: boolean };
   personalInfo?: CRSPersonalInfo;
   addressInfo?: CRSAddressInfo;
@@ -328,7 +324,6 @@ export const generateCRSReport = async ({
     },
     body: JSON.stringify({
       userId,
-      referenceNumber,
       type: "personal",
       bureaus,
       personalInfo,
@@ -341,12 +336,15 @@ export const generateCRSReport = async ({
   await new Promise((resolve) => setTimeout(resolve, 5000));
 };
 
-export const generateCRSReportBusiness = async (
-  userId: string,
-  referenceNumber: string,
-  businessId: string,
+export const generateCRSReportBusiness = async ({
+  userId,
+  businessId,
   bypassPremiumCheck = false,
-) => {
+}: {
+  userId: string;
+  businessId: string;
+  bypassPremiumCheck?: boolean;
+}) => {
   const user = await getUserById(userId);
   if (!user) throw new Error("User not found.");
   const membership = await getUserMembership(userId);
@@ -362,7 +360,6 @@ export const generateCRSReportBusiness = async (
     },
     body: JSON.stringify({
       businessId: businessId,
-      referenceNumber,
       userId: userId,
       type: "business",
     }),
@@ -371,7 +368,6 @@ export const generateCRSReportBusiness = async (
 
 export const refreshCRSData = async ({
   userId,
-  referenceNumber,
   bureaus,
   personalInfo,
   addressInfo,
@@ -408,7 +404,6 @@ export const refreshCRSData = async ({
 
     await generateCRSReport({
       userId,
-      referenceNumber,
       bureaus,
       personalInfo,
       addressInfo,
@@ -436,7 +431,7 @@ export const refreshCRSData = async ({
 
     await Promise.all(
       businessesToRefresh.map(async (business) => {
-        await generateCRSReportBusiness(userId, referenceNumber, business.id!);
+        await generateCRSReportBusiness({ userId, businessId: business.id! });
       }),
     );
   }

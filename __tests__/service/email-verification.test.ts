@@ -81,10 +81,7 @@ import { Timestamp } from "firebase-admin/firestore";
 import { authenticationAdmin } from "@/lib/fireabase-admin";
 import {
   getCRSReport,
-  fundAnalysis,
-  generateCRSReport,
   sendClientFundingApplicationCongratsMessageNewRegistration,
-  requestMapBankProductsN8nNewRegistration,
 } from "@/service/crs";
 
 describe("service/email-verification", () => {

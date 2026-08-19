@@ -41,45 +41,41 @@ export const activateUserMembership = async ({
     status: "active",
   });
 
-  let referenceNumber = "";
-  const appliedFundings = await getApplyFunding(userId);
-  if (appliedFundings && appliedFundings.length > 0) {
-    referenceNumber = appliedFundings[0].referenceNumber!;
-  }
-
-  if (!referenceNumber) {
-    throw new AppError("Missing reference number");
-  }
-
   // Automatically trigger CRS report generation and then Funding Analysis upon activation
   try {
     logInfo("Triggering CRS report on membership activation", {
       userId,
-      referenceNumber,
     });
     await generateCRSReport({
       userId,
-      referenceNumber,
       bureaus: { equifax: true, experian: true, transunion: true },
       bypassPremiumCheck: true,
     });
 
-    // We trigger the funding analysis here immediately after the CRS report succeeds,
-    // because the analysis usually requires the newly pulled credit report data.
-    logInfo("Triggering Funding Analysis on membership activation", {
-      userId,
-      referenceNumber,
-    });
-    await fundAnalysis({
-      referenceNumber,
-      userId,
-    });
+    let referenceNumber = "";
+    const appliedFundings = await getApplyFunding(userId);
+    if (appliedFundings && appliedFundings.length > 0) {
+      referenceNumber = appliedFundings[0].referenceNumber!;
+    }
+
+    if (referenceNumber) {
+      // We trigger the funding analysis here immediately after the CRS report succeeds,
+      // because the analysis usually requires the newly pulled credit report data.
+      logInfo("Triggering Funding Analysis on membership activation", {
+        userId,
+        referenceNumber,
+      });
+
+      await fundAnalysis({
+        referenceNumber,
+        userId,
+      });
+    }
   } catch (error) {
     console.error(
       "Failed to generate CRS report or Funding Analysis on membership activation:",
       error,
     );
-    // We don't throw the error here so that the membership activation itself still succeeds
   }
 
   membershipCache.invalidate(userId);

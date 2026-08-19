@@ -988,7 +988,6 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
         // Upon success, trigger the report generation directly
         await generateCRSReport({
           userId,
-          referenceNumber: generatedRef!,
           bureaus: { equifax: true, experian: true, transunion: true },
           bypassPremiumCheck: true,
         });

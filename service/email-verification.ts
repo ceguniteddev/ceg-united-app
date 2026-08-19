@@ -5,15 +5,7 @@ import { EMAIL_VERIFICATION_TOKENS } from "@/constant/collection-name";
 import { randomBytes } from "crypto";
 import AppError from "@/error/AppError";
 import { Timestamp } from "firebase-admin/firestore";
-import {
-  fundAnalysis,
-  generateCRSReport,
-  getCRSReport,
-  requestMapBankProductsN8nNewRegistration,
-  sendClientFundingApplicationAuditAnalysis,
-  sendClientFundingApplicationCongratsMessage,
-  sendClientFundingApplicationCongratsMessageNewRegistration,
-} from "./crs";
+import { sendClientFundingApplicationCongratsMessageNewRegistration } from "./crs";
 import { RegistrationType } from "@/schema/users";
 import { logInfo } from "@/lib/logger";
 
