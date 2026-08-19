@@ -344,7 +344,15 @@ export function PublicRegistrationForm() {
       if (errorMessages.length > 0) {
         // Deduplicate messages in case of multiple issues
         const uniqueMessages = Array.from(new Set(errorMessages));
-        toast.error(`Missing Documents: ${uniqueMessages.join(" | ")}`);
+        toast.error("Missing Documents", {
+          description: (
+            <ul className="list-disc pl-4">
+              {uniqueMessages.map((message) => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
+          ),
+        });
       } else {
         toast.error("Please provide all required documents");
       }
