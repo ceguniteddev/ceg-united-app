@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { dateOfBirthSchema, GenderEnum, ROLESEnum } from ".";
+import { ROLESEnum } from ".";
 
 // Strict SSN validator with normalization
 export const ssnSchema = z
