@@ -2,8 +2,10 @@
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useAuth } from "@/provider/AuthContext";
-import { useWalletQuery, WalletTransaction } from "@/hooks/wallet";
+import { useWalletQuery, WalletTransaction, WalletData } from "@/hooks/wallet";
 import { createWalletCheckoutConfig } from "@/service/dodo";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { app } from "@/lib/firebase";
 import { DodoCheckoutView } from "@/components/funding/DodoCheckoutView";
 import {
   Card,
@@ -193,8 +195,19 @@ export default function WalletPage() {
       pollingTimerRef.current = setInterval(async () => {
         attempts += 1;
         try {
-          const res = await queryClient.fetchQuery({
+          const res = await queryClient.fetchQuery<WalletData>({
             queryKey: [GET_WALLET, userData?.id],
+            queryFn: async () => {
+              const getWalletFn = httpsCallable<{ userId: string }, WalletData>(
+                getFunctions(app),
+                "getWallet",
+              );
+              const response = await getWalletFn({
+                userId: userData?.id || "",
+              });
+              return response.data;
+            },
+            staleTime: 0,
           });
           const currentBalance = (res as any)?.balance || 0;
           const transactions = (res as any)?.transactions || [];
@@ -231,10 +244,12 @@ export default function WalletPage() {
       if (closeTimeoutRef.current) {
         clearTimeout(closeTimeoutRef.current);
       }
+      // Close the Sheet only. Clearing checkoutSessionId (which unmounts
+      // DodoCheckoutView and its redirect-suppressing listener) is deferred
+      // to the Sheet's onOpenChange handler so the SDK cannot trigger a
+      // trailing full-page redirect while the iframe is still alive.
       closeTimeoutRef.current = setTimeout(() => {
         setIsCheckoutOpen(false);
-        setIsCheckoutSuccess(false);
-        setCheckoutSessionId("");
       }, 2200);
     },
     [lastPurchasedAmount, queryClient, userData?.id],
@@ -591,7 +606,11 @@ export default function WalletPage() {
         onOpenChange={(open) => {
           setIsCheckoutOpen(open);
           if (!open) {
+            // Only now that the Sheet is fully closed do we tear down the
+            // checkout (and its redirect-suppressing listener), preventing
+            // the Dodo SDK from performing a trailing full-page redirect.
             setIsCheckoutSuccess(false);
+            setCheckoutSessionId("");
             if (closeTimeoutRef.current) {
               clearTimeout(closeTimeoutRef.current);
             }
@@ -625,8 +644,26 @@ export default function WalletPage() {
             )}
           </SheetHeader>
           <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative flex flex-col">
-            {isCheckoutSuccess ? (
-              <div className="flex flex-col items-center justify-center my-auto p-8 text-center animate-in fade-in zoom-in-95 duration-300">
+            {/*
+              DodoCheckoutView must remain mounted through the success state.
+              Its capture-phase message listener suppresses the Dodo SDK's
+              trailing full-page redirect; unmounting it (as before) removed
+              that listener and caused the page to reload. The success screen
+              is now rendered as an overlay on top of the still-mounted view.
+            */}
+            {checkoutSessionId && (
+              <DodoCheckoutView
+                checkoutId={checkoutSessionId}
+                checkoutDetails={{
+                  url: checkoutUrl,
+                  checkout_url: checkoutUrl,
+                  amount: Math.round(getAmountToPurchase() * 100),
+                }}
+                onComplete={handleCheckoutComplete}
+              />
+            )}
+            {isCheckoutSuccess && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-50 p-8 text-center animate-in fade-in zoom-in-95 duration-300">
                 <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-5 shadow-sm">
                   <CheckCircle2 className="w-10 h-10" />
                 </div>
@@ -645,18 +682,6 @@ export default function WalletPage() {
                   Updating your balance...
                 </div>
               </div>
-            ) : (
-              checkoutSessionId && (
-                <DodoCheckoutView
-                  checkoutId={checkoutSessionId}
-                  checkoutDetails={{
-                    url: checkoutUrl,
-                    checkout_url: checkoutUrl,
-                    amount: Math.round(getAmountToPurchase() * 100),
-                  }}
-                  onComplete={handleCheckoutComplete}
-                />
-              )
             )}
           </div>
         </SheetContent>
