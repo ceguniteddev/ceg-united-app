@@ -199,7 +199,7 @@ export function BookingSection({
             </div>
             <a
               href={formatPhoneHref(b.primaryPhone)}
-              className="block font-mono text-[24px] sm:text-[28px] md:text-[32px] font-bold text-gray-900 tracking-tight leading-none mt-2 hover:text-blue-700 transition-colors break-words"
+              className="block font-mono text-[22px] sm:text-[28px] md:text-[32px] font-bold text-gray-900 tracking-tight leading-tight mt-2 hover:text-blue-700 transition-colors break-all sm:break-words"
             >
               {b.primaryPhoneLabel}
             </a>
@@ -498,7 +498,7 @@ export function DeniedSection({
               href={formatPhoneHref(
                 recon?.reconsiderationPhone || "1-800-555-0100",
               )}
-              className="font-mono text-[22px] sm:text-[26px] font-bold text-gray-900 tracking-tight leading-none hover:text-blue-700 transition-colors"
+              className="block font-mono text-[20px] sm:text-[26px] font-bold text-gray-900 tracking-tight leading-tight hover:text-blue-700 transition-colors break-all sm:break-words"
             >
               {recon?.reconsiderationPhone || "1-800-555-0100"}
             </a>

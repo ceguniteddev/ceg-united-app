@@ -216,78 +216,98 @@ export function ClientIdentityBar({
 
   return (
     <div className="bg-[#18365d] text-white print:bg-[#18365d]">
-      <div className="max-w-[1500px] mx-auto px-4 sm:px-6 py-4 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-y-4 gap-x-6">
-          {/* Left: Avatar + Client Name & Business */}
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-11 h-11 rounded-full bg-slate-700/80 ring-2 ring-white/20 flex items-center justify-center shrink-0 font-bold text-[15px] text-white tracking-wider">
-              {initials}
-            </div>
-            <div className="min-w-0">
-              <div className="text-[17px] font-bold text-white leading-snug truncate">
-                {resolvedClientName}
+      <div className="max-w-[1500px] mx-auto px-4 sm:px-6 py-4 space-y-3.5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+          {/* Top row on mobile: Avatar + Name/Business, and Readiness card */}
+          <div className="flex items-start justify-between gap-3 lg:justify-start lg:flex-1 lg:min-w-0">
+            {/* Avatar + Client Name & Business */}
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="w-11 h-11 rounded-full bg-slate-700/80 ring-2 ring-white/20 flex items-center justify-center shrink-0 font-bold text-[15px] text-white tracking-wider">
+                {initials}
               </div>
-              <div className="text-[12.5px] font-medium text-slate-300 leading-tight truncate">
-                {subtitle}
+              <div className="min-w-0">
+                <div className="text-[16px] sm:text-[17px] font-bold text-white leading-snug truncate">
+                  {resolvedClientName}
+                </div>
+                <div className="text-[12px] sm:text-[12.5px] font-medium text-slate-300 leading-tight truncate">
+                  {subtitle}
+                </div>
+              </div>
+            </div>
+
+            {/* Readiness card — shown inline on mobile (compact), moves right on desktop */}
+            <div className="bg-white/10 backdrop-blur-xs ring-1 ring-white/15 rounded-2xl px-3 py-2 flex items-center gap-2.5 shrink-0 lg:hidden">
+              <ProgressRing
+                pct={pb.section4_approvalEstimate.clientMeetsMinFICO ? 94 : 65}
+                size={40}
+                onDark
+              />
+              <div className="hidden sm:block">
+                <div className="text-[13px] font-bold text-white leading-tight">
+                  Readiness
+                </div>
+                <div className="text-[11px] text-slate-300 leading-snug mt-0.5">
+                  30 / 32 filled
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="hidden xl:block h-10 w-[1px] bg-slate-600/50" />
+          <div className="hidden lg:block h-10 w-px bg-slate-600/50 shrink-0" />
 
-          {/* Center: 3 Stat Columns */}
-          <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+          {/* Center: Stat columns — responsive grid */}
+          <div className="grid grid-cols-3 gap-x-4 gap-y-3 sm:gap-x-8 lg:flex lg:items-center lg:gap-x-8">
             {/* Stat 1: FICO */}
-            <div className="min-w-[90px]">
-              <div className="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">
+            <div className="min-w-0">
+              <div className="text-[10px] sm:text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">
                 FICO
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <Gauge className="w-4 h-4 text-blue-300 shrink-0" />
-                <span className="text-[19px] font-extrabold text-white leading-none font-mono">
+                <span className="text-[17px] sm:text-[19px] font-extrabold text-white leading-none font-mono tabular-nums">
                   {displayFico}
                 </span>
               </div>
-              <div className="text-[11px] font-medium text-slate-300 mt-1">
+              <div className="text-[11px] font-medium text-slate-300 mt-1 truncate">
                 {scoreRating}
               </div>
             </div>
 
             {/* Stat 2: FUNDING PATH */}
-            <div className="min-w-[120px]">
-              <div className="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">
+            <div className="min-w-0">
+              <div className="text-[10px] sm:text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">
                 FUNDING PATH
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <GitFork className="w-4 h-4 text-blue-300 shrink-0" />
-                <span className="text-[16px] font-bold text-white leading-none truncate max-w-[180px]">
+                <span className="text-[14px] sm:text-[16px] font-bold text-white leading-tight truncate">
                   {displayFundingPath}
                 </span>
               </div>
-              <div className="text-[11px] font-medium text-slate-300 mt-1">
+              <div className="text-[11px] font-medium text-slate-300 mt-1 truncate">
                 {timeInBusiness}
               </div>
             </div>
 
             {/* Stat 3: HOUSEHOLD INCOME */}
-            <div className="min-w-[130px]">
-              <div className="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">
+            <div className="min-w-0">
+              <div className="text-[10px] sm:text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">
                 HOUSEHOLD INCOME
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <DollarSign className="w-4 h-4 text-blue-300 shrink-0" />
-                <span className="text-[19px] font-extrabold text-white leading-none font-mono">
+                <span className="text-[17px] sm:text-[19px] font-extrabold text-white leading-none font-mono tabular-nums truncate">
                   {formattedHouseholdIncome}
                 </span>
               </div>
-              <div className="text-[11px] font-medium text-slate-300 mt-1">
+              <div className="text-[11px] font-medium text-slate-300 mt-1 truncate">
                 {dtiPct}% utilization
               </div>
             </div>
           </div>
 
-          {/* Right: Playbook Readiness Card */}
-          <div className="bg-white/10 backdrop-blur-xs ring-1 ring-white/15 rounded-2xl px-4 py-2.5 flex items-center gap-3.5 shrink-0">
+          {/* Right: Playbook Readiness Card — desktop only */}
+          <div className="hidden lg:flex bg-white/10 backdrop-blur-xs ring-1 ring-white/15 rounded-2xl px-4 py-2.5 items-center gap-3.5 shrink-0">
             <ProgressRing
               pct={pb.section4_approvalEstimate.clientMeetsMinFICO ? 94 : 65}
               size={48}
@@ -305,9 +325,9 @@ export function ClientIdentityBar({
         </div>
 
         {/* Bottom Banner ("To reach 100%:") */}
-        <div className="w-full rounded-xl border border-blue-400/25 bg-blue-950/40 px-4 py-2.5 text-[12.5px] flex items-center gap-2">
+        <div className="w-full rounded-xl border border-blue-400/25 bg-blue-950/40 px-4 py-2.5 text-[12px] sm:text-[12.5px] flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
           <span className="font-bold text-white shrink-0">To reach 100%:</span>
-          <span className="text-slate-300 font-medium truncate">
+          <span className="text-slate-300 font-medium">
             Business bank statements (last 3 months) · EIN verification letter
           </span>
         </div>

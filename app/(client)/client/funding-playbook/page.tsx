@@ -427,7 +427,7 @@ export default function ClientFundingPlaybookPage() {
             (approvedFunds as ApprovedBankFormData[]).length > 0 &&
             !playbook &&
             !isFetchingCache && (
-              <div className="w-full lg:w-auto">
+              <div className="w-full sm:col-span-2 lg:col-span-1">
                 <button
                   onClick={handleGeneratePlaybook}
                   disabled={isGenerating || !selectedFundId}
