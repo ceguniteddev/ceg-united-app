@@ -9,12 +9,14 @@ import { useNewRegistrationStore } from "@/store/new-registration-store";
 import { Step1Auth } from "./Step1Auth";
 import { Step2BusinessDetails } from "./Step2BusinessDetails";
 import { Step3Funding } from "./Step3FundingDocuments";
+import { RegistrationPurposeStep } from "./RegistrationPurposeStep";
 import { ProgressBar } from "@/components/registration/ProgressBar";
 import {
   authSchema,
   businessDetailsSchema,
   documentUploadSchema,
   FundingType,
+  RegistrationPurpose,
 } from "@/schema/new-registration";
 import { toast } from "sonner";
 import IconMenu from "@/components/icon-menu";
@@ -39,6 +41,8 @@ import {
 export function PublicRegistrationForm() {
   const router = useRouter();
   const {
+    registrationPurpose,
+    setRegistrationPurpose,
     currentStep,
     setStep,
     authData,
@@ -52,6 +56,9 @@ export function PublicRegistrationForm() {
     setLeadId,
   } = useNewRegistrationStore();
 
+  const isFinancialEducation =
+    registrationPurpose === RegistrationPurpose.FinancialEducation;
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -60,12 +67,19 @@ export function PublicRegistrationForm() {
   >("idle");
   const [loadingStep, setLoadingStep] = useState(0);
 
-  const loadingSteps = [
-    "Saving personal information...",
-    "Securing business details...",
-    "Uploading documents...",
-    "Finalizing registration...",
-  ];
+  const loadingSteps = isFinancialEducation
+    ? [
+        "Saving personal information...",
+        "Securing identity details...",
+        "Uploading driver's license...",
+        "Finalizing registration...",
+      ]
+    : [
+        "Saving personal information...",
+        "Securing business details...",
+        "Uploading documents...",
+        "Finalizing registration...",
+      ];
 
   useEffect(() => {
     setIsHydrated(useNewRegistrationStore.persist.hasHydrated());
@@ -109,6 +123,7 @@ export function PublicRegistrationForm() {
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
       ...documentUploadData,
+      registrationPurpose: registrationPurpose ?? undefined,
       fundingType: businessDetailsData.fundingType,
       employmentType: businessDetailsData.employmentType,
     },
@@ -131,20 +146,26 @@ export function PublicRegistrationForm() {
       formStep2.reset(businessDetailsData);
       formStep3.reset({
         ...documentUploadData,
+        registrationPurpose: registrationPurpose ?? undefined,
         fundingType: businessDetailsData.fundingType,
         employmentType: businessDetailsData.employmentType,
       });
     }
-  }, [isHydrated]);
+  }, [isHydrated, registrationPurpose]);
 
   // Sync business details to formStep3 when moving to step 3
   useEffect(() => {
     if (currentStep === 3) {
+      formStep3.setValue(
+        "registrationPurpose",
+        registrationPurpose ?? undefined,
+      );
       formStep3.setValue("fundingType", businessDetailsData.fundingType);
       formStep3.setValue("employmentType", businessDetailsData.employmentType);
     }
   }, [
     currentStep,
+    registrationPurpose,
     businessDetailsData.fundingType,
     businessDetailsData.employmentType,
     formStep3,
@@ -193,7 +214,11 @@ export function PublicRegistrationForm() {
     return () => subscription.unsubscribe();
   }, [formStep3.watch, updateDocumentUploadData]);
 
-  const progress = Math.floor(Math.min(((currentStep - 1) / 3) * 100, 100));
+  const progress = isFinancialEducation
+    ? currentStep === 1
+      ? 50
+      : 100
+    : Math.floor(Math.min((currentStep / 3) * 100, 100));
 
   const handleNextStep1 = async () => {
     const isValid = await formStep1.trigger();
@@ -202,7 +227,9 @@ export function PublicRegistrationForm() {
       updateAuthData(authData);
 
       try {
-        const encodedData = btoa(JSON.stringify(authData));
+        const encodedData = btoa(
+          JSON.stringify({ ...authData, registrationPurpose }),
+        );
 
         if (leadId) {
           // If we already have a leadId, just update the existing lead
@@ -213,7 +240,7 @@ export function PublicRegistrationForm() {
           });
 
           if (response.ok) {
-            setStep(2);
+            setStep(isFinancialEducation ? 3 : 2);
           } else {
             toast.error("Could not save progress. Please try again.");
           }
@@ -228,7 +255,7 @@ export function PublicRegistrationForm() {
           if (response.ok) {
             const { leadId: newLeadId } = await response.json();
             setLeadId(newLeadId);
-            setStep(2);
+            setStep(isFinancialEducation ? 3 : 2);
           } else {
             toast.error("Could not save progress. Please try again.");
           }
@@ -317,7 +344,15 @@ export function PublicRegistrationForm() {
       if (errorMessages.length > 0) {
         // Deduplicate messages in case of multiple issues
         const uniqueMessages = Array.from(new Set(errorMessages));
-        toast.error(`Missing Documents: ${uniqueMessages.join(" | ")}`);
+        toast.error("Missing Documents", {
+          description: (
+            <ul className="list-disc pl-4">
+              {uniqueMessages.map((message) => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
+          ),
+        });
       } else {
         toast.error("Please provide all required documents");
       }
@@ -378,8 +413,9 @@ export function PublicRegistrationForm() {
 
       const finalData = {
         leadId,
+        registrationPurpose,
         auth: latestAuthData,
-        business: latestBusinessData,
+        business: isFinancialEducation ? undefined : latestBusinessData,
         documents: latestDocumentData,
       };
 
@@ -396,7 +432,6 @@ export function PublicRegistrationForm() {
 
       clearInterval(interval);
       setSubmissionStatus("success");
-      resetRegistration();
     } catch (error: any) {
       clearInterval(interval);
       console.error(error);
@@ -408,449 +443,493 @@ export function PublicRegistrationForm() {
 
   return (
     <div className="w-full max-w-[95vw] sm:max-w-[900px] lg:max-w-[1000px] mx-auto">
-      <ProgressBar progress={progress} className="mb-6" />
-
-      {currentStep === 1 && (
-        <Form {...formStep1}>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleNextStep1();
-            }}
-            className="space-y-6"
-          >
-            <Step1Auth />
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                size="lg"
-                disabled={
-                  !formStep1.watch("consentConfirmTerms") ||
-                  !formStep1.watch("consentConfirmPrivacy")
-                }
-                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base py-6 transition-colors disabled:opacity-50"
-              >
-                <IconMenu
-                  text="Next"
-                  iconLocation="right"
-                  icon={<ChevronRight className="ml-2 h-5 w-5" />}
-                />
-              </Button>
-            </div>
-          </form>
-        </Form>
+      {!registrationPurpose && (
+        <RegistrationPurposeStep onSelect={setRegistrationPurpose} />
       )}
 
-      {currentStep === 2 && (
-        <Form {...formStep2}>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleNextStep2();
-            }}
-            className="space-y-6"
-          >
-            <Step2BusinessDetails />
-            <div className="flex justify-between gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setStep(1)}
-                size="lg"
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-              <Button
-                type="submit"
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base px-8 transition-colors"
-              >
-                <IconMenu
-                  text="Next"
-                  iconLocation="right"
-                  icon={<ChevronRight className="ml-2 h-5 w-5" />}
-                />
-              </Button>
-            </div>
-          </form>
-        </Form>
-      )}
+      {registrationPurpose && (
+        <>
+          <ProgressBar progress={progress} className="mb-6" />
 
-      {currentStep === 3 && (
-        <Form {...formStep3}>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleReview();
-            }}
-            className="space-y-6"
-          >
-            <Step3Funding />
-            <div className="flex justify-between gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setStep(2)}
-                size="lg"
-                disabled={isSubmitting}
+          {currentStep === 1 && (
+            <Form {...formStep1}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleNextStep1();
+                }}
+                className="space-y-6"
               >
-                <ChevronLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-              <Button
-                type="submit"
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base px-8 transition-colors disabled:opacity-50"
-                disabled={isSubmitting}
-              >
-                <IconMenu
-                  text="Review Application"
-                  icon={<ChevronRight className="mr-2 h-5 w-5" />}
-                  iconLocation="right"
-                />
-              </Button>
-            </div>
-          </form>
-        </Form>
-      )}
-
-      <Dialog
-        open={showConfirmModal}
-        onOpenChange={(open) => {
-          if (submissionStatus === "idle") {
-            setShowConfirmModal(open);
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-          {submissionStatus === "idle" && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Review Your Information</DialogTitle>
-                <DialogDescription>
-                  Please verify the details you entered before submitting.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-6 py-4">
-                <div>
-                  <h3 className="font-semibold text-lg border-b pb-2 mb-3">
-                    Personal Information
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                    <div>
-                      <span className="text-gray-500 font-medium">
-                        First Name:
-                      </span>{" "}
-                      <span className="font-medium text-gray-900">
-                        {authData.firstName}
-                      </span>
-                    </div>
-                    {authData.middleName && (
-                      <div>
-                        <span className="text-gray-500 font-medium">
-                          Middle Name:
-                        </span>{" "}
-                        <span className="font-medium text-gray-900">
-                          {authData.middleName}
-                        </span>
-                      </div>
-                    )}
-                    <div>
-                      <span className="text-gray-500 font-medium">
-                        Last Name:
-                      </span>{" "}
-                      <span className="font-medium text-gray-900">
-                        {authData.lastName}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 font-medium">SSN:</span>{" "}
-                      <span className="font-medium text-gray-900">
-                        {authData.ssn}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 font-medium">Email:</span>{" "}
-                      <span className="font-medium text-gray-900">
-                        {authData.email}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 font-medium">Phone:</span>{" "}
-                      <span className="font-medium text-gray-900">
-                        {authData.phoneNumber}
-                      </span>
-                    </div>
-                    {authData.addressStreet && (
-                      <div className="col-span-1 sm:col-span-2">
-                        <span className="text-gray-500 font-medium">
-                          Address:
-                        </span>{" "}
-                        <span className="font-medium text-gray-900 block">
-                          {authData.addressStreet}
-                          <br />
-                          {authData.addressCity}, {authData.addressState}{" "}
-                          {authData.addressPostal}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                <Step1Auth />
+                <div className="flex justify-between gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setRegistrationPurpose(null)}
+                    size="lg"
+                  >
+                    <ChevronLeft className="mr-2 h-4 w-4" /> Back
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    disabled={
+                      !formStep1.watch("consentConfirmTerms") ||
+                      !formStep1.watch("consentConfirmPrivacy")
+                    }
+                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base py-6 transition-colors disabled:opacity-50"
+                  >
+                    <IconMenu
+                      text="Next"
+                      iconLocation="right"
+                      icon={<ChevronRight className="ml-2 h-5 w-5" />}
+                    />
+                  </Button>
                 </div>
+              </form>
+            </Form>
+          )}
 
-                <div>
-                  <h3 className="font-semibold text-lg border-b pb-2 mb-3">
-                    Funding Details
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                    <div>
-                      <span className="text-gray-500 font-medium">
-                        Funding Amount:
+          {!isFinancialEducation && currentStep === 2 && (
+            <Form {...formStep2}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleNextStep2();
+                }}
+                className="space-y-6"
+              >
+                <Step2BusinessDetails />
+                <div className="flex justify-between gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(1)}
+                    size="lg"
+                  >
+                    <ChevronLeft className="mr-2 h-4 w-4" /> Back
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base px-8 transition-colors"
+                  >
+                    <IconMenu
+                      text="Next"
+                      iconLocation="right"
+                      icon={<ChevronRight className="ml-2 h-5 w-5" />}
+                    />
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          )}
+
+          {currentStep === 3 && (
+            <Form {...formStep3}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleReview();
+                }}
+                className="space-y-6"
+              >
+                <Step3Funding />
+                <div className="flex justify-between gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(isFinancialEducation ? 1 : 2)}
+                    size="lg"
+                    disabled={isSubmitting}
+                  >
+                    <ChevronLeft className="mr-2 h-4 w-4" /> Back
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base px-8 transition-colors disabled:opacity-50"
+                    disabled={isSubmitting}
+                  >
+                    <IconMenu
+                      text={
+                        isFinancialEducation
+                          ? "Review Registration"
+                          : "Review Application"
+                      }
+                      icon={<ChevronRight className="mr-2 h-5 w-5" />}
+                      iconLocation="right"
+                    />
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          )}
+
+          <Dialog
+            open={showConfirmModal}
+            onOpenChange={(open) => {
+              if (submissionStatus === "idle") {
+                setShowConfirmModal(open);
+              }
+            }}
+          >
+            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+              {submissionStatus === "idle" && (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Review Your Information</DialogTitle>
+                    <DialogDescription>
+                      Please verify the details you entered before submitting.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-6 py-4">
+                    <div className="rounded-lg bg-blue-50 px-4 py-3 text-sm">
+                      <span className="font-medium text-blue-900">
+                        Registration purpose:
                       </span>{" "}
-                      <span className="font-medium text-gray-900">
-                        ${businessDetailsData.fundingAmount?.toLocaleString()}
+                      <span className="text-blue-800">
+                        {registrationPurpose}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-500 font-medium">
-                        Funding Type:
-                      </span>{" "}
-                      <span className="font-medium text-gray-900">
-                        {businessDetailsData.fundingType}
-                      </span>
-                    </div>
-                    {(businessDetailsData.fundingType ===
-                      FundingType.Personal ||
-                      businessDetailsData.fundingType === FundingType.Both) && (
-                      <>
+                      <h3 className="font-semibold text-lg border-b pb-2 mb-3">
+                        Personal Information
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
                         <div>
                           <span className="text-gray-500 font-medium">
-                            Est. Credit Score (Personal):
+                            First Name:
                           </span>{" "}
                           <span className="font-medium text-gray-900">
-                            {businessDetailsData.creditScore}
+                            {authData.firstName}
+                          </span>
+                        </div>
+                        {authData.middleName && (
+                          <div>
+                            <span className="text-gray-500 font-medium">
+                              Middle Name:
+                            </span>{" "}
+                            <span className="font-medium text-gray-900">
+                              {authData.middleName}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-gray-500 font-medium">
+                            Last Name:
+                          </span>{" "}
+                          <span className="font-medium text-gray-900">
+                            {authData.lastName}
                           </span>
                         </div>
                         <div>
                           <span className="text-gray-500 font-medium">
-                            Employment Type:
+                            SSN:
                           </span>{" "}
                           <span className="font-medium text-gray-900">
-                            {businessDetailsData.employmentType}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                    {(businessDetailsData.fundingType ===
-                      FundingType.Business ||
-                      businessDetailsData.fundingType === FundingType.Both) && (
-                      <>
-                        <div>
-                          <span className="text-gray-500 font-medium">
-                            Est. Credit Score (Business):
-                          </span>{" "}
-                          <span className="font-medium text-gray-900">
-                            {businessDetailsData.businessCreditScore}
+                            {authData.ssn}
                           </span>
                         </div>
                         <div>
                           <span className="text-gray-500 font-medium">
-                            Business Name:
+                            Email:
                           </span>{" "}
                           <span className="font-medium text-gray-900">
-                            {businessDetailsData.businessName}
+                            {authData.email}
                           </span>
                         </div>
                         <div>
                           <span className="text-gray-500 font-medium">
-                            Business Contact Number:
+                            Phone:
                           </span>{" "}
                           <span className="font-medium text-gray-900">
-                            {businessDetailsData.businessPhoneNumber}
+                            {authData.phoneNumber}
                           </span>
                         </div>
-                        <div>
-                          <span className="text-gray-500 font-medium">
-                            EIN:
-                          </span>{" "}
-                          <span className="font-medium text-gray-900">
-                            {businessDetailsData.ein}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500 font-medium">
-                            Time in Business:
-                          </span>{" "}
-                          <span className="font-medium text-gray-900">
-                            {businessDetailsData.timeInBusiness}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500 font-medium">
-                            Business Industry:
-                          </span>{" "}
-                          <span className="font-medium text-gray-900">
-                            {businessDetailsData.businessIndustry}
-                          </span>
-                        </div>
-                        {businessDetailsData.businessStreetAddress && (
+                        {authData.addressStreet && (
                           <div className="col-span-1 sm:col-span-2">
                             <span className="text-gray-500 font-medium">
-                              Business Address:
+                              Address:
                             </span>{" "}
                             <span className="font-medium text-gray-900 block">
-                              {businessDetailsData.businessStreetAddress}
+                              {authData.addressStreet}
                               <br />
-                              {businessDetailsData.businessCityAddress},{" "}
-                              {businessDetailsData.businessStateAddress}{" "}
-                              {businessDetailsData.businessPostalAddress}
+                              {authData.addressCity}, {authData.addressState}{" "}
+                              {authData.addressPostal}
                             </span>
                           </div>
                         )}
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-lg border-b pb-2 mb-3">
-                    Documents Provided
-                  </h3>
-                  <div className="grid grid-cols-1 gap-y-2 text-sm">
-                    <div>
-                      <span className="text-gray-500 font-medium">
-                        {`Driver's License:`}
-                      </span>{" "}
-                      <span className="font-medium text-gray-900">
-                        {documentUploadData.driverLicense?.uploaded
-                          ? "Yes"
-                          : "No"}
-                      </span>
+                      </div>
                     </div>
-                    {(businessDetailsData.fundingType ===
-                      FundingType.Personal ||
-                      businessDetailsData.fundingType === FundingType.Both) && (
-                      <>
-                        {businessDetailsData.employmentType === "W2" && (
-                          <div>
-                            <span className="text-gray-500 font-medium">
-                              Paystubs:
-                            </span>{" "}
-                            <span className="font-medium text-gray-900">
-                              {documentUploadData.personalDocs?.paystubs
-                                ?.uploaded
-                                ? "Yes"
-                                : "No"}
-                            </span>
-                          </div>
-                        )}
-                        {businessDetailsData.employmentType ===
-                          "Self-employed" && (
-                          <div>
-                            <span className="text-gray-500 font-medium">
-                              Bank Statements (Personal):
-                            </span>{" "}
-                            <span className="font-medium text-gray-900">
-                              {documentUploadData.personalDocs?.bankStatements
-                                ?.uploaded
-                                ? "Yes"
-                                : "No"}
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    {(businessDetailsData.fundingType ===
-                      FundingType.Business ||
-                      businessDetailsData.fundingType === FundingType.Both) && (
+
+                    {!isFinancialEducation && (
                       <div>
-                        <span className="text-gray-500 font-medium">
-                          Bank Statements (Business):
-                        </span>{" "}
-                        <span className="font-medium text-gray-900">
-                          {documentUploadData.businessDocs?.bankStatements
-                            ?.uploaded
-                            ? "Yes"
-                            : "No"}
-                        </span>
+                        <h3 className="font-semibold text-lg border-b pb-2 mb-3">
+                          Funding Details
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
+                          <div>
+                            <span className="text-gray-500 font-medium">
+                              Funding Amount:
+                            </span>{" "}
+                            <span className="font-medium text-gray-900">
+                              $
+                              {businessDetailsData.fundingAmount?.toLocaleString()}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 font-medium">
+                              Funding Type:
+                            </span>{" "}
+                            <span className="font-medium text-gray-900">
+                              {businessDetailsData.fundingType}
+                            </span>
+                          </div>
+                          {(businessDetailsData.fundingType ===
+                            FundingType.Personal ||
+                            businessDetailsData.fundingType ===
+                              FundingType.Both) && (
+                            <>
+                              <div>
+                                <span className="text-gray-500 font-medium">
+                                  Est. Credit Score (Personal):
+                                </span>{" "}
+                                <span className="font-medium text-gray-900">
+                                  {businessDetailsData.creditScore}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 font-medium">
+                                  Employment Type:
+                                </span>{" "}
+                                <span className="font-medium text-gray-900">
+                                  {businessDetailsData.employmentType}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                          {(businessDetailsData.fundingType ===
+                            FundingType.Business ||
+                            businessDetailsData.fundingType ===
+                              FundingType.Both) && (
+                            <>
+                              <div>
+                                <span className="text-gray-500 font-medium">
+                                  Est. Credit Score (Business):
+                                </span>{" "}
+                                <span className="font-medium text-gray-900">
+                                  {businessDetailsData.businessCreditScore}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 font-medium">
+                                  Business Name:
+                                </span>{" "}
+                                <span className="font-medium text-gray-900">
+                                  {businessDetailsData.businessName}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 font-medium">
+                                  Business Contact Number:
+                                </span>{" "}
+                                <span className="font-medium text-gray-900">
+                                  {businessDetailsData.businessPhoneNumber}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 font-medium">
+                                  EIN:
+                                </span>{" "}
+                                <span className="font-medium text-gray-900">
+                                  {businessDetailsData.ein}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 font-medium">
+                                  Time in Business:
+                                </span>{" "}
+                                <span className="font-medium text-gray-900">
+                                  {businessDetailsData.timeInBusiness}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 font-medium">
+                                  Business Industry:
+                                </span>{" "}
+                                <span className="font-medium text-gray-900">
+                                  {businessDetailsData.businessIndustry}
+                                </span>
+                              </div>
+                              {businessDetailsData.businessStreetAddress && (
+                                <div className="col-span-1 sm:col-span-2">
+                                  <span className="text-gray-500 font-medium">
+                                    Business Address:
+                                  </span>{" "}
+                                  <span className="font-medium text-gray-900 block">
+                                    {businessDetailsData.businessStreetAddress}
+                                    <br />
+                                    {
+                                      businessDetailsData.businessCityAddress
+                                    },{" "}
+                                    {businessDetailsData.businessStateAddress}{" "}
+                                    {businessDetailsData.businessPostalAddress}
+                                  </span>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
                     )}
+
+                    <div>
+                      <h3 className="font-semibold text-lg border-b pb-2 mb-3">
+                        Documents Provided
+                      </h3>
+                      <div className="grid grid-cols-1 gap-y-2 text-sm">
+                        <div>
+                          <span className="text-gray-500 font-medium">
+                            {`Driver's License:`}
+                          </span>{" "}
+                          <span className="font-medium text-gray-900">
+                            {documentUploadData.driverLicense?.uploaded
+                              ? "Yes"
+                              : "No"}
+                          </span>
+                        </div>
+                        {(businessDetailsData.fundingType ===
+                          FundingType.Personal ||
+                          businessDetailsData.fundingType ===
+                            FundingType.Both) && (
+                          <>
+                            {businessDetailsData.employmentType === "W2" && (
+                              <div>
+                                <span className="text-gray-500 font-medium">
+                                  Paystubs:
+                                </span>{" "}
+                                <span className="font-medium text-gray-900">
+                                  {documentUploadData.personalDocs?.paystubs
+                                    ?.uploaded
+                                    ? "Yes"
+                                    : "No"}
+                                </span>
+                              </div>
+                            )}
+                            {businessDetailsData.employmentType ===
+                              "Self-employed" && (
+                              <div>
+                                <span className="text-gray-500 font-medium">
+                                  Bank Statements (Personal):
+                                </span>{" "}
+                                <span className="font-medium text-gray-900">
+                                  {documentUploadData.personalDocs
+                                    ?.bankStatements?.uploaded
+                                    ? "Yes"
+                                    : "No"}
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {(businessDetailsData.fundingType ===
+                          FundingType.Business ||
+                          businessDetailsData.fundingType ===
+                            FundingType.Both) && (
+                          <div>
+                            <span className="text-gray-500 font-medium">
+                              Bank Statements (Business):
+                            </span>{" "}
+                            <span className="font-medium text-gray-900">
+                              {documentUploadData.businessDocs?.bankStatements
+                                ?.uploaded
+                                ? "Yes"
+                                : "No"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
+
+                  <DialogFooter className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowConfirmModal(false)}
+                      disabled={isSubmitting}
+                    >
+                      Back to Edit
+                    </Button>
+                    <Button
+                      onClick={executeFinalSubmit}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      disabled={isSubmitting}
+                    >
+                      <IconMenu
+                        text={"Confirm & Join!"}
+                        icon={<UserPlus className="mr-2 h-4 w-4" />}
+                      />
+                    </Button>
+                  </DialogFooter>
+                </>
+              )}
+
+              {submissionStatus === "submitting" && (
+                <div className="flex flex-col items-center justify-center py-8 w-full mx-auto">
+                  <Loader2 className="h-12 w-12 animate-spin text-blue-500 mb-6" />
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2 text-center">
+                    Processing Registration
+                  </h3>
+                  <p className="text-gray-500 text-sm text-center mb-8 animate-pulse min-h-[1.5rem] font-medium">
+                    {loadingSteps[loadingStep]}
+                  </p>
+                  <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out shadow-sm"
+                      style={{
+                        width: `${Math.min(((loadingStep + 1) / loadingSteps.length) * 100, 95)}%`,
+                      }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2 text-center">
+                    This may take a moment...
+                  </p>
                 </div>
-              </div>
+              )}
 
-              <DialogFooter className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowConfirmModal(false)}
-                  disabled={isSubmitting}
-                >
-                  Back to Edit
-                </Button>
-                <Button
-                  onClick={executeFinalSubmit}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                  disabled={isSubmitting}
-                >
-                  <IconMenu
-                    text={"Confirm & Join!"}
-                    icon={<UserPlus className="mr-2 h-4 w-4" />}
-                  />
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-
-          {submissionStatus === "submitting" && (
-            <div className="flex flex-col items-center justify-center py-8 w-full mx-auto">
-              <Loader2 className="h-12 w-12 animate-spin text-blue-500 mb-6" />
-              <h3 className="text-xl font-semibold text-gray-800 mb-2 text-center">
-                Processing Registration
-              </h3>
-              <p className="text-gray-500 text-sm text-center mb-8 animate-pulse min-h-[1.5rem] font-medium">
-                {loadingSteps[loadingStep]}
-              </p>
-              <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out shadow-sm"
-                  style={{
-                    width: `${Math.min(((loadingStep + 1) / loadingSteps.length) * 100, 95)}%`,
-                  }}
-                ></div>
-              </div>
-              <p className="text-xs text-gray-400 mt-2 text-center">
-                This may take a moment...
-              </p>
-            </div>
-          )}
-
-          {submissionStatus === "success" && (
-            <div className="flex flex-col items-center justify-center py-8 w-full mx-auto text-center">
-              <div className="bg-blue-100 rounded-full p-4 mb-4">
-                <CheckCircle className="h-16 w-16 text-blue-600" />
-              </div>
-              <h3 className="text-2xl font-semibold text-blue-700 mb-4">
-                Thank You!
-              </h3>
-              <p className="text-gray-700 text-lg mb-8 max-w-md">
-                Your registration was successful. Please check your email and
-                verify your email address to continue.
-              </p>
-              <Button
-                onClick={() => {
-                  setShowConfirmModal(false);
-                  router.push("/");
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg w-full max-w-xs"
-              >
-                <IconMenu
-                  text="OK"
-                  icon={<CircleCheckBigIcon className="h-4 w-4" />}
-                />
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+              {submissionStatus === "success" && (
+                <div className="flex flex-col items-center justify-center py-8 w-full mx-auto text-center">
+                  <div className="bg-blue-100 rounded-full p-4 mb-4">
+                    <CheckCircle className="h-16 w-16 text-blue-600" />
+                  </div>
+                  <h3 className="text-2xl font-semibold text-blue-700 mb-4">
+                    Thank You!
+                  </h3>
+                  <p className="text-gray-700 text-lg mb-8 max-w-md">
+                    Your registration was successful. Please check your email
+                    and verify your email address to continue.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setShowConfirmModal(false);
+                      resetRegistration();
+                      router.push("/");
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg w-full max-w-xs"
+                  >
+                    <IconMenu
+                      text="OK"
+                      icon={<CircleCheckBigIcon className="h-4 w-4" />}
+                    />
+                  </Button>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
     </div>
   );
 }

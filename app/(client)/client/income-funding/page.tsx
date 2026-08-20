@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, AlertCircle, Home, Loader2 } from "lucide-react";
 // import { ProgressStepper } from "@/components/income-funding/ProgressStepper";
 import { PreApprovalView } from "@/components/income-funding/PreApprovalView";
 import { DocumentCollectionView } from "@/components/income-funding/DocumentCollectionView";
@@ -336,7 +336,8 @@ export function IncomeFundingContent({
             }
             className="inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm transition"
           >
-            Go to Back
+            <Home className="h-4 w-4" aria-hidden="true" />
+            Go Back
           </Link>
         </div>
       </div>

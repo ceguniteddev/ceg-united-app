@@ -1,14 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import { Check, X, ArrowRight, CheckCircle2, Shield } from "lucide-react";
+import { useState } from "react";
+import { Check, X, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { useFeeSettings } from "@/hooks/fee-settings";
 import { cn } from "@/lib/utils";
 import { useMembership } from "@/hooks/membership";
 import { useAuth } from "@/provider/AuthContext";
-import { useAddons } from "@/hooks/addons";
 
 interface PricingPlansProps {
   onSelectPlan?: (
@@ -26,15 +24,10 @@ export function PricingPlans({
   const { userData } = useAuth();
   const { data: feeSettings, isLoading: isLoadingSettings } = useFeeSettings();
   const { data: membership } = useMembership(userData?.id);
-  const { data: addons } = useAddons();
 
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
 
   const activeTierId = membership?.status === "active" ? membership.tier : null;
-  const creditModuleActive = addons?.some(
-    (a) => a.addonId === "credit_module_pro" && a.status === "active",
-  );
 
   const tiers = [
     {
@@ -103,6 +96,7 @@ export function PricingPlans({
       highlight: false,
     },
   ];
+  const selectedPlan = tiers.find((tier) => tier.id === selectedPlanId);
 
   return (
     <div className="w-full max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -228,118 +222,28 @@ export function PricingPlans({
         })}
       </div>
 
-      <div className="mt-16 bg-blue-50/50 rounded-2xl p-8 border border-blue-100 transition-colors hover:bg-blue-50">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="flex items-start gap-4">
-            <div className="bg-blue-600 p-3 rounded-lg text-white">
-              <Shield className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">
-                Credit Module Pro Add-on
-              </h3>
-              <p className="text-slate-600 mt-1 max-w-2xl text-sm">
-                Unlock the self-service AI credit optimization toolkit. Includes
-                AI dispute letter generator, inquiry dispute workflows, bureau
-                tracking, and more.
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row items-center gap-6 whitespace-nowrap">
-            <span className="text-2xl font-bold text-slate-900">
-              +${feeSettings?.creditModuleProAddonPrice ?? 197}
-              <span className="text-sm font-medium text-slate-500">/mo</span>
-            </span>
-
-            {creditModuleActive ? (
-              <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full font-bold text-sm flex items-center">
-                <CheckCircle2 className="w-4 h-4 mr-1.5" /> Already Active
-              </span>
-            ) : (
-              <div className="flex flex-col items-end gap-1">
-                <div className="flex items-center gap-3">
-                  <span
-                    className={cn(
-                      "text-sm font-semibold",
-                      selectedAddonIds.includes("credit_module_pro")
-                        ? "text-emerald-600"
-                        : "text-slate-600",
-                    )}
-                  >
-                    {selectedAddonIds.includes("credit_module_pro")
-                      ? "Added to Cart"
-                      : "Add to Plan"}
-                  </span>
-                  <Switch
-                    checked={selectedAddonIds.includes("credit_module_pro")}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setSelectedAddonIds((prev) => [
-                          ...prev,
-                          "credit_module_pro",
-                        ]);
-                      } else {
-                        setSelectedAddonIds((prev) =>
-                          prev.filter((id) => id !== "credit_module_pro"),
-                        );
-                      }
-                    }}
-                  />
-                </div>
-                {!activeTierId && !selectedPlanId && (
-                  <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded font-semibold mt-1">
-                    Requires Membership
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Cart Summary Section */}
-      {(selectedPlanId || selectedAddonIds.length > 0) && (
+      {selectedPlan && (
         <>
           {/* Spacer so the fixed cart doesn't overlap content */}
           <div className="h-24 md:h-28" />
           <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 md:p-6 shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.1)] z-50">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-6 text-sm">
-                {selectedPlanId && (
-                  <div className="flex flex-col">
-                    <span className="text-slate-500 font-medium">
-                      Selected Plan
-                    </span>
-                    <span className="text-slate-900 font-bold">
-                      {tiers.find((t) => t.id === selectedPlanId)?.name} ($
-                      {tiers.find((t) => t.id === selectedPlanId)?.price}/mo)
-                    </span>
-                  </div>
-                )}
-                {selectedAddonIds.length > 0 && (
-                  <div className="flex flex-col">
-                    <span className="text-slate-500 font-medium">
-                      Selected Add-ons
-                    </span>
-                    <span className="text-slate-900 font-bold">
-                      Credit Module Pro ($
-                      {feeSettings?.creditModuleProAddonPrice ?? 197}/mo)
-                    </span>
-                  </div>
-                )}
+                <div className="flex flex-col">
+                  <span className="text-slate-500 font-medium">
+                    Selected Plan
+                  </span>
+                  <span className="text-slate-900 font-bold">
+                    {selectedPlan.name} (${selectedPlan.price}/mo)
+                  </span>
+                </div>
                 <div className="flex flex-col pl-6 border-l border-slate-200">
                   <span className="text-slate-500 font-medium">
                     Monthly Total
                   </span>
                   <span className="text-blue-600 font-extrabold text-lg">
-                    $
-                    {(selectedPlanId
-                      ? (tiers.find((t) => t.id === selectedPlanId)?.price ?? 0)
-                      : 0) +
-                      (selectedAddonIds.includes("credit_module_pro")
-                        ? (feeSettings?.creditModuleProAddonPrice ?? 197)
-                        : 0)}
-                    /mo
+                    ${selectedPlan.price}/mo
                   </span>
                 </div>
               </div>
@@ -347,18 +251,9 @@ export function PricingPlans({
               <Button
                 size="lg"
                 onClick={() => {
-                  const planPrice = selectedPlanId
-                    ? (tiers.find((t) => t.id === selectedPlanId)?.price ?? 0)
-                    : 0;
-                  const addonsPrice = selectedAddonIds.includes(
-                    "credit_module_pro",
-                  )
-                    ? (feeSettings?.creditModuleProAddonPrice ?? 197)
-                    : 0;
-                  const total = planPrice + addonsPrice;
-                  onSelectPlan?.(selectedPlanId || "", total, selectedAddonIds);
+                  onSelectPlan?.(selectedPlan.id, selectedPlan.price);
                 }}
-                disabled={isLoading || (!selectedPlanId && !activeTierId)}
+                disabled={isLoading}
                 className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-lg text-lg px-8 h-12"
               >
                 Proceed to Checkout

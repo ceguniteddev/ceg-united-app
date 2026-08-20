@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { WhopCheckoutEmbed } from "@whop/checkout/react";
+import { DodoCheckoutView } from "@/components/funding/DodoCheckoutView";
+import { useDodoCheckoutDetails } from "@/hooks/dodo";
 import { toast } from "sonner";
-import Spinner from "@/components/Spinner";
 import { useCartStore } from "@/components/tradelines/useCartStore";
 import { USER_ALL_TRADELINES_KEY } from "@/hooks/tradelines";
 import type { CartItem } from "@/types/tradelines";
@@ -22,14 +22,14 @@ export const TradelineCheckoutView = ({
   checkoutId,
   items,
   totalPrice,
-  prefillEmail,
   userId,
   onPaymentCompleteAction,
 }: TradelineCheckoutViewProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const queryClient = useQueryClient();
+  const { checkoutDetails } = useDodoCheckoutDetails(checkoutId);
 
-  const handleComplete = (plan_id: string, receipt_id?: string) => {
+  const handleComplete = (paymentId?: string) => {
     if (isRecording) return; // Prevent duplicate calls
 
     setIsRecording(true);
@@ -45,8 +45,8 @@ export const TradelineCheckoutView = ({
             body: JSON.stringify({
               items,
               totalPrice,
-              planId: plan_id,
-              receiptId: receipt_id || null,
+              planId: checkoutId,
+              receiptId: paymentId || null,
               checkoutId,
             }),
           },
@@ -91,22 +91,15 @@ export const TradelineCheckoutView = ({
         </p>
       </div>
 
-      {/* Whop Checkout Embed */}
+      {/* Dodo Checkout */}
       <div className="rounded-lg overflow-hidden shadow-xl">
-        <WhopCheckoutEmbed
-          prefill={{
-            email: prefillEmail || "",
-            address: {
-              country: "US",
-            },
+        <DodoCheckoutView
+          checkoutId={checkoutId}
+          checkoutDetails={{
+            ...(checkoutDetails || {}),
+            amount: Math.round(totalPrice * 100),
           }}
-          sessionId={checkoutId}
           onComplete={handleComplete}
-          fallback={
-            <div className="flex items-center justify-center h-96">
-              <Spinner displayText="Loading secure checkout..." />
-            </div>
-          }
         />
       </div>
     </div>

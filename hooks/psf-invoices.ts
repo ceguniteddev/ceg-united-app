@@ -124,7 +124,7 @@ export const useSignPsfInvoiceMutation = (userId: string) => {
 };
 
 /**
- * Hook for admin to send a PSF invoice (generates Whop checkout link)
+ * Hook for admin to send a PSF invoice (generates Dodo checkout link)
  * Does not require client signature — admin-initiated send.
  */
 export const useSendPsfInvoiceMutation = (userId: string) => {

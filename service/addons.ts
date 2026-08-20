@@ -38,9 +38,25 @@ export const activateUserAddon = async ({
   if (!userId) throw new AppError("User ID is required.");
 
   const db = firestoreAdmin();
+  const addonsRef = db.collection(`${USER_COLLECTION}/${userId}/addons`);
+  const existing = await addonsRef
+    .where("addonId", "==", addonId)
+    .where("status", "==", "active")
+    .limit(1)
+    .get();
 
-  // Create addon record
-  await db.collection(`${USER_COLLECTION}/${userId}/addons`).add({
+  if (!existing.empty) {
+    await existing.docs[0].ref.update({
+      amount,
+      ...(planId ? { planId } : {}),
+      ...(receiptId ? { receiptId } : {}),
+      ...(checkoutId ? { checkoutId } : {}),
+      updatedAt: new Date(),
+    });
+    return { success: true, alreadyActive: true };
+  }
+
+  await addonsRef.add({
     addonId,
     amount,
     planId: planId || null,

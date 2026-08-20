@@ -8,13 +8,13 @@ import {
 import { withAuth } from "@/lib/api-validation";
 import { getCurrentUser } from "@/service/user";
 import { saveFeeAgreementToPDF } from "@/service/fee-agreement-pdf";
-import { createPsfInvoiceCheckoutConfig } from "@/service/whop";
+import { createPsfInvoiceCheckoutConfig } from "@/service/dodo";
 import { PSF_INVOICES_COLLECTION } from "@/constant/collection-name";
 
 /**
  * POST /api/user/[userId]/psf-invoices/[invoiceId]/sign
  * Signs a PSF success fee invoice, generates the fee agreement PDF,
- * creates a Whop checkout link, and updates the invoice status.
+ * creates a Dodo checkout link, and updates the invoice status.
  */
 export const POST = withAuth(
   async (
@@ -107,22 +107,24 @@ export const POST = withAuth(
         }
       }
 
-      // 2. Generate a Whop checkout link for successFeeAmount
+      // 2. Generate a Dodo checkout link for successFeeAmount
       let checkoutId: string;
       let checkoutUrl: string;
 
       try {
-        const whopConfig = await createPsfInvoiceCheckoutConfig({
+        const dodoConfig = await createPsfInvoiceCheckoutConfig({
           userId,
           invoiceId,
-          feeAmount: invoiceData.amount ?? invoiceData.successFeeAmount,
+          feeAmount: Math.round(
+            (invoiceData.amount ?? invoiceData.successFeeAmount) * 100,
+          ),
         });
-        checkoutId = whopConfig.checkoutId;
-        checkoutUrl = whopConfig.url;
-      } catch (whopError: any) {
-        console.error("Error creating Whop checkout config:", whopError);
+        checkoutId = dodoConfig.checkoutId;
+        checkoutUrl = dodoConfig.url;
+      } catch (dodoError: any) {
+        console.error("Error creating Dodo checkout config:", dodoError);
         return internalServerError(
-          "Failed to generate Whop payment checkout link.",
+          "Failed to generate Dodo payment checkout link.",
         );
       }
 
@@ -140,8 +142,8 @@ export const POST = withAuth(
       await invoiceRef.update({
         status: "signed",
         signature: updatedSignature,
-        whopCheckoutId: checkoutId,
-        whopCheckoutUrl: checkoutUrl,
+        dodoCheckoutId: checkoutId,
+        dodoCheckoutUrl: checkoutUrl,
         updatedAt,
       });
 

@@ -315,7 +315,7 @@ function TradelinesPage() {
     try {
       setIsPurchasing(true);
 
-      // Create Whop checkout session
+      // Create Dodo checkout session
       const totalPrice = cart.getTotalPrice();
       const response = await fetch(
         `/api/user/${user.uid}/tradelines/checkout`,

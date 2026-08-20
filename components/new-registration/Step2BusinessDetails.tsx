@@ -56,7 +56,9 @@ export function Step2BusinessDetails() {
                       ? Math.max(1000, field.value)
                       : 1000,
                   ]}
-                  onValueChange={(vals) => field.onChange(vals[0])}
+                  onValueChange={([value]) =>
+                    field.onChange(Math.round(value / 1000) * 1000)
+                  }
                   min={1000}
                   max={1000000}
                   step={1000}

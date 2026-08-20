@@ -14,7 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { createMembershipCheckoutConfig } from "@/service/whop";
+import { createMembershipCheckoutConfig } from "@/service/dodo";
 import { useFeeSettings } from "@/hooks/fee-settings";
 import { AddonCheckoutView } from "@/components/pricing-plans/AddonCheckoutView";
 import { toast } from "sonner";
@@ -42,6 +42,7 @@ export function FundabilityAuditTab({
   // Pricing / Checkout state
   const [isPricingModalOpen, setPricingModalOpen] = useState(false);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [isAddonCheckout, setIsAddonCheckout] = useState(false);
   const [isCheckoutSheetOpen, setCheckoutSheetOpen] = useState(false);
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
@@ -67,6 +68,7 @@ export function FundabilityAuditTab({
         selectedAddonIds: selectedAddons,
       });
       setCheckoutId(res.checkoutId);
+      setCheckoutUrl(res.url);
       setSelectedPlan({ id: planId, amount });
       setPricingModalOpen(false);
       setCheckoutSheetOpen(true);
@@ -243,6 +245,7 @@ export function FundabilityAuditTab({
                   ) : (
                     <MembershipCheckoutView
                       checkoutId={checkoutId}
+                      checkoutUrl={checkoutUrl || undefined}
                       userId={targetUserId}
                       tierId={selectedPlan.id}
                       amount={selectedPlan.amount}

@@ -36,6 +36,11 @@ export const authSchema = z.object({
 
 export type AuthForm = z.infer<typeof authSchema>;
 
+export enum RegistrationPurpose {
+  Funding = "Funding",
+  FinancialEducation = "Financial Education",
+}
+
 export enum FundingType {
   Personal = "Personal",
   Business = "Business",
@@ -185,6 +190,7 @@ export type FundingPageForm = z.infer<typeof fundingPageSchema>;
 
 export const documentUploadSchema = z
   .object({
+    registrationPurpose: z.enum(RegistrationPurpose).optional(),
     fundingType: z.string().nullable().optional(),
     employmentType: z.enum(["W2", "Self-employed", ""]).nullable().optional(),
 
@@ -236,13 +242,15 @@ export const documentUploadSchema = z
           });
         }
       } else if (data.employmentType === "Self-employed") {
-        if (
-          !data.personalDocs?.bankStatements ||
-          data.personalDocs.bankStatements.count === 0
-        ) {
+        const bankStatements = data.personalDocs?.bankStatements;
+        const bankStatementCount = Array.isArray(bankStatements?.files)
+          ? bankStatements.files.length
+          : (bankStatements?.count ?? 0);
+
+        if (bankStatementCount !== 3) {
           ctx.addIssue({
             code: "custom",
-            message: "Bank statements are required",
+            message: "Exactly 3 personal bank statements are required",
             path: ["personalDocs", "bankStatements"],
           });
         }
@@ -250,13 +258,15 @@ export const documentUploadSchema = z
     }
 
     if (isBusiness) {
-      if (
-        !data.businessDocs?.bankStatements ||
-        data.businessDocs.bankStatements.count === 0
-      ) {
+      const bankStatements = data.businessDocs?.bankStatements;
+      const bankStatementCount = Array.isArray(bankStatements?.files)
+        ? bankStatements.files.length
+        : (bankStatements?.count ?? 0);
+
+      if (bankStatementCount !== 4) {
         ctx.addIssue({
           code: "custom",
-          message: "Business bank statements are required",
+          message: "Exactly 4 business bank statements are required",
           path: ["businessDocs", "bankStatements"],
         });
       }

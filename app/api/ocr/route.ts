@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { badRequest, forbidden, internalServerError } from "@/app/api/helpers";
+import { badRequest, forbidden } from "@/app/api/helpers";
 import { GoogleGenAI } from "@google/genai";
 import { createEnterpriseAssessment } from "@/lib/captcha/captcha";
 import AppError from "@/error/AppError";
@@ -9,10 +9,7 @@ const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
 const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
 const MAX_REQUESTS_PER_WINDOW = 5;
 
-export const POST = async (
-  request: NextRequest,
-  { params }: { params?: Promise<{ userId?: string }> },
-) => {
+export const POST = async (request: NextRequest) => {
   try {
     // 4. Origin and Referer Checking
     const origin = request.headers.get("origin");

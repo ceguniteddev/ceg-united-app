@@ -1,5 +1,4 @@
 "use client";
-import Spinner from "@/components/Spinner";
 import { checkFreePullEligibility } from "@/lib/crs-eligibility";
 import { useClientCRSReportQuery } from "@/hooks/crs";
 import { useCountUp } from "@/hooks/useCountUp";
@@ -74,7 +73,7 @@ import { initiateCRSReportCheckout, generateCRSReport } from "@/service/crs";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { WhopCheckoutEmbed } from "@whop/checkout/react";
+import { DodoCheckoutView } from "@/components/funding/DodoCheckoutView";
 import { UserWithId } from "@/schema/registration";
 import { ConfirmButton } from "@/components/Confirmation";
 import { useFeeSettings } from "@/hooks/fee-settings";
@@ -892,6 +891,7 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [checkoutMetadata, setCheckoutMetadata] = useState<any>(null);
   const { crsReport, isLoading } = useClientCRSReportQuery({ userId });
   const { data: feeSettings } = useFeeSettings();
@@ -967,8 +967,6 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
 
   const handleGenerateReport = async () => {
     const latestApp = appliedFunding?.[0];
-    const generatedRef = latestApp?.referenceNumber;
-
     if (!isEligibleForFreePull && !hasSufficientBalance) {
       setIsConfirmOpen(false);
       setTopUpModalOpen(true);
@@ -988,7 +986,6 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
         // Upon success, trigger the report generation directly
         await generateCRSReport({
           userId,
-          referenceNumber: generatedRef!,
           bureaus: { equifax: true, experian: true, transunion: true },
           bypassPremiumCheck: true,
         });
@@ -1037,6 +1034,7 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
               : undefined,
         });
         setCheckoutId(res.checkoutId);
+        setCheckoutUrl(res.url);
         setIsConfirmOpen(false);
       } else if ("success" in res && res.success) {
         toast.success(
@@ -1950,7 +1948,12 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
       {/* Checkout Modal */}
       <Dialog
         open={!!checkoutId}
-        onOpenChange={(open) => !open && setCheckoutId(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCheckoutId(null);
+            setCheckoutUrl(null);
+          }
+        }}
       >
         <DialogContent
           className="w-[95vw] sm:max-w-[600px] md:max-w-[700px] p-0 overflow-hidden bg-transparent border-none shadow-none"
@@ -1960,21 +1963,23 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
           {checkoutId && (
             <div className="bg-white rounded-xl shadow-2xl overflow-y-auto w-full max-h-[90vh] md:max-h-[85vh] relative">
               <button
-                onClick={() => setCheckoutId(null)}
+                onClick={() => {
+                  setCheckoutId(null);
+                  setCheckoutUrl(null);
+                }}
                 className="cursor-pointer absolute top-3 right-3 p-2 bg-gray-100 hover:bg-gray-200 rounded-full z-50 transition-colors"
                 aria-label="Close"
               >
                 <X className="w-4 h-4 text-gray-600" />
               </button>
-              <WhopCheckoutEmbed
-                sessionId={checkoutId}
-                prefill={{
-                  email: activeUserData?.email,
-                  address: {
-                    country: "US",
-                  },
+              <DodoCheckoutView
+                checkoutId={checkoutId}
+                checkoutDetails={{
+                  url: checkoutUrl || undefined,
+                  checkout_url: checkoutUrl || undefined,
+                  amount: Math.round(reportFee * 100),
                 }}
-                onComplete={async (planId, receiptId) => {
+                onComplete={async (paymentId) => {
                   try {
                     const response = await fetch(
                       `/api/user/${userId}/crs/purchase`,
@@ -1982,8 +1987,8 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          planId,
-                          receiptId,
+                          planId: checkoutId,
+                          receiptId: paymentId,
                           checkoutId,
                           metadata: checkoutMetadata,
                         }),
@@ -1998,6 +2003,7 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
                       "Payment successful! Generating your credit report...",
                     );
                     setCheckoutId(null);
+                    setCheckoutUrl(null);
                     setCheckoutMetadata(null);
                   } catch (error) {
                     console.error(error);
@@ -2005,13 +2011,9 @@ const ClientCreditReport = ({ userId, userData }: Props) => {
                       "Payment succeeded but report generation failed. Please contact support.",
                     );
                     setCheckoutId(null);
+                    setCheckoutUrl(null);
                   }
                 }}
-                fallback={
-                  <div className="flex items-center justify-center h-full">
-                    <Spinner displayText="Loading secure checkout..." />
-                  </div>
-                }
               />
             </div>
           )}

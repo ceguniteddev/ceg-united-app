@@ -11,7 +11,7 @@ export type PricingPlan = {
   subtitle: string;
   features: string[];
   recommended?: boolean;
-  whopKey?: PaymentPlan;
+  paymentKey?: PaymentPlan;
   isDenefits?: boolean;
   denefitsUrlEnvKey?: "audit" | "intelligence" | "accelerator";
 };
@@ -52,7 +52,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       "Training & Insights Library",
     ],
     recommended: true,
-    whopKey: "IntelligenceFull",
+    paymentKey: "IntelligenceFull",
   },
   {
     type: "contact",
