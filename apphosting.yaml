@@ -148,7 +148,7 @@ env:
     value: ""
     availability: [RUNTIME]
   - variable: DODO_PRODUCT_WALLET_ID
-    value: ""
+    value: pdt_0NlorCWqu5qMcxsXyQndJ
     availability: [RUNTIME]
   - variable: DODO_PRODUCT_PSF_ID
     value: ""
@@ -157,16 +157,22 @@ env:
     value: ""
     availability: [RUNTIME]
   - variable: DODO_PRODUCT_MEMBERSHIP_STARTER_ID
-    value: ""
+    value: pdt_0NlorUoXvGqMNovNhtQ03
     availability: [RUNTIME]
   - variable: DODO_PRODUCT_MEMBERSHIP_PRO_ID
-    value: ""
+    value: pdt_0NlorUH06nqTmjrmZp4e0
     availability: [RUNTIME]
   - variable: DODO_PRODUCT_MEMBERSHIP_EXECUTIVE_ID
-    value: ""
+    value: pdt_0NlorTSLcDLiPU3wuWudW
     availability: [RUNTIME]
   - variable: DODO_PRODUCT_CREDIT_MODULE_PRO_ID
-    value: ""
+    value: pdt_0NlorIxCkWoOfdQAgzSBW
+    availability: [RUNTIME]
+  - variable: DODO_PAYMENTS_ENVIRONMENT
+    value: live_mode
+    availability: [RUNTIME]
+  - variable: DODO_PAYMENTS_LOG
+    value: info
     availability: [RUNTIME]
   - variable: WC_CONSUMER_KEY
     value: ck_ea997ec7a404f79481d6e57a9b1d22bfe1278371
