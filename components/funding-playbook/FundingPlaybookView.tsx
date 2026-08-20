@@ -129,7 +129,7 @@ export function FundingPlaybookView({
           <SectionRail active={active} />
 
           <div className="flex-1 min-w-0 space-y-4">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 sm:px-6 py-5">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 sm:px-6 py-4 sm:py-5">
               <div className="flex items-center justify-between">
                 <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-600">
                   YOUR FUNDING PLAYBOOK
@@ -140,7 +140,7 @@ export function FundingPlaybookView({
                 </div>
               </div>
 
-              <h1 className="text-[20px] sm:text-[23px] font-bold text-gray-900 tracking-tight leading-tight mt-1.5">
+              <h1 className="text-[18px] sm:text-[23px] font-bold text-gray-900 tracking-tight leading-tight mt-1.5 break-words">
                 {fullTitle}
               </h1>
 

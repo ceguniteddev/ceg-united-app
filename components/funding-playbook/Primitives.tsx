@@ -37,7 +37,7 @@ export function SectionCard({
   return (
     <section
       id={id}
-      className="scroll-mt-[132px] bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:break-inside-avoid print:shadow-none print:border-gray-300"
+      className="scroll-mt-[72px] lg:scroll-mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:break-inside-avoid print:shadow-none print:border-gray-300"
     >
       <div className="flex flex-wrap sm:flex-nowrap items-start gap-x-3 gap-y-2.5 px-4 sm:px-6 pt-4 sm:pt-5 pb-3.5 sm:pb-4 border-b border-gray-100">
         <div
@@ -61,7 +61,9 @@ export function SectionCard({
           )}
         </div>
         {aside && (
-          <div className="flex-shrink-0 pt-0.5 max-w-full">{aside}</div>
+          <div className="flex-shrink-0 pt-0.5 max-w-full order-last sm:order-none w-full sm:w-auto">
+            {aside}
+          </div>
         )}
       </div>
       <div className="px-4 sm:px-6 py-4 sm:py-5">{children}</div>
@@ -91,13 +93,13 @@ export function Chip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ring-1 ring-inset max-w-full sm:max-w-xs truncate",
+        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ring-1 ring-inset max-w-full min-w-0",
         tones[tone],
         className,
       )}
     >
-      {Icon && <Icon className="w-3 h-3" />}
-      {children}
+      {Icon && <Icon className="w-3 h-3 shrink-0" />}
+      <span className="truncate">{children}</span>
     </span>
   );
 }

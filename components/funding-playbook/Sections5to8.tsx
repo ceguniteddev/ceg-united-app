@@ -122,7 +122,7 @@ export function IncomeSection({ pb }: { pb: Playbook }) {
                 <span className="text-[11px] font-semibold text-slate-500 block">
                   Annual business revenue
                 </span>
-                <span className="font-mono text-[32px] font-extrabold text-blue-700 leading-tight block mt-0.5">
+                <span className="font-mono text-[26px] sm:text-[32px] font-extrabold text-blue-700 leading-tight block mt-0.5 tabular-nums break-words">
                   {usd(biz.annualBusinessRevenue)}
                 </span>
               </div>
@@ -176,7 +176,7 @@ export function IncomeSection({ pb }: { pb: Playbook }) {
                 <span className="text-[11px] font-semibold text-slate-500 block">
                   Household income
                 </span>
-                <span className="font-mono text-[32px] font-extrabold text-slate-900 leading-tight block mt-0.5">
+                <span className="font-mono text-[26px] sm:text-[32px] font-extrabold text-slate-900 leading-tight block mt-0.5 tabular-nums break-words">
                   {usd(personal.householdTotal)}
                 </span>
               </div>
@@ -225,7 +225,7 @@ export function IncomeSection({ pb }: { pb: Playbook }) {
           <div className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
             WHAT TO ENTER ON THIS APPLICATION
           </div>
-          <div className="font-mono text-[13px] font-semibold text-slate-200 bg-[#1e293b] px-3 py-1.5 rounded-md inline-block">
+          <div className="font-mono text-[12px] sm:text-[13px] font-semibold text-slate-200 bg-[#1e293b] px-3 py-1.5 rounded-md inline-block max-w-full break-words">
             {summary}
           </div>
         </div>
@@ -266,11 +266,11 @@ export function HousingSection({ pb }: { pb: Playbook }) {
     >
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-4">
-          <div className="rounded-2xl border-2 border-blue-600/20 bg-blue-50/40 px-5 py-5">
+          <div className="rounded-2xl border-2 border-blue-600/20 bg-blue-50/40 px-4 py-4 sm:px-5 sm:py-5">
             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
               Monthly Housing Payment
             </div>
-            <div className="font-mono text-[34px] font-bold text-blue-700 mt-2">
+            <div className="font-mono text-[28px] sm:text-[34px] font-bold text-blue-700 mt-2 tabular-nums break-words">
               {usd(h.currentMonthlyHousingPayment)}
             </div>
             <p className="text-[12px] text-gray-500 mt-1">
@@ -388,11 +388,11 @@ export function ApprovalSection({ pb }: { pb: Playbook }) {
         {/* Left Column */}
         <div className="space-y-4">
           {/* Dark Blue Estimated Approval Range Card */}
-          <div className="relative overflow-hidden rounded-2xl bg-[#1b3459] px-6 py-6 text-white shadow-sm">
+          <div className="relative overflow-hidden rounded-2xl bg-[#1b3459] px-4 py-5 sm:px-6 sm:py-6 text-white shadow-sm">
             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">
               Estimated Approval Range
             </div>
-            <div className="font-mono text-[36px] sm:text-[46px] font-bold tracking-tight leading-none mt-2 tabular-nums">
+            <div className="font-mono text-[28px] sm:text-[40px] md:text-[46px] font-bold tracking-tight leading-tight mt-2 tabular-nums break-words">
               {usd(lo)}{" "}
               <span className="text-slate-400 font-normal mx-1">–</span>{" "}
               {usd(hi)}
