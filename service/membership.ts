@@ -237,13 +237,10 @@ export const getUserMembership = async (
 ): Promise<UserMembership | null> => {
   if (!userId) throw new AppError("User ID is required.");
 
-  if (!options?.bypassCache) {
-    const cached = membershipCache.get(userId);
-    if (cached !== undefined) {
-      logInfo("getUserMembership cache hit", { userId });
-      return cached;
-    }
-  }
+  logInfo("Resolving user membership", {
+    userId,
+    bypassCache: options?.bypassCache === true,
+  });
   logInfo("Fetching user membership", { userId, options });
   const db = firestoreAdmin();
   const snapshot = await db
@@ -253,7 +250,7 @@ export const getUserMembership = async (
     .get();
 
   if (snapshot.empty) {
-    membershipCache.set(userId, null);
+    logInfo("No Firestore membership found", { userId });
     return null;
   }
 
@@ -273,7 +270,13 @@ export const getUserMembership = async (
     updatedAt: data.updatedAt?.toDate().toISOString() || null,
   };
 
-  membershipCache.set(userId, result);
+  logInfo("Resolved Firestore membership", {
+    userId,
+    membershipId: result.id,
+    status: result.status,
+    tier: result.tier,
+    bypassCache: options?.bypassCache === true,
+  });
   return result;
 };
 
