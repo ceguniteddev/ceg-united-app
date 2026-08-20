@@ -33,8 +33,10 @@ import {
   createAddonCheckoutConfig,
 } from "@/service/dodo";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Sidebar = () => {
+  const queryClient = useQueryClient();
   const { user, userData } = useAuth();
   const { data: addons = [] } = useAddons();
   const { data: membership } = useMembership(userData?.id);
@@ -326,6 +328,10 @@ const Sidebar = () => {
                   amount={selectedPlan.amount}
                   prefillEmail={userData.email || ""}
                   onPaymentCompleteAction={() => {
+                    queryClient.invalidateQueries({ queryKey: ["membership"] });
+                    queryClient.invalidateQueries({
+                      queryKey: ["user", userData.id],
+                    });
                     setCheckoutSheetOpen(false);
                     router.refresh();
                   }}
@@ -341,6 +347,10 @@ const Sidebar = () => {
                   membershipAmount={selectedPlan?.amount ?? 0}
                   onPaymentCompleteAction={() => {
                     // Checkout is now 1-step, just close the modal
+                    queryClient.invalidateQueries({ queryKey: ["membership"] });
+                    queryClient.invalidateQueries({
+                      queryKey: ["user", userData.id],
+                    });
                     setCheckoutSheetOpen(false);
                     router.refresh();
                   }}

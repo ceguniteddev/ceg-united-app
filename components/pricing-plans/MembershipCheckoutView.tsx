@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import Spinner from "@/components/Spinner";
 import { useFeeSettings } from "@/hooks/fee-settings";
 import { useDodoCheckoutDetails } from "@/hooks/dodo";
@@ -53,7 +54,12 @@ export const MembershipCheckoutView = ({
   const resolvedAddonAmount =
     addonAmount ?? feeSettings?.creditModuleProAddonPrice ?? 197;
 
+  const queryClient = useQueryClient();
+
   const handleComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ["membership"] });
+    queryClient.invalidateQueries({ queryKey: ["all-memberships"] });
+    queryClient.invalidateQueries({ queryKey: ["user", userId] });
     toast.success(
       "Payment received. Your membership will activate after verification.",
     );

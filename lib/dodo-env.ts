@@ -3,7 +3,7 @@ export const resolveDodoEnvironment = (env: NodeJS.ProcessEnv = process.env) =>
 
 export const resolveDodoReturnUrl = (env: NodeJS.ProcessEnv = process.env) =>
   env.DODO_PAYMENTS_RETURN_URL ||
-  `${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}`;
+  `${env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/client/home`;
 
 export const dodoEnvironment = resolveDodoEnvironment();
 export const dodoReturnUrl = resolveDodoReturnUrl();

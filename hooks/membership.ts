@@ -17,15 +17,19 @@ export const useGetAllMemberships = () => {
   });
 };
 
-export const useMembership = (userId?: string) => {
+export const useMembership = (
+  userId?: string,
+  options?: { bypassCache?: boolean; staleTime?: number },
+) => {
   const { user } = useAuth();
   const targetUserId = userId || user?.uid;
 
   return useQuery({
-    queryKey: ["membership", targetUserId],
-    queryFn: () => getUserMembership(targetUserId!),
+    queryKey: ["membership", targetUserId, options?.bypassCache ?? false],
+    queryFn: () =>
+      getUserMembership(targetUserId!, { bypassCache: options?.bypassCache }),
     enabled: !!targetUserId,
-    staleTime: 1000 * 60 * 15,
+    staleTime: options?.staleTime ?? 1000 * 30, // 30 seconds default for fast reactivity
     gcTime: 1000 * 60 * 30,
   });
 };

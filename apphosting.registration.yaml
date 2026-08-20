@@ -127,7 +127,7 @@ env:
       - BUILD
       - RUNTIME
   - variable: DODO_PAYMENTS_RETURN_URL
-    value: https://ceg-united-app-registration--cegunitedllc.us-east4.hosted.app
+    value: https://ceg-united-app-registration--cegunitedllc.us-east4.hosted.app/client/home
     availability:
       - BUILD
       - RUNTIME

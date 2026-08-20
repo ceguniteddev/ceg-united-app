@@ -127,7 +127,7 @@ env:
       - BUILD
       - RUNTIME
   - variable: DODO_PAYMENTS_RETURN_URL
-    value: https://app.cegunited.com
+    value: https://app.cegunited.com/client/home
     availability:
       - BUILD
       - RUNTIME

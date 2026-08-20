@@ -11,6 +11,7 @@ export default defineConfig({
       "__tests__/service/dodo/**/*.test.ts",
       "__tests__/hooks/dodo.test.tsx",
       "__tests__/components/funding/DodoCheckoutView.test.tsx",
+      "__tests__/components/payments/**/*.test.tsx",
       "__tests__/api/dodo/**/*.test.ts",
       "__tests__/lib/dodo-sdk.test.ts",
     ],

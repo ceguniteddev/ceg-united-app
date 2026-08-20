@@ -13,7 +13,7 @@ import {
   USER_WALLET_TRANSACTIONS,
 } from "@/constant/collection-name";
 import { dodoClient } from "@/lib/dodo-sdk";
-import { dodoReturnUrl } from "@/lib/dodo-env";
+import { resolveDodoReturnUrl } from "@/lib/dodo-env";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { logError, logInfo } from "@/lib/logger";
 import type { PaymentPlan } from "@/schema/payments";
@@ -85,6 +85,7 @@ const createSession = async ({
   amountInCents,
   metadata = {},
   onDemand,
+  returnUrl,
 }: {
   userId: string;
   productId: string;
@@ -92,6 +93,7 @@ const createSession = async ({
   amountInCents: number;
   metadata?: Metadata;
   onDemand?: boolean;
+  returnUrl?: string;
 }): Promise<CheckoutResult> => {
   const user = await getCheckoutUser(userId);
   const session = await dodoClient.checkoutSessions.create({
@@ -107,7 +109,7 @@ const createSession = async ({
       name: `${user.firstName} ${user.lastName}`.trim(),
     },
     metadata: { userId, paymentKey, ...metadata },
-    return_url: dodoReturnUrl,
+    return_url: returnUrl ?? resolveDodoReturnUrl(),
     allowed_payment_method_types: [
       "credit",
       "debit",
@@ -157,10 +159,12 @@ export const createDodoCheckoutConfig = async ({
   userId,
   paymentKey,
   customAmount,
+  returnUrl,
 }: {
   userId: string;
   paymentKey: PaymentPlan;
   customAmount?: number;
+  returnUrl?: string;
 }): Promise<CheckoutResult> => {
   const isVariable = paymentKey.includes("Tradeline");
   if (!isVariable) {
@@ -183,6 +187,7 @@ export const createDodoCheckoutConfig = async ({
     productId: requireProduct(productForPayment(paymentKey), paymentKey),
     paymentKey,
     amountInCents: amountForPayment(paymentKey, customAmount),
+    returnUrl,
   });
 };
 
@@ -200,11 +205,13 @@ export const createMembershipCheckoutConfig = async ({
   planId,
   selectedAddonIds = [],
   isAddon = false,
+  returnUrl,
 }: {
   userId: string;
   planId: "tier_starter" | "tier_pro" | "tier_executive";
   selectedAddonIds?: string[];
   isAddon?: boolean;
+  returnUrl?: string;
 }): Promise<CheckoutResult> => {
   const fees = await getFeeSettings();
   const prices = {
@@ -225,6 +232,7 @@ export const createMembershipCheckoutConfig = async ({
     paymentKey: planId,
     amountInCents: priceInCents,
     onDemand: true,
+    returnUrl,
     metadata: {
       planId,
       isAddon: String(isAddon),
@@ -236,9 +244,11 @@ export const createMembershipCheckoutConfig = async ({
 export const createAddonCheckoutConfig = async ({
   userId,
   addonId,
+  returnUrl,
 }: {
   userId: string;
   addonId: "credit_module_pro";
+  returnUrl?: string;
 }): Promise<CheckoutResult> => {
   const fees = await getFeeSettings();
   return createSession({
@@ -250,6 +260,7 @@ export const createAddonCheckoutConfig = async ({
     paymentKey: addonId,
     amountInCents: Math.round(fees.creditModuleProAddonPrice * 100),
     onDemand: true,
+    returnUrl,
     metadata: { planId: addonId, isAddon: "true" },
   });
 };
@@ -259,11 +270,13 @@ export const createCRSReportCheckoutConfig = async ({
   paymentKey,
   feeAmount,
   metadata = {},
+  returnUrl,
 }: {
   userId: string;
   paymentKey: "CreditReportFee" | "BusinessCreditReportFee";
   feeAmount: number;
   metadata?: Metadata;
+  returnUrl?: string;
 }) =>
   createSession({
     userId,
@@ -274,36 +287,43 @@ export const createCRSReportCheckoutConfig = async ({
     paymentKey,
     amountInCents: feeAmount,
     metadata,
+    returnUrl,
   });
 
 export const createWalletCheckoutConfig = async ({
   userId,
   amount: amountInCents,
+  returnUrl,
 }: {
   userId: string;
   amount: number;
+  returnUrl?: string;
 }) =>
   createSession({
     userId,
     productId: requireProduct(process.env.DODO_PRODUCT_WALLET_ID, "wallet"),
     paymentKey: "WalletTopUp",
     amountInCents,
+    returnUrl,
   });
 
 export const createPsfInvoiceCheckoutConfig = async ({
   userId,
   invoiceId,
   feeAmount,
+  returnUrl,
 }: {
   userId: string;
   invoiceId: string;
   feeAmount: number;
+  returnUrl?: string;
 }) =>
   createSession({
     userId,
     productId: requireProduct(process.env.DODO_PRODUCT_PSF_ID, "PSF invoice"),
     paymentKey: "PSF_INVOICE",
     amountInCents: feeAmount,
+    returnUrl,
     metadata: { invoiceId, type: "PSF_INVOICE", planId: "PSF_INVOICE" },
   });
 

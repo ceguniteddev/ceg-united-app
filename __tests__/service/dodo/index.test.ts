@@ -103,6 +103,7 @@ describe("Dodo payment service", () => {
     vi.clearAllMocks();
     queryResult = { empty: true, docs: [] };
     paymentDocs = [];
+    delete process.env.DODO_PAYMENTS_RETURN_URL;
     Object.assign(process.env, {
       NEXT_PUBLIC_APP_URL: "https://app.test",
       DODO_PRODUCT_BUSINESS_SERVICES_ID: "p_business_services",
@@ -247,10 +248,25 @@ describe("Dodo payment service", () => {
     expect(mocks.create).toHaveBeenCalledWith(
       expect.objectContaining({
         product_cart: [expect.objectContaining({ amount: 123 })],
-        return_url: "http://localhost:3000",
+        return_url: "http://localhost:3000/client/home",
       }),
     );
     delete process.env.DODO_AUDIT_FULL_AMOUNT;
+  });
+
+  it("uses an explicit checkout return URL when provided", async () => {
+    await createDodoCheckoutConfig({
+      userId: "u1",
+      paymentKey: "TradelinePurchase",
+      customAmount: 12345,
+      returnUrl: "https://app.test/client/my-credit",
+    });
+
+    expect(mocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        return_url: "https://app.test/client/my-credit",
+      }),
+    );
   });
 
   it.each([
