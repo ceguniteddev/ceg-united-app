@@ -356,26 +356,28 @@ export function BureauSection({ pb }: { pb: Playbook }) {
       }
     >
       <div className="space-y-5">
-        <div className={`rounded-2xl border-2 px-5 py-5 ${tone.ring}`}>
-          <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
-            <div>
+        <div
+          className={`rounded-2xl border-2 px-4 py-4 sm:px-5 sm:py-5 ${tone.ring}`}
+        >
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-x-8 gap-y-4">
+            <div className="min-w-0">
               <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
                 {lenderName} typically pulls
               </div>
-              <div className="text-[30px] sm:text-[34px] font-extrabold text-gray-900 tracking-tight leading-none mt-1.5 capitalize">
+              <div className="text-[26px] sm:text-[34px] font-extrabold text-gray-900 tracking-tight leading-none mt-1.5 capitalize break-words">
                 {b.primaryBureau}
               </div>
               <p className="text-[11.5px] text-gray-500 mt-2 max-w-sm leading-snug">
                 {b.bureauPullNotes || "Standard bureau pull."}
               </p>
             </div>
-            <div className="sm:ml-auto text-right">
+            <div className="sm:ml-auto text-left sm:text-right min-w-0">
               <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
                 Your {b.primaryBureau} inquiries
               </div>
-              <div className="flex items-baseline gap-2 justify-end mt-1.5">
+              <div className="flex items-baseline gap-2 justify-start sm:justify-end mt-1.5 flex-wrap">
                 <span
-                  className={`font-mono text-[38px] font-bold leading-none tabular-nums ${tone.text}`}
+                  className={`font-mono text-[32px] sm:text-[38px] font-bold leading-none tabular-nums ${tone.text}`}
                 >
                   {primaryBureauInquiries}
                 </span>

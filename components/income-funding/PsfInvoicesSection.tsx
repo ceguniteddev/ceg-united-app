@@ -406,7 +406,7 @@ function InvoiceRow({
                 </div>
               )}
 
-              {invoice.status === "signed" && invoice.whopCheckoutUrl && (
+              {invoice.status === "signed" && invoice.dodoCheckoutUrl && (
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
                   {invoice.sentAt && (
                     <div className="flex items-center gap-1.5 text-xs text-gray-500">
@@ -424,7 +424,7 @@ function InvoiceRow({
                   <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <Button
                       onClick={() =>
-                        window.open(invoice.whopCheckoutUrl!, "_blank")
+                        window.open(invoice.dodoCheckoutUrl!, "_blank")
                       }
                       className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
@@ -471,10 +471,10 @@ function InvoiceRow({
                 </button>
               )}
 
-              {invoice.status === "signed" && invoice.whopCheckoutUrl && (
+              {invoice.status === "signed" && invoice.dodoCheckoutUrl && (
                 <Button
                   onClick={() =>
-                    window.open(invoice.whopCheckoutUrl!, "_blank")
+                    window.open(invoice.dodoCheckoutUrl!, "_blank")
                   }
                   className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
@@ -535,7 +535,7 @@ function InvoiceRow({
             <AlertDialogTitle>Manually Mark as Paid?</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to mark this invoice as paid manually? This
-              will bypass Whop payment gateways and tag the invoice as settled
+              will bypass Dodo payment processing and tag the invoice as settled
               in the system.
               {secondaryAmount !== undefined && (
                 <span className="block mt-2 font-medium text-amber-600">

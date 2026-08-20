@@ -15,7 +15,9 @@ export const GET = withAuth(
     }
 
     try {
-      const data = await getUserMembership(userId);
+      const bypassCache =
+        req.nextUrl.searchParams.get("bypassCache") === "true";
+      const data = await getUserMembership(userId, { bypassCache });
 
       return NextResponse.json(data, { status: 200 });
     } catch (err) {

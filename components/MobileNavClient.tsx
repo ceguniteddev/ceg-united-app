@@ -39,7 +39,7 @@ import {
 import {
   createMembershipCheckoutConfig,
   createAddonCheckoutConfig,
-} from "@/service/whop";
+} from "@/service/dodo";
 import { toast } from "sonner";
 import { useUserPsfInvoicesQuery } from "@/hooks/psf-invoices";
 

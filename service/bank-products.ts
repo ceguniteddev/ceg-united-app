@@ -37,7 +37,7 @@ import NotFoundError from "@/error/NotFoundError";
 import { createAsanaCustomerServiceTask } from "./n8n";
 import { getCRSReport, getCRSBusinessProfile } from "@/service/crs";
 import { saveFeeAgreementToPDF } from "@/service/fee-agreement-pdf";
-import { createPsfInvoiceCheckoutConfig } from "./whop";
+import { createPsfInvoiceCheckoutConfig } from "./dodo";
 
 // Cache for bank websites (5 minute TTL)
 let banksCache: Awaited<ReturnType<typeof getBanks>> | null = null;
@@ -2318,19 +2318,19 @@ export const approveAppliedBankProduct = async ({
             );
           }
 
-          // Create Whop Link
+          // Create Dodo Payments checkout link.
           let checkoutId: string | undefined;
           let checkoutUrl: string | undefined;
           try {
-            const whopConfig = await createPsfInvoiceCheckoutConfig({
+            const dodoConfig = await createPsfInvoiceCheckoutConfig({
               userId: docData.userId,
               invoiceId,
-              feeAmount: successFeeAmount,
+              feeAmount: Math.round(successFeeAmount * 100),
             });
-            checkoutId = whopConfig?.checkoutId;
-            checkoutUrl = whopConfig?.url;
-          } catch (whopError) {
-            console.error("Failed to create Whop checkout link:", whopError);
+            checkoutId = dodoConfig?.checkoutId;
+            checkoutUrl = dodoConfig?.url;
+          } catch (dodoError) {
+            console.error("Failed to create Dodo checkout link:", dodoError);
           }
 
           const invoiceData = {
@@ -2350,8 +2350,8 @@ export const approveAppliedBankProduct = async ({
                 new Date().toISOString(),
               ipAddress: docData.specialistSignature.ipAddress || "Unknown",
             },
-            ...(checkoutId ? { whopCheckoutId: checkoutId } : {}),
-            ...(checkoutUrl ? { whopCheckoutUrl: checkoutUrl } : {}),
+            ...(checkoutId ? { dodoCheckoutId: checkoutId } : {}),
+            ...(checkoutUrl ? { dodoCheckoutUrl: checkoutUrl } : {}),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { getWhopCheckoutDetailByCheckoutId } from "@/service/whop";
-import { WhopCheckoutView } from "@/components/funding/WhopCheckoutView";
+import { getDodoCheckoutDetailByCheckoutId } from "@/service/dodo";
+import { DodoCheckoutView } from "@/components/funding/DodoCheckoutView";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -13,7 +13,7 @@ export default async function CheckoutPage({
   params: Promise<{ checkoutId: string }>;
 }) {
   const { checkoutId } = await params;
-  const checkoutDetails = await getWhopCheckoutDetailByCheckoutId(checkoutId);
+  const checkoutDetails = await getDodoCheckoutDetailByCheckoutId(checkoutId);
 
   if (!checkoutDetails) {
     notFound();
@@ -23,7 +23,7 @@ export default async function CheckoutPage({
   const serializedDetails = JSON.parse(JSON.stringify(checkoutDetails));
 
   return (
-    <WhopCheckoutView
+    <DodoCheckoutView
       checkoutDetails={serializedDetails}
       checkoutId={checkoutId}
     />

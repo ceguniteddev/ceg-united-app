@@ -39,7 +39,7 @@ export function SectionRail({ active }: { active: string }) {
       aria-label="Playbook sections"
       className="hidden lg:block w-[228px] flex-shrink-0 print:hidden"
     >
-      <div className="sticky top-[86px]">
+      <div className="sticky top-4">
         <div className="flex items-center justify-between mb-3 px-2">
           <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400">
             Your playbook
@@ -97,7 +97,7 @@ export function SectionAccordionNav({ active }: { active: string }) {
   return (
     <nav
       aria-label="Playbook sections (mobile)"
-      className="lg:hidden sticky top-[62px] z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-white/95 backdrop-blur-md border-b border-gray-100 print:hidden"
+      className="lg:hidden sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-white/95 backdrop-blur-md border-b border-gray-100 print:hidden"
     >
       <button
         onClick={() => setOpen((o) => !o)}

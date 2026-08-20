@@ -1,17 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { WhopCheckoutEmbed } from "@whop/checkout/react";
+import { useCallback, useRef } from "react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import Spinner from "@/components/Spinner";
 import { useFeeSettings } from "@/hooks/fee-settings";
-import { useQueryClient } from "@tanstack/react-query";
-
-import { activateUserMembership } from "@/service/membership";
-import { activateUserAddon } from "@/service/addons";
+import { useDodoCheckoutDetails } from "@/hooks/dodo";
+import { DodoCheckoutView } from "@/components/funding/DodoCheckoutView";
 
 type MembershipCheckoutViewProps = {
   checkoutId: string;
+  checkoutUrl?: string;
   userId: string;
   tierId: string;
   amount: number; // Total combined amount paid
@@ -24,18 +23,24 @@ type MembershipCheckoutViewProps = {
 
 export const MembershipCheckoutView = ({
   checkoutId,
+  checkoutUrl,
   userId,
   tierId,
   amount,
   membershipAmount,
   addonAmount,
   pendingAddons,
-  prefillEmail,
   onPaymentCompleteAction,
 }: MembershipCheckoutViewProps) => {
-  const [isRecording, setIsRecording] = useState(false);
   const { data: feeSettings } = useFeeSettings();
-  const queryClient = useQueryClient();
+  const {
+    checkoutDetails: fetchedCheckoutDetails,
+    isLoading,
+    error,
+  } = useDodoCheckoutDetails(checkoutUrl ? "" : checkoutId);
+  const checkoutDetails = checkoutUrl
+    ? { url: checkoutUrl, amount: Math.round(amount * 100) }
+    : fetchedCheckoutDetails;
 
   const resolvedMembershipAmount =
     tierId === "tier_starter"
@@ -49,48 +54,59 @@ export const MembershipCheckoutView = ({
   const resolvedAddonAmount =
     addonAmount ?? feeSettings?.creditModuleProAddonPrice ?? 197;
 
-  const handleComplete = async (plan_id: string, receipt_id?: string) => {
-    if (isRecording) return; // Prevent duplicate calls
+  const queryClient = useQueryClient();
+  const isCompletingRef = useRef(false);
 
-    setIsRecording(true);
+  const handleComplete = useCallback(async () => {
+    if (isCompletingRef.current) return;
+    isCompletingRef.current = true;
+
+    toast.info("Payment received. Activating your membership...");
 
     try {
-      await activateUserMembership({
-        userId,
-        tier: tierId,
-        planId: plan_id,
-        receiptId: receipt_id,
-        amount: resolvedMembershipAmount,
-        checkoutId: receipt_id || checkoutId,
-      });
-
-      queryClient.invalidateQueries({ queryKey: ["membership", userId] });
-      queryClient.invalidateQueries({ queryKey: ["all-memberships"] });
-
-      if (pendingAddons && pendingAddons.includes("credit_module_pro")) {
-        await activateUserAddon({
-          userId,
-          addonId: "credit_module_pro",
-          amount: resolvedAddonAmount,
-          planId: plan_id,
-          receiptId: receipt_id,
-          checkoutId: receipt_id || checkoutId,
-        });
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const response = await fetch(
+          `/api/user/${userId}/membership?bypassCache=true`,
+        );
+        if (response.ok) {
+          const membership = await response.json();
+          if (membership?.status === "active") {
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: ["membership"] }),
+              queryClient.invalidateQueries({
+                queryKey: ["all-memberships"],
+              }),
+              queryClient.invalidateQueries({ queryKey: ["user", userId] }),
+            ]);
+            toast.success("Membership activated! Welcome to CEG Brain.");
+            onPaymentCompleteAction?.();
+            return;
+          }
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1500));
       }
 
-      toast.success(
-        "Payment successful! Your membership and selected add-ons have been activated.",
+      await queryClient.invalidateQueries({ queryKey: ["membership"] });
+      toast.info(
+        "Your payment is confirmed. Membership activation is still processing.",
       );
       onPaymentCompleteAction?.();
     } catch (error) {
-      console.error(error);
+      console.error("Failed to verify membership activation:", error);
       toast.error(
-        "There was an error verifying your payment. Please contact support.",
+        "Payment succeeded, but membership verification is delayed. Please refresh shortly.",
       );
-    } finally {
-      setIsRecording(false);
+      onPaymentCompleteAction?.();
     }
-  };
+  }, [onPaymentCompleteAction, queryClient, userId]);
+
+  if (!checkoutUrl && isLoading) {
+    return <Spinner displayText="Loading secure Dodo checkout..." />;
+  }
+
+  if ((!checkoutUrl && error) || !checkoutDetails) {
+    return <p role="alert">Unable to load the Dodo Payments checkout.</p>;
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -119,20 +135,10 @@ export const MembershipCheckoutView = ({
       </div>
 
       <div className="rounded-lg overflow-hidden shadow-xl">
-        <WhopCheckoutEmbed
-          prefill={{
-            email: prefillEmail || "",
-            address: {
-              country: "US",
-            },
-          }}
-          sessionId={checkoutId}
+        <DodoCheckoutView
+          checkoutId={checkoutId}
+          checkoutDetails={checkoutDetails}
           onComplete={handleComplete}
-          fallback={
-            <div className="flex items-center justify-center h-96">
-              <Spinner displayText="Loading secure checkout..." />
-            </div>
-          }
         />
       </div>
     </div>

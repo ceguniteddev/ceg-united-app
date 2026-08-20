@@ -5,9 +5,11 @@ import {
   BusinessDetailsForm,
   FundingPageForm,
   DocumentUploadForm,
+  RegistrationPurpose,
 } from "@/schema/new-registration";
 
 interface NewRegistrationState {
+  registrationPurpose: RegistrationPurpose | null;
   currentStep: number;
   leadId: string | null;
   authData: Partial<AuthForm>;
@@ -16,6 +18,7 @@ interface NewRegistrationState {
   documentUploadData: Partial<DocumentUploadForm>;
 
   setStep: (step: number) => void;
+  setRegistrationPurpose: (purpose: RegistrationPurpose | null) => void;
   setLeadId: (id: string | null) => void;
   updateAuthData: (data: Partial<AuthForm>) => void;
   updateBusinessDetailsData: (data: Partial<BusinessDetailsForm>) => void;
@@ -25,6 +28,7 @@ interface NewRegistrationState {
 }
 
 const initialState = {
+  registrationPurpose: null,
   currentStep: 1,
   leadId: null,
   authData: {},
@@ -39,6 +43,14 @@ export const useNewRegistrationStore = create<NewRegistrationState>()(
       ...initialState,
 
       setStep: (step) => set({ currentStep: step }),
+      setRegistrationPurpose: (registrationPurpose) =>
+        set({
+          registrationPurpose,
+          currentStep: 1,
+          businessDetailsData: {},
+          fundingData: {},
+          documentUploadData: {},
+        }),
       setLeadId: (id) => set({ leadId: id }),
 
       updateAuthData: (data) =>

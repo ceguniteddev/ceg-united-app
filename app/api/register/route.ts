@@ -1,13 +1,118 @@
 import { NextResponse } from "next/server";
-import { authSchema } from "@/schema/new-registration";
+import { z } from "zod";
+import {
+  authSchema,
+  businessDetailsSchema,
+  documentUploadSchema,
+  RegistrationPurpose,
+} from "@/schema/new-registration";
 import { registerUser } from "@/service/user";
 import { User } from "@/schema/registration";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
+import { uploadDocument } from "@/service/documents";
 import {
   ApplyFunding,
   FundingApplicationType,
   FUNDING_PRODUCTS_BY_CATEGORY,
 } from "@/schema/apply-funding";
+
+const registrationRequestSchema = z
+  .object({
+    leadId: z.string().nullable().optional(),
+    registrationPurpose: z.enum(RegistrationPurpose),
+    auth: authSchema,
+    business: z.unknown().optional(),
+    documents: z.unknown(),
+  })
+  .superRefine((data, ctx) => {
+    const documents = data.documents as any;
+    const driverFiles = documents?.driverLicense?.files;
+
+    if (!Array.isArray(driverFiles) || driverFiles.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Driver's license is required",
+        path: ["documents", "driverLicense"],
+      });
+    }
+
+    if (data.registrationPurpose === RegistrationPurpose.Funding) {
+      const businessResult = businessDetailsSchema.safeParse(data.business);
+      if (!businessResult.success) {
+        for (const issue of businessResult.error.issues) {
+          ctx.addIssue({
+            ...issue,
+            path: ["business", ...issue.path],
+          });
+        }
+        return;
+      }
+
+      const documentResult = documentUploadSchema.safeParse({
+        ...documents,
+        registrationPurpose: data.registrationPurpose,
+        fundingType: businessResult.data.fundingType,
+        employmentType: businessResult.data.employmentType,
+      });
+      if (!documentResult.success) {
+        for (const issue of documentResult.error.issues) {
+          ctx.addIssue({
+            ...issue,
+            path: ["documents", ...issue.path],
+          });
+        }
+      }
+    } else {
+      const hasFundingDocuments =
+        documents?.businessDocs?.bankStatements?.files?.length > 0 ||
+        documents?.personalDocs?.bankStatements?.files?.length > 0 ||
+        documents?.personalDocs?.paystubs?.files?.length > 0;
+
+      if (data.business !== undefined || hasFundingDocuments) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "Financial Education registration cannot include funding or financial documents",
+          path: ["registrationPurpose"],
+        });
+      }
+    }
+  });
+
+async function uploadFinancialEducationDriverLicense({
+  userId,
+  leadId,
+  documents,
+}: {
+  userId: string;
+  leadId?: string | null;
+  documents: any;
+}) {
+  for (const document of documents.driverLicense.files) {
+    if (!document.base64 || !document.name || !document.type) {
+      throw new Error("Invalid driver's license document payload");
+    }
+
+    const base64Data = document.base64.includes(",")
+      ? document.base64.split(",")[1]
+      : document.base64;
+    const buffer = Buffer.from(base64Data, "base64");
+    const file = new File([new Uint8Array(buffer)], document.name, {
+      type: document.type,
+    });
+
+    await uploadDocument({
+      userId,
+      file,
+      documentType: "DRIVERS_LICENSE",
+      customMetadata: {
+        registrationPurpose: RegistrationPurpose.FinancialEducation,
+        uploadedAt: new Date().toISOString(),
+        ...(leadId ? { leadId } : {}),
+      },
+    });
+  }
+}
 
 function mapFundingData(body: any): ApplyFunding | undefined {
   if (!body.business || !body.business.fundingType) {
@@ -47,7 +152,7 @@ function mapFundingData(body: any): ApplyFunding | undefined {
         : undefined,
     howDoYouGetPaid: body.business.employmentType,
     businessName: body.business.businessName,
-    businessPhoneNumber: body.business.businessContactNumber,
+    businessPhoneNumber: body.business.businessPhoneNumber,
     employerIdentificationNumber: body.business.ein,
     industryField: body.business.businessIndustry,
     businessStreetAddress: body.business.businessStreetAddress,
@@ -128,31 +233,42 @@ function mapFundingData(body: any): ApplyFunding | undefined {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-
-    if (!body.auth) {
+    const result = registrationRequestSchema.safeParse(await req.json());
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Incomplete registration data" },
+        { error: z.prettifyError(result.error) },
         { status: 400 },
       );
     }
 
-    // Validate payloads
-    const parsedAuth = authSchema.parse(body.auth);
+    const body = result.data;
+    const parsedAuth = body.auth;
 
     // Call service to register the user
-    const fundingData = mapFundingData(body);
+    const fundingData =
+      body.registrationPurpose === RegistrationPurpose.Funding
+        ? mapFundingData(body)
+        : undefined;
 
-    await registerUser({
+    const registeredUser = await registerUser({
       user: {
         ...parsedAuth,
         role: "Client",
         isBrokerInvite: false,
-        leadId: body.leadId,
+        leadId: body.leadId ?? undefined,
+        registrationPurpose: body.registrationPurpose,
       } as any as User,
       registrationType: "Self",
       fundingData: fundingData,
     });
+
+    if (body.registrationPurpose === RegistrationPurpose.FinancialEducation) {
+      await uploadFinancialEducationDriverLicense({
+        userId: registeredUser.id,
+        leadId: body.leadId,
+        documents: body.documents,
+      });
+    }
 
     // Update the lead document status if leadId is provided
     if (body.leadId) {
@@ -163,6 +279,7 @@ export async function POST(req: Request) {
 
       await db.collection("user-leads").doc(body.leadId).update({
         status: "Registered",
+        registrationPurpose: body.registrationPurpose,
         data: finalAuthDataForLead,
         updatedAt: new Date().toISOString(),
       });

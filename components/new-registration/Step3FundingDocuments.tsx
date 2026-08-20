@@ -14,7 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { FundingType } from "@/schema/new-registration";
+import { FundingType, RegistrationPurpose } from "@/schema/new-registration";
 import { useNewRegistrationStore } from "@/store/new-registration-store";
 import { toast } from "sonner";
 import { getCaptchaTokenRegistration } from "@/lib/captcha";
@@ -103,7 +103,7 @@ const PublicFileUpload = ({
       base64: string;
       docType?: string;
     }[],
-  ) => void;
+  ) => void | Promise<void>;
   titleOverride?: string;
   descriptionOverride?: string;
   maxFiles?: number;
@@ -142,7 +142,7 @@ const PublicFileUpload = ({
       );
 
       if (onUploadComplete) {
-        onUploadComplete(processedFiles);
+        await onUploadComplete(processedFiles);
       }
     } catch (error) {
       console.error(error);
@@ -319,11 +319,15 @@ const LocalDocumentList = ({
 export function Step3Funding() {
   const { watch, setValue, getValues, control } = useFormContext();
   const {
+    registrationPurpose,
     businessDetailsData,
     authData,
     updateAuthData,
     updateBusinessDetailsData,
   } = useNewRegistrationStore();
+
+  const isFinancialEducation =
+    registrationPurpose === RegistrationPurpose.FinancialEducation;
 
   const fundingType = watch("fundingType") || businessDetailsData.fundingType;
   const employmentType =
@@ -445,12 +449,12 @@ export function Step3Funding() {
     );
 
     if (fieldName === "driverLicense" && allFiles.length > 0) {
-      extractDriverLicenseData(allFiles);
+      await extractDriverLicenseData(allFiles);
     } else if (
       fieldName === "businessDocs.bankStatements" &&
       allFiles.length > 0
     ) {
-      extractBusinessBankStatementData(allFiles);
+      await extractBusinessBankStatementData(allFiles);
     }
   };
 
@@ -636,7 +640,8 @@ export function Step3Funding() {
     <Card className="bg-slate-100 border-slate-200">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <span>📄</span> Document Upload
+          <span>📄</span>{" "}
+          {isFinancialEducation ? "Identity Verification" : "Document Upload"}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">

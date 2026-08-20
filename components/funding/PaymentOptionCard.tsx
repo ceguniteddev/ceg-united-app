@@ -65,7 +65,7 @@ export const PaymentOptionCard = ({
   );
 };
 
-export const WhopCheckoutButtonBase = ({
+export const DodoCheckoutButtonBase = ({
   buttonName,
   subText,
   className,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-validation";
-import { createWhopCheckoutConfig } from "@/service/whop";
+import { createDodoCheckoutConfig } from "@/service/dodo";
 import { badRequest, internalServerError } from "@/app/api/helpers";
 
 export const POST = withAuth(
@@ -24,12 +24,11 @@ export const POST = withAuth(
         return badRequest({ errors: "Total price is required" });
       }
 
-      // Create Whop checkout with totalPrice in cents
-      const { checkoutId, url } = await createWhopCheckoutConfig({
+      // Dodo BYOP amounts use the smallest currency unit (cents).
+      const { checkoutId, url } = await createDodoCheckoutConfig({
         userId: userId,
         paymentKey: "TradelinePurchase",
-        // customAmount: Math.round(totalPrice * 100), // Convert to cents
-        customAmount: totalPrice, // Whop now expects amount in dollars
+        customAmount: Math.round(totalPrice * 100),
       });
 
       return NextResponse.json({

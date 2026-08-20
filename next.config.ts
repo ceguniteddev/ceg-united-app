@@ -1,4 +1,11 @@
 import type { NextConfig } from "next";
+import { loadEnvFile } from "node:process";
+
+try {
+  loadEnvFile(".env.dodo");
+} catch {
+  // Deployment environments provide Dodo variables through App Hosting.
+}
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -51,13 +58,14 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://cdn.tiny.cloud https://cdn.tailwindcss.com https://apis.google.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://cdn.tiny.cloud https://cdn.tailwindcss.com https://apis.google.com https://*.dodopayments.com https://dodopayments.com https://*.custom.hs.dodopayments.com https://sdk-v2.custom.hs.dodopayments.com",
+              "script-src-elem 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://cdn.tiny.cloud https://cdn.tailwindcss.com https://apis.google.com https://*.dodopayments.com https://dodopayments.com https://*.custom.hs.dodopayments.com https://sdk-v2.custom.hs.dodopayments.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tiny.cloud",
-              "img-src 'self' data: blob: https://storage.googleapis.com https://placehold.co https://tradelinesupply.com https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
+              "img-src 'self' data: blob: https://storage.googleapis.com https://placehold.co https://tradelinesupply.com https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.dodopayments.com https://dodopayments.com",
               "font-src 'self' data: https://fonts.gstatic.com https://cdn.tiny.cloud",
-              "connect-src 'self' https://storage.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://*.cloudfunctions.net https://api.mux.com https://stream.mux.com https://recaptchaenterprise.googleapis.com https://www.google.com",
+              "connect-src 'self' https://storage.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://*.cloudfunctions.net https://api.mux.com https://stream.mux.com https://recaptchaenterprise.googleapis.com https://www.google.com https://*.dodopayments.com https://dodopayments.com",
               "media-src 'self' blob: https://storage.googleapis.com https://stream.mux.com",
-              "frame-src 'self' blob: https://www.google.com https://recaptcha.google.com https://storage.googleapis.com https://whop.com https://calendly.com https://lob-assets.com",
+              "frame-src 'self' blob: https://www.google.com https://recaptcha.google.com https://storage.googleapis.com https://*.dodopayments.com https://dodopayments.com https://calendly.com https://lob-assets.com",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",

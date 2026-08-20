@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileNavClient from "@/components/MobileNavClient";
+import { DodoPaymentReturnSync } from "@/components/payments/DodoPaymentReturnSync";
 import "driver.js/dist/driver.css";
 import "@/app/globals-funding.css";
 // import UserBanners from "@/components/UserBanners";
@@ -20,6 +22,9 @@ export default function ClientLayout({
 }>) {
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden font-inter">
+      <Suspense fallback={null}>
+        <DodoPaymentReturnSync />
+      </Suspense>
       <Sidebar />
       <div className="flex flex-1 min-h-0 flex-col">
         <MobileNavClient />

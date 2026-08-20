@@ -45,13 +45,13 @@ export const psfInvoiceSchema = z.object({
   successFeeAmount: z.number().optional(),
   status: PsfInvoiceStatusEnum,
   signature: PsfInvoiceSignatureSchema.optional(),
-  /** Timestamp when an admin sends the invoice to the client (generates Whop checkout) */
+  /** Timestamp when an admin sends the invoice to the client (generates Dodo checkout) */
   sentAt: z.string().optional(),
   /** ISO date string for when the invoice was issued */
   invoiceDate: z.string().optional(),
   items: z.array(PsfInvoiceItemSchema).optional(),
-  whopCheckoutId: z.string().optional(),
-  whopCheckoutUrl: z.string().optional(),
+  dodoCheckoutId: z.string().optional(),
+  dodoCheckoutUrl: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

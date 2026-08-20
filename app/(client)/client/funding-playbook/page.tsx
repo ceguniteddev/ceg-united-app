@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import Link from "next/link";
 import { useAuth } from "@/provider/AuthContext";
 import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
@@ -267,6 +268,12 @@ export default function ClientFundingPlaybookPage() {
             {`You haven't submitted any funding applications yet. Please apply for
             funding first.`}
           </p>
+          <Link
+            href="/client/income-funding"
+            className="inline-flex h-10 items-center justify-center rounded-xl bg-blue-600 px-5 text-xs font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+          >
+            Apply for Funding
+          </Link>
         </div>
       </div>
     );
@@ -420,7 +427,7 @@ export default function ClientFundingPlaybookPage() {
             (approvedFunds as ApprovedBankFormData[]).length > 0 &&
             !playbook &&
             !isFetchingCache && (
-              <div className="w-full lg:w-auto">
+              <div className="w-full sm:col-span-2 lg:col-span-1">
                 <button
                   onClick={handleGeneratePlaybook}
                   disabled={isGenerating || !selectedFundId}

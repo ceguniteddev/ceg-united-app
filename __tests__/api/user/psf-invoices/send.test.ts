@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+/// <reference types="vitest/globals" />
+
 import { NextRequest } from "next/server";
 
 // --- Mocks ---
@@ -49,7 +50,7 @@ vi.mock("@/service/documents", () => ({
 }));
 
 const mockCreatePsfInvoiceCheckoutConfig = vi.fn();
-vi.mock("@/service/whop", () => ({
+vi.mock("@/service/dodo", () => ({
   createPsfInvoiceCheckoutConfig: (...args: any[]) =>
     mockCreatePsfInvoiceCheckoutConfig(...args),
 }));
@@ -141,7 +142,7 @@ describe("POST /api/user/[userId]/psf-invoices/[invoiceId]/send", () => {
     );
   });
 
-  it("should return internalServerError (500) if Whop config generation fails", async () => {
+  it("should return internalServerError (500) if Dodo config generation fails", async () => {
     mockGetCurrentUser.mockResolvedValue({ role: "Admin", uid: "admin-1" });
     mockGet.mockResolvedValue({
       exists: true,
@@ -152,14 +153,14 @@ describe("POST /api/user/[userId]/psf-invoices/[invoiceId]/send", () => {
       }),
     });
     mockCreatePsfInvoiceCheckoutConfig.mockRejectedValue(
-      new Error("Whop error"),
+      new Error("Dodo error"),
     );
 
     const res = await POST(makeRequest(), params("user-1", "invoice-1"));
     expect(res.status).toBe(500);
   });
 
-  it("should generate Whop checkout config, update Firestore document, and return 200", async () => {
+  it("should generate Dodo checkout config, update Firestore document, and return 200", async () => {
     mockGetCurrentUser.mockResolvedValue({ role: "Admin", uid: "admin-1" });
     mockGet.mockResolvedValue({
       exists: true,
@@ -170,8 +171,8 @@ describe("POST /api/user/[userId]/psf-invoices/[invoiceId]/send", () => {
       }),
     });
     mockCreatePsfInvoiceCheckoutConfig.mockResolvedValue({
-      checkoutId: "whop-checkout-123",
-      url: "https://whop.com/checkout/123",
+      checkoutId: "dodo-checkout-123",
+      url: "https://test.dodopayments.com/checkout/123",
     });
     mockGetUserById.mockResolvedValue({
       email: "user@example.com",
@@ -191,19 +192,19 @@ describe("POST /api/user/[userId]/psf-invoices/[invoiceId]/send", () => {
 
     const json = await res.json();
     expect(json.success).toBe(true);
-    expect(json.url).toBe("https://whop.com/checkout/123");
+    expect(json.url).toBe("https://test.dodopayments.com/checkout/123");
 
     expect(mockCreatePsfInvoiceCheckoutConfig).toHaveBeenCalledWith({
       userId: "user-1",
       invoiceId: "invoice-1",
-      feeAmount: 500,
+      feeAmount: 50000,
     });
 
     expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         status: "signed",
-        whopCheckoutId: "whop-checkout-123",
-        whopCheckoutUrl: "https://whop.com/checkout/123",
+        dodoCheckoutId: "dodo-checkout-123",
+        dodoCheckoutUrl: "https://test.dodopayments.com/checkout/123",
       }),
     );
   });

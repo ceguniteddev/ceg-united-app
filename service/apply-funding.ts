@@ -257,7 +257,6 @@ export const applyFunding = async ({
     logInfo("Generating new CRS report for user:", { userId: value.userId });
     await generateCRSReport({
       userId: value.userId!,
-      referenceNumber,
       bureaus: { equifax: true, experian: true, transunion: true },
     });
   }
@@ -265,11 +264,10 @@ export const applyFunding = async ({
   if (isPremium && value.businessId) {
     const businessData = await getCRSBusinessProfile(value.businessId);
     if (!businessData) {
-      await generateCRSReportBusiness(
-        value.userId!,
-        referenceNumber,
-        value.businessId,
-      );
+      await generateCRSReportBusiness({
+        userId: value.userId!,
+        businessId: value.businessId,
+      });
     }
   }
 

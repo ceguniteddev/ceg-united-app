@@ -15,32 +15,30 @@ export const POST = withAuth(
       }
 
       const body = await req.json();
-      const { planId, receiptId, checkoutId, metadata } = body;
+      const { metadata } = body;
 
       if (!metadata || !metadata.reportType || !metadata.referenceNumber) {
         return badRequest({ errors: "Invalid metadata payload" });
       }
 
-      const { reportType, referenceNumber, businessId } = metadata;
+      const { reportType, businessId } = metadata;
 
       // Note: You can store the purchase record in a Firestore collection here
-      // if tracking CRS purchases is needed. Currently, Whop SDK + Firestore
-      // automatically syncs payments to USER_WHOP_PAYMENTS collection via webhooks.
+      // if tracking CRS purchases is needed. Dodo Payments + Firestore
+      // automatically sync payments via verified webhooks.
 
       if (reportType === "personal") {
         await generateCRSReport({
           userId,
-          referenceNumber,
           bureaus: { equifax: true, experian: true, transunion: true },
           bypassPremiumCheck: true,
         });
       } else if (reportType === "business" && businessId) {
-        await generateCRSReportBusiness(
+        await generateCRSReportBusiness({
           userId,
-          referenceNumber,
           businessId,
-          true,
-        );
+          bypassPremiumCheck: true,
+        });
       } else {
         return badRequest({
           errors: "Invalid report type or missing business ID",

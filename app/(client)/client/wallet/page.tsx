@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useAuth } from "@/provider/AuthContext";
-import { useWalletQuery, WalletTransaction } from "@/hooks/wallet";
-import { createWalletCheckoutConfig } from "@/service/whop";
+import { useWalletQuery, WalletTransaction, WalletData } from "@/hooks/wallet";
+import { createWalletCheckoutConfig } from "@/service/dodo";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { app } from "@/lib/firebase";
+import { DodoCheckoutView } from "@/components/funding/DodoCheckoutView";
 import {
   Card,
   CardContent,
@@ -23,6 +26,7 @@ import {
   Loader2,
   Info,
   ShoppingCart,
+  CheckCircle2,
 } from "lucide-react";
 import IconMenu from "@/components/icon-menu";
 import EmptyState from "@/components/EmptyState";
@@ -37,7 +41,6 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { GET_WALLET } from "@/constant/react-query-keys";
 
@@ -46,7 +49,7 @@ const USE_MOCK_DATA = false;
 
 const MOCK_TRANSACTION_TEMPLATES = [
   {
-    description: "Wallet Top-up via Whop",
+    description: "Wallet Top-up via Dodo Payments",
     type: "credit" as const,
     amount: 50.0,
   },
@@ -67,7 +70,7 @@ const MOCK_TRANSACTION_TEMPLATES = [
     amount: 11.5,
   },
   {
-    description: "Wallet Top-up via Whop",
+    description: "Wallet Top-up via Dodo Payments",
     type: "credit" as const,
     amount: 25.0,
   },
@@ -87,7 +90,7 @@ const MOCK_TRANSACTION_TEMPLATES = [
     amount: 11.5,
   },
   {
-    description: "Wallet Top-up via Whop",
+    description: "Wallet Top-up via Dodo Payments",
     type: "credit" as const,
     amount: 15.0,
   },
@@ -109,7 +112,7 @@ const MOCK_TRANSACTIONS: WalletTransaction[] = Array.from(
     const template =
       MOCK_TRANSACTION_TEMPLATES[i % MOCK_TRANSACTION_TEMPLATES.length];
     let amount = template.amount;
-    if (template.description === "Wallet Top-up via Whop") {
+    if (template.description === "Wallet Top-up via Dodo Payments") {
       const packages = [15.0, 25.0, 50.0, 100.0];
       amount = packages[(i + 3) % packages.length];
     }
@@ -156,18 +159,101 @@ export default function WalletPage() {
   const [customAmount, setCustomAmount] = useState<string>("");
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isCheckoutSuccess, setIsCheckoutSuccess] = useState(false);
+  const [isPollingBalance, setIsPollingBalance] = useState(false);
+  const [lastPurchasedAmount, setLastPurchasedAmount] = useState<number>(0);
   const [checkoutSessionId, setCheckoutSessionId] = useState<string>("");
   const [checkoutUrl, setCheckoutUrl] = useState("");
 
-  const handleCheckoutComplete = () => {
-    toast.success(
-      "Payment completed successfully! Your wallet balance will update shortly.",
-    );
-    setIsCheckoutOpen(false);
-    setCheckoutSessionId("");
-    // Re-invalidate/refetch wallet balance
-    queryClient.invalidateQueries({ queryKey: [GET_WALLET, userData?.id] });
-  };
+  const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initialBalanceRef = useRef<number>(0);
+
+  // Clean up timers on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    };
+  }, []);
+
+  const handleCheckoutComplete = useCallback(
+    (paymentId?: string) => {
+      setIsCheckoutSuccess(true);
+      setIsPollingBalance(true);
+
+      const startBalance = initialBalanceRef.current;
+      const targetMinBalance = startBalance + lastPurchasedAmount;
+      let attempts = 0;
+      const maxAttempts = 15; // 15 attempts * 1.5s = ~22.5 seconds max
+
+      if (pollingTimerRef.current) {
+        clearInterval(pollingTimerRef.current);
+      }
+
+      // Start polling for webhook to update Firestore balance
+      pollingTimerRef.current = setInterval(async () => {
+        attempts += 1;
+        try {
+          const res = await queryClient.fetchQuery<WalletData>({
+            queryKey: [GET_WALLET, userData?.id],
+            queryFn: async () => {
+              const getWalletFn = httpsCallable<{ userId: string }, WalletData>(
+                getFunctions(app),
+                "getWallet",
+              );
+              const response = await getWalletFn({
+                userId: userData?.id || "",
+              });
+              return response.data;
+            },
+            staleTime: 0,
+          });
+          const currentBalance = (res as any)?.balance || 0;
+          const transactions = (res as any)?.transactions || [];
+          const hasNewTx = paymentId
+            ? transactions.some((t: any) => t.paymentId === paymentId)
+            : false;
+
+          if (
+            currentBalance >= targetMinBalance ||
+            hasNewTx ||
+            attempts >= maxAttempts
+          ) {
+            if (pollingTimerRef.current) {
+              clearInterval(pollingTimerRef.current);
+              pollingTimerRef.current = null;
+            }
+            setIsPollingBalance(false);
+            if (currentBalance >= targetMinBalance || hasNewTx) {
+              toast.success("Wallet balance updated!");
+            }
+          }
+        } catch {
+          if (attempts >= maxAttempts) {
+            if (pollingTimerRef.current) {
+              clearInterval(pollingTimerRef.current);
+              pollingTimerRef.current = null;
+            }
+            setIsPollingBalance(false);
+          }
+        }
+      }, 1500);
+
+      // Auto close the Sheet after brief celebration
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+      // Close the Sheet only. Clearing checkoutSessionId (which unmounts
+      // DodoCheckoutView and its redirect-suppressing listener) is deferred
+      // to the Sheet's onOpenChange handler so the SDK cannot trigger a
+      // trailing full-page redirect while the iframe is still alive.
+      closeTimeoutRef.current = setTimeout(() => {
+        setIsCheckoutOpen(false);
+      }, 2200);
+    },
+    [lastPurchasedAmount, queryClient, userData?.id],
+  );
 
   if (authLoading) {
     return (
@@ -197,9 +283,13 @@ export default function WalletPage() {
 
     try {
       setIsPurchasing(true);
+      setLastPurchasedAmount(finalAmount);
+      initialBalanceRef.current = wallet?.balance || 0;
+      setIsCheckoutSuccess(false);
+
       const { checkoutId, url } = await createWalletCheckoutConfig({
         userId: userData?.id,
-        amount: finalAmount,
+        amount: Math.round(finalAmount * 100),
       });
       if (checkoutId) {
         setCheckoutSessionId(checkoutId);
@@ -255,7 +345,14 @@ export default function WalletPage() {
                 variant="outline"
                 className="bg-white/15 text-white border-white/20 backdrop-blur-sm px-2.5 py-0.5"
               >
-                Active
+                {isPollingBalance ? (
+                  <span className="flex items-center gap-1.5 text-blue-100">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Syncing...
+                  </span>
+                ) : (
+                  "Active"
+                )}
               </Badge>
             </div>
             <p className="text-sm font-medium text-blue-100/90 mb-1">
@@ -264,8 +361,11 @@ export default function WalletPage() {
             {displayWalletLoading ? (
               <Skeleton className="h-10 w-32 bg-white/10" />
             ) : (
-              <h2 className="text-4xl font-bold text-white tracking-tight">
+              <h2 className="text-4xl font-bold text-white tracking-tight flex items-center gap-2">
                 ${displayBalance.toFixed(2)}
+                {isPollingBalance && (
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-200" />
+                )}
               </h2>
             )}
           </CardContent>
@@ -407,7 +507,7 @@ export default function WalletPage() {
                     </li>
                     <li>
                       All transactions are secure and powered by our payment
-                      partner, Whop.
+                      partner, Dodo Payments.
                     </li>
                   </ul>
                 </div>
@@ -500,8 +600,23 @@ export default function WalletPage() {
         </div>
       </div>
 
-      {/* Whop Checkout Sheet */}
-      <Sheet open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
+      {/* Dodo Checkout Sheet */}
+      <Sheet
+        open={isCheckoutOpen}
+        onOpenChange={(open) => {
+          setIsCheckoutOpen(open);
+          if (!open) {
+            // Only now that the Sheet is fully closed do we tear down the
+            // checkout (and its redirect-suppressing listener), preventing
+            // the Dodo SDK from performing a trailing full-page redirect.
+            setIsCheckoutSuccess(false);
+            setCheckoutSessionId("");
+            if (closeTimeoutRef.current) {
+              clearTimeout(closeTimeoutRef.current);
+            }
+          }
+        }}
+      >
         <SheetContent
           side="right"
           className="w-full sm:max-w-2xl p-0 flex flex-col gap-0 overflow-hidden"
@@ -509,14 +624,15 @@ export default function WalletPage() {
           <SheetHeader className="px-6 py-4 border-b border-gray-200 flex flex-row items-center justify-between space-y-0">
             <div>
               <SheetTitle className="text-xl font-bold">
-                Secure Checkout
+                {isCheckoutSuccess ? "Payment Confirmed" : "Secure Checkout"}
               </SheetTitle>
               <SheetDescription className="hidden sm:block">
-                Please complete your payment using the secure Whop checkout form
-                below.
+                {isCheckoutSuccess
+                  ? "Your transaction has been processed successfully."
+                  : "Please complete your payment using the secure Dodo checkout form below."}
               </SheetDescription>
             </div>
-            {checkoutUrl && (
+            {checkoutUrl && !isCheckoutSuccess && (
               <Button
                 variant="outline"
                 size="sm"
@@ -527,18 +643,45 @@ export default function WalletPage() {
               </Button>
             )}
           </SheetHeader>
-          <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative">
+          <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative flex flex-col">
+            {/*
+              DodoCheckoutView must remain mounted through the success state.
+              Its capture-phase message listener suppresses the Dodo SDK's
+              trailing full-page redirect; unmounting it (as before) removed
+              that listener and caused the page to reload. The success screen
+              is now rendered as an overlay on top of the still-mounted view.
+            */}
             {checkoutSessionId && (
-              <WhopCheckoutEmbed
-                sessionId={checkoutSessionId}
+              <DodoCheckoutView
+                checkoutId={checkoutSessionId}
+                checkoutDetails={{
+                  url: checkoutUrl,
+                  checkout_url: checkoutUrl,
+                  amount: Math.round(getAmountToPurchase() * 100),
+                }}
                 onComplete={handleCheckoutComplete}
-                prefill={{ email: userData.email || "" }}
-                fallback={
-                  <div className="flex items-center justify-center h-full">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                  </div>
-                }
               />
+            )}
+            {isCheckoutSuccess && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-50 p-8 text-center animate-in fade-in zoom-in-95 duration-300">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-5 shadow-sm">
+                  <CheckCircle2 className="w-10 h-10" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Payment Successful!
+                </h2>
+                <p className="text-sm text-gray-600 max-w-sm mb-5">
+                  Your payment of{" "}
+                  <span className="font-semibold text-gray-900">
+                    ${lastPurchasedAmount.toFixed(2)}
+                  </span>{" "}
+                  was received. Adding funds to your wallet...
+                </p>
+                <div className="flex items-center gap-2 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-100 px-3.5 py-2 rounded-full shadow-xs">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                  Updating your balance...
+                </div>
+              </div>
             )}
           </div>
         </SheetContent>

@@ -72,7 +72,7 @@ import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registrationSchema } from "@/schema/registration";
-import { sendPaymentLink } from "@/service/whop";
+import { sendPaymentLink } from "@/service/dodo";
 import { cn } from "@/lib/utils";
 import { MembershipTier } from "@/schema/users";
 
@@ -1184,7 +1184,7 @@ const SendClientAgreement = ({ user }: { user: UserWithId }) => {
 
 const PaymentAmountDisplay = ({ user }: { user: UserWithId }) => {
   const defaultAmount =
-    process.env.NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT || "15000";
+    process.env.NEXT_PUBLIC_DODO_FULL_PAYMENT_AMOUNT || "15000";
   const [amount, setAmount] = useState<string>(
     String((user as any).paymentAmount ?? defaultAmount),
   );
