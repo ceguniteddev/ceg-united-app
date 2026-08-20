@@ -143,37 +143,59 @@ env:
       - RUNTIME
   - variable: DODO_PRODUCT_BUSINESS_SERVICES_ID
     value: ""
-    availability: [RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: DODO_PRODUCT_TRADELINE_ID
     value: ""
-    availability: [RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: DODO_PRODUCT_WALLET_ID
     value: pdt_0NlorCWqu5qMcxsXyQndJ
-    availability: [RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: DODO_PRODUCT_PSF_ID
     value: ""
-    availability: [RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: DODO_PRODUCT_CRS_REPORT_ID
     value: ""
-    availability: [RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: DODO_PRODUCT_MEMBERSHIP_STARTER_ID
     value: pdt_0NlorUoXvGqMNovNhtQ03
-    availability: [RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: DODO_PRODUCT_MEMBERSHIP_PRO_ID
     value: pdt_0NlorUH06nqTmjrmZp4e0
-    availability: [RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: DODO_PRODUCT_MEMBERSHIP_EXECUTIVE_ID
     value: pdt_0NlorTSLcDLiPU3wuWudW
-    availability: [RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: DODO_PRODUCT_CREDIT_MODULE_PRO_ID
     value: pdt_0NlorIxCkWoOfdQAgzSBW
-    availability: [RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: DODO_PAYMENTS_ENVIRONMENT
     value: live_mode
-    availability: [RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: DODO_PAYMENTS_LOG
     value: info
-    availability: [RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: WC_CONSUMER_KEY
     value: ck_ea997ec7a404f79481d6e57a9b1d22bfe1278371
     availability:
