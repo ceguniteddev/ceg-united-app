@@ -423,6 +423,22 @@ export const recordPaymentSucceeded = async ({
     }
   }
 
+  if (userId && paymentKey === "credit_module_pro") {
+    const fees = await getFeeSettings();
+    await activateUserAddon({
+      userId,
+      addonId: "credit_module_pro",
+      amount:
+        Number(metadata.addonAmount) ||
+        payment.total_amount / 100 ||
+        fees.creditModuleProAddonPrice ||
+        197,
+      checkoutId: payment.checkout_session_id || undefined,
+      planId: payment.product_cart?.[0]?.product_id || checkoutData.productId,
+      receiptId: payment.payment_id,
+    });
+  }
+
   if (userId && paymentKey === "WalletTopUp") {
     await db.runTransaction(async (transaction) => {
       const duplicateQuery = db

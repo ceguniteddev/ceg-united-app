@@ -490,6 +490,42 @@ describe("Dodo payment service", () => {
     );
   });
 
+  it("activates a standalone addon from a verified payment", async () => {
+    queryResult = {
+      empty: false,
+      docs: [
+        {
+          id: "checkout",
+          data: () => ({
+            userId: "u1",
+            productId: "p_addon",
+            paymentKey: "credit_module_pro",
+            metadata: {
+              userId: "u1",
+              paymentKey: "credit_module_pro",
+              planId: "credit_module_pro",
+              isAddon: "true",
+            },
+          }),
+        },
+      ],
+    };
+
+    await recordPaymentSucceeded({
+      payment: payment({ metadata: undefined, total_amount: 40000 }),
+    });
+
+    expect(mocks.activate).not.toHaveBeenCalled();
+    expect(mocks.activateAddon).toHaveBeenCalledWith({
+      userId: "u1",
+      addonId: "credit_module_pro",
+      amount: 400,
+      checkoutId: "cks_1",
+      planId: "p_addon",
+      receiptId: "pay_1",
+    });
+  });
+
   it("updates an existing wallet", async () => {
     mocks.txGet
       .mockResolvedValueOnce({ empty: true })

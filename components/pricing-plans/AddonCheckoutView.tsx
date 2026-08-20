@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef } from "react";
 import { DodoCheckoutView } from "@/components/funding/DodoCheckoutView";
 import { useDodoCheckoutDetails } from "@/hooks/dodo";
 import { toast } from "sonner";
-
-import { activateUserAddon, AddonTier } from "@/service/addons";
+import { useQueryClient } from "@tanstack/react-query";
+import { getUserAddons, UserAddon } from "@/service/addons";
 
 type AddonCheckoutViewProps = {
   checkoutId: string;
@@ -23,35 +23,61 @@ export const AddonCheckoutView = ({
   amount,
   onPaymentCompleteAction,
 }: AddonCheckoutViewProps) => {
-  const [isRecording, setIsRecording] = useState(false);
+  const queryClient = useQueryClient();
+  const isCompletingRef = useRef(false);
   const { checkoutDetails } = useDodoCheckoutDetails(checkoutId);
 
-  const handleComplete = async (paymentId?: string) => {
-    if (isRecording) return; // Prevent duplicate calls
-
-    setIsRecording(true);
+  const handleComplete = useCallback(async () => {
+    if (isCompletingRef.current) return;
+    isCompletingRef.current = true;
 
     try {
-      await activateUserAddon({
-        userId,
-        addonId: addonId as AddonTier,
-        planId: checkoutId,
-        receiptId: paymentId,
-        amount,
-        checkoutId,
-      });
+      toast.info("Payment received. Activating your add-on...");
 
-      toast.success("Payment successful! Your add-on is being activated.");
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const addons = (await queryClient.fetchQuery({
+          queryKey: ["user-addons", userId],
+          queryFn: () => getUserAddons(userId),
+          staleTime: 0,
+        })) as UserAddon[];
+
+        if (
+          addons.some(
+            (addon) => addon.addonId === addonId && addon.status === "active",
+          )
+        ) {
+          await queryClient.invalidateQueries({
+            queryKey: ["has-credit-repair-addon", userId],
+          });
+          toast.success("Payment successful! Your add-on is now active.");
+          onPaymentCompleteAction?.();
+          return;
+        }
+
+        await queryClient.invalidateQueries({
+          queryKey: ["user-addons", userId],
+        });
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["user-addons", userId] }),
+        queryClient.invalidateQueries({
+          queryKey: ["has-credit-repair-addon", userId],
+        }),
+      ]);
+      toast.info(
+        "Your payment is confirmed. Add-on activation is still processing.",
+      );
       onPaymentCompleteAction?.();
     } catch (error) {
-      console.error(error);
+      console.error("Failed to verify add-on activation:", error);
       toast.error(
-        "There was an error verifying your payment. Please contact support.",
+        "Payment succeeded, but add-on verification is delayed. Please refresh shortly.",
       );
-    } finally {
-      setIsRecording(false);
+      onPaymentCompleteAction?.();
     }
-  };
+  }, [addonId, onPaymentCompleteAction, queryClient, userId]);
 
   return (
     <div className="p-6 space-y-6">
