@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { DodoPayments } from "@/lib/dodo-checkout";
 import { currency } from "@/lib/utils";
 
@@ -22,6 +22,61 @@ export const DodoCheckoutView = ({
 }: DodoCheckoutViewProps) => {
   const checkoutUrl = checkoutDetails.checkout_url || checkoutDetails.url;
   const elementId = `dodo-inline-checkout-${checkoutId.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+  const onCompleteRef = useRef(onComplete);
+  const hasCompletedRef = useRef(false);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  // Unified single-execution success handler
+  const handleSuccess = (paymentId?: string) => {
+    if (hasCompletedRef.current) return;
+    hasCompletedRef.current = true;
+
+    if (DodoPayments.Checkout.isOpen()) {
+      DodoPayments.Checkout.close();
+    }
+    onCompleteRef.current?.(paymentId);
+  };
+
+  // Intercept and suppress ALL SDK top-level window redirects in inline mode
+  useEffect(() => {
+    hasCompletedRef.current = false;
+
+    const handleCaptureMessage = (event: MessageEvent) => {
+      const data = event.data;
+      if (!data || typeof data !== "object") return;
+
+      if (data.event_type === "checkout.redirect") {
+        // Stop the dodopayments-checkout SDK from receiving this event and calling window.location.href
+        event.stopImmediatePropagation();
+
+        const redirectTo = String(
+          data.data?.message?.redirect_to || data.data?.redirect_to || "",
+        );
+        const paymentId = String(
+          data.data?.message?.payment_id || data.data?.payment_id || "",
+        );
+
+        const isExplicitFailure =
+          redirectTo.includes("/failed") ||
+          redirectTo.includes("status=failed") ||
+          redirectTo.includes("status=error") ||
+          redirectTo.includes("/cancelled");
+
+        if (!isExplicitFailure) {
+          handleSuccess(paymentId || undefined);
+        }
+      }
+    };
+
+    window.addEventListener("message", handleCaptureMessage, true);
+
+    return () => {
+      window.removeEventListener("message", handleCaptureMessage, true);
+    };
+  }, []);
 
   useEffect(() => {
     if (!checkoutUrl) return;
@@ -30,12 +85,16 @@ export const DodoCheckoutView = ({
       mode:
         process.env.NEXT_PUBLIC_DODO_PAYMENTS_MODE === "live" ? "live" : "test",
       displayType: "inline",
-      onEvent: (event) => {
-        if (
-          event.event_type === "checkout.status" &&
-          event.data?.status === "succeeded"
-        ) {
-          onComplete?.(String(event.data.payment_id || ""));
+      onEvent: (event: any) => {
+        const isSuccess =
+          (event.event_type === "checkout.status" &&
+            (event.data?.status === "succeeded" ||
+              event.data?.status === "completed")) ||
+          event.event_type === "checkout.payment_succeeded" ||
+          event.event_type === "checkout.completed";
+
+        if (isSuccess) {
+          handleSuccess(String(event.data?.payment_id || ""));
         }
       },
     });
@@ -44,7 +103,7 @@ export const DodoCheckoutView = ({
     return () => {
       if (DodoPayments.Checkout.isOpen()) DodoPayments.Checkout.close();
     };
-  }, [checkoutUrl, elementId, onComplete]);
+  }, [checkoutUrl, elementId]);
 
   if (!checkoutUrl) {
     return <p role="alert">Dodo checkout URL is unavailable.</p>;

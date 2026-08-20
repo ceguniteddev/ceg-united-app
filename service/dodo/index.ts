@@ -118,6 +118,9 @@ const createSession = async ({
       "google_pay",
     ],
     customization: { theme: "system" },
+    feature_flags: {
+      redirect_immediately: true,
+    },
     ...(onDemand
       ? {
           subscription_data: {
