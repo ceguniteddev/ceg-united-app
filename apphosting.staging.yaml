@@ -141,28 +141,8 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  - variable: DODO_PRODUCT_BUSINESS_SERVICES_ID
-    value: ""
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: DODO_PRODUCT_TRADELINE_ID
-    value: ""
-    availability:
-      - BUILD
-      - RUNTIME
   - variable: DODO_PRODUCT_WALLET_ID
     value: pdt_0NloVDSyLzfS9gw6kj8lw
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: DODO_PRODUCT_PSF_ID
-    value: ""
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: DODO_PRODUCT_CRS_REPORT_ID
-    value: ""
     availability:
       - BUILD
       - RUNTIME
