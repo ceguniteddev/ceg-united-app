@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import Spinner from "@/components/Spinner";
@@ -29,7 +30,6 @@ export const MembershipCheckoutView = ({
   membershipAmount,
   addonAmount,
   pendingAddons,
-  prefillEmail,
   onPaymentCompleteAction,
 }: MembershipCheckoutViewProps) => {
   const { data: feeSettings } = useFeeSettings();
@@ -55,16 +55,50 @@ export const MembershipCheckoutView = ({
     addonAmount ?? feeSettings?.creditModuleProAddonPrice ?? 197;
 
   const queryClient = useQueryClient();
+  const isCompletingRef = useRef(false);
 
-  const handleComplete = () => {
-    queryClient.invalidateQueries({ queryKey: ["membership"] });
-    queryClient.invalidateQueries({ queryKey: ["all-memberships"] });
-    queryClient.invalidateQueries({ queryKey: ["user", userId] });
-    toast.success(
-      "Payment received. Your membership will activate after verification.",
-    );
-    onPaymentCompleteAction?.();
-  };
+  const handleComplete = useCallback(async () => {
+    if (isCompletingRef.current) return;
+    isCompletingRef.current = true;
+
+    toast.info("Payment received. Activating your membership...");
+
+    try {
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const response = await fetch(
+          `/api/user/${userId}/membership?bypassCache=true`,
+        );
+        if (response.ok) {
+          const membership = await response.json();
+          if (membership?.status === "active") {
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: ["membership"] }),
+              queryClient.invalidateQueries({
+                queryKey: ["all-memberships"],
+              }),
+              queryClient.invalidateQueries({ queryKey: ["user", userId] }),
+            ]);
+            toast.success("Membership activated! Welcome to CEG Brain.");
+            onPaymentCompleteAction?.();
+            return;
+          }
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["membership"] });
+      toast.info(
+        "Your payment is confirmed. Membership activation is still processing.",
+      );
+      onPaymentCompleteAction?.();
+    } catch (error) {
+      console.error("Failed to verify membership activation:", error);
+      toast.error(
+        "Payment succeeded, but membership verification is delayed. Please refresh shortly.",
+      );
+      onPaymentCompleteAction?.();
+    }
+  }, [onPaymentCompleteAction, queryClient, userId]);
 
   if (!checkoutUrl && isLoading) {
     return <Spinner displayText="Loading secure Dodo checkout..." />;

@@ -77,4 +77,21 @@ describe("DodoPaymentReturnSync", () => {
       );
     });
   });
+
+  it("verifies membership from the explicit checkout return marker", async () => {
+    window.history.replaceState({}, "", "/client/home?membershipCheckout=1");
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <DodoPaymentReturnSync />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/user/test-user-123/membership?bypassCache=true",
+      );
+      expect(window.location.search).not.toContain("membershipCheckout");
+    });
+  });
 });

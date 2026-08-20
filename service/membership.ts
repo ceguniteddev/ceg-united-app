@@ -29,17 +29,55 @@ export const activateUserMembership = async ({
   if (!userId) throw new AppError("User ID is required.");
 
   const db = firestoreAdmin();
+  const membershipRef = db.collection(
+    `${USER_COLLECTION}/${userId}/membership`,
+  );
+  const latestMembershipQuery = membershipRef
+    .orderBy("createdAt", "desc")
+    .limit(1);
+  const currentRef = membershipRef.doc("current");
+  let alreadyActive = false;
 
-  // Create membership record
-  await db.collection(`${USER_COLLECTION}/${userId}/membership`).add({
-    tier,
-    amount,
-    planId: planId || null,
-    receiptId: receiptId || null,
-    checkoutId: checkoutId || null,
-    createdAt: new Date(),
-    status: "active",
+  await db.runTransaction(async (transaction) => {
+    const [currentDoc, latestMembership] = await Promise.all([
+      transaction.get(currentRef),
+      transaction.get(latestMembershipQuery),
+    ]);
+    const existingDoc = currentDoc.exists
+      ? currentDoc
+      : latestMembership.docs[0];
+    const existingData = existingDoc?.data();
+    alreadyActive =
+      existingData?.status === "active" && existingData?.tier === tier;
+
+    if (alreadyActive && existingDoc) {
+      transaction.set(
+        existingDoc.ref,
+        {
+          amount,
+          ...(planId ? { planId } : {}),
+          ...(receiptId ? { receiptId } : {}),
+          ...(checkoutId ? { checkoutId } : {}),
+          updatedAt: new Date(),
+        },
+        { merge: true },
+      );
+      return;
+    }
+
+    transaction.set(currentRef, {
+      tier,
+      amount,
+      planId: planId || null,
+      receiptId: receiptId || null,
+      checkoutId: checkoutId || null,
+      createdAt: new Date(),
+      status: "active",
+    });
   });
+
+  membershipCache.invalidate(userId);
+  if (alreadyActive) return { success: true, alreadyActive: true };
 
   // Automatically trigger CRS report generation and then Funding Analysis upon activation
   try {
@@ -78,7 +116,6 @@ export const activateUserMembership = async ({
     );
   }
 
-  membershipCache.invalidate(userId);
   return { success: true };
 };
 

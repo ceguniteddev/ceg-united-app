@@ -19,6 +19,7 @@ import { logError, logInfo } from "@/lib/logger";
 import type { PaymentPlan } from "@/schema/payments";
 import { EmailJobs } from "@/schema/trigger-email";
 import { getFeeSettings } from "@/service/fee-settings";
+import { activateUserAddon } from "@/service/addons";
 import { activateUserMembership } from "@/service/membership";
 import { sendTriggerEmail } from "@/service/trigger-email";
 import { getUserById } from "@/service/user";
@@ -200,6 +201,19 @@ const membershipProduct = (planId: string) => {
   return products[planId];
 };
 
+const membershipTierForProduct = (productId?: string) => {
+  if (!productId) return undefined;
+  return (["tier_starter", "tier_pro", "tier_executive"] as const).find(
+    (tier) => membershipProduct(tier) === productId,
+  );
+};
+
+const membershipReturnUrl = (returnUrl?: string) => {
+  const url = new URL(returnUrl ?? resolveDodoReturnUrl());
+  url.searchParams.set("membershipCheckout", "1");
+  return url.toString();
+};
+
 export const createMembershipCheckoutConfig = async ({
   userId,
   planId,
@@ -232,9 +246,10 @@ export const createMembershipCheckoutConfig = async ({
     paymentKey: planId,
     amountInCents: priceInCents,
     onDemand: true,
-    returnUrl,
+    returnUrl: membershipReturnUrl(returnUrl),
     metadata: {
       planId,
+      membershipAmount: String(prices[planId]),
       isAddon: String(isAddon),
       selectedAddonIds: JSON.stringify(selectedAddonIds),
     },
@@ -358,12 +373,55 @@ export const recordPaymentSucceeded = async ({
   payment: Payment;
 }) => {
   const db = firestoreAdmin();
-  const metadata = (payment.metadata || {}) as Record<string, string>;
-  const userId = metadata.userId || null;
   const checkout = payment.checkout_session_id
     ? await getDodoCheckoutDetailByCheckoutId(payment.checkout_session_id)
     : null;
-  const paymentKey = metadata.paymentKey || (checkout as any)?.paymentKey;
+  const checkoutData = (checkout || {}) as Record<string, any>;
+  const metadata = {
+    ...((checkoutData.metadata || {}) as Record<string, string>),
+    ...((payment.metadata || {}) as Record<string, string>),
+  };
+  const userId = metadata.userId || checkoutData.userId || null;
+  const paymentKey = metadata.paymentKey || checkoutData.paymentKey;
+
+  logInfo("Recording Dodo payment succeeded", {
+    paymentId: payment.payment_id,
+    userId,
+    paymentKey,
+  });
+
+  if (userId && membershipProduct(paymentKey)) {
+    await activateUserMembership({
+      userId,
+      tier: paymentKey,
+      amount: Number(metadata.membershipAmount) || payment.total_amount / 100,
+      checkoutId: payment.checkout_session_id || undefined,
+      planId: payment.product_cart?.[0]?.product_id || checkoutData.productId,
+      receiptId: payment.payment_id,
+    });
+
+    let selectedAddonIds: string[] = [];
+    try {
+      selectedAddonIds = JSON.parse(metadata.selectedAddonIds || "[]");
+    } catch (error) {
+      logError(
+        new Error(
+          `Invalid selectedAddonIds for ${payment.payment_id}: ${error}`,
+        ),
+      );
+    }
+    if (selectedAddonIds.includes("credit_module_pro")) {
+      const fees = await getFeeSettings();
+      await activateUserAddon({
+        userId,
+        addonId: "credit_module_pro",
+        amount: fees.creditModuleProAddonPrice ?? 197,
+        checkoutId: payment.checkout_session_id || undefined,
+        planId: checkoutData.productId,
+        receiptId: payment.payment_id,
+      });
+    }
+  }
 
   if (userId && paymentKey === "WalletTopUp") {
     await db.runTransaction(async (transaction) => {
@@ -426,11 +484,33 @@ export const recordSubscriptionActive = async ({
   subscription: Subscription;
 }) => {
   const metadata = (subscription.metadata || {}) as Record<string, string>;
-  if (!metadata.userId || !metadata.planId) return;
+  const tier =
+    metadata.planId || membershipTierForProduct(subscription.product_id);
+  let userId = metadata.userId;
+
+  if (!userId && subscription.customer?.customer_id) {
+    const paymentSnapshot = await firestoreAdmin()
+      .collection(USER_DODO_PAYMENTS)
+      .where("customer.customer_id", "==", subscription.customer.customer_id)
+      .limit(20)
+      .get();
+    userId = paymentSnapshot.docs[0]?.data()?.userId;
+  }
+
+  if (!userId || !tier) {
+    logError(
+      new Error(
+        `Unable to activate subscription ${subscription.subscription_id}: missing ${!userId ? "userId" : "membership tier"}`,
+      ),
+    );
+    return;
+  }
   await activateUserMembership({
-    userId: metadata.userId,
-    tier: metadata.planId,
-    amount: subscription.recurring_pre_tax_amount / 100,
+    userId,
+    tier,
+    amount:
+      Number(metadata.membershipAmount) ||
+      subscription.recurring_pre_tax_amount / 100,
     checkoutId: subscription.subscription_id,
     planId: subscription.product_id,
     receiptId: subscription.subscription_id,

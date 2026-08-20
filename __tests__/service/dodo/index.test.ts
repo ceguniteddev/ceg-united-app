@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   getFees: vi.fn(),
   activate: vi.fn(),
+  activateAddon: vi.fn(),
   sendEmail: vi.fn(),
   add: vi.fn(),
   update: vi.fn(),
@@ -27,6 +28,9 @@ vi.mock("@/service/user", () => ({ getUserById: mocks.getUser }));
 vi.mock("@/service/fee-settings", () => ({ getFeeSettings: mocks.getFees }));
 vi.mock("@/service/membership", () => ({
   activateUserMembership: mocks.activate,
+}));
+vi.mock("@/service/addons", () => ({
+  activateUserAddon: mocks.activateAddon,
 }));
 vi.mock("@/service/trigger-email", () => ({
   sendTriggerEmail: mocks.sendEmail,
@@ -285,6 +289,12 @@ describe("Dodo payment service", () => {
       expect(mocks.create).toHaveBeenCalledWith(
         expect.objectContaining({
           product_cart: [expect.objectContaining({ product_id: productId })],
+          return_url: "https://app.test/client/home?membershipCheckout=1",
+          metadata: expect.objectContaining({
+            userId: "u1",
+            planId,
+            membershipAmount: expect.any(String),
+          }),
           subscription_data: {
             on_demand: expect.objectContaining({
               mandate_only: false,
@@ -436,6 +446,50 @@ describe("Dodo payment service", () => {
     expect(mocks.set).toHaveBeenCalled();
   });
 
+  it("activates membership and bundled addons from a verified payment", async () => {
+    queryResult = {
+      empty: false,
+      docs: [
+        {
+          id: "checkout",
+          data: () => ({
+            userId: "u1",
+            productId: "p_pro",
+            paymentKey: "tier_pro",
+            metadata: {
+              userId: "u1",
+              planId: "tier_pro",
+              membershipAmount: "2000",
+              selectedAddonIds: '["credit_module_pro"]',
+            },
+          }),
+        },
+      ],
+    };
+
+    await recordPaymentSucceeded({
+      payment: payment({ metadata: undefined, total_amount: 240000 }),
+    });
+
+    expect(mocks.activate).toHaveBeenCalledWith({
+      userId: "u1",
+      tier: "tier_pro",
+      amount: 2000,
+      checkoutId: "cks_1",
+      planId: "p_pro",
+      receiptId: "pay_1",
+    });
+    expect(mocks.activateAddon).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "u1",
+        addonId: "credit_module_pro",
+        amount: 400,
+        checkoutId: "cks_1",
+        receiptId: "pay_1",
+      }),
+    );
+  });
+
   it("updates an existing wallet", async () => {
     mocks.txGet
       .mockResolvedValueOnce({ empty: true })
@@ -483,6 +537,34 @@ describe("Dodo payment service", () => {
     });
     expect(mocks.activate).toHaveBeenCalledWith(
       expect.objectContaining({ amount: 20 }),
+    );
+  });
+
+  it("recovers subscription membership context from product and payments", async () => {
+    paymentDocs = [
+      {
+        id: "payment",
+        data: () => ({ userId: "u1", created_at: "2026-08-20" }),
+      },
+    ];
+
+    await recordSubscriptionActive({
+      subscription: {
+        metadata: {},
+        customer: { customer_id: "cus_1" },
+        recurring_pre_tax_amount: 200000,
+        subscription_id: "sub_1",
+        product_id: "p_pro",
+      } as any,
+    });
+
+    expect(mocks.activate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "u1",
+        tier: "tier_pro",
+        amount: 2000,
+        checkoutId: "sub_1",
+      }),
     );
   });
 

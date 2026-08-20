@@ -49,21 +49,24 @@ export function DodoPaymentReturnSync() {
     const subscriptionId =
       params.get?.("subscription_id") || params.get?.("subscriptionId");
     const status = params.get?.("status") || params.get?.("payment_status");
+    const membershipCheckout = params.get?.("membershipCheckout");
 
     const hasPaymentReturnParams = !!(
       paymentId ||
       checkoutId ||
       subscriptionId ||
-      status
+      status ||
+      membershipCheckout === "1"
     );
 
     if (!hasPaymentReturnParams) return;
 
     const paramKey = `${paymentId || ""}-${checkoutId || ""}-${subscriptionId || ""}-${status || ""}`;
     if (handledRef.current === paramKey) return;
-    handledRef.current = paramKey;
 
     const targetUserId = user?.uid || userData?.id;
+    if (!targetUserId) return;
+    handledRef.current = paramKey;
 
     // Invalidate all related React Query caches immediately
     queryClient.invalidateQueries({ queryKey: ["membership"] });
@@ -75,13 +78,11 @@ export function DodoPaymentReturnSync() {
     toast.info("Verifying your payment and updating membership status...");
 
     let attempt = 0;
-    const maxAttempts = 5;
-    const pollIntervals = [0, 1500, 3500, 6000, 9000];
+    const maxAttempts = 8;
+    const pollIntervals = [0, 1500, 3000, 4500, 6000, 7500, 9000, 10500];
 
     const verifyMembership = async () => {
       attempt++;
-      if (!targetUserId) return;
-
       try {
         const res = await fetch(
           `/api/user/${targetUserId}/membership?bypassCache=true`,
@@ -123,6 +124,7 @@ export function DodoPaymentReturnSync() {
         url.searchParams.delete("subscriptionId");
         url.searchParams.delete("status");
         url.searchParams.delete("payment_status");
+        url.searchParams.delete("membershipCheckout");
         window.history.replaceState({}, "", url.pathname + url.search);
       }
     };
