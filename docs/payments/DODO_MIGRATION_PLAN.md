@@ -126,9 +126,7 @@ DODO_PAYMENTS_WEBHOOK_KEY=        # webhook signing secret
 DODO_PAYMENTS_ENVIRONMENT=        # test_mode | live_mode
 
 # Product IDs (created in Dodo dashboard)
-DODO_PRODUCT_AUDIT_ID=
-DODO_PRODUCT_INTELLIGENCE_ID=
-DODO_PRODUCT_ACCELERATOR_ID=
+DODO_PRODUCT_BUSINESS_SERVICES_ID= # Shared BYOP: Audit, Intelligence, Accelerator
 DODO_PRODUCT_TRADELINE_ID=        # BYOP
 DODO_PRODUCT_WALLET_ID=           # BYOP
 DODO_PRODUCT_PSF_ID=              # BYOP

@@ -32,11 +32,12 @@ const amount = (name: string, fallback: number) =>
 const productForPayment = (paymentKey: PaymentPlan) => {
   if (paymentKey.includes("Tradeline"))
     return process.env.DODO_PRODUCT_TRADELINE_ID;
-  if (paymentKey.includes("Audit")) return process.env.DODO_PRODUCT_AUDIT_ID;
-  if (paymentKey.includes("Intelligence"))
-    return process.env.DODO_PRODUCT_INTELLIGENCE_ID;
-  if (paymentKey.includes("Accelerator"))
-    return process.env.DODO_PRODUCT_ACCELERATOR_ID;
+  if (
+    paymentKey.includes("Audit") ||
+    paymentKey.includes("Intelligence") ||
+    paymentKey.includes("Accelerator")
+  )
+    return process.env.DODO_PRODUCT_BUSINESS_SERVICES_ID;
   if (paymentKey.includes("CreditReport"))
     return process.env.DODO_PRODUCT_CRS_REPORT_ID;
   if (paymentKey === "WalletTopUp") return process.env.DODO_PRODUCT_WALLET_ID;

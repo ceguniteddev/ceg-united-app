@@ -105,9 +105,7 @@ describe("Dodo payment service", () => {
     paymentDocs = [];
     Object.assign(process.env, {
       NEXT_PUBLIC_APP_URL: "https://app.test",
-      DODO_PRODUCT_AUDIT_ID: "p_audit",
-      DODO_PRODUCT_INTELLIGENCE_ID: "p_intelligence",
-      DODO_PRODUCT_ACCELERATOR_ID: "p_accelerator",
+      DODO_PRODUCT_BUSINESS_SERVICES_ID: "p_business_services",
       DODO_PRODUCT_TRADELINE_ID: "p_tradeline",
       DODO_PRODUCT_CRS_REPORT_ID: "p_crs",
       DODO_PRODUCT_WALLET_ID: "p_wallet",
@@ -149,12 +147,12 @@ describe("Dodo payment service", () => {
   });
 
   it.each([
-    ["AuditFull", "p_audit", 200000],
-    ["IntelligenceFull", "p_intelligence", 500000],
-    ["AcceleratorFull", "p_accelerator", 1500000],
-    ["AuditDownPayment", "p_audit", 75000],
-    ["IntelligenceDownPayment", "p_intelligence", 100000],
-    ["AcceleratorDownPayment", "p_accelerator", 500000],
+    ["AuditFull", "p_business_services", 200000],
+    ["IntelligenceFull", "p_business_services", 500000],
+    ["AcceleratorFull", "p_business_services", 1500000],
+    ["AuditDownPayment", "p_business_services", 75000],
+    ["IntelligenceDownPayment", "p_business_services", 100000],
+    ["AcceleratorDownPayment", "p_business_services", 500000],
     ["TradelinePurchase", "p_tradeline", 12345],
   ] as const)(
     "creates %s checkout",
@@ -231,6 +229,11 @@ describe("Dodo payment service", () => {
         customAmount: 100,
       }),
     ).rejects.toThrow("Missing Dodo product ID");
+    delete process.env.DODO_PRODUCT_BUSINESS_SERVICES_ID;
+    await expect(
+      createDodoCheckoutConfig({ userId: "u1", paymentKey: "AuditFull" }),
+    ).rejects.toThrow("Missing Dodo product ID for AuditFull");
+    process.env.DODO_PRODUCT_BUSINESS_SERVICES_ID = "p_business_services";
   });
 
   it("uses configured amounts, fallback URLs, and refreshes partial cache entries", async () => {
