@@ -25,7 +25,7 @@ import { getUserMembership } from "@/service/membership";
 import { checkFreePullEligibility } from "@/lib/crs-eligibility";
 import { CRSAddressInfo, CRSPersonalInfo, CRSReportType } from "@/types/crs";
 import { getFeeSettings } from "@/service/fee-settings";
-import { createCRSReportCheckoutConfig } from "@/service/whop";
+import { createCRSReportCheckoutConfig } from "@/service/dodo";
 
 export const initiateCRSReportCheckout = async ({
   userId,
@@ -143,7 +143,7 @@ export const initiateCRSReportCheckout = async ({
     return await createCRSReportCheckoutConfig({
       userId,
       paymentKey,
-      feeAmount: fee,
+      feeAmount: Math.round(fee * 100),
       metadata: {
         reportType,
         businessId: businessId || "",

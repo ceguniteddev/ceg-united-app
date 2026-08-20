@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { WhopCheckoutEmbed } from "@whop/checkout/react";
+import { DodoCheckoutView } from "@/components/funding/DodoCheckoutView";
+import { useDodoCheckoutDetails } from "@/hooks/dodo";
 import { toast } from "sonner";
-import Spinner from "@/components/Spinner";
 
 import { activateUserAddon, AddonTier } from "@/service/addons";
 
@@ -21,12 +21,12 @@ export const AddonCheckoutView = ({
   userId,
   addonId,
   amount,
-  prefillEmail,
   onPaymentCompleteAction,
 }: AddonCheckoutViewProps) => {
   const [isRecording, setIsRecording] = useState(false);
+  const { checkoutDetails } = useDodoCheckoutDetails(checkoutId);
 
-  const handleComplete = async (plan_id: string, receipt_id?: string) => {
+  const handleComplete = async (paymentId?: string) => {
     if (isRecording) return; // Prevent duplicate calls
 
     setIsRecording(true);
@@ -35,10 +35,10 @@ export const AddonCheckoutView = ({
       await activateUserAddon({
         userId,
         addonId: addonId as AddonTier,
-        planId: plan_id,
-        receiptId: receipt_id,
+        planId: checkoutId,
+        receiptId: paymentId,
         amount,
-        checkoutId: receipt_id || checkoutId,
+        checkoutId,
       });
 
       toast.success("Payment successful! Your add-on is being activated.");
@@ -66,20 +66,13 @@ export const AddonCheckoutView = ({
       </div>
 
       <div className="rounded-lg overflow-hidden shadow-xl">
-        <WhopCheckoutEmbed
-          prefill={{
-            email: prefillEmail || "",
-            address: {
-              country: "US",
-            },
+        <DodoCheckoutView
+          checkoutId={checkoutId}
+          checkoutDetails={{
+            ...(checkoutDetails || {}),
+            amount: Math.round(amount * 100),
           }}
-          sessionId={checkoutId}
           onComplete={handleComplete}
-          fallback={
-            <div className="flex items-center justify-center h-96">
-              <Spinner displayText="Loading secure checkout..." />
-            </div>
-          }
         />
       </div>
     </div>

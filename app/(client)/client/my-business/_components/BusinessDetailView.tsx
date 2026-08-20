@@ -49,7 +49,7 @@ import DeleteConfirmation from "@/components/delete-confirmation";
 import { initiateCRSReportCheckout } from "@/service/crs";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { WhopCheckoutEmbed } from "@whop/checkout/react";
+import { DodoCheckoutView } from "@/components/funding/DodoCheckoutView";
 import { useFeeSettings } from "@/hooks/fee-settings";
 
 import { useMembership } from "@/hooks/membership";
@@ -119,6 +119,7 @@ export function BusinessDetailView({
   // CRS Report Checkout State
   const [isGenerating, setIsGenerating] = useState(false);
   const [crsCheckoutId, setCrsCheckoutId] = useState<string | null>(null);
+  const [crsCheckoutUrl, setCrsCheckoutUrl] = useState<string | null>(null);
   const [checkoutMetadata, setCheckoutMetadata] = useState<any>(null);
 
   // Membership Checkout State
@@ -214,6 +215,7 @@ export function BusinessDetailView({
               : undefined,
         });
         setCrsCheckoutId(res.checkoutId);
+        setCrsCheckoutUrl(res.url);
         setIsConfirmOpen(false);
       } else if ("success" in res && res.success) {
         toast.success(
@@ -711,7 +713,12 @@ export function BusinessDetailView({
       {!isAdminView && (
         <Dialog
           open={!!crsCheckoutId}
-          onOpenChange={(open) => !open && setCrsCheckoutId(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setCrsCheckoutId(null);
+              setCrsCheckoutUrl(null);
+            }
+          }}
         >
           <DialogContent
             className="w-[95vw] sm:max-w-[600px] md:max-w-[700px] p-0 overflow-hidden bg-transparent border-none shadow-none"
@@ -723,21 +730,23 @@ export function BusinessDetailView({
             {crsCheckoutId && (
               <div className="bg-white rounded-xl shadow-2xl overflow-y-auto w-full max-h-[90vh] md:max-h-[85vh] relative">
                 <button
-                  onClick={() => setCrsCheckoutId(null)}
+                  onClick={() => {
+                    setCrsCheckoutId(null);
+                    setCrsCheckoutUrl(null);
+                  }}
                   className="absolute top-3 right-3 p-2 bg-gray-100 hover:bg-gray-200 rounded-full z-50 transition-colors"
                   aria-label="Close"
                 >
                   <X className="w-4 h-4 text-gray-600" />
                 </button>
-                <WhopCheckoutEmbed
-                  sessionId={crsCheckoutId}
-                  prefill={{
-                    email: activeUserData?.email || undefined,
-                    address: {
-                      country: "US",
-                    },
+                <DodoCheckoutView
+                  checkoutId={crsCheckoutId}
+                  checkoutDetails={{
+                    url: crsCheckoutUrl || undefined,
+                    checkout_url: crsCheckoutUrl || undefined,
+                    amount: Math.round(reportFee * 100),
                   }}
-                  onComplete={async (planId, receiptId) => {
+                  onComplete={async (paymentId) => {
                     try {
                       const response = await fetch(
                         `/api/user/${targetUserId}/crs/purchase`,
@@ -745,8 +754,8 @@ export function BusinessDetailView({
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({
-                            planId,
-                            receiptId,
+                            planId: crsCheckoutId,
+                            receiptId: paymentId,
                             checkoutId: crsCheckoutId,
                             metadata: checkoutMetadata,
                           }),
@@ -778,6 +787,7 @@ export function BusinessDetailView({
                         ],
                       });
                       setCrsCheckoutId(null);
+                      setCrsCheckoutUrl(null);
                       setCheckoutMetadata(null);
                     } catch (error) {
                       console.error(error);
@@ -785,13 +795,9 @@ export function BusinessDetailView({
                         "Payment succeeded but report generation failed. Please contact support.",
                       );
                       setCrsCheckoutId(null);
+                      setCrsCheckoutUrl(null);
                     }
                   }}
-                  fallback={
-                    <div className="flex items-center justify-center h-full min-h-[400px]">
-                      <Spinner displayText="Loading secure checkout..." />
-                    </div>
-                  }
                 />
               </div>
             )}

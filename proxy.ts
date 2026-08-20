@@ -25,7 +25,6 @@ const PUBLIC_ROUTES = new Set<string>([
   "/api/admin/register",
   "/api/broker/validate-token",
   "/api/broker/register",
-  "/api/payments/whop",
   "/api/payments/dodo",
   "/api/ocr",
 ]);
@@ -35,7 +34,6 @@ const BROKER_HOME = "/broker/home";
 
 const CLIENT_ALLOWED_API_PREFIXES = [
   "/api/pdf/generate",
-  "/api/whop/checkout",
   "/api/dodo/checkout",
   "/api/special-deals",
   "/api/pricing",

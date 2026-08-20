@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { PaymentPlan } from "@/schema/payments";
 import { PRICING_PLANS } from "@/constant/payment";
 import { useAuth } from "@/provider/AuthContext";
-import { WhopCheckoutButtonBase } from "./PaymentOptionCard";
+import { DodoCheckoutButtonBase } from "./PaymentOptionCard";
+import { createDodoCheckoutConfig } from "@/service/dodo";
 import {
   ArrowUpRight,
   CheckCircle2,
@@ -161,10 +162,10 @@ export default function PricingPlansGrid({ userId, className }: Props) {
             </a>
           )}
 
-          {active.type === "one-time" && active.whopKey && (
-            <WhopCheckoutButton
+          {active.type === "one-time" && active.paymentKey && (
+            <DodoCheckoutButton
               userId={userId}
-              paymentKey={active.whopKey}
+              paymentKey={active.paymentKey}
               buttonName="Pay $4,950 Now"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11 text-sm font-semibold"
             />
@@ -191,7 +192,7 @@ export default function PricingPlansGrid({ userId, className }: Props) {
   );
 }
 
-const WhopCheckoutButton = ({
+const DodoCheckoutButton = ({
   userId: userIdProp,
   buttonName,
   className,
@@ -213,22 +214,13 @@ const WhopCheckoutButton = ({
     }
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/user/${resolvedUserId}/whop`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentKey }),
+      const { checkoutId, url } = await createDodoCheckoutConfig({
+        userId: resolvedUserId,
+        paymentKey,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || "Failed to create checkout session.",
-        );
-      }
-
-      const { checkoutId } = await response.json();
-      if (checkoutId) {
-        window.open(`/client/payments/whop/${checkoutId}`, "_blank");
+      if (checkoutId && url) {
+        window.location.assign(url);
       } else {
         toast.error("Could not retrieve the checkout session.");
       }
@@ -243,7 +235,7 @@ const WhopCheckoutButton = ({
   };
 
   return (
-    <WhopCheckoutButtonBase
+    <DodoCheckoutButtonBase
       buttonName={buttonName}
       className={className}
       isLoading={isLoading}

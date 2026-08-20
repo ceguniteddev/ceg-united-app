@@ -24,8 +24,8 @@ export const POST = withAuth(
       const { reportType, businessId } = metadata;
 
       // Note: You can store the purchase record in a Firestore collection here
-      // if tracking CRS purchases is needed. Currently, Whop SDK + Firestore
-      // automatically syncs payments to USER_WHOP_PAYMENTS collection via webhooks.
+      // if tracking CRS purchases is needed. Dodo Payments + Firestore
+      // automatically sync payments via verified webhooks.
 
       if (reportType === "personal") {
         await generateCRSReport({

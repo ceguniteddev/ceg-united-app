@@ -7,7 +7,7 @@ import {
 } from "@/app/api/helpers";
 import { withAuth } from "@/lib/api-validation";
 import { getCurrentUser, getUserById } from "@/service/user";
-import { createPsfInvoiceCheckoutConfig } from "@/service/whop";
+import { createPsfInvoiceCheckoutConfig } from "@/service/dodo";
 import { sendTriggerEmail } from "@/service/trigger-email";
 import { generateInvoicePDF } from "@/service/invoice-pdf";
 import { uploadDocument } from "@/service/documents";
@@ -26,7 +26,7 @@ function formatInvoiceUSD(n: number): string {
 
 /**
  * POST /api/user/[userId]/psf-invoices/[invoiceId]/send
- * Admin-only: sends the invoice by generating a Whop checkout link,
+ * Admin-only: sends the invoice by generating a Dodo checkout link,
  * creating an invoice PDF, and emailing it to the client.
  */
 export const POST = withAuth(
@@ -80,22 +80,24 @@ export const POST = withAuth(
         });
       }
 
-      // Generate Whop checkout link
+      // Generate Dodo checkout link
       let checkoutId: string;
       let checkoutUrl: string;
 
       try {
-        const whopConfig = await createPsfInvoiceCheckoutConfig({
+        const dodoConfig = await createPsfInvoiceCheckoutConfig({
           userId,
           invoiceId,
-          feeAmount: invoiceData.amount ?? invoiceData.successFeeAmount,
+          feeAmount: Math.round(
+            (invoiceData.amount ?? invoiceData.successFeeAmount) * 100,
+          ),
         });
-        checkoutId = whopConfig.checkoutId;
-        checkoutUrl = whopConfig.url;
-      } catch (whopError: any) {
-        console.error("Error creating Whop checkout config:", whopError);
+        checkoutId = dodoConfig.checkoutId;
+        checkoutUrl = dodoConfig.url;
+      } catch (dodoError: any) {
+        console.error("Error creating Dodo checkout config:", dodoError);
         return internalServerError(
-          "Failed to generate Whop payment checkout link.",
+          "Failed to generate Dodo payment checkout link.",
         );
       }
 
@@ -281,8 +283,8 @@ export const POST = withAuth(
       await invoiceRef.update({
         status: "signed",
         sentAt: now,
-        whopCheckoutId: checkoutId,
-        whopCheckoutUrl: checkoutUrl,
+        dodoCheckoutId: checkoutId,
+        dodoCheckoutUrl: checkoutUrl,
         updatedAt: now,
       });
 

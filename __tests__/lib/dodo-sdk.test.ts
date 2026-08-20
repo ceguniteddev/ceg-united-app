@@ -30,13 +30,13 @@ describe("Dodo environment", () => {
       } as unknown as NodeJS.ProcessEnv),
     ).toBe("live_mode");
     expect(resolveDodoReturnUrl({} as NodeJS.ProcessEnv)).toBe(
-      "http://localhost:3000/checkout/success",
+      "http://localhost:3000",
     );
     expect(
       resolveDodoReturnUrl({
         NEXT_PUBLIC_APP_URL: "https://app.example",
       } as unknown as NodeJS.ProcessEnv),
-    ).toBe("https://app.example/checkout/success");
+    ).toBe("https://app.example");
     expect(
       resolveDodoReturnUrl({
         DODO_PAYMENTS_RETURN_URL: "https://return.example",

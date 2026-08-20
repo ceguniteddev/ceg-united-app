@@ -127,7 +127,7 @@ env:
       - BUILD
       - RUNTIME
   - variable: DODO_PAYMENTS_RETURN_URL
-    value: https://staging.cegunited.com/checkout/success
+    value: https://staging.cegunited.com
     availability:
       - BUILD
       - RUNTIME
@@ -141,96 +141,33 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  - variable: WHOP_COMPANY_ID
-    value: biz_CEGVfTydxqFwgI
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_PRODUCT_ID
-    value: prod_Nx8k4DHCfXq8g
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_GENERATE_CRS_REPORT_PRODUCT_ID
-    value: prod_4fUciRne9Fa7z
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_CREDIT_REPAIR_PRODUCT_ID
-    value: prod_eHxOYC1i4vmis
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_WALLET_PRODUCT_ID
-    value: prod_cxXEOMltwsIwd
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_TRADELINE_PRODUCT_ID
-    value: prod_8qoWdnNh7w7PF
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_PRICING_PLAN_STARTER_ID
-    value: prod_fV5gCPjKwe067
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_PRICING_PLAN_PRO_ID
-    value: prod_oJhxhteiZonAQ
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_PRICING_PLAN_EXECUTIVE_ID
-    value: prod_0mb3w3BVfhYYQ
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_BASE_URL
-    value: https://api.whop.com/api/v1
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: NEXT_PUBLIC_WHOP_FULL_PAYMENT_AMOUNT
-    value: 2500
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_FINANCING_AMOUNT
-    value: 2500
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_AUDIT_FULL_AMOUNT
-    value: 2000
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_INTELLIGENCE_FULL_AMOUNT
-    value: 5000
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_ACCELERATOR_FULL_AMOUNT
-    value: 15000
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_AUDIT_DOWNPAYMENT_AMOUNT
-    value: 750
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_INTELLIGENCE_DOWNPAYMENT_AMOUNT
-    value: 1000
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: WHOP_ACCELERATOR_DOWNPAYMENT_AMOUNT
-    value: 5000
-    availability:
-      - BUILD
-      - RUNTIME
+  - variable: DODO_PRODUCT_BUSINESS_SERVICES_ID
+    value: ""
+    availability: [RUNTIME]
+  - variable: DODO_PRODUCT_TRADELINE_ID
+    value: ""
+    availability: [RUNTIME]
+  - variable: DODO_PRODUCT_WALLET_ID
+    value: ""
+    availability: [RUNTIME]
+  - variable: DODO_PRODUCT_PSF_ID
+    value: ""
+    availability: [RUNTIME]
+  - variable: DODO_PRODUCT_CRS_REPORT_ID
+    value: ""
+    availability: [RUNTIME]
+  - variable: DODO_PRODUCT_MEMBERSHIP_STARTER_ID
+    value: ""
+    availability: [RUNTIME]
+  - variable: DODO_PRODUCT_MEMBERSHIP_PRO_ID
+    value: ""
+    availability: [RUNTIME]
+  - variable: DODO_PRODUCT_MEMBERSHIP_EXECUTIVE_ID
+    value: ""
+    availability: [RUNTIME]
+  - variable: DODO_PRODUCT_CREDIT_MODULE_PRO_ID
+    value: ""
+    availability: [RUNTIME]
   - variable: WC_CONSUMER_KEY
     value: ck_ea997ec7a404f79481d6e57a9b1d22bfe1278371
     availability:
@@ -268,10 +205,10 @@ env:
     secret: MUX_TOKEN_SECRET
   - variable: PDF_API_KEY
     secret: PDF_API_KEY_STAGING
-  - variable: WHOP_API_KEY
-    secret: WHOP_API_KEY_STAGING
-  - variable: WHOP_WEBHOOK_SECRET
-    secret: WHOP_WEBHOOK_SECRET_STAGING
+  - variable: DODO_PAYMENTS_API_KEY
+    secret: DODO_PAYMENTS_API_KEY_STAGING
+  - variable: DODO_PAYMENTS_WEBHOOK_KEY
+    secret: DODO_PAYMENTS_WEBHOOK_KEY_STAGING
   - variable: WC_CONSUMER_SECRET
     secret: WC_CONSUMER_SECRET
   - variable: GEMINI_MODEL

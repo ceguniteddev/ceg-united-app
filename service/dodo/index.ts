@@ -119,7 +119,7 @@ const createSession = async ({
       ? {
           subscription_data: {
             on_demand: {
-              mandate_only: true,
+              mandate_only: false,
               product_currency: "USD",
               product_price: Math.round(amountInCents),
             },

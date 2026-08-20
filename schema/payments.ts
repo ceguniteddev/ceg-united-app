@@ -28,16 +28,7 @@ export type DenefitsRequest = z.infer<typeof DenefitsRequestSchema>;
 
 export const DenefitsStatusEnum = z.enum(["Active", "InActive"]);
 
-import { Payment } from "@whop/sdk/resources.js";
 import type { Payment as DodoSdkPayment } from "dodopayments/resources/payments";
-
-export type WhopPayment = Payment & {
-  docId: string | null;
-  userId: string | null;
-  mappedEmail: string | null;
-  mappedFirstName: string | null;
-  mappedLastName: string | null;
-};
 
 export type DodoPayment = DodoSdkPayment & {
   docId: string | null;

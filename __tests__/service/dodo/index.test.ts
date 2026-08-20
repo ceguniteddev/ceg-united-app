@@ -247,7 +247,7 @@ describe("Dodo payment service", () => {
     expect(mocks.create).toHaveBeenCalledWith(
       expect.objectContaining({
         product_cart: [expect.objectContaining({ amount: 123 })],
-        return_url: "http://localhost:3000/checkout/success",
+        return_url: "http://localhost:3000",
       }),
     );
     delete process.env.DODO_AUDIT_FULL_AMOUNT;
@@ -270,7 +270,10 @@ describe("Dodo payment service", () => {
         expect.objectContaining({
           product_cart: [expect.objectContaining({ product_id: productId })],
           subscription_data: {
-            on_demand: expect.objectContaining({ product_price: price }),
+            on_demand: expect.objectContaining({
+              mandate_only: false,
+              product_price: price,
+            }),
           },
         }),
       );

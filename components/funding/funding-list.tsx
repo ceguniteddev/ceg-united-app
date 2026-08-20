@@ -60,7 +60,7 @@ import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
 
 import { toast } from "sonner";
-import { createMembershipCheckoutConfig } from "@/service/whop";
+import { createMembershipCheckoutConfig } from "@/service/dodo";
 import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
 import { AddonCheckoutView } from "@/components/pricing-plans/AddonCheckoutView";
 // import { useFeeSettings } from "@/hooks/fee-settings";

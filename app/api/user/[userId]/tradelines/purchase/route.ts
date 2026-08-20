@@ -40,10 +40,10 @@ export const POST = withAuth(
           grandTotal: currency(totalPrice),
           image: item.tradeline.image || "",
           status: "pending",
-          // Whop payment details
-          whop_plan_id: planId,
-          whop_receipt_id: receiptId,
-          whop_checkout_id: checkoutId,
+          // Dodo payment details
+          dodo_plan_id: planId,
+          dodo_receipt_id: receiptId,
+          dodo_checkout_id: checkoutId,
         });
       });
 

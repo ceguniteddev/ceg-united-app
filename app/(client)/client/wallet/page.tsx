@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
 import { useWalletQuery, WalletTransaction } from "@/hooks/wallet";
-import { createWalletCheckoutConfig } from "@/service/whop";
+import { createWalletCheckoutConfig } from "@/service/dodo";
+import { DodoCheckoutView } from "@/components/funding/DodoCheckoutView";
 import {
   Card,
   CardContent,
@@ -37,7 +38,6 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { GET_WALLET } from "@/constant/react-query-keys";
 
@@ -46,7 +46,7 @@ const USE_MOCK_DATA = false;
 
 const MOCK_TRANSACTION_TEMPLATES = [
   {
-    description: "Wallet Top-up via Whop",
+    description: "Wallet Top-up via Dodo Payments",
     type: "credit" as const,
     amount: 50.0,
   },
@@ -67,7 +67,7 @@ const MOCK_TRANSACTION_TEMPLATES = [
     amount: 11.5,
   },
   {
-    description: "Wallet Top-up via Whop",
+    description: "Wallet Top-up via Dodo Payments",
     type: "credit" as const,
     amount: 25.0,
   },
@@ -87,7 +87,7 @@ const MOCK_TRANSACTION_TEMPLATES = [
     amount: 11.5,
   },
   {
-    description: "Wallet Top-up via Whop",
+    description: "Wallet Top-up via Dodo Payments",
     type: "credit" as const,
     amount: 15.0,
   },
@@ -109,7 +109,7 @@ const MOCK_TRANSACTIONS: WalletTransaction[] = Array.from(
     const template =
       MOCK_TRANSACTION_TEMPLATES[i % MOCK_TRANSACTION_TEMPLATES.length];
     let amount = template.amount;
-    if (template.description === "Wallet Top-up via Whop") {
+    if (template.description === "Wallet Top-up via Dodo Payments") {
       const packages = [15.0, 25.0, 50.0, 100.0];
       amount = packages[(i + 3) % packages.length];
     }
@@ -199,7 +199,7 @@ export default function WalletPage() {
       setIsPurchasing(true);
       const { checkoutId, url } = await createWalletCheckoutConfig({
         userId: userData?.id,
-        amount: finalAmount,
+        amount: Math.round(finalAmount * 100),
       });
       if (checkoutId) {
         setCheckoutSessionId(checkoutId);
@@ -407,7 +407,7 @@ export default function WalletPage() {
                     </li>
                     <li>
                       All transactions are secure and powered by our payment
-                      partner, Whop.
+                      partner, Dodo Payments.
                     </li>
                   </ul>
                 </div>
@@ -500,7 +500,7 @@ export default function WalletPage() {
         </div>
       </div>
 
-      {/* Whop Checkout Sheet */}
+      {/* Dodo Checkout Sheet */}
       <Sheet open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
         <SheetContent
           side="right"
@@ -512,7 +512,7 @@ export default function WalletPage() {
                 Secure Checkout
               </SheetTitle>
               <SheetDescription className="hidden sm:block">
-                Please complete your payment using the secure Whop checkout form
+                Please complete your payment using the secure Dodo checkout form
                 below.
               </SheetDescription>
             </div>
@@ -529,15 +529,14 @@ export default function WalletPage() {
           </SheetHeader>
           <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative">
             {checkoutSessionId && (
-              <WhopCheckoutEmbed
-                sessionId={checkoutSessionId}
+              <DodoCheckoutView
+                checkoutId={checkoutSessionId}
+                checkoutDetails={{
+                  url: checkoutUrl,
+                  checkout_url: checkoutUrl,
+                  amount: Math.round(getAmountToPurchase() * 100),
+                }}
                 onComplete={handleCheckoutComplete}
-                prefill={{ email: userData.email || "" }}
-                fallback={
-                  <div className="flex items-center justify-center h-full">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                  </div>
-                }
               />
             )}
           </div>

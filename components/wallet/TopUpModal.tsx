@@ -3,7 +3,8 @@ import { Loader2, ExternalLink } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { createWalletCheckoutConfig } from "@/service/whop";
+import { createWalletCheckoutConfig } from "@/service/dodo";
+import { DodoCheckoutView } from "@/components/funding/DodoCheckoutView";
 import { GET_WALLET } from "@/constant/react-query-keys";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,21 +15,19 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { WhopCheckoutEmbed } from "@whop/checkout/react";
 
 export interface TopUpModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
   userEmail?: string;
-  onComplete?: () => void; // Optional callback triggered when Whop checkout completes successfully
+  onComplete?: () => void;
 }
 
 export function TopUpModal({
   isOpen,
   onClose,
   userId,
-  userEmail,
   onComplete,
 }: TopUpModalProps) {
   const [selectedPack, setSelectedPack] = useState<number | "custom">(25);
@@ -65,7 +64,7 @@ export function TopUpModal({
       setIsPurchasing(true);
       const { checkoutId, url } = await createWalletCheckoutConfig({
         userId,
-        amount,
+        amount: Math.round(amount * 100),
       });
       if (checkoutId) {
         setCheckoutSessionId(checkoutId);
@@ -253,7 +252,7 @@ export function TopUpModal({
                 Secure Checkout
               </SheetTitle>
               <SheetDescription className="hidden sm:block text-gray-500 mt-1">
-                Please complete your top-up payment using the secure Whop
+                Please complete your top-up payment using the secure Dodo
                 checkout form below.
               </SheetDescription>
             </div>
@@ -270,15 +269,18 @@ export function TopUpModal({
           </SheetHeader>
           <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative">
             {checkoutSessionId && (
-              <WhopCheckoutEmbed
-                sessionId={checkoutSessionId}
+              <DodoCheckoutView
+                checkoutId={checkoutSessionId}
+                checkoutDetails={{
+                  url: checkoutUrl,
+                  checkout_url: checkoutUrl,
+                  amount: Math.round(
+                    (selectedPack === "custom"
+                      ? Number(customAmount)
+                      : selectedPack) * 100,
+                  ),
+                }}
                 onComplete={handleCheckoutComplete}
-                prefill={{ email: userEmail || "" }}
-                fallback={
-                  <div className="flex items-center justify-center h-full">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                  </div>
-                }
               />
             )}
           </div>

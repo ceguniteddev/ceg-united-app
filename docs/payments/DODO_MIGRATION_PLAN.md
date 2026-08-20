@@ -174,7 +174,7 @@ const session = await dodoClient.checkoutSessions.create({
   product_cart: [{ product_id: DODO_PRODUCT_X_ID, quantity: 1, amount }], // amount only for BYOP
   customer: { email: user.email, name: `${user.firstName} ${user.lastName}` },
   metadata: { userId, paymentKey },
-  return_url: `${APP_URL}/checkout/success`,
+  return_url: `${APP_URL}`,
 });
 return { checkoutId: session.session_id, url: session.checkout_url };
 ```

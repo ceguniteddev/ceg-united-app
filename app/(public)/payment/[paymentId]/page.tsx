@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { getUserById } from "@/service/user";
 import { notFound } from "next/navigation";
-import { getPaymentRequestById } from "@/service/whop/utils";
+import { getPaymentRequestById } from "@/service/dodo/utils";
 import PricingPlansGrid from "@/components/funding/PricingPlansGrid";
 
 export const metadata: Metadata = {

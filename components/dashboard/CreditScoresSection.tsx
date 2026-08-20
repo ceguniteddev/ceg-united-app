@@ -15,7 +15,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/provider/AuthContext";
-import { createMembershipCheckoutConfig } from "@/service/whop";
+import { createMembershipCheckoutConfig } from "@/service/dodo";
 // import { useFeeSettings } from "@/hooks/fee-settings";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -37,8 +37,7 @@ import { TopUpModal } from "@/components/wallet/TopUpModal";
 import { ConfirmButton } from "@/components/Confirmation";
 import { useFeeSettings } from "@/hooks/fee-settings";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { WhopCheckoutEmbed } from "@whop/checkout/react";
-import Spinner from "@/components/Spinner";
+import { DodoCheckoutView } from "@/components/funding/DodoCheckoutView";
 
 export interface CreditScore {
   bureau: "experian" | "equifax" | "transunion";
@@ -269,6 +268,7 @@ export function CreditScoresSection({
 }) {
   const [isPricingModalOpen, setPricingModalOpen] = useState(false);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [isCheckoutSheetOpen, setCheckoutSheetOpen] = useState(false);
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<{
@@ -336,7 +336,6 @@ export function CreditScoresSection({
     }
 
     const latestApp = appliedFunding?.[0];
-    const generatedRef = latestApp?.referenceNumber;
 
     if (!isEligibleForFreePull && hasSufficientBalance) {
       try {
@@ -403,6 +402,7 @@ export function CreditScoresSection({
               : undefined,
         });
         setCheckoutId(res.checkoutId);
+        setCheckoutUrl(res.url);
         setIsConfirmOpen(false);
       } else if ("success" in res && res.success) {
         toast.success(
@@ -444,6 +444,7 @@ export function CreditScoresSection({
         selectedAddonIds: selectedAddons,
       });
       setCheckoutId(res.checkoutId);
+      setCheckoutUrl(res.url);
       setSelectedPlan({ id: planId, amount });
       setPricingModalOpen(false);
       setCheckoutSheetOpen(true);
@@ -664,6 +665,7 @@ export function CreditScoresSection({
         onOpenChange={(open) => {
           if (!open) {
             setCheckoutId(null);
+            setCheckoutUrl(null);
             setCheckoutMetadata(null);
           }
         }}
@@ -678,6 +680,7 @@ export function CreditScoresSection({
               <button
                 onClick={() => {
                   setCheckoutId(null);
+                  setCheckoutUrl(null);
                   setCheckoutMetadata(null);
                 }}
                 className="cursor-pointer absolute top-3 right-3 p-2 bg-gray-100 hover:bg-gray-200 rounded-full z-50 transition-colors"
@@ -685,15 +688,14 @@ export function CreditScoresSection({
               >
                 <X className="w-4 h-4 text-gray-600" />
               </button>
-              <WhopCheckoutEmbed
-                sessionId={checkoutId}
-                prefill={{
-                  email: activeUserData?.email,
-                  address: {
-                    country: "US",
-                  },
+              <DodoCheckoutView
+                checkoutId={checkoutId}
+                checkoutDetails={{
+                  url: checkoutUrl || undefined,
+                  checkout_url: checkoutUrl || undefined,
+                  amount: Math.round(creditReportFee * 100),
                 }}
-                onComplete={async (planId, receiptId) => {
+                onComplete={async (paymentId) => {
                   try {
                     const response = await fetch(
                       `/api/user/${user!.uid}/crs/purchase`,
@@ -701,8 +703,8 @@ export function CreditScoresSection({
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          planId,
-                          receiptId,
+                          planId: checkoutId,
+                          receiptId: paymentId,
                           checkoutId,
                           metadata: checkoutMetadata,
                         }),
@@ -717,6 +719,7 @@ export function CreditScoresSection({
                       "Payment successful! Generating your credit report...",
                     );
                     setCheckoutId(null);
+                    setCheckoutUrl(null);
                     setCheckoutMetadata(null);
                     queryClient.invalidateQueries({
                       queryKey: [GET_USER, user!.uid],
@@ -734,14 +737,10 @@ export function CreditScoresSection({
                       "Payment succeeded but report generation failed. Please contact support.",
                     );
                     setCheckoutId(null);
+                    setCheckoutUrl(null);
                     setCheckoutMetadata(null);
                   }
                 }}
-                fallback={
-                  <div className="flex items-center justify-center h-[400px]">
-                    <Spinner displayText="Loading secure checkout..." />
-                  </div>
-                }
               />
             </div>
           )}

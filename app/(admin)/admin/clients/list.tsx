@@ -51,7 +51,7 @@ import { DenefitsRequest, DenefitsStatusEnum } from "@/schema/payments";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useGetWhopPayments } from "@/hooks/admin/payments/whop";
+import { useGetDodoPayments } from "@/hooks/admin/payments/dodo";
 import { useGetAllMemberships } from "@/hooks/membership";
 import { MultiSelect } from "@/components/multi-select";
 
@@ -94,7 +94,7 @@ const denefitsStatusFilterFn: FilterFn<UserWithId> = (
   return value === selectedFilter;
 };
 
-const whopPaymentFilterFn: FilterFn<UserWithId> = (
+const dodoPaymentFilterFn: FilterFn<UserWithId> = (
   row,
   columnId,
   filterValue,
@@ -111,7 +111,7 @@ const whopPaymentFilterFn: FilterFn<UserWithId> = (
 const ClientsList = () => {
   const [membershipFilter, setMembershipFilter] = useState<string[]>([]);
   const [denefitsStatusFilter, setDenefitsStatusFilter] = useState("all");
-  const [whopPaymentFilter, setWhopPaymentFilter] = useState("all");
+  const [dodoPaymentFilter, setDodoPaymentFilter] = useState("all");
 
   const { users, isLoading } = useUsersQuery("Client");
   const [sorting, setSorting] = React.useState<SortingState>([
@@ -122,7 +122,7 @@ const ClientsList = () => {
   );
   const { denefitsContracts, isLoading: denefitsContractsLoading } =
     useGetDenefitsContracts();
-  const { whopPayments, isLoading: whopPaymentsLoading } = useGetWhopPayments();
+  const { dodoPayments, isLoading: dodoPaymentsLoading } = useGetDodoPayments();
   const { data: allMemberships, isLoading: membershipsLoading } =
     useGetAllMemberships();
 
@@ -136,12 +136,10 @@ const ClientsList = () => {
     );
   }, [denefitsContracts]);
 
-  const whopPaymentsMap = useMemo(() => {
-    if (!whopPayments) return new Map();
-    return new Map(
-      whopPayments.map((payment: any) => [payment.userId, payment]),
-    );
-  }, [whopPayments]);
+  const dodoPaymentsMap = useMemo(() => {
+    if (!dodoPayments) return new Map();
+    return new Map(dodoPayments.map((payment) => [payment.userId, payment]));
+  }, [dodoPayments]);
 
   const membershipsMap = useMemo(() => {
     if (!allMemberships) return new Map();
@@ -227,16 +225,16 @@ const ClientsList = () => {
       filterFn: denefitsStatusFilterFn,
     },
     {
-      id: "whopPayment",
+      id: "dodoPayment",
       header: ({ column }) => (
-        <SortableHeader column={column} title="Whop Payment" />
+        <SortableHeader column={column} title="Dodo Payment" />
       ),
       accessorFn: (row) => {
-        const payment = whopPaymentsMap.get(row.id);
+        const payment = dodoPaymentsMap.get(row.id);
         return payment ? "Active" : "InActive";
       },
       cell: ({ row }) => {
-        const payment = whopPaymentsMap.get(row.original.id);
+        const payment = dodoPaymentsMap.get(row.original.id);
         const status = payment ? "Active" : "InActive";
         return (
           <div>
@@ -244,7 +242,7 @@ const ClientsList = () => {
           </div>
         );
       },
-      filterFn: whopPaymentFilterFn,
+      filterFn: dodoPaymentFilterFn,
     },
 
     {
@@ -331,15 +329,15 @@ const ClientsList = () => {
   }, [denefitsStatusFilter, table]);
 
   useEffect(() => {
-    const col = table.getColumn("whopPayment");
+    const col = table.getColumn("dodoPayment");
     if (!col) return;
 
-    if (whopPaymentFilter === "all") {
+    if (dodoPaymentFilter === "all") {
       col.setFilterValue(undefined);
     } else {
-      col.setFilterValue(whopPaymentFilter);
+      col.setFilterValue(dodoPaymentFilter);
     }
-  }, [whopPaymentFilter, table]);
+  }, [dodoPaymentFilter, table]);
 
   const exportToExcel = () => {
     const rows = table.getFilteredRowModel().rows;
@@ -351,7 +349,7 @@ const ClientsList = () => {
       "Broker",
       "Date Added",
       "Denefits Contract",
-      "Whop Payment",
+      "Dodo Payment",
       "Membership",
     ];
 
@@ -361,8 +359,8 @@ const ClientsList = () => {
       const contract = denefitsContractsMap.get(client.id);
       const denefitsStatus = contract ? "Active" : "InActive";
 
-      const whopPayment = whopPaymentsMap.get(client.id);
-      const whopPaymentStatus = whopPayment ? "Active" : "InActive";
+      const dodoPayment = dodoPaymentsMap.get(client.id);
+      const dodoPaymentStatus = dodoPayment ? "Active" : "InActive";
 
       const membership = membershipsMap.get(client.id);
       let membershipType = "None";
@@ -388,7 +386,7 @@ const ClientsList = () => {
         `"${brokerName}"`,
         `"${regDate}"`,
         `"${denefitsStatus}"`,
-        `"${whopPaymentStatus}"`,
+        `"${dodoPaymentStatus}"`,
         `"${membershipType}"`,
       ].join(",");
     });
@@ -411,7 +409,7 @@ const ClientsList = () => {
   if (
     isLoading ||
     denefitsContractsLoading ||
-    whopPaymentsLoading ||
+    dodoPaymentsLoading ||
     membershipsLoading
   ) {
     return <Spinner displayText="Loading clients..." />;
@@ -488,10 +486,10 @@ const ClientsList = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          {/* Whop Payment Filter */}
+          {/* Dodo Payment Filter */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-muted-foreground">
-              Whop Payment
+              Dodo Payment
             </label>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -500,17 +498,17 @@ const ClientsList = () => {
                   className="h-9 w-full justify-between"
                 >
                   <span>
-                    {whopPaymentFilter === "all"
+                    {dodoPaymentFilter === "all"
                       ? "All Status"
-                      : whopPaymentFilter}
+                      : dodoPaymentFilter}
                   </span>
                   <ChevronDownIcon className="h-4 w-4 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-[200px]">
                 <DropdownMenuRadioGroup
-                  value={whopPaymentFilter}
-                  onValueChange={setWhopPaymentFilter}
+                  value={dodoPaymentFilter}
+                  onValueChange={setDodoPaymentFilter}
                 >
                   <DropdownMenuRadioItem value="all">
                     All Status
@@ -534,8 +532,8 @@ const ClientsList = () => {
             const client = row.original;
             const contract = denefitsContractsMap.get(client.id);
             const denefitsStatus = contract ? "Active" : "Inactive";
-            const whopPayment = whopPaymentsMap.get(client.id);
-            const whopPaymentStatus = whopPayment ? "Active" : "Inactive";
+            const dodoPayment = dodoPaymentsMap.get(client.id);
+            const dodoPaymentStatus = dodoPayment ? "Active" : "Inactive";
 
             return (
               <Card key={row.id} className="overflow-hidden">
@@ -558,8 +556,8 @@ const ClientsList = () => {
                     <CategoryBadge category={denefitsStatus} />
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Whop Payment:</span>
-                    <CategoryBadge category={whopPaymentStatus} />
+                    <span className="text-muted-foreground">Dodo Payment:</span>
+                    <CategoryBadge category={dodoPaymentStatus} />
                   </div>
 
                   <div className="flex items-center justify-between">

@@ -31,7 +31,7 @@ import {
 import {
   createMembershipCheckoutConfig,
   createAddonCheckoutConfig,
-} from "@/service/whop";
+} from "@/service/dodo";
 import { toast } from "sonner";
 
 const Sidebar = () => {
