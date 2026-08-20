@@ -1,4 +1,11 @@
 import type { NextConfig } from "next";
+import { loadEnvFile } from "node:process";
+
+try {
+  loadEnvFile(".env.dodo");
+} catch {
+  // Deployment environments provide Dodo variables through App Hosting.
+}
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -57,7 +64,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' data: https://fonts.gstatic.com https://cdn.tiny.cloud",
               "connect-src 'self' https://storage.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://*.cloudfunctions.net https://api.mux.com https://stream.mux.com https://recaptchaenterprise.googleapis.com https://www.google.com",
               "media-src 'self' blob: https://storage.googleapis.com https://stream.mux.com",
-              "frame-src 'self' blob: https://www.google.com https://recaptcha.google.com https://storage.googleapis.com https://whop.com https://calendly.com https://lob-assets.com",
+              "frame-src 'self' blob: https://www.google.com https://recaptcha.google.com https://storage.googleapis.com https://whop.com https://checkout.dodopayments.com https://test.checkout.dodopayments.com https://test.dodopayments.com https://live.dodopayments.com https://calendly.com https://lob-assets.com",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",

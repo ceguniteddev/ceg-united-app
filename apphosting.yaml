@@ -110,11 +110,7 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  # - variable: NEXT_PUBLIC_FANBASIS_URL
-  #   value: https://www.fanbasis.com/agency-checkout/Cegunited/lOOnM
-  #   availability:
-  #     - BUILD
-  #     - RUNTIME
+
   - variable: MUX_TOKEN_ID
     value: 0d9782a4-b4cb-42c3-844e-cb0822886a82
     availability:
@@ -127,6 +123,16 @@ env:
       - RUNTIME
   - variable: NEXT_PUBLIC_APP_URL
     value: https://app.cegunited.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: DODO_PAYMENTS_RETURN_URL
+    value: https://app.cegunited.com/checkout/success
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_DODO_PAYMENTS_MODE
+    value: live
     availability:
       - BUILD
       - RUNTIME
@@ -254,14 +260,6 @@ env:
     secret: FIREBASE_PRIVATE_KEY
   - variable: ADMIN_ACCESS_KEY
     secret: ADMIN_ACCESS_KEY_PRODUCTION
-  - variable: PLAID_CLIENT_ID
-    secret: PLAID_CLIENT_ID
-  - variable: PLAID_SECRET
-    secret: PLAID_SECRET_PRODUCTION
-  # - variable: RECAPTCHA_SECRET_KEY
-  #   secret: RECAPTCHA_SECRET_KEY_PRODUCTION
-  # - variable: EMAIL_PASSWORD
-  #   secret: EMAIL_PASSWORD
   - variable: ENCRYPTION_KEY
     secret: ENCRYPTION_KEY
   - variable: FIREBASE_PRIVATE_KEY_BASE64

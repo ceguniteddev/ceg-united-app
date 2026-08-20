@@ -65,7 +65,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { createMembershipCheckoutConfig } from "@/service/whop";
+import { createMembershipCheckoutConfig } from "@/service/dodo";
 
 interface BusinessDetailViewProps {
   targetUserId: string;
@@ -124,6 +124,9 @@ export function BusinessDetailView({
   // Membership Checkout State
   const [isPricingModalOpen, setPricingModalOpen] = useState(false);
   const [membershipCheckoutId, setMembershipCheckoutId] = useState<
+    string | null
+  >(null);
+  const [membershipCheckoutUrl, setMembershipCheckoutUrl] = useState<
     string | null
   >(null);
   const [isMembershipSheetOpen, setMembershipSheetOpen] = useState(false);
@@ -252,6 +255,7 @@ export function BusinessDetailView({
         selectedAddonIds: selectedAddons,
       });
       setMembershipCheckoutId(res.checkoutId);
+      setMembershipCheckoutUrl(res.url);
       setSelectedPlan({ id: planId, amount });
       setPricingModalOpen(false);
       setMembershipSheetOpen(true);
@@ -685,6 +689,7 @@ export function BusinessDetailView({
                 ) : (
                   <MembershipCheckoutView
                     checkoutId={membershipCheckoutId}
+                    checkoutUrl={membershipCheckoutUrl || undefined}
                     userId={activeUserData.id!}
                     tierId={selectedPlan.id}
                     amount={selectedPlan.amount}

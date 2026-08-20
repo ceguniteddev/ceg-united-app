@@ -1,0 +1,505 @@
+"use server";
+
+import type { Payment } from "dodopayments/resources/payments";
+import type { Subscription } from "dodopayments/resources/subscriptions";
+import { randomUUID } from "crypto";
+
+import {
+  DODO_CHECKOUTS_COLLECTION,
+  DODO_PAYMENT_REQUESTS_COLLECTION,
+  PSF_INVOICES_COLLECTION,
+  USER_DODO_PAYMENTS,
+  USER_WALLET,
+  USER_WALLET_TRANSACTIONS,
+} from "@/constant/collection-name";
+import { dodoClient } from "@/lib/dodo-sdk";
+import { dodoReturnUrl } from "@/lib/dodo-env";
+import { firestoreAdmin } from "@/lib/fireabase-admin";
+import { logError, logInfo } from "@/lib/logger";
+import type { PaymentPlan } from "@/schema/payments";
+import { EmailJobs } from "@/schema/trigger-email";
+import { getFeeSettings } from "@/service/fee-settings";
+import { activateUserMembership } from "@/service/membership";
+import { sendTriggerEmail } from "@/service/trigger-email";
+import { getUserById } from "@/service/user";
+
+type CheckoutResult = { checkoutId: string; url: string };
+type Metadata = Record<string, string>;
+
+const amount = (name: string, fallback: number) =>
+  Number(process.env[name] || fallback);
+
+const productForPayment = (paymentKey: PaymentPlan) => {
+  if (paymentKey.includes("Tradeline"))
+    return process.env.DODO_PRODUCT_TRADELINE_ID;
+  if (paymentKey.includes("Audit")) return process.env.DODO_PRODUCT_AUDIT_ID;
+  if (paymentKey.includes("Intelligence"))
+    return process.env.DODO_PRODUCT_INTELLIGENCE_ID;
+  if (paymentKey.includes("Accelerator"))
+    return process.env.DODO_PRODUCT_ACCELERATOR_ID;
+  if (paymentKey.includes("CreditReport"))
+    return process.env.DODO_PRODUCT_CRS_REPORT_ID;
+  if (paymentKey === "WalletTopUp") return process.env.DODO_PRODUCT_WALLET_ID;
+  return undefined;
+};
+
+const amountForPayment = (paymentKey: PaymentPlan, customAmount?: number) => {
+  if (customAmount != null) return customAmount;
+  const amounts: Partial<Record<PaymentPlan, number>> = {
+    AuditFull: amount("DODO_AUDIT_FULL_AMOUNT", 200000),
+    IntelligenceFull: amount("DODO_INTELLIGENCE_FULL_AMOUNT", 500000),
+    AcceleratorFull: amount("DODO_ACCELERATOR_FULL_AMOUNT", 1500000),
+    AuditDownPayment: amount("DODO_AUDIT_DOWNPAYMENT_AMOUNT", 75000),
+    IntelligenceDownPayment: amount(
+      "DODO_INTELLIGENCE_DOWNPAYMENT_AMOUNT",
+      100000,
+    ),
+    AcceleratorDownPayment: amount(
+      "DODO_ACCELERATOR_DOWNPAYMENT_AMOUNT",
+      500000,
+    ),
+  };
+  const configuredAmount = amounts[paymentKey];
+  if (configuredAmount == null) {
+    throw new Error(`Missing Dodo amount for ${paymentKey}.`);
+  }
+  return configuredAmount;
+};
+
+const requireProduct = (productId: string | undefined, label: string) => {
+  if (!productId) throw new Error(`Missing Dodo product ID for ${label}.`);
+  return productId;
+};
+
+const getCheckoutUser = async (userId: string) => {
+  const user = await getUserById(userId);
+  if (!user) throw new Error("User not found");
+  return user;
+};
+
+const createSession = async ({
+  userId,
+  productId,
+  paymentKey,
+  amountInCents,
+  metadata = {},
+  onDemand,
+}: {
+  userId: string;
+  productId: string;
+  paymentKey: string;
+  amountInCents: number;
+  metadata?: Metadata;
+  onDemand?: boolean;
+}): Promise<CheckoutResult> => {
+  const user = await getCheckoutUser(userId);
+  const session = await dodoClient.checkoutSessions.create({
+    product_cart: [
+      {
+        product_id: productId,
+        quantity: 1,
+        amount: Math.round(amountInCents),
+      },
+    ],
+    customer: {
+      email: user.email,
+      name: `${user.firstName} ${user.lastName}`.trim(),
+    },
+    metadata: { userId, paymentKey, ...metadata },
+    return_url: dodoReturnUrl,
+    allowed_payment_method_types: [
+      "credit",
+      "debit",
+      "apple_pay",
+      "google_pay",
+    ],
+    customization: { theme: "system" },
+    ...(onDemand
+      ? {
+          subscription_data: {
+            on_demand: {
+              mandate_only: true,
+              product_currency: "USD",
+              product_price: Math.round(amountInCents),
+            },
+          },
+        }
+      : {}),
+  });
+
+  if (!session.session_id || !session.checkout_url) {
+    throw new Error(
+      "Dodo Payments did not return a complete checkout session.",
+    );
+  }
+
+  await firestoreAdmin()
+    .collection(DODO_CHECKOUTS_COLLECTION)
+    .add({
+      userId,
+      checkoutId: session.session_id,
+      url: session.checkout_url,
+      createdAt: new Date(),
+      amount: amountInCents,
+      productId,
+      status: "created",
+      paymentKey,
+      metadata: { userId, paymentKey, ...metadata },
+      provider: "dodo",
+      ...session,
+    });
+
+  return { checkoutId: session.session_id, url: session.checkout_url };
+};
+
+export const createDodoCheckoutConfig = async ({
+  userId,
+  paymentKey,
+  customAmount,
+}: {
+  userId: string;
+  paymentKey: PaymentPlan;
+  customAmount?: number;
+}): Promise<CheckoutResult> => {
+  const isVariable = paymentKey.includes("Tradeline");
+  if (!isVariable) {
+    const existing = await firestoreAdmin()
+      .collection(DODO_CHECKOUTS_COLLECTION)
+      .where("userId", "==", userId)
+      .where("paymentKey", "==", paymentKey)
+      .limit(1)
+      .get();
+    if (!existing.empty) {
+      const data = existing.docs[0].data();
+      if (data.checkoutId && data.url) {
+        return { checkoutId: data.checkoutId, url: data.url };
+      }
+    }
+  }
+
+  return createSession({
+    userId,
+    productId: requireProduct(productForPayment(paymentKey), paymentKey),
+    paymentKey,
+    amountInCents: amountForPayment(paymentKey, customAmount),
+  });
+};
+
+const membershipProduct = (planId: string) => {
+  const products: Record<string, string | undefined> = {
+    tier_starter: process.env.DODO_PRODUCT_MEMBERSHIP_STARTER_ID,
+    tier_pro: process.env.DODO_PRODUCT_MEMBERSHIP_PRO_ID,
+    tier_executive: process.env.DODO_PRODUCT_MEMBERSHIP_EXECUTIVE_ID,
+  };
+  return products[planId];
+};
+
+export const createMembershipCheckoutConfig = async ({
+  userId,
+  planId,
+  selectedAddonIds = [],
+  isAddon = false,
+}: {
+  userId: string;
+  planId: "tier_starter" | "tier_pro" | "tier_executive";
+  selectedAddonIds?: string[];
+  isAddon?: boolean;
+}): Promise<CheckoutResult> => {
+  const fees = await getFeeSettings();
+  const prices = {
+    tier_starter: fees.tierStarterPrice,
+    tier_pro: fees.tierProPrice,
+    tier_executive: fees.tierExecutivePrice,
+  };
+  const priceInDollars =
+    prices[planId] +
+    (selectedAddonIds.includes("credit_module_pro")
+      ? (fees.creditModuleProAddonPrice ?? 197)
+      : 0);
+  const priceInCents = Math.round(priceInDollars * 100);
+
+  return createSession({
+    userId,
+    productId: requireProduct(membershipProduct(planId), planId),
+    paymentKey: planId,
+    amountInCents: priceInCents,
+    onDemand: true,
+    metadata: {
+      planId,
+      isAddon: String(isAddon),
+      selectedAddonIds: JSON.stringify(selectedAddonIds),
+    },
+  });
+};
+
+export const createAddonCheckoutConfig = async ({
+  userId,
+  addonId,
+}: {
+  userId: string;
+  addonId: "credit_module_pro";
+}): Promise<CheckoutResult> => {
+  const fees = await getFeeSettings();
+  return createSession({
+    userId,
+    productId: requireProduct(
+      process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID,
+      addonId,
+    ),
+    paymentKey: addonId,
+    amountInCents: Math.round(fees.creditModuleProAddonPrice * 100),
+    onDemand: true,
+    metadata: { planId: addonId, isAddon: "true" },
+  });
+};
+
+export const createCRSReportCheckoutConfig = async ({
+  userId,
+  paymentKey,
+  feeAmount,
+  metadata = {},
+}: {
+  userId: string;
+  paymentKey: "CreditReportFee" | "BusinessCreditReportFee";
+  feeAmount: number;
+  metadata?: Metadata;
+}) =>
+  createSession({
+    userId,
+    productId: requireProduct(
+      process.env.DODO_PRODUCT_CRS_REPORT_ID,
+      "CRS report",
+    ),
+    paymentKey,
+    amountInCents: feeAmount,
+    metadata,
+  });
+
+export const createWalletCheckoutConfig = async ({
+  userId,
+  amount: amountInCents,
+}: {
+  userId: string;
+  amount: number;
+}) =>
+  createSession({
+    userId,
+    productId: requireProduct(process.env.DODO_PRODUCT_WALLET_ID, "wallet"),
+    paymentKey: "WalletTopUp",
+    amountInCents,
+  });
+
+export const createPsfInvoiceCheckoutConfig = async ({
+  userId,
+  invoiceId,
+  feeAmount,
+}: {
+  userId: string;
+  invoiceId: string;
+  feeAmount: number;
+}) =>
+  createSession({
+    userId,
+    productId: requireProduct(process.env.DODO_PRODUCT_PSF_ID, "PSF invoice"),
+    paymentKey: "PSF_INVOICE",
+    amountInCents: feeAmount,
+    metadata: { invoiceId, type: "PSF_INVOICE", planId: "PSF_INVOICE" },
+  });
+
+export const chargeMembership = async ({
+  subscriptionId,
+  amountInCents,
+  metadata = {},
+}: {
+  subscriptionId: string;
+  amountInCents: number;
+  metadata?: Metadata;
+}) =>
+  dodoClient.subscriptions.charge(subscriptionId, {
+    product_price: Math.round(amountInCents),
+    product_currency: "USD",
+    metadata,
+  });
+
+export const getDodoCheckoutDetailByCheckoutId = async (checkoutId: string) => {
+  const result = await firestoreAdmin()
+    .collection(DODO_CHECKOUTS_COLLECTION)
+    .where("checkoutId", "==", checkoutId)
+    .limit(1)
+    .get();
+  if (result.empty) return null;
+  return { id: result.docs[0].id, ...result.docs[0].data() };
+};
+
+export const recordPaymentSucceeded = async ({
+  payment,
+}: {
+  payment: Payment;
+}) => {
+  const db = firestoreAdmin();
+  const metadata = (payment.metadata || {}) as Record<string, string>;
+  const userId = metadata.userId || null;
+  const checkout = payment.checkout_session_id
+    ? await getDodoCheckoutDetailByCheckoutId(payment.checkout_session_id)
+    : null;
+  const paymentKey = metadata.paymentKey || (checkout as any)?.paymentKey;
+
+  if (userId && paymentKey === "WalletTopUp") {
+    await db.runTransaction(async (transaction) => {
+      const duplicateQuery = db
+        .collection(USER_WALLET_TRANSACTIONS)
+        .where("paymentId", "==", payment.payment_id)
+        .limit(1);
+      const duplicate = await transaction.get(duplicateQuery);
+      if (!duplicate.empty) return;
+
+      const creditAmount = payment.total_amount / 100;
+      const walletRef = db.collection(USER_WALLET).doc(userId);
+      const wallet = await transaction.get(walletRef);
+      if (wallet.exists) {
+        transaction.update(walletRef, {
+          balance: (wallet.data()?.balance || 0) + creditAmount,
+          updatedAt: new Date().toISOString(),
+        });
+      } else {
+        transaction.set(walletRef, {
+          balance: creditAmount,
+          userId,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+      transaction.set(db.collection(USER_WALLET_TRANSACTIONS).doc(), {
+        userId,
+        amount: creditAmount,
+        type: "credit",
+        description: "Wallet Top-up via Dodo Payments",
+        createdAt: new Date().toISOString(),
+        paymentId: payment.payment_id,
+      });
+    });
+  }
+
+  const invoiceId =
+    metadata.invoiceId || (checkout as any)?.metadata?.invoiceId;
+  if (paymentKey === "PSF_INVOICE" && invoiceId) {
+    await db.collection(PSF_INVOICES_COLLECTION).doc(invoiceId).set(
+      {
+        status: "paid",
+        dodoPaymentId: payment.payment_id,
+        paidAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
+  }
+
+  await db
+    .collection(USER_DODO_PAYMENTS)
+    .doc(payment.payment_id)
+    .set({ ...payment, userId, provider: "dodo" }, { merge: true });
+};
+
+export const recordSubscriptionActive = async ({
+  subscription,
+}: {
+  subscription: Subscription;
+}) => {
+  const metadata = (subscription.metadata || {}) as Record<string, string>;
+  if (!metadata.userId || !metadata.planId) return;
+  await activateUserMembership({
+    userId: metadata.userId,
+    tier: metadata.planId,
+    amount: subscription.recurring_pre_tax_amount / 100,
+    checkoutId: subscription.subscription_id,
+    planId: subscription.product_id,
+    receiptId: subscription.subscription_id,
+  });
+};
+
+export const getDodoPayments = async () => {
+  const snapshot = await firestoreAdmin()
+    .collection(USER_DODO_PAYMENTS)
+    .orderBy("created_at", "desc")
+    .get();
+  return Promise.all(
+    snapshot.docs.map(async (doc) => {
+      const data = doc.data();
+      const user = data.userId
+        ? await getUserById(data.userId).catch(() => null)
+        : null;
+      return {
+        docId: doc.id,
+        ...data,
+        mappedEmail: user?.email || null,
+        mappedFirstName: user?.firstName || null,
+        mappedLastName: user?.lastName || null,
+      };
+    }),
+  );
+};
+
+export const getDodoCustomerIdByUserId = async (userId: string) => {
+  const snapshot = await firestoreAdmin()
+    .collection(USER_DODO_PAYMENTS)
+    .where("userId", "==", userId)
+    .orderBy("created_at", "desc")
+    .limit(20)
+    .get();
+  for (const doc of snapshot.docs) {
+    const customerId = doc.data().customer?.customer_id;
+    if (customerId) return customerId as string;
+  }
+  return null;
+};
+
+export const mapDodoPaymentToUser = async ({
+  docId,
+  userId,
+}: {
+  docId: string;
+  userId: string;
+}) => {
+  const user = await getCheckoutUser(userId);
+  await firestoreAdmin().collection(USER_DODO_PAYMENTS).doc(docId).update({
+    userId,
+    mappedEmail: user.email,
+    mappedFirstName: user.firstName,
+    mappedLastName: user.lastName,
+  });
+  return { success: true };
+};
+
+export const unmapDodoPayment = async ({ docId }: { docId: string }) => {
+  await firestoreAdmin().collection(USER_DODO_PAYMENTS).doc(docId).update({
+    userId: null,
+    mappedEmail: null,
+    mappedFirstName: null,
+    mappedLastName: null,
+  });
+  return { success: true };
+};
+
+export const sendPaymentLink = async ({ userId }: { userId: string }) => {
+  try {
+    const user = await getCheckoutUser(userId);
+    const paymentId = randomUUID();
+    await firestoreAdmin()
+      .collection(DODO_PAYMENT_REQUESTS_COLLECTION)
+      .doc(paymentId)
+      .set({ userId, status: "pending", createdAt: new Date() });
+    const url = `${process.env.NEXT_PUBLIC_APP_URL}/payment/${paymentId}`;
+    await sendTriggerEmail({
+      to: user.email,
+      message: {
+        subject: "Complete Your Payment",
+        html: `<p>Hi ${user.firstName},</p><p><a href="${url}">Complete Payment</a></p>`,
+      },
+      job: EmailJobs.SEND_PAYMENT_LINK,
+    });
+    logInfo("Sent Dodo payment link", { userId, paymentId });
+    return { success: true };
+  } catch (error: any) {
+    logError(new Error(`Error sending Dodo payment link: ${error.message}`));
+    throw error;
+  }
+};

@@ -31,6 +31,8 @@ export const GET_USER_NOTIFICATIONS_COUNT = "get-user-notifications-count";
 
 export const GET_WHOP_PAYMENTS = "get-whop-payments";
 export const GET_WHOP_CHECKOUT_DETAILS = "get-whop-checkout-details";
+export const GET_DODO_PAYMENTS = "get-dodo-payments";
+export const GET_DODO_CHECKOUT_DETAILS = "get-dodo-checkout-details";
 
 export const GET_BUSINESS_AUDIT = "get-business-audit";
 export const GET_CONSUMER_REPORTING_AGENCIES =

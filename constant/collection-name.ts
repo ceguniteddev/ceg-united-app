@@ -10,6 +10,9 @@ export const USER_FUNDING_APPLICATION_FUND_MAPPING_APPROVED =
 export const USER_DENEFITS_CONTRACT = "user-denefits-contract";
 export const PAYMENT_REQUESTS_COLLECTION = "whop-payment-requests";
 export const USER_WHOP_PAYMENTS = "user-whop-payments";
+export const DODO_PAYMENT_REQUESTS_COLLECTION = "dodo-payment-requests";
+export const USER_DODO_PAYMENTS = "user-dodo-payments";
+export const DODO_WEBHOOK_EVENTS = "dodo-webhook-events";
 
 export const GMAIL_TOKENS = "gmail-token";
 
@@ -38,6 +41,7 @@ export const ATTACHMENT = "attachment";
 export const MUX_DATA = "mux-data";
 
 export const WHOP_CHECKOUTS_COLLECTION = "whop-checkouts";
+export const DODO_CHECKOUTS_COLLECTION = "dodo-checkouts";
 
 export const USER_COURSE_PROGRESS = "user-course-progress";
 export const USER_COURSE_ENROLLMENT = "user-course-enrollment";
