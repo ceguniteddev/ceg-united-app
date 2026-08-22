@@ -6,6 +6,8 @@ import { UploadedFileData } from "@/schema";
 import { Attachment, Course } from "@/schema/educational-materials/course";
 import { Timestamp } from "firebase-admin/firestore";
 import { getChaptersByCourseId } from "./chapter";
+import { getUserMembership } from "@/service/membership";
+import { getUserAddons } from "@/service/addons";
 
 export const recordCourseTitle = async (title: string) => {
   const db = firestoreAdmin();
@@ -317,23 +319,30 @@ export const deleteAttachment = async ({
 
 export const getUserCourses = async (userId: string): Promise<Course[]> => {
   try {
-    // First, check if user has paid or is mapped in denefits contract
     const db = firestoreAdmin();
 
-    // Check if user exists in USER_DENEFITS_CONTRACT collection
-    const { USER_DENEFITS_CONTRACT } =
-      await import("@/constant/collection-name");
-    const denefitsRef = db
-      .collection(USER_DENEFITS_CONTRACT)
-      .where("userId", "==", userId);
-    const denefitsSnapshot = await denefitsRef.get();
+    // Check active membership or active add-on
+    const membership = await getUserMembership(userId);
+    const addons = await getUserAddons(userId);
+    const hasAccess =
+      membership?.status === "active" ||
+      addons.some((addon) => addon.status === "active");
 
-    // If user doesn't have denefits contract, return empty array
-    if (denefitsSnapshot.empty) {
-      return [];
+    if (!hasAccess) {
+      // Check if user exists in USER_DENEFITS_CONTRACT collection for backward compatibility
+      const { USER_DENEFITS_CONTRACT } =
+        await import("@/constant/collection-name");
+      const denefitsRef = db
+        .collection(USER_DENEFITS_CONTRACT)
+        .where("userId", "==", userId);
+      const denefitsSnapshot = await denefitsRef.get();
+
+      if (denefitsSnapshot.empty) {
+        return [];
+      }
     }
 
-    // If user has denefits contract, return all published courses
+    // Return all published courses
     const coursesRef = db
       .collection(COURSE)
       .where("isPublished", "==", true)

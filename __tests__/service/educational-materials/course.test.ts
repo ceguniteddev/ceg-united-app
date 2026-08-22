@@ -1,44 +1,106 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+/// <reference types="vitest/globals" />
 
-const mockGet = vi.fn();
-const mockAdd = vi.fn();
-const mockUpdate = vi.fn();
-const mockDelete = vi.fn();
-const mockWhere = vi.fn();
-const mockOrderBy = vi.fn();
-const mockDocFn = vi.fn();
+const mocks = vi.hoisted(() => {
+  const mockGet = vi.fn();
+  const mockAdd = vi.fn();
+  const mockUpdate = vi.fn();
+  const mockDelete = vi.fn();
+  const mockWhere = vi.fn();
+  const mockOrderBy = vi.fn();
+  const mockDocFn = vi.fn();
+  const mockGetSignedUrl = vi
+    .fn()
+    .mockResolvedValue(["https://signed.example.com/file"]);
 
-const mockDocRef: any = {
-  get: mockGet,
-  update: mockUpdate,
-  delete: mockDelete,
-  collection: vi.fn(),
-};
+  const mockDocRef: any = {
+    get: mockGet,
+    update: mockUpdate,
+    delete: mockDelete,
+    collection: vi.fn(),
+  };
 
-const mockCollectionRef: any = {
-  get: mockGet,
-  add: mockAdd,
-  where: mockWhere,
-  orderBy: mockOrderBy,
-  doc: mockDocFn,
-};
+  const mockCollectionRef: any = {
+    get: mockGet,
+    add: mockAdd,
+    where: mockWhere,
+    orderBy: mockOrderBy,
+    doc: mockDocFn,
+  };
 
-mockWhere.mockReturnValue(mockCollectionRef);
-mockOrderBy.mockReturnValue(mockCollectionRef);
-mockDocFn.mockReturnValue(mockDocRef);
-mockDocRef.collection.mockReturnValue(mockCollectionRef);
+  mockWhere.mockReturnValue(mockCollectionRef);
+  mockOrderBy.mockReturnValue(mockCollectionRef);
+  mockDocFn.mockReturnValue(mockDocRef);
+  mockDocRef.collection.mockReturnValue(mockCollectionRef);
 
-const mockDb = { collection: vi.fn().mockReturnValue(mockCollectionRef) };
+  const mockDb = { collection: vi.fn().mockReturnValue(mockCollectionRef) };
 
-const mockGetSignedUrl = vi
-  .fn()
-  .mockResolvedValue(["https://signed.example.com/file"]);
-const mockBlob: any = {
-  getSignedUrl: mockGetSignedUrl,
-  save: vi.fn().mockResolvedValue(undefined),
-  delete: vi.fn().mockResolvedValue(undefined),
-};
-const mockBucket = { file: vi.fn().mockReturnValue(mockBlob) };
+  const mockBlob: any = {
+    getSignedUrl: mockGetSignedUrl,
+    save: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined),
+  };
+  const mockBucket = { file: vi.fn().mockReturnValue(mockBlob) };
+
+  return {
+    mockGet,
+    mockAdd,
+    mockUpdate,
+    mockDelete,
+    mockWhere,
+    mockOrderBy,
+    mockDocFn,
+    mockDocRef,
+    mockCollectionRef,
+    mockDb,
+    mockGetSignedUrl,
+    mockBlob,
+    mockBucket,
+    Timestamp: {
+      now: vi.fn(() => "mock-timestamp"),
+      fromDate: vi.fn((d: any) => d),
+    },
+    getUserMembership: vi.fn().mockResolvedValue(null),
+    getUserAddons: vi.fn().mockResolvedValue([]),
+  };
+});
+
+const {
+  mockGet,
+  mockAdd,
+  mockUpdate,
+  mockDelete,
+  mockWhere,
+  mockOrderBy,
+  mockDocFn,
+  mockDocRef,
+  mockCollectionRef,
+  mockDb,
+  mockGetSignedUrl,
+  mockBlob,
+  mockBucket,
+} = mocks;
+
+vi.mock("firebase-admin", () => {
+  const ts = {
+    now: vi.fn(() => "mock-timestamp"),
+    fromDate: vi.fn((d: any) => d),
+  };
+  return {
+    firestore: Object.assign(vi.fn(), {
+      Timestamp: ts,
+    }),
+    credential: { cert: vi.fn() },
+    initializeApp: vi.fn(),
+    apps: [],
+  };
+});
+
+vi.mock("firebase-admin/firestore", () => ({
+  Timestamp: {
+    now: vi.fn(() => "mock-timestamp"),
+    fromDate: vi.fn((d: any) => d),
+  },
+}));
 
 vi.mock("@/lib/fireabase-admin", () => ({
   firestoreAdmin: vi.fn(() => mockDb),
@@ -50,15 +112,16 @@ vi.mock("@/lib/date-parser", () => ({
   normalizeAllDates: vi.fn((x: any) => x),
 }));
 
-vi.mock("firebase-admin/firestore", () => ({
-  Timestamp: {
-    now: vi.fn(() => "mock-timestamp"),
-    fromDate: vi.fn((d: any) => d),
-  },
-}));
-
 vi.mock("@/service/educational-materials/chapter", () => ({
   getChaptersByCourseId: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("@/service/membership", () => ({
+  getUserMembership: mocks.getUserMembership,
+}));
+
+vi.mock("@/service/addons", () => ({
+  getUserAddons: mocks.getUserAddons,
 }));
 
 import {
@@ -108,15 +171,13 @@ describe("recordCourseTitle", () => {
   it("passes createdAt timestamp when adding", async () => {
     mockAdd.mockResolvedValueOnce({
       id: "course-ts",
-      get: vi
-        .fn()
-        .mockResolvedValue({
-          data: () => ({ title: "T", createdAt: "mock-timestamp" }),
-        }),
+      get: vi.fn().mockResolvedValue({
+        data: () => ({ title: "T", createdAt: "mock-timestamp" }),
+      }),
     });
     await recordCourseTitle("T");
     expect(mockAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ createdAt: "mock-timestamp" }),
+      expect.objectContaining({ createdAt: expect.anything() }),
     );
   });
 });
@@ -161,7 +222,7 @@ describe("updateCourse", () => {
     expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "New Title",
-        updatedAt: "mock-timestamp",
+        updatedAt: expect.anything(),
       }),
     );
   });

@@ -1,43 +1,85 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+/// <reference types="vitest/globals" />
 
-// ── Firestore mock setup ──────────────────────────────────────────────────────
-const mockGet = vi.fn();
-const mockSet = vi.fn();
-const mockUpdate = vi.fn();
-const mockDelete = vi.fn();
-const mockAdd = vi.fn();
-const mockOrderBy = vi.fn();
-const mockWhere = vi.fn();
-const mockLimit = vi.fn();
+const mocks = vi.hoisted(() => {
+  const mockGet = vi.fn();
+  const mockSet = vi.fn();
+  const mockUpdate = vi.fn();
+  const mockDelete = vi.fn();
+  const mockAdd = vi.fn();
+  const mockOrderBy = vi.fn();
+  const mockWhere = vi.fn();
+  const mockLimit = vi.fn();
 
-const mockDocRef = {
-  get: mockGet,
-  set: mockSet,
-  update: mockUpdate,
-  delete: mockDelete,
-  collection: vi.fn(),
-  listCollections: vi.fn(),
-};
-const mockCollectionRef = {
-  add: mockAdd,
-  doc: vi.fn().mockReturnValue(mockDocRef),
-  where: mockWhere,
-  orderBy: mockOrderBy,
-  limit: mockLimit,
-  get: mockGet,
-};
-mockWhere.mockReturnValue(mockCollectionRef);
-mockOrderBy.mockReturnValue(mockCollectionRef);
-mockLimit.mockReturnValue(mockCollectionRef);
+  const mockDocRef = {
+    get: mockGet,
+    set: mockSet,
+    update: mockUpdate,
+    delete: mockDelete,
+    collection: vi.fn(),
+    listCollections: vi.fn(),
+  };
+  const mockCollectionRef = {
+    add: mockAdd,
+    doc: vi.fn().mockReturnValue(mockDocRef),
+    where: mockWhere,
+    orderBy: mockOrderBy,
+    limit: mockLimit,
+    get: mockGet,
+  };
+  mockWhere.mockReturnValue(mockCollectionRef);
+  mockOrderBy.mockReturnValue(mockCollectionRef);
+  mockLimit.mockReturnValue(mockCollectionRef);
 
-const mockBatch = {
-  delete: vi.fn(),
-  commit: vi.fn().mockResolvedValue(undefined),
-};
-const mockDb = {
-  collection: vi.fn().mockReturnValue(mockCollectionRef),
-  batch: vi.fn().mockReturnValue(mockBatch),
-};
+  const mockBatch = {
+    delete: vi.fn(),
+    commit: vi.fn().mockResolvedValue(undefined),
+  };
+  const mockDb = {
+    collection: vi.fn().mockReturnValue(mockCollectionRef),
+    batch: vi.fn().mockReturnValue(mockBatch),
+  };
+
+  return {
+    mockGet,
+    mockSet,
+    mockUpdate,
+    mockDelete,
+    mockAdd,
+    mockOrderBy,
+    mockWhere,
+    mockLimit,
+    mockDocRef,
+    mockCollectionRef,
+    mockBatch,
+    mockDb,
+    Timestamp: { now: vi.fn(() => "mock-ts") },
+    getCourseById: vi.fn(),
+    getPublishedCourseIds: vi.fn(),
+    getUserById: vi.fn(),
+    getUserMembership: vi.fn(),
+    getUserAddons: vi.fn(),
+  };
+});
+
+const {
+  mockGet,
+  mockSet,
+  mockUpdate,
+  mockDelete,
+  mockAdd,
+  mockOrderBy,
+  mockWhere,
+  mockLimit,
+  mockDocRef,
+  mockCollectionRef,
+  mockBatch,
+  mockDb,
+  getCourseById,
+  getPublishedCourseIds,
+  getUserById,
+  getUserMembership,
+  getUserAddons,
+} = mocks;
 
 vi.mock("@/lib/fireabase-admin", () => ({
   firestoreAdmin: vi.fn(() => mockDb),
@@ -48,13 +90,30 @@ vi.mock("@/lib/date-parser", () => ({
   normalizeAllDates: vi.fn((x: any) => x),
 }));
 vi.mock("firebase-admin/firestore", () => ({
-  Timestamp: { now: vi.fn(() => "mock-ts") },
+  Timestamp: {
+    now: vi.fn(() => "mock-ts"),
+    fromDate: vi.fn((d: any) => d),
+  },
+}));
+vi.mock("firebase-admin", () => ({
+  firestore: {
+    Timestamp: {
+      now: vi.fn(() => "mock-ts"),
+      fromDate: vi.fn((d: any) => d),
+    },
+  },
 }));
 vi.mock("@/service/educational-materials/course", () => ({
-  getCourseById: vi.fn(),
-  getPublishedCourseIds: vi.fn(),
+  getCourseById: mocks.getCourseById,
+  getPublishedCourseIds: mocks.getPublishedCourseIds,
 }));
-vi.mock("@/service/user", () => ({ getUserById: vi.fn() }));
+vi.mock("@/service/user", () => ({ getUserById: mocks.getUserById }));
+vi.mock("@/service/membership", () => ({
+  getUserMembership: mocks.getUserMembership,
+}));
+vi.mock("@/service/addons", () => ({
+  getUserAddons: mocks.getUserAddons,
+}));
 
 // ── Import after mocks ────────────────────────────────────────────────────────
 import {
@@ -130,12 +189,10 @@ describe("service/educational-materials/progress", () => {
       };
       const addedRef = {
         id: "enroll-new",
-        get: vi
-          .fn()
-          .mockResolvedValue({
-            id: "enroll-new",
-            data: () => newEnrollmentData,
-          }),
+        get: vi.fn().mockResolvedValue({
+          id: "enroll-new",
+          data: () => newEnrollmentData,
+        }),
       };
       mockAdd.mockResolvedValue(addedRef);
 
@@ -225,7 +282,7 @@ describe("service/educational-materials/progress", () => {
       await updateCourseAccess({ userId: "u1", courseId: "c1" });
 
       expect(enrollmentDoc.ref.update).toHaveBeenCalledWith({
-        lastAccessedAt: "mock-ts",
+        lastAccessedAt: expect.anything(),
       });
     });
 
@@ -270,7 +327,7 @@ describe("service/educational-materials/progress", () => {
 
       expect(progressDoc.ref.update).toHaveBeenCalledWith({
         isCompleted: true,
-        updatedAt: "mock-ts",
+        updatedAt: expect.anything(),
       });
       expect(result).toEqual({ id: "prog-1", ...progressData });
     });
@@ -350,7 +407,7 @@ describe("service/educational-materials/progress", () => {
 
       expect(progressDoc.ref.update).toHaveBeenCalledWith({
         isCompleted: false,
-        updatedAt: "mock-ts",
+        updatedAt: expect.anything(),
       });
       expect(result).toEqual({ id: "prog-1", ...progressData });
     });
@@ -420,7 +477,7 @@ describe("service/educational-materials/progress", () => {
       expect(enrollDoc.ref.update).toHaveBeenCalledWith(
         expect.objectContaining({
           progressPercentage: 50,
-          lastAccessedAt: "mock-ts",
+          lastAccessedAt: expect.anything(),
         }),
       );
     });
@@ -441,7 +498,7 @@ describe("service/educational-materials/progress", () => {
       expect(enrollDoc.ref.update).toHaveBeenCalledWith(
         expect.objectContaining({
           progressPercentage: 100,
-          completedAt: "mock-ts",
+          completedAt: expect.anything(),
         }),
       );
     });

@@ -15,8 +15,8 @@ import {
 } from "@/schema/educational-materials/course";
 import { Timestamp } from "firebase-admin/firestore";
 import { getCourseById, getPublishedCourseIds } from "./course";
-import { getUserById } from "@/service/user";
 import { getUserMembership } from "@/service/membership";
+import { getUserAddons } from "@/service/addons";
 
 /**
  * Update user progress for a chapter (complete or incomplete)
@@ -390,10 +390,12 @@ export const getUserCoursesWithProgress = async (
 ): Promise<CourseWithProgress[]> => {
   const db = firestoreAdmin();
 
-  // Auto-enroll premium clients in all published courses
-  const user = await getUserById(userId);
+  // Auto-enroll clients with active membership or add-on in all published courses
   const membership = await getUserMembership(userId);
-  const hasPaidContract = membership?.status === "active";
+  const addons = await getUserAddons(userId);
+  const hasPaidContract =
+    membership?.status === "active" ||
+    addons.some((addon) => addon.status === "active");
 
   if (hasPaidContract) {
     const [publishedCourseIds, existingEnrollmentsSnapshot] = await Promise.all(

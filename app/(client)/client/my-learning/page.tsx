@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
 import { useGetUserCoursesWithProgress } from "@/hooks/educational-materials/course";
 import { useMembership } from "@/hooks/membership";
+import { useAddons } from "@/hooks/addons";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import Spinner from "@/components/Spinner";
 import EmptyState from "@/components/EmptyState";
@@ -40,7 +41,7 @@ const COURSE_GRADIENTS = [
 type FilterStatus = "all" | "in-progress" | "not-started" | "completed";
 
 const MyLearningPage = () => {
-  const { user, userData } = useAuth();
+  const { user } = useAuth();
   const { coursesWithProgress, isLoading } = useGetUserCoursesWithProgress(
     user?.uid || "",
   );
@@ -48,6 +49,7 @@ const MyLearningPage = () => {
   //   useGetDenefitsContractsByUserId(user?.uid || "");
 
   const { data: userMembership } = useMembership(user?.uid);
+  const { data: addons = [] } = useAddons();
 
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,8 +58,10 @@ const MyLearningPage = () => {
     return <Spinner displayText="Loading your courses..." />;
   }
 
-  // Check if user has a paid membership
-  const hasPaidContract = userMembership?.status === "active";
+  // Check if user has a paid membership or active add-on
+  const hasPaidContract =
+    userMembership?.status === "active" ||
+    addons.some((addon) => addon.status === "active");
 
   if (!hasPaidContract) {
     return (
@@ -67,8 +71,8 @@ const MyLearningPage = () => {
           subtext="Access your enrolled courses and track your progress"
         />
         <EmptyState
-          title="Denefits Contract Required"
-          description="You need an active Denefits contract to access learning materials. Please contact support or complete your contract registration to unlock courses."
+          title="Membership or Add-on Required"
+          description="You need an active membership or add-on to access learning materials. Please upgrade or subscribe to unlock courses."
         />
       </div>
     );
@@ -83,7 +87,7 @@ const MyLearningPage = () => {
         />
         <EmptyState
           title="No Courses Available"
-          description="You don't have access to any courses yet. Courses become available when you have an active Denefits contract."
+          description="You don't have access to any courses yet. Courses become available when you have an active membership or add-on."
         />
       </div>
     );

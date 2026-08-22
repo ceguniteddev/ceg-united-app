@@ -19,6 +19,7 @@ import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { useParams, useSearchParams } from "next/navigation";
 import { useUserQuery } from "@/hooks/user";
 import { useMembership } from "@/hooks/membership";
+import { useUserAddons } from "@/hooks/addons";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import Spinner from "@/components/Spinner";
 import { useMemo, useState } from "react";
@@ -61,10 +62,15 @@ const ClientProfilePage = () => {
   // const { denefitsContract, isLoading: isDenefitsLoading } =
   //   useGetDenefitsContractsByUserId(userId);
 
+  const { data: addons = [] } = useUserAddons(userId);
+
   // Check if user has access to learning materials
   const hasLearningMaterialsAccess = useMemo(() => {
-    return membershipData?.status === "active";
-  }, [membershipData]);
+    return (
+      membershipData?.status === "active" ||
+      addons.some((a) => a.status === "active")
+    );
+  }, [membershipData, addons]);
 
   // Check if user has letter feature enabled
   const hasLetterFeatureEnabled = useMemo(() => {
