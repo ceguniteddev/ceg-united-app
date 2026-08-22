@@ -14,7 +14,7 @@ import { ChaptersList } from "./chapters-list";
 import { Course } from "@/schema/educational-materials/course";
 import { toast } from "sonner";
 import { id } from "date-fns/locale";
-import { CustomFormField } from "@/components/CustomFormField";
+import { FormInput } from "@/components/forms/form-input";
 import z from "zod";
 import { useChapterMutation } from "@/hooks/educational-materials/chapter";
 
@@ -64,7 +64,7 @@ export const ChaptersForm = ({ initialData, courseId }: ChaptersFormProps) => {
   };
 
   const onReorder = async (
-    updateData: { id: string | undefined; position: number }[]
+    updateData: { id: string | undefined; position: number }[],
   ) => {
     if (!id) return;
     try {
@@ -82,7 +82,7 @@ export const ChaptersForm = ({ initialData, courseId }: ChaptersFormProps) => {
 
   const onEdit = (id: string) => {
     router.push(
-      `/admin/educational-materials/courses/${courseId}/chapters/${id}`
+      `/admin/educational-materials/courses/${courseId}/chapters/${id}`,
     );
   };
 
@@ -116,8 +116,14 @@ export const ChaptersForm = ({ initialData, courseId }: ChaptersFormProps) => {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 mt-4"
           >
-            <CustomFormField name="title" label="Chapter title" />
-            <Button disabled={!isValid || isSubmitting} type="submit">
+            <FormInput
+              control={form.control}
+              name="title"
+              label="Lecture Title"
+              placeholder="e.g. Introduction to Underwriting"
+              required
+            />
+            <Button disabled={!isValid || isSubmitting} type="submit" size="sm">
               Create
             </Button>
           </form>
@@ -127,7 +133,7 @@ export const ChaptersForm = ({ initialData, courseId }: ChaptersFormProps) => {
         <div
           className={cn(
             "text-sm mt-2",
-            !initialData.chapters?.length && "text-slate-500 italic"
+            !initialData.chapters?.length && "text-slate-500 italic",
           )}
         >
           {!initialData.chapters?.length && "No chapters"}

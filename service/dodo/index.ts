@@ -11,6 +11,8 @@ import {
   USER_DODO_PAYMENTS,
   USER_WALLET,
   USER_WALLET_TRANSACTIONS,
+  COURSE,
+  USER_COURSE_ENROLLMENT,
 } from "@/constant/collection-name";
 import { dodoClient } from "@/lib/dodo-sdk";
 import { resolveDodoReturnUrl } from "@/lib/dodo-env";
@@ -42,6 +44,11 @@ const productForPayment = (paymentKey: PaymentPlan) => {
   if (paymentKey.includes("CreditReport"))
     return process.env.DODO_PRODUCT_CRS_REPORT_ID;
   if (paymentKey === "WalletTopUp") return process.env.DODO_PRODUCT_WALLET_ID;
+  if (paymentKey === "CoursePurchase")
+    return (
+      process.env.DODO_PRODUCT_COURSE_ID ||
+      process.env.DODO_PRODUCT_BUSINESS_SERVICES_ID
+    );
   return undefined;
 };
 
@@ -349,6 +356,51 @@ export const createPsfInvoiceCheckoutConfig = async ({
     metadata: { invoiceId, type: "PSF_INVOICE", planId: "PSF_INVOICE" },
   });
 
+export const createCourseCheckoutConfig = async ({
+  userId,
+  courseId,
+  returnUrl,
+}: {
+  userId: string;
+  courseId: string;
+  returnUrl?: string;
+}) => {
+  const db = firestoreAdmin();
+  const courseDoc = await db.collection(COURSE).doc(courseId).get();
+  if (!courseDoc.exists) {
+    throw new Error("Course not found");
+  }
+  const courseData = courseDoc.data();
+  if (!courseData?.isPublished) {
+    throw new Error("Course is not available for purchase");
+  }
+
+  const priceInDollars =
+    courseData.discountPrice != null && courseData.discountPrice >= 0
+      ? courseData.discountPrice
+      : courseData.price || 0;
+
+  const amountInCents = Math.round(priceInDollars * 100);
+
+  const productId =
+    courseData.dodoProductId ||
+    process.env.DODO_PRODUCT_COURSE_ID ||
+    process.env.DODO_PRODUCT_BUSINESS_SERVICES_ID;
+
+  return createSession({
+    userId,
+    productId: requireProduct(productId, "course"),
+    paymentKey: "CoursePurchase",
+    amountInCents,
+    returnUrl,
+    metadata: {
+      courseId,
+      courseTitle: courseData.title || "",
+      type: "COURSE_PURCHASE",
+    },
+  });
+};
+
 export const chargeMembership = async ({
   subscriptionId,
   amountInCents,
@@ -495,6 +547,42 @@ export const recordPaymentSucceeded = async ({
       },
       { merge: true },
     );
+  }
+
+  if (paymentKey === "CoursePurchase" || metadata.type === "COURSE_PURCHASE") {
+    const courseId = metadata.courseId;
+    if (userId && courseId) {
+      await db.runTransaction(async (transaction) => {
+        const enrollmentQuery = db
+          .collection(USER_COURSE_ENROLLMENT)
+          .where("userId", "==", userId)
+          .where("courseId", "==", courseId)
+          .limit(1);
+        const existing = await transaction.get(enrollmentQuery);
+        if (existing.empty) {
+          const newEnrollmentRef = db.collection(USER_COURSE_ENROLLMENT).doc();
+          transaction.set(newEnrollmentRef, {
+            userId,
+            courseId,
+            enrolledAt: new Date(),
+            lastAccessedAt: new Date(),
+            progressPercentage: 0,
+            dodoPaymentId: payment.payment_id,
+            amountPaid: payment.total_amount / 100,
+            status: "active",
+          });
+
+          const courseRef = db.collection(COURSE).doc(courseId);
+          const courseDoc = await transaction.get(courseRef);
+          if (courseDoc.exists) {
+            const currentCount = courseDoc.data()?.enrolledStudentsCount || 0;
+            transaction.update(courseRef, {
+              enrolledStudentsCount: currentCount + 1,
+            });
+          }
+        }
+      });
+    }
   }
 
   await db

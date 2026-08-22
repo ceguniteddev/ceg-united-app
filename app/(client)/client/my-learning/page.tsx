@@ -2,10 +2,10 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
-import { useGetUserCoursesWithProgress } from "@/hooks/educational-materials/course";
-import { useMembership } from "@/hooks/membership";
-import { useAddons } from "@/hooks/addons";
-// import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
+import {
+  useGetUserCoursesWithProgress,
+  useGetCourses,
+} from "@/hooks/educational-materials/course";
 import Spinner from "@/components/Spinner";
 import EmptyState from "@/components/EmptyState";
 import {
@@ -19,16 +19,20 @@ import {
   SlidersHorizontal,
   BarChart3,
   FileText,
+  Star,
+  Sparkles,
+  ShoppingBag,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import HeaderBox from "@/components/HeaderBox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-// Deterministic gradient per course index
 const COURSE_GRADIENTS = [
   "from-blue-500 to-blue-700",
   "from-violet-500 to-purple-700",
@@ -45,60 +49,23 @@ const MyLearningPage = () => {
   const { coursesWithProgress, isLoading } = useGetUserCoursesWithProgress(
     user?.uid || "",
   );
-  // const { denefitsContract, isLoading: isLoadingContract } =
-  //   useGetDenefitsContractsByUserId(user?.uid || "");
+  const { courses: allCourses, isLoading: isLoadingAll } = useGetCourses();
 
-  const { data: userMembership } = useMembership(user?.uid);
-  const { data: addons = [] } = useAddons();
-
+  const [activeTab, setActiveTab] = useState("my-courses");
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  if (isLoading) {
-    return <Spinner displayText="Loading your courses..." />;
+  if (isLoading || isLoadingAll) {
+    return <Spinner displayText="Loading courses..." />;
   }
 
-  // Check if user has a paid membership or active add-on
-  const hasPaidContract =
-    userMembership?.status === "active" ||
-    addons.some((addon) => addon.status === "active");
-
-  if (!hasPaidContract) {
-    return (
-      <div className="transactions">
-        <HeaderBox
-          title="My Learning"
-          subtext="Access your enrolled courses and track your progress"
-        />
-        <EmptyState
-          title="Membership or Credit Repair Add-on Required"
-          description="You need an active membership or Credit Repair add-on to access learning materials. Please upgrade or subscribe to unlock courses."
-        />
-      </div>
-    );
-  }
-
-  if (!coursesWithProgress || coursesWithProgress.length === 0) {
-    return (
-      <div className="transactions">
-        <HeaderBox
-          title="My Learning"
-          subtext="Access your enrolled courses and track your progress"
-        />
-        <EmptyState
-          title="No Courses Available"
-          description="You don't have access to any courses yet. Courses become available when you have an active membership or add-on."
-        />
-      </div>
-    );
-  }
-
-  // Calculate statistics
-  const totalCourses = coursesWithProgress.length;
-  const completedCourses = coursesWithProgress.filter(
+  // Calculate enrolled statistics
+  const enrolledCourses = coursesWithProgress || [];
+  const totalCourses = enrolledCourses.length;
+  const completedCourses = enrolledCourses.filter(
     (course) => course.enrollment?.progressPercentage === 100,
   ).length;
-  const inProgressCourses = coursesWithProgress.filter(
+  const inProgressCourses = enrolledCourses.filter(
     (course) =>
       (course.enrollment?.progressPercentage ?? 0) > 0 &&
       course.enrollment?.progressPercentage !== 100,
@@ -107,15 +74,15 @@ const MyLearningPage = () => {
   const overallProgress =
     totalCourses > 0
       ? Math.round(
-          coursesWithProgress.reduce(
+          enrolledCourses.reduce(
             (sum, c) => sum + (c.enrollment?.progressPercentage ?? 0),
             0,
           ) / totalCourses,
         )
       : 0;
 
-  // Filter + search
-  const filteredCourses = coursesWithProgress.filter((course) => {
+  // Filter enrolled courses
+  const filteredEnrolledCourses = enrolledCourses.filter((course) => {
     const pct = course.enrollment?.progressPercentage ?? 0;
     const status =
       pct === 100 ? "completed" : pct > 0 ? "in-progress" : "not-started";
@@ -131,415 +98,371 @@ const MyLearningPage = () => {
     return true;
   });
 
-  const filterOptions: { value: FilterStatus; label: string; count: number }[] =
-    [
-      { value: "all", label: "All", count: totalCourses },
-      { value: "in-progress", label: "In Progress", count: inProgressCourses },
-      { value: "not-started", label: "Not Started", count: notStartedCourses },
-      { value: "completed", label: "Completed", count: completedCourses },
-    ];
+  // Filter catalog courses
+  const publishedCatalog = (allCourses || []).filter((c) => c.isPublished);
+  const filteredCatalog = publishedCatalog.filter((course) => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return (
+        course.title?.toLowerCase().includes(q) ||
+        course.description?.toLowerCase().includes(q) ||
+        course.category?.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
 
-  // Doughnut chart data
-  const doughnutData = {
-    labels: ["Completed", "In Progress", "Not Started"],
-    datasets: [
-      {
-        data: [completedCourses, inProgressCourses, notStartedCourses],
-        backgroundColor: ["#10b981", "#3b82f6", "#e5e7eb"],
-        borderColor: ["#059669", "#2563eb", "#d1d5db"],
-        borderWidth: 1.5,
-      },
-    ],
-  };
-
-  const doughnutOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: "72%",
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (ctx: { label: string; raw: unknown }) =>
-            ` ${ctx.label}: ${ctx.raw} course${Number(ctx.raw) !== 1 ? "s" : ""}`,
-        },
-      },
-    },
-  };
+  const enrolledCourseIds = new Set(enrolledCourses.map((c) => c.id));
 
   return (
-    <div className="transactions">
+    <div className="transactions space-y-6">
       <HeaderBox
-        title="My Learning"
-        subtext="Access your enrolled courses and track your progress"
+        title="Learning Center"
+        subtext="Browse premium masterclasses, track your enrolled courses, and earn completion certificates."
       />
 
-      {/* Stats + Chart */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-6">
-        {/* Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-3 flex-1">
-          <StatCard
-            icon={BookOpen}
-            label="Total Courses"
-            value={String(totalCourses)}
-            color="text-blue-600"
-            bg="bg-blue-50"
-          />
-          <StatCard
-            icon={Clock}
-            label="In Progress"
-            value={String(inProgressCourses)}
-            color="text-amber-600"
-            bg="bg-amber-50"
-          />
-          <StatCard
-            icon={Trophy}
-            label="Completed"
-            value={String(completedCourses)}
-            color="text-emerald-600"
-            bg="bg-emerald-50"
-          />
-          <StatCard
-            icon={GraduationCap}
-            label="Overall Progress"
-            value={`${overallProgress}%`}
-            color="text-violet-600"
-            bg="bg-violet-50"
-          />
-        </div>
-
-        {/* Doughnut Chart Card */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-5 lg:w-64 xl:w-72">
-          <div className="relative w-24 h-24 flex-shrink-0">
-            <Doughnut data={doughnutData} options={doughnutOptions} />
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-lg font-bold text-gray-900 leading-none">
-                {overallProgress}%
-              </span>
-              <span className="text-[9px] text-gray-400 uppercase font-semibold tracking-wide mt-0.5">
-                Done
-              </span>
-            </div>
-          </div>
-          <div className="space-y-2 min-w-0">
-            <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-              Progress
-            </p>
-            <ChartLegendItem
-              color="bg-emerald-500"
-              label="Completed"
-              count={completedCourses}
-            />
-            <ChartLegendItem
-              color="bg-blue-500"
-              label="In Progress"
-              count={inProgressCourses}
-            />
-            <ChartLegendItem
-              color="bg-gray-200"
-              label="Not Started"
-              count={notStartedCourses}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Search + Filter Pills */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
-        {/* Search */}
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search courses..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-9 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-          />
-        </div>
-
-        {/* Filter Pills */}
-        <div className="flex items-center flex-wrap gap-1.5">
-          <SlidersHorizontal className="hidden sm:block w-3.5 h-3.5 text-gray-400 flex-shrink-0 mr-0.5" />
-          {filterOptions.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setFilter(opt.value)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[36px] sm:min-h-[32px] ${
-                filter === opt.value
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 active:scale-95"
-              }`}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
+          <TabsList className="bg-slate-100 dark:bg-slate-900 p-1 rounded-lg">
+            <TabsTrigger
+              value="my-courses"
+              className="flex items-center gap-2 text-xs sm:text-sm"
             >
-              {opt.label}
-              <span
-                className={`text-[10px] ${
-                  filter === opt.value ? "text-white/70" : "text-gray-400"
-                }`}
-              >
-                {opt.count}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
+              <BookOpen className="w-4 h-4" />
+              <span>My Courses ({totalCourses})</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="catalog"
+              className="flex items-center gap-2 text-xs sm:text-sm"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>Explore Catalog ({publishedCatalog.length})</span>
+            </TabsTrigger>
+          </TabsList>
 
-      {/* Course Grid */}
-      {filteredCourses.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-            <BookOpen className="w-7 h-7 text-gray-400" />
+          {/* Search Input */}
+          <div className="relative max-w-xs w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search courses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 text-sm border rounded-lg bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
-          <p className="text-sm font-medium text-gray-700">No courses found</p>
-          <p className="text-xs text-gray-400 mt-1">
-            Try adjusting your search or filter
-          </p>
-          <button
-            onClick={() => {
-              setFilter("all");
-              setSearchQuery("");
-            }}
-            className="mt-4 text-xs text-blue-600 font-medium hover:underline"
-          >
-            Clear filters
-          </button>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {filteredCourses.map((course, index) => {
-            const progressPercentage =
-              course.enrollment?.progressPercentage || 0;
-            const publishedChapters =
-              course.chapters?.filter((c) => c.isPublished).length || 0;
-            const completedChapters = course.completedChapters || 0;
-            const isCompleted = progressPercentage === 100;
-            const isInProgress = progressPercentage > 0 && !isCompleted;
-            const gradient = COURSE_GRADIENTS[index % COURSE_GRADIENTS.length];
 
-            // SVG progress ring
-            const ringSize = 52;
-            const strokeWidth = 4;
-            const radius = (ringSize - strokeWidth) / 2;
-            const circumference = 2 * Math.PI * radius;
-            const offset =
-              circumference - (progressPercentage / 100) * circumference;
+        {/* TAB 1: Enrolled Courses */}
+        <TabsContent value="my-courses" className="space-y-6 mt-4">
+          {totalCourses > 0 && (
+            <>
+              {/* Progress Overview Stats */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border shadow-sm flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Enrolled Courses</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                      {totalCourses}
+                    </p>
+                  </div>
+                </div>
 
-            return (
-              <Link
-                key={course.id}
-                href={`/client/my-learning/${course.id}`}
-                className="group"
-              >
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden h-full flex flex-col">
-                  {/* Gradient Banner */}
-                  <div
-                    className={`relative h-28 sm:h-32 bg-gradient-to-r ${gradient} overflow-hidden`}
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border shadow-sm flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">In Progress</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                      {inProgressCourses}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border shadow-sm flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Completed</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                      {completedCourses}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border shadow-sm flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                    <Trophy className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Avg Completion</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                      {overallProgress}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Filter Chips */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <Button
+                  variant={filter === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("all")}
+                  className="rounded-full text-xs"
+                >
+                  All ({totalCourses})
+                </Button>
+                <Button
+                  variant={filter === "in-progress" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("in-progress")}
+                  className="rounded-full text-xs"
+                >
+                  In Progress ({inProgressCourses})
+                </Button>
+                <Button
+                  variant={filter === "completed" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("completed")}
+                  className="rounded-full text-xs"
+                >
+                  Completed ({completedCourses})
+                </Button>
+                <Button
+                  variant={filter === "not-started" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("not-started")}
+                  className="rounded-full text-xs"
+                >
+                  Not Started ({notStartedCourses})
+                </Button>
+              </div>
+            </>
+          )}
+
+          {/* Enrolled Courses Grid */}
+          {filteredEnrolledCourses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredEnrolledCourses.map((course, index) => {
+                const progressPct = course.enrollment?.progressPercentage ?? 0;
+                const gradient =
+                  COURSE_GRADIENTS[index % COURSE_GRADIENTS.length];
+
+                return (
+                  <Link
+                    key={course.id}
+                    href={`/client/my-learning/${course.id}`}
+                    className="group flex flex-col bg-white dark:bg-slate-900 rounded-2xl border shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
                   >
-                    {/* Decorative shapes */}
-                    <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4" />
-                    <div className="absolute bottom-0 left-8 w-20 h-20 bg-white/10 rounded-full translate-y-1/2" />
-
-                    {/* Category badge */}
-                    {course.category && (
-                      <div className="absolute top-3 left-4">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white backdrop-blur-sm">
-                          {course.category}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Status badge */}
-                    {isCompleted && (
-                      <div className="absolute top-3 right-4">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/80 text-white backdrop-blur-sm">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Done
-                        </span>
-                      </div>
-                    )}
-                    {isInProgress && (
-                      <div className="absolute top-3 right-4">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/80 text-white backdrop-blur-sm">
-                          <Clock className="w-3 h-3" />
-                          Active
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Center icon */}
-                    <div className="absolute inset-0 flex items-center justify-center">
+                    {/* Thumbnail */}
+                    <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                       {course.imageUrl ? (
                         <Image
                           src={course.imageUrl}
-                          alt={course.title || "Course image"}
+                          alt={course.title}
                           fill
-                          className="object-cover opacity-30"
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                          <BookOpen className="w-7 h-7 text-white" />
+                        <div
+                          className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white`}
+                        >
+                          <BookOpen className="w-10 h-10 opacity-60" />
                         </div>
                       )}
+                      <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-sm text-white text-xs px-2.5 py-0.5 rounded-full font-medium">
+                        {course.category}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Card Body */}
-                  <div className="p-4 sm:p-5 flex-1 flex flex-col">
-                    <div className="flex items-start gap-3 mb-3">
-                      {/* Text */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
+                    {/* Card Content */}
+                    <div className="p-5 flex flex-col flex-1 justify-between space-y-4">
+                      <div className="space-y-1.5">
+                        <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 group-hover:text-blue-600 transition-colors line-clamp-1">
                           {course.title}
                         </h3>
-                        {course.description && (
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                            {course.description}
-                          </p>
-                        )}
-                        {/* Meta */}
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
-                          <span className="inline-flex items-center gap-1 text-[11px] text-gray-400">
-                            <FileText className="w-3 h-3" />
-                            {publishedChapters}{" "}
-                            {publishedChapters === 1 ? "chapter" : "chapters"}
-                          </span>
-                          {completedChapters > 0 && (
-                            <span className="inline-flex items-center gap-1 text-[11px] text-gray-400">
-                              <BarChart3 className="w-3 h-3" />
-                              {completedChapters}/{publishedChapters} done
-                            </span>
-                          )}
-                        </div>
+                        <p className="text-xs text-gray-500 line-clamp-2">
+                          {course.subtitle || course.description}
+                        </p>
                       </div>
 
-                      {/* Progress Ring */}
-                      <div className="flex-shrink-0 relative flex items-center justify-center">
-                        <svg
-                          width={ringSize}
-                          height={ringSize}
-                          className="-rotate-90"
-                        >
-                          <circle
-                            cx={ringSize / 2}
-                            cy={ringSize / 2}
-                            r={radius}
-                            fill="none"
-                            stroke="#f1f5f9"
-                            strokeWidth={strokeWidth}
-                          />
-                          <circle
-                            cx={ringSize / 2}
-                            cy={ringSize / 2}
-                            r={radius}
-                            fill="none"
-                            stroke={isCompleted ? "#10b981" : "#3b82f6"}
-                            strokeWidth={strokeWidth}
-                            strokeDasharray={circumference}
-                            strokeDashoffset={offset}
-                            strokeLinecap="round"
-                            className="transition-all duration-700"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-xs font-bold text-gray-900 leading-none">
-                            {progressPercentage}%
+                      {/* Progress Bar */}
+                      <div className="space-y-2 pt-2 border-t">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-medium text-gray-700 dark:text-gray-300">
+                            {progressPct === 100
+                              ? "Completed"
+                              : `${progressPct}% complete`}
                           </span>
+                          <span className="text-gray-400">
+                            {course.completedChapters || 0} /{" "}
+                            {course.totalChapters || 0} lectures
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              progressPct === 100
+                                ? "bg-emerald-500"
+                                : "bg-blue-600"
+                            }`}
+                            style={{ width: `${progressPct}%` }}
+                          />
                         </div>
                       </div>
                     </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border p-12 text-center space-y-4">
+              <div className="w-14 h-14 bg-blue-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto text-blue-600">
+                <BookOpen className="w-7 h-7" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  No courses found in your library
+                </h3>
+                <p className="text-sm text-gray-500 max-w-md mx-auto mt-1">
+                  Explore our catalog of paid and free educational materials to
+                  start learning today.
+                </p>
+              </div>
+              <Button
+                onClick={() => setActiveTab("catalog")}
+                className="gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <ShoppingBag className="w-4 h-4" /> Browse Course Catalog
+              </Button>
+            </div>
+          )}
+        </TabsContent>
 
-                    {/* Progress bar */}
-                    <div className="mt-auto">
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-700 ${
-                            isCompleted ? "bg-emerald-500" : "bg-blue-500"
-                          }`}
-                          style={{
-                            width: `${Math.max(progressPercentage, progressPercentage > 0 ? 4 : 0)}%`,
-                          }}
-                        />
-                      </div>
-                      {course.enrollment?.lastAccessedAt && (
-                        <p className="text-[10px] text-gray-400 mt-1.5">
-                          Last accessed:{" "}
-                          {new Date(
-                            course.enrollment.lastAccessedAt,
-                          ).toLocaleDateString()}
-                        </p>
-                      )}
+        {/* TAB 2: Course Catalog */}
+        <TabsContent value="catalog" className="space-y-6 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCatalog.map((course, index) => {
+              const isEnrolled = enrolledCourseIds.has(course.id);
+              const price = course.price ?? 0;
+              const discountPrice = course.discountPrice;
+              const effectivePrice =
+                discountPrice != null ? discountPrice : price;
+              const gradient =
+                COURSE_GRADIENTS[index % COURSE_GRADIENTS.length];
 
-                      {/* CTA */}
-                      <div className="mt-3 w-full px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-xs font-semibold flex items-center justify-center gap-2 min-h-[44px]">
-                        {isCompleted
-                          ? "Review Course"
-                          : isInProgress
-                            ? "Continue Learning"
-                            : "Start Course"}
-                        <ArrowRight className="w-3.5 h-3.5" />
+              return (
+                <div
+                  key={course.id}
+                  className="group flex flex-col bg-white dark:bg-slate-900 rounded-2xl border shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+                >
+                  {/* Thumbnail */}
+                  <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    {course.imageUrl ? (
+                      <Image
+                        src={course.imageUrl}
+                        alt={course.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div
+                        className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white`}
+                      >
+                        <BookOpen className="w-10 h-10 opacity-60" />
                       </div>
+                    )}
+                    <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-sm text-white text-xs px-2.5 py-0.5 rounded-full font-medium">
+                      {course.category}
+                    </div>
+
+                    {isEnrolled && (
+                      <div className="absolute top-3 right-3 bg-emerald-600 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">
+                        Enrolled
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-5 flex flex-col flex-1 justify-between space-y-4">
+                    <div className="space-y-2">
+                      <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 group-hover:text-blue-600 transition-colors line-clamp-1">
+                        {course.title}
+                      </h3>
+                      <p className="text-xs text-gray-500 line-clamp-2">
+                        {course.subtitle || course.description}
+                      </p>
+
+                      <div className="flex items-center gap-1 text-xs text-amber-500 font-bold pt-1">
+                        <span>{(course.averageRating || 5.0).toFixed(1)}</span>
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        <span className="text-gray-400 font-normal">
+                          ({course.totalRatingsCount || 0})
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Price & Action */}
+                    <div className="flex items-center justify-between pt-3 border-t">
+                      <div>
+                        {course.isFree ? (
+                          <span className="font-bold text-base text-emerald-600">
+                            Free
+                          </span>
+                        ) : (
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="font-bold text-base text-gray-900 dark:text-gray-100">
+                              $
+                              {effectivePrice.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </span>
+                            {discountPrice != null && discountPrice < price && (
+                              <span className="text-xs line-through text-gray-400">
+                                $
+                                {price.toLocaleString("en-US", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <Link
+                        href={
+                          isEnrolled
+                            ? `/client/my-learning/${course.id}`
+                            : `/client/courses/${course.id}`
+                        }
+                      >
+                        <Button
+                          size="sm"
+                          variant={isEnrolled ? "outline" : "default"}
+                          className="gap-1 text-xs"
+                        >
+                          {isEnrolled ? "Continue" : "View Course"}
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
-
-// ─── Stat Card ────────────────────────────────────────────────
-interface StatCardProps {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  color: string;
-  bg: string;
-}
-
-function StatCard({ icon: Icon, label, value, color, bg }: StatCardProps) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3.5 sm:p-4">
-      <div className="flex items-center gap-3">
-        <div
-          className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center flex-shrink-0`}
-        >
-          <Icon className={`w-4.5 h-4.5 ${color}`} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-lg font-bold text-gray-900 leading-none">
-            {value}
-          </p>
-          <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-0.5 truncate">
-            {label}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Chart Legend Item ─────────────────────────────────────────
-function ChartLegendItem({
-  color,
-  label,
-  count,
-}: {
-  color: string;
-  label: string;
-  count: number;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <div className={`w-2.5 h-2.5 rounded-full ${color} flex-shrink-0`} />
-      <span className="text-xs text-gray-600 truncate">{label}</span>
-      <span className="ml-auto text-xs font-semibold text-gray-900 pl-2">
-        {count}
-      </span>
-    </div>
-  );
-}
 
 export default MyLearningPage;

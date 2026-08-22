@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { CustomFormField } from "@/components/CustomFormField";
+import { FormInput } from "@/components/forms/form-input";
 import { useCourseMutation } from "@/hooks/educational-materials/course";
 
 interface TitleFormProps {
@@ -75,7 +75,13 @@ export const TitleForm = ({ initialData, courseId }: TitleFormProps) => {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 mt-4"
           >
-            <CustomFormField name="title" label="* Course title" />
+            <FormInput
+              control={form.control}
+              name="title"
+              label="Course Title"
+              placeholder="e.g. Advanced Commercial Lending & Underwriting"
+              required
+            />
             <div className="flex items-center gap-x-2">
               <Button disabled={!isValid || isSubmitting} type="submit">
                 Save

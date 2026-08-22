@@ -35,8 +35,11 @@ export const BUSINESS_DETAIL_COLLECTION = "business-detail";
 
 export const COURSE = "course";
 export const CHAPTER = "chapter";
+export const SECTION = "section";
 export const ATTACHMENT = "attachment";
 export const MUX_DATA = "mux-data";
+export const COURSE_REVIEWS = "course-reviews";
+export const COURSE_NOTES = "course-notes";
 
 export const DODO_CHECKOUTS_COLLECTION = "dodo-checkouts";
 

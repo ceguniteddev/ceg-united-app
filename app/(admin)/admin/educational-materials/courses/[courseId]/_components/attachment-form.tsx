@@ -53,14 +53,19 @@ export const AttachmentForm = ({
       try {
         await uploadCourseAttachment({ courseId, formData });
 
-        toast.success("Course updated");
+        toast.success(
+          `${droppedFiles.length} file${
+            droppedFiles.length > 1 ? "s" : ""
+          } uploaded successfully`,
+        );
         toggleEdit();
+        router.refresh();
       } catch (error: any) {
         console.error(error);
-        toast.error("Something went wrong");
+        toast.error(error?.message || "Failed to upload attachments");
       }
     },
-    [courseId, router]
+    [courseId, router, uploadCourseAttachment],
   );
 
   const onDelete = async (id: string) => {
@@ -132,12 +137,14 @@ export const AttachmentForm = ({
             className="cursor-pointer"
             onDrop={handleDrop}
             disabled={isUploadingAttachment}
+            maxFiles={50}
           >
             <DropzoneEmptyState />
             <DropzoneContent />
           </Dropzone>
           <div className="text-xs text-muted-foreground mt-4">
-            Add anything your Client might need to complete the course.
+            Upload single or multiple files (PDFs, spreadsheets, templates,
+            documents).
           </div>
         </div>
       )}

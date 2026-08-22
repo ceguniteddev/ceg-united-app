@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Course } from "@/schema/educational-materials/course";
 import { toast } from "sonner";
-import { CustomFormField } from "@/components/CustomFormField";
+import { FormTextarea } from "@/components/forms/form-textarea";
 import { useCourseMutation } from "@/hooks/educational-materials/course";
 
 interface DescriptionFormProps {
@@ -80,7 +80,7 @@ export const DescriptionForm = ({
         <p
           className={cn(
             "text-sm mt-2",
-            !initialData.description && "text-slate-500 italic"
+            !initialData.description && "text-slate-500 italic",
           )}
         >
           {initialData.description || "No description"}
@@ -92,10 +92,13 @@ export const DescriptionForm = ({
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 mt-4"
           >
-            <CustomFormField
+            <FormTextarea
+              control={form.control}
               name="description"
               label="Course Description"
-              type="textarea"
+              rows={4}
+              placeholder="e.g. This course teaches advanced underwriting principles and capital structuring..."
+              required
             />
             <div className="flex items-center gap-x-2">
               <Button disabled={!isValid || isSubmitting} type="submit">

@@ -8,23 +8,13 @@ import { Pencil, Save } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
+import { FormTextarea } from "@/components/forms/form-textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Chapter } from "@/schema/educational-materials/course";
 import { toast } from "sonner";
-import dynamic from "next/dynamic";
 import { useChapterMutation } from "@/hooks/educational-materials/chapter";
-
-const EditorQuill = dynamic(() => import("@/components/editor/EditorQuill"), {
-  ssr: false,
-});
 
 interface ChapterDescriptionFormProps {
   initialData: Chapter;
@@ -94,7 +84,7 @@ export const ChapterDescriptionForm = ({
         <div
           className={cn(
             "text-sm mt-2",
-            !initialData.description && "text-slate-500 italic"
+            !initialData.description && "text-slate-500 italic",
           )}
         >
           {!initialData.description && "No description"}
@@ -113,27 +103,22 @@ export const ChapterDescriptionForm = ({
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 mt-4"
           >
-            <FormField
+            <FormTextarea
               control={form.control}
               name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <EditorQuill {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Chapter Description"
+              placeholder="e.g. In this lesson, we will cover..."
+              rows={4}
+              required
             />
-            <div className="flex items-center mt-10">
+            <div className="flex items-center mt-4">
               <Button
                 disabled={!isValid || isSubmitting}
-                variant={"ghost"}
-                className="cursor-pointer bg-blue-200 hover:bg-blue-300"
+                size="sm"
                 type="submit"
               >
-                <Save className="h-4 w-4" />
-                Save
+                <Save className="h-4 w-4 mr-1" />
+                Save Description
               </Button>
             </div>
           </form>

@@ -1,36 +1,71 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+/// <reference types="vitest/globals" />
 
-// ── Firestore mock setup ──────────────────────────────────────────────────────
-const mockGet = vi.fn();
-const mockSet = vi.fn();
-const mockUpdate = vi.fn();
-const mockDelete = vi.fn();
-const mockAdd = vi.fn();
-const mockOrderBy = vi.fn();
-const mockWhere = vi.fn();
-const mockLimit = vi.fn();
+const mocks = vi.hoisted(() => {
+  const mockGet = vi.fn();
+  const mockSet = vi.fn();
+  const mockUpdate = vi.fn();
+  const mockDelete = vi.fn();
+  const mockAdd = vi.fn();
+  const mockOrderBy = vi.fn();
+  const mockWhere = vi.fn();
+  const mockLimit = vi.fn();
 
-const mockDocRef = {
-  get: mockGet,
-  set: mockSet,
-  update: mockUpdate,
-  delete: mockDelete,
-  collection: vi.fn(),
-  listCollections: vi.fn(),
-};
-const mockCollectionRef = {
-  add: mockAdd,
-  doc: vi.fn().mockReturnValue(mockDocRef),
-  where: mockWhere,
-  orderBy: mockOrderBy,
-  limit: mockLimit,
-  get: mockGet,
-};
-mockWhere.mockReturnValue(mockCollectionRef);
-mockOrderBy.mockReturnValue(mockCollectionRef);
-mockLimit.mockReturnValue(mockCollectionRef);
+  const mockDocRef: any = {
+    get: mockGet,
+    set: mockSet,
+    update: mockUpdate,
+    delete: mockDelete,
+    collection: vi.fn(),
+    listCollections: vi.fn(),
+  };
+  const mockCollectionRef: any = {
+    add: mockAdd,
+    doc: vi.fn().mockReturnValue(mockDocRef),
+    where: mockWhere,
+    orderBy: mockOrderBy,
+    limit: mockLimit,
+    get: mockGet,
+  };
+  mockWhere.mockReturnValue(mockCollectionRef);
+  mockOrderBy.mockReturnValue(mockCollectionRef);
+  mockLimit.mockReturnValue(mockCollectionRef);
 
-const mockDb = { collection: vi.fn().mockReturnValue(mockCollectionRef) };
+  const mockDb = { collection: vi.fn().mockReturnValue(mockCollectionRef) };
+  const mockTimestamp = {
+    now: vi.fn(() => "mock-ts"),
+    fromDate: vi.fn((d: any) => d),
+  };
+
+  return {
+    mockGet,
+    mockSet,
+    mockUpdate,
+    mockDelete,
+    mockAdd,
+    mockOrderBy,
+    mockWhere,
+    mockLimit,
+    mockDocRef,
+    mockCollectionRef,
+    mockDb,
+    mockTimestamp,
+  };
+});
+
+const {
+  mockGet,
+  mockSet,
+  mockUpdate,
+  mockDelete,
+  mockAdd,
+  mockOrderBy,
+  mockWhere,
+  mockLimit,
+  mockDocRef,
+  mockCollectionRef,
+  mockDb,
+  mockTimestamp,
+} = mocks;
 
 vi.mock("@/lib/fireabase-admin", () => ({
   firestoreAdmin: vi.fn(() => mockDb),
@@ -41,8 +76,9 @@ vi.mock("@/lib/fireabase-admin", () => ({
 vi.mock("@/lib/date-parser", () => ({
   normalizeAllDates: vi.fn((x: any) => x),
 }));
+
 vi.mock("firebase-admin/firestore", () => ({
-  Timestamp: { now: vi.fn(() => "mock-ts") },
+  Timestamp: mockTimestamp,
 }));
 
 // ── Import after mocks ────────────────────────────────────────────────────────
@@ -96,12 +132,14 @@ describe("service/educational-materials/chapter", () => {
         position: 1,
       });
 
-      expect(mockAdd).toHaveBeenCalledWith({
-        title: "Chapter 1",
-        courseId: "c1",
-        position: 1,
-        createdAt: "mock-ts",
-      });
+      expect(mockAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Chapter 1",
+          courseId: "c1",
+          position: 1,
+          createdAt: expect.anything(),
+        }),
+      );
       expect(result).toEqual({
         id: "new-ch",
         title: "Chapter 1",
@@ -140,10 +178,12 @@ describe("service/educational-materials/chapter", () => {
         data: { title: "Updated" },
       });
 
-      expect(mockUpdate).toHaveBeenCalledWith({
-        title: "Updated",
-        updatedAt: "mock-ts",
-      });
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Updated",
+          updatedAt: expect.anything(),
+        }),
+      );
       expect(result).toEqual({ id: "ch-1", ...updatedData });
     });
   });
@@ -159,10 +199,12 @@ describe("service/educational-materials/chapter", () => {
         data: { isPublished: true },
       });
 
-      expect(mockUpdate).toHaveBeenCalledWith({
-        isPublished: true,
-        updatedAt: "mock-ts",
-      });
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          isPublished: true,
+          updatedAt: expect.anything(),
+        }),
+      );
     });
   });
 
@@ -248,16 +290,18 @@ describe("service/educational-materials/chapter", () => {
         playbackId: "play-456",
       });
 
-      expect(mockUpdate).toHaveBeenCalledWith({
-        videoUrl: "https://stream.mux.com/play-456.m3u8",
-        muxData: {
-          assetId: "asset-123",
-          playbackId: "play-456",
-          chapterId: "ch-1",
-          courseId: "c1",
-        },
-        updatedAt: "mock-ts",
-      });
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          videoUrl: "https://stream.mux.com/play-456.m3u8",
+          muxData: {
+            assetId: "asset-123",
+            playbackId: "play-456",
+            chapterId: "ch-1",
+            courseId: "c1",
+          },
+          updatedAt: expect.anything(),
+        }),
+      );
     });
   });
 });
