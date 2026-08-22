@@ -486,11 +486,58 @@ describe("Dodo payment service", () => {
         amount: 400,
         checkoutId: "cks_1",
         receiptId: "pay_1",
+        triggerCRSWorkflow: false,
+      }),
+    );
+
+    // Fallback when metadata.selectedAddonIds is undefined
+    queryResult = {
+      empty: false,
+      docs: [
+        {
+          id: "checkout",
+          data: () => ({
+            userId: "u1",
+            productId: "p_pro",
+            paymentKey: "tier_pro",
+            metadata: {
+              userId: "u1",
+              planId: "tier_pro",
+            },
+          }),
+        },
+      ],
+    };
+    await recordPaymentSucceeded({
+      payment: payment({ metadata: undefined, total_amount: 200000 }),
+    });
+
+    // Fallback when creditModuleProAddonPrice is undefined and checkout_session_id is undefined
+    mocks.getFees.mockResolvedValueOnce({
+      creditModuleProAddonPrice: undefined as any,
+    });
+    await recordPaymentSucceeded({
+      payment: {
+        ...payment({
+          metadata: {
+            userId: "u1",
+            paymentKey: "tier_pro",
+            selectedAddonIds: '["credit_module_pro"]',
+          },
+          total_amount: 240000,
+        }),
+        checkout_session_id: undefined,
+      } as any,
+    });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        amount: 197,
+        checkoutId: undefined,
       }),
     );
   });
 
-  it("activates a standalone addon from a verified payment", async () => {
+  it("activates a standalone addon from a verified payment with amount fallback branches", async () => {
     queryResult = {
       empty: false,
       docs: [
@@ -511,19 +558,100 @@ describe("Dodo payment service", () => {
       ],
     };
 
+    // Case 1: metadata.addonAmount is present
     await recordPaymentSucceeded({
-      payment: payment({ metadata: undefined, total_amount: 40000 }),
+      payment: {
+        ...payment({
+          metadata: {
+            userId: "u1",
+            paymentKey: "credit_module_pro",
+            addonAmount: "500",
+          },
+          total_amount: 40000,
+        }),
+        checkout_session_id: undefined,
+      } as any,
     });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({ amount: 500, checkoutId: undefined }),
+    );
 
-    expect(mocks.activate).not.toHaveBeenCalled();
-    expect(mocks.activateAddon).toHaveBeenCalledWith({
-      userId: "u1",
-      addonId: "credit_module_pro",
-      amount: 400,
-      checkoutId: "cks_1",
-      planId: "p_addon",
-      receiptId: "pay_1",
+    // Case 2: falls back to fees.creditModuleProAddonPrice
+    mocks.getFees.mockResolvedValueOnce({ creditModuleProAddonPrice: 250 });
+    await recordPaymentSucceeded({
+      payment: payment({ metadata: undefined, total_amount: 0 }),
     });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({ amount: 250 }),
+    );
+
+    // Case 3: fees price is undefined/0, falls back to total_amount / 100
+    mocks.getFees.mockResolvedValueOnce({
+      creditModuleProAddonPrice: undefined as any,
+    });
+    await recordPaymentSucceeded({
+      payment: payment({ metadata: undefined, total_amount: 30000 }),
+    });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({ amount: 300 }),
+    );
+
+    // Case 4: all zero/falsy, falls back to 197
+    mocks.getFees.mockResolvedValueOnce({
+      creditModuleProAddonPrice: 0 as any,
+    });
+    await recordPaymentSucceeded({
+      payment: payment({ metadata: undefined, total_amount: 0 }),
+    });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({ amount: 197 }),
+    );
+  });
+
+  it("activates addon subscription with fallback branches for planId and amount", async () => {
+    // metadata.planId missing (falls back to "credit_module_pro") and falls back through price options
+    mocks.getFees.mockResolvedValueOnce({
+      creditModuleProAddonPrice: 0 as any,
+    });
+    await recordSubscriptionActive({
+      subscription: {
+        metadata: {
+          userId: "u1",
+          isAddon: "true",
+        },
+        recurring_pre_tax_amount: 15000,
+        subscription_id: "sub_addon_fallback",
+        product_id: "pdt_credit_module_pro",
+      } as any,
+    });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        addonId: "credit_module_pro",
+        amount: 150,
+      }),
+    );
+
+    // all pricing undefined/0, falls back to 197
+    mocks.getFees.mockResolvedValueOnce({
+      creditModuleProAddonPrice: 0 as any,
+    });
+    await recordSubscriptionActive({
+      subscription: {
+        metadata: {
+          userId: "u1",
+          isAddon: "true",
+        },
+        recurring_pre_tax_amount: 0,
+        subscription_id: "sub_addon_197",
+        product_id: "pdt_credit_module_pro",
+      } as any,
+    });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        addonId: "credit_module_pro",
+        amount: 197,
+      }),
+    );
   });
 
   it("updates an existing wallet", async () => {
@@ -598,9 +726,49 @@ describe("Dodo payment service", () => {
         checkoutId: "sub_addon_1",
         planId: "pdt_credit_module_pro",
         receiptId: "sub_addon_1",
+        triggerCRSWorkflow: true,
       }),
     );
     expect(mocks.activate).not.toHaveBeenCalled();
+  });
+
+  it("handles missing userId when activating addon subscription and handles invalid selectedAddonIds JSON", async () => {
+    await recordSubscriptionActive({
+      subscription: {
+        metadata: {
+          planId: "credit_module_pro",
+          isAddon: "true",
+        },
+        subscription_id: "sub_addon_no_user",
+      } as any,
+    });
+    expect(mocks.activateAddon).not.toHaveBeenCalled();
+
+    queryResult = {
+      empty: false,
+      docs: [
+        {
+          id: "checkout",
+          data: () => ({
+            userId: "u1",
+            productId: "p_pro",
+            paymentKey: "tier_pro",
+            metadata: {
+              userId: "u1",
+              planId: "tier_pro",
+              selectedAddonIds: "invalid-json",
+            },
+          }),
+        },
+      ],
+    };
+
+    await recordPaymentSucceeded({
+      payment: payment({ metadata: undefined, total_amount: 200000 }),
+    });
+    expect(mocks.activate).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "u1", tier: "tier_pro" }),
+    );
   });
 
   it("recovers subscription membership context from product and payments", async () => {

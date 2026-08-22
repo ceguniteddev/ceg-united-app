@@ -3,6 +3,7 @@
 const mocks = vi.hoisted(() => ({
   transactionGet: vi.fn(),
   transactionSet: vi.fn(),
+  triggerActivationCRSWorkflow: vi.fn(),
 }));
 
 const targetRef = { id: "credit_module_pro" };
@@ -23,6 +24,10 @@ vi.mock("@/lib/fireabase-admin", () => ({
   }),
 }));
 
+vi.mock("@/service/membership", () => ({
+  triggerActivationCRSWorkflow: mocks.triggerActivationCRSWorkflow,
+}));
+
 vi.mock("@/lib/logger", () => ({ logInfo: vi.fn() }));
 
 import { activateUserAddon } from "@/service/addons";
@@ -30,6 +35,7 @@ import { activateUserAddon } from "@/service/addons";
 describe("activateUserAddon", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.triggerActivationCRSWorkflow.mockResolvedValue(undefined);
   });
 
   it("creates a new addon using target document ref if none exists", async () => {
@@ -56,9 +62,32 @@ describe("activateUserAddon", () => {
         status: "active",
       }),
     );
+    expect(mocks.triggerActivationCRSWorkflow).not.toHaveBeenCalled();
   });
 
-  it("updates existing active addon document idempotently if already exists", async () => {
+  it("triggers CRS workflow on first activation when triggerCRSWorkflow is true", async () => {
+    mocks.transactionGet
+      .mockResolvedValueOnce({ exists: false })
+      .mockResolvedValueOnce({ docs: [] });
+
+    const res = await activateUserAddon({
+      userId: "user_1",
+      addonId: "credit_module_pro",
+      amount: 197,
+      checkoutId: "cks_1",
+      planId: "pdt_1",
+      receiptId: "pay_1",
+      triggerCRSWorkflow: true,
+    });
+
+    expect(res).toEqual({ success: true });
+    expect(mocks.triggerActivationCRSWorkflow).toHaveBeenCalledWith({
+      userId: "user_1",
+      source: "addon",
+    });
+  });
+
+  it("updates existing active addon document idempotently if already exists and skips CRS workflow", async () => {
     const existingRef = { id: "credit_module_pro" };
     mocks.transactionGet
       .mockResolvedValueOnce({
@@ -73,6 +102,7 @@ describe("activateUserAddon", () => {
       addonId: "credit_module_pro",
       amount: 197,
       checkoutId: "sub_1",
+      triggerCRSWorkflow: true,
     });
 
     expect(res).toEqual({ success: true, alreadyActive: true });
@@ -84,5 +114,6 @@ describe("activateUserAddon", () => {
       }),
       { merge: true },
     );
+    expect(mocks.triggerActivationCRSWorkflow).not.toHaveBeenCalled();
   });
 });

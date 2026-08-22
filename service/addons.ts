@@ -4,6 +4,7 @@ import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { USER_COLLECTION } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { logInfo } from "@/lib/logger";
+import { triggerActivationCRSWorkflow } from "@/service/membership";
 
 export type AddonTier = "credit_module_pro";
 
@@ -26,6 +27,7 @@ export const activateUserAddon = async ({
   checkoutId,
   planId,
   receiptId,
+  triggerCRSWorkflow = false,
 }: {
   userId: string;
   addonId: AddonTier;
@@ -33,6 +35,7 @@ export const activateUserAddon = async ({
   checkoutId?: string;
   planId?: string;
   receiptId?: string;
+  triggerCRSWorkflow?: boolean;
 }) => {
   logInfo("Activating user addon", { userId, addonId, amount });
   if (!userId) throw new AppError("User ID is required.");
@@ -82,7 +85,15 @@ export const activateUserAddon = async ({
     });
   });
 
-  return { success: true, ...(alreadyActive ? { alreadyActive: true } : {}) };
+  if (alreadyActive) {
+    return { success: true, alreadyActive: true };
+  }
+
+  if (triggerCRSWorkflow && addonId === "credit_module_pro") {
+    await triggerActivationCRSWorkflow({ userId, source: "addon" });
+  }
+
+  return { success: true };
 };
 
 export const getUserAddons = async (userId: string): Promise<UserAddon[]> => {

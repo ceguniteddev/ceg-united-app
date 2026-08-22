@@ -426,6 +426,7 @@ export const recordPaymentSucceeded = async ({
         checkoutId: payment.checkout_session_id || undefined,
         planId: checkoutData.productId,
         receiptId: payment.payment_id,
+        triggerCRSWorkflow: false,
       });
     }
   }
@@ -443,6 +444,7 @@ export const recordPaymentSucceeded = async ({
       checkoutId: payment.checkout_session_id || undefined,
       planId: payment.product_cart?.[0]?.product_id || checkoutData.productId,
       receiptId: payment.payment_id,
+      triggerCRSWorkflow: true,
     });
   }
 
@@ -548,6 +550,7 @@ export const recordSubscriptionActive = async ({
       checkoutId: subscription.subscription_id,
       planId: subscription.product_id,
       receiptId: subscription.subscription_id,
+      triggerCRSWorkflow: true,
     });
     return;
   }
