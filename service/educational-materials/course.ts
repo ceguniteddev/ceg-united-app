@@ -322,25 +322,25 @@ export const getUserCourses = async (userId: string): Promise<Course[]> => {
     const db = firestoreAdmin();
 
     // Check active membership or active add-on
-    const membership = await getUserMembership(userId);
-    const addons = await getUserAddons(userId);
-    const hasAccess =
-      membership?.status === "active" ||
-      addons.some((addon) => addon.status === "active");
+    // const membership = await getUserMembership(userId);
+    // const addons = await getUserAddons(userId);
+    // const hasAccess =
+    //   membership?.status === "active" ||
+    //   addons.some((addon) => addon.status === "active");
 
-    if (!hasAccess) {
-      // Check if user exists in USER_DENEFITS_CONTRACT collection for backward compatibility
-      const { USER_DENEFITS_CONTRACT } =
-        await import("@/constant/collection-name");
-      const denefitsRef = db
-        .collection(USER_DENEFITS_CONTRACT)
-        .where("userId", "==", userId);
-      const denefitsSnapshot = await denefitsRef.get();
+    // if (!hasAccess) {
+    //   // Check if user exists in USER_DENEFITS_CONTRACT collection for backward compatibility
+    //   const { USER_DENEFITS_CONTRACT } =
+    //     await import("@/constant/collection-name");
+    //   const denefitsRef = db
+    //     .collection(USER_DENEFITS_CONTRACT)
+    //     .where("userId", "==", userId);
+    //   const denefitsSnapshot = await denefitsRef.get();
 
-      if (denefitsSnapshot.empty) {
-        return [];
-      }
-    }
+    //   if (denefitsSnapshot.empty) {
+    //     return [];
+    //   }
+    // }
 
     // Return all published courses
     const coursesRef = db

@@ -71,8 +71,8 @@ const MyLearningPage = () => {
           subtext="Access your enrolled courses and track your progress"
         />
         <EmptyState
-          title="Membership or Add-on Required"
-          description="You need an active membership or add-on to access learning materials. Please upgrade or subscribe to unlock courses."
+          title="Membership or Credit Repair Add-on Required"
+          description="You need an active membership or Credit Repair add-on to access learning materials. Please upgrade or subscribe to unlock courses."
         />
       </div>
     );
