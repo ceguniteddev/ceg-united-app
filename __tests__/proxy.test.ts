@@ -1,22 +1,37 @@
-import { vi, describe, beforeEach, it, expect, Mock } from "vitest";
+/// <reference types="vitest/globals" />
 
-// Mock server-only BEFORE imports
-vi.mock("server-only", () => {
-  return {};
-});
-
-import { NextRequest, NextResponse } from "next/server";
-import { proxy } from "@/proxy";
-import { verifySession } from "@/lib/session";
-import { getUserById } from "@/service/user";
+const mocks = vi.hoisted(() => ({
+  verifySession: vi.fn(),
+  getUserById: vi.fn(),
+  getUserMembership: vi.fn(),
+  getUserAddons: vi.fn(),
+  hasActiveAddon: vi.fn(),
+  getSystemConfig: vi.fn(),
+}));
 
 vi.mock("@/lib/session", () => ({
-  verifySession: vi.fn(),
+  verifySession: mocks.verifySession,
 }));
 
 vi.mock("@/service/user", () => ({
-  getUserById: vi.fn(),
+  getUserById: mocks.getUserById,
 }));
+
+vi.mock("@/service/membership", () => ({
+  getUserMembership: mocks.getUserMembership,
+}));
+
+vi.mock("@/service/addons", () => ({
+  getUserAddons: mocks.getUserAddons,
+  hasActiveAddon: mocks.hasActiveAddon,
+}));
+
+vi.mock("@/service/system-config", () => ({
+  getSystemConfig: mocks.getSystemConfig,
+}));
+
+import { NextRequest, NextResponse } from "next/server";
+import { proxy } from "@/proxy";
 
 describe("proxy middleware API validation", () => {
   let nextSpy: any;
@@ -60,11 +75,11 @@ describe("proxy middleware API validation", () => {
   it("should block Client from accessing Admin API with session cookie", async () => {
     const req = createMockReq("/api/admin/income-funding", "valid_session");
 
-    (verifySession as Mock).mockResolvedValue({
+    mocks.verifySession.mockResolvedValue({
       email: "client@test.com",
       uid: "client_uid",
     });
-    (getUserById as Mock).mockResolvedValue({ role: "Client" });
+    mocks.getUserById.mockResolvedValue({ role: "Client" });
 
     await proxy(req);
 
@@ -76,11 +91,11 @@ describe("proxy middleware API validation", () => {
   it("should block Client from accessing Broker API with session cookie", async () => {
     const req = createMockReq("/api/broker/clients", "valid_session");
 
-    (verifySession as Mock).mockResolvedValue({
+    mocks.verifySession.mockResolvedValue({
       email: "client@test.com",
       uid: "client_uid",
     });
-    (getUserById as Mock).mockResolvedValue({ role: "Client" });
+    mocks.getUserById.mockResolvedValue({ role: "Client" });
 
     await proxy(req);
 
@@ -92,11 +107,11 @@ describe("proxy middleware API validation", () => {
   it("should block Client from accessing unknown API (not in allowed prefixes)", async () => {
     const req = createMockReq("/api/unknown/endpoint", "valid_session");
 
-    (verifySession as Mock).mockResolvedValue({
+    mocks.verifySession.mockResolvedValue({
       email: "client@test.com",
       uid: "client_uid",
     });
-    (getUserById as Mock).mockResolvedValue({ role: "Client" });
+    mocks.getUserById.mockResolvedValue({ role: "Client" });
 
     await proxy(req);
 
@@ -111,11 +126,11 @@ describe("proxy middleware API validation", () => {
       "valid_session",
     );
 
-    (verifySession as Mock).mockResolvedValue({
+    mocks.verifySession.mockResolvedValue({
       email: "client@test.com",
       uid: "client_uid",
     });
-    (getUserById as Mock).mockResolvedValue({ role: "Client" });
+    mocks.getUserById.mockResolvedValue({ role: "Client" });
 
     await proxy(req);
 
@@ -127,11 +142,11 @@ describe("proxy middleware API validation", () => {
   it("should allow Client to access their own API route", async () => {
     const req = createMockReq("/api/user/client_uid/profile", "valid_session");
 
-    (verifySession as Mock).mockResolvedValue({
+    mocks.verifySession.mockResolvedValue({
       email: "client@test.com",
       uid: "client_uid",
     });
-    (getUserById as Mock).mockResolvedValue({ role: "Client" });
+    mocks.getUserById.mockResolvedValue({ role: "Client" });
 
     await proxy(req);
 
@@ -149,11 +164,11 @@ describe("proxy middleware API validation", () => {
   it("should allow Client to access allowed client prefixes (e.g. /api/pdf/generate)", async () => {
     const req = createMockReq("/api/pdf/generate", "valid_session");
 
-    (verifySession as Mock).mockResolvedValue({
+    mocks.verifySession.mockResolvedValue({
       email: "client@test.com",
       uid: "client_uid",
     });
-    (getUserById as Mock).mockResolvedValue({ role: "Client" });
+    mocks.getUserById.mockResolvedValue({ role: "Client" });
 
     await proxy(req);
 
@@ -163,14 +178,89 @@ describe("proxy middleware API validation", () => {
   it("should allow Admin to access Admin API", async () => {
     const req = createMockReq("/api/admin/income-funding", "valid_session");
 
-    (verifySession as Mock).mockResolvedValue({
+    mocks.verifySession.mockResolvedValue({
       email: "admin@test.com",
       uid: "admin_uid",
     });
-    (getUserById as Mock).mockResolvedValue({ role: "Admin" });
+    mocks.getUserById.mockResolvedValue({ role: "Admin" });
 
     await proxy(req);
 
     expect(nextSpy).toHaveBeenCalled();
+  });
+
+  describe("client page routing for /client/my-learning", () => {
+    it("allows access to /client/my-learning when client has active membership", async () => {
+      const req = createMockReq("/client/my-learning", "valid_session");
+
+      mocks.verifySession.mockResolvedValue({
+        email: "client@test.com",
+        uid: "client_uid",
+      });
+      mocks.getUserById.mockResolvedValue({ role: "Client" });
+      mocks.getUserMembership.mockResolvedValue({ status: "active" });
+
+      await proxy(req);
+
+      expect(nextSpy).toHaveBeenCalled();
+    });
+
+    it("allows access to /client/my-learning when client has inactive membership but active addon", async () => {
+      const req = createMockReq("/client/my-learning", "valid_session");
+
+      mocks.verifySession.mockResolvedValue({
+        email: "client@test.com",
+        uid: "client_uid",
+      });
+      mocks.getUserById.mockResolvedValue({ role: "Client" });
+      mocks.getUserMembership.mockResolvedValue({ status: "inactive" });
+      mocks.getUserAddons.mockResolvedValue([
+        { addonId: "credit_module_pro", status: "active" },
+      ]);
+
+      await proxy(req);
+
+      expect(nextSpy).toHaveBeenCalled();
+    });
+
+    it("redirects /client/my-learning to /client/home when client has no membership and no active addon", async () => {
+      const redirectSpy = vi.spyOn(NextResponse, "redirect");
+      const req = createMockReq("/client/my-learning", "valid_session");
+
+      mocks.verifySession.mockResolvedValue({
+        email: "client@test.com",
+        uid: "client_uid",
+      });
+      mocks.getUserById.mockResolvedValue({ role: "Client" });
+      mocks.getUserMembership.mockResolvedValue(null);
+      mocks.getUserAddons.mockResolvedValue([]);
+
+      await proxy(req);
+
+      expect(redirectSpy).toHaveBeenCalledWith(
+        new URL("/client/home", "http://localhost:3000"),
+      );
+    });
+
+    it("redirects /client/my-analysis to /client/home when client has only active addon without active membership", async () => {
+      const redirectSpy = vi.spyOn(NextResponse, "redirect");
+      const req = createMockReq("/client/my-analysis", "valid_session");
+
+      mocks.verifySession.mockResolvedValue({
+        email: "client@test.com",
+        uid: "client_uid",
+      });
+      mocks.getUserById.mockResolvedValue({ role: "Client" });
+      mocks.getUserMembership.mockResolvedValue(null);
+      mocks.getUserAddons.mockResolvedValue([
+        { addonId: "credit_module_pro", status: "active" },
+      ]);
+
+      await proxy(req);
+
+      expect(redirectSpy).toHaveBeenCalledWith(
+        new URL("/client/home", "http://localhost:3000"),
+      );
+    });
   });
 });

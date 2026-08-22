@@ -201,11 +201,19 @@ const MobileNavClient = () => {
                     pathname === item.route ||
                     pathname.startsWith(`${item.route}/`);
 
+                  const hasActiveMembership =
+                    !!userData && membership?.status === "active";
+                  const hasAnyActiveAddon = addons.some(
+                    (a) => a.status === "active",
+                  );
+
                   const isLocked =
-                    ((!userData || membership?.status !== "active") &&
+                    (!hasActiveMembership &&
                       (item.route === "/client/my-analysis" ||
-                        item.route === "/client/my-learning" ||
                         item.route === "/client/my-credit")) ||
+                    (!hasActiveMembership &&
+                      !hasAnyActiveAddon &&
+                      item.route === "/client/my-learning") ||
                     (item.route === "/client/credit-repair" &&
                       !addons.some((a) => a.addonId === "credit_module_pro"));
 

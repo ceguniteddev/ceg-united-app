@@ -3,7 +3,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/session";
 import { getUserById } from "@/service/user";
-import { hasActiveAddon } from "@/service/addons";
+import { hasActiveAddon, getUserAddons } from "@/service/addons";
 import { getUserMembership } from "@/service/membership";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { getSystemConfig } from "@/service/system-config";
@@ -260,11 +260,20 @@ export async function proxy(req: NextRequest) {
       return NextResponse.redirect(new URL(CLIENT_HOME, origin));
     }
 
-    if (
+    if (pathname.startsWith("/client/my-learning")) {
+      if (!hasPaidContract) {
+        const userAddons = await getUserAddons(sessionCookie.uid);
+        const hasAnyActiveAddon = userAddons.some(
+          (addon) => addon.status === "active",
+        );
+        if (!hasAnyActiveAddon) {
+          return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+        }
+      }
+    } else if (
       !hasPaidContract &&
       (pathname.startsWith("/client/my-analysis") ||
         pathname.startsWith("/client/my-credit") ||
-        pathname.startsWith("/client/my-learning") ||
         // pathname.startsWith("/client/credit-repair") ||
         pathname.startsWith("/client/income-funding/apply"))
     ) {
