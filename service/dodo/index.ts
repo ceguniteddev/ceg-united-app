@@ -279,7 +279,11 @@ export const createAddonCheckoutConfig = async ({
     amountInCents: Math.round(fees.creditModuleProAddonPrice * 100),
     onDemand: true,
     returnUrl,
-    metadata: { planId: addonId, isAddon: "true" },
+    metadata: {
+      planId: addonId,
+      isAddon: "true",
+      addonAmount: String(fees.creditModuleProAddonPrice),
+    },
   });
 };
 
@@ -433,8 +437,8 @@ export const recordPaymentSucceeded = async ({
       addonId: "credit_module_pro",
       amount:
         Number(metadata.addonAmount) ||
-        payment.total_amount / 100 ||
         fees.creditModuleProAddonPrice ||
+        payment.total_amount / 100 ||
         197,
       checkoutId: payment.checkout_session_id || undefined,
       planId: payment.product_cart?.[0]?.product_id || checkoutData.productId,
@@ -503,8 +507,6 @@ export const recordSubscriptionActive = async ({
   subscription: Subscription;
 }) => {
   const metadata = (subscription.metadata || {}) as Record<string, string>;
-  const tier =
-    metadata.planId || membershipTierForProduct(subscription.product_id);
   let userId = metadata.userId;
 
   if (!userId && subscription.customer?.customer_id) {
@@ -515,6 +517,43 @@ export const recordSubscriptionActive = async ({
       .get();
     userId = paymentSnapshot.docs[0]?.data()?.userId;
   }
+
+  const isAddon =
+    metadata.isAddon === "true" ||
+    metadata.planId === "credit_module_pro" ||
+    (Boolean(process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID) &&
+      subscription.product_id ===
+        process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID);
+
+  if (isAddon) {
+    if (!userId) {
+      logError(
+        new Error(
+          `Unable to activate addon subscription ${subscription.subscription_id}: missing userId`,
+        ),
+      );
+      return;
+    }
+    const fees = await getFeeSettings();
+    const addonId =
+      (metadata.planId as "credit_module_pro") || "credit_module_pro";
+    await activateUserAddon({
+      userId,
+      addonId,
+      amount:
+        Number(metadata.addonAmount) ||
+        fees.creditModuleProAddonPrice ||
+        subscription.recurring_pre_tax_amount / 100 ||
+        197,
+      checkoutId: subscription.subscription_id,
+      planId: subscription.product_id,
+      receiptId: subscription.subscription_id,
+    });
+    return;
+  }
+
+  const tier =
+    metadata.planId || membershipTierForProduct(subscription.product_id);
 
   if (!userId || !tier) {
     logError(

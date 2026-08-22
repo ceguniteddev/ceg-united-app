@@ -264,7 +264,8 @@ export async function proxy(req: NextRequest) {
       !hasPaidContract &&
       (pathname.startsWith("/client/my-analysis") ||
         pathname.startsWith("/client/my-credit") ||
-        pathname.startsWith("/client/credit-repair") ||
+        pathname.startsWith("/client/my-learning") ||
+        // pathname.startsWith("/client/credit-repair") ||
         pathname.startsWith("/client/income-funding/apply"))
     ) {
       return NextResponse.redirect(new URL(CLIENT_HOME, origin));

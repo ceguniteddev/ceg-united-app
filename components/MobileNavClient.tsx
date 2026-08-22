@@ -170,12 +170,12 @@ const MobileNavClient = () => {
                   //   return false;
                   // }
 
-                  if (
-                    item.route === "/client/credit-repair" &&
-                    (!userData || membership?.status !== "active")
-                  ) {
-                    return false;
-                  }
+                  // if (
+                  //   item.route === "/client/credit-repair" &&
+                  //   (!userData || membership?.status !== "active")
+                  // ) {
+                  //   return false;
+                  // }
 
                   // Filter out "Letter Stream" if user has no letter features enabled
                   if (item.route === "/client/letter-stream") {

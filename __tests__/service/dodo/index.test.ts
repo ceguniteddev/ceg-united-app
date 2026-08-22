@@ -576,6 +576,33 @@ describe("Dodo payment service", () => {
     );
   });
 
+  it("activates addon subscription when metadata isAddon or addon planId is provided", async () => {
+    mocks.getFees.mockResolvedValueOnce({ creditModuleProAddonPrice: 197 });
+    await recordSubscriptionActive({
+      subscription: {
+        metadata: {
+          userId: "u1",
+          planId: "credit_module_pro",
+          isAddon: "true",
+        },
+        recurring_pre_tax_amount: 19700,
+        subscription_id: "sub_addon_1",
+        product_id: "pdt_credit_module_pro",
+      } as any,
+    });
+    expect(mocks.activateAddon).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "u1",
+        addonId: "credit_module_pro",
+        amount: 197,
+        checkoutId: "sub_addon_1",
+        planId: "pdt_credit_module_pro",
+        receiptId: "sub_addon_1",
+      }),
+    );
+    expect(mocks.activate).not.toHaveBeenCalled();
+  });
+
   it("recovers subscription membership context from product and payments", async () => {
     paymentDocs = [
       {
