@@ -205,26 +205,7 @@ describe("proxy middleware API validation", () => {
       expect(nextSpy).toHaveBeenCalled();
     });
 
-    it("allows access to /client/my-learning when client has inactive membership but active addon", async () => {
-      const req = createMockReq("/client/my-learning", "valid_session");
-
-      mocks.verifySession.mockResolvedValue({
-        email: "client@test.com",
-        uid: "client_uid",
-      });
-      mocks.getUserById.mockResolvedValue({ role: "Client" });
-      mocks.getUserMembership.mockResolvedValue({ status: "inactive" });
-      mocks.getUserAddons.mockResolvedValue([
-        { addonId: "credit_module_pro", status: "active" },
-      ]);
-
-      await proxy(req);
-
-      expect(nextSpy).toHaveBeenCalled();
-    });
-
-    it("redirects /client/my-learning to /client/home when client has no membership and no active addon", async () => {
-      const redirectSpy = vi.spyOn(NextResponse, "redirect");
+    it("allows access to /client/my-learning for any client even without membership or addon", async () => {
       const req = createMockReq("/client/my-learning", "valid_session");
 
       mocks.verifySession.mockResolvedValue({
@@ -237,9 +218,7 @@ describe("proxy middleware API validation", () => {
 
       await proxy(req);
 
-      expect(redirectSpy).toHaveBeenCalledWith(
-        new URL("/client/home", "http://localhost:3000"),
-      );
+      expect(nextSpy).toHaveBeenCalled();
     });
 
     it("redirects /client/my-analysis to /client/home when client has only active addon without active membership", async () => {

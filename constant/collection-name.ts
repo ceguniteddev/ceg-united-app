@@ -11,6 +11,8 @@ export const USER_DENEFITS_CONTRACT = "user-denefits-contract";
 export const DODO_PAYMENT_REQUESTS_COLLECTION = "dodo-payment-requests";
 export const USER_DODO_PAYMENTS = "user-dodo-payments";
 export const DODO_WEBHOOK_EVENTS = "dodo-webhook-events";
+export const USER_LUMINO_PAYMENTS = "user-lumino-payments";
+export const LUMINO_WEBHOOK_EVENTS = "lumino-webhook-events";
 
 export const GMAIL_TOKENS = "gmail-token";
 

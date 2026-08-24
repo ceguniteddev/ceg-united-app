@@ -26,6 +26,7 @@ const PUBLIC_ROUTES = new Set<string>([
   "/api/broker/validate-token",
   "/api/broker/register",
   "/api/payments/dodo",
+  "/api/webhooks/lumino",
   "/api/ocr",
 ]);
 const CLIENT_HOME = "/client/home";
@@ -264,17 +265,7 @@ export async function proxy(req: NextRequest) {
       return NextResponse.redirect(new URL(CLIENT_HOME, origin));
     }
 
-    if (pathname.startsWith("/client/my-learning")) {
-      if (!hasPaidContract) {
-        const userAddons = await getUserAddons(sessionCookie.uid);
-        const hasAnyActiveAddon = userAddons.some(
-          (addon) => addon.status === "active",
-        );
-        if (!hasAnyActiveAddon) {
-          return NextResponse.redirect(new URL(CLIENT_HOME, origin));
-        }
-      }
-    } else if (
+    if (
       !hasPaidContract &&
       (pathname.startsWith("/client/my-analysis") ||
         pathname.startsWith("/client/my-credit") ||
