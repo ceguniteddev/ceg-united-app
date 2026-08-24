@@ -116,6 +116,7 @@ export const courseSchema = z.object({
   price: z.number().min(0).default(0), // in USD (e.g. 49.99)
   discountPrice: z.number().min(0).optional(),
   dodoProductId: z.string().optional(),
+  luminoCheckoutUrl: z.string().optional(),
 
   // Publishing & Metrics
   isPublished: z.boolean().default(false),

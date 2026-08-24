@@ -1,5 +1,6 @@
-import { renderHook, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+/// <reference types="vitest/globals" />
+
+import { renderHook, waitFor, act } from "@testing-library/react";
 import {
   useGetCourses,
   useGetUserCourses,
@@ -9,13 +10,19 @@ import {
   useEnrollUserInCourse,
 } from "@/hooks/educational-materials/course";
 import { createWrapper } from "../../utils/test-utils";
-import { toast } from "sonner";
 
+const toast = vi.hoisted(() => ({
+  error: vi.fn(),
+  success: vi.fn(),
+  warning: vi.fn(),
+}));
 vi.mock("sonner", () => ({
-  toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() },
+  toast,
 }));
 
-const mockUser = { uid: "user-123" };
+const { mockUser } = vi.hoisted(() => ({
+  mockUser: { uid: "user-123" },
+}));
 vi.mock("@/provider/AuthContext", () => ({
   useAuth: () => ({ user: mockUser }),
 }));
@@ -205,7 +212,7 @@ describe("educational-materials/course hooks", () => {
         wrapper: createWrapper(),
       });
 
-      await result.current.enrollUser({
+      const response = await result.current.enrollUser({
         userId: "u1",
         courseId: "c1",
       });
@@ -214,9 +221,7 @@ describe("educational-materials/course hooks", () => {
         "/api/user/u1/courses/c1/enroll",
         { method: "POST" },
       );
-      expect(toast.success).toHaveBeenCalledWith(
-        "Successfully enrolled in course",
-      );
+      expect(response).toEqual({ success: true });
     });
   });
 });

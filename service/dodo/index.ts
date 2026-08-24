@@ -375,6 +375,13 @@ export const createCourseCheckoutConfig = async ({
     throw new Error("Course is not available for purchase");
   }
 
+  if (courseData.luminoCheckoutUrl) {
+    return {
+      checkoutId: `lumino_${courseId}`,
+      url: courseData.luminoCheckoutUrl,
+    };
+  }
+
   const priceInDollars =
     courseData.discountPrice != null && courseData.discountPrice >= 0
       ? courseData.discountPrice

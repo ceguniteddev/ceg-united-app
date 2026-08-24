@@ -228,9 +228,9 @@ const CoursePage = () => {
                 <h2 className="text-lg font-semibold">Course Monetization</h2>
               </div>
               <p className="text-xs text-gray-500 mb-4">
-                Set individual pricing for this course. Dodo Payments handles
-                checkout sessions, credit card/Apple Pay transactions, and
-                automatic course enrollment.
+                Set individual pricing and checkout settings for this course.
+                Add a Lumino checkout link to enable students to purchase this
+                course via Lumino.
               </p>
               <PriceForm initialData={course} courseId={course.id!} />
             </div>

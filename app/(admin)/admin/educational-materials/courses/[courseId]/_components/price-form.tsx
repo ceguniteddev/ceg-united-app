@@ -3,7 +3,7 @@
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Pencil, DollarSign, CheckCircle2 } from "lucide-react";
+import { Pencil, DollarSign, CheckCircle2, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -26,6 +26,7 @@ const formSchema = z.object({
   price: z.coerce.number().min(0),
   discountPrice: z.coerce.number().min(0).optional(),
   dodoProductId: z.string().optional(),
+  luminoCheckoutUrl: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -44,6 +45,7 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
       price: initialData?.price || 0,
       discountPrice: initialData?.discountPrice,
       dodoProductId: initialData?.dodoProductId || "",
+      luminoCheckoutUrl: initialData?.luminoCheckoutUrl || "",
     },
   });
 
@@ -62,6 +64,10 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
               ? undefined
               : values.discountPrice,
           dodoProductId: values.dodoProductId || undefined,
+          luminoCheckoutUrl:
+            values.isFree || !values.luminoCheckoutUrl
+              ? undefined
+              : values.luminoCheckoutUrl,
         },
       });
       toast.success("Pricing updated successfully");
@@ -128,6 +134,22 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
                   </span>
                 </div>
               )}
+              {initialData?.luminoCheckoutUrl && (
+                <div className="flex flex-col gap-1 text-xs pt-1 border-t border-slate-200 dark:border-slate-800">
+                  <span className="text-gray-500 font-medium">
+                    Lumino Checkout Link:
+                  </span>
+                  <a
+                    href={initialData.luminoCheckoutUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 break-all"
+                  >
+                    <span>{initialData.luminoCheckoutUrl}</span>
+                    <ExternalLink className="w-3 h-3 shrink-0" />
+                  </a>
+                </div>
+              )}
               {initialData?.dodoProductId && (
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <span>Dodo Product ID:</span>
@@ -157,8 +179,8 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
                       Make this course Free
                     </span>
                     <span className="text-xs text-gray-500 block">
-                      Students will be able to enroll immediately without Dodo
-                      Payments checkout.
+                      Students will be able to enroll immediately without Lumino
+                      checkout.
                     </span>
                   </div>
                 }
@@ -191,6 +213,20 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
                     disabled={isSubmitting}
                     thousandSeparator=","
                   />
+                </div>
+
+                <div className="space-y-1">
+                  <FormInput
+                    control={form.control}
+                    name="luminoCheckoutUrl"
+                    label="Lumino Checkout Link (URL)"
+                    placeholder="https://lumino.io/checkout/..."
+                    disabled={isSubmitting}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Payment checkout link from Lumino (https://lumino.io) used
+                    when clients purchase this course.
+                  </p>
                 </div>
               </>
             )}

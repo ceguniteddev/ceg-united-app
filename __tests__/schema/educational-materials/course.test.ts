@@ -299,4 +299,12 @@ describe("courseSchema", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it("accepts luminoCheckoutUrl", () => {
+    const result = courseSchema.safeParse({
+      ...validCourse,
+      luminoCheckoutUrl: "https://lumino.io/checkout/test-course",
+    });
+    expect(result.success).toBe(true);
+  });
 });
