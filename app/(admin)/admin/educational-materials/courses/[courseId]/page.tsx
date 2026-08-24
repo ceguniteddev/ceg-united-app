@@ -108,11 +108,6 @@ const CoursePage = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <Link href={`/client/courses/${courseId}`} target="_blank">
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <Eye className="w-4 h-4" /> Preview Course Page
-                </Button>
-              </Link>
               <Actions
                 disabled={!isComplete}
                 courseId={courseId}
