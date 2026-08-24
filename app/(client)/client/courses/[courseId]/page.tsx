@@ -6,6 +6,7 @@ import {
   useGetCourseById,
   useCourseEnrollment,
   useEnrollUserInCourse,
+  useCourseCheckout,
 } from "@/hooks/educational-materials/course";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -51,6 +52,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
   const { isEnrolled, isLoading: isLoadingEnrollment } =
     useCourseEnrollment(courseId);
   const { enrollUser, isEnrolling } = useEnrollUserInCourse();
+  const { createCheckout, isLoading: isCheckingOut } = useCourseCheckout();
 
   if (isLoadingCourse || isLoadingEnrollment) {
     return <Spinner displayText="Loading course details..." />;
@@ -90,9 +92,19 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
     router.push(`/client/my-learning/${course.id}`);
   };
 
-  const handleLuminoCheckout = () => {
+  const handlePurchase = async () => {
+    if (!user?.uid || !course.id) return;
     if (course.luminoCheckoutUrl) {
       window.open(course.luminoCheckoutUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    const returnUrl = `${window.location.origin}/client/my-learning/${course.id}`;
+    const res = await createCheckout({
+      courseId: course.id,
+      returnUrl,
+    });
+    if (res?.url) {
+      window.location.href = res.url;
     }
   };
 
@@ -376,17 +388,27 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
                 >
                   Enroll Now (Free)
                 </Button>
-              ) : course.luminoCheckoutUrl ? (
+              ) : (
                 <Button
-                  onClick={handleLuminoCheckout}
+                  onClick={handlePurchase}
+                  disabled={isCheckingOut}
                   className="w-full h-12 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-md"
                 >
-                  Purchase via Lumino
-                  <ExternalLink className="w-4 h-4" />
-                </Button>
-              ) : (
-                <Button disabled className="w-full h-12 text-sm font-semibold">
-                  Checkout Unavailable
+                  {isCheckingOut ? (
+                    "Processing Checkout..."
+                  ) : (
+                    <>
+                      Buy Now ( $
+                      {effectivePrice.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                      )
+                      {course.luminoCheckoutUrl && (
+                        <ExternalLink className="w-4 h-4" />
+                      )}
+                    </>
+                  )}
                 </Button>
               )}
             </div>

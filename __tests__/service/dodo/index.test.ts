@@ -73,6 +73,7 @@ import {
   chargeMembership,
   createAddonCheckoutConfig,
   createCRSReportCheckoutConfig,
+  createCourseCheckoutConfig,
   createDodoCheckoutConfig,
   createMembershipCheckoutConfig,
   createPsfInvoiceCheckoutConfig,
@@ -849,5 +850,87 @@ describe("Dodo payment service", () => {
     await expect(sendPaymentLink({ userId: "u1" })).rejects.toThrow(
       "mail down",
     );
+  });
+
+  describe("course checkout & webhook fulfillment", () => {
+    it("creates course checkout session using Dodo Payments", async () => {
+      mocks.get.mockResolvedValueOnce({
+        exists: true,
+        data: () => ({
+          isPublished: true,
+          price: 99,
+          title: "Masterclass",
+        }),
+      });
+      mocks.create.mockResolvedValueOnce({
+        session_id: "cks_course_123",
+        checkout_url: "https://checkout.dodopayments.com/course",
+      });
+
+      const res = await createCourseCheckoutConfig({
+        userId: "u1",
+        courseId: "course_1",
+      });
+
+      expect(res).toEqual({
+        checkoutId: "cks_course_123",
+        url: "https://checkout.dodopayments.com/course",
+      });
+    });
+
+    it("returns lumino checkout url when course specifies luminoCheckoutUrl", async () => {
+      mocks.get.mockResolvedValueOnce({
+        exists: true,
+        data: () => ({
+          isPublished: true,
+          luminoCheckoutUrl: "https://lumino.com/pay/course_1",
+        }),
+      });
+
+      const res = await createCourseCheckoutConfig({
+        userId: "u1",
+        courseId: "course_1",
+      });
+
+      expect(res).toEqual({
+        checkoutId: "lumino_course_1",
+        url: "https://lumino.com/pay/course_1",
+      });
+    });
+
+    it("fulfills course enrollment on CoursePurchase payment succeeded", async () => {
+      mocks.runTransaction.mockImplementation(async (cb: any) => {
+        const tx = {
+          get: vi
+            .fn()
+            .mockResolvedValueOnce({ empty: true })
+            .mockResolvedValueOnce({
+              exists: true,
+              data: () => ({ enrolledStudentsCount: 2 }),
+            }),
+          set: vi.fn(),
+          update: vi.fn(),
+        };
+        await cb(tx);
+        expect(tx.set).toHaveBeenCalled();
+        expect(tx.update).toHaveBeenCalled();
+      });
+
+      await recordPaymentSucceeded({
+        payment: {
+          payment_id: "pay_course_1",
+          checkout_session_id: "cks_course_1",
+          total_amount: 9900,
+          metadata: {
+            userId: "u1",
+            courseId: "course_1",
+            type: "COURSE_PURCHASE",
+            paymentKey: "CoursePurchase",
+          },
+        },
+      } as any);
+
+      expect(mocks.runTransaction).toHaveBeenCalled();
+    });
   });
 });

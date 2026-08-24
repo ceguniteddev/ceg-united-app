@@ -8,6 +8,7 @@ import {
   useGetCourseById,
   useCourseMutation,
   useEnrollUserInCourse,
+  useCourseCheckout,
 } from "@/hooks/educational-materials/course";
 import { createWrapper } from "../../utils/test-utils";
 
@@ -222,6 +223,42 @@ describe("educational-materials/course hooks", () => {
         { method: "POST" },
       );
       expect(response).toEqual({ success: true });
+    });
+  });
+
+  describe("useCourseCheckout", () => {
+    it("should start checkout for course", async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          checkoutId: "chk-1",
+          url: "https://checkout.dodo.com/123",
+        }),
+      });
+
+      const { result } = renderHook(() => useCourseCheckout(), {
+        wrapper: createWrapper(),
+      });
+
+      const response = await result.current.createCheckout({
+        courseId: "c1",
+        returnUrl: "https://app.com/client/my-learning/c1",
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/user/user-123/courses/c1/checkout",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            returnUrl: "https://app.com/client/my-learning/c1",
+          }),
+        },
+      );
+      expect(response).toEqual({
+        checkoutId: "chk-1",
+        url: "https://checkout.dodo.com/123",
+      });
     });
   });
 });

@@ -6,6 +6,7 @@ import {
   useGetUserCoursesWithProgress,
   useGetCourses,
   useEnrollUserInCourse,
+  useCourseCheckout,
 } from "@/hooks/educational-materials/course";
 import Spinner from "@/components/Spinner";
 import EmptyState from "@/components/EmptyState";
@@ -55,10 +56,35 @@ const MyLearningPage = () => {
   );
   const { courses: allCourses, isLoading: isLoadingAll } = useGetCourses();
   const { enrollUser, isEnrolling } = useEnrollUserInCourse();
+  const { createCheckout } = useCourseCheckout();
 
+  const [checkingOutCourseId, setCheckingOutCourseId] = useState<string | null>(
+    null,
+  );
   const [activeTab, setActiveTab] = useState("my-courses");
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleBuyCourse = async (course: any) => {
+    if (!user?.uid || !course.id) return;
+    if (course.luminoCheckoutUrl) {
+      window.open(course.luminoCheckoutUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    try {
+      setCheckingOutCourseId(course.id);
+      const returnUrl = `${window.location.origin}/client/my-learning/${course.id}`;
+      const res = await createCheckout({
+        courseId: course.id,
+        returnUrl,
+      });
+      if (res?.url) {
+        window.location.href = res.url;
+      }
+    } finally {
+      setCheckingOutCourseId(null);
+    }
+  };
 
   if (isLoading || isLoadingAll) {
     return <Spinner displayText="Loading courses..." />;
@@ -471,22 +497,23 @@ const MyLearningPage = () => {
                           Enroll Free
                           <ArrowRight className="w-3.5 h-3.5" />
                         </Button>
-                      ) : course.luminoCheckoutUrl ? (
+                      ) : (
                         <div className="flex items-center gap-1.5">
                           <Button
                             size="sm"
                             variant="default"
                             className="gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white"
-                            onClick={() => {
-                              window.open(
-                                course.luminoCheckoutUrl,
-                                "_blank",
-                                "noopener,noreferrer",
-                              );
-                            }}
+                            disabled={checkingOutCourseId === course.id}
+                            onClick={() => handleBuyCourse(course)}
                           >
-                            Checkout
-                            <ExternalLink className="w-3 h-3" />
+                            {checkingOutCourseId === course.id
+                              ? "Processing..."
+                              : "Buy Now"}
+                            {course.luminoCheckoutUrl ? (
+                              <ExternalLink className="w-3 h-3" />
+                            ) : (
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            )}
                           </Button>
                           <Link href={`/client/courses/${course.id}`}>
                             <Button
@@ -498,17 +525,6 @@ const MyLearningPage = () => {
                             </Button>
                           </Link>
                         </div>
-                      ) : (
-                        <Link href={`/client/courses/${course.id}`}>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            className="gap-1 text-xs"
-                          >
-                            View Course
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </Button>
-                        </Link>
                       )}
                     </div>
                   </div>

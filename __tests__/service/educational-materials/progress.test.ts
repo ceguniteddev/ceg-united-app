@@ -120,6 +120,7 @@ import {
   enrollUserInCourse,
   unenrollUserFromCourse,
   getUserCourseEnrollment,
+  getUserCoursesWithProgress,
   updateCourseAccess,
   markChapterComplete,
   markChapterIncomplete,
@@ -178,9 +179,14 @@ describe("service/educational-materials/progress", () => {
       expect(result).toEqual({ id: "enroll-1", ...existingData });
     });
 
-    it("creates new enrollment when not yet enrolled", async () => {
+    it("creates new enrollment when course is free and published", async () => {
       // First get: empty enrollment check
       mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: true,
+        isFree: true,
+      });
 
       const newEnrollmentData = {
         userId: "u1",
@@ -195,6 +201,11 @@ describe("service/educational-materials/progress", () => {
         }),
       };
       mockAdd.mockResolvedValue(addedRef);
+      // course doc get for enrolledStudentsCount increment
+      mockDocRef.get.mockResolvedValueOnce({
+        exists: true,
+        data: () => ({ enrolledStudentsCount: 5 }),
+      });
 
       const result = await enrollUserInCourse({ userId: "u1", courseId: "c1" });
 
@@ -205,6 +216,80 @@ describe("service/educational-materials/progress", () => {
           progressPercentage: 0,
         }),
       );
+      expect(result).toEqual({ id: "enroll-new", ...newEnrollmentData });
+    });
+
+    it("throws error when course is not found", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce(null);
+
+      await expect(
+        enrollUserInCourse({ userId: "u1", courseId: "c1" }),
+      ).rejects.toThrow("Course not found");
+    });
+
+    it("throws error when course is not published", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: false,
+        isFree: true,
+      });
+
+      await expect(
+        enrollUserInCourse({ userId: "u1", courseId: "c1" }),
+      ).rejects.toThrow("Course is not available");
+    });
+
+    it("throws error when course is paid and payment is not verified", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: true,
+        isFree: false,
+        price: 49.99,
+      });
+
+      await expect(
+        enrollUserInCourse({ userId: "u1", courseId: "c1" }),
+      ).rejects.toThrow(
+        "This is a paid course and requires purchase before enrollment.",
+      );
+    });
+
+    it("creates enrollment when course is paid and payment is verified", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: true,
+        isFree: false,
+        price: 49.99,
+      });
+
+      const newEnrollmentData = {
+        userId: "u1",
+        courseId: "c1",
+        progressPercentage: 0,
+      };
+      const addedRef = {
+        id: "enroll-new",
+        get: vi.fn().mockResolvedValue({
+          id: "enroll-new",
+          data: () => newEnrollmentData,
+        }),
+      };
+      mockAdd.mockResolvedValue(addedRef);
+      mockDocRef.get.mockResolvedValueOnce({
+        exists: true,
+        data: () => ({ enrolledStudentsCount: 0 }),
+      });
+
+      const result = await enrollUserInCourse({
+        userId: "u1",
+        courseId: "c1",
+        isPaymentVerified: true,
+      });
+
       expect(result).toEqual({ id: "enroll-new", ...newEnrollmentData });
     });
   });
@@ -501,6 +586,50 @@ describe("service/educational-materials/progress", () => {
           completedAt: expect.anything(),
         }),
       );
+    });
+  });
+
+  // ── getUserCoursesWithProgress ────────────────────────────────────────────
+  describe("getUserCoursesWithProgress", () => {
+    it("returns empty array when user has no enrollments", async () => {
+      mockGet.mockResolvedValueOnce({ empty: true, docs: [] });
+
+      const result = await getUserCoursesWithProgress("u1");
+
+      expect(result).toEqual([]);
+    });
+
+    it("returns enrolled courses with progress for user", async () => {
+      const enrollmentDoc = makeDocSnap("enroll-1", {
+        userId: "u1",
+        courseId: "c1",
+        progressPercentage: 50,
+      });
+      mockGet
+        .mockResolvedValueOnce({ empty: false, docs: [enrollmentDoc] }) // enrollments query
+        .mockResolvedValueOnce({ docs: [{ id: "ch-1" }, { id: "ch-2" }] }) // course chapters
+        .mockResolvedValueOnce({
+          docs: [
+            makeDocSnap("prog-1", {
+              userId: "u1",
+              chapterId: "ch-1",
+              isCompleted: true,
+            }),
+          ],
+        }); // user progress
+
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        title: "Test Course",
+        chapters: [{ id: "ch-1" }, { id: "ch-2" }],
+      });
+
+      const result = await getUserCoursesWithProgress("u1");
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe("c1");
+      expect(result[0].completedChapters).toBe(1);
+      expect(result[0].totalChapters).toBe(2);
     });
   });
 });

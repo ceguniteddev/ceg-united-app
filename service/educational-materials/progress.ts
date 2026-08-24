@@ -14,9 +14,7 @@ import {
   CourseWithProgress,
 } from "@/schema/educational-materials/course";
 import { Timestamp } from "firebase-admin/firestore";
-import { getCourseById, getPublishedCourseIds } from "./course";
-import { getUserMembership } from "@/service/membership";
-import { getUserAddons } from "@/service/addons";
+import { getCourseById } from "./course";
 
 /**
  * Update user progress for a chapter (complete or incomplete)
@@ -45,9 +43,11 @@ export const updateUserProgress = async ({
 export const enrollUserInCourse = async ({
   userId,
   courseId,
+  isPaymentVerified = false,
 }: {
   userId: string;
   courseId: string;
+  isPaymentVerified?: boolean;
 }): Promise<UserCourseEnrollment> => {
   const db = firestoreAdmin();
 
@@ -67,6 +67,18 @@ export const enrollUserInCourse = async ({
     } as UserCourseEnrollment;
   }
 
+  // Check course existence and free/paid requirements
+  const course = await getCourseById(courseId);
+  if (!course) {
+    throw new Error("Course not found");
+  }
+  if (!course.isPublished) {
+    throw new Error("Course is not available");
+  }
+  if (!course.isFree && !isPaymentVerified) {
+    throw new Error("This is a paid course and requires purchase before enrollment.");
+  }
+
   // Create new enrollment
   const enrollmentRef = await db.collection(USER_COURSE_ENROLLMENT).add({
     userId,
@@ -75,6 +87,20 @@ export const enrollUserInCourse = async ({
     lastAccessedAt: Timestamp.now(),
     progressPercentage: 0,
   });
+
+  // Increment enrolled students count on course
+  try {
+    const courseRef = db.collection(COURSE).doc(courseId);
+    const courseDoc = await courseRef.get();
+    if (courseDoc.exists) {
+      const currentCount = courseDoc.data()?.enrolledStudentsCount || 0;
+      await courseRef.update({
+        enrolledStudentsCount: currentCount + 1,
+      });
+    }
+  } catch (e) {
+    console.error("Failed to increment student count:", e);
+  }
 
   const enrollmentDoc = await enrollmentRef.get();
   return {
@@ -383,49 +409,14 @@ export const updateCourseProgress = async ({
 
 /**
  * Get all courses with progress for a user.
- * Premium clients are automatically enrolled in all published courses.
+ * Only returns courses the user has purchased or explicitly enrolled in.
  */
 export const getUserCoursesWithProgress = async (
   userId: string,
 ): Promise<CourseWithProgress[]> => {
   const db = firestoreAdmin();
 
-  // Auto-enroll clients with active membership or add-on in all published courses
-  const membership = await getUserMembership(userId);
-  const addons = await getUserAddons(userId);
-  const hasPaidContract =
-    membership?.status === "active" ||
-    addons.some((addon) => addon.status === "active");
-
-  if (hasPaidContract) {
-    const [publishedCourseIds, existingEnrollmentsSnapshot] = await Promise.all(
-      [
-        getPublishedCourseIds(),
-        db
-          .collection(USER_COURSE_ENROLLMENT)
-          .where("userId", "==", userId)
-          .get(),
-      ],
-    );
-
-    const enrolledCourseIds = new Set(
-      existingEnrollmentsSnapshot.docs.map((doc) => doc.data().courseId),
-    );
-
-    const missingCourseIds = publishedCourseIds.filter(
-      (id) => !enrolledCourseIds.has(id),
-    );
-
-    if (missingCourseIds.length > 0) {
-      await Promise.all(
-        missingCourseIds.map((courseId) =>
-          enrollUserInCourse({ userId, courseId }),
-        ),
-      );
-    }
-  }
-
-  // Get user's enrollments
+  // Get user's explicit enrollments
   const enrollmentsSnapshot = await db
     .collection(USER_COURSE_ENROLLMENT)
     .where("userId", "==", userId)
