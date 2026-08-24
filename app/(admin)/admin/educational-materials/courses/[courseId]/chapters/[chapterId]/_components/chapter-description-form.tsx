@@ -1,12 +1,12 @@
 "use client";
 
 import * as z from "zod";
-import axios from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Pencil, Save } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 
 import { Form } from "@/components/ui/form";
 import { FormTextarea } from "@/components/forms/form-textarea";
@@ -15,6 +15,10 @@ import { cn } from "@/lib/utils";
 import { Chapter } from "@/schema/educational-materials/course";
 import { toast } from "sonner";
 import { useChapterMutation } from "@/hooks/educational-materials/chapter";
+
+const EditorQuill = dynamic(() => import("@/components/editor/EditorQuill"), {
+  ssr: false,
+});
 
 interface ChapterDescriptionFormProps {
   initialData: Chapter;

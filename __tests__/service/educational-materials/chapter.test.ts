@@ -304,4 +304,26 @@ describe("service/educational-materials/chapter", () => {
       );
     });
   });
+
+  // ── removeChapterVideo ───────────────────────────────────────────────────────
+  describe("removeChapterVideo", () => {
+    it("clears videoUrl and muxData from chapter doc", async () => {
+      const { removeChapterVideo } =
+        await import("@/service/educational-materials/chapter");
+      mockUpdate.mockResolvedValue(undefined);
+
+      await removeChapterVideo({
+        courseId: "c1",
+        chapterId: "ch-1",
+      });
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          videoUrl: null,
+          muxData: null,
+          updatedAt: expect.anything(),
+        }),
+      );
+    });
+  });
 });

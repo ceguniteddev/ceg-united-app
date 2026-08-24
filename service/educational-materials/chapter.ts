@@ -166,3 +166,22 @@ export const recordMuxData = async ({
     updatedAt: Timestamp.now(),
   });
 };
+
+export const removeChapterVideo = async ({
+  courseId,
+  chapterId,
+}: {
+  courseId: string;
+  chapterId: string;
+}) => {
+  const db = firestoreAdmin();
+  const collectionRef = db
+    .collection(`${COURSE}/${courseId}/${CHAPTER}`)
+    .doc(chapterId);
+
+  await collectionRef.update({
+    videoUrl: null,
+    muxData: null,
+    updatedAt: Timestamp.now(),
+  });
+};

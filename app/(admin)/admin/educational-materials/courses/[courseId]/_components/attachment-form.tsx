@@ -82,9 +82,14 @@ export const AttachmentForm = ({
 
   return (
     <div className="mt-6 border bg-slate-100 rounded-md p-4">
-      <div className="font-medium flex items-center justify-between">
+      <div className="font-medium flex items-center justify-between pb-2">
         Course attachments
-        <Button onClick={toggleEdit} variant="ghost" className="cursor-pointer">
+        <Button
+          onClick={toggleEdit}
+          variant="ghost"
+          className="cursor-pointer"
+          disabled={isUploadingAttachment}
+        >
           {isEditing && <>Cancel</>}
           {!isEditing && (
             <>
@@ -133,15 +138,25 @@ export const AttachmentForm = ({
       )}
       {isEditing && (
         <div>
-          <Dropzone
-            className="cursor-pointer"
-            onDrop={handleDrop}
-            disabled={isUploadingAttachment}
-            maxFiles={50}
-          >
-            <DropzoneEmptyState />
-            <DropzoneContent />
-          </Dropzone>
+          <div className="relative">
+            {isUploadingAttachment && (
+              <div className="absolute inset-0 bg-white/70 backdrop-blur-xs z-10 flex flex-col items-center justify-center rounded-lg">
+                <Loader2 className="w-8 h-8 animate-spin text-sky-700 mb-2" />
+                <span className="text-sm font-medium text-slate-700">
+                  Uploading attachments...
+                </span>
+              </div>
+            )}
+            <Dropzone
+              className="cursor-pointer"
+              onDrop={handleDrop}
+              disabled={isUploadingAttachment}
+              maxFiles={50}
+            >
+              <DropzoneEmptyState />
+              <DropzoneContent />
+            </Dropzone>
+          </div>
           <div className="text-xs text-muted-foreground mt-4">
             Upload single or multiple files (PDFs, spreadsheets, templates,
             documents).

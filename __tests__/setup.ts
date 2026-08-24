@@ -9,3 +9,5 @@ process.env.FIREBASE_PROJECT_ID = "test-project";
 process.env.FIREBASE_CLIENT_EMAIL = "test@test.com";
 process.env.FIREBASE_PRIVATE_KEY =
   "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC...\n-----END PRIVATE KEY-----\n";
+process.env.MUX_TOKEN_ID = "test-mux-token-id";
+process.env.MUX_TOKEN_SECRET = "test-mux-token-secret";

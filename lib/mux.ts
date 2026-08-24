@@ -1,5 +1,8 @@
 "use server";
-import { recordMuxData } from "@/service/educational-materials/chapter";
+import {
+  recordMuxData,
+  removeChapterVideo,
+} from "@/service/educational-materials/chapter";
 import Mux from "@mux/mux-node";
 import { revalidatePath } from "next/cache";
 
@@ -38,10 +41,12 @@ export const updateChapterVideo = async ({
   uploadId,
   chapterId,
   courseId,
+  previousAssetId,
 }: {
   uploadId: string;
   chapterId: string;
   courseId: string;
+  previousAssetId?: string;
 }) => {
   let attempts = 0;
   while (attempts <= 10) {
@@ -61,14 +66,21 @@ export const updateChapterVideo = async ({
           courseId,
         });
 
+        if (previousAssetId && previousAssetId !== asset.id) {
+          await deleteMuxVideo(previousAssetId);
+        }
+
         // Clear the Next.js cache for the page to show the updated video
         revalidatePath(`/courses/${courseId}/chapters/${chapterId}`);
+        revalidatePath(
+          `/admin/educational-materials/courses/${courseId}/chapters/${chapterId}`,
+        );
         return { success: true };
       }
     } catch (error) {
       console.error(
         `Polling attempt ${attempts + 1} failed for upload ${uploadId}:`,
-        error
+        error,
       );
     }
 
@@ -84,5 +96,33 @@ export const deleteMuxVideo = async (assetId: string) => {
     await mux.video.assets.delete(assetId);
   } catch (error) {
     console.error("Error deleting Mux video:", error);
+  }
+};
+
+export const deleteChapterVideo = async ({
+  courseId,
+  chapterId,
+  assetId,
+}: {
+  courseId: string;
+  chapterId: string;
+  assetId?: string;
+}) => {
+  try {
+    if (assetId) {
+      await deleteMuxVideo(assetId);
+    }
+
+    await removeChapterVideo({ courseId, chapterId });
+
+    revalidatePath(`/courses/${courseId}/chapters/${chapterId}`);
+    revalidatePath(
+      `/admin/educational-materials/courses/${courseId}/chapters/${chapterId}`,
+    );
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting chapter video:", error);
+    throw new Error("Could not delete chapter video.");
   }
 };
