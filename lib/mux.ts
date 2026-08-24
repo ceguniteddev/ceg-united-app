@@ -34,8 +34,8 @@ export const createUploadUrl = async () => {
   }
 };
 
-const waitForThreeSeconds = () =>
-  new Promise((resolve) => setTimeout(resolve, 3000));
+const waitDelay = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 export const updateChapterVideo = async ({
   uploadId,
@@ -49,33 +49,39 @@ export const updateChapterVideo = async ({
   previousAssetId?: string;
 }) => {
   let attempts = 0;
-  while (attempts <= 10) {
+  const maxAttempts = 30;
+
+  while (attempts <= maxAttempts) {
     try {
       const upload = await mux.video.uploads.retrieve(uploadId);
 
       if (upload?.asset_id) {
         const asset = await mux.video.assets.retrieve(upload.asset_id);
 
-        if (!asset?.playback_ids?.[0]?.id) {
-          throw new Error("Asset created but playback ID is not available.");
-        }
-        await recordMuxData({
-          assetId: asset.id,
-          playbackId: asset.playback_ids[0].id,
-          chapterId,
-          courseId,
-        });
-
-        if (previousAssetId && previousAssetId !== asset.id) {
-          await deleteMuxVideo(previousAssetId);
+        if (asset.status === "errored") {
+          throw new Error("Mux failed to process the video.");
         }
 
-        // Clear the Next.js cache for the page to show the updated video
-        revalidatePath(`/courses/${courseId}/chapters/${chapterId}`);
-        revalidatePath(
-          `/admin/educational-materials/courses/${courseId}/chapters/${chapterId}`,
-        );
-        return { success: true };
+        // Wait until asset is ready so the user never sees HTTP 412 (Preparing)
+        if (asset.status === "ready" && asset.playback_ids?.[0]?.id) {
+          await recordMuxData({
+            assetId: asset.id,
+            playbackId: asset.playback_ids[0].id,
+            chapterId,
+            courseId,
+          });
+
+          if (previousAssetId && previousAssetId !== asset.id) {
+            await deleteMuxVideo(previousAssetId);
+          }
+
+          // Clear the Next.js cache for the page to show the updated video
+          revalidatePath(`/courses/${courseId}/chapters/${chapterId}`);
+          revalidatePath(
+            `/admin/educational-materials/courses/${courseId}/chapters/${chapterId}`,
+          );
+          return { success: true };
+        }
       }
     } catch (error) {
       console.error(
@@ -84,11 +90,11 @@ export const updateChapterVideo = async ({
       );
     }
 
-    await waitForThreeSeconds();
+    await waitDelay(2500);
     attempts++;
   }
 
-  throw new Error("Video processing failed after multiple attempts.");
+  throw new Error("Video processing timed out. Please try again.");
 };
 
 export const deleteMuxVideo = async (assetId: string) => {

@@ -297,7 +297,8 @@ export const useChapterMutation = () => {
       if (!res.ok) {
         let message = "Failed to delete chapter";
         try {
-          message = await res.text();
+          const json = await res.json();
+          message = json?.errors || json?.error || json?.message || message;
         } catch (_) {
           const text = await res.text();
           if (text) message = text;

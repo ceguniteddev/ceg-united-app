@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const PATCH = withAuth(
   async (
     req: NextRequest,
-    { params }: { params?: Promise<{ courseId: string; chapterId: string }> }
+    { params }: { params?: Promise<{ courseId: string; chapterId: string }> },
   ) => {
     const { courseId, chapterId } = (await params) ?? {};
     if (!courseId) {
@@ -21,7 +21,7 @@ export const PATCH = withAuth(
     if (!chapterId) {
       return NextResponse.json(
         { error: "Missing chapter id" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     try {
@@ -36,13 +36,13 @@ export const PATCH = withAuth(
       console.log("[CHAPTER_ID_PATCH]", error);
       return new NextResponse("Internal Error", { status: 500 });
     }
-  }
+  },
 );
 
 export const GET = withAuth(
   async (
     req: NextRequest,
-    { params }: { params?: Promise<{ courseId: string; chapterId: string }> }
+    { params }: { params?: Promise<{ courseId: string; chapterId: string }> },
   ) => {
     const { courseId, chapterId } = (await params) ?? {};
     if (!courseId) {
@@ -51,7 +51,7 @@ export const GET = withAuth(
     if (!chapterId) {
       return NextResponse.json(
         { error: "Missing chapter id" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     try {
@@ -59,7 +59,7 @@ export const GET = withAuth(
       if (!response) {
         return NextResponse.json(
           { error: "Chapter not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
       return NextResponse.json(response, { status: 200 });
@@ -67,13 +67,13 @@ export const GET = withAuth(
       console.log("[CHAPTER_ID_PATCH]", error);
       return new NextResponse("Internal Error", { status: 500 });
     }
-  }
+  },
 );
 
 export const POST = withAuth(
   async (
     req: NextRequest,
-    { params }: { params?: Promise<{ courseId: string; chapterId: string }> }
+    { params }: { params?: Promise<{ courseId: string; chapterId: string }> },
   ) => {
     const { courseId, chapterId } = (await params) ?? {};
     if (!courseId) {
@@ -82,7 +82,7 @@ export const POST = withAuth(
     if (!chapterId) {
       return NextResponse.json(
         { error: "Missing chapter id" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -97,13 +97,13 @@ export const POST = withAuth(
       console.log("[CHAPTER_ID_PATCH]", error);
       return new NextResponse("Internal Error", { status: 500 });
     }
-  }
+  },
 );
 
 export const DELETE = withAuth(
   async (
     req: NextRequest,
-    { params }: { params?: Promise<{ courseId: string; chapterId: string }> }
+    { params }: { params?: Promise<{ courseId: string; chapterId: string }> },
   ) => {
     const { courseId, chapterId } = (await params) ?? {};
     if (!courseId) {
@@ -112,7 +112,7 @@ export const DELETE = withAuth(
     if (!chapterId) {
       return NextResponse.json(
         { error: "Missing chapter id" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -120,6 +120,13 @@ export const DELETE = withAuth(
       // delete muxData
       const chapter = await getChapterById({ courseId, chapterId });
       if (!chapter) return badRequest({ errors: "Chapter not found." });
+
+      if (chapter.isPublished) {
+        return badRequest({
+          errors:
+            "Cannot delete a published chapter. Please unpublish it first.",
+        });
+      }
 
       if (chapter.videoUrl) {
         if (chapter.muxData?.assetId) {
@@ -131,7 +138,7 @@ export const DELETE = withAuth(
 
       const course = await getCourseById(courseId);
       const hasPublishedChapters = course?.chapters?.some(
-        (chapter) => chapter.isPublished === true
+        (chapter) => chapter.isPublished === true,
       );
 
       if (!hasPublishedChapters) {
@@ -147,5 +154,5 @@ export const DELETE = withAuth(
       console.log("[CHAPTER_ID_PATCH]", error);
       return new NextResponse("Internal Error", { status: 500 });
     }
-  }
+  },
 );
