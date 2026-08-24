@@ -243,7 +243,7 @@ export const createCourseCheckoutConfig = async ({
 
 ### 5.1 Course Catalog & Sales Page (`/client/courses/[courseId]`)
 
-- **Hero Header**: Title, Subtitle, Rating stars, Total students enrolled, Instructor, Last updated date.
+- **Hero Header**: Title, Subtitle, Rating stars, Total enrolled, Instructor, Last updated date.
 - **Sticky Purchase Sidebar Card**: Thumbnail with playable trailer preview, Current price + original price + discount badge, "Buy Now" button (triggers Dodo checkout) or "Go to Course" (if already enrolled), 30-Day Money-Back Guarantee badge, Lifetime access feature list.
 - **Curriculum Accordion**: Sections & Lectures breakdown with durations, lecture count, and "Preview" buttons for lectures marked `isFreePreview: true`.
 - **Learning Objectives**: 2-column checklist of what students will learn.

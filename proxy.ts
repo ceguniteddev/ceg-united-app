@@ -42,6 +42,7 @@ const CLIENT_ALLOWED_API_PREFIXES = [
   "/api/funding-playbook",
   "/api/auth/refresh-session",
   "/api/ocr",
+  "/api/courses",
 ];
 
 function isAllowedClientApiRoute(pathname: string, uid: string) {
@@ -81,6 +82,8 @@ function isPublic(pathname: string) {
 
   if (pathname.startsWith("/payment")) return true;
 
+  if (pathname.startsWith("/client/courses")) return true;
+
   // example: add /register subpaths if you have any
   return false;
 }
@@ -90,6 +93,7 @@ function isAdminRoute(pathname: string) {
 }
 
 function isClientRoute(pathname: string) {
+  if (pathname.startsWith("/client/courses")) return false;
   return pathname.startsWith("/client") || pathname.startsWith("/api/client");
 }
 

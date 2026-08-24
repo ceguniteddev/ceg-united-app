@@ -263,4 +263,56 @@ describe("proxy middleware API validation", () => {
       );
     });
   });
+
+  describe("course preview and educational materials routing", () => {
+    it("allows Admin to access /client/courses/[courseId] for preview without redirection to admin home", async () => {
+      const req = createMockReq("/client/courses/course_123", "valid_session");
+
+      mocks.verifySession.mockResolvedValue({
+        email: "admin@test.com",
+        uid: "admin_uid",
+      });
+      mocks.getUserById.mockResolvedValue({ role: "Admin" });
+
+      await proxy(req);
+
+      expect(nextSpy).toHaveBeenCalled();
+    });
+
+    it("allows Broker to access /client/courses/[courseId] without redirection to broker home", async () => {
+      const req = createMockReq("/client/courses/course_123", "valid_session");
+
+      mocks.verifySession.mockResolvedValue({
+        email: "broker@test.com",
+        uid: "broker_uid",
+      });
+      mocks.getUserById.mockResolvedValue({ role: "Broker" });
+
+      await proxy(req);
+
+      expect(nextSpy).toHaveBeenCalled();
+    });
+
+    it("allows unauthenticated user to access /client/courses/[courseId] without redirect", async () => {
+      const req = createMockReq("/client/courses/course_123");
+
+      await proxy(req);
+
+      expect(nextSpy).toHaveBeenCalled();
+    });
+
+    it("allows Client to access /api/courses and /api/courses/[courseId]", async () => {
+      const req = createMockReq("/api/courses/course_123", "valid_session");
+
+      mocks.verifySession.mockResolvedValue({
+        email: "client@test.com",
+        uid: "client_uid",
+      });
+      mocks.getUserById.mockResolvedValue({ role: "Client" });
+
+      await proxy(req);
+
+      expect(nextSpy).toHaveBeenCalled();
+    });
+  });
 });

@@ -602,11 +602,15 @@ const CourseDetailPage = () => {
                   <h2 className="text-xl font-bold text-white">
                     {selectedChapter?.title}
                   </h2>
-                  <p className="text-sm text-slate-400 mt-2 leading-relaxed">
-                    {selectedChapter?.description ||
-                      course.description ||
-                      "No additional lecture notes."}
-                  </p>
+                  <div
+                    className="text-sm text-slate-400 mt-2 leading-relaxed prose dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        selectedChapter?.description ||
+                        course.description ||
+                        "<p>No additional lecture notes.</p>",
+                    }}
+                  />
                 </div>
 
                 <div className="pt-4 border-t border-slate-800 flex items-center gap-4">

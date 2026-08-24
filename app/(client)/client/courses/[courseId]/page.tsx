@@ -39,6 +39,7 @@ import {
   useCourseCheckout,
 } from "@/hooks/educational-materials/course";
 import { Chapter } from "@/schema/educational-materials/course";
+import { stripHtml } from "@/lib/utils";
 
 const CourseLandingPage = () => {
   const params = useParams();
@@ -164,9 +165,7 @@ const CourseLandingPage = () => {
 
               <div className="flex items-center gap-1.5 text-slate-300">
                 <Users className="w-4 h-4 text-slate-400" />
-                <span>
-                  {course.enrolledStudentsCount || 0} students enrolled
-                </span>
+                <span>{course.enrolledStudentsCount || 0} enrolled</span>
               </div>
             </div>
 
@@ -262,7 +261,7 @@ const CourseLandingPage = () => {
                             </span>
                             {chapter.description && (
                               <p className="text-xs text-gray-400 line-clamp-1">
-                                {chapter.description}
+                                {stripHtml(chapter.description)}
                               </p>
                             )}
                           </div>
@@ -331,9 +330,14 @@ const CourseLandingPage = () => {
               <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 Course Description
               </h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">
-                {course.description}
-              </p>
+              {course.description && (
+                <div
+                  className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed prose dark:prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html: course.description,
+                  }}
+                />
+              )}
             </div>
 
             {/* Instructor Profile Card */}
@@ -485,10 +489,6 @@ const CourseLandingPage = () => {
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-gray-500 shrink-0" />
                     <span>Full lifetime access with future updates</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-gray-500 shrink-0" />
-                    <span>Certificate of completion upon finishing</span>
                   </div>
                 </div>
               </div>
