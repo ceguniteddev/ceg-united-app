@@ -73,7 +73,7 @@ const CoursePage = () => {
   return (
     <>
       {!course.isPublished && (
-        <Banner label="This course is currently in Draft mode. Publish it to make it available to students." />
+        <Banner label="This course is currently in Draft mode. Publish it to make it available to clients." />
       )}
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Navigation & Header */}
@@ -143,7 +143,7 @@ const CoursePage = () => {
               className="flex items-center gap-2 py-2.5 text-xs sm:text-sm font-medium"
             >
               <Users className="w-4 h-4" />
-              <span>Target Students</span>
+              <span>Target Clients</span>
             </TabsTrigger>
             <TabsTrigger
               value="pricing"

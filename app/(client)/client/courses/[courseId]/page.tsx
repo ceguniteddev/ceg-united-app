@@ -166,7 +166,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
               <div className="flex items-center gap-1 text-slate-400">
                 <Users className="w-4 h-4" />
                 <span>
-                  {course.enrolledStudentsCount || 0} students enrolled
+                  {course.enrolledStudentsCount || 0} enrolled
                 </span>
               </div>
               {course.instructor?.name && (

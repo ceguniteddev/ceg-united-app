@@ -69,7 +69,7 @@ export const TargetStudentsForm = ({
       <div className="font-medium flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-blue-600" />
-          <span>Target Students & Learning Objectives</span>
+          <span>Target Clients & Learning Objectives</span>
         </div>
         <Button
           onClick={() => setIsEditing(!isEditing)}
@@ -92,7 +92,7 @@ export const TargetStudentsForm = ({
           <div>
             <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              What will students learn?
+              What will clients learn?
             </h4>
             {initialData.learningObjectives?.length ? (
               <ul className="list-disc pl-5 space-y-1 text-gray-600 dark:text-gray-400">

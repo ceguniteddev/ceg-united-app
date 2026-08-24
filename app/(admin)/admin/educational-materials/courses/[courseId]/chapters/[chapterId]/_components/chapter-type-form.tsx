@@ -127,7 +127,7 @@ export const ChapterTypeForm = ({
               <FormCheckbox
                 control={form.control}
                 name="isFreePreview"
-                label="Enable Free Preview (Students can view this lecture without buying)"
+                label="Enable Free Preview (Clients can view this lecture without buying)"
               />
             </div>
 
