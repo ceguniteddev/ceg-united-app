@@ -21,12 +21,15 @@ export async function POST(req: Request) {
       req.headers.get("admin-access-key") ||
       req.headers.get("x-admin-access-key");
 
+    const expectedKey = process.env.ADMIN_ACCESS_KEY;
     if (
-      process.env.ADMIN_ACCESS_KEY &&
-      adminAccessKey !== process.env.ADMIN_ACCESS_KEY
+      !expectedKey ||
+      expectedKey === "undefined" ||
+      expectedKey === "" ||
+      adminAccessKey !== expectedKey
     ) {
       return NextResponse.json(
-        { error: "Unauthorized access" },
+        { error: "Unauthorized access: Invalid or missing ADMIN_ACCESS_KEY" },
         { status: 401 },
       );
     }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+/// <reference types="vitest/globals" />
 
 vi.mock("@/lib/fireabase-admin", () => ({
   firestoreAdmin: vi.fn(),

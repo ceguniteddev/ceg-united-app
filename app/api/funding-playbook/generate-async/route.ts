@@ -10,9 +10,16 @@ import {
   RateLimitExceededError,
 } from "@/lib/funding-playbook/rate-limit";
 import { logInfo, logError } from "@/lib/logger";
+import { getCurrentUser } from "@/service/user";
+import { unauthorized, forbidden } from "@/app/api/helpers";
 
 export async function POST(req: Request) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return unauthorized();
+    }
+
     const body = await req.json();
     const parsedBody = GeneratePlaybookRequestSchema.safeParse(body);
     if (!parsedBody.success) {
@@ -27,6 +34,12 @@ export async function POST(req: Request) {
       lenderId: reqLenderId,
       productId: reqProductId,
     } = parsedBody.data;
+
+    if (currentUser.role !== "Admin" && currentUser.uid !== userId) {
+      return forbidden(
+        "Access denied: You cannot trigger playbook generation for another user.",
+      );
+    }
 
     const lenderId = reqLenderId || "chase";
     const productId = reqProductId || "chase-sapphire-preferred";
