@@ -3,12 +3,14 @@ import Quill from "quill";
 import "quill/dist/quill.snow.css";
 import "quill/dist/quill.bubble.css";
 import "./editor.css";
+import { cn } from "@/lib/utils";
 
 interface CustomEditorProps {
   value?: string;
   onChange?: (content: string) => void;
   readOnly?: boolean;
   placeholder?: string;
+  className?: string;
 }
 
 const EditorQuill = forwardRef<Quill, CustomEditorProps>(
@@ -18,13 +20,14 @@ const EditorQuill = forwardRef<Quill, CustomEditorProps>(
       onChange,
       readOnly = false,
       placeholder = "Write something...",
+      className,
     },
-    ref
+    ref,
   ) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const quillRef = useRef<Quill | null>(null);
     const [editorId] = useState(
-      `quill-editor-${Math.random().toString(36).substring(2, 9)}`
+      `quill-editor-${Math.random().toString(36).substring(2, 9)}`,
     );
 
     useEffect(() => {
@@ -81,8 +84,13 @@ const EditorQuill = forwardRef<Quill, CustomEditorProps>(
       }
     }, [value]);
 
-    return <div ref={editorRef} className="custom-editor-container"></div>;
-  }
+    return (
+      <div
+        ref={editorRef}
+        className={cn("custom-editor-container", className)}
+      ></div>
+    );
+  },
 );
 EditorQuill.displayName = "EditorQuill";
 export default EditorQuill;

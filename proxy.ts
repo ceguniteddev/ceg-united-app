@@ -3,7 +3,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/session";
 import { getUserById } from "@/service/user";
-import { hasActiveAddon } from "@/service/addons";
+import { hasActiveAddon, getUserAddons } from "@/service/addons";
 import { getUserMembership } from "@/service/membership";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { getSystemConfig } from "@/service/system-config";
@@ -26,6 +26,7 @@ const PUBLIC_ROUTES = new Set<string>([
   "/api/broker/validate-token",
   "/api/broker/register",
   "/api/payments/dodo",
+  "/api/webhooks/lumino",
   "/api/ocr",
 ]);
 const CLIENT_HOME = "/client/home";
@@ -42,6 +43,7 @@ const CLIENT_ALLOWED_API_PREFIXES = [
   "/api/funding-playbook",
   "/api/auth/refresh-session",
   "/api/ocr",
+  "/api/courses",
 ];
 
 function isAllowedClientApiRoute(pathname: string, uid: string) {
@@ -81,6 +83,8 @@ function isPublic(pathname: string) {
 
   if (pathname.startsWith("/payment")) return true;
 
+  if (pathname.startsWith("/client/courses")) return true;
+
   // example: add /register subpaths if you have any
   return false;
 }
@@ -90,6 +94,7 @@ function isAdminRoute(pathname: string) {
 }
 
 function isClientRoute(pathname: string) {
+  if (pathname.startsWith("/client/courses")) return false;
   return pathname.startsWith("/client") || pathname.startsWith("/api/client");
 }
 
@@ -264,7 +269,7 @@ export async function proxy(req: NextRequest) {
       !hasPaidContract &&
       (pathname.startsWith("/client/my-analysis") ||
         pathname.startsWith("/client/my-credit") ||
-        pathname.startsWith("/client/credit-repair") ||
+        // pathname.startsWith("/client/credit-repair") ||
         pathname.startsWith("/client/income-funding/apply"))
     ) {
       return NextResponse.redirect(new URL(CLIENT_HOME, origin));

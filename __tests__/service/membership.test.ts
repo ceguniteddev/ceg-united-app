@@ -46,7 +46,10 @@ vi.mock("@/lib/membership-cache", () => ({
 
 vi.mock("@/lib/logger", () => ({ logInfo: vi.fn() }));
 
-import { activateUserMembership } from "@/service/membership";
+import {
+  activateUserMembership,
+  triggerActivationCRSWorkflow,
+} from "@/service/membership";
 
 describe("activateUserMembership", () => {
   beforeEach(() => {
@@ -99,5 +102,57 @@ describe("activateUserMembership", () => {
     );
     expect(mocks.generateCRSReport).toHaveBeenCalledTimes(1);
     expect(mocks.invalidateCache).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("triggerActivationCRSWorkflow", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.generateCRSReport.mockResolvedValue(undefined);
+    mocks.fundAnalysis.mockResolvedValue(undefined);
+    mocks.getApplyFunding.mockResolvedValue([]);
+  });
+
+  it("generates CRS report and skips funding analysis when referenceNumber is not present", async () => {
+    mocks.getApplyFunding.mockResolvedValueOnce([]);
+
+    await triggerActivationCRSWorkflow({ userId: "u1", source: "membership" });
+
+    expect(mocks.generateCRSReport).toHaveBeenCalledWith({
+      userId: "u1",
+      bureaus: { equifax: true, experian: true, transunion: true },
+      bypassPremiumCheck: true,
+    });
+    expect(mocks.fundAnalysis).not.toHaveBeenCalled();
+  });
+
+  it("generates CRS report and triggers funding analysis when referenceNumber is present", async () => {
+    mocks.getApplyFunding.mockResolvedValueOnce([
+      { referenceNumber: "REF-12345" },
+    ]);
+
+    await triggerActivationCRSWorkflow({ userId: "u1", source: "addon" });
+
+    expect(mocks.generateCRSReport).toHaveBeenCalledWith({
+      userId: "u1",
+      bureaus: { equifax: true, experian: true, transunion: true },
+      bypassPremiumCheck: true,
+    });
+    expect(mocks.fundAnalysis).toHaveBeenCalledWith({
+      userId: "u1",
+      referenceNumber: "REF-12345",
+    });
+  });
+
+  it("swallows errors gracefully if CRS report generation fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.generateCRSReport.mockRejectedValueOnce(new Error("CRS API failure"));
+
+    await expect(
+      triggerActivationCRSWorkflow({ userId: "u1", source: "addon" }),
+    ).resolves.toBeUndefined();
+
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });

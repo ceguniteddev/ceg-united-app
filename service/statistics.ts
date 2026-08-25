@@ -118,11 +118,15 @@ export const getClientStatistics = async (userId: string) => {
   const userData = await getUserById(userId);
   // get total funding applications amount
   const fundingApplications = await getApplyFunding(userId);
+  const hasFundingApplications =
+    Array.isArray(fundingApplications) && fundingApplications.length > 0;
 
-  const approvedFunds = await getFundMappingAnalysisDetails({
-    userId,
-    clientApplicationStatus: ["Approved", "Funded"],
-  });
+  const approvedFunds = hasFundingApplications
+    ? await getFundMappingAnalysisDetails({
+        userId,
+        clientApplicationStatus: ["Approved", "Funded"],
+      })
+    : [];
 
   // Fetch CRS report data and DTI report in parallel
   const [crsReportData, dtiReportData] = await Promise.all([

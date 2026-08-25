@@ -1,9 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/provider/AuthContext";
-import { useGetUserCoursesWithProgress } from "@/hooks/educational-materials/course";
+import {
+  useGetUserCoursesWithProgress,
+  useCourseReviews,
+  useAddCourseReview,
+  useCourseNotes,
+  useSaveCourseNote,
+  useDeleteCourseNote,
+} from "@/hooks/educational-materials/course";
 import { useChapterProgress } from "@/hooks/educational-materials/chapter";
 import Spinner from "@/components/Spinner";
 import {
@@ -13,34 +20,73 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
-  GraduationCap,
+  HelpCircle,
+  Award,
   Download,
   BookOpen,
+  StickyNote,
+  Star,
+  Trophy,
+  Menu,
+  X,
+  Check,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { MuxVideoPlayer } from "@/components/MuxVideoPlayer";
-import dynamic from "next/dynamic";
-const EditorQuill = dynamic(() => import("@/components/editor/EditorQuill"), {
-  ssr: false,
-});
+import { toast } from "sonner";
+import { isCourseFree } from "@/lib/course-pricing";
+
 const CourseDetailPage = () => {
   const params = useParams();
   const courseId = params.courseId as string;
+  const router = useRouter();
   const { user } = useAuth();
+
   const { coursesWithProgress, isLoading } = useGetUserCoursesWithProgress(
     user?.uid || "",
   );
   const { updateProgress } = useChapterProgress();
 
+  // Reviews hooks
+  const { reviews } = useCourseReviews(courseId);
+  const { addReview, isSubmitting: isSubmittingReview } =
+    useAddCourseReview(courseId);
+
+  // Notes hooks
+  const { notes } = useCourseNotes(courseId);
+  const { saveNote, isSaving: isSavingNote } = useSaveCourseNote(courseId);
+  const { deleteNote } = useDeleteCourseNote(courseId);
+
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(
     null,
   );
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [newNoteContent, setNewNoteContent] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [showCertificate, setShowCertificate] = useState(false);
+
+  // Quiz state
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizScore, setQuizScore] = useState<number | null>(null);
 
   const course = coursesWithProgress?.find((c) => c.id === courseId);
 
-  // Get published chapters sorted by position
+  // Published chapters sorted by position
   const publishedChapters = useMemo(() => {
     return (
       course?.chapters
@@ -52,30 +98,64 @@ const CourseDetailPage = () => {
   // Auto-select first incomplete chapter or first chapter
   useEffect(() => {
     if (publishedChapters.length > 0 && !selectedChapterId) {
-      const firstIncompleteChapter = publishedChapters.find((chapter) => {
+      const firstIncomplete = publishedChapters.find((chapter) => {
         const progress = course?.userProgress?.find(
           (p) => p.chapterId === chapter.id,
         );
         return !progress?.isCompleted;
       });
 
-      const chapterId =
-        firstIncompleteChapter?.id ?? publishedChapters[0]?.id ?? null;
+      const chapterId = firstIncomplete?.id ?? publishedChapters[0]?.id ?? null;
       setSelectedChapterId(chapterId);
     }
   }, [publishedChapters, selectedChapterId, course?.userProgress]);
+
+  // Reset quiz state on chapter change
+  useEffect(() => {
+    setQuizAnswers({});
+    setQuizSubmitted(false);
+    setQuizScore(null);
+  }, [selectedChapterId]);
 
   const selectedChapter = publishedChapters.find(
     (c) => c.id === selectedChapterId,
   );
 
+  const allAttachments = useMemo(() => {
+    const list: Array<{
+      id?: string;
+      name: string;
+      url: string;
+      source?: string;
+    }> = [];
+    if (course?.attachments && course.attachments.length > 0) {
+      course.attachments.forEach((att) => {
+        list.push({ ...att, source: "Course Resource" });
+      });
+    }
+    if (
+      selectedChapter?.attachments &&
+      selectedChapter.attachments.length > 0
+    ) {
+      selectedChapter.attachments.forEach((att) => {
+        list.push({ ...att, source: `${selectedChapter.title} Resource` });
+      });
+    }
+    return list;
+  }, [
+    course?.attachments,
+    selectedChapter?.attachments,
+    selectedChapter?.title,
+  ]);
+
+  const currentChapterProgress = course?.userProgress?.find(
+    (p) => p.chapterId === selectedChapter?.id,
+  );
+
   const handleMarkComplete = async () => {
     if (!selectedChapter || !user?.uid) return;
 
-    const currentProgress = course?.userProgress?.find(
-      (p) => p.chapterId === selectedChapter.id,
-    );
-    const newCompletionStatus = !currentProgress?.isCompleted;
+    const newCompletionStatus = !currentChapterProgress?.isCompleted;
 
     await updateProgress({
       userId: user.uid,
@@ -88,12 +168,7 @@ const CourseDetailPage = () => {
   const handleVideoComplete = async () => {
     if (!selectedChapter || !user?.uid) return;
 
-    const currentProgress = course?.userProgress?.find(
-      (p) => p.chapterId === selectedChapter.id,
-    );
-
-    // Only mark as complete if not already completed
-    if (!currentProgress?.isCompleted) {
+    if (!currentChapterProgress?.isCompleted) {
       await updateProgress({
         userId: user.uid,
         chapterId: selectedChapter.id!,
@@ -101,6 +176,9 @@ const CourseDetailPage = () => {
         isCompleted: true,
       });
     }
+
+    // Auto-advance to next chapter if available
+    handleNextChapter();
   };
 
   const handleNextChapter = () => {
@@ -131,412 +209,729 @@ const CourseDetailPage = () => {
     }
   };
 
+  const handleSaveNote = async () => {
+    if (!newNoteContent.trim() || !selectedChapter || !user?.uid) return;
+    try {
+      await saveNote({
+        chapterId: selectedChapter.id!,
+        timestampSeconds: 0,
+        content: newNoteContent.trim(),
+      });
+      setNewNoteContent("");
+    } catch {
+      toast.error("Failed to save note");
+    }
+  };
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewComment.trim()) {
+      toast.error("Please enter a review comment");
+      return;
+    }
+    try {
+      await addReview({
+        rating: reviewRating,
+        comment: reviewComment.trim(),
+      });
+      setReviewComment("");
+    } catch {
+      toast.error("Failed to submit review");
+    }
+  };
+
+  // Quiz submission & grading
+  const handleQuizSubmit = async () => {
+    if (!selectedChapter?.quiz?.questions?.length) return;
+
+    const questions = selectedChapter.quiz.questions;
+    let correctCount = 0;
+    questions.forEach((q) => {
+      if (quizAnswers[q.id] === q.correctAnswerIndex) {
+        correctCount++;
+      }
+    });
+
+    const scorePct = Math.round((correctCount / questions.length) * 100);
+    setQuizScore(scorePct);
+    setQuizSubmitted(true);
+
+    const passingPct = selectedChapter.quiz.passingScorePercentage ?? 70;
+    if (scorePct >= passingPct && user?.uid) {
+      toast.success(`Passed quiz with ${scorePct}%!`);
+      if (!currentChapterProgress?.isCompleted) {
+        await updateProgress({
+          userId: user.uid,
+          chapterId: selectedChapter.id!,
+          courseId: courseId,
+          isCompleted: true,
+        });
+      }
+    } else {
+      toast.error(`Score: ${scorePct}%. Passing is ${passingPct}%. Try again!`);
+    }
+  };
+
   if (isLoading) {
-    return <Spinner displayText="Loading course..." />;
+    return <Spinner displayText="Loading learning player..." />;
   }
 
   if (!course) {
     return (
-      <div className="transactions">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-            <BookOpen className="w-7 h-7 text-gray-400" />
-          </div>
-          <p className="text-sm font-semibold text-gray-700 mb-1">
-            Course Not Found
-          </p>
-          <p className="text-xs text-gray-400 mb-6">
-            You don&apos;t have access to this course or it doesn&apos;t exist.
-          </p>
-          <Link href="/client/my-learning">
-            <Button size="sm">
-              <ChevronLeft className="w-4 h-4 mr-1.5" />
-              Back to My Learning
-            </Button>
-          </Link>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-[500px] text-center p-6">
+        <h2 className="text-2xl font-bold text-gray-900">
+          Course Not Enrolled
+        </h2>
+        <p className="text-gray-500 mt-2">
+          You are not enrolled in this course or it doesn&apos;t exist.
+        </p>
+        <Link href={`/client/courses/${courseId}`} className="mt-4">
+          <Button>View Course Catalog Page</Button>
+        </Link>
       </div>
     );
   }
 
-  const progressPercentage = course.enrollment?.progressPercentage || 0;
-  const completedChapters = course.completedChapters || 0;
-  const isChapterCompleted = course?.userProgress?.find(
-    (p) => p.chapterId === selectedChapter?.id,
-  )?.isCompleted;
+  const progressPct = course.enrollment?.progressPercentage ?? 0;
+  const completedCount = course.completedChapters ?? 0;
+  const totalCount = publishedChapters.length;
 
-  const currentChapterIndex = publishedChapters.findIndex(
+  const isVideo = !selectedChapter?.type || selectedChapter.type === "video";
+  const isArticle = selectedChapter?.type === "article";
+  const isQuiz = selectedChapter?.type === "quiz";
+
+  const currentIndex = publishedChapters.findIndex(
     (c) => c.id === selectedChapterId,
   );
-
-  // Course progress ring
-  const ringSize = 64;
-  const strokeWidth = 5;
-  const ringRadius = (ringSize - strokeWidth) / 2;
-  const ringCircumference = 2 * Math.PI * ringRadius;
-  const ringOffset =
-    ringCircumference - (progressPercentage / 100) * ringCircumference;
+  const hasNext = currentIndex < publishedChapters.length - 1;
+  const hasPrevious = currentIndex > 0;
 
   return (
-    <div className="transactions">
-      {/* Back Link */}
-      <Link
-        href="/client/my-learning"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors mb-4"
-      >
-        <ChevronLeft className="w-4 h-4" />
-        Back to My Learning
-      </Link>
-
-      {/* Course Header Card */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-5">
-        {/* Gradient Banner */}
-        <div className="relative h-32 sm:h-40 bg-gradient-to-r from-blue-500 to-blue-700 overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-1/3 translate-x-1/4" />
-          <div className="absolute bottom-0 left-8 w-24 h-24 bg-white/10 rounded-full translate-y-1/2" />
-          {course.category && (
-            <div className="absolute top-3 left-4">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white backdrop-blur-sm">
-                {course.category}
-              </span>
-            </div>
-          )}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <GraduationCap className="w-8 h-8 text-white" />
-            </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+      {/* Top Bar / Header */}
+      <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between shrink-0 sticky top-0 z-30">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/client/my-learning"
+            className="text-slate-400 hover:text-white transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </Link>
+          <div className="border-l border-slate-800 pl-3 flex items-center gap-2">
+            <h1 className="text-xs sm:text-sm font-semibold text-white line-clamp-1 max-w-[200px] sm:max-w-md">
+              {course.title}
+            </h1>
+            {isCourseFree(course) && (
+              <Badge className="bg-emerald-600/90 text-white text-[10px] px-1.5 py-0 h-4 font-semibold shrink-0">
+                Free
+              </Badge>
+            )}
           </div>
         </div>
 
-        {/* Course Info */}
-        <div className="p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-            <div className="flex-1">
-              <h1 className="text-lg font-bold text-gray-900">
-                {course.title}
-              </h1>
-              {course.description && (
-                <p className="text-sm text-gray-500 mt-1">
-                  {course.description}
-                </p>
-              )}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3">
-                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                  <BookOpen className="w-3.5 h-3.5" />
-                  {publishedChapters.length}{" "}
-                  {publishedChapters.length === 1 ? "chapter" : "chapters"}
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  {completedChapters}/{publishedChapters.length} completed
-                </span>
-              </div>
+        <div className="flex items-center gap-3">
+          {/* Progress Indicator */}
+          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
+            <div className="w-24 bg-slate-800 rounded-full h-2 overflow-hidden">
+              <div
+                className={`h-full transition-all duration-300 ${
+                  progressPct === 100 ? "bg-emerald-500" : "bg-blue-500"
+                }`}
+                style={{ width: `${progressPct}%` }}
+              />
             </div>
+            <span className="font-semibold text-white">{progressPct}%</span>
+          </div>
 
-            {/* Progress Ring */}
-            <div className="flex items-center gap-3 sm:flex-col sm:items-center flex-shrink-0">
-              <div className="relative">
-                <svg width={ringSize} height={ringSize} className="-rotate-90">
-                  <circle
-                    cx={ringSize / 2}
-                    cy={ringSize / 2}
-                    r={ringRadius}
-                    fill="none"
-                    stroke="#f1f5f9"
-                    strokeWidth={strokeWidth}
+          {progressPct === 100 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowCertificate(true)}
+              className="text-xs h-8 border-amber-500 text-amber-400 bg-transparent hover:bg-amber-950/40 gap-1.5"
+            >
+              <Award className="w-3.5 h-3.5" />
+              Certificate
+            </Button>
+          )}
+
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="text-slate-300 hover:text-white"
+          >
+            {sidebarOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
+          </Button>
+        </div>
+      </header>
+
+      {/* Main Workspace Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left/Main Column: Player + Tabs */}
+        <div className="flex-1 flex flex-col overflow-y-auto">
+          {/* Media Player Viewport */}
+          <div className="bg-black w-full flex items-center justify-center relative min-h-[300px] sm:min-h-[460px] lg:min-h-[520px]">
+            {isVideo && (
+              <div className="w-full h-full max-w-5xl aspect-video mx-auto">
+                {selectedChapter?.muxData?.playbackId ? (
+                  <MuxVideoPlayer
+                    playbackId={selectedChapter.muxData.playbackId}
+                    onComplete={handleVideoComplete}
+                    title={selectedChapter.title}
                   />
-                  <circle
-                    cx={ringSize / 2}
-                    cy={ringSize / 2}
-                    r={ringRadius}
-                    fill="none"
-                    stroke={progressPercentage === 100 ? "#10b981" : "#3b82f6"}
-                    strokeWidth={strokeWidth}
-                    strokeDasharray={ringCircumference}
-                    strokeDashoffset={ringOffset}
-                    strokeLinecap="round"
-                    className="transition-all duration-700 ease-out"
+                ) : selectedChapter?.videoUrl ? (
+                  <video
+                    src={selectedChapter.videoUrl}
+                    controls
+                    onEnded={handleVideoComplete}
+                    className="w-full h-full"
                   />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-base font-bold text-gray-900 leading-none">
-                    {progressPercentage}%
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-slate-500">
+                    <PlayCircle className="w-12 h-12 mb-2 opacity-50" />
+                    <p className="text-sm">
+                      No video content for this lecture.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isArticle && (
+              <div className="w-full max-w-4xl mx-auto p-6 sm:p-10 bg-slate-900 rounded-xl my-8 border border-slate-800 text-slate-200">
+                <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-3">
+                  <FileText className="w-4 h-4" /> Reading Lesson
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-6">
+                  {selectedChapter?.title}
+                </h2>
+                <div
+                  className="prose dark:prose-invert max-w-none text-slate-300 leading-relaxed space-y-4"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      selectedChapter?.articleContentHtml ||
+                      selectedChapter?.description ||
+                      "<p>No reading content provided.</p>",
+                  }}
+                />
+              </div>
+            )}
+
+            {isQuiz && (
+              <div className="w-full max-w-3xl mx-auto p-6 sm:p-10 bg-slate-900 rounded-xl my-8 border border-slate-800 text-slate-200 space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                  <div className="flex items-center gap-2 text-purple-400 text-xs font-bold uppercase tracking-wider">
+                    <HelpCircle className="w-4 h-4" /> Knowledge Check
+                  </div>
+                  <span className="text-xs text-slate-400">
+                    Passing Grade:{" "}
+                    {selectedChapter?.quiz?.passingScorePercentage || 70}%
                   </span>
                 </div>
+
+                <h2 className="text-xl font-bold text-white">
+                  {selectedChapter?.title}
+                </h2>
+
+                <div className="space-y-6">
+                  {selectedChapter?.quiz?.questions?.map((q, qIndex) => (
+                    <div
+                      key={q.id || qIndex}
+                      className="p-5 bg-slate-950 rounded-xl border border-slate-800/80 space-y-3"
+                    >
+                      <p className="font-semibold text-sm text-slate-100">
+                        {qIndex + 1}. {q.question}
+                      </p>
+
+                      <div className="space-y-2">
+                        {q.options.map((opt, optIndex) => {
+                          const isSelected = quizAnswers[q.id] === optIndex;
+                          const isCorrect = optIndex === q.correctAnswerIndex;
+                          const showFeedback = quizSubmitted;
+
+                          let btnClasses =
+                            "w-full text-left p-3 rounded-lg text-xs font-medium border transition-all flex items-center justify-between ";
+
+                          if (showFeedback) {
+                            if (isCorrect) {
+                              btnClasses +=
+                                "bg-emerald-950/60 border-emerald-500 text-emerald-300";
+                            } else if (isSelected && !isCorrect) {
+                              btnClasses +=
+                                "bg-red-950/60 border-red-500 text-red-300";
+                            } else {
+                              btnClasses +=
+                                "bg-slate-900 border-slate-800 text-slate-400";
+                            }
+                          } else {
+                            if (isSelected) {
+                              btnClasses +=
+                                "bg-blue-950 border-blue-500 text-blue-200";
+                            } else {
+                              btnClasses +=
+                                "bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800";
+                            }
+                          }
+
+                          return (
+                            <button
+                              key={optIndex}
+                              disabled={quizSubmitted}
+                              onClick={() =>
+                                setQuizAnswers((prev) => ({
+                                  ...prev,
+                                  [q.id]: optIndex,
+                                }))
+                              }
+                              className={btnClasses}
+                            >
+                              <span>{opt}</span>
+                              {showFeedback && isCorrect && (
+                                <Check className="w-4 h-4 text-emerald-400" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {quizSubmitted && q.explanation && (
+                        <p className="text-xs text-slate-400 italic pt-1">
+                          💡 {q.explanation}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Quiz Controls */}
+                <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                  {quizSubmitted ? (
+                    <Button
+                      onClick={() => {
+                        setQuizSubmitted(false);
+                        setQuizAnswers({});
+                        setQuizScore(null);
+                      }}
+                      variant="outline"
+                      className="gap-1.5 text-xs border-slate-700 bg-slate-850 text-slate-200 hover:bg-slate-800 hover:text-white"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Retake Quiz
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleQuizSubmit}
+                      disabled={
+                        Object.keys(quizAnswers).length <
+                        (selectedChapter?.quiz?.questions?.length || 0)
+                      }
+                      className="bg-purple-600 hover:bg-purple-700 text-xs font-semibold"
+                    >
+                      Submit Quiz Answers
+                    </Button>
+                  )}
+                </div>
               </div>
-              <div className="sm:-mt-2 flex flex-col items-center">
-                <span className="text-[9px] text-gray-400 uppercase font-semibold tracking-wide">
-                  {progressPercentage === 100 ? "Complete" : "Progress"}
-                </span>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Full progress bar */}
-          <div className="mt-4 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ${
-                progressPercentage === 100 ? "bg-emerald-500" : "bg-blue-500"
-              }`}
-              style={{
-                width: `${Math.max(progressPercentage, progressPercentage > 0 ? 2 : 0)}%`,
-              }}
-            />
+          {/* Navigation Controls Bar below Player */}
+          <div className="h-12 bg-slate-900 border-b border-slate-800 px-4 sm:px-8 flex items-center justify-between">
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={!hasPrevious}
+              onClick={handlePreviousChapter}
+              className="text-xs text-slate-400 hover:text-white gap-1"
+            >
+              <ChevronLeft className="w-4 h-4" /> Previous
+            </Button>
+
+            <Button
+              size="sm"
+              variant={
+                currentChapterProgress?.isCompleted ? "outline" : "default"
+              }
+              onClick={handleMarkComplete}
+              className={cn(
+                "text-xs gap-1.5 font-medium",
+                currentChapterProgress?.isCompleted
+                  ? "border-emerald-500 text-emerald-400 bg-transparent hover:bg-emerald-950/30"
+                  : "bg-blue-600 hover:bg-blue-700 text-white",
+              )}
+            >
+              {currentChapterProgress?.isCompleted ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  Completed
+                </>
+              ) : (
+                <>
+                  <Circle className="w-4 h-4" />
+                  Mark as Complete
+                </>
+              )}
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={!hasNext}
+              onClick={handleNextChapter}
+              className="text-xs text-slate-400 hover:text-white gap-1"
+            >
+              Next <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Bottom Tabs Workspace */}
+          <div className="p-4 sm:p-8 max-w-5xl w-full mx-auto space-y-6">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
+              <TabsList className="bg-slate-900 border border-slate-800 p-1 rounded-lg">
+                <TabsTrigger
+                  value="overview"
+                  className="flex items-center gap-1.5 text-xs sm:text-sm"
+                >
+                  <BookOpen className="w-3.5 h-3.5" /> Overview
+                </TabsTrigger>
+                <TabsTrigger
+                  value="notes"
+                  className="flex items-center gap-1.5 text-xs sm:text-sm"
+                >
+                  <StickyNote className="w-3.5 h-3.5" /> Notes ({notes.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="resources"
+                  className="flex items-center gap-1.5 text-xs sm:text-sm"
+                >
+                  <Download className="w-3.5 h-3.5" /> Resources (
+                  {allAttachments.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="reviews"
+                  className="flex items-center gap-1.5 text-xs sm:text-sm"
+                >
+                  <Star className="w-3.5 h-3.5" /> Reviews ({reviews.length})
+                </TabsTrigger>
+              </TabsList>
+
+              {/* TAB: Overview */}
+              <TabsContent value="overview" className="mt-6 space-y-6">
+                <div>
+                  <h2 className="text-xl font-bold text-white">
+                    {selectedChapter?.title}
+                  </h2>
+                  <div
+                    className="text-sm text-slate-400 mt-2 leading-relaxed prose dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        selectedChapter?.description ||
+                        course.description ||
+                        "<p>No additional lecture notes.</p>",
+                    }}
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-slate-800 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center">
+                    {course.instructor?.name?.charAt(0) || "C"}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-white text-sm">
+                      {course.instructor?.name || "CEG United"}
+                    </h4>
+                    <p className="text-xs text-slate-400">
+                      {course.instructor?.title || "Senior Instructor"}
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* TAB: Personal Notes */}
+              <TabsContent value="notes" className="mt-6 space-y-6">
+                <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
+                  <label className="text-xs font-semibold text-slate-300 block">
+                    Add Note for {selectedChapter?.title}
+                  </label>
+                  <Textarea
+                    value={newNoteContent}
+                    onChange={(e) => setNewNoteContent(e.target.value)}
+                    placeholder="Type your notes or insights here..."
+                    rows={3}
+                    className="bg-slate-950 border-slate-800 text-slate-200 text-sm"
+                  />
+                  <Button
+                    onClick={handleSaveNote}
+                    disabled={isSavingNote || !newNoteContent.trim()}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-xs"
+                  >
+                    Save Note
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {notes.length > 0 ? (
+                    notes.map((note) => (
+                      <div
+                        key={note.id}
+                        className="p-4 bg-slate-900 rounded-xl border border-slate-800 flex items-start justify-between gap-4"
+                      >
+                        <p className="text-sm text-slate-300 whitespace-pre-wrap">
+                          {note.content}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteNote(note.id!)}
+                          className="text-xs text-slate-500 hover:text-red-400"
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-500 italic">
+                      No personal notes yet. Use notes to remember key concepts.
+                    </p>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* TAB: Resources & Attachments */}
+              <TabsContent value="resources" className="mt-6 space-y-4">
+                <div className="space-y-2">
+                  {allAttachments.length > 0 ? (
+                    allAttachments.map((att, attIndex) => (
+                      <div
+                        key={att.id || att.url || attIndex}
+                        className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between gap-3 hover:border-slate-700 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                            <Download className="w-4 h-4 text-blue-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium text-slate-200 truncate">
+                              {att.name}
+                            </p>
+                            {att.source && (
+                              <p className="text-[10px] text-slate-500 truncate">
+                                {att.source}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <a
+                          href={att.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="shrink-0"
+                        >
+                          <Button
+                            size="sm"
+                            className="text-xs h-8 px-3 gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-sm transition-colors border-0"
+                          >
+                            <Download className="w-3.5 h-3.5" /> Download
+                          </Button>
+                        </a>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-500 italic">
+                      No downloadable resources attached to this course.
+                    </p>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* TAB: Reviews */}
+              <TabsContent value="reviews" className="mt-6 space-y-6">
+                {/* Leave a Review Box */}
+                <form
+                  onSubmit={handleReviewSubmit}
+                  className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4"
+                >
+                  <h3 className="text-sm font-bold text-white">
+                    Leave Course Feedback
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        type="button"
+                        key={star}
+                        onClick={() => setReviewRating(star)}
+                        className="text-amber-400 hover:scale-110 transition-transform"
+                      >
+                        <Star
+                          className={`w-5 h-5 ${
+                            star <= reviewRating
+                              ? "fill-amber-400 text-amber-400"
+                              : "text-slate-600"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    <span className="text-xs text-slate-400 ml-2">
+                      {reviewRating} out of 5 stars
+                    </span>
+                  </div>
+                  <Textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="Write your honest review and feedback..."
+                    rows={3}
+                    className="bg-slate-950 border-slate-800 text-slate-200 text-sm"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={isSubmittingReview || !reviewComment.trim()}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-xs"
+                  >
+                    Submit Review
+                  </Button>
+                </form>
+
+                {/* Reviews List */}
+                <div className="space-y-4">
+                  {reviews.length > 0 ? (
+                    reviews.map((rev) => (
+                      <div
+                        key={rev.id}
+                        className="p-4 bg-slate-900 rounded-xl border border-slate-800 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-xs text-white">
+                            {rev.userName}
+                          </span>
+                          <div className="flex text-amber-400">
+                            {[...Array(rev.rating)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className="w-3.5 h-3.5 fill-amber-400 text-amber-400"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          {rev.comment}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-500 italic">
+                      No reviews yet. Be the first to share your experience!
+                    </p>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
-      </div>
 
-      {/* Two-column layout: chapter list + content */}
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5">
-        {/* Chapter List — horizontal scroll on mobile, sidebar on desktop */}
-        <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
-              Chapters
-            </h3>
-            {/* Mobile: horizontal scroll; Desktop: vertical list */}
-            <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible pb-1 lg:pb-0">
+        {/* Right Column: Course Curriculum Drawer (Udemy-Style) */}
+        {sidebarOpen && (
+          <aside className="w-80 lg:w-96 bg-slate-900 border-l border-slate-800 flex flex-col shrink-0">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-sm text-white">Course Content</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {completedCount} / {totalCount} completed ({progressPct}%)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-800/60">
               {publishedChapters.map((chapter, index) => {
-                const isCompleted = course?.userProgress?.find(
-                  (p) => p.chapterId === chapter.id,
-                )?.isCompleted;
-                const isActive = chapter.id === selectedChapterId;
+                const isSelected = chapter.id === selectedChapterId;
+                const isCompleted = course.userProgress?.some(
+                  (p) => p.chapterId === chapter.id && p.isCompleted,
+                );
+                const isVideoType = !chapter.type || chapter.type === "video";
+                const isArticleType = chapter.type === "article";
+                const isQuizType = chapter.type === "quiz";
 
                 return (
                   <button
-                    key={chapter.id}
-                    onClick={() => {
-                      if (chapter.id) setSelectedChapterId(chapter.id);
-                    }}
+                    key={chapter.id || index}
+                    onClick={() => setSelectedChapterId(chapter.id!)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all w-full flex-shrink-0 lg:flex-shrink min-h-[52px]",
-                      isActive
-                        ? "bg-blue-50 border border-blue-100"
-                        : "hover:bg-gray-50 border border-transparent",
+                      "w-full p-3.5 text-left transition-colors flex items-start gap-3",
+                      isSelected
+                        ? "bg-slate-800/90 text-white font-medium"
+                        : "text-slate-300 hover:bg-slate-850 hover:text-white",
                     )}
                   >
-                    {/* Status icon */}
-                    {isCompleted ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
-                    ) : isActive ? (
-                      <div className="w-5 h-5 rounded-full border-2 border-blue-500 flex items-center justify-center flex-shrink-0">
-                        <div className="w-2 h-2 rounded-full bg-blue-500" />
-                      </div>
-                    ) : (
-                      <Circle className="w-5 h-5 text-gray-300 flex-shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={cn(
-                          "text-sm font-medium leading-snug line-clamp-2",
-                          isActive ? "text-blue-700" : "text-gray-700",
-                        )}
-                      >
-                        {chapter.title}
-                      </p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">
-                        Chapter {index + 1}
-                      </p>
+                    <div className="mt-0.5 shrink-0">
+                      {isCompleted ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      ) : isSelected ? (
+                        <PlayCircle className="w-4 h-4 text-blue-400" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-slate-600" />
+                      )}
                     </div>
-                    {isActive && (
-                      <ChevronRight className="w-4 h-4 text-blue-400 flex-shrink-0 hidden lg:block" />
-                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium line-clamp-2">
+                        {index + 1}. {chapter.title}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500">
+                        {isVideoType && <span>Video Lesson</span>}
+                        {isArticleType && <span>Reading Lesson</span>}
+                        {isQuizType && <span>Quiz</span>}
+                      </div>
+                    </div>
                   </button>
                 );
               })}
             </div>
-          </div>
-
-          {/* Course Resources */}
-          {course.attachments && course.attachments.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-2">
-                <Download className="w-3.5 h-3.5" />
-                Resources
-              </h3>
-              <div className="space-y-2">
-                {course.attachments.map((attachment) => {
-                  const ext =
-                    attachment.name?.split(".").pop()?.toLowerCase() || "";
-                  const fileStyle =
-                    ext === "pdf"
-                      ? { bg: "bg-red-50", color: "text-red-600" }
-                      : ext === "xlsx" || ext === "xls"
-                        ? { bg: "bg-emerald-50", color: "text-emerald-600" }
-                        : { bg: "bg-blue-50", color: "text-blue-600" };
-
-                  return (
-                    <a
-                      key={attachment.id}
-                      href={attachment.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors group"
-                    >
-                      <div
-                        className={`w-9 h-9 rounded-xl ${fileStyle.bg} flex items-center justify-center flex-shrink-0`}
-                      >
-                        <FileText
-                          className={`w-4.5 h-4.5 ${fileStyle.color}`}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-900 truncate">
-                          {attachment.name}
-                        </p>
-                        {ext && (
-                          <p className="text-[10px] text-gray-400 uppercase mt-0.5">
-                            {ext}
-                          </p>
-                        )}
-                      </div>
-                      <Download className="w-4 h-4 text-gray-300 group-hover:text-blue-600 transition-colors flex-shrink-0" />
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Chapter Content */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          {selectedChapter ? (
-            <div>
-              {/* Video Player */}
-              {selectedChapter.videoUrl &&
-              selectedChapter.muxData?.playbackId ? (
-                <MuxVideoPlayer
-                  playbackId={selectedChapter.muxData.playbackId}
-                  title={selectedChapter.title}
-                  onComplete={handleVideoComplete}
-                />
-              ) : (
-                <div className="aspect-video bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-1/3 translate-x-1/4" />
-                  <div className="absolute bottom-0 left-8 w-24 h-24 bg-white/10 rounded-full translate-y-1/2" />
-                  <div className="relative z-10 flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                      <PlayCircle className="w-8 h-8 text-white" />
-                    </div>
-                    <p className="text-sm text-white/80">
-                      No video for this chapter
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Chapter Info */}
-              <div className="p-4 sm:p-6">
-                {/* Chapter header */}
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                        Chapter {currentChapterIndex + 1} of{" "}
-                        {publishedChapters.length}
-                      </span>
-                      {isChapterCompleted && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Completed
-                        </span>
-                      )}
-                    </div>
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                      {selectedChapter.title}
-                    </h2>
-                  </div>
-                </div>
-
-                {/* Chapter description */}
-                {selectedChapter.description && (
-                  <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <BookOpen className="w-4 h-4 text-blue-600" />
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Lesson Content
-                      </h4>
-                    </div>
-                    <EditorQuill
-                      value={selectedChapter.description}
-                      readOnly
-                      placeholder=""
-                    />
-                  </div>
-                )}
-
-                {/* Action buttons */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t border-gray-100">
-                  {/* Mark complete */}
-                  <button
-                    onClick={handleMarkComplete}
-                    className={cn(
-                      "flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-medium rounded-xl transition-all active:scale-[0.98] shadow-sm min-h-[44px]",
-                      isChapterCompleted
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                        : "bg-blue-600 hover:bg-blue-700 text-white",
-                    )}
-                  >
-                    {isChapterCompleted ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4" />
-                        Mark as Incomplete
-                      </>
-                    ) : (
-                      <>
-                        <Circle className="w-4 h-4" />
-                        Mark as Complete
-                      </>
-                    )}
-                  </button>
-
-                  {/* Navigation */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handlePreviousChapter}
-                      disabled={currentChapterIndex === 0}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 px-4 py-3 text-sm font-medium rounded-xl transition-all border min-h-[44px]",
-                        currentChapterIndex > 0
-                          ? "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 active:scale-[0.98]"
-                          : "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed",
-                      )}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                      Prev
-                    </button>
-                    <button
-                      onClick={handleNextChapter}
-                      disabled={
-                        currentChapterIndex === publishedChapters.length - 1
-                      }
-                      className={cn(
-                        "inline-flex items-center gap-1.5 px-4 py-3 text-sm font-medium rounded-xl transition-all border min-h-[44px]",
-                        currentChapterIndex < publishedChapters.length - 1
-                          ? "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 active:scale-[0.98]"
-                          : "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed",
-                      )}
-                    >
-                      Next
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-                <BookOpen className="w-7 h-7 text-gray-400" />
-              </div>
-              <p className="text-sm font-medium text-gray-700">
-                Select a chapter to start learning
-              </p>
-            </div>
-          )}
-        </div>
+          </aside>
+        )}
       </div>
+
+      {/* Certificate Modal */}
+      <Dialog open={showCertificate} onOpenChange={setShowCertificate}>
+        <DialogContent className="max-w-2xl bg-slate-900 border-amber-500/50 text-white text-center p-8">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-extrabold text-amber-400 flex items-center justify-center gap-2">
+              <Trophy className="w-6 h-6 text-amber-400" /> Certificate of
+              Completion
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-6 border-y border-slate-800 my-4">
+            <p className="text-xs text-slate-400 uppercase tracking-widest">
+              This is to certify that
+            </p>
+            <h3 className="text-2xl font-bold text-white">
+              {user?.displayName || user?.email || "Student"}
+            </h3>
+            <p className="text-xs text-slate-400">
+              has successfully completed all requirements for
+            </p>
+            <h4 className="text-lg font-bold text-blue-400">{course.title}</h4>
+            <p className="text-xs text-slate-500">
+              Verified by CEG United Educational Standards
+            </p>
+          </div>
+          <Button
+            onClick={() => setShowCertificate(false)}
+            className="bg-amber-600 hover:bg-amber-700 text-black font-bold mx-auto"
+          >
+            Close Certificate
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

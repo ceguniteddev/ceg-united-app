@@ -1,8 +1,6 @@
 "use client";
 
-import axios from "axios";
-import { Trash } from "lucide-react";
-import { useState } from "react";
+import { Eye, EyeOff, Loader2, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -30,7 +28,9 @@ export const Actions = ({ disabled, courseId, isPublished }: ActionsProps) => {
   } = useCourseMutation();
 
   const onClick = async () => {
-    const notification = toast.loading("Please wait...");
+    const notification = toast.loading(
+      isPublished ? "Unpublishing course..." : "Publishing course...",
+    );
     try {
       if (isPublished) {
         await unpublishCourse(courseId);
@@ -52,7 +52,7 @@ export const Actions = ({ disabled, courseId, isPublished }: ActionsProps) => {
   };
 
   const onDelete = async () => {
-    const notification = toast.loading("Please wait...");
+    const notification = toast.loading("Deleting course...");
     try {
       await deleteCourse(courseId);
       toast.success("Course deleted", {
@@ -76,7 +76,22 @@ export const Actions = ({ disabled, courseId, isPublished }: ActionsProps) => {
         size="sm"
         className="cursor-pointer"
       >
-        {isPublished ? "Unpublish" : "Publish"}
+        {isPublishing || isUnpublishing ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            {isPublished ? "Unpublishing..." : "Publishing..."}
+          </>
+        ) : isPublished ? (
+          <>
+            <EyeOff className="h-4 w-4 mr-2" />
+            Unpublish
+          </>
+        ) : (
+          <>
+            <Eye className="h-4 w-4 mr-2" />
+            Publish
+          </>
+        )}
       </Button>
       <ConfirmModal onConfirm={onDelete}>
         <Button

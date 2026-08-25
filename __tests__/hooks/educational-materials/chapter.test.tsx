@@ -1,29 +1,45 @@
-import { renderHook, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+/// <reference types="vitest/globals" />
+
+import { renderHook, waitFor, act } from "@testing-library/react";
 import {
   useGetChapterById,
   useChapterMutation,
   useChapterProgress,
 } from "@/hooks/educational-materials/chapter";
 import { createWrapper } from "../../utils/test-utils";
-import { toast } from "sonner";
 
+const toast = vi.hoisted(() => ({
+  error: vi.fn(),
+  success: vi.fn(),
+  warning: vi.fn(),
+}));
 vi.mock("sonner", () => ({
-  toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() },
+  toast,
 }));
 
-const mockUser = { uid: "user-123" };
+const { mockUser } = vi.hoisted(() => ({
+  mockUser: { uid: "user-123" },
+}));
 vi.mock("@/provider/AuthContext", () => ({
   useAuth: () => ({ user: mockUser }),
 }));
 
+const { mockRouter } = vi.hoisted(() => ({
+  mockRouter: { push: vi.fn(), replace: vi.fn(), refresh: vi.fn() },
+}));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useRouter: () => mockRouter,
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
 }));
 
-vi.mock("@/lib/mux", () => ({
+const muxMocks = vi.hoisted(() => ({
   updateChapterVideo: vi.fn(),
+  deleteChapterVideo: vi.fn(),
+  createUploadUrl: vi.fn(),
 }));
+
+vi.mock("@/lib/mux", () => muxMocks);
 
 global.fetch = vi.fn();
 
@@ -203,7 +219,11 @@ describe("educational-materials/chapter hooks", () => {
           isCompleted: true,
         }),
       });
-      expect(toast.success).toHaveBeenCalledWith("Chapter marked as complete!");
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith(
+          "Chapter marked as complete!",
+        );
+      });
     });
 
     it("should not show toast when not completed", async () => {

@@ -14,9 +14,8 @@ import {
   CourseWithProgress,
 } from "@/schema/educational-materials/course";
 import { Timestamp } from "firebase-admin/firestore";
-import { getCourseById, getPublishedCourseIds } from "./course";
-import { getUserById } from "@/service/user";
-import { getUserMembership } from "@/service/membership";
+import { getCourseById } from "./course";
+import { isCourseFree } from "@/lib/course-pricing";
 
 /**
  * Update user progress for a chapter (complete or incomplete)
@@ -39,16 +38,35 @@ export const updateUserProgress = async ({
   }
 };
 
+export interface EnrollUserInCourseParams {
+  userId: string;
+  courseId: string;
+  isPaymentVerified?: boolean;
+  isManualEnrollment?: boolean;
+  assignedByAdminId?: string;
+  assignedByAdminEmail?: string;
+  enrollmentSource?:
+    | "self_free"
+    | "self_paid"
+    | "manual_admin"
+    | "lumino_webhook"
+    | "dodo_webhook";
+  notes?: string;
+}
+
 /**
  * Enroll a user in a course
  */
 export const enrollUserInCourse = async ({
   userId,
   courseId,
-}: {
-  userId: string;
-  courseId: string;
-}): Promise<UserCourseEnrollment> => {
+  isPaymentVerified = false,
+  isManualEnrollment = false,
+  assignedByAdminId,
+  assignedByAdminEmail,
+  enrollmentSource,
+  notes,
+}: EnrollUserInCourseParams): Promise<UserCourseEnrollment> => {
   const db = firestoreAdmin();
 
   // Check if already enrolled
@@ -67,14 +85,70 @@ export const enrollUserInCourse = async ({
     } as UserCourseEnrollment;
   }
 
-  // Create new enrollment
-  const enrollmentRef = await db.collection(USER_COURSE_ENROLLMENT).add({
+  // Check course existence and free/paid requirements
+  const course = await getCourseById(courseId);
+  if (!course) {
+    throw new Error("Course not found");
+  }
+  if (!course.isPublished) {
+    throw new Error("Course is not available");
+  }
+
+  const courseIsFree = isCourseFree(course);
+  const isAllowedToEnroll =
+    courseIsFree || isPaymentVerified || isManualEnrollment;
+  if (!isAllowedToEnroll) {
+    throw new Error(
+      "This is a paid course and requires purchase before enrollment.",
+    );
+  }
+
+  const determinedSource =
+    enrollmentSource ||
+    (isManualEnrollment
+      ? "manual_admin"
+      : courseIsFree
+        ? "self_free"
+        : "self_paid");
+
+  const enrollmentPayload: Record<string, any> = {
     userId,
     courseId,
     enrolledAt: Timestamp.now(),
     lastAccessedAt: Timestamp.now(),
     progressPercentage: 0,
-  });
+    enrollmentSource: determinedSource,
+  };
+
+  if (assignedByAdminId) {
+    enrollmentPayload.assignedByAdminId = assignedByAdminId;
+    enrollmentPayload.assignedAt = Timestamp.now();
+  }
+  if (assignedByAdminEmail) {
+    enrollmentPayload.assignedByAdminEmail = assignedByAdminEmail;
+  }
+  if (notes) {
+    enrollmentPayload.notes = notes;
+  }
+
+  // Create new enrollment
+  const enrollmentRef = await db
+    .collection(USER_COURSE_ENROLLMENT)
+    .add(enrollmentPayload);
+
+  // Increment enrolled students count on course
+  try {
+    const courseRef = db.collection(COURSE).doc(courseId);
+    const courseDoc = await courseRef.get();
+    if (courseDoc.exists) {
+      const currentCount = courseDoc.data()?.enrolledStudentsCount || 0;
+      await courseRef.update({
+        enrolledStudentsCount: currentCount + 1,
+      });
+    }
+  } catch (e) {
+    console.error("Failed to increment student count:", e);
+  }
 
   const enrollmentDoc = await enrollmentRef.get();
   return {
@@ -112,7 +186,7 @@ export const unenrollUserFromCourse = async ({
     .collection(`${COURSE}/${courseId}/${CHAPTER}`)
     .get();
 
-  const chapterIds = chaptersSnapshot.docs.map((doc) => doc.id);
+  const chapterIds = chaptersSnapshot.docs?.map((doc) => doc.id) || [];
 
   if (chapterIds.length > 0) {
     // Delete all progress records for this user and course
@@ -122,12 +196,14 @@ export const unenrollUserFromCourse = async ({
       .where("chapterId", "in", chapterIds)
       .get();
 
-    const batch = db.batch();
-    progressSnapshot.docs.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
+    if (progressSnapshot.docs && progressSnapshot.docs.length > 0) {
+      const batch = db.batch();
+      progressSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
 
-    await batch.commit();
+      await batch.commit();
+    }
   }
 };
 
@@ -383,47 +459,14 @@ export const updateCourseProgress = async ({
 
 /**
  * Get all courses with progress for a user.
- * Premium clients are automatically enrolled in all published courses.
+ * Only returns courses the user has purchased or explicitly enrolled in.
  */
 export const getUserCoursesWithProgress = async (
   userId: string,
 ): Promise<CourseWithProgress[]> => {
   const db = firestoreAdmin();
 
-  // Auto-enroll premium clients in all published courses
-  const user = await getUserById(userId);
-  const membership = await getUserMembership(userId);
-  const hasPaidContract = membership?.status === "active";
-
-  if (hasPaidContract) {
-    const [publishedCourseIds, existingEnrollmentsSnapshot] = await Promise.all(
-      [
-        getPublishedCourseIds(),
-        db
-          .collection(USER_COURSE_ENROLLMENT)
-          .where("userId", "==", userId)
-          .get(),
-      ],
-    );
-
-    const enrolledCourseIds = new Set(
-      existingEnrollmentsSnapshot.docs.map((doc) => doc.data().courseId),
-    );
-
-    const missingCourseIds = publishedCourseIds.filter(
-      (id) => !enrolledCourseIds.has(id),
-    );
-
-    if (missingCourseIds.length > 0) {
-      await Promise.all(
-        missingCourseIds.map((courseId) =>
-          enrollUserInCourse({ userId, courseId }),
-        ),
-      );
-    }
-  }
-
-  // Get user's enrollments
+  // Get user's explicit enrollments
   const enrollmentsSnapshot = await db
     .collection(USER_COURSE_ENROLLMENT)
     .where("userId", "==", userId)
@@ -433,38 +476,38 @@ export const getUserCoursesWithProgress = async (
     return [];
   }
 
-  const coursesWithProgress: CourseWithProgress[] = [];
+  const coursesWithProgress = await Promise.all(
+    enrollmentsSnapshot.docs.map(async (enrollmentDoc) => {
+      const enrollment = {
+        id: enrollmentDoc.id,
+        ...normalizeAllDates(enrollmentDoc.data()),
+      } as UserCourseEnrollment;
 
-  for (const enrollmentDoc of enrollmentsSnapshot.docs) {
-    const enrollment = {
-      id: enrollmentDoc.id,
-      ...normalizeAllDates(enrollmentDoc.data()),
-    } as UserCourseEnrollment;
+      // Get course details and user progress in parallel
+      const [course, userProgress] = await Promise.all([
+        getCourseById(enrollment.courseId),
+        getUserProgressForCourse({
+          userId,
+          courseId: enrollment.courseId,
+        }),
+      ]);
 
-    // Get course details
-    const course = await getCourseById(enrollment.courseId);
-
-    if (course) {
-      // Get user progress for this course
-      const userProgress = await getUserProgressForCourse({
-        userId,
-        courseId: enrollment.courseId,
-      });
+      if (!course) return null;
 
       const totalChapters = course.chapters?.length || 0;
       const completedChapters = userProgress.filter(
         (p) => p.isCompleted,
       ).length;
 
-      coursesWithProgress.push({
+      return {
         ...course,
         enrollment,
         totalChapters,
         completedChapters,
         userProgress,
-      });
-    }
-  }
+      } as CourseWithProgress;
+    }),
+  );
 
-  return coursesWithProgress;
+  return coursesWithProgress.filter((c): c is CourseWithProgress => c !== null);
 };

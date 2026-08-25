@@ -1,11 +1,25 @@
 "use server";
-import { ATTACHMENT, COURSE } from "@/constant/collection-name";
+import {
+  ATTACHMENT,
+  COURSE,
+  SECTION,
+  COURSE_REVIEWS,
+  COURSE_NOTES,
+} from "@/constant/collection-name";
 import { normalizeAllDates } from "@/lib/date-parser";
 import { firestoreAdmin, storageAdmin } from "@/lib/fireabase-admin";
 import { UploadedFileData } from "@/schema";
-import { Attachment, Course } from "@/schema/educational-materials/course";
+import {
+  Attachment,
+  Course,
+  CourseReview,
+  CourseNote,
+  Section,
+} from "@/schema/educational-materials/course";
 import { Timestamp } from "firebase-admin/firestore";
 import { getChaptersByCourseId } from "./chapter";
+import { getUserMembership } from "@/service/membership";
+import { getUserAddons } from "@/service/addons";
 
 export const recordCourseTitle = async (title: string) => {
   const db = firestoreAdmin();
@@ -49,9 +63,12 @@ export const getCourseById = async (id: string): Promise<Course | null> => {
 
   const imageUrl = await getCourseDocument(data?.imageUrl);
 
-  const chapters = await getChaptersByCourseId(id);
-
-  const attachments = await getAttachmentsByCourseId(id);
+  const [chapters, attachments, sections, reviews] = await Promise.all([
+    getChaptersByCourseId(id).catch(() => null),
+    getAttachmentsByCourseId(id).catch(() => null),
+    getSectionsByCourseId(id).catch(() => null),
+    getCourseReviews(id).catch(() => []),
+  ]);
 
   return {
     id: doc.id,
@@ -59,6 +76,8 @@ export const getCourseById = async (id: string): Promise<Course | null> => {
     imageUrl,
     chapters,
     attachments,
+    sections: sections || undefined,
+    reviews: reviews && reviews.length > 0 ? reviews : undefined,
   };
 };
 
@@ -317,23 +336,30 @@ export const deleteAttachment = async ({
 
 export const getUserCourses = async (userId: string): Promise<Course[]> => {
   try {
-    // First, check if user has paid or is mapped in denefits contract
     const db = firestoreAdmin();
 
-    // Check if user exists in USER_DENEFITS_CONTRACT collection
-    const { USER_DENEFITS_CONTRACT } =
-      await import("@/constant/collection-name");
-    const denefitsRef = db
-      .collection(USER_DENEFITS_CONTRACT)
-      .where("userId", "==", userId);
-    const denefitsSnapshot = await denefitsRef.get();
+    // Check active membership or active add-on
+    // const membership = await getUserMembership(userId);
+    // const addons = await getUserAddons(userId);
+    // const hasAccess =
+    //   membership?.status === "active" ||
+    //   addons.some((addon) => addon.status === "active");
 
-    // If user doesn't have denefits contract, return empty array
-    if (denefitsSnapshot.empty) {
-      return [];
-    }
+    // if (!hasAccess) {
+    //   // Check if user exists in USER_DENEFITS_CONTRACT collection for backward compatibility
+    //   const { USER_DENEFITS_CONTRACT } =
+    //     await import("@/constant/collection-name");
+    //   const denefitsRef = db
+    //     .collection(USER_DENEFITS_CONTRACT)
+    //     .where("userId", "==", userId);
+    //   const denefitsSnapshot = await denefitsRef.get();
 
-    // If user has denefits contract, return all published courses
+    //   if (denefitsSnapshot.empty) {
+    //     return [];
+    //   }
+    // }
+
+    // Return all published courses
     const coursesRef = db
       .collection(COURSE)
       .where("isPublished", "==", true)
@@ -370,4 +396,260 @@ export const getUserCourses = async (userId: string): Promise<Course[]> => {
     console.error("Failed to get user courses:", error);
     return [];
   }
+};
+
+/* ==================== Sections Management ==================== */
+
+export const getSectionsByCourseId = async (
+  courseId: string,
+): Promise<Section[] | null> => {
+  try {
+    const db = firestoreAdmin();
+    let query: any = db.collection(`${COURSE}/${courseId}/${SECTION}`);
+    if (typeof query.orderBy === "function") {
+      query = query.orderBy("position", "asc");
+    }
+    const querySnapshot = await query.get();
+    if (!querySnapshot || querySnapshot.empty) return null;
+
+    return querySnapshot.docs.map((doc: any) => ({
+      id: doc.id,
+      ...normalizeAllDates(doc.data()),
+    })) as Section[];
+  } catch {
+    return null;
+  }
+};
+
+export const createCourseSection = async ({
+  courseId,
+  title,
+  description,
+  position,
+}: {
+  courseId: string;
+  title: string;
+  description?: string;
+  position: number;
+}): Promise<Section> => {
+  const db = firestoreAdmin();
+  const collectionRef = db.collection(`${COURSE}/${courseId}/${SECTION}`);
+  const docRef = await collectionRef.add({
+    courseId,
+    title,
+    description: description || "",
+    position,
+    isPublished: true,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  });
+  const data = (await docRef.get()).data();
+  return {
+    id: docRef.id,
+    ...normalizeAllDates(data),
+  } as Section;
+};
+
+export const updateCourseSection = async ({
+  courseId,
+  sectionId,
+  data,
+}: {
+  courseId: string;
+  sectionId: string;
+  data: Partial<Section>;
+}) => {
+  const db = firestoreAdmin();
+  const docRef = db
+    .collection(`${COURSE}/${courseId}/${SECTION}`)
+    .doc(sectionId);
+  await docRef.update({
+    ...data,
+    updatedAt: Timestamp.now(),
+  });
+  const updatedDoc = await docRef.get();
+  return {
+    id: updatedDoc.id,
+    ...normalizeAllDates(updatedDoc.data()),
+  };
+};
+
+export const deleteCourseSection = async ({
+  courseId,
+  sectionId,
+}: {
+  courseId: string;
+  sectionId: string;
+}) => {
+  const db = firestoreAdmin();
+  await db
+    .collection(`${COURSE}/${courseId}/${SECTION}`)
+    .doc(sectionId)
+    .delete();
+};
+
+/* ==================== Reviews & Ratings ==================== */
+
+export const getCourseReviews = async (
+  courseId: string,
+): Promise<CourseReview[]> => {
+  try {
+    const db = firestoreAdmin();
+    const querySnapshot = await db
+      .collection(COURSE_REVIEWS)
+      .where("courseId", "==", courseId)
+      .get();
+    if (!querySnapshot || querySnapshot.empty) return [];
+
+    const reviews = querySnapshot.docs.map((doc: any) => ({
+      id: doc.id,
+      ...normalizeAllDates(doc.data()),
+    })) as CourseReview[];
+
+    return reviews.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+  } catch (error) {
+    console.error("Error getting course reviews:", error);
+    return [];
+  }
+};
+
+export const addCourseReview = async ({
+  courseId,
+  userId,
+  userName,
+  userAvatar,
+  rating,
+  comment,
+}: {
+  courseId: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  rating: number;
+  comment: string;
+}): Promise<CourseReview> => {
+  const db = firestoreAdmin();
+  const docRef = await db.collection(COURSE_REVIEWS).add({
+    courseId,
+    userId,
+    userName,
+    userAvatar: userAvatar || "",
+    rating,
+    comment,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  });
+
+  // Recalculate averageRating and totalRatingsCount for course
+  const allReviewsSnapshot = await db
+    .collection(COURSE_REVIEWS)
+    .where("courseId", "==", courseId)
+    .get();
+
+  const totalCount = allReviewsSnapshot.docs.length;
+  const sum = allReviewsSnapshot.docs.reduce(
+    (acc, doc) => acc + (doc.data()?.rating || 5),
+    0,
+  );
+  const avg = totalCount > 0 ? Number((sum / totalCount).toFixed(1)) : 5.0;
+
+  await db.collection(COURSE).doc(courseId).update({
+    averageRating: avg,
+    totalRatingsCount: totalCount,
+    updatedAt: Timestamp.now(),
+  });
+
+  const createdDoc = await docRef.get();
+  return {
+    id: docRef.id,
+    ...normalizeAllDates(createdDoc.data()),
+  } as CourseReview;
+};
+
+/* ==================== Personal Notes ==================== */
+
+export const getCourseNotes = async ({
+  userId,
+  courseId,
+}: {
+  userId: string;
+  courseId: string;
+}): Promise<CourseNote[]> => {
+  try {
+    const db = firestoreAdmin();
+    const querySnapshot = await db
+      .collection(COURSE_NOTES)
+      .where("userId", "==", userId)
+      .where("courseId", "==", courseId)
+      .get();
+
+    if (!querySnapshot || querySnapshot.empty) return [];
+
+    const notes = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...normalizeAllDates(doc.data()),
+    })) as CourseNote[];
+
+    return notes.sort(
+      (a, b) => (a.timestampSeconds || 0) - (b.timestampSeconds || 0),
+    );
+  } catch (error) {
+    console.error("Error getting course notes:", error);
+    return [];
+  }
+};
+
+export const saveCourseNote = async ({
+  id,
+  userId,
+  courseId,
+  chapterId,
+  timestampSeconds,
+  content,
+}: {
+  id?: string;
+  userId: string;
+  courseId: string;
+  chapterId: string;
+  timestampSeconds: number;
+  content: string;
+}): Promise<CourseNote> => {
+  const db = firestoreAdmin();
+  if (id) {
+    const docRef = db.collection(COURSE_NOTES).doc(id);
+    await docRef.update({
+      content,
+      timestampSeconds,
+      updatedAt: Timestamp.now(),
+    });
+    const updated = await docRef.get();
+    return {
+      id: updated.id,
+      ...normalizeAllDates(updated.data()),
+    } as CourseNote;
+  } else {
+    const docRef = await db.collection(COURSE_NOTES).add({
+      userId,
+      courseId,
+      chapterId,
+      timestampSeconds,
+      content,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+    const created = await docRef.get();
+    return {
+      id: docRef.id,
+      ...normalizeAllDates(created.data()),
+    } as CourseNote;
+  }
+};
+
+export const deleteCourseNote = async (noteId: string) => {
+  const db = firestoreAdmin();
+  await db.collection(COURSE_NOTES).doc(noteId).delete();
 };

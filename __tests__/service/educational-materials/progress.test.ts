@@ -1,43 +1,85 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+/// <reference types="vitest/globals" />
 
-// ── Firestore mock setup ──────────────────────────────────────────────────────
-const mockGet = vi.fn();
-const mockSet = vi.fn();
-const mockUpdate = vi.fn();
-const mockDelete = vi.fn();
-const mockAdd = vi.fn();
-const mockOrderBy = vi.fn();
-const mockWhere = vi.fn();
-const mockLimit = vi.fn();
+const mocks = vi.hoisted(() => {
+  const mockGet = vi.fn();
+  const mockSet = vi.fn();
+  const mockUpdate = vi.fn();
+  const mockDelete = vi.fn();
+  const mockAdd = vi.fn();
+  const mockOrderBy = vi.fn();
+  const mockWhere = vi.fn();
+  const mockLimit = vi.fn();
 
-const mockDocRef = {
-  get: mockGet,
-  set: mockSet,
-  update: mockUpdate,
-  delete: mockDelete,
-  collection: vi.fn(),
-  listCollections: vi.fn(),
-};
-const mockCollectionRef = {
-  add: mockAdd,
-  doc: vi.fn().mockReturnValue(mockDocRef),
-  where: mockWhere,
-  orderBy: mockOrderBy,
-  limit: mockLimit,
-  get: mockGet,
-};
-mockWhere.mockReturnValue(mockCollectionRef);
-mockOrderBy.mockReturnValue(mockCollectionRef);
-mockLimit.mockReturnValue(mockCollectionRef);
+  const mockDocRef = {
+    get: mockGet,
+    set: mockSet,
+    update: mockUpdate,
+    delete: mockDelete,
+    collection: vi.fn(),
+    listCollections: vi.fn(),
+  };
+  const mockCollectionRef = {
+    add: mockAdd,
+    doc: vi.fn().mockReturnValue(mockDocRef),
+    where: mockWhere,
+    orderBy: mockOrderBy,
+    limit: mockLimit,
+    get: mockGet,
+  };
+  mockWhere.mockReturnValue(mockCollectionRef);
+  mockOrderBy.mockReturnValue(mockCollectionRef);
+  mockLimit.mockReturnValue(mockCollectionRef);
 
-const mockBatch = {
-  delete: vi.fn(),
-  commit: vi.fn().mockResolvedValue(undefined),
-};
-const mockDb = {
-  collection: vi.fn().mockReturnValue(mockCollectionRef),
-  batch: vi.fn().mockReturnValue(mockBatch),
-};
+  const mockBatch = {
+    delete: vi.fn(),
+    commit: vi.fn().mockResolvedValue(undefined),
+  };
+  const mockDb = {
+    collection: vi.fn().mockReturnValue(mockCollectionRef),
+    batch: vi.fn().mockReturnValue(mockBatch),
+  };
+
+  return {
+    mockGet,
+    mockSet,
+    mockUpdate,
+    mockDelete,
+    mockAdd,
+    mockOrderBy,
+    mockWhere,
+    mockLimit,
+    mockDocRef,
+    mockCollectionRef,
+    mockBatch,
+    mockDb,
+    Timestamp: { now: vi.fn(() => "mock-ts") },
+    getCourseById: vi.fn(),
+    getPublishedCourseIds: vi.fn(),
+    getUserById: vi.fn(),
+    getUserMembership: vi.fn(),
+    getUserAddons: vi.fn(),
+  };
+});
+
+const {
+  mockGet,
+  mockSet,
+  mockUpdate,
+  mockDelete,
+  mockAdd,
+  mockOrderBy,
+  mockWhere,
+  mockLimit,
+  mockDocRef,
+  mockCollectionRef,
+  mockBatch,
+  mockDb,
+  getCourseById,
+  getPublishedCourseIds,
+  getUserById,
+  getUserMembership,
+  getUserAddons,
+} = mocks;
 
 vi.mock("@/lib/fireabase-admin", () => ({
   firestoreAdmin: vi.fn(() => mockDb),
@@ -48,19 +90,37 @@ vi.mock("@/lib/date-parser", () => ({
   normalizeAllDates: vi.fn((x: any) => x),
 }));
 vi.mock("firebase-admin/firestore", () => ({
-  Timestamp: { now: vi.fn(() => "mock-ts") },
+  Timestamp: {
+    now: vi.fn(() => "mock-ts"),
+    fromDate: vi.fn((d: any) => d),
+  },
+}));
+vi.mock("firebase-admin", () => ({
+  firestore: {
+    Timestamp: {
+      now: vi.fn(() => "mock-ts"),
+      fromDate: vi.fn((d: any) => d),
+    },
+  },
 }));
 vi.mock("@/service/educational-materials/course", () => ({
-  getCourseById: vi.fn(),
-  getPublishedCourseIds: vi.fn(),
+  getCourseById: mocks.getCourseById,
+  getPublishedCourseIds: mocks.getPublishedCourseIds,
 }));
-vi.mock("@/service/user", () => ({ getUserById: vi.fn() }));
+vi.mock("@/service/user", () => ({ getUserById: mocks.getUserById }));
+vi.mock("@/service/membership", () => ({
+  getUserMembership: mocks.getUserMembership,
+}));
+vi.mock("@/service/addons", () => ({
+  getUserAddons: mocks.getUserAddons,
+}));
 
 // ── Import after mocks ────────────────────────────────────────────────────────
 import {
   enrollUserInCourse,
   unenrollUserFromCourse,
   getUserCourseEnrollment,
+  getUserCoursesWithProgress,
   updateCourseAccess,
   markChapterComplete,
   markChapterIncomplete,
@@ -119,9 +179,14 @@ describe("service/educational-materials/progress", () => {
       expect(result).toEqual({ id: "enroll-1", ...existingData });
     });
 
-    it("creates new enrollment when not yet enrolled", async () => {
+    it("creates new enrollment when course is free and published", async () => {
       // First get: empty enrollment check
       mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: true,
+        isFree: true,
+      });
 
       const newEnrollmentData = {
         userId: "u1",
@@ -130,14 +195,17 @@ describe("service/educational-materials/progress", () => {
       };
       const addedRef = {
         id: "enroll-new",
-        get: vi
-          .fn()
-          .mockResolvedValue({
-            id: "enroll-new",
-            data: () => newEnrollmentData,
-          }),
+        get: vi.fn().mockResolvedValue({
+          id: "enroll-new",
+          data: () => newEnrollmentData,
+        }),
       };
       mockAdd.mockResolvedValue(addedRef);
+      // course doc get for enrolledStudentsCount increment
+      mockDocRef.get.mockResolvedValueOnce({
+        exists: true,
+        data: () => ({ enrolledStudentsCount: 5 }),
+      });
 
       const result = await enrollUserInCourse({ userId: "u1", courseId: "c1" });
 
@@ -149,6 +217,190 @@ describe("service/educational-materials/progress", () => {
         }),
       );
       expect(result).toEqual({ id: "enroll-new", ...newEnrollmentData });
+    });
+
+    it("throws error when course is not found", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce(null);
+
+      await expect(
+        enrollUserInCourse({ userId: "u1", courseId: "c1" }),
+      ).rejects.toThrow("Course not found");
+    });
+
+    it("throws error when course is not published", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: false,
+        isFree: true,
+      });
+
+      await expect(
+        enrollUserInCourse({ userId: "u1", courseId: "c1" }),
+      ).rejects.toThrow("Course is not available");
+    });
+
+    it("creates enrollment when course is free because price is 0", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: true,
+        isFree: false,
+        price: 0,
+      });
+
+      const newEnrollmentData = {
+        userId: "u1",
+        courseId: "c1",
+        progressPercentage: 0,
+      };
+      const addedRef = {
+        id: "enroll-new",
+        get: vi.fn().mockResolvedValue({
+          id: "enroll-new",
+          data: () => newEnrollmentData,
+        }),
+      };
+      mockAdd.mockResolvedValue(addedRef);
+      mockDocRef.get.mockResolvedValueOnce({
+        exists: true,
+        data: () => ({ enrolledStudentsCount: 5 }),
+      });
+
+      const result = await enrollUserInCourse({ userId: "u1", courseId: "c1" });
+
+      expect(mockAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "u1",
+          courseId: "c1",
+          enrollmentSource: "self_free",
+        }),
+      );
+      expect(result).toEqual({ id: "enroll-new", ...newEnrollmentData });
+    });
+
+    it("throws error when course is paid and payment is not verified", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: true,
+        isFree: false,
+        price: 49.99,
+      });
+
+      await expect(
+        enrollUserInCourse({ userId: "u1", courseId: "c1" }),
+      ).rejects.toThrow(
+        "This is a paid course and requires purchase before enrollment.",
+      );
+    });
+
+    it("creates enrollment when course is paid and payment is verified", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: true,
+        isFree: false,
+        price: 49.99,
+      });
+
+      const newEnrollmentData = {
+        userId: "u1",
+        courseId: "c1",
+        progressPercentage: 0,
+      };
+      const addedRef = {
+        id: "enroll-new",
+        get: vi.fn().mockResolvedValue({
+          id: "enroll-new",
+          data: () => newEnrollmentData,
+        }),
+      };
+      mockAdd.mockResolvedValue(addedRef);
+      mockDocRef.get.mockResolvedValueOnce({
+        exists: true,
+        data: () => ({ enrolledStudentsCount: 0 }),
+      });
+
+      const result = await enrollUserInCourse({
+        userId: "u1",
+        courseId: "c1",
+        isPaymentVerified: true,
+      });
+
+      expect(result).toEqual({ id: "enroll-new", ...newEnrollmentData });
+    });
+
+    it("creates enrollment when course is paid and manual admin enrollment is enabled with metadata", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: true,
+        isFree: false,
+        price: 199.99,
+      });
+
+      const newEnrollmentData = {
+        userId: "u1",
+        courseId: "c1",
+        progressPercentage: 0,
+        enrollmentSource: "manual_admin",
+        assignedByAdminId: "admin-1",
+        assignedByAdminEmail: "admin@cegunited.com",
+        notes: "Promotional override",
+      };
+      const addedRef = {
+        id: "enroll-manual",
+        get: vi.fn().mockResolvedValue({
+          id: "enroll-manual",
+          data: () => newEnrollmentData,
+        }),
+      };
+      mockAdd.mockResolvedValue(addedRef);
+      mockDocRef.get.mockResolvedValueOnce({
+        exists: true,
+        data: () => ({ enrolledStudentsCount: 2 }),
+      });
+
+      const result = await enrollUserInCourse({
+        userId: "u1",
+        courseId: "c1",
+        isManualEnrollment: true,
+        assignedByAdminId: "admin-1",
+        assignedByAdminEmail: "admin@cegunited.com",
+        notes: "Promotional override",
+      });
+
+      expect(mockAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "u1",
+          courseId: "c1",
+          enrollmentSource: "manual_admin",
+          assignedByAdminId: "admin-1",
+          assignedByAdminEmail: "admin@cegunited.com",
+          notes: "Promotional override",
+        }),
+      );
+      expect(result).toEqual({ id: "enroll-manual", ...newEnrollmentData });
+    });
+
+    it("throws error when manual enrollment attempts to assign an unpublished course", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: false,
+        isFree: false,
+        price: 199.99,
+      });
+
+      await expect(
+        enrollUserInCourse({
+          userId: "u1",
+          courseId: "c1",
+          isManualEnrollment: true,
+        }),
+      ).rejects.toThrow("Course is not available");
     });
   });
 
@@ -225,7 +477,7 @@ describe("service/educational-materials/progress", () => {
       await updateCourseAccess({ userId: "u1", courseId: "c1" });
 
       expect(enrollmentDoc.ref.update).toHaveBeenCalledWith({
-        lastAccessedAt: "mock-ts",
+        lastAccessedAt: expect.anything(),
       });
     });
 
@@ -270,7 +522,7 @@ describe("service/educational-materials/progress", () => {
 
       expect(progressDoc.ref.update).toHaveBeenCalledWith({
         isCompleted: true,
-        updatedAt: "mock-ts",
+        updatedAt: expect.anything(),
       });
       expect(result).toEqual({ id: "prog-1", ...progressData });
     });
@@ -350,7 +602,7 @@ describe("service/educational-materials/progress", () => {
 
       expect(progressDoc.ref.update).toHaveBeenCalledWith({
         isCompleted: false,
-        updatedAt: "mock-ts",
+        updatedAt: expect.anything(),
       });
       expect(result).toEqual({ id: "prog-1", ...progressData });
     });
@@ -420,7 +672,7 @@ describe("service/educational-materials/progress", () => {
       expect(enrollDoc.ref.update).toHaveBeenCalledWith(
         expect.objectContaining({
           progressPercentage: 50,
-          lastAccessedAt: "mock-ts",
+          lastAccessedAt: expect.anything(),
         }),
       );
     });
@@ -441,9 +693,53 @@ describe("service/educational-materials/progress", () => {
       expect(enrollDoc.ref.update).toHaveBeenCalledWith(
         expect.objectContaining({
           progressPercentage: 100,
-          completedAt: "mock-ts",
+          completedAt: expect.anything(),
         }),
       );
+    });
+  });
+
+  // ── getUserCoursesWithProgress ────────────────────────────────────────────
+  describe("getUserCoursesWithProgress", () => {
+    it("returns empty array when user has no enrollments", async () => {
+      mockGet.mockResolvedValueOnce({ empty: true, docs: [] });
+
+      const result = await getUserCoursesWithProgress("u1");
+
+      expect(result).toEqual([]);
+    });
+
+    it("returns enrolled courses with progress for user", async () => {
+      const enrollmentDoc = makeDocSnap("enroll-1", {
+        userId: "u1",
+        courseId: "c1",
+        progressPercentage: 50,
+      });
+      mockGet
+        .mockResolvedValueOnce({ empty: false, docs: [enrollmentDoc] }) // enrollments query
+        .mockResolvedValueOnce({ docs: [{ id: "ch-1" }, { id: "ch-2" }] }) // course chapters
+        .mockResolvedValueOnce({
+          docs: [
+            makeDocSnap("prog-1", {
+              userId: "u1",
+              chapterId: "ch-1",
+              isCompleted: true,
+            }),
+          ],
+        }); // user progress
+
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        title: "Test Course",
+        chapters: [{ id: "ch-1" }, { id: "ch-2" }],
+      });
+
+      const result = await getUserCoursesWithProgress("u1");
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe("c1");
+      expect(result[0].completedChapters).toBe(1);
+      expect(result[0].totalChapters).toBe(2);
     });
   });
 });

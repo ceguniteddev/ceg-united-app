@@ -11,6 +11,8 @@ import {
   USER_DODO_PAYMENTS,
   USER_WALLET,
   USER_WALLET_TRANSACTIONS,
+  COURSE,
+  USER_COURSE_ENROLLMENT,
 } from "@/constant/collection-name";
 import { dodoClient } from "@/lib/dodo-sdk";
 import { resolveDodoReturnUrl } from "@/lib/dodo-env";
@@ -23,6 +25,7 @@ import { activateUserAddon } from "@/service/addons";
 import { activateUserMembership } from "@/service/membership";
 import { sendTriggerEmail } from "@/service/trigger-email";
 import { getUserById } from "@/service/user";
+import { getCoursePricing } from "@/lib/course-pricing";
 
 type CheckoutResult = { checkoutId: string; url: string };
 type Metadata = Record<string, string>;
@@ -42,6 +45,11 @@ const productForPayment = (paymentKey: PaymentPlan) => {
   if (paymentKey.includes("CreditReport"))
     return process.env.DODO_PRODUCT_CRS_REPORT_ID;
   if (paymentKey === "WalletTopUp") return process.env.DODO_PRODUCT_WALLET_ID;
+  if (paymentKey === "CoursePurchase")
+    return (
+      process.env.DODO_PRODUCT_COURSE_ID ||
+      process.env.DODO_PRODUCT_BUSINESS_SERVICES_ID
+    );
   return undefined;
 };
 
@@ -279,7 +287,11 @@ export const createAddonCheckoutConfig = async ({
     amountInCents: Math.round(fees.creditModuleProAddonPrice * 100),
     onDemand: true,
     returnUrl,
-    metadata: { planId: addonId, isAddon: "true" },
+    metadata: {
+      planId: addonId,
+      isAddon: "true",
+      addonAmount: String(fees.creditModuleProAddonPrice),
+    },
   });
 };
 
@@ -344,6 +356,58 @@ export const createPsfInvoiceCheckoutConfig = async ({
     returnUrl,
     metadata: { invoiceId, type: "PSF_INVOICE", planId: "PSF_INVOICE" },
   });
+
+export const createCourseCheckoutConfig = async ({
+  userId,
+  courseId,
+  returnUrl,
+}: {
+  userId: string;
+  courseId: string;
+  returnUrl?: string;
+}) => {
+  const db = firestoreAdmin();
+  const courseDoc = await db.collection(COURSE).doc(courseId).get();
+  if (!courseDoc.exists) {
+    throw new Error("Course not found");
+  }
+  const courseData = courseDoc.data();
+  if (!courseData?.isPublished) {
+    throw new Error("Course is not available for purchase");
+  }
+
+  if (courseData.luminoCheckoutUrl) {
+    return {
+      checkoutId: `lumino_${courseId}`,
+      url: courseData.luminoCheckoutUrl,
+    };
+  }
+
+  const pricing = getCoursePricing(courseData);
+  if (pricing.isFree) {
+    throw new Error("Course is free and does not require checkout");
+  }
+
+  const amountInCents = Math.round(pricing.effectivePrice * 100);
+
+  const productId =
+    courseData.dodoProductId ||
+    process.env.DODO_PRODUCT_COURSE_ID ||
+    process.env.DODO_PRODUCT_BUSINESS_SERVICES_ID;
+
+  return createSession({
+    userId,
+    productId: requireProduct(productId, "course"),
+    paymentKey: "CoursePurchase",
+    amountInCents,
+    returnUrl,
+    metadata: {
+      courseId,
+      courseTitle: courseData.title || "",
+      type: "COURSE_PURCHASE",
+    },
+  });
+};
 
 export const chargeMembership = async ({
   subscriptionId,
@@ -422,6 +486,7 @@ export const recordPaymentSucceeded = async ({
         checkoutId: payment.checkout_session_id || undefined,
         planId: checkoutData.productId,
         receiptId: payment.payment_id,
+        triggerCRSWorkflow: false,
       });
     }
   }
@@ -433,12 +498,13 @@ export const recordPaymentSucceeded = async ({
       addonId: "credit_module_pro",
       amount:
         Number(metadata.addonAmount) ||
-        payment.total_amount / 100 ||
         fees.creditModuleProAddonPrice ||
+        payment.total_amount / 100 ||
         197,
       checkoutId: payment.checkout_session_id || undefined,
       planId: payment.product_cart?.[0]?.product_id || checkoutData.productId,
       receiptId: payment.payment_id,
+      triggerCRSWorkflow: true,
     });
   }
 
@@ -491,6 +557,42 @@ export const recordPaymentSucceeded = async ({
     );
   }
 
+  if (paymentKey === "CoursePurchase" || metadata.type === "COURSE_PURCHASE") {
+    const courseId = metadata.courseId;
+    if (userId && courseId) {
+      await db.runTransaction(async (transaction) => {
+        const enrollmentQuery = db
+          .collection(USER_COURSE_ENROLLMENT)
+          .where("userId", "==", userId)
+          .where("courseId", "==", courseId)
+          .limit(1);
+        const existing = await transaction.get(enrollmentQuery);
+        if (existing.empty) {
+          const newEnrollmentRef = db.collection(USER_COURSE_ENROLLMENT).doc();
+          transaction.set(newEnrollmentRef, {
+            userId,
+            courseId,
+            enrolledAt: new Date(),
+            lastAccessedAt: new Date(),
+            progressPercentage: 0,
+            dodoPaymentId: payment.payment_id,
+            amountPaid: payment.total_amount / 100,
+            status: "active",
+          });
+
+          const courseRef = db.collection(COURSE).doc(courseId);
+          const courseDoc = await transaction.get(courseRef);
+          if (courseDoc.exists) {
+            const currentCount = courseDoc.data()?.enrolledStudentsCount || 0;
+            transaction.update(courseRef, {
+              enrolledStudentsCount: currentCount + 1,
+            });
+          }
+        }
+      });
+    }
+  }
+
   await db
     .collection(USER_DODO_PAYMENTS)
     .doc(payment.payment_id)
@@ -503,8 +605,6 @@ export const recordSubscriptionActive = async ({
   subscription: Subscription;
 }) => {
   const metadata = (subscription.metadata || {}) as Record<string, string>;
-  const tier =
-    metadata.planId || membershipTierForProduct(subscription.product_id);
   let userId = metadata.userId;
 
   if (!userId && subscription.customer?.customer_id) {
@@ -515,6 +615,44 @@ export const recordSubscriptionActive = async ({
       .get();
     userId = paymentSnapshot.docs[0]?.data()?.userId;
   }
+
+  const isAddon =
+    metadata.isAddon === "true" ||
+    metadata.planId === "credit_module_pro" ||
+    (Boolean(process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID) &&
+      subscription.product_id ===
+        process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID);
+
+  if (isAddon) {
+    if (!userId) {
+      logError(
+        new Error(
+          `Unable to activate addon subscription ${subscription.subscription_id}: missing userId`,
+        ),
+      );
+      return;
+    }
+    const fees = await getFeeSettings();
+    const addonId =
+      (metadata.planId as "credit_module_pro") || "credit_module_pro";
+    await activateUserAddon({
+      userId,
+      addonId,
+      amount:
+        Number(metadata.addonAmount) ||
+        fees.creditModuleProAddonPrice ||
+        subscription.recurring_pre_tax_amount / 100 ||
+        197,
+      checkoutId: subscription.subscription_id,
+      planId: subscription.product_id,
+      receiptId: subscription.subscription_id,
+      triggerCRSWorkflow: true,
+    });
+    return;
+  }
+
+  const tier =
+    metadata.planId || membershipTierForProduct(subscription.product_id);
 
   if (!userId || !tier) {
     logError(

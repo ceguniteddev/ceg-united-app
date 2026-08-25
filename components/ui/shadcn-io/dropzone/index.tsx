@@ -31,7 +31,7 @@ const renderBytes = (bytes: number) => {
 };
 
 const DropzoneContext = createContext<DropzoneContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export type DropzoneProps = Omit<DropzoneOptions, "onDrop"> & {
@@ -40,14 +40,14 @@ export type DropzoneProps = Omit<DropzoneOptions, "onDrop"> & {
   onDrop?: (
     acceptedFiles: File[],
     fileRejections: FileRejection[],
-    event: DropEvent
+    event: DropEvent,
   ) => void;
   children?: ReactNode;
 };
 
 export const Dropzone = ({
   accept,
-  maxFiles = 1,
+  maxFiles,
   maxSize,
   minSize,
   onDrop,
@@ -60,7 +60,7 @@ export const Dropzone = ({
 }: DropzoneProps) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept,
-    maxFiles,
+    ...(maxFiles !== undefined ? { maxFiles } : {}),
     maxSize,
     minSize,
     onError,
@@ -73,16 +73,24 @@ export const Dropzone = ({
               toast.warning(
                 maxSize
                   ? `File is too large. Maximum size is ${renderBytes(
-                      maxSize
+                      maxSize,
                     )}.`
-                  : err.message
+                  : err.message,
               );
               return;
             }
 
             if (err.code === "file-invalid-type") {
               toast.warning(err.message);
+              return;
             }
+
+            if (err.code === "too-many-files") {
+              toast.warning(`Too many files. Maximum allowed is ${maxFiles}.`);
+              return;
+            }
+
+            toast.warning(err.message);
           });
         });
         return;
@@ -102,7 +110,7 @@ export const Dropzone = ({
         className={cn(
           "relative h-auto w-full flex-col overflow-hidden min-h-[100px] sm:min-h-[120px]",
           isDragActive && "outline-none ring-1 ring-ring",
-          className
+          className,
         )}
         disabled={disabled}
         type="button"
@@ -155,7 +163,7 @@ export const DropzoneContent = ({
       <p className="my-2 w-full truncate font-medium text-xs sm:text-sm">
         {src.length > maxLabelItems
           ? `${new Intl.ListFormat("en").format(
-              src.slice(0, maxLabelItems).map((file) => file.name)
+              src.slice(0, maxLabelItems).map((file) => file.name),
             )} and ${src.length - maxLabelItems} more`
           : new Intl.ListFormat("en").format(src.map((file) => file.name))}
       </p>

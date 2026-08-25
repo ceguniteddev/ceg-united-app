@@ -9,10 +9,20 @@ export const recordChapterTitle = async ({
   title,
   courseId,
   position,
+  type = "video",
+  sectionId,
+  isFreePreview = false,
+  articleContentHtml,
+  quiz,
 }: {
   title: string;
   courseId: string;
   position: number;
+  type?: "video" | "article" | "quiz";
+  sectionId?: string;
+  isFreePreview?: boolean;
+  articleContentHtml?: string;
+  quiz?: any;
 }) => {
   const db = firestoreAdmin();
   const collectionRef = db.collection(`${COURSE}/${courseId}/${CHAPTER}`);
@@ -20,7 +30,14 @@ export const recordChapterTitle = async ({
     title,
     courseId,
     position,
+    type,
+    sectionId: sectionId || "",
+    isFreePreview: Boolean(isFreePreview),
+    articleContentHtml: articleContentHtml || "",
+    ...(quiz ? { quiz } : {}),
+    isPublished: false,
     createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
   });
   const data = (await docRef.get()).data();
   return {
@@ -146,6 +163,25 @@ export const recordMuxData = async ({
   await collectionRef.update({
     videoUrl: `https://stream.mux.com/${playbackId}.m3u8`,
     muxData: muxDataObject,
+    updatedAt: Timestamp.now(),
+  });
+};
+
+export const removeChapterVideo = async ({
+  courseId,
+  chapterId,
+}: {
+  courseId: string;
+  chapterId: string;
+}) => {
+  const db = firestoreAdmin();
+  const collectionRef = db
+    .collection(`${COURSE}/${courseId}/${CHAPTER}`)
+    .doc(chapterId);
+
+  await collectionRef.update({
+    videoUrl: null,
+    muxData: null,
     updatedAt: Timestamp.now(),
   });
 };

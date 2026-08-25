@@ -22,7 +22,7 @@ export function WhatsNewAccordion() {
   const TriggerContent = (
     <>
       <div className="relative size-6">
-        <Image src="/icons/bell.svg" alt="What's New" fill />
+        <Image src="/icons/bell.svg" alt="What's New" fill sizes="24px" />
 
         {hasActiveItems && (
           <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
