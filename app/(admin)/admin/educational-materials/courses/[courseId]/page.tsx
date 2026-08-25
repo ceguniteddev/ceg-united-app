@@ -10,11 +10,10 @@ import {
   File,
   DollarSign,
   Users,
-  Eye,
   ArrowLeft,
+  Star,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 
 import { TitleForm } from "./_components/title-form";
 import { SubtitleForm } from "./_components/subtitle-form";
@@ -28,6 +27,7 @@ import { LevelForm } from "./_components/level-form";
 import { InstructorForm } from "./_components/instructor-form";
 import { TargetStudentsForm } from "./_components/target-students-form";
 import { PriceForm } from "./_components/price-form";
+import { ReviewsPanel } from "./_components/reviews-panel";
 
 import { useGetCourseById } from "@/hooks/educational-materials/course";
 import Spinner from "@/components/Spinner";
@@ -123,7 +123,7 @@ const CoursePage = () => {
           onValueChange={setActiveTab}
           className="w-full space-y-6"
         >
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full bg-slate-100 dark:bg-slate-900 p-1 rounded-lg h-auto">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 w-full bg-slate-100 dark:bg-slate-900 p-1 rounded-lg h-auto">
             <TabsTrigger
               value="landing-page"
               className="flex items-center gap-2 py-2.5 text-xs sm:text-sm font-medium"
@@ -158,6 +158,13 @@ const CoursePage = () => {
             >
               <File className="w-4 h-4" />
               <span>Resources</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="reviews"
+              className="flex items-center gap-2 py-2.5 text-xs sm:text-sm font-medium"
+            >
+              <Star className="w-4 h-4" />
+              <span>Reviews</span>
             </TabsTrigger>
           </TabsList>
 
@@ -251,6 +258,11 @@ const CoursePage = () => {
               </p>
               <AttachmentForm initialData={course} courseId={course.id!} />
             </div>
+          </TabsContent>
+
+          {/* TAB 6: Student Reviews */}
+          <TabsContent value="reviews" className="space-y-6">
+            <ReviewsPanel courseId={courseId} initialData={course} />
           </TabsContent>
         </Tabs>
       </div>

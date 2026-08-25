@@ -1,6 +1,6 @@
 /// <reference types="vitest/globals" />
 
-import { renderHook, waitFor, act } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import {
   useGetCourses,
   useGetUserCourses,
@@ -9,6 +9,7 @@ import {
   useCourseMutation,
   useEnrollUserInCourse,
   useCourseCheckout,
+  useCourseReviews,
 } from "@/hooks/educational-materials/course";
 import { createWrapper } from "../../utils/test-utils";
 
@@ -294,6 +295,58 @@ describe("educational-materials/course hooks", () => {
         checkoutId: "chk-1",
         url: "https://checkout.dodo.com/123",
       });
+    });
+  });
+
+  describe("useCourseReviews", () => {
+    it("should fetch reviews for a course", async () => {
+      const mockReviews = [
+        {
+          id: "r1",
+          courseId: "c1",
+          userId: "u1",
+          userName: "Alice Smith",
+          rating: 5,
+          comment: "Great content!",
+        },
+      ];
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ reviews: mockReviews }),
+      });
+
+      const { result } = renderHook(() => useCourseReviews("c1"), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.reviews).toEqual(mockReviews);
+      expect(global.fetch).toHaveBeenCalledWith("/api/courses/c1/reviews");
+    });
+
+    it("should return empty array on failure or error response", async () => {
+      (global.fetch as any).mockResolvedValueOnce({ ok: false });
+
+      const { result } = renderHook(() => useCourseReviews("c1"), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.reviews).toEqual([]);
+    });
+
+    it("should not fetch when courseId is empty", async () => {
+      renderHook(() => useCourseReviews(""), {
+        wrapper: createWrapper(),
+      });
+
+      expect(global.fetch).not.toHaveBeenCalled();
     });
   });
 });
