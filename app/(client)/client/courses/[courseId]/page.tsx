@@ -165,9 +165,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
               </div>
               <div className="flex items-center gap-1 text-slate-400">
                 <Users className="w-4 h-4" />
-                <span>
-                  {course.enrolledStudentsCount || 0} enrolled
-                </span>
+                <span>{course.enrolledStudentsCount || 0} enrolled</span>
               </div>
               {course.instructor?.name && (
                 <div className="text-slate-400">
@@ -192,6 +190,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
                 src={course.imageUrl}
                 alt={course.title}
                 fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-cover"
               />
             ) : (
