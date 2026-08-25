@@ -68,7 +68,7 @@ const {
 } = mocks;
 
 vi.mock("@/lib/fireabase-admin", () => ({
-  firestoreAdmin: vi.fn(() => mockDb),
+  firestoreAdmin: vi.fn(() => mocks.mockDb),
   authenticationAdmin: vi.fn(),
   storageAdmin: vi.fn(),
 }));
@@ -78,7 +78,7 @@ vi.mock("@/lib/date-parser", () => ({
 }));
 
 vi.mock("firebase-admin/firestore", () => ({
-  Timestamp: mockTimestamp,
+  Timestamp: mocks.mockTimestamp,
 }));
 
 // ── Import after mocks ────────────────────────────────────────────────────────
