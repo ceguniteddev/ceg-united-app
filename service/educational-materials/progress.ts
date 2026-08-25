@@ -15,6 +15,7 @@ import {
 } from "@/schema/educational-materials/course";
 import { Timestamp } from "firebase-admin/firestore";
 import { getCourseById } from "./course";
+import { isCourseFree } from "@/lib/course-pricing";
 
 /**
  * Update user progress for a chapter (complete or incomplete)
@@ -93,8 +94,9 @@ export const enrollUserInCourse = async ({
     throw new Error("Course is not available");
   }
 
+  const courseIsFree = isCourseFree(course);
   const isAllowedToEnroll =
-    course.isFree || isPaymentVerified || isManualEnrollment;
+    courseIsFree || isPaymentVerified || isManualEnrollment;
   if (!isAllowedToEnroll) {
     throw new Error(
       "This is a paid course and requires purchase before enrollment.",
@@ -105,7 +107,7 @@ export const enrollUserInCourse = async ({
     enrollmentSource ||
     (isManualEnrollment
       ? "manual_admin"
-      : course.isFree
+      : courseIsFree
         ? "self_free"
         : "self_paid");
 

@@ -241,6 +241,45 @@ describe("service/educational-materials/progress", () => {
       ).rejects.toThrow("Course is not available");
     });
 
+    it("creates enrollment when course is free because price is 0", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: true,
+        isFree: false,
+        price: 0,
+      });
+
+      const newEnrollmentData = {
+        userId: "u1",
+        courseId: "c1",
+        progressPercentage: 0,
+      };
+      const addedRef = {
+        id: "enroll-new",
+        get: vi.fn().mockResolvedValue({
+          id: "enroll-new",
+          data: () => newEnrollmentData,
+        }),
+      };
+      mockAdd.mockResolvedValue(addedRef);
+      mockDocRef.get.mockResolvedValueOnce({
+        exists: true,
+        data: () => ({ enrolledStudentsCount: 5 }),
+      });
+
+      const result = await enrollUserInCourse({ userId: "u1", courseId: "c1" });
+
+      expect(mockAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "u1",
+          courseId: "c1",
+          enrollmentSource: "self_free",
+        }),
+      );
+      expect(result).toEqual({ id: "enroll-new", ...newEnrollmentData });
+    });
+
     it("throws error when course is paid and payment is not verified", async () => {
       mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
       mocks.getCourseById.mockResolvedValueOnce({

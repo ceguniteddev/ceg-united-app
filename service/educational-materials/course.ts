@@ -495,23 +495,24 @@ export const getCourseReviews = async (
 ): Promise<CourseReview[]> => {
   try {
     const db = firestoreAdmin();
-    let query: any = db
+    const querySnapshot = await db
       .collection(COURSE_REVIEWS)
-      .where("courseId", "==", courseId);
-    if (typeof query.orderBy === "function") {
-      query = query.orderBy("createdAt", "desc");
-    }
-    if (typeof query.limit === "function") {
-      query = query.limit(50);
-    }
-    const querySnapshot = await query.get();
+      .where("courseId", "==", courseId)
+      .get();
     if (!querySnapshot || querySnapshot.empty) return [];
 
-    return querySnapshot.docs.map((doc: any) => ({
+    const reviews = querySnapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...normalizeAllDates(doc.data()),
     })) as CourseReview[];
-  } catch {
+
+    return reviews.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+  } catch (error) {
+    console.error("Error getting course reviews:", error);
     return [];
   }
 };
@@ -578,20 +579,28 @@ export const getCourseNotes = async ({
   userId: string;
   courseId: string;
 }): Promise<CourseNote[]> => {
-  const db = firestoreAdmin();
-  const querySnapshot = await db
-    .collection(COURSE_NOTES)
-    .where("userId", "==", userId)
-    .where("courseId", "==", courseId)
-    .orderBy("timestampSeconds", "asc")
-    .get();
+  try {
+    const db = firestoreAdmin();
+    const querySnapshot = await db
+      .collection(COURSE_NOTES)
+      .where("userId", "==", userId)
+      .where("courseId", "==", courseId)
+      .get();
 
-  if (querySnapshot.empty) return [];
+    if (!querySnapshot || querySnapshot.empty) return [];
 
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...normalizeAllDates(doc.data()),
-  })) as CourseNote[];
+    const notes = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...normalizeAllDates(doc.data()),
+    })) as CourseNote[];
+
+    return notes.sort(
+      (a, b) => (a.timestampSeconds || 0) - (b.timestampSeconds || 0),
+    );
+  } catch (error) {
+    console.error("Error getting course notes:", error);
+    return [];
+  }
 };
 
 export const saveCourseNote = async ({

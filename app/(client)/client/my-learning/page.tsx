@@ -9,20 +9,14 @@ import {
   useCourseCheckout,
 } from "@/hooks/educational-materials/course";
 import Spinner from "@/components/Spinner";
-import EmptyState from "@/components/EmptyState";
 import {
   BookOpen,
   CheckCircle2,
   Clock,
   Trophy,
   ArrowRight,
-  GraduationCap,
   Search,
-  SlidersHorizontal,
-  BarChart3,
-  FileText,
   Star,
-  Sparkles,
   ShoppingBag,
   ExternalLink,
 } from "lucide-react";
@@ -33,7 +27,7 @@ import HeaderBox from "@/components/HeaderBox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js";
-import { Doughnut } from "react-chartjs-2";
+import { getCoursePricing } from "@/lib/course-pricing";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -382,10 +376,7 @@ const MyLearningPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCatalog.map((course, index) => {
               const isEnrolled = enrolledCourseIds.has(course.id);
-              const price = course.price ?? 0;
-              const discountPrice = course.discountPrice;
-              const effectivePrice =
-                discountPrice != null ? discountPrice : price;
+              const pricing = getCoursePricing(course);
               const gradient =
                 COURSE_GRADIENTS[index % COURSE_GRADIENTS.length];
 
@@ -415,11 +406,15 @@ const MyLearningPage = () => {
                       {course.category}
                     </div>
 
-                    {isEnrolled && (
+                    {isEnrolled ? (
                       <div className="absolute top-3 right-3 bg-emerald-600 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">
                         Enrolled
                       </div>
-                    )}
+                    ) : pricing.isFree ? (
+                      <div className="absolute top-3 right-3 bg-emerald-600 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">
+                        Free
+                      </div>
+                    ) : null}
                   </div>
 
                   {/* Body */}
@@ -444,26 +439,18 @@ const MyLearningPage = () => {
                     {/* Price & Action */}
                     <div className="flex items-center justify-between pt-3 border-t">
                       <div>
-                        {course.isFree ? (
+                        {pricing.isFree ? (
                           <span className="font-bold text-base text-emerald-600">
                             Free
                           </span>
                         ) : (
                           <div className="flex items-baseline gap-1.5">
                             <span className="font-bold text-base text-gray-900 dark:text-gray-100">
-                              $
-                              {effectivePrice.toLocaleString("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
+                              ${pricing.formattedEffectivePrice}
                             </span>
-                            {discountPrice != null && discountPrice < price && (
+                            {pricing.hasDiscount && (
                               <span className="text-xs line-through text-gray-400">
-                                $
-                                {price.toLocaleString("en-US", {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })}
+                                ${pricing.formattedBasePrice}
                               </span>
                             )}
                           </div>
@@ -481,24 +468,35 @@ const MyLearningPage = () => {
                             <ArrowRight className="w-3.5 h-3.5" />
                           </Button>
                         </Link>
-                      ) : course.isFree ? (
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700"
-                          disabled={isEnrolling}
-                          onClick={async () => {
-                            if (!user?.uid || !course.id) return;
-                            await enrollUser({
-                              userId: user.uid,
-                              courseId: course.id,
-                            });
-                            router.push(`/client/my-learning/${course.id}`);
-                          }}
-                        >
-                          Enroll Free
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Button>
+                      ) : pricing.isFree ? (
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                            disabled={isEnrolling}
+                            onClick={async () => {
+                              if (!user?.uid || !course.id) return;
+                              await enrollUser({
+                                userId: user.uid,
+                                courseId: course.id,
+                              });
+                              router.push(`/client/my-learning/${course.id}`);
+                            }}
+                          >
+                            Enroll Free
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Button>
+                          <Link href={`/client/courses/${course.id}`}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 text-xs"
+                            >
+                              Details
+                            </Button>
+                          </Link>
+                        </div>
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <Button

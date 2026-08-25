@@ -38,6 +38,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { MuxVideoPlayer } from "@/components/MuxVideoPlayer";
+import { getCoursePricing } from "@/lib/course-pricing";
 
 interface CourseDetailsPageProps {
   params: Promise<{ courseId: string }>;
@@ -78,9 +79,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
     );
   }
 
-  const price = course.price ?? 0;
-  const discountPrice = course.discountPrice;
-  const effectivePrice = discountPrice != null ? discountPrice : price;
+  const pricing = getCoursePricing(course);
   const sections = course.sections || [];
   const publishedChapters = (course.chapters || []).filter(
     (ch) => ch.isPublished,
@@ -129,6 +128,11 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
               <Badge className="bg-blue-600 hover:bg-blue-700 text-white text-xs">
                 {course.category}
               </Badge>
+              {pricing.isFree && (
+                <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">
+                  Free
+                </Badge>
+              )}
               <Badge
                 variant="secondary"
                 className="text-xs bg-slate-800 text-slate-300"
@@ -212,7 +216,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
               <div className="border rounded-2xl p-6 bg-white dark:bg-slate-900 space-y-4">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                   <Zap className="w-5 h-5 text-amber-500" />
-                  What you'll learn
+                  What you&apos;ll learn
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {course.learningObjectives.map((obj, i) => (
@@ -341,26 +345,18 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
                 Course Enrollment
               </span>
               <div className="mt-1 flex items-baseline gap-2">
-                {course.isFree ? (
+                {pricing.isFree ? (
                   <span className="text-3xl font-extrabold text-emerald-600">
                     Free
                   </span>
                 ) : (
                   <>
                     <span className="text-3xl font-extrabold text-gray-900 dark:text-gray-100">
-                      $
-                      {effectivePrice.toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      ${pricing.formattedEffectivePrice}
                     </span>
-                    {discountPrice != null && discountPrice < price && (
+                    {pricing.hasDiscount && (
                       <span className="text-base line-through text-gray-400">
-                        $
-                        {price.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
+                        ${pricing.formattedBasePrice}
                       </span>
                     )}
                   </>
@@ -379,11 +375,11 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
                     Continue Learning
                   </Button>
                 </Link>
-              ) : course.isFree ? (
+              ) : pricing.isFree ? (
                 <Button
                   onClick={handleEnrollFree}
                   disabled={isEnrolling}
-                  className="w-full h-12 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+                  className="w-full h-12 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-sm"
                 >
                   Enroll Now (Free)
                 </Button>
@@ -397,12 +393,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
                     "Processing Checkout..."
                   ) : (
                     <>
-                      Buy Now ( $
-                      {effectivePrice.toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                      )
+                      Buy Now (${pricing.formattedEffectivePrice})
                       {course.luminoCheckoutUrl && (
                         <ExternalLink className="w-4 h-4" />
                       )}

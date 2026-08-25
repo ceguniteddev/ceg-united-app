@@ -25,6 +25,7 @@ import { activateUserAddon } from "@/service/addons";
 import { activateUserMembership } from "@/service/membership";
 import { sendTriggerEmail } from "@/service/trigger-email";
 import { getUserById } from "@/service/user";
+import { getCoursePricing } from "@/lib/course-pricing";
 
 type CheckoutResult = { checkoutId: string; url: string };
 type Metadata = Record<string, string>;
@@ -382,12 +383,12 @@ export const createCourseCheckoutConfig = async ({
     };
   }
 
-  const priceInDollars =
-    courseData.discountPrice != null && courseData.discountPrice >= 0
-      ? courseData.discountPrice
-      : courseData.price || 0;
+  const pricing = getCoursePricing(courseData);
+  if (pricing.isFree) {
+    throw new Error("Course is free and does not require checkout");
+  }
 
-  const amountInCents = Math.round(priceInDollars * 100);
+  const amountInCents = Math.round(pricing.effectivePrice * 100);
 
   const productId =
     courseData.dodoProductId ||

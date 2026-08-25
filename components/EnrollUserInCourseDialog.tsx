@@ -34,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { COURSES_KEY } from "@/constant/react-query-keys";
+import { getCoursePricing } from "@/lib/course-pricing";
 
 interface EnrollUserInCourseDialogProps {
   userId: string;
@@ -206,16 +207,7 @@ const EnrollUserInCourseDialog = ({
               {availableCourses.map((course) => {
                 const publishedChapters =
                   course.chapters?.filter((c) => c.isPublished).length || 0;
-                const price = course.price ?? 0;
-                const discountPrice = course.discountPrice;
-                const effectivePrice =
-                  discountPrice != null ? discountPrice : price;
-                const isFree = course.isFree || effectivePrice === 0;
-                const formattedPrice = effectivePrice.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                });
-
+                const pricing = getCoursePricing(course);
                 const isChecked = selectedCourseIds.includes(course.id!);
 
                 return (
@@ -260,13 +252,13 @@ const EnrollUserInCourseDialog = ({
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Selected
                           </Badge>
-                        ) : isFree ? (
+                        ) : pricing.isFree ? (
                           <Badge className="bg-emerald-600 text-white text-[10px]">
                             Free
                           </Badge>
                         ) : (
                           <Badge className="bg-slate-900/80 backdrop-blur-sm text-white text-[10px]">
-                            ${formattedPrice}
+                            ${pricing.formattedEffectivePrice}
                           </Badge>
                         )}
                       </div>
@@ -293,9 +285,9 @@ const EnrollUserInCourseDialog = ({
                           </span>
                         </div>
                         <span className="text-[11px] font-medium text-slate-500">
-                          {isFree
+                          {pricing.isFree
                             ? "Free Course"
-                            : `Paid Course ($${formattedPrice})`}
+                            : `Paid Course ($${pricing.formattedEffectivePrice})`}
                         </span>
                       </div>
                     </CardContent>

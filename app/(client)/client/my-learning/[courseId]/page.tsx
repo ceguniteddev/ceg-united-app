@@ -24,21 +24,17 @@ import {
   Award,
   Download,
   BookOpen,
-  MessageSquare,
   StickyNote,
   Star,
   Trophy,
   Menu,
   X,
-  Share2,
   Check,
   RotateCcw,
-  Sparkles,
-  ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -50,6 +46,7 @@ import {
 import { cn } from "@/lib/utils";
 import { MuxVideoPlayer } from "@/components/MuxVideoPlayer";
 import { toast } from "sonner";
+import { isCourseFree } from "@/lib/course-pricing";
 
 const CourseDetailPage = () => {
   const params = useParams();
@@ -123,6 +120,33 @@ const CourseDetailPage = () => {
   const selectedChapter = publishedChapters.find(
     (c) => c.id === selectedChapterId,
   );
+
+  const allAttachments = useMemo(() => {
+    const list: Array<{
+      id?: string;
+      name: string;
+      url: string;
+      source?: string;
+    }> = [];
+    if (course?.attachments && course.attachments.length > 0) {
+      course.attachments.forEach((att) => {
+        list.push({ ...att, source: "Course Resource" });
+      });
+    }
+    if (
+      selectedChapter?.attachments &&
+      selectedChapter.attachments.length > 0
+    ) {
+      selectedChapter.attachments.forEach((att) => {
+        list.push({ ...att, source: `${selectedChapter.title} Resource` });
+      });
+    }
+    return list;
+  }, [
+    course?.attachments,
+    selectedChapter?.attachments,
+    selectedChapter?.title,
+  ]);
 
   const currentChapterProgress = course?.userProgress?.find(
     (p) => p.chapterId === selectedChapter?.id,
@@ -259,7 +283,7 @@ const CourseDetailPage = () => {
           Course Not Enrolled
         </h2>
         <p className="text-gray-500 mt-2">
-          You are not enrolled in this course or it doesn't exist.
+          You are not enrolled in this course or it doesn&apos;t exist.
         </p>
         <Link href={`/client/courses/${courseId}`} className="mt-4">
           <Button>View Course Catalog Page</Button>
@@ -293,10 +317,15 @@ const CourseDetailPage = () => {
           >
             <ChevronLeft className="w-5 h-5" />
           </Link>
-          <div className="border-l border-slate-800 pl-3">
-            <h1 className="text-xs sm:text-sm font-semibold text-white line-clamp-1 max-w-[220px] sm:max-w-md">
+          <div className="border-l border-slate-800 pl-3 flex items-center gap-2">
+            <h1 className="text-xs sm:text-sm font-semibold text-white line-clamp-1 max-w-[200px] sm:max-w-md">
               {course.title}
             </h1>
+            {isCourseFree(course) && (
+              <Badge className="bg-emerald-600/90 text-white text-[10px] px-1.5 py-0 h-4 font-semibold shrink-0">
+                Free
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -319,7 +348,7 @@ const CourseDetailPage = () => {
               size="sm"
               variant="outline"
               onClick={() => setShowCertificate(true)}
-              className="text-xs h-8 border-amber-500 text-amber-400 hover:bg-amber-950/40 gap-1.5"
+              className="text-xs h-8 border-amber-500 text-amber-400 bg-transparent hover:bg-amber-950/40 gap-1.5"
             >
               <Award className="w-3.5 h-3.5" />
               Certificate
@@ -489,7 +518,7 @@ const CourseDetailPage = () => {
                         setQuizScore(null);
                       }}
                       variant="outline"
-                      className="gap-1.5 text-xs"
+                      className="gap-1.5 text-xs border-slate-700 bg-slate-850 text-slate-200 hover:bg-slate-800 hover:text-white"
                     >
                       <RotateCcw className="w-3.5 h-3.5" /> Retake Quiz
                     </Button>
@@ -531,7 +560,7 @@ const CourseDetailPage = () => {
               className={cn(
                 "text-xs gap-1.5 font-medium",
                 currentChapterProgress?.isCompleted
-                  ? "border-emerald-500 text-emerald-400 hover:bg-emerald-950/30"
+                  ? "border-emerald-500 text-emerald-400 bg-transparent hover:bg-emerald-950/30"
                   : "bg-blue-600 hover:bg-blue-700 text-white",
               )}
             >
@@ -584,9 +613,7 @@ const CourseDetailPage = () => {
                   className="flex items-center gap-1.5 text-xs sm:text-sm"
                 >
                   <Download className="w-3.5 h-3.5" /> Resources (
-                  {(course.attachments?.length || 0) +
-                    (selectedChapter?.attachments?.length || 0)}
-                  )
+                  {allAttachments.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="reviews"
@@ -682,30 +709,39 @@ const CourseDetailPage = () => {
               {/* TAB: Resources & Attachments */}
               <TabsContent value="resources" className="mt-6 space-y-4">
                 <div className="space-y-2">
-                  {course.attachments && course.attachments.length > 0 ? (
-                    course.attachments.map((att) => (
+                  {allAttachments.length > 0 ? (
+                    allAttachments.map((att, attIndex) => (
                       <div
-                        key={att.id}
-                        className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between"
+                        key={att.id || att.url || attIndex}
+                        className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between gap-3 hover:border-slate-700 transition-colors"
                       >
-                        <div className="flex items-center gap-3">
-                          <Download className="w-4 h-4 text-blue-400" />
-                          <span className="text-xs font-medium text-slate-200">
-                            {att.name}
-                          </span>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                            <Download className="w-4 h-4 text-blue-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium text-slate-200 truncate">
+                              {att.name}
+                            </p>
+                            {att.source && (
+                              <p className="text-[10px] text-slate-500 truncate">
+                                {att.source}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <a
                           href={att.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           download
+                          className="shrink-0"
                         >
                           <Button
                             size="sm"
-                            variant="outline"
-                            className="text-xs h-7 gap-1"
+                            className="text-xs h-8 px-3 gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-sm transition-colors border-0"
                           >
-                            <Download className="w-3 h-3" /> Download
+                            <Download className="w-3.5 h-3.5" /> Download
                           </Button>
                         </a>
                       </div>
