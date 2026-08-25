@@ -9,7 +9,6 @@ import ClientNotes from "@/components/notes/ClientNotes";
 import ClientAppliedFunding from "@/components/ClientAppliedFundingList";
 import ClientDocuments from "@/components/ClientDocuments";
 import ClientCreditReport from "@/components/ClientCreditReport";
-import BusinessRecordsPage from "@/components/ClientBusinessReport";
 import UserLearningMaterials from "@/components/UserLearningMaterials";
 import AdminLetterFeatureManagement from "@/components/AdminLetterFeatureManagement";
 import CreditRepairView from "@/components/CreditRepairView";
@@ -87,17 +86,9 @@ const ClientProfilePage = () => {
       { value: "business", label: "Business" },
       { value: "fund-application", label: "Funding Application" },
       { value: "applied-funding", label: "Applied Funding" },
+      { value: "learning-materials", label: "Learning Materials" },
+      { value: "credit-repair", label: "Credit Repair" },
     ];
-
-    if (hasLearningMaterialsAccess) {
-      options.push({
-        value: "learning-materials",
-        label: "Learning Materials",
-      });
-    }
-
-    // options.push({ value: "letters", label: "Letters" });
-    options.push({ value: "credit-repair", label: "Credit Repair" });
 
     if (hasLetterFeatureEnabled) {
       options.push({ value: "dispute-letters", label: "Dispute Letters" });
@@ -109,7 +100,7 @@ const ClientProfilePage = () => {
     );
 
     return options;
-  }, [hasLearningMaterialsAccess, hasLetterFeatureEnabled]);
+  }, [hasLetterFeatureEnabled]);
 
   // Show loading state while fetching data
   if (isUserLoading) {
@@ -197,11 +188,9 @@ const ClientProfilePage = () => {
         )}
       </TabsContent>
 
-      {hasLearningMaterialsAccess && (
-        <TabsContent value="learning-materials" className="w-full">
-          <UserLearningMaterials userId={userId} isAdminView />
-        </TabsContent>
-      )}
+      <TabsContent value="learning-materials" className="w-full">
+        <UserLearningMaterials userId={userId} isAdminView />
+      </TabsContent>
 
       <TabsContent value="letters" className="w-full">
         <AdminLetterFeatureManagement user={userData as UserWithId} />

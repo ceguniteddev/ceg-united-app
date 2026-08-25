@@ -220,7 +220,42 @@ describe("educational-materials/course hooks", () => {
 
       expect(global.fetch).toHaveBeenCalledWith(
         "/api/user/u1/courses/c1/enroll",
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ notes: undefined }),
+        },
+      );
+      expect(response).toEqual({ success: true });
+    });
+
+    it("should pass notes when enrolling with admin override note", async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      });
+
+      const { result } = renderHook(() => useEnrollUserInCourse(), {
+        wrapper: createWrapper(),
+      });
+
+      const response = await result.current.enrollUser({
+        userId: "u1",
+        courseId: "c1",
+        notes: "Special promotion",
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/user/u1/courses/c1/enroll",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ notes: "Special promotion" }),
+        },
       );
       expect(response).toEqual({ success: true });
     });

@@ -358,9 +358,11 @@ export const useEnrollUserInCourse = () => {
     mutationFn: async ({
       userId,
       courseId,
+      notes,
     }: {
       userId: string;
       courseId: string;
+      notes?: string;
     }) => {
       if (!user) throw new Error("User not authenticated");
 
@@ -368,11 +370,20 @@ export const useEnrollUserInCourse = () => {
         `/api/user/${userId}/courses/${courseId}/enroll`,
         {
           method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ notes }),
         },
       );
 
       if (!response.ok) {
-        throw new Error("Failed to enroll user in course");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message ||
+            errorData.errors ||
+            "Failed to enroll user in course",
+        );
       }
 
       return response.json();
@@ -383,6 +394,17 @@ export const useEnrollUserInCourse = () => {
       });
       queryClient.invalidateQueries({
         queryKey: [COURSES_KEY, "user", variables.userId, "progress"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [
+          COURSES_KEY,
+          variables.courseId,
+          "enrollment",
+          variables.userId,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [COURSES_KEY],
       });
       toast.success("Successfully enrolled in course");
     },
@@ -420,7 +442,12 @@ export const useUnenrollUserFromCourse = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to unenroll user from course");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message ||
+            errorData.errors ||
+            "Failed to unenroll user from course",
+        );
       }
 
       return response.json();
@@ -431,6 +458,17 @@ export const useUnenrollUserFromCourse = () => {
       });
       queryClient.invalidateQueries({
         queryKey: [COURSES_KEY, "user", variables.userId, "progress"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [
+          COURSES_KEY,
+          variables.courseId,
+          "enrollment",
+          variables.userId,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [COURSES_KEY],
       });
       toast.success("Successfully unenrolled from course");
     },

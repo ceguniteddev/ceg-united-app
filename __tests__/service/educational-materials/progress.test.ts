@@ -292,6 +292,77 @@ describe("service/educational-materials/progress", () => {
 
       expect(result).toEqual({ id: "enroll-new", ...newEnrollmentData });
     });
+
+    it("creates enrollment when course is paid and manual admin enrollment is enabled with metadata", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: true,
+        isFree: false,
+        price: 199.99,
+      });
+
+      const newEnrollmentData = {
+        userId: "u1",
+        courseId: "c1",
+        progressPercentage: 0,
+        enrollmentSource: "manual_admin",
+        assignedByAdminId: "admin-1",
+        assignedByAdminEmail: "admin@cegunited.com",
+        notes: "Promotional override",
+      };
+      const addedRef = {
+        id: "enroll-manual",
+        get: vi.fn().mockResolvedValue({
+          id: "enroll-manual",
+          data: () => newEnrollmentData,
+        }),
+      };
+      mockAdd.mockResolvedValue(addedRef);
+      mockDocRef.get.mockResolvedValueOnce({
+        exists: true,
+        data: () => ({ enrolledStudentsCount: 2 }),
+      });
+
+      const result = await enrollUserInCourse({
+        userId: "u1",
+        courseId: "c1",
+        isManualEnrollment: true,
+        assignedByAdminId: "admin-1",
+        assignedByAdminEmail: "admin@cegunited.com",
+        notes: "Promotional override",
+      });
+
+      expect(mockAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "u1",
+          courseId: "c1",
+          enrollmentSource: "manual_admin",
+          assignedByAdminId: "admin-1",
+          assignedByAdminEmail: "admin@cegunited.com",
+          notes: "Promotional override",
+        }),
+      );
+      expect(result).toEqual({ id: "enroll-manual", ...newEnrollmentData });
+    });
+
+    it("throws error when manual enrollment attempts to assign an unpublished course", async () => {
+      mockGet.mockResolvedValueOnce(makeQuerySnap([], true));
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        isPublished: false,
+        isFree: false,
+        price: 199.99,
+      });
+
+      await expect(
+        enrollUserInCourse({
+          userId: "u1",
+          courseId: "c1",
+          isManualEnrollment: true,
+        }),
+      ).rejects.toThrow("Course is not available");
+    });
   });
 
   // ── unenrollUserFromCourse ────────────────────────────────────────────────

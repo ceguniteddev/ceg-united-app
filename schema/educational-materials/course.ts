@@ -231,6 +231,19 @@ export const UserCourseEnrollmentSchema = z.object({
   receiptUrl: z.string().optional(),
   amountPaid: z.number().optional(),
   certificateId: z.string().optional(),
+  enrollmentSource: z
+    .enum([
+      "self_free",
+      "self_paid",
+      "manual_admin",
+      "lumino_webhook",
+      "dodo_webhook",
+    ])
+    .optional(),
+  assignedByAdminId: z.string().optional(),
+  assignedByAdminEmail: z.string().optional(),
+  assignedAt: z.date().optional(),
+  notes: z.string().optional(),
 });
 
 export type UserCourseEnrollment = z.infer<typeof UserCourseEnrollmentSchema>;

@@ -37,6 +37,22 @@ export const updateUserProgress = async ({
   }
 };
 
+export interface EnrollUserInCourseParams {
+  userId: string;
+  courseId: string;
+  isPaymentVerified?: boolean;
+  isManualEnrollment?: boolean;
+  assignedByAdminId?: string;
+  assignedByAdminEmail?: string;
+  enrollmentSource?:
+    | "self_free"
+    | "self_paid"
+    | "manual_admin"
+    | "lumino_webhook"
+    | "dodo_webhook";
+  notes?: string;
+}
+
 /**
  * Enroll a user in a course
  */
@@ -44,11 +60,12 @@ export const enrollUserInCourse = async ({
   userId,
   courseId,
   isPaymentVerified = false,
-}: {
-  userId: string;
-  courseId: string;
-  isPaymentVerified?: boolean;
-}): Promise<UserCourseEnrollment> => {
+  isManualEnrollment = false,
+  assignedByAdminId,
+  assignedByAdminEmail,
+  enrollmentSource,
+  notes,
+}: EnrollUserInCourseParams): Promise<UserCourseEnrollment> => {
   const db = firestoreAdmin();
 
   // Check if already enrolled
@@ -75,18 +92,47 @@ export const enrollUserInCourse = async ({
   if (!course.isPublished) {
     throw new Error("Course is not available");
   }
-  if (!course.isFree && !isPaymentVerified) {
-    throw new Error("This is a paid course and requires purchase before enrollment.");
+
+  const isAllowedToEnroll =
+    course.isFree || isPaymentVerified || isManualEnrollment;
+  if (!isAllowedToEnroll) {
+    throw new Error(
+      "This is a paid course and requires purchase before enrollment.",
+    );
   }
 
-  // Create new enrollment
-  const enrollmentRef = await db.collection(USER_COURSE_ENROLLMENT).add({
+  const determinedSource =
+    enrollmentSource ||
+    (isManualEnrollment
+      ? "manual_admin"
+      : course.isFree
+        ? "self_free"
+        : "self_paid");
+
+  const enrollmentPayload: Record<string, any> = {
     userId,
     courseId,
     enrolledAt: Timestamp.now(),
     lastAccessedAt: Timestamp.now(),
     progressPercentage: 0,
-  });
+    enrollmentSource: determinedSource,
+  };
+
+  if (assignedByAdminId) {
+    enrollmentPayload.assignedByAdminId = assignedByAdminId;
+    enrollmentPayload.assignedAt = Timestamp.now();
+  }
+  if (assignedByAdminEmail) {
+    enrollmentPayload.assignedByAdminEmail = assignedByAdminEmail;
+  }
+  if (notes) {
+    enrollmentPayload.notes = notes;
+  }
+
+  // Create new enrollment
+  const enrollmentRef = await db
+    .collection(USER_COURSE_ENROLLMENT)
+    .add(enrollmentPayload);
 
   // Increment enrolled students count on course
   try {
@@ -138,7 +184,7 @@ export const unenrollUserFromCourse = async ({
     .collection(`${COURSE}/${courseId}/${CHAPTER}`)
     .get();
 
-  const chapterIds = chaptersSnapshot.docs.map((doc) => doc.id);
+  const chapterIds = chaptersSnapshot.docs?.map((doc) => doc.id) || [];
 
   if (chapterIds.length > 0) {
     // Delete all progress records for this user and course
@@ -148,12 +194,14 @@ export const unenrollUserFromCourse = async ({
       .where("chapterId", "in", chapterIds)
       .get();
 
-    const batch = db.batch();
-    progressSnapshot.docs.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
+    if (progressSnapshot.docs && progressSnapshot.docs.length > 0) {
+      const batch = db.batch();
+      progressSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
 
-    await batch.commit();
+      await batch.commit();
+    }
   }
 };
 
