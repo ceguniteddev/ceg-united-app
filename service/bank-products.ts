@@ -2193,6 +2193,7 @@ export const applyApprovedMappedFund = async ({
           hasSignedSuccessFeeAgreement || docData?.hasSignedSuccessFeeAgreement
             ? docData?.signedSuccessFeeAgreementAt || new Date().toISOString()
             : null,
+        updatedAt: Timestamp.now(),
       },
       { merge: true },
     );

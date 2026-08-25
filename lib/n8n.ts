@@ -70,7 +70,7 @@ export const calculateBusinessIncomePreApprovedN8N = async () =>
     : "business-income-preapprove-computation";
 
 export const getFundingPlaybookN8N = async () =>
-  isProd() ? "funding-playbook-prod" : "funding-playbook";
+  isProd() ? "funding-playbook-prod" : "funding-playbook-prod";
 
 export const getBranchesNearMeN8N = async () =>
   isProd() ? "branches-near-me-prod" : "branches-near-me";
