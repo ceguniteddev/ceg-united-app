@@ -1,4 +1,5 @@
-import { describe, it, expect, afterEach } from "vitest";
+/// <reference types="vitest/globals" />
+
 import {
   getFundingAnalysis,
   deleteFundingAnalysis,
@@ -17,195 +18,201 @@ import {
   getBranchesNearMeN8N,
 } from "@/lib/n8n";
 
-afterEach(() => {
-  delete process.env.ENVIRONMENT;
-});
-
-describe("getFundingAnalysis", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await getFundingAnalysis()).toBe("funding-analysis");
+describe("n8n", () => {
+  afterEach(() => {
+    delete process.env.ENVIRONMENT;
   });
 
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await getFundingAnalysis()).toBe("funding-analysis-prod");
-  });
-});
+  describe("getFundingAnalysis", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await getFundingAnalysis()).toBe("funding-analysis");
+    });
 
-describe("deleteFundingAnalysis", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await deleteFundingAnalysis()).toBe("delete-funding-analysis");
-  });
-
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await deleteFundingAnalysis()).toBe("delete-funding-analysis-prod");
-  });
-});
-
-describe("createAsanaTaskForLender", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await createAsanaTaskForLender()).toBe("client-apply-bank-product");
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await getFundingAnalysis()).toBe("funding-analysis-prod");
+    });
   });
 
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await createAsanaTaskForLender()).toBe(
-      "client-apply-bank-product-prod",
-    );
-  });
-});
+  describe("deleteFundingAnalysis", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await deleteFundingAnalysis()).toBe("delete-funding-analysis");
+    });
 
-describe("generateCRSReportN8N", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await generateCRSReportN8N()).toBe("crs-report");
-  });
-
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await generateCRSReportN8N()).toBe("crs-report-prod");
-  });
-});
-
-describe("deleteCRSReportN8N", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await deleteCRSReportN8N()).toBe("delete-crs-qdrant");
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await deleteFundingAnalysis()).toBe(
+        "delete-funding-analysis-prod",
+      );
+    });
   });
 
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await deleteCRSReportN8N()).toBe("delete-crs-qdrant-prod");
-  });
-});
+  describe("createAsanaTaskForLender", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await createAsanaTaskForLender()).toBe(
+        "client-apply-bank-product",
+      );
+    });
 
-describe("sendClientAnalysisN8N", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await sendClientAnalysisN8N()).toBe("send-client-analysis");
-  });
-
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await sendClientAnalysisN8N()).toBe("send-client-analysis-prod");
-  });
-});
-
-describe("createFundingAnalysisToPDFN8N", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await createFundingAnalysisToPDFN8N()).toBe(
-      "credit-analysis-to-pdf",
-    );
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await createAsanaTaskForLender()).toBe(
+        "client-apply-bank-product-prod",
+      );
+    });
   });
 
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await createFundingAnalysisToPDFN8N()).toBe(
-      "credit-analysis-to-pdf-prod",
-    );
-  });
-});
+  describe("generateCRSReportN8N", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await generateCRSReportN8N()).toBe("crs-report");
+    });
 
-describe("generateDisputeLetterN8N", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await generateDisputeLetterN8N()).toBe("generate-dispute-letter");
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await generateCRSReportN8N()).toBe("crs-report-prod");
+    });
   });
 
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await generateDisputeLetterN8N()).toBe(
-      "generate-dispute-letter-prod",
-    );
-  });
-});
+  describe("deleteCRSReportN8N", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await deleteCRSReportN8N()).toBe("delete-crs-qdrant");
+    });
 
-describe("generateDisputeLetterFactualErrorN8N", () => {
-  it("returns same webhook name regardless of environment", async () => {
-    expect(await generateDisputeLetterFactualErrorN8N()).toBe(
-      "generate-dispute-letter-factual-error",
-    );
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await deleteCRSReportN8N()).toBe("delete-crs-qdrant-prod");
+    });
   });
 
-  it("returns same webhook name in production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await generateDisputeLetterFactualErrorN8N()).toBe(
-      "generate-dispute-letter-factual-error",
-    );
-  });
-});
+  describe("sendClientAnalysisN8N", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await sendClientAnalysisN8N()).toBe("send-client-analysis");
+    });
 
-describe("sendClientCongratsMessageN8N", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await sendClientCongratsMessageN8N()).toBe(
-      "send-client-congrats-message",
-    );
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await sendClientAnalysisN8N()).toBe("send-client-analysis-prod");
+    });
   });
 
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await sendClientCongratsMessageN8N()).toBe(
-      "send-client-congrats-message-prod",
-    );
-  });
-});
+  describe("createFundingAnalysisToPDFN8N", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await createFundingAnalysisToPDFN8N()).toBe(
+        "credit-analysis-to-pdf",
+      );
+    });
 
-describe("mapBankProductsN8n", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await mapBankProductsN8n()).toBe("bank-product-mapping");
-  });
-
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await mapBankProductsN8n()).toBe("bank-product-mapping-prod");
-  });
-});
-
-describe("sendClientServiceAgreementN8N", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await sendClientServiceAgreementN8N()).toBe(
-      "sign-client-service-agreement",
-    );
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await createFundingAnalysisToPDFN8N()).toBe(
+        "credit-analysis-to-pdf-prod",
+      );
+    });
   });
 
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await sendClientServiceAgreementN8N()).toBe(
-      "sign-client-service-agreement-prod",
-    );
-  });
-});
+  describe("generateDisputeLetterN8N", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await generateDisputeLetterN8N()).toBe("generate-dispute-letter");
+    });
 
-describe("createAsanaCustomerServiceTaskN8N", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await createAsanaCustomerServiceTaskN8N()).toBe(
-      "create-asana-customer-service-task",
-    );
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await generateDisputeLetterN8N()).toBe(
+        "generate-dispute-letter-prod",
+      );
+    });
   });
 
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await createAsanaCustomerServiceTaskN8N()).toBe(
-      "create-asana-customer-service-task-prod",
-    );
-  });
-});
+  describe("generateDisputeLetterFactualErrorN8N", () => {
+    it("returns same webhook name regardless of environment", async () => {
+      expect(await generateDisputeLetterFactualErrorN8N()).toBe(
+        "generate-dispute-letter-factual-error",
+      );
+    });
 
-describe("getFundingPlaybookN8N", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await getFundingPlaybookN8N()).toBe("funding-playbook");
-  });
-
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await getFundingPlaybookN8N()).toBe("funding-playbook-prod");
-  });
-});
-
-describe("getBranchesNearMeN8N", () => {
-  it("returns dev webhook name when ENVIRONMENT is not set", async () => {
-    expect(await getBranchesNearMeN8N()).toBe("branches-near-me");
+    it("returns same webhook name in production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await generateDisputeLetterFactualErrorN8N()).toBe(
+        "generate-dispute-letter-factual-error",
+      );
+    });
   });
 
-  it("returns prod webhook name when ENVIRONMENT=production", async () => {
-    process.env.ENVIRONMENT = "production";
-    expect(await getBranchesNearMeN8N()).toBe("branches-near-me-prod");
+  describe("sendClientCongratsMessageN8N", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await sendClientCongratsMessageN8N()).toBe(
+        "send-client-congrats-message",
+      );
+    });
+
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await sendClientCongratsMessageN8N()).toBe(
+        "send-client-congrats-message-prod",
+      );
+    });
+  });
+
+  describe("mapBankProductsN8n", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await mapBankProductsN8n()).toBe("bank-product-mapping");
+    });
+
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await mapBankProductsN8n()).toBe("bank-product-mapping-prod");
+    });
+  });
+
+  describe("sendClientServiceAgreementN8N", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await sendClientServiceAgreementN8N()).toBe(
+        "sign-client-service-agreement",
+      );
+    });
+
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await sendClientServiceAgreementN8N()).toBe(
+        "sign-client-service-agreement-prod",
+      );
+    });
+  });
+
+  describe("createAsanaCustomerServiceTaskN8N", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await createAsanaCustomerServiceTaskN8N()).toBe(
+        "create-asana-customer-service-task",
+      );
+    });
+
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await createAsanaCustomerServiceTaskN8N()).toBe(
+        "create-asana-customer-service-task-prod",
+      );
+    });
+  });
+
+  describe("getFundingPlaybookN8N", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await getFundingPlaybookN8N()).toBe("funding-playbook");
+    });
+
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await getFundingPlaybookN8N()).toBe("funding-playbook-prod");
+    });
+  });
+
+  describe("getBranchesNearMeN8N", () => {
+    it("returns dev webhook name when ENVIRONMENT is not set", async () => {
+      expect(await getBranchesNearMeN8N()).toBe("branches-near-me");
+    });
+
+    it("returns prod webhook name when ENVIRONMENT=production", async () => {
+      process.env.ENVIRONMENT = "production";
+      expect(await getBranchesNearMeN8N()).toBe("branches-near-me-prod");
+    });
   });
 });
