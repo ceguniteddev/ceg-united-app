@@ -81,6 +81,7 @@ export const useGetUserCoursesWithProgress = (userId: string) => {
   const {
     data: coursesWithProgress,
     isLoading,
+    isFetching,
     refetch,
   } = useQuery({
     queryKey: [COURSES_KEY, "user", userId, "progress"],
@@ -103,6 +104,7 @@ export const useGetUserCoursesWithProgress = (userId: string) => {
   return {
     coursesWithProgress,
     isLoading,
+    isFetching,
     refetch,
   };
 };

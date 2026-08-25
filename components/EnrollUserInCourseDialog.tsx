@@ -24,14 +24,16 @@ import {
   UserPlus,
   CheckCircle2,
   Search,
-  DollarSign,
   Sparkles,
   FileText,
+  Loader2,
 } from "lucide-react";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { COURSES_KEY } from "@/constant/react-query-keys";
 
 interface EnrollUserInCourseDialogProps {
   userId: string;
@@ -42,10 +44,12 @@ const EnrollUserInCourseDialog = ({
   userId,
   triggerButton,
 }: EnrollUserInCourseDialogProps) => {
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [adminNote, setAdminNote] = useState("");
+  const [isBatchEnrolling, setIsBatchEnrolling] = useState(false);
 
   const { courses, isLoading: isCoursesLoading } = useGetCourses();
   const { coursesWithProgress, isLoading: isEnrolledLoading } =
@@ -75,32 +79,58 @@ const EnrollUserInCourseDialog = ({
     );
   }, [courses, enrolledCourseIds, searchQuery]);
 
-  const selectedCourse = useMemo(() => {
-    return courses?.find((c) => c.id === selectedCourseId) || null;
-  }, [courses, selectedCourseId]);
+  const selectedCourses = useMemo(() => {
+    const idSet = new Set(selectedCourseIds);
+    return courses?.filter((c) => idSet.has(c.id!)) || [];
+  }, [courses, selectedCourseIds]);
+
+  const toggleCourse = (id: string) => {
+    setSelectedCourseIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedCourseIds.length === availableCourses.length) {
+      setSelectedCourseIds([]);
+    } else {
+      setSelectedCourseIds(availableCourses.map((c) => c.id!));
+    }
+  };
 
   const handleEnroll = async () => {
-    if (!selectedCourseId) {
-      toast.error("Please select a course to enable");
+    if (selectedCourseIds.length === 0) {
+      toast.error("Please select at least one course to enable");
       return;
     }
 
     try {
-      await enrollUser({
-        userId,
-        courseId: selectedCourseId,
-        notes: adminNote.trim() || undefined,
+      setIsBatchEnrolling(true);
+      await Promise.all(
+        selectedCourseIds.map((courseId) =>
+          enrollUser({
+            userId,
+            courseId,
+            notes: adminNote.trim() || undefined,
+          }),
+        ),
+      );
+      await queryClient.refetchQueries({
+        queryKey: [COURSES_KEY, "user", userId, "progress"],
       });
       setOpen(false);
-      setSelectedCourseId(null);
+      setSelectedCourseIds([]);
       setAdminNote("");
       setSearchQuery("");
     } catch (error) {
       console.error("Enrollment failed:", error);
+    } finally {
+      setIsBatchEnrolling(false);
     }
   };
 
   const isLoading = isCoursesLoading || isEnrolledLoading;
+  const busy = isEnrolling || isBatchEnrolling;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -119,21 +149,36 @@ const EnrollUserInCourseDialog = ({
             Manually Enable Course Access
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Select a published course to immediately enable for this client.
-            This manual grant bypasses standard checkout and activates the
-            course directly in their Learning Center.
+            Select one or more published courses to immediately enable for this
+            client. This manual grant bypasses standard checkout and activates
+            the courses directly in their Learning Center.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Search Bar */}
-        <div className="relative my-2">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search available published courses by title or category..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 text-sm"
-          />
+        {/* Search & Bulk Action Bar */}
+        <div className="flex items-center gap-2 my-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search available published courses by title or category..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 text-sm"
+            />
+          </div>
+          {availableCourses.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSelectAll}
+              className="shrink-0 text-xs h-9"
+            >
+              {selectedCourseIds.length === availableCourses.length
+                ? "Deselect All"
+                : "Select All"}
+            </Button>
+          )}
         </div>
 
         {/* Courses Content */}
@@ -159,7 +204,6 @@ const EnrollUserInCourseDialog = ({
           <ScrollArea className="h-[340px] pr-3 my-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {availableCourses.map((course) => {
-                const isSelected = selectedCourseId === course.id;
                 const publishedChapters =
                   course.chapters?.filter((c) => c.isPublished).length || 0;
                 const price = course.price ?? 0;
@@ -172,15 +216,17 @@ const EnrollUserInCourseDialog = ({
                   maximumFractionDigits: 2,
                 });
 
+                const isChecked = selectedCourseIds.includes(course.id!);
+
                 return (
                   <Card
                     key={course.id}
                     className={`cursor-pointer transition-all border overflow-hidden p-0 py-0 gap-0 ${
-                      isSelected
+                      isChecked
                         ? "ring-2 ring-blue-600 border-blue-600 bg-blue-50/20 dark:bg-blue-950/20 shadow-md"
                         : "hover:border-slate-400 hover:shadow-sm"
                     }`}
-                    onClick={() => setSelectedCourseId(course.id!)}
+                    onClick={() => toggleCourse(course.id!)}
                   >
                     <div className="relative w-full h-32 bg-slate-100 dark:bg-slate-800 overflow-hidden">
                       {course.imageUrl ? (
@@ -208,7 +254,7 @@ const EnrollUserInCourseDialog = ({
                       </div>
 
                       <div className="absolute top-2 right-2">
-                        {isSelected ? (
+                        {isChecked ? (
                           <Badge className="bg-blue-600 text-white text-xs gap-1">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Selected
@@ -259,20 +305,44 @@ const EnrollUserInCourseDialog = ({
           </ScrollArea>
         )}
 
-        {/* Selected Course Confirmation Preview & Note */}
-        {selectedCourse && (
+        {/* Selected Courses Confirmation Preview & Note */}
+        {selectedCourses.length > 0 && (
           <div className="p-3 bg-blue-50 dark:bg-slate-900 border border-blue-200 dark:border-blue-900 rounded-lg space-y-2 mt-2">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5 text-blue-800 dark:text-blue-300 font-semibold">
                 <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                Selected: {selectedCourse.title}
+                Selected ({selectedCourses.length}):
               </div>
               <span className="text-[11px] text-muted-foreground">
                 Manual Admin Override
               </span>
             </div>
+
+            {/* Chips of selected courses */}
+            <div className="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto">
+              {selectedCourses.map((c) => (
+                <Badge
+                  key={c.id}
+                  variant="outline"
+                  className="bg-white dark:bg-slate-950 text-xs gap-1 pr-1.5 py-0.5"
+                >
+                  <span className="line-clamp-1 max-w-[200px]">{c.title}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCourse(c.id!);
+                    }}
+                    className="hover:text-red-500 font-bold ml-1"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))}
+            </div>
+
             <Input
-              placeholder="Optional admin note (e.g. Promotional access granted)"
+              placeholder="Optional admin note (e.g. Promotional package granted)"
               value={adminNote}
               onChange={(e) => setAdminNote(e.target.value)}
               className="h-8 text-xs bg-white dark:bg-slate-950"
@@ -285,27 +355,32 @@ const EnrollUserInCourseDialog = ({
             variant="outline"
             onClick={() => {
               setOpen(false);
-              setSelectedCourseId(null);
+              setSelectedCourseIds([]);
               setAdminNote("");
             }}
-            disabled={isEnrolling}
+            disabled={busy}
           >
             Cancel
           </Button>
           <Button
             onClick={handleEnroll}
-            disabled={!selectedCourseId || isEnrolling || isLoading}
+            disabled={selectedCourseIds.length === 0 || busy || isLoading}
             className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
           >
-            {isEnrolling ? (
+            {busy ? (
               <>
-                <Spinner displayText="" />
-                Enabling Course...
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                Enabling {selectedCourseIds.length} Course
+                {selectedCourseIds.length > 1 ? "s" : ""}...
               </>
             ) : (
               <>
                 <UserPlus className="w-4 h-4" />
-                Enable Course for Client
+                Enable{" "}
+                {selectedCourseIds.length > 0
+                  ? selectedCourseIds.length
+                  : ""}{" "}
+                Course{selectedCourseIds.length > 1 ? "s" : ""} for Client
               </>
             )}
           </Button>

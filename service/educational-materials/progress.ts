@@ -474,38 +474,38 @@ export const getUserCoursesWithProgress = async (
     return [];
   }
 
-  const coursesWithProgress: CourseWithProgress[] = [];
+  const coursesWithProgress = await Promise.all(
+    enrollmentsSnapshot.docs.map(async (enrollmentDoc) => {
+      const enrollment = {
+        id: enrollmentDoc.id,
+        ...normalizeAllDates(enrollmentDoc.data()),
+      } as UserCourseEnrollment;
 
-  for (const enrollmentDoc of enrollmentsSnapshot.docs) {
-    const enrollment = {
-      id: enrollmentDoc.id,
-      ...normalizeAllDates(enrollmentDoc.data()),
-    } as UserCourseEnrollment;
+      // Get course details and user progress in parallel
+      const [course, userProgress] = await Promise.all([
+        getCourseById(enrollment.courseId),
+        getUserProgressForCourse({
+          userId,
+          courseId: enrollment.courseId,
+        }),
+      ]);
 
-    // Get course details
-    const course = await getCourseById(enrollment.courseId);
-
-    if (course) {
-      // Get user progress for this course
-      const userProgress = await getUserProgressForCourse({
-        userId,
-        courseId: enrollment.courseId,
-      });
+      if (!course) return null;
 
       const totalChapters = course.chapters?.length || 0;
       const completedChapters = userProgress.filter(
         (p) => p.isCompleted,
       ).length;
 
-      coursesWithProgress.push({
+      return {
         ...course,
         enrollment,
         totalChapters,
         completedChapters,
         userProgress,
-      });
-    }
-  }
+      } as CourseWithProgress;
+    }),
+  );
 
-  return coursesWithProgress;
+  return coursesWithProgress.filter((c): c is CourseWithProgress => c !== null);
 };
