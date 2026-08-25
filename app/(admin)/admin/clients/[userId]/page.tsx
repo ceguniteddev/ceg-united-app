@@ -9,7 +9,6 @@ import ClientNotes from "@/components/notes/ClientNotes";
 import ClientAppliedFunding from "@/components/ClientAppliedFundingList";
 import ClientDocuments from "@/components/ClientDocuments";
 import ClientCreditReport from "@/components/ClientCreditReport";
-import BusinessRecordsPage from "@/components/ClientBusinessReport";
 import UserLearningMaterials from "@/components/UserLearningMaterials";
 import AdminLetterFeatureManagement from "@/components/AdminLetterFeatureManagement";
 import CreditRepairView from "@/components/CreditRepairView";
@@ -19,6 +18,7 @@ import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { useParams, useSearchParams } from "next/navigation";
 import { useUserQuery } from "@/hooks/user";
 import { useMembership } from "@/hooks/membership";
+import { useUserAddons } from "@/hooks/addons";
 // import { useGetDenefitsContractsByUserId } from "@/hooks/denefits";
 import Spinner from "@/components/Spinner";
 import { useMemo, useState } from "react";
@@ -61,10 +61,15 @@ const ClientProfilePage = () => {
   // const { denefitsContract, isLoading: isDenefitsLoading } =
   //   useGetDenefitsContractsByUserId(userId);
 
+  const { data: addons = [] } = useUserAddons(userId);
+
   // Check if user has access to learning materials
   const hasLearningMaterialsAccess = useMemo(() => {
-    return membershipData?.status === "active";
-  }, [membershipData]);
+    return (
+      membershipData?.status === "active" ||
+      addons.some((a) => a.status === "active")
+    );
+  }, [membershipData, addons]);
 
   // Check if user has letter feature enabled
   const hasLetterFeatureEnabled = useMemo(() => {
@@ -81,17 +86,9 @@ const ClientProfilePage = () => {
       { value: "business", label: "Business" },
       { value: "fund-application", label: "Funding Application" },
       { value: "applied-funding", label: "Applied Funding" },
+      { value: "learning-materials", label: "Learning Materials" },
+      { value: "credit-repair", label: "Credit Repair" },
     ];
-
-    if (hasLearningMaterialsAccess) {
-      options.push({
-        value: "learning-materials",
-        label: "Learning Materials",
-      });
-    }
-
-    // options.push({ value: "letters", label: "Letters" });
-    options.push({ value: "credit-repair", label: "Credit Repair" });
 
     if (hasLetterFeatureEnabled) {
       options.push({ value: "dispute-letters", label: "Dispute Letters" });
@@ -103,7 +100,7 @@ const ClientProfilePage = () => {
     );
 
     return options;
-  }, [hasLearningMaterialsAccess, hasLetterFeatureEnabled]);
+  }, [hasLetterFeatureEnabled]);
 
   // Show loading state while fetching data
   if (isUserLoading) {
@@ -191,11 +188,9 @@ const ClientProfilePage = () => {
         )}
       </TabsContent>
 
-      {hasLearningMaterialsAccess && (
-        <TabsContent value="learning-materials" className="w-full">
-          <UserLearningMaterials userId={userId} isAdminView />
-        </TabsContent>
-      )}
+      <TabsContent value="learning-materials" className="w-full">
+        <UserLearningMaterials userId={userId} isAdminView />
+      </TabsContent>
 
       <TabsContent value="letters" className="w-full">
         <AdminLetterFeatureManagement user={userData as UserWithId} />

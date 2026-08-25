@@ -73,6 +73,7 @@ import {
   chargeMembership,
   createAddonCheckoutConfig,
   createCRSReportCheckoutConfig,
+  createCourseCheckoutConfig,
   createDodoCheckoutConfig,
   createMembershipCheckoutConfig,
   createPsfInvoiceCheckoutConfig,
@@ -486,11 +487,58 @@ describe("Dodo payment service", () => {
         amount: 400,
         checkoutId: "cks_1",
         receiptId: "pay_1",
+        triggerCRSWorkflow: false,
+      }),
+    );
+
+    // Fallback when metadata.selectedAddonIds is undefined
+    queryResult = {
+      empty: false,
+      docs: [
+        {
+          id: "checkout",
+          data: () => ({
+            userId: "u1",
+            productId: "p_pro",
+            paymentKey: "tier_pro",
+            metadata: {
+              userId: "u1",
+              planId: "tier_pro",
+            },
+          }),
+        },
+      ],
+    };
+    await recordPaymentSucceeded({
+      payment: payment({ metadata: undefined, total_amount: 200000 }),
+    });
+
+    // Fallback when creditModuleProAddonPrice is undefined and checkout_session_id is undefined
+    mocks.getFees.mockResolvedValueOnce({
+      creditModuleProAddonPrice: undefined as any,
+    });
+    await recordPaymentSucceeded({
+      payment: {
+        ...payment({
+          metadata: {
+            userId: "u1",
+            paymentKey: "tier_pro",
+            selectedAddonIds: '["credit_module_pro"]',
+          },
+          total_amount: 240000,
+        }),
+        checkout_session_id: undefined,
+      } as any,
+    });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        amount: 197,
+        checkoutId: undefined,
       }),
     );
   });
 
-  it("activates a standalone addon from a verified payment", async () => {
+  it("activates a standalone addon from a verified payment with amount fallback branches", async () => {
     queryResult = {
       empty: false,
       docs: [
@@ -511,19 +559,100 @@ describe("Dodo payment service", () => {
       ],
     };
 
+    // Case 1: metadata.addonAmount is present
     await recordPaymentSucceeded({
-      payment: payment({ metadata: undefined, total_amount: 40000 }),
+      payment: {
+        ...payment({
+          metadata: {
+            userId: "u1",
+            paymentKey: "credit_module_pro",
+            addonAmount: "500",
+          },
+          total_amount: 40000,
+        }),
+        checkout_session_id: undefined,
+      } as any,
     });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({ amount: 500, checkoutId: undefined }),
+    );
 
-    expect(mocks.activate).not.toHaveBeenCalled();
-    expect(mocks.activateAddon).toHaveBeenCalledWith({
-      userId: "u1",
-      addonId: "credit_module_pro",
-      amount: 400,
-      checkoutId: "cks_1",
-      planId: "p_addon",
-      receiptId: "pay_1",
+    // Case 2: falls back to fees.creditModuleProAddonPrice
+    mocks.getFees.mockResolvedValueOnce({ creditModuleProAddonPrice: 250 });
+    await recordPaymentSucceeded({
+      payment: payment({ metadata: undefined, total_amount: 0 }),
     });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({ amount: 250 }),
+    );
+
+    // Case 3: fees price is undefined/0, falls back to total_amount / 100
+    mocks.getFees.mockResolvedValueOnce({
+      creditModuleProAddonPrice: undefined as any,
+    });
+    await recordPaymentSucceeded({
+      payment: payment({ metadata: undefined, total_amount: 30000 }),
+    });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({ amount: 300 }),
+    );
+
+    // Case 4: all zero/falsy, falls back to 197
+    mocks.getFees.mockResolvedValueOnce({
+      creditModuleProAddonPrice: 0 as any,
+    });
+    await recordPaymentSucceeded({
+      payment: payment({ metadata: undefined, total_amount: 0 }),
+    });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({ amount: 197 }),
+    );
+  });
+
+  it("activates addon subscription with fallback branches for planId and amount", async () => {
+    // metadata.planId missing (falls back to "credit_module_pro") and falls back through price options
+    mocks.getFees.mockResolvedValueOnce({
+      creditModuleProAddonPrice: 0 as any,
+    });
+    await recordSubscriptionActive({
+      subscription: {
+        metadata: {
+          userId: "u1",
+          isAddon: "true",
+        },
+        recurring_pre_tax_amount: 15000,
+        subscription_id: "sub_addon_fallback",
+        product_id: "pdt_credit_module_pro",
+      } as any,
+    });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        addonId: "credit_module_pro",
+        amount: 150,
+      }),
+    );
+
+    // all pricing undefined/0, falls back to 197
+    mocks.getFees.mockResolvedValueOnce({
+      creditModuleProAddonPrice: 0 as any,
+    });
+    await recordSubscriptionActive({
+      subscription: {
+        metadata: {
+          userId: "u1",
+          isAddon: "true",
+        },
+        recurring_pre_tax_amount: 0,
+        subscription_id: "sub_addon_197",
+        product_id: "pdt_credit_module_pro",
+      } as any,
+    });
+    expect(mocks.activateAddon).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        addonId: "credit_module_pro",
+        amount: 197,
+      }),
+    );
   });
 
   it("updates an existing wallet", async () => {
@@ -573,6 +702,73 @@ describe("Dodo payment service", () => {
     });
     expect(mocks.activate).toHaveBeenCalledWith(
       expect.objectContaining({ amount: 20 }),
+    );
+  });
+
+  it("activates addon subscription when metadata isAddon or addon planId is provided", async () => {
+    mocks.getFees.mockResolvedValueOnce({ creditModuleProAddonPrice: 197 });
+    await recordSubscriptionActive({
+      subscription: {
+        metadata: {
+          userId: "u1",
+          planId: "credit_module_pro",
+          isAddon: "true",
+        },
+        recurring_pre_tax_amount: 19700,
+        subscription_id: "sub_addon_1",
+        product_id: "pdt_credit_module_pro",
+      } as any,
+    });
+    expect(mocks.activateAddon).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "u1",
+        addonId: "credit_module_pro",
+        amount: 197,
+        checkoutId: "sub_addon_1",
+        planId: "pdt_credit_module_pro",
+        receiptId: "sub_addon_1",
+        triggerCRSWorkflow: true,
+      }),
+    );
+    expect(mocks.activate).not.toHaveBeenCalled();
+  });
+
+  it("handles missing userId when activating addon subscription and handles invalid selectedAddonIds JSON", async () => {
+    await recordSubscriptionActive({
+      subscription: {
+        metadata: {
+          planId: "credit_module_pro",
+          isAddon: "true",
+        },
+        subscription_id: "sub_addon_no_user",
+      } as any,
+    });
+    expect(mocks.activateAddon).not.toHaveBeenCalled();
+
+    queryResult = {
+      empty: false,
+      docs: [
+        {
+          id: "checkout",
+          data: () => ({
+            userId: "u1",
+            productId: "p_pro",
+            paymentKey: "tier_pro",
+            metadata: {
+              userId: "u1",
+              planId: "tier_pro",
+              selectedAddonIds: "invalid-json",
+            },
+          }),
+        },
+      ],
+    };
+
+    await recordPaymentSucceeded({
+      payment: payment({ metadata: undefined, total_amount: 200000 }),
+    });
+    expect(mocks.activate).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "u1", tier: "tier_pro" }),
     );
   });
 
@@ -654,5 +850,87 @@ describe("Dodo payment service", () => {
     await expect(sendPaymentLink({ userId: "u1" })).rejects.toThrow(
       "mail down",
     );
+  });
+
+  describe("course checkout & webhook fulfillment", () => {
+    it("creates course checkout session using Dodo Payments", async () => {
+      mocks.get.mockResolvedValueOnce({
+        exists: true,
+        data: () => ({
+          isPublished: true,
+          price: 99,
+          title: "Masterclass",
+        }),
+      });
+      mocks.create.mockResolvedValueOnce({
+        session_id: "cks_course_123",
+        checkout_url: "https://checkout.dodopayments.com/course",
+      });
+
+      const res = await createCourseCheckoutConfig({
+        userId: "u1",
+        courseId: "course_1",
+      });
+
+      expect(res).toEqual({
+        checkoutId: "cks_course_123",
+        url: "https://checkout.dodopayments.com/course",
+      });
+    });
+
+    it("returns lumino checkout url when course specifies luminoCheckoutUrl", async () => {
+      mocks.get.mockResolvedValueOnce({
+        exists: true,
+        data: () => ({
+          isPublished: true,
+          luminoCheckoutUrl: "https://lumino.com/pay/course_1",
+        }),
+      });
+
+      const res = await createCourseCheckoutConfig({
+        userId: "u1",
+        courseId: "course_1",
+      });
+
+      expect(res).toEqual({
+        checkoutId: "lumino_course_1",
+        url: "https://lumino.com/pay/course_1",
+      });
+    });
+
+    it("fulfills course enrollment on CoursePurchase payment succeeded", async () => {
+      mocks.runTransaction.mockImplementation(async (cb: any) => {
+        const tx = {
+          get: vi
+            .fn()
+            .mockResolvedValueOnce({ empty: true })
+            .mockResolvedValueOnce({
+              exists: true,
+              data: () => ({ enrolledStudentsCount: 2 }),
+            }),
+          set: vi.fn(),
+          update: vi.fn(),
+        };
+        await cb(tx);
+        expect(tx.set).toHaveBeenCalled();
+        expect(tx.update).toHaveBeenCalled();
+      });
+
+      await recordPaymentSucceeded({
+        payment: {
+          payment_id: "pay_course_1",
+          checkout_session_id: "cks_course_1",
+          total_amount: 9900,
+          metadata: {
+            userId: "u1",
+            courseId: "course_1",
+            type: "COURSE_PURCHASE",
+            paymentKey: "CoursePurchase",
+          },
+        },
+      } as any);
+
+      expect(mocks.runTransaction).toHaveBeenCalled();
+    });
   });
 });

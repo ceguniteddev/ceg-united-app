@@ -170,12 +170,12 @@ const MobileNavClient = () => {
                   //   return false;
                   // }
 
-                  if (
-                    item.route === "/client/credit-repair" &&
-                    (!userData || membership?.status !== "active")
-                  ) {
-                    return false;
-                  }
+                  // if (
+                  //   item.route === "/client/credit-repair" &&
+                  //   (!userData || membership?.status !== "active")
+                  // ) {
+                  //   return false;
+                  // }
 
                   // Filter out "Letter Stream" if user has no letter features enabled
                   if (item.route === "/client/letter-stream") {
@@ -201,11 +201,19 @@ const MobileNavClient = () => {
                     pathname === item.route ||
                     pathname.startsWith(`${item.route}/`);
 
+                  const hasActiveMembership =
+                    !!userData && membership?.status === "active";
+                  const hasAnyActiveAddon = addons.some(
+                    (a) => a.status === "active",
+                  );
+
                   const isLocked =
-                    ((!userData || membership?.status !== "active") &&
+                    (!hasActiveMembership &&
                       (item.route === "/client/my-analysis" ||
-                        item.route === "/client/my-learning" ||
                         item.route === "/client/my-credit")) ||
+                    (!hasActiveMembership &&
+                      !hasAnyActiveAddon &&
+                      item.route === "/client/my-learning") ||
                     (item.route === "/client/credit-repair" &&
                       !addons.some((a) => a.addonId === "credit_module_pro"));
 
@@ -216,6 +224,7 @@ const MobileNavClient = () => {
                           src={item.imgURL}
                           alt={item.label}
                           fill
+                          sizes="24px"
                           className={cn({
                             "brightness-[3] invert-0": isActive,
                           })}

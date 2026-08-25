@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { CustomFormField } from "@/components/CustomFormField";
+import { FormInput } from "@/components/forms/form-input";
 import { useCourseMutation } from "@/hooks/educational-materials/course";
 import IconMenu from "@/components/icon-menu";
 import { X, ArrowRight, Loader2 } from "lucide-react";
@@ -67,7 +67,13 @@ const CourseCreatePage = ({
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 sm:space-y-6"
           >
-            <CustomFormField name={"title"} label={"* Course title"} />
+            <FormInput
+              control={form.control}
+              name="title"
+              label="Course Title"
+              placeholder="e.g. Advanced Commercial Lending & Underwriting"
+              required
+            />
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <Button

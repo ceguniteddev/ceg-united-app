@@ -1,5 +1,6 @@
+/// <reference types="vitest/globals" />
+
 import { renderHook, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   useGetCourses,
   useGetUserCourses,
@@ -7,15 +8,23 @@ import {
   useGetCourseById,
   useCourseMutation,
   useEnrollUserInCourse,
+  useCourseCheckout,
+  useCourseReviews,
 } from "@/hooks/educational-materials/course";
 import { createWrapper } from "../../utils/test-utils";
-import { toast } from "sonner";
 
+const toast = vi.hoisted(() => ({
+  error: vi.fn(),
+  success: vi.fn(),
+  warning: vi.fn(),
+}));
 vi.mock("sonner", () => ({
-  toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() },
+  toast,
 }));
 
-const mockUser = { uid: "user-123" };
+const { mockUser } = vi.hoisted(() => ({
+  mockUser: { uid: "user-123" },
+}));
 vi.mock("@/provider/AuthContext", () => ({
   useAuth: () => ({ user: mockUser }),
 }));
@@ -205,18 +214,139 @@ describe("educational-materials/course hooks", () => {
         wrapper: createWrapper(),
       });
 
-      await result.current.enrollUser({
+      const response = await result.current.enrollUser({
         userId: "u1",
         courseId: "c1",
       });
 
       expect(global.fetch).toHaveBeenCalledWith(
         "/api/user/u1/courses/c1/enroll",
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ notes: undefined }),
+        },
       );
-      expect(toast.success).toHaveBeenCalledWith(
-        "Successfully enrolled in course",
+      expect(response).toEqual({ success: true });
+    });
+
+    it("should pass notes when enrolling with admin override note", async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      });
+
+      const { result } = renderHook(() => useEnrollUserInCourse(), {
+        wrapper: createWrapper(),
+      });
+
+      const response = await result.current.enrollUser({
+        userId: "u1",
+        courseId: "c1",
+        notes: "Special promotion",
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/user/u1/courses/c1/enroll",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ notes: "Special promotion" }),
+        },
       );
+      expect(response).toEqual({ success: true });
+    });
+  });
+
+  describe("useCourseCheckout", () => {
+    it("should start checkout for course", async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          checkoutId: "chk-1",
+          url: "https://checkout.dodo.com/123",
+        }),
+      });
+
+      const { result } = renderHook(() => useCourseCheckout(), {
+        wrapper: createWrapper(),
+      });
+
+      const response = await result.current.createCheckout({
+        courseId: "c1",
+        returnUrl: "https://app.com/client/my-learning/c1",
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/user/user-123/courses/c1/checkout",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            returnUrl: "https://app.com/client/my-learning/c1",
+          }),
+        },
+      );
+      expect(response).toEqual({
+        checkoutId: "chk-1",
+        url: "https://checkout.dodo.com/123",
+      });
+    });
+  });
+
+  describe("useCourseReviews", () => {
+    it("should fetch reviews for a course", async () => {
+      const mockReviews = [
+        {
+          id: "r1",
+          courseId: "c1",
+          userId: "u1",
+          userName: "Alice Smith",
+          rating: 5,
+          comment: "Great content!",
+        },
+      ];
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ reviews: mockReviews }),
+      });
+
+      const { result } = renderHook(() => useCourseReviews("c1"), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.reviews).toEqual(mockReviews);
+      expect(global.fetch).toHaveBeenCalledWith("/api/courses/c1/reviews");
+    });
+
+    it("should return empty array on failure or error response", async () => {
+      (global.fetch as any).mockResolvedValueOnce({ ok: false });
+
+      const { result } = renderHook(() => useCourseReviews("c1"), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.reviews).toEqual([]);
+    });
+
+    it("should not fetch when courseId is empty", async () => {
+      renderHook(() => useCourseReviews(""), {
+        wrapper: createWrapper(),
+      });
+
+      expect(global.fetch).not.toHaveBeenCalled();
     });
   });
 });

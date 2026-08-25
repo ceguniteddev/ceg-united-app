@@ -4,6 +4,7 @@ import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { USER_COLLECTION } from "@/constant/collection-name";
 import AppError from "@/error/AppError";
 import { logInfo } from "@/lib/logger";
+import { triggerActivationCRSWorkflow } from "@/service/membership";
 
 export type AddonTier = "credit_module_pro";
 
@@ -26,6 +27,7 @@ export const activateUserAddon = async ({
   checkoutId,
   planId,
   receiptId,
+  triggerCRSWorkflow = false,
 }: {
   userId: string;
   addonId: AddonTier;
@@ -33,38 +35,63 @@ export const activateUserAddon = async ({
   checkoutId?: string;
   planId?: string;
   receiptId?: string;
+  triggerCRSWorkflow?: boolean;
 }) => {
   logInfo("Activating user addon", { userId, addonId, amount });
   if (!userId) throw new AppError("User ID is required.");
 
   const db = firestoreAdmin();
   const addonsRef = db.collection(`${USER_COLLECTION}/${userId}/addons`);
-  const existing = await addonsRef
+  const targetDocRef = addonsRef.doc(addonId);
+  const activeQuery = addonsRef
     .where("addonId", "==", addonId)
     .where("status", "==", "active")
-    .limit(1)
-    .get();
+    .limit(1);
 
-  if (!existing.empty) {
-    await existing.docs[0].ref.update({
+  let alreadyActive = false;
+
+  await db.runTransaction(async (transaction) => {
+    const [targetDoc, activeSnapshot] = await Promise.all([
+      transaction.get(targetDocRef),
+      transaction.get(activeQuery),
+    ]);
+
+    const existingDoc = targetDoc.exists ? targetDoc : activeSnapshot.docs[0];
+
+    if (existingDoc && existingDoc.exists) {
+      alreadyActive = true;
+      transaction.set(
+        existingDoc.ref,
+        {
+          amount,
+          ...(planId ? { planId } : {}),
+          ...(receiptId ? { receiptId } : {}),
+          ...(checkoutId ? { checkoutId } : {}),
+          updatedAt: new Date(),
+        },
+        { merge: true },
+      );
+      return;
+    }
+
+    transaction.set(targetDocRef, {
+      addonId,
       amount,
-      ...(planId ? { planId } : {}),
-      ...(receiptId ? { receiptId } : {}),
-      ...(checkoutId ? { checkoutId } : {}),
-      updatedAt: new Date(),
+      planId: planId || null,
+      receiptId: receiptId || null,
+      checkoutId: checkoutId || null,
+      createdAt: new Date(),
+      status: "active",
     });
+  });
+
+  if (alreadyActive) {
     return { success: true, alreadyActive: true };
   }
 
-  await addonsRef.add({
-    addonId,
-    amount,
-    planId: planId || null,
-    receiptId: receiptId || null,
-    checkoutId: checkoutId || null,
-    createdAt: new Date(),
-    status: "active",
-  });
+  if (triggerCRSWorkflow && addonId === "credit_module_pro") {
+    await triggerActivationCRSWorkflow({ userId, source: "addon" });
+  }
 
   return { success: true };
 };

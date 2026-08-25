@@ -30,6 +30,7 @@ import LetterForm from "@/components/letter-stream/form";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { useUserQuery } from "@/hooks/user";
 import { useMembership } from "@/hooks/membership";
+import { useUserAddons } from "@/hooks/addons";
 import { UserWithId } from "@/schema/registration";
 // import { useGetClientApplyFunding } from "@/hooks/apply-funding";
 // import { ApplyFundingWithUser } from "@/schema/apply-funding";
@@ -51,10 +52,14 @@ const AdminViewApplication = () => {
   // const { appliedFunding, isLoading: isFundingLoading } =
   //   useGetClientApplyFunding(userId);
   const { data: userMembership } = useMembership(userId);
+  const { data: addons = [] } = useUserAddons(userId);
 
   const hasLearningMaterialsAccess = useMemo(() => {
-    return userMembership?.status === "active";
-  }, [userMembership]);
+    return (
+      userMembership?.status === "active" ||
+      addons.some((a) => a.status === "active")
+    );
+  }, [userMembership, addons]);
 
   const hasLetterFeatureEnabled = useMemo(() => {
     return !!userData?.letterFeatureEnabled;

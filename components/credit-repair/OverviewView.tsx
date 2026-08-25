@@ -3,12 +3,17 @@ import { ReportHealthCard } from "@/components/credit-repair/ReportHealthCard";
 import { PositiveNegativeFactors } from "@/components/credit-repair/PositiveNegativeFactors";
 import { EducationSidebar } from "@/components/credit-repair/EducationSidebar";
 import { useCreditRepairState } from "@/hooks/useCreditRepairState";
+import { cn } from "@/lib/utils";
 
 export function OverviewView({
   state,
 }: {
   state: ReturnType<typeof useCreditRepairState>;
 }) {
+  const hasNegativeItems =
+    (state.health?.negativeItems ?? 0) > 0 ||
+    (state.items && state.items.length > 0);
+
   return (
     <div className="space-y-5">
       {/* Bureau scores + Report Health */}
@@ -57,7 +62,13 @@ export function OverviewView({
             </p>
             <button
               onClick={() => state.setView("select-items")}
-              className="cursor-pointer mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-gray-100 text-brand-700 text-sm font-semibold transition-colors shadow-sm"
+              disabled={!hasNegativeItems}
+              className={cn(
+                "mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-brand-700 text-sm font-semibold transition-colors shadow-sm",
+                hasNegativeItems
+                  ? "cursor-pointer hover:bg-gray-100"
+                  : "opacity-50 cursor-not-allowed",
+              )}
             >
               Review & select items
             </button>

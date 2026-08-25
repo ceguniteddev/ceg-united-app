@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Course } from "@/schema/educational-materials/course";
 import { toast } from "sonner";
-import { CustomFormField } from "@/components/CustomFormField";
+import { FormSelect } from "@/components/forms/form-select";
 import { courseCategories } from "@/constant/common";
 import { useCourseMutation } from "@/hooks/educational-materials/course";
 
@@ -54,7 +54,7 @@ export const CategoryForm = ({ initialData, courseId }: CategoryFormProps) => {
   };
 
   const selectedOption = courseCategories.find(
-    (option) => option.value === initialData.category
+    (option) => option.value === initialData.category,
   );
 
   return (
@@ -76,7 +76,7 @@ export const CategoryForm = ({ initialData, courseId }: CategoryFormProps) => {
         <p
           className={cn(
             "text-sm mt-2",
-            !initialData.category && "text-slate-500 italic"
+            !initialData.category && "text-slate-500 italic",
           )}
         >
           {selectedOption?.label || "No category"}
@@ -88,11 +88,13 @@ export const CategoryForm = ({ initialData, courseId }: CategoryFormProps) => {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 mt-4"
           >
-            <CustomFormField
+            <FormSelect
+              control={form.control}
               name="category"
-              label="Course category"
-              type="select"
+              label="Course Category"
               options={courseCategories}
+              placeholder="Select a category"
+              required
             />
             <div className="flex items-center gap-x-2">
               <Button disabled={!isValid || isSubmitting} type="submit">

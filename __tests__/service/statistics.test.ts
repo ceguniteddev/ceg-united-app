@@ -1,79 +1,107 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+/// <reference types="vitest/globals" />
 
-// Standard Firestore mock pattern with collectionGroup support for getFundMappingApproved
-const mockGet = vi.fn();
-const mockSet = vi.fn();
-const mockUpdate = vi.fn();
-const mockDelete = vi.fn();
-const mockAdd = vi.fn();
-const mockOrderBy = vi.fn();
-const mockWhere = vi.fn();
-const mockLimit = vi.fn();
+const mocks = vi.hoisted(() => {
+  const mockGet = vi.fn();
+  const mockSet = vi.fn();
+  const mockUpdate = vi.fn();
+  const mockDelete = vi.fn();
+  const mockAdd = vi.fn();
+  const mockOrderBy = vi.fn();
+  const mockWhere = vi.fn();
+  const mockLimit = vi.fn();
 
-const mockDocRef = {
-  get: mockGet,
-  set: mockSet,
-  update: mockUpdate,
-  delete: mockDelete,
-};
-const mockCollectionRef = {
-  add: mockAdd,
-  doc: vi.fn().mockReturnValue(mockDocRef),
-  where: mockWhere,
-  orderBy: mockOrderBy,
-  limit: mockLimit,
-  get: mockGet,
-};
-mockWhere.mockReturnValue(mockCollectionRef);
-mockOrderBy.mockReturnValue(mockCollectionRef);
-mockLimit.mockReturnValue(mockCollectionRef);
+  const mockDocRef = {
+    get: mockGet,
+    set: mockSet,
+    update: mockUpdate,
+    delete: mockDelete,
+  };
+  const mockCollectionRef = {
+    add: mockAdd,
+    doc: vi.fn().mockReturnValue(mockDocRef),
+    where: mockWhere,
+    orderBy: mockOrderBy,
+    limit: mockLimit,
+    get: mockGet,
+  };
+  mockWhere.mockReturnValue(mockCollectionRef);
+  mockOrderBy.mockReturnValue(mockCollectionRef);
+  mockLimit.mockReturnValue(mockCollectionRef);
 
-// collectionGroup chain for getFundMappingApproved
-const mockCollectionGroupGet = vi.fn();
-const mockCollectionGroupRef = {
-  orderBy: vi.fn(),
-  where: vi.fn(),
-  get: mockCollectionGroupGet,
-};
-mockCollectionGroupRef.orderBy.mockReturnValue(mockCollectionGroupRef);
-mockCollectionGroupRef.where.mockReturnValue(mockCollectionGroupRef);
+  const mockCollectionGroupGet = vi.fn();
+  const mockCollectionGroupRef = {
+    orderBy: vi.fn(),
+    where: vi.fn(),
+    get: mockCollectionGroupGet,
+  };
+  mockCollectionGroupRef.orderBy.mockReturnValue(mockCollectionGroupRef);
+  mockCollectionGroupRef.where.mockReturnValue(mockCollectionGroupRef);
 
-const mockDb = {
-  collection: vi.fn().mockReturnValue(mockCollectionRef),
-  collectionGroup: vi.fn().mockReturnValue(mockCollectionGroupRef),
-};
+  const mockDb = {
+    collection: vi.fn().mockReturnValue(mockCollectionRef),
+    collectionGroup: vi.fn().mockReturnValue(mockCollectionGroupRef),
+  };
+
+  return {
+    mockGet,
+    mockSet,
+    mockUpdate,
+    mockDelete,
+    mockAdd,
+    mockOrderBy,
+    mockWhere,
+    mockLimit,
+    mockDocRef,
+    mockCollectionRef,
+    mockCollectionGroupGet,
+    mockCollectionGroupRef,
+    mockDb,
+    getUsers: vi.fn(),
+    getUserById: vi.fn(),
+    getUserDocuments: vi.fn(),
+    getApplyFunding: vi.fn(),
+    getApplyFundingByReferenceNumber: vi.fn(),
+    getFundingApplications: vi.fn(),
+    getFundMappingAnalysisDetails: vi.fn(),
+    getFundMappingApproved: vi.fn(),
+    getBusiness: vi.fn(),
+    getCRSReport: vi.fn(),
+    getCRSBusinessScore: vi.fn(),
+    getCRSBusinessProfile: vi.fn(),
+  };
+});
 
 vi.mock("@/lib/fireabase-admin", () => ({
-  firestoreAdmin: vi.fn(() => mockDb),
+  firestoreAdmin: vi.fn(() => mocks.mockDb),
   authenticationAdmin: vi.fn(),
   storageAdmin: vi.fn(),
 }));
 
 vi.mock("@/service/user", () => ({
-  getUsers: vi.fn(),
-  getUserById: vi.fn(),
-  getUserDocuments: vi.fn(),
+  getUsers: mocks.getUsers,
+  getUserById: mocks.getUserById,
+  getUserDocuments: mocks.getUserDocuments,
 }));
 
 vi.mock("@/service/apply-funding", () => ({
-  getApplyFunding: vi.fn(),
-  getApplyFundingByReferenceNumber: vi.fn(),
-  getFundingApplications: vi.fn(),
+  getApplyFunding: mocks.getApplyFunding,
+  getApplyFundingByReferenceNumber: mocks.getApplyFundingByReferenceNumber,
+  getFundingApplications: mocks.getFundingApplications,
 }));
 
 vi.mock("@/service/bank-products", () => ({
-  getFundMappingAnalysisDetails: vi.fn(),
-  getFundMappingApproved: vi.fn(),
+  getFundMappingAnalysisDetails: mocks.getFundMappingAnalysisDetails,
+  getFundMappingApproved: mocks.getFundMappingApproved,
 }));
 
 vi.mock("@/service/business", () => ({
-  getBusiness: vi.fn(),
+  getBusiness: mocks.getBusiness,
 }));
 
 vi.mock("@/service/crs", () => ({
-  getCRSReport: vi.fn(),
-  getCRSBusinessScore: vi.fn(),
-  getCRSBusinessProfile: vi.fn(),
+  getCRSReport: mocks.getCRSReport,
+  getCRSBusinessScore: mocks.getCRSBusinessScore,
+  getCRSBusinessProfile: mocks.getCRSBusinessProfile,
 }));
 
 vi.mock("@/lib/date-parser", () => ({
@@ -106,10 +134,14 @@ import {
 describe("service/statistics", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGet.mockResolvedValue({ docs: [] });
-    mockCollectionGroupGet.mockResolvedValue({ docs: [] });
-    mockCollectionGroupRef.orderBy.mockReturnValue(mockCollectionGroupRef);
-    mockCollectionGroupRef.where.mockReturnValue(mockCollectionGroupRef);
+    mocks.mockGet.mockResolvedValue({ docs: [] });
+    mocks.mockCollectionGroupGet.mockResolvedValue({ docs: [] });
+    mocks.mockCollectionGroupRef.orderBy.mockReturnValue(
+      mocks.mockCollectionGroupRef,
+    );
+    mocks.mockCollectionGroupRef.where.mockReturnValue(
+      mocks.mockCollectionGroupRef,
+    );
   });
 
   describe("getAdminStatistics", () => {
@@ -146,7 +178,7 @@ describe("service/statistics", () => {
         { status: "Pending", addressState: "CA" },
         { status: "Approved", addressState: "NY" },
       ] as any);
-      mockCollectionGroupGet.mockResolvedValue({ docs: [] });
+      mocks.mockCollectionGroupGet.mockResolvedValue({ docs: [] });
 
       const result = await getAdminStatistics();
 
@@ -160,7 +192,7 @@ describe("service/statistics", () => {
         { status: "Pending", addressState: "CA" },
         { status: "Approved", addressState: "NY" },
       ] as any);
-      mockCollectionGroupGet.mockResolvedValue({ docs: [] });
+      mocks.mockCollectionGroupGet.mockResolvedValue({ docs: [] });
 
       const result = await getAdminStatistics();
 
@@ -174,7 +206,7 @@ describe("service/statistics", () => {
         { status: "Approved", addressState: "TX" },
         { status: "Approved", addressState: "TX" },
       ] as any);
-      mockCollectionGroupGet.mockResolvedValue({ docs: [] });
+      mocks.mockCollectionGroupGet.mockResolvedValue({ docs: [] });
 
       const result = await getAdminStatistics();
 
@@ -184,7 +216,7 @@ describe("service/statistics", () => {
     it("includes approved and funded totals from getFundMappingApproved", async () => {
       vi.mocked(getUsers).mockResolvedValue([] as any);
       vi.mocked(getFundingApplications).mockResolvedValue([] as any);
-      mockCollectionGroupGet.mockResolvedValue({
+      mocks.mockCollectionGroupGet.mockResolvedValue({
         docs: [
           {
             id: "d1",
@@ -247,7 +279,10 @@ describe("service/statistics", () => {
       expect(vi.mocked(getApplyFunding)).toHaveBeenCalledWith("user-1");
     });
 
-    it("fetches approved and funded mapping details", async () => {
+    it("fetches approved and funded mapping details when funding applications exist", async () => {
+      vi.mocked(getApplyFunding).mockResolvedValue([
+        { id: "app-1", referenceNumber: "REF-1" },
+      ] as any);
       await getClientStatistics("user-1");
       expect(vi.mocked(getFundMappingAnalysisDetails)).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -255,6 +290,29 @@ describe("service/statistics", () => {
           clientApplicationStatus: ["Approved", "Funded"],
         }),
       );
+    });
+
+    it("skips getFundMappingAnalysisDetails and sets approvedFunds to empty array when fundingApplications is null or empty", async () => {
+      // Test null
+      vi.mocked(getApplyFunding).mockResolvedValueOnce(null as any);
+      const resNull = await getClientStatistics("user-1");
+      expect(vi.mocked(getFundMappingAnalysisDetails)).not.toHaveBeenCalled();
+      expect(resNull.approvedFunds).toEqual([]);
+      expect(resNull.fundingApplications).toBeNull();
+      expect(vi.mocked(getCRSReport)).toHaveBeenCalledWith("user-1");
+
+      // Test empty array
+      vi.clearAllMocks();
+      vi.mocked(getUserById).mockResolvedValue({
+        id: "user-1",
+        email: "u@test.com",
+      } as any);
+      vi.mocked(getApplyFunding).mockResolvedValueOnce([]);
+      const resEmpty = await getClientStatistics("user-1");
+      expect(vi.mocked(getFundMappingAnalysisDetails)).not.toHaveBeenCalled();
+      expect(resEmpty.approvedFunds).toEqual([]);
+      expect(resEmpty.fundingApplications).toEqual([]);
+      expect(vi.mocked(getCRSReport)).toHaveBeenCalledWith("user-1");
     });
 
     it("fetches CRS report for the user", async () => {

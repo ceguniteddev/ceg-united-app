@@ -129,6 +129,7 @@ const SidebarAdmin = () => {
                                   src={item.imgURL}
                                   alt={item.label}
                                   fill
+                                  sizes="20px"
                                   className={cn("object-contain", {
                                     "brightness-[3] invert-0": isActive,
                                   })}

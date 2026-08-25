@@ -10,6 +10,52 @@ import { Query } from "firebase-admin/firestore";
 import { MembershipTier, UserMembership } from "@/schema/users";
 import membershipCache from "@/lib/membership-cache";
 
+export const triggerActivationCRSWorkflow = async ({
+  userId,
+  source = "membership",
+}: {
+  userId: string;
+  source?: "membership" | "addon";
+}) => {
+  try {
+    logInfo(`Triggering CRS report on ${source} activation`, {
+      userId,
+      source,
+    });
+    await generateCRSReport({
+      userId,
+      bureaus: { equifax: true, experian: true, transunion: true },
+      bypassPremiumCheck: true,
+    });
+
+    let referenceNumber = "";
+    const appliedFundings = await getApplyFunding(userId);
+    if (appliedFundings && appliedFundings.length > 0) {
+      referenceNumber = appliedFundings[0].referenceNumber!;
+    }
+
+    if (referenceNumber) {
+      // We trigger the funding analysis here immediately after the CRS report succeeds,
+      // because the analysis usually requires the newly pulled credit report data.
+      logInfo(`Triggering Funding Analysis on ${source} activation`, {
+        userId,
+        referenceNumber,
+        source,
+      });
+
+      await fundAnalysis({
+        referenceNumber,
+        userId,
+      });
+    }
+  } catch (error) {
+    console.error(
+      `Failed to generate CRS report or Funding Analysis on ${source} activation:`,
+      error,
+    );
+  }
+};
+
 export const activateUserMembership = async ({
   userId,
   tier,
@@ -80,41 +126,7 @@ export const activateUserMembership = async ({
   if (alreadyActive) return { success: true, alreadyActive: true };
 
   // Automatically trigger CRS report generation and then Funding Analysis upon activation
-  try {
-    logInfo("Triggering CRS report on membership activation", {
-      userId,
-    });
-    await generateCRSReport({
-      userId,
-      bureaus: { equifax: true, experian: true, transunion: true },
-      bypassPremiumCheck: true,
-    });
-
-    let referenceNumber = "";
-    const appliedFundings = await getApplyFunding(userId);
-    if (appliedFundings && appliedFundings.length > 0) {
-      referenceNumber = appliedFundings[0].referenceNumber!;
-    }
-
-    if (referenceNumber) {
-      // We trigger the funding analysis here immediately after the CRS report succeeds,
-      // because the analysis usually requires the newly pulled credit report data.
-      logInfo("Triggering Funding Analysis on membership activation", {
-        userId,
-        referenceNumber,
-      });
-
-      await fundAnalysis({
-        referenceNumber,
-        userId,
-      });
-    }
-  } catch (error) {
-    console.error(
-      "Failed to generate CRS report or Funding Analysis on membership activation:",
-      error,
-    );
-  }
+  await triggerActivationCRSWorkflow({ userId, source: "membership" });
 
   return { success: true };
 };

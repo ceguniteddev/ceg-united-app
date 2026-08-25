@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+/// <reference types="vitest/globals" />
 import {
   MuxSchema,
   ChapterSchema,
@@ -296,6 +296,14 @@ describe("courseSchema", () => {
       ...validCourse,
       id: "course-1",
       attachments: [attachment],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts luminoCheckoutUrl", () => {
+    const result = courseSchema.safeParse({
+      ...validCourse,
+      luminoCheckoutUrl: "https://lumino.io/checkout/test-course",
     });
     expect(result.success).toBe(true);
   });

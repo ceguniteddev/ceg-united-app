@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { COURSES_KEY, CHAPTERS_KEY } from "@/constant/react-query-keys";
 import { useAuth } from "@/provider/AuthContext";
 import { Chapter } from "@/schema/educational-materials/course";
-import { updateChapterVideo } from "@/lib/mux";
+import { deleteChapterVideo, updateChapterVideo } from "@/lib/mux";
 
 export const useGetChapterById = ({
   courseId,
@@ -26,7 +26,9 @@ export const useGetChapterById = ({
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
 
-      const response = await fetch(`/api/courses/${courseId}/chapters/${chapterId}`);
+      const response = await fetch(
+        `/api/courses/${courseId}/chapters/${chapterId}`,
+      );
 
       if (!response.ok) {
         let message = `Request failed with status ${response.status}`;
@@ -67,7 +69,13 @@ export const useChapterMutation = () => {
   const router = useRouter();
 
   const createChapterMutation = useMutation({
-    mutationFn: async ({ courseId, title }: { courseId: string; title: string }) => {
+    mutationFn: async ({
+      courseId,
+      title,
+    }: {
+      courseId: string;
+      title: string;
+    }) => {
       const res = await fetch(`/api/courses/${courseId}/chapters`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -112,11 +120,14 @@ export const useChapterMutation = () => {
       chapterId: string;
       data: Partial<Chapter>;
     }) => {
-      const res = await fetch(`/api/courses/${courseId}/chapters/${chapterId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const res = await fetch(
+        `/api/courses/${courseId}/chapters/${chapterId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        },
+      );
 
       if (!res.ok) {
         let message = "Failed to update chapter";
@@ -183,10 +194,19 @@ export const useChapterMutation = () => {
   });
 
   const unpublishChapterMutation = useMutation({
-    mutationFn: async ({ courseId, chapterId }: { courseId: string; chapterId: string }) => {
-      const res = await fetch(`/api/courses/${courseId}/chapters/${chapterId}/unpublish`, {
-        method: "PATCH",
-      });
+    mutationFn: async ({
+      courseId,
+      chapterId,
+    }: {
+      courseId: string;
+      chapterId: string;
+    }) => {
+      const res = await fetch(
+        `/api/courses/${courseId}/chapters/${chapterId}/unpublish`,
+        {
+          method: "PATCH",
+        },
+      );
 
       if (!res.ok) {
         let message = "Failed to unpublish chapter";
@@ -217,10 +237,19 @@ export const useChapterMutation = () => {
   });
 
   const publishChapterMutation = useMutation({
-    mutationFn: async ({ courseId, chapterId }: { courseId: string; chapterId: string }) => {
-      const res = await fetch(`/api/courses/${courseId}/chapters/${chapterId}/publish`, {
-        method: "PATCH",
-      });
+    mutationFn: async ({
+      courseId,
+      chapterId,
+    }: {
+      courseId: string;
+      chapterId: string;
+    }) => {
+      const res = await fetch(
+        `/api/courses/${courseId}/chapters/${chapterId}/publish`,
+        {
+          method: "PATCH",
+        },
+      );
 
       if (!res.ok) {
         let message = "Failed to publish chapter";
@@ -251,15 +280,25 @@ export const useChapterMutation = () => {
   });
 
   const deleteChapterMutation = useMutation({
-    mutationFn: async ({ courseId, chapterId }: { courseId: string; chapterId: string }) => {
-      const res = await fetch(`/api/courses/${courseId}/chapters/${chapterId}`, {
-        method: "DELETE",
-      });
+    mutationFn: async ({
+      courseId,
+      chapterId,
+    }: {
+      courseId: string;
+      chapterId: string;
+    }) => {
+      const res = await fetch(
+        `/api/courses/${courseId}/chapters/${chapterId}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!res.ok) {
         let message = "Failed to delete chapter";
         try {
-          message = await res.text();
+          const json = await res.json();
+          message = json?.errors || json?.error || json?.message || message;
         } catch (_) {
           const text = await res.text();
           if (text) message = text;
@@ -289,15 +328,49 @@ export const useChapterMutation = () => {
       courseId,
       chapterId,
       uploadId,
+      previousAssetId,
     }: {
       courseId: string;
       chapterId: string;
       uploadId: string;
+      previousAssetId?: string;
     }) => {
       await updateChapterVideo({
-        uploadId: uploadId,
-        chapterId: chapterId,
-        courseId: courseId,
+        uploadId,
+        chapterId,
+        courseId,
+        previousAssetId,
+      });
+    },
+    onSuccess: (data, context) => {
+      queryClient.invalidateQueries({ queryKey: [COURSES_KEY] });
+      queryClient.invalidateQueries({
+        queryKey: [COURSES_KEY, context.courseId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [CHAPTERS_KEY, context.courseId, context.chapterId],
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error || "Something went wrong");
+      console.error(error);
+    },
+  });
+
+  const deleteChapterVideoMutation = useMutation({
+    mutationFn: async ({
+      courseId,
+      chapterId,
+      assetId,
+    }: {
+      courseId: string;
+      chapterId: string;
+      assetId?: string;
+    }) => {
+      await deleteChapterVideo({
+        courseId,
+        chapterId,
+        assetId,
       });
     },
     onSuccess: (data, context) => {
@@ -336,6 +409,9 @@ export const useChapterMutation = () => {
 
     updateChapterVideo: updateChapterVideoMutation.mutateAsync,
     isUpdatingVideo: updateChapterVideoMutation.isPending,
+
+    deleteChapterVideo: deleteChapterVideoMutation.mutateAsync,
+    isDeletingVideo: deleteChapterVideoMutation.isPending,
   };
 };
 

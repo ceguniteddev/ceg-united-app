@@ -47,6 +47,58 @@ const columns: ColumnDef<Course>[] = [
     cell: ({ row }) => <div>{row.getValue("category")}</div>,
   },
   {
+    accessorKey: "price",
+    id: "price",
+    header: ({ column }) => <SortableHeader column={column} title="Price" />,
+    cell: ({ row }) => {
+      const isFree = row.original.isFree;
+      const price = row.original.price;
+      const discountPrice = row.original.discountPrice;
+      if (isFree) {
+        return (
+          <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+            Free
+          </span>
+        );
+      }
+      return (
+        <div className="flex items-center gap-1.5 text-xs">
+          <span className="font-bold text-gray-900">
+            $
+            {(discountPrice ?? price ?? 0).toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </span>
+          {discountPrice != null && discountPrice < (price || 0) && (
+            <span className="line-through text-gray-400">
+              $
+              {(price || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "averageRating",
+    id: "averageRating",
+    header: ({ column }) => <SortableHeader column={column} title="Rating" />,
+    cell: ({ row }) => {
+      const rating = row.original.averageRating || 5.0;
+      const count = row.original.totalRatingsCount || 0;
+      return (
+        <div className="flex items-center gap-1 text-xs font-medium text-amber-600">
+          <span>★ {rating.toFixed(1)}</span>
+          <span className="text-gray-400">({count})</span>
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "isPublished",
     id: "isPublished",
     header: ({ column }) => (
@@ -68,7 +120,7 @@ const columns: ColumnDef<Course>[] = [
 const CoursesList = ({ courses }: { courses?: any }) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -161,7 +213,7 @@ const CoursesList = ({ courses }: { courses?: any }) => {
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -180,7 +232,7 @@ const CoursesList = ({ courses }: { courses?: any }) => {
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
