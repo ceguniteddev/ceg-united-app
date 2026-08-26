@@ -7,11 +7,8 @@ import type {
   ApplicationChannel,
   BureauRiskTier,
   BureauInquiryInfo,
-  OtherChannel,
   CegProductLift,
-  ExistingLenderRelationship,
 } from "@/types/funding-playbook";
-import { AIPlaybookReasoningOutputSchema } from "./schemas";
 
 /**
  * Normalizes raw n8n response into the flat AI reasoning output shape.

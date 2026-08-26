@@ -147,6 +147,23 @@ export function FundingApplyContent({
   const handleApplyNow = async () => {
     if (!lender) return;
 
+    // Trigger funding playbook generation asynchronously in background (fire-and-forget)
+    const lenderId = lender.bankId || lender.id || "";
+    const productId = lender.id || lender.products?.[0]?.id || "";
+    if (targetUserId && (lenderId || productId)) {
+      fetch("/api/funding-playbook/generate-async", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: targetUserId,
+          lenderId,
+          productId,
+        }),
+      }).catch((err) => {
+        console.error("Failed to trigger background playbook generation:", err);
+      });
+    }
+
     // Update application status with selected method
     await applyApprovedMappedFund({
       fundMappingApprovedId: lender.fundMappingApprovedId,
