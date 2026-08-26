@@ -44,7 +44,7 @@ export function PreApprovalHeroCard({
         <div className="mt-6 flex flex-wrap gap-3">
           <button
             onClick={onContinue}
-            className="cursor-pointer inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all"
+            className="cursor-pointer inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all text-sm"
           >
             Continue to select your offer
             <ArrowRight className="w-4 h-4" />

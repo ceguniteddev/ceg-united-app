@@ -1,7 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  Suspense,
+} from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/provider/AuthContext";
 import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
@@ -55,6 +62,30 @@ const QUALIFYING_STATUSES: FundingApplicationSatus[] = [
 ];
 
 export default function ClientFundingPlaybookPage() {
+  return (
+    <Suspense fallback={<Spinner />}>
+      <FundingPlaybookContent />
+    </Suspense>
+  );
+}
+
+export function FundingPlaybookContent({
+  initialReferenceNumber,
+  initialPathwayId,
+  initialFundId,
+}: {
+  initialReferenceNumber?: string;
+  initialPathwayId?: string;
+  initialFundId?: string;
+} = {}) {
+  const searchParams = useSearchParams();
+  const queryReference =
+    searchParams?.get("referenceNumber") || initialReferenceNumber;
+  const queryPathwayId = searchParams?.get("pathwayId") || initialPathwayId;
+  const queryFundId =
+    searchParams?.get("fundId") ||
+    searchParams?.get("fundMappingApprovedId") ||
+    initialFundId;
   const { user, userData } = useAuth();
 
   // ── 1. Funding Applications ────────────────────────────────────────
@@ -78,14 +109,34 @@ export default function ClientFundingPlaybookPage() {
       .sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [appliedFunding]);
 
+  const initialMatch = useMemo(() => {
+    if (!referenceOptions.length) return "";
+    const match =
+      queryReference &&
+      referenceOptions.find((opt) => opt.value === queryReference);
+    return match ? match.value : referenceOptions[0].value;
+  }, [referenceOptions, queryReference]);
+
   const [selectedReference, setSelectedReference] = useState<string>("");
 
-  // Auto-select when options load
+  // Auto-select when options load (prefer valid query referenceNumber, fallback to newest)
   useEffect(() => {
-    if (referenceOptions.length > 0 && !selectedReference) {
-      setSelectedReference(referenceOptions[0].value);
+    if (initialMatch) {
+      setSelectedReference((current) => {
+        // If current reference is valid and no queryReference override was just matched, keep current
+        if (
+          queryReference &&
+          referenceOptions.some((opt) => opt.value === queryReference)
+        ) {
+          return queryReference;
+        }
+        if (current && referenceOptions.some((opt) => opt.value === current)) {
+          return current;
+        }
+        return initialMatch;
+      });
     }
-  }, [referenceOptions, selectedReference]);
+  }, [initialMatch, queryReference, referenceOptions]);
 
   // ── 2. Applied Pathways (Pre-Approved or greater) ──────────────────
   const qualifiedPathways = useMemo(() => {
@@ -103,19 +154,28 @@ export default function ClientFundingPlaybookPage() {
 
   const [selectedPathwayId, setSelectedPathwayId] = useState<string>("");
 
-  // Auto-select first qualifying pathway when pathways change
+  // Auto-select qualifying pathway (prefer queryPathwayId, fallback to first qualifying)
   useEffect(() => {
     if (qualifiedPathways.length > 0) {
-      const stillValid = qualifiedPathways.some(
-        (p) => p.pathwayId === selectedPathwayId,
-      );
-      if (!stillValid) {
-        setSelectedPathwayId(qualifiedPathways[0].pathwayId);
+      if (
+        queryPathwayId &&
+        qualifiedPathways.some((p) => p.pathwayId === queryPathwayId)
+      ) {
+        if (selectedPathwayId !== queryPathwayId) {
+          setSelectedPathwayId(queryPathwayId);
+        }
+      } else {
+        const stillValid = qualifiedPathways.some(
+          (p) => p.pathwayId === selectedPathwayId,
+        );
+        if (!stillValid) {
+          setSelectedPathwayId(qualifiedPathways[0].pathwayId);
+        }
       }
     } else {
       setSelectedPathwayId("");
     }
-  }, [qualifiedPathways, selectedPathwayId]);
+  }, [qualifiedPathways, selectedPathwayId, queryPathwayId]);
 
   // ── 3. Approved Mapped Funds (from auto-serve) ────────────────────
   const { mappedFund: approvedFunds = [], isLoading: isLoadingFunds } =
@@ -127,21 +187,43 @@ export default function ClientFundingPlaybookPage() {
 
   const [selectedFundId, setSelectedFundId] = useState<string>("");
 
-  // Auto-select first fund when funds change
+  // Auto-select fund (prefer queryFundId, fallback to first approved fund)
   useEffect(() => {
     if (approvedFunds && approvedFunds.length > 0) {
-      const stillValid = (approvedFunds as ApprovedBankFormData[]).some(
-        (f) => f.fundMappingApprovedId === selectedFundId,
-      );
-      if (!stillValid) {
-        setSelectedFundId(
-          (approvedFunds as ApprovedBankFormData[])[0].fundMappingApprovedId,
+      const funds = approvedFunds as ApprovedBankFormData[];
+      if (
+        queryFundId &&
+        funds.some(
+          (f) =>
+            f.fundMappingApprovedId === queryFundId ||
+            f.bankId === queryFundId ||
+            f.id === queryFundId,
+        )
+      ) {
+        const matchingFund = funds.find(
+          (f) =>
+            f.fundMappingApprovedId === queryFundId ||
+            f.bankId === queryFundId ||
+            f.id === queryFundId,
         );
+        if (
+          matchingFund &&
+          selectedFundId !== matchingFund.fundMappingApprovedId
+        ) {
+          setSelectedFundId(matchingFund.fundMappingApprovedId);
+        }
+      } else {
+        const stillValid = funds.some(
+          (f) => f.fundMappingApprovedId === selectedFundId,
+        );
+        if (!stillValid) {
+          setSelectedFundId(funds[0].fundMappingApprovedId);
+        }
       }
     } else {
       setSelectedFundId("");
     }
-  }, [approvedFunds, selectedFundId]);
+  }, [approvedFunds, selectedFundId, queryFundId]);
 
   const selectedFund = useMemo(() => {
     if (!selectedFundId || !approvedFunds) return null;

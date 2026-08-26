@@ -55,6 +55,7 @@ import { useRouter } from "next/navigation";
 import { ApprovalOddsBadge } from "./v2/ApprovalOddsBadge";
 import { LenderLogo } from "./v2/LenderLogo";
 import { CheckCircle2 } from "lucide-react";
+import BankPlaybookButton from "./BankPlaybookButton";
 import IconMenu from "../icon-menu";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
@@ -94,6 +95,9 @@ const getBaseColumns = (
         ? data.bankName
         : `Bank ${row.index + 1}`;
 
+      const lenderId = data.bankId || data.id || "";
+      const productId = data.id || (data.products?.[0] as any)?.id || "";
+
       return (
         <div className="flex items-center gap-3">
           <LenderLogo
@@ -106,10 +110,22 @@ const getBaseColumns = (
             colorClass={data.logoColor || "text-blue-600"}
             size="sm"
           />
-          <div className="min-w-0">
+          <div className="min-w-0 flex flex-col items-start gap-1">
             <p className="text-sm font-semibold text-gray-900 whitespace-normal break-words max-w-[250px] md:max-w-[300px] xl:max-w-[400px]">
               {displayBankName}
             </p>
+            {data.userId && lenderId && productId && (
+              <div className="flex items-center pt-0.5">
+                <BankPlaybookButton
+                  userId={data.userId}
+                  lenderId={lenderId}
+                  productId={productId}
+                  referenceNumber={data.referenceNumber}
+                  pathwayId={data.pathwayId}
+                  fundMappingApprovedId={data.fundMappingApprovedId}
+                />
+              </div>
+            )}
             {data.clientApplicationStatus === "Funded" && data.fundedAmount && (
               <div className="flex items-center gap-1.5 mt-0.5">
                 <CheckCircle2 className="size-3.5 text-blue-500" />
@@ -498,9 +514,23 @@ const FundingCard = ({
               colorClass={data.logoColor || "text-blue-600"}
               size="md"
             />
-            <div>
+            <div className="min-w-0 flex flex-col items-start gap-1">
               <p className="text-xs text-gray-500">Bank Name</p>
               <p className="font-semibold">{displayBankName}</p>
+              {data.userId &&
+                (data.bankId || data.id) &&
+                (data.id || data.products?.[0]?.id) && (
+                  <div className="flex items-center pt-0.5">
+                    <BankPlaybookButton
+                      userId={data.userId}
+                      lenderId={data.bankId || data.id}
+                      productId={data.id || data.products?.[0]?.id}
+                      referenceNumber={data.referenceNumber}
+                      pathwayId={data.pathwayId}
+                      fundMappingApprovedId={data.fundMappingApprovedId}
+                    />
+                  </div>
+                )}
               {isColumnVisible("fundedAmount") &&
                 data.clientApplicationStatus === "Funded" &&
                 data.fundedAmount && (
