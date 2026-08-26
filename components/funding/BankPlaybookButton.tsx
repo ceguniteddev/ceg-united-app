@@ -65,14 +65,14 @@ export function BankPlaybookButton({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 border border-blue-200 transition-colors shrink-0 cursor-pointer shadow-2xs",
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-xs transition-all shrink-0 cursor-pointer",
         className,
       )}
       title="View generated Funding Playbook in a new tab"
     >
-      <Sparkles className="w-3 h-3 text-blue-600 shrink-0" />
+      <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
       <span>Playbook</span>
-      <ExternalLink className="w-3 h-3 text-blue-500 opacity-80 shrink-0" />
+      <ExternalLink className="w-3 h-3 text-blue-100 opacity-90 shrink-0" />
     </a>
   );
 }

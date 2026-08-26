@@ -78,11 +78,11 @@ export const sidebarLinks = [
     route: "/client/income-funding",
     label: "My Funding",
   },
-  {
-    imgURL: "/icons/file-chart-column.svg",
-    route: "/client/funding-playbook",
-    label: "Funding Playbook",
-  },
+  // {
+  //   imgURL: "/icons/file-chart-column.svg",
+  //   route: "/client/funding-playbook",
+  //   label: "Funding Playbook",
+  // },
   {
     imgURL: "/icons/file-chart-column.svg",
     route: "/client/my-analysis",

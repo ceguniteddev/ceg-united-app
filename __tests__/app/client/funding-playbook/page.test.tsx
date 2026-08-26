@@ -2,7 +2,7 @@ import React from "react";
 import { render } from "@testing-library/react";
 import ClientFundingPlaybookPage, {
   FundingPlaybookContent,
-} from "@/app/(client)/client/funding-playbook/page";
+} from "@/app/(client)/client/_funding-playbook/page";
 import { useAuth } from "@/provider/AuthContext";
 import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 import { useClientMappedFundingDetailsQuery } from "@/hooks/admin/funding-application/fund-mapping";
