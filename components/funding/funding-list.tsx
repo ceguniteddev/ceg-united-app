@@ -96,7 +96,7 @@ const getBaseColumns = (
         : `Bank ${row.index + 1}`;
 
       const lenderId = data.bankId || data.id || "";
-      const productId = data.id || data.products?.[0]?.id || "";
+      const productId = data.id || (data.products?.[0] as any)?.id || "";
 
       return (
         <div className="flex items-center gap-3">

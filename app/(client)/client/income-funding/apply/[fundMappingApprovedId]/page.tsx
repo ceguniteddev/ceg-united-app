@@ -149,7 +149,7 @@ export function FundingApplyContent({
 
     // Trigger funding playbook generation asynchronously in background (fire-and-forget)
     const lenderId = lender.bankId || lender.id || "";
-    const productId = lender.id || lender.products?.[0]?.id || "";
+    const productId = lender.id || (lender.products?.[0] as any)?.id || "";
     if (targetUserId && (lenderId || productId)) {
       fetch("/api/funding-playbook/generate-async", {
         method: "POST",
