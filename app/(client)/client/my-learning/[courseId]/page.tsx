@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useAuth } from "@/provider/AuthContext";
 import {
   useGetUserCoursesWithProgress,
@@ -43,6 +43,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { MuxVideoPlayer } from "@/components/MuxVideoPlayer";
 import { toast } from "sonner";
@@ -51,7 +57,6 @@ import { isCourseFree } from "@/lib/course-pricing";
 const CourseDetailPage = () => {
   const params = useParams();
   const courseId = params.courseId as string;
-  const router = useRouter();
   const { user } = useAuth();
 
   const { coursesWithProgress, isLoading } = useGetUserCoursesWithProgress(
@@ -72,7 +77,8 @@ const CourseDetailPage = () => {
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(
     null,
   );
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [mobileCurriculumOpen, setMobileCurriculumOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [newNoteContent, setNewNoteContent] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
@@ -306,19 +312,84 @@ const CourseDetailPage = () => {
   const hasNext = currentIndex < publishedChapters.length - 1;
   const hasPrevious = currentIndex > 0;
 
+  const curriculumContent = (
+    <>
+      <div className="flex items-center justify-between border-b border-slate-800 p-4">
+        <div className="min-w-0">
+          <h3 className="text-sm font-bold text-white">Course Content</h3>
+          <p className="mt-0.5 text-xs text-slate-400">
+            {completedCount} / {totalCount} completed ({progressPct}%)
+          </p>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto overscroll-contain divide-y divide-slate-800/60">
+        {publishedChapters.map((chapter, index) => {
+          const isSelected = chapter.id === selectedChapterId;
+          const isCompleted = course.userProgress?.some(
+            (p) => p.chapterId === chapter.id && p.isCompleted,
+          );
+          const isVideoType = !chapter.type || chapter.type === "video";
+          const isArticleType = chapter.type === "article";
+          const isQuizType = chapter.type === "quiz";
+
+          return (
+            <button
+              key={chapter.id || index}
+              type="button"
+              onClick={() => {
+                setSelectedChapterId(chapter.id!);
+                setMobileCurriculumOpen(false);
+              }}
+              aria-current={isSelected ? "true" : undefined}
+              className={cn(
+                "flex min-h-14 w-full items-start gap-3 p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-400 motion-reduce:transition-none",
+                isSelected
+                  ? "bg-slate-800/90 font-medium text-white"
+                  : "text-slate-300 hover:bg-slate-800/60 hover:text-white",
+              )}
+            >
+              <div className="mt-0.5 shrink-0">
+                {isCompleted ? (
+                  <CheckCircle2 className="size-4 text-emerald-400" />
+                ) : isSelected ? (
+                  <PlayCircle className="size-4 text-blue-400" />
+                ) : (
+                  <Circle className="size-4 text-slate-600" />
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-2 text-xs font-medium">
+                  {index + 1}. {chapter.title}
+                </p>
+                <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-500">
+                  {isVideoType && <span>Video Lesson</span>}
+                  {isArticleType && <span>Reading Lesson</span>}
+                  {isQuizType && <span>Quiz</span>}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <main className="-mx-4 flex min-h-[calc(100dvh-110px)] w-[calc(100%+2rem)] min-w-0 max-w-none flex-col overflow-x-clip bg-slate-950 text-slate-100 lg:-mx-6 lg:min-h-dvh lg:w-[calc(100%+3rem)]">
       {/* Top Bar / Header */}
-      <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between shrink-0 sticky top-0 z-30">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-30 flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-3 py-2 sm:px-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Link
             href="/client/my-learning"
-            className="text-slate-400 hover:text-white transition-colors"
+            className="flex size-10 shrink-0 items-center justify-center rounded-md text-slate-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 motion-reduce:transition-none"
+            aria-label="Back to learning center"
           >
             <ChevronLeft className="w-5 h-5" />
           </Link>
-          <div className="border-l border-slate-800 pl-3 flex items-center gap-2">
-            <h1 className="text-xs sm:text-sm font-semibold text-white line-clamp-1 max-w-[200px] sm:max-w-md">
+          <div className="flex min-w-0 items-center gap-2 border-l border-slate-800 pl-2 sm:pl-3">
+            <h1 className="truncate text-xs font-semibold text-white sm:text-sm">
               {course.title}
             </h1>
             {isCourseFree(course) && (
@@ -329,7 +400,7 @@ const CourseDetailPage = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-3">
           {/* Progress Indicator */}
           <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
             <div className="w-24 bg-slate-800 rounded-full h-2 overflow-hidden">
@@ -348,36 +419,45 @@ const CourseDetailPage = () => {
               size="sm"
               variant="outline"
               onClick={() => setShowCertificate(true)}
-              className="text-xs h-8 border-amber-500 text-amber-400 bg-transparent hover:bg-amber-950/40 gap-1.5"
+              className="h-9 gap-1.5 border-amber-500 bg-transparent px-2 text-xs text-amber-400 hover:bg-amber-950/40 sm:px-3"
             >
               <Award className="w-3.5 h-3.5" />
-              Certificate
+              <span className="hidden sm:inline">Certificate</span>
             </Button>
           )}
 
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-slate-300 hover:text-white"
+            onClick={() => {
+              if (window.matchMedia("(min-width: 1024px)").matches) {
+                setDesktopSidebarOpen((open) => !open);
+              } else {
+                setMobileCurriculumOpen(true);
+              }
+            }}
+            className="size-10 p-0 text-slate-300 hover:text-white"
+            aria-label="Open course curriculum"
+            aria-expanded={mobileCurriculumOpen}
           >
-            {sidebarOpen ? (
-              <X className="w-5 h-5" />
+            <Menu className="size-5 lg:hidden" />
+            {desktopSidebarOpen ? (
+              <X className="hidden size-5 lg:block" />
             ) : (
-              <Menu className="w-5 h-5" />
+              <Menu className="hidden size-5 lg:block" />
             )}
           </Button>
         </div>
       </header>
 
       {/* Main Workspace Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         {/* Left/Main Column: Player + Tabs */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
           {/* Media Player Viewport */}
-          <div className="bg-black w-full flex items-center justify-center relative min-h-[300px] sm:min-h-[460px] lg:min-h-[520px]">
+          <div className="relative flex min-h-[210px] w-full min-w-0 items-center justify-center bg-black sm:min-h-[360px] lg:min-h-[520px]">
             {isVideo && (
-              <div className="w-full h-full max-w-5xl aspect-video mx-auto">
+              <div className="mx-auto aspect-video h-full w-full max-w-5xl">
                 {selectedChapter?.muxData?.playbackId ? (
                   <MuxVideoPlayer
                     playbackId={selectedChapter.muxData.playbackId}
@@ -403,11 +483,11 @@ const CourseDetailPage = () => {
             )}
 
             {isArticle && (
-              <div className="w-full max-w-4xl mx-auto p-6 sm:p-10 bg-slate-900 rounded-xl my-8 border border-slate-800 text-slate-200">
+              <article className="mx-3 my-4 w-full max-w-4xl overflow-hidden rounded-xl border border-slate-800 bg-slate-900 p-4 text-slate-200 sm:mx-6 sm:my-8 sm:p-10">
                 <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-3">
                   <FileText className="w-4 h-4" /> Reading Lesson
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-6">
+                <h2 className="mb-4 text-xl font-bold text-white [text-wrap:balance] sm:mb-6 sm:text-2xl">
                   {selectedChapter?.title}
                 </h2>
                 <div
@@ -419,12 +499,12 @@ const CourseDetailPage = () => {
                       "<p>No reading content provided.</p>",
                   }}
                 />
-              </div>
+              </article>
             )}
 
             {isQuiz && (
-              <div className="w-full max-w-3xl mx-auto p-6 sm:p-10 bg-slate-900 rounded-xl my-8 border border-slate-800 text-slate-200 space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="mx-3 my-4 w-full max-w-3xl space-y-5 overflow-hidden rounded-xl border border-slate-800 bg-slate-900 p-4 text-slate-200 sm:mx-6 sm:my-8 sm:space-y-6 sm:p-10">
+                <div className="flex flex-col gap-2 border-b border-slate-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2 text-purple-400 text-xs font-bold uppercase tracking-wider">
                     <HelpCircle className="w-4 h-4" /> Knowledge Check
                   </div>
@@ -442,7 +522,7 @@ const CourseDetailPage = () => {
                   {selectedChapter?.quiz?.questions?.map((q, qIndex) => (
                     <div
                       key={q.id || qIndex}
-                      className="p-5 bg-slate-950 rounded-xl border border-slate-800/80 space-y-3"
+                      className="space-y-3 rounded-xl border border-slate-800/80 bg-slate-950 p-4 sm:p-5"
                     >
                       <p className="font-semibold text-sm text-slate-100">
                         {qIndex + 1}. {q.question}
@@ -455,7 +535,7 @@ const CourseDetailPage = () => {
                           const showFeedback = quizSubmitted;
 
                           let btnClasses =
-                            "w-full text-left p-3 rounded-lg text-xs font-medium border transition-all flex items-center justify-between ";
+                            "flex min-h-11 w-full items-center justify-between gap-3 rounded-lg border p-3 text-left text-xs font-medium transition-all motion-reduce:transition-none ";
 
                           if (showFeedback) {
                             if (isCorrect) {
@@ -509,7 +589,21 @@ const CourseDetailPage = () => {
                 </div>
 
                 {/* Quiz Controls */}
-                <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                <div className="flex flex-col items-stretch gap-3 border-t border-slate-800 pt-4 sm:flex-row sm:items-center sm:justify-between [&_button]:w-full sm:[&_button]:w-auto">
+                  {quizSubmitted && quizScore !== null && (
+                    <p
+                      className={cn(
+                        "text-center text-sm font-semibold sm:text-left",
+                        quizScore >=
+                          (selectedChapter?.quiz?.passingScorePercentage ?? 70)
+                          ? "text-emerald-400"
+                          : "text-red-400",
+                      )}
+                      role="status"
+                    >
+                      Score: {quizScore}%
+                    </p>
+                  )}
                   {quizSubmitted ? (
                     <Button
                       onClick={() => {
@@ -540,15 +634,16 @@ const CourseDetailPage = () => {
           </div>
 
           {/* Navigation Controls Bar below Player */}
-          <div className="h-12 bg-slate-900 border-b border-slate-800 px-4 sm:px-8 flex items-center justify-between">
+          <div className="flex min-h-14 items-center justify-between gap-1 border-b border-slate-800 bg-slate-900 px-2 sm:px-8">
             <Button
               size="sm"
               variant="ghost"
               disabled={!hasPrevious}
               onClick={handlePreviousChapter}
-              className="text-xs text-slate-400 hover:text-white gap-1"
+              className="h-10 gap-1 px-2 text-xs text-slate-400 hover:text-white sm:px-3"
             >
-              <ChevronLeft className="w-4 h-4" /> Previous
+              <ChevronLeft className="size-4" />
+              <span className="hidden min-[370px]:inline">Previous</span>
             </Button>
 
             <Button
@@ -558,7 +653,7 @@ const CourseDetailPage = () => {
               }
               onClick={handleMarkComplete}
               className={cn(
-                "text-xs gap-1.5 font-medium",
+                "h-10 gap-1.5 px-2 text-[11px] font-medium min-[370px]:px-3 min-[370px]:text-xs",
                 currentChapterProgress?.isCompleted
                   ? "border-emerald-500 text-emerald-400 bg-transparent hover:bg-emerald-950/30"
                   : "bg-blue-600 hover:bg-blue-700 text-white",
@@ -572,7 +667,8 @@ const CourseDetailPage = () => {
               ) : (
                 <>
                   <Circle className="w-4 h-4" />
-                  Mark as Complete
+                  <span className="hidden min-[370px]:inline">Mark as </span>
+                  Complete
                 </>
               )}
             </Button>
@@ -582,51 +678,60 @@ const CourseDetailPage = () => {
               variant="ghost"
               disabled={!hasNext}
               onClick={handleNextChapter}
-              className="text-xs text-slate-400 hover:text-white gap-1"
+              className="h-10 gap-1 px-2 text-xs text-slate-400 hover:text-white sm:px-3"
             >
-              Next <ChevronRight className="w-4 h-4" />
+              <span className="hidden min-[370px]:inline">Next</span>
+              <ChevronRight className="size-4" />
             </Button>
           </div>
 
           {/* Bottom Tabs Workspace */}
-          <div className="p-4 sm:p-8 max-w-5xl w-full mx-auto space-y-6">
+          <div className="mx-auto w-full min-w-0 max-w-5xl space-y-6 p-4 sm:p-8">
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
-              className="w-full"
+              className="w-full min-w-0"
             >
-              <TabsList className="bg-slate-900 border border-slate-800 p-1 rounded-lg">
+              <TabsList className="grid h-auto w-full grid-cols-2 rounded-lg border border-slate-800 bg-slate-900 p-1 sm:grid-cols-4">
                 <TabsTrigger
                   value="overview"
-                  className="flex items-center gap-1.5 text-xs sm:text-sm"
+                  className="min-w-0 gap-1.5 px-2 text-xs sm:text-sm"
                 >
-                  <BookOpen className="w-3.5 h-3.5" /> Overview
+                  <BookOpen className="size-3.5 shrink-0" />
+                  <span className="truncate">Overview</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="notes"
-                  className="flex items-center gap-1.5 text-xs sm:text-sm"
+                  className="min-w-0 gap-1.5 px-2 text-xs sm:text-sm"
                 >
-                  <StickyNote className="w-3.5 h-3.5" /> Notes ({notes.length})
+                  <StickyNote className="size-3.5 shrink-0" />
+                  <span className="truncate">Notes ({notes.length})</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="resources"
-                  className="flex items-center gap-1.5 text-xs sm:text-sm"
+                  className="min-w-0 gap-1.5 px-2 text-xs sm:text-sm"
                 >
-                  <Download className="w-3.5 h-3.5" /> Resources (
-                  {allAttachments.length})
+                  <Download className="size-3.5 shrink-0" />
+                  <span className="truncate">
+                    Resources ({allAttachments.length})
+                  </span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="reviews"
-                  className="flex items-center gap-1.5 text-xs sm:text-sm"
+                  className="min-w-0 gap-1.5 px-2 text-xs sm:text-sm"
                 >
-                  <Star className="w-3.5 h-3.5" /> Reviews ({reviews.length})
+                  <Star className="size-3.5 shrink-0" />
+                  <span className="truncate">Reviews ({reviews.length})</span>
                 </TabsTrigger>
               </TabsList>
 
               {/* TAB: Overview */}
-              <TabsContent value="overview" className="mt-6 space-y-6">
+              <TabsContent
+                value="overview"
+                className="mt-5 min-w-0 space-y-6 sm:mt-6"
+              >
                 <div>
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-xl font-bold text-white [text-wrap:balance]">
                     {selectedChapter?.title}
                   </h2>
                   <div
@@ -656,7 +761,10 @@ const CourseDetailPage = () => {
               </TabsContent>
 
               {/* TAB: Personal Notes */}
-              <TabsContent value="notes" className="mt-6 space-y-6">
+              <TabsContent
+                value="notes"
+                className="mt-5 min-w-0 space-y-6 sm:mt-6"
+              >
                 <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
                   <label className="text-xs font-semibold text-slate-300 block">
                     Add Note for {selectedChapter?.title}
@@ -683,16 +791,16 @@ const CourseDetailPage = () => {
                     notes.map((note) => (
                       <div
                         key={note.id}
-                        className="p-4 bg-slate-900 rounded-xl border border-slate-800 flex items-start justify-between gap-4"
+                        className="flex min-w-0 flex-col items-stretch gap-3 rounded-xl border border-slate-800 bg-slate-900 p-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
                       >
-                        <p className="text-sm text-slate-300 whitespace-pre-wrap">
+                        <p className="min-w-0 break-words text-sm text-slate-300 whitespace-pre-wrap">
                           {note.content}
                         </p>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => deleteNote(note.id!)}
-                          className="text-xs text-slate-500 hover:text-red-400"
+                          className="self-end text-xs text-slate-500 hover:text-red-400"
                         >
                           Delete
                         </Button>
@@ -707,13 +815,16 @@ const CourseDetailPage = () => {
               </TabsContent>
 
               {/* TAB: Resources & Attachments */}
-              <TabsContent value="resources" className="mt-6 space-y-4">
+              <TabsContent
+                value="resources"
+                className="mt-5 min-w-0 space-y-4 sm:mt-6"
+              >
                 <div className="space-y-2">
                   {allAttachments.length > 0 ? (
                     allAttachments.map((att, attIndex) => (
                       <div
                         key={att.id || att.url || attIndex}
-                        className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between gap-3 hover:border-slate-700 transition-colors"
+                        className="flex min-w-0 items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900 p-3 transition-colors hover:border-slate-700 motion-reduce:transition-none sm:gap-3"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
@@ -741,7 +852,10 @@ const CourseDetailPage = () => {
                             size="sm"
                             className="text-xs h-8 px-3 gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-sm transition-colors border-0"
                           >
-                            <Download className="w-3.5 h-3.5" /> Download
+                            <Download className="size-3.5" />
+                            <span className="hidden min-[370px]:inline">
+                              Download
+                            </span>
                           </Button>
                         </a>
                       </div>
@@ -755,22 +869,26 @@ const CourseDetailPage = () => {
               </TabsContent>
 
               {/* TAB: Reviews */}
-              <TabsContent value="reviews" className="mt-6 space-y-6">
+              <TabsContent
+                value="reviews"
+                className="mt-5 min-w-0 space-y-6 sm:mt-6"
+              >
                 {/* Leave a Review Box */}
                 <form
                   onSubmit={handleReviewSubmit}
-                  className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4"
+                  className="space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-4 sm:p-5"
                 >
                   <h3 className="text-sm font-bold text-white">
                     Leave Course Feedback
                   </h3>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
                         type="button"
                         key={star}
                         onClick={() => setReviewRating(star)}
-                        className="text-amber-400 hover:scale-110 transition-transform"
+                        className="flex size-9 items-center justify-center text-amber-400 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 motion-reduce:transform-none motion-reduce:transition-none"
+                        aria-label={`Rate ${star} out of 5 stars`}
                       >
                         <Star
                           className={`w-5 h-5 ${
@@ -781,7 +899,7 @@ const CourseDetailPage = () => {
                         />
                       </button>
                     ))}
-                    <span className="text-xs text-slate-400 ml-2">
+                    <span className="w-full text-xs text-slate-400 sm:ml-2 sm:w-auto">
                       {reviewRating} out of 5 stars
                     </span>
                   </div>
@@ -839,72 +957,32 @@ const CourseDetailPage = () => {
           </div>
         </div>
 
-        {/* Right Column: Course Curriculum Drawer (Udemy-Style) */}
-        {sidebarOpen && (
-          <aside className="w-80 lg:w-96 bg-slate-900 border-l border-slate-800 flex flex-col shrink-0">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-sm text-white">Course Content</h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {completedCount} / {totalCount} completed ({progressPct}%)
-                </p>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-800/60">
-              {publishedChapters.map((chapter, index) => {
-                const isSelected = chapter.id === selectedChapterId;
-                const isCompleted = course.userProgress?.some(
-                  (p) => p.chapterId === chapter.id && p.isCompleted,
-                );
-                const isVideoType = !chapter.type || chapter.type === "video";
-                const isArticleType = chapter.type === "article";
-                const isQuizType = chapter.type === "quiz";
-
-                return (
-                  <button
-                    key={chapter.id || index}
-                    onClick={() => setSelectedChapterId(chapter.id!)}
-                    className={cn(
-                      "w-full p-3.5 text-left transition-colors flex items-start gap-3",
-                      isSelected
-                        ? "bg-slate-800/90 text-white font-medium"
-                        : "text-slate-300 hover:bg-slate-850 hover:text-white",
-                    )}
-                  >
-                    <div className="mt-0.5 shrink-0">
-                      {isCompleted ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      ) : isSelected ? (
-                        <PlayCircle className="w-4 h-4 text-blue-400" />
-                      ) : (
-                        <Circle className="w-4 h-4 text-slate-600" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium line-clamp-2">
-                        {index + 1}. {chapter.title}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500">
-                        {isVideoType && <span>Video Lesson</span>}
-                        {isArticleType && <span>Reading Lesson</span>}
-                        {isQuizType && <span>Quiz</span>}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+        {/* Persistent desktop curriculum */}
+        {desktopSidebarOpen && (
+          <aside className="hidden w-80 shrink-0 flex-col border-l border-slate-800 bg-slate-900 lg:flex xl:w-96">
+            {curriculumContent}
           </aside>
         )}
       </div>
 
+      {/* Full-width mobile curriculum */}
+      <Sheet open={mobileCurriculumOpen} onOpenChange={setMobileCurriculumOpen}>
+        <SheetContent
+          side="right"
+          className="flex h-dvh w-full max-w-none flex-col gap-0 border-slate-800 bg-slate-900 p-0 text-slate-100 sm:max-w-md lg:hidden"
+        >
+          <SheetHeader className="sr-only">
+            <SheetTitle>Course curriculum</SheetTitle>
+          </SheetHeader>
+          {curriculumContent}
+        </SheetContent>
+      </Sheet>
+
       {/* Certificate Modal */}
       <Dialog open={showCertificate} onOpenChange={setShowCertificate}>
-        <DialogContent className="max-w-2xl bg-slate-900 border-amber-500/50 text-white text-center p-8">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto border-amber-500/50 bg-slate-900 p-5 text-center text-white sm:p-8">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-extrabold text-amber-400 flex items-center justify-center gap-2">
+            <DialogTitle className="flex items-center justify-center gap-2 text-xl font-extrabold text-amber-400 [text-wrap:balance] sm:text-2xl">
               <Trophy className="w-6 h-6 text-amber-400" /> Certificate of
               Completion
             </DialogTitle>
@@ -932,7 +1010,7 @@ const CourseDetailPage = () => {
           </Button>
         </DialogContent>
       </Dialog>
-    </div>
+    </main>
   );
 };
 

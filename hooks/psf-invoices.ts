@@ -123,6 +123,40 @@ export const useSignPsfInvoiceMutation = (userId: string) => {
   });
 };
 
+/** Creates a fresh hosted checkout for a signed, unpaid invoice. */
+export const usePayPsfInvoiceMutation = (userId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ invoiceId }: { invoiceId: string }) => {
+      const response = await fetch(
+        `/api/user/${userId}/psf-invoices/${invoiceId}/checkout`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.errors || errorData.message || "Failed to start payment",
+        );
+      }
+
+      return response.json() as Promise<{ success: boolean; url: string }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [GET_USER_PSF_INVOICES, userId],
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to start payment");
+    },
+  });
+};
+
 /**
  * Hook for admin to send a PSF invoice (generates Dodo checkout link)
  * Does not require client signature — admin-initiated send.

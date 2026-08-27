@@ -140,33 +140,39 @@ const MyLearningPage = () => {
   const enrolledCourseIds = new Set(enrolledCourses.map((c) => c.id));
 
   return (
-    <div className="transactions space-y-6">
+    <main className="flex w-full min-w-0 max-w-full flex-col gap-4 overflow-x-clip bg-gray-25 py-3 sm:gap-6 sm:py-6">
       <HeaderBox
         title="Learning Center"
         subtext="Browse premium masterclasses, track your enrolled courses, and earn completion certificates."
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
-          <TabsList className="bg-slate-100 dark:bg-slate-900 p-1 rounded-lg">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full min-w-0"
+      >
+        <div className="flex min-w-0 flex-col gap-3 pb-2 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <TabsList className="grid h-auto w-full min-w-0 grid-cols-2 rounded-lg bg-slate-100 p-1 dark:bg-slate-900 lg:w-auto">
             <TabsTrigger
               value="my-courses"
-              className="flex items-center gap-2 text-xs sm:text-sm"
+              className="min-w-0 gap-1.5 px-2 text-[11px] sm:gap-2 sm:px-3 sm:text-sm"
             >
-              <BookOpen className="w-4 h-4" />
-              <span>My Courses ({totalCourses})</span>
+              <BookOpen className="size-3.5 shrink-0 sm:size-4" />
+              <span className="truncate">My Courses ({totalCourses})</span>
             </TabsTrigger>
             <TabsTrigger
               value="catalog"
-              className="flex items-center gap-2 text-xs sm:text-sm"
+              className="min-w-0 gap-1.5 px-2 text-[11px] sm:gap-2 sm:px-3 sm:text-sm"
             >
-              <ShoppingBag className="w-4 h-4" />
-              <span>Explore Catalog ({publishedCatalog.length})</span>
+              <ShoppingBag className="size-3.5 shrink-0 sm:size-4" />
+              <span className="truncate">
+                Explore Catalog ({publishedCatalog.length})
+              </span>
             </TabsTrigger>
           </TabsList>
 
           {/* Search Input */}
-          <div className="relative max-w-xs w-full">
+          <div className="relative w-full lg:max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
@@ -179,53 +185,64 @@ const MyLearningPage = () => {
         </div>
 
         {/* TAB 1: Enrolled Courses */}
-        <TabsContent value="my-courses" className="space-y-6 mt-4">
+        <TabsContent
+          value="my-courses"
+          className="mt-3 min-w-0 space-y-4 sm:mt-4 sm:space-y-6"
+        >
           {totalCourses > 0 && (
             <>
               {/* Progress Overview Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border shadow-sm flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+              <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                <div className="flex min-w-0 items-center gap-2 rounded-xl border bg-white p-3 dark:bg-slate-900 sm:gap-3 sm:p-4">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600 sm:size-10">
                     <BookOpen className="w-5 h-5" />
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Enrolled Courses</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-[11px] text-gray-600 sm:text-xs">
+                      Enrolled Courses
+                    </p>
                     <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
                       {totalCourses}
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border shadow-sm flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+                <div className="flex min-w-0 items-center gap-2 rounded-xl border bg-white p-3 dark:bg-slate-900 sm:gap-3 sm:p-4">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600 sm:size-10">
                     <Clock className="w-5 h-5" />
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500">In Progress</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-[11px] text-gray-600 sm:text-xs">
+                      In Progress
+                    </p>
                     <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
                       {inProgressCourses}
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border shadow-sm flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                <div className="flex min-w-0 items-center gap-2 rounded-xl border bg-white p-3 dark:bg-slate-900 sm:gap-3 sm:p-4">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 sm:size-10">
                     <CheckCircle2 className="w-5 h-5" />
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Completed</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-[11px] text-gray-600 sm:text-xs">
+                      Completed
+                    </p>
                     <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
                       {completedCourses}
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border shadow-sm flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                <div className="flex min-w-0 items-center gap-2 rounded-xl border bg-white p-3 dark:bg-slate-900 sm:gap-3 sm:p-4">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-600 sm:size-10">
                     <Trophy className="w-5 h-5" />
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Avg Completion</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-[11px] text-gray-600 sm:text-xs">
+                      Avg Completion
+                    </p>
                     <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
                       {overallProgress}%
                     </p>
@@ -234,12 +251,12 @@ const MyLearningPage = () => {
               </div>
 
               {/* Status Filter Chips */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <div className="flex max-w-full items-center gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <Button
                   variant={filter === "all" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilter("all")}
-                  className="rounded-full text-xs"
+                  className="shrink-0 rounded-full text-xs"
                 >
                   All ({totalCourses})
                 </Button>
@@ -247,7 +264,7 @@ const MyLearningPage = () => {
                   variant={filter === "in-progress" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilter("in-progress")}
-                  className="rounded-full text-xs"
+                  className="shrink-0 rounded-full text-xs"
                 >
                   In Progress ({inProgressCourses})
                 </Button>
@@ -255,7 +272,7 @@ const MyLearningPage = () => {
                   variant={filter === "completed" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilter("completed")}
-                  className="rounded-full text-xs"
+                  className="shrink-0 rounded-full text-xs"
                 >
                   Completed ({completedCourses})
                 </Button>
@@ -263,7 +280,7 @@ const MyLearningPage = () => {
                   variant={filter === "not-started" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilter("not-started")}
-                  className="rounded-full text-xs"
+                  className="shrink-0 rounded-full text-xs"
                 >
                   Not Started ({notStartedCourses})
                 </Button>
@@ -273,7 +290,7 @@ const MyLearningPage = () => {
 
           {/* Enrolled Courses Grid */}
           {filteredEnrolledCourses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
               {filteredEnrolledCourses.map((course, index) => {
                 const progressPct = course.enrollment?.progressPercentage ?? 0;
                 const gradient =
@@ -283,7 +300,7 @@ const MyLearningPage = () => {
                   <Link
                     key={course.id}
                     href={`/client/my-learning/${course.id}`}
-                    className="group flex flex-col bg-white dark:bg-slate-900 rounded-2xl border shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+                    className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-white transition-shadow duration-200 hover:shadow-md dark:bg-slate-900"
                   >
                     {/* Thumbnail */}
                     <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
@@ -308,7 +325,7 @@ const MyLearningPage = () => {
                     </div>
 
                     {/* Card Content */}
-                    <div className="p-5 flex flex-col flex-1 justify-between space-y-4">
+                    <div className="flex flex-1 flex-col justify-between space-y-4 p-4 sm:p-5">
                       <div className="space-y-1.5">
                         <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 group-hover:text-blue-600 transition-colors line-clamp-1">
                           {course.title}
@@ -320,13 +337,13 @@ const MyLearningPage = () => {
 
                       {/* Progress Bar */}
                       <div className="space-y-2 pt-2 border-t">
-                        <div className="flex items-center justify-between text-xs">
+                        <div className="flex min-w-0 items-center justify-between gap-2 text-xs">
                           <span className="font-medium text-gray-700 dark:text-gray-300">
                             {progressPct === 100
                               ? "Completed"
                               : `${progressPct}% complete`}
                           </span>
-                          <span className="text-gray-400">
+                          <span className="shrink-0 text-gray-500">
                             {course.completedChapters || 0} /{" "}
                             {course.totalChapters || 0} lectures
                           </span>
@@ -348,7 +365,7 @@ const MyLearningPage = () => {
               })}
             </div>
           ) : (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border p-12 text-center space-y-4">
+            <div className="space-y-4 rounded-2xl border bg-white p-6 text-center dark:bg-slate-900 sm:p-12">
               <div className="w-14 h-14 bg-blue-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto text-blue-600">
                 <BookOpen className="w-7 h-7" />
               </div>
@@ -372,8 +389,11 @@ const MyLearningPage = () => {
         </TabsContent>
 
         {/* TAB 2: Course Catalog */}
-        <TabsContent value="catalog" className="space-y-6 mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <TabsContent
+          value="catalog"
+          className="mt-3 min-w-0 space-y-4 sm:mt-4 sm:space-y-6"
+        >
+          <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
             {filteredCatalog.map((course, index) => {
               const isEnrolled = enrolledCourseIds.has(course.id);
               const pricing = getCoursePricing(course);
@@ -383,7 +403,7 @@ const MyLearningPage = () => {
               return (
                 <div
                   key={course.id}
-                  className="group flex flex-col bg-white dark:bg-slate-900 rounded-2xl border shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+                  className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-white transition-shadow duration-200 hover:shadow-md dark:bg-slate-900"
                 >
                   {/* Thumbnail */}
                   <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
@@ -418,7 +438,7 @@ const MyLearningPage = () => {
                   </div>
 
                   {/* Body */}
-                  <div className="p-5 flex flex-col flex-1 justify-between space-y-4">
+                  <div className="flex flex-1 flex-col justify-between space-y-4 p-4 sm:p-5">
                     <div className="space-y-2">
                       <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 group-hover:text-blue-600 transition-colors line-clamp-1">
                         {course.title}
@@ -437,8 +457,8 @@ const MyLearningPage = () => {
                     </div>
 
                     {/* Price & Action */}
-                    <div className="flex items-center justify-between pt-3 border-t">
-                      <div>
+                    <div className="flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
                         {pricing.isFree ? (
                           <span className="font-bold text-base text-emerald-600">
                             Free
@@ -458,18 +478,21 @@ const MyLearningPage = () => {
                       </div>
 
                       {isEnrolled ? (
-                        <Link href={`/client/my-learning/${course.id}`}>
+                        <Link
+                          href={`/client/my-learning/${course.id}`}
+                          className="w-full sm:w-auto"
+                        >
                           <Button
                             size="sm"
                             variant="outline"
-                            className="gap-1 text-xs"
+                            className="w-full gap-1 text-xs sm:w-auto"
                           >
                             Continue
                             <ArrowRight className="w-3.5 h-3.5" />
                           </Button>
                         </Link>
                       ) : pricing.isFree ? (
-                        <div className="flex items-center gap-1.5">
+                        <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center">
                           <Button
                             size="sm"
                             variant="default"
@@ -498,7 +521,7 @@ const MyLearningPage = () => {
                           </Link>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1.5">
+                        <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center">
                           <Button
                             size="sm"
                             variant="default"
@@ -534,7 +557,7 @@ const MyLearningPage = () => {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+    </main>
   );
 };
 
