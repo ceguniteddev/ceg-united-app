@@ -4,6 +4,7 @@ import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { authFirebase } from "@/lib/firebase";
 import { toast } from "sonner";
 
 export interface BankPlaybookButtonProps {
@@ -14,6 +15,34 @@ export interface BankPlaybookButtonProps {
   pathwayId?: string;
   fundMappingApprovedId?: string;
   className?: string;
+}
+
+async function authenticatedFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) {
+  const request = async (forceRefresh: boolean) => {
+    const headers = new Headers(init?.headers);
+    const currentUser = authFirebase.currentUser;
+
+    if (currentUser) {
+      headers.set(
+        "Authorization",
+        `Bearer ${await currentUser.getIdToken(forceRefresh)}`,
+      );
+    }
+
+    return fetch(input, {
+      ...init,
+      credentials: "include",
+      headers,
+    });
+  };
+
+  const response = await request(false);
+  if (response.status !== 401 || !authFirebase.currentUser) return response;
+
+  return request(true);
 }
 
 export function BankPlaybookButton({
@@ -33,22 +62,31 @@ export function BankPlaybookButton({
     queryFn: async () => {
       if (!userId || !lenderId || !productId) return false;
 
-      try {
-        const res = await fetch(
-          `/api/funding-playbook/fetch?userId=${encodeURIComponent(userId)}&lenderId=${encodeURIComponent(lenderId)}&productId=${encodeURIComponent(productId)}`,
-        );
+      const cacheBuster = Date.now().toString();
+      const res = await authenticatedFetch(
+        `/api/funding-playbook/fetch?userId=${encodeURIComponent(userId)}&lenderId=${encodeURIComponent(lenderId)}&productId=${encodeURIComponent(productId)}&_=${cacheBuster}`,
+        {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache, no-store, max-age=0",
+            Pragma: "no-cache",
+          },
+        },
+      );
 
-        if (!res.ok) return false;
-
-        const data = await res.json();
-        return Boolean(data?.playbook?.section1_bestMethod);
-      } catch {
-        return false;
+      if (res.status === 404) return false;
+      if (!res.ok) {
+        throw new Error("Unable to check the Funding Playbook status.");
       }
+
+      const data = await res.json();
+      return Boolean(data?.playbook);
     },
     enabled: hasRequiredIds,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    retry: 2,
   });
 
   const queryParams = new URLSearchParams();
@@ -66,7 +104,7 @@ export function BankPlaybookButton({
       const endpoint = hasPlaybook
         ? "/api/funding-playbook/generate?force=true"
         : "/api/funding-playbook/generate";
-      const response = await fetch(endpoint, {
+      const response = await authenticatedFetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, lenderId, productId }),

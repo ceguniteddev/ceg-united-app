@@ -283,6 +283,7 @@ export function PreApprovalView({
         <ClientActiveFundingList
           userId={userId}
           referenceNumber={referenceNumber}
+          showFundingPathway
         />
       </div>
     </div>

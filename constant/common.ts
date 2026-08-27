@@ -390,6 +390,12 @@ export const transactionCategoryStyles = {
     textColor: "text-emerald-700",
     chipBackgroundColor: "bg-emerald-50",
   },
+  Funded: {
+    borderColor: "border-emerald-300",
+    backgroundColor: "bg-emerald-600",
+    textColor: "text-emerald-700",
+    chipBackgroundColor: "bg-emerald-50",
+  },
   Yes: {
     borderColor: "border-emerald-300",
     backgroundColor: "bg-emerald-600",
