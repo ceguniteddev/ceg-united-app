@@ -56,11 +56,13 @@ export async function POST(req: Request) {
 
     const lenderId = reqLenderId || "chase";
     const productId = reqProductId || "chase-sapphire-preferred";
+    const forceRegenerate =
+      new URL(req.url).searchParams.get("force") === "true";
 
     // Check cache before calling n8n
     const id = playbookId(userId, lenderId, productId);
     const cached = await getCachedPlaybook(id);
-    if (cached) {
+    if (cached && !forceRegenerate) {
       return NextResponse.json({ cached: true, playbook: cached });
     }
 

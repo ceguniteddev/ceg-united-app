@@ -97,11 +97,11 @@ export function SectionAccordionNav({ active }: { active: string }) {
   return (
     <nav
       aria-label="Playbook sections (mobile)"
-      className="lg:hidden sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-white/95 backdrop-blur-md border-b border-gray-100 print:hidden"
+      className="sticky top-0 z-20 -mx-3 border-b border-gray-100 bg-white/95 px-3 py-2 backdrop-blur-md sm:-mx-6 sm:px-6 lg:hidden print:hidden"
     >
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2.5 h-10 px-3 rounded-xl bg-gray-50 border border-gray-200 text-left"
+        className="flex min-h-11 w-full items-center gap-2.5 rounded-xl border border-gray-200 bg-gray-50 px-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1"
         aria-expanded={open}
       >
         <ListOrdered className="w-4 h-4 text-blue-600 flex-shrink-0" />
@@ -126,7 +126,7 @@ export function SectionAccordionNav({ active }: { active: string }) {
                   window.setTimeout(() => scrollToSection(s.id), 60);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left",
+                  "flex min-h-11 w-full items-center gap-2.5 px-3.5 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600",
                   s.id === active
                     ? "bg-blue-50 text-blue-700"
                     : "text-gray-600",

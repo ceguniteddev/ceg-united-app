@@ -29,7 +29,6 @@ export function PreApprovalView({
   onContinue,
   userId,
   referenceNumber,
-  isAdminView,
 }: PreApprovalViewProps) {
   // Fallback to mock data if real data is not available yet
   const computationFromBackend = realDeal?.businessIncomeComputation || {};
@@ -266,14 +265,18 @@ export function PreApprovalView({
       )}
       {/* Matched Funding Products */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-6 md:p-7 animate-fade-in-up stagger-8">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-start gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
             <Sparkles className="w-5 h-5" />
           </div>
-          <div>
-            <div className="text-lg font-semibold uppercase tracking-wide text-blue-600">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-gray-900">
               Your Applied Funding Products
-            </div>
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm leading-5 text-gray-600">
+              Generate a personalized playbook for any lender below, then open
+              it to review application steps and recommendations.
+            </p>
           </div>
         </div>
 
