@@ -599,8 +599,8 @@ export function DeniedSection({
 
         {/* Step 6 — talk to a coach */}
         <DenialStep n={6} title="Talk to a CEG coach" icon={Headphones} last>
-          <div className="rounded-xl bg-gradient-to-r from-blue-900 to-[#2a4f7c] p-4 flex flex-wrap items-center gap-4">
-            <div className="min-w-0 flex-1">
+          <div className="rounded-xl bg-gradient-to-r from-blue-900 to-[#2a4f7c] p-4 flex flex-col items-start gap-3">
+            <div className="min-w-0 w-full">
               <p className="text-[13px] font-semibold text-white leading-snug">
                 {help?.aiClosingNote ||
                   `A CEG coach will run the reconsideration call script with ${clientName} live, listen in, and tell you exactly what to say if the analyst pushes back.`}
@@ -616,6 +616,7 @@ export function DeniedSection({
               variant="secondary"
               icon={Headphones}
               size="lg"
+              className="self-start"
             >
               Talk to a coach
             </ActionButton>

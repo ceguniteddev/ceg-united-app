@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   Wallet,
   Home,
@@ -13,6 +14,7 @@ import {
   XCircle,
   ShieldCheck,
   AlertTriangle,
+  ArrowRight,
 } from "lucide-react";
 import type { Playbook } from "@/types/funding-playbook";
 import { SectionCard, Chip, RationaleBlock } from "./Primitives";
@@ -662,6 +664,15 @@ export function CegProductLiftSection({ pb }: { pb: Playbook }) {
         {c.recommendations.map((rec, idx) => {
           const displayTitle =
             rec.serviceLabel || rec.service.replace("_", " ");
+          const isInquiryRemoval = displayTitle
+            .toLowerCase()
+            .includes("inquiry removal");
+          const isCreditMonitoring = displayTitle
+            .toLowerCase()
+            .includes("credit monitoring");
+          const impactDays = isInquiryRemoval
+            ? 5
+            : rec.estimatedTimeToImpactDays;
           return (
             <div
               key={`${rec.service}-${rec.rank || idx}`}
@@ -671,15 +682,35 @@ export function CegProductLiftSection({ pb }: { pb: Playbook }) {
                 <span className="text-[14px] font-bold text-gray-900 capitalize">
                   #{rec.rank} - {displayTitle}
                 </span>
-                <Chip tone="blue">
-                  {rec.estimatedTimeToImpactDays} days impact
-                </Chip>
+                <Chip tone="blue">{impactDays} days impact</Chip>
               </div>
               <p className="text-[12.5px] text-gray-600 leading-relaxed">
                 {rec.aiApplicability}
               </p>
-              <div className="text-[11.5px] font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg inline-block">
-                Lift: {rec.curatedImpactEstimate}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                {!isCreditMonitoring && rec.curatedImpactEstimate && (
+                  <div className="text-[11.5px] font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg inline-block">
+                    Lift: {rec.curatedImpactEstimate}
+                  </div>
+                )}
+                {isInquiryRemoval && (
+                  <Link
+                    href="/client/credit-repair"
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold text-blue-700 transition-colors hover:bg-blue-50 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                  >
+                    Open Credit Repair
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Link>
+                )}
+                {isCreditMonitoring && (
+                  <Link
+                    href="/client/my-credit"
+                    className="ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold text-blue-700 transition-colors hover:bg-blue-50 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                  >
+                    Open My Credit
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Link>
+                )}
               </div>
             </div>
           );

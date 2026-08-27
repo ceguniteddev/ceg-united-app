@@ -5,6 +5,7 @@ import type {
   Product,
   Branch,
   ApplicationChannel,
+  OtherChannel,
   BureauRiskTier,
   BureauInquiryInfo,
   CegProductLift,
@@ -79,14 +80,19 @@ export function normalizeN8nOutput(raw: any): any {
     normalized.section8_recommendations =
       normalized.section8_recommendations.map((rec: any, idx: number) => {
         if (!rec || typeof rec !== "object") return rec;
+        const serviceLabel =
+          typeof rec.service === "string" ? rec.service : undefined;
+        const isInquiryRemoval = serviceLabel
+          ?.toLowerCase()
+          .includes("inquiry removal");
         return {
           service: normalizeServiceEnum(rec.service),
-          serviceLabel:
-            typeof rec.service === "string" ? rec.service : undefined,
+          serviceLabel,
           rank: Number(rec.rank) || idx + 1,
           aiApplicability: String(rec.aiApplicability || ""),
-          estimatedTimeToImpactDays:
-            Number(rec.estimatedTimeToImpactDays) || 30,
+          estimatedTimeToImpactDays: isInquiryRemoval
+            ? 5
+            : Number(rec.estimatedTimeToImpactDays) || 30,
         };
       });
   }
@@ -102,6 +108,36 @@ export function normalizeChannelEnum(channelInput: any): ApplicationChannel {
   if (lower.includes("app") || lower.includes("mobile")) return "mobile_app";
   if (lower.includes("online") || lower.includes("web")) return "online";
   return "online";
+}
+
+/**
+ * Keeps the "other channels" list consistent with the deterministic primary
+ * recommendation. AI output can contain duplicate alternatives or repeat the
+ * primary channel, so enforce the cross-field invariant before persistence.
+ */
+export function sanitizeOtherChannels(
+  channelInputs: unknown,
+  recommendedChannel: ApplicationChannel,
+): OtherChannel[] {
+  if (!Array.isArray(channelInputs)) return [];
+
+  const seen = new Set<ApplicationChannel>();
+  const alternatives: OtherChannel[] = [];
+
+  for (const input of channelInputs) {
+    if (!input || typeof input !== "object") continue;
+
+    const candidate = input as Record<string, unknown>;
+    const channel = normalizeChannelEnum(candidate.channel);
+    const note = String(candidate.note || "").trim();
+
+    if (channel === recommendedChannel || seen.has(channel) || !note) continue;
+
+    seen.add(channel);
+    alternatives.push({ channel, recommended: false, note });
+  }
+
+  return alternatives;
 }
 
 export function normalizeServiceEnum(
@@ -372,9 +408,10 @@ export function assemblePlaybook(inputs: AssemblyInputs): Playbook {
       keyTakeaways: Array.isArray(aiOutput.section1_keyTakeaways)
         ? aiOutput.section1_keyTakeaways
         : [],
-      otherChannels: Array.isArray(aiOutput.section1_otherChannels)
-        ? aiOutput.section1_otherChannels
-        : [],
+      otherChannels: sanitizeOtherChannels(
+        aiOutput.section1_otherChannels,
+        recommendedChannel,
+      ),
       decisionSpeedNote:
         aiOutput.section1_decisionSpeedNote ||
         "Decisions typically take 1–3 business days.",
@@ -498,16 +535,23 @@ export function assemblePlaybook(inputs: AssemblyInputs): Playbook {
 
     section8_cegRecommendations: {
       recommendations: Array.isArray(aiOutput.section8_recommendations)
-        ? aiOutput.section8_recommendations.map((r: any) => ({
-            service: r.service,
-            serviceLabel: r.serviceLabel,
-            rank: r.rank,
-            curatedImpactEstimate:
-              cegProductLiftFor(product.cegProductLift, r.service) ??
-              `+${r.rank === 1 ? 40 : r.rank === 2 ? 25 : 15} pts / lift`,
-            aiApplicability: r.aiApplicability,
-            estimatedTimeToImpactDays: r.estimatedTimeToImpactDays,
-          }))
+        ? aiOutput.section8_recommendations.map((r: any) => {
+            const isCreditMonitoring = String(r.serviceLabel || r.service || "")
+              .toLowerCase()
+              .includes("credit monitoring");
+
+            return {
+              service: r.service,
+              serviceLabel: r.serviceLabel,
+              rank: r.rank,
+              curatedImpactEstimate: isCreditMonitoring
+                ? ""
+                : (cegProductLiftFor(product.cegProductLift, r.service) ??
+                  `+${r.rank === 1 ? 40 : r.rank === 2 ? 25 : 15} pts / lift`),
+              aiApplicability: r.aiApplicability,
+              estimatedTimeToImpactDays: r.estimatedTimeToImpactDays,
+            };
+          })
         : [],
     },
 
@@ -568,6 +612,9 @@ export function assemblePlaybook(inputs: AssemblyInputs): Playbook {
       const serviceName =
         r.serviceLabel || (r.service ? r.service.replace("_", " ") : "Service");
       const serviceType = r.service || "credit_repair";
+      const isCreditMonitoring = serviceName
+        .toLowerCase()
+        .includes("credit monitoring");
 
       let icon: "tradeline" | "repair" | "income" | "mentor" = "repair";
       if (serviceType === "tradelines") icon = "tradeline";
@@ -579,14 +626,17 @@ export function assemblePlaybook(inputs: AssemblyInputs): Playbook {
         title: `${serviceName} Strategy`,
         cegProduct: `CEG ${serviceName}`,
         description: r.aiApplicability || "Recommended optimization strategy.",
-        impactScore:
-          cegProductLiftFor(product.cegProductLift, serviceType) ??
-          `+${r.rank === 1 ? 40 : 25} pts`,
+        impactScore: isCreditMonitoring
+          ? "Monitoring only"
+          : (cegProductLiftFor(product.cegProductLift, serviceType) ??
+            `+${r.rank === 1 ? 40 : 25} pts`),
         impactApproval: `+${r.rank === 1 ? 35 : 20}% odds`,
         timeline: `${r.estimatedTimeToImpactDays || 30} days`,
         investment: "Program Service",
         ctaLabel: `Explore ${serviceName}`,
-        href: "https://cegunited.com",
+        href: isCreditMonitoring
+          ? "/client/my-credit"
+          : "https://cegunited.com",
         icon,
       };
     }),
