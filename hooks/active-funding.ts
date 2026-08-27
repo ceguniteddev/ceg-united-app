@@ -39,8 +39,14 @@ export const useClientActiveFundingDetailsQuery = ({
 
       const queryString = queryParams.toString();
       const url = `/api/user/${userId}/funding-application/${referenceNumber}${queryString ? `?${queryString}` : ""}`;
+      const idToken = await user.getIdToken();
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        credentials: "same-origin",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
