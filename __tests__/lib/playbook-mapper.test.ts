@@ -318,6 +318,10 @@ describe("playbook-mapper", () => {
         playbook.section8_cegRecommendations.recommendations[1]
           .curatedImpactEstimate,
       ).toBe("");
+      expect(playbook.improvers?.[0]).toMatchObject({
+        title: "credit repair Strategy",
+        href: "/client/credit-repair",
+      });
       expect(playbook.improvers?.[1]).toMatchObject({
         title: "Credit Monitoring Strategy",
         impactScore: "Monitoring only",

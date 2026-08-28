@@ -636,7 +636,9 @@ export function assemblePlaybook(inputs: AssemblyInputs): Playbook {
         ctaLabel: `Explore ${serviceName}`,
         href: isCreditMonitoring
           ? "/client/my-credit"
-          : "https://cegunited.com",
+          : serviceType === "credit_repair"
+            ? "/client/credit-repair"
+            : "https://cegunited.com",
         icon,
       };
     }),

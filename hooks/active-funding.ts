@@ -32,13 +32,18 @@ export const useClientActiveFundingDetailsQuery = ({
       if (!userId || !referenceNumber)
         throw new Error("Missing userId or referenceNumber");
 
-      const queryParams = new URLSearchParams();
+      const queryParams = new URLSearchParams({
+        userId,
+        referenceNumber,
+      });
+      ["Sent to Lender", "Approved", "Declined", "Funded"].forEach((status) =>
+        queryParams.append("clientApplicationStatus", status),
+      );
       if (pathwayId) {
         queryParams.append("pathwayId", pathwayId);
       }
 
-      const queryString = queryParams.toString();
-      const url = `/api/user/${userId}/funding-application/${referenceNumber}${queryString ? `?${queryString}` : ""}`;
+      const url = `/api/funding-application?${queryParams.toString()}`;
       const idToken = await user.getIdToken();
 
       const response = await fetch(url, {
@@ -49,8 +54,10 @@ export const useClientActiveFundingDetailsQuery = ({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error(errorData);
+        const errorData = await response.text();
+        console.error(
+          errorData || `Request failed with status ${response.status}`,
+        );
         toast.error("Failed to fetch active client funding details.");
         return [];
       }
