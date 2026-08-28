@@ -72,6 +72,28 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
+const FUNDING_PATHWAY_LABELS: Record<string, string> = {
+  income_based: "Income-Based Lenders",
+  business_credit_card_stacking: "Business Credit Card Stacking",
+  business_lines_of_credit: "Business Lines of Credit",
+  business_loan: "Business Loans",
+  personal_loan: "Personal Loans",
+  personal_credit_card: "Personal Credit Cards",
+};
+
+const getFundingPathwayLabel = (pathwayId?: string) => {
+  if (!pathwayId) return "—";
+
+  return (
+    FUNDING_PATHWAY_LABELS[pathwayId] ||
+    pathwayId
+      .split("_")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
+  );
+};
+
 const getBaseColumns = (
   hasPaidContract: boolean,
 ): ColumnDef<BankFormData>[] => [
@@ -161,6 +183,25 @@ const getBaseColumns = (
             </span>
           ))}
         </div>
+      );
+    },
+  },
+  {
+    accessorKey: "pathwayId",
+    id: "fundingPathway",
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Funding Pathway" />
+    ),
+    cell: ({ row }) => {
+      const pathwayId = (row.original as ApprovedBankFormData).pathwayId;
+      if (!pathwayId) return null;
+
+      const pathwayLabel = getFundingPathwayLabel(pathwayId);
+
+      return (
+        <span className="inline-flex max-w-[220px] rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+          {pathwayLabel}
+        </span>
       );
     },
   },
@@ -387,7 +428,7 @@ const FundingList = ({ appliedFunding, isAdminView, viewColumns }: Props) => {
       </div>
 
       {/* Desktop Table View */}
-      <div className="rounded-md border hidden md:flex">
+      <div className="hidden rounded-md border md:flex">
         <ScrollArea
           type="always"
           className="w-1 flex-1 h-[calc(100vh-400px)] min-h-[400px]"
@@ -448,7 +489,7 @@ const FundingList = ({ appliedFunding, isAdminView, viewColumns }: Props) => {
       </div>
 
       {/* Mobile Card View */}
-      <div className="lg:hidden space-y-4">
+      <div className="space-y-4 md:hidden">
         {table.getRowModel().rows?.length ? (
           table
             .getRowModel()
@@ -493,7 +534,7 @@ const FundingCard = ({
   };
 
   return (
-    <div className="border rounded-lg p-4 bg-white shadow-sm space-y-3">
+    <article className="space-y-4 rounded-lg border bg-white p-3 shadow-sm sm:p-4">
       {isColumnVisible("referenceNumber") && data.referenceNumber && (
         <div className="pb-2 border-b">
           <p className="text-xs text-gray-500">Reference Number</p>
@@ -502,52 +543,59 @@ const FundingCard = ({
       )}
 
       {isColumnVisible("bankName") && (
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3 flex-1">
-            <LenderLogo
-              initial={
-                hasPaidContract
-                  ? data.logoInitial || data.bankName.trim()[0]
-                  : "B"
-              }
-              bgClass={data.logoBg || "bg-blue-100"}
-              colorClass={data.logoColor || "text-blue-600"}
-              size="md"
-            />
-            <div className="min-w-0 flex flex-col items-start gap-1">
-              <p className="text-xs text-gray-500">Bank Name</p>
-              <p className="font-semibold">{displayBankName}</p>
-              {data.userId &&
-                (data.bankId || data.id) &&
-                (data.id || data.products?.[0]?.id) && (
-                  <div className="flex items-center pt-0.5">
-                    <BankPlaybookButton
-                      userId={data.userId}
-                      lenderId={data.bankId || data.id}
-                      productId={data.id || data.products?.[0]?.id}
-                      referenceNumber={data.referenceNumber}
-                      pathwayId={data.pathwayId}
-                      fundMappingApprovedId={data.fundMappingApprovedId}
-                    />
-                  </div>
-                )}
-              {isColumnVisible("fundedAmount") &&
-                data.clientApplicationStatus === "Funded" &&
-                data.fundedAmount && (
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <CheckCircle2 className="size-3.5 text-blue-500" />
-                    <span className="text-xs text-gray-500">
-                      Funded ${data.fundedAmount.toLocaleString()}
-                    </span>
-                  </div>
-                )}
+        <div className="space-y-3">
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <LenderLogo
+                initial={
+                  hasPaidContract
+                    ? data.logoInitial || data.bankName.trim()[0]
+                    : "B"
+                }
+                bgClass={data.logoBg || "bg-blue-100"}
+                colorClass={data.logoColor || "text-blue-600"}
+                size="md"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-gray-500">Bank Name</p>
+                <p className="truncate font-semibold text-gray-900">
+                  {displayBankName}
+                </p>
+              </div>
             </div>
+            {isAdminView && data.rank && (
+              <div className="flex size-7 flex-shrink-0 items-center justify-center rounded-full bg-blue-500 text-white">
+                <span className="text-xs font-bold">{data.rank}</span>
+              </div>
+            )}
           </div>
-          {isAdminView && data.rank && (
-            <div className="size-7 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-bold">{data.rank}</span>
-            </div>
-          )}
+
+          {data.userId &&
+            (data.bankId || data.id) &&
+            (data.id || data.products?.[0]?.id) && (
+              <BankPlaybookButton
+                userId={data.userId}
+                lenderId={data.bankId || data.id}
+                productId={data.id || data.products?.[0]?.id}
+                referenceNumber={data.referenceNumber}
+                pathwayId={data.pathwayId}
+                fundMappingApprovedId={data.fundMappingApprovedId}
+                className="flex w-full flex-col gap-2 min-[360px]:flex-row min-[360px]:flex-wrap [&>a]:min-h-11 [&>a]:justify-center [&>button]:min-h-11 [&>button]:justify-center"
+              />
+            )}
+
+          <div>
+            {isColumnVisible("fundedAmount") &&
+              data.clientApplicationStatus === "Funded" &&
+              data.fundedAmount && (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <CheckCircle2 className="size-3.5 text-blue-500" />
+                  <span className="text-xs text-gray-500">
+                    Funded ${data.fundedAmount.toLocaleString()}
+                  </span>
+                </div>
+              )}
+          </div>
         </div>
       )}
 
@@ -579,6 +627,15 @@ const FundingCard = ({
             </div>
           </div>
         )}
+
+      {isColumnVisible("fundingPathway") && data.pathwayId && (
+        <div>
+          <p className="text-xs text-gray-500">Funding Pathway</p>
+          <span className="mt-1 inline-flex rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+            {getFundingPathwayLabel(data.pathwayId)}
+          </span>
+        </div>
+      )}
 
       {isColumnVisible("requirements") &&
         data.products &&
@@ -623,7 +680,7 @@ const FundingCard = ({
         </div>
       )}
 
-      {isColumnVisible("approvedAmount") && data.approvedAmount > 0 && (
+      {isColumnVisible("approvedAmount") && (
         <div>
           <p className="text-xs text-gray-500">Approved Amount</p>
           <p className="font-semibold text-green-600">
@@ -632,14 +689,14 @@ const FundingCard = ({
         </div>
       )}
 
-      {isColumnVisible("approvedRemarks") && data.approvedRemarks && (
+      {isColumnVisible("approvedRemarks") && (
         <div>
           <p className="text-xs text-gray-500">Approved Remarks</p>
-          <p className="text-sm">{data.approvedRemarks}</p>
+          <p className="text-sm">{data.approvedRemarks || "—"}</p>
         </div>
       )}
 
-      {isColumnVisible("fundedAmount") && data.fundedAmount > 0 && (
+      {isColumnVisible("fundedAmount") && (
         <div>
           <p className="text-xs text-gray-500">Funded Amount</p>
           <p className="font-semibold text-blue-600">
@@ -652,7 +709,7 @@ const FundingCard = ({
         {isColumnVisible("clientActions") && <ActionCell row={row} />}
         {isColumnVisible("adminActions") && <AdminActionCell row={row} />}
       </div>
-    </div>
+    </article>
   );
 };
 

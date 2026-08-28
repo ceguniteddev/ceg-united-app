@@ -1,15 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  PhoneCall,
-  UserRound,
-  Mail,
-  MessageCircle,
-  X,
-  Send,
-  Sparkles,
-} from "lucide-react";
+import { PhoneCall, UserRound, X, Send, Sparkles } from "lucide-react";
 import type { Playbook } from "@/types/funding-playbook";
 
 export function StickyHelpBar({ pb }: { pb: Playbook }) {
@@ -18,7 +10,7 @@ export function StickyHelpBar({ pb }: { pb: Playbook }) {
   return (
     <div className="sticky bottom-0 z-30 print:hidden">
       <div className="bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
-        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 py-3 flex items-center gap-2.5">
+        <div className="mx-auto flex max-w-[1500px] items-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:gap-2.5 sm:px-6">
           <div className="hidden lg:flex items-center gap-2 min-w-0 mr-2">
             <Sparkles className="w-4 h-4 text-blue-600 flex-shrink-0" />
             <div className="min-w-0">
@@ -33,16 +25,21 @@ export function StickyHelpBar({ pb }: { pb: Playbook }) {
 
           <a
             href={`tel:${help.cegSupportPhone}`}
-            className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl bg-blue-600 text-white text-[12.5px] font-semibold hover:bg-blue-700 transition-colors shadow-sm active:scale-[0.98]"
+            className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 active:scale-[0.98] sm:px-4 lg:flex-none"
           >
             <PhoneCall className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Call {help.cegSupportPhone}</span>
+            <span className="truncate">
+              <span className="sm:hidden">Call support</span>
+              <span className="hidden sm:inline">
+                Call {help.cegSupportPhone}
+              </span>
+            </span>
           </a>
           <a
             href={help.scheduleConsultUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl bg-gray-900 text-white text-[12.5px] font-semibold hover:bg-gray-800 transition-colors shadow-sm active:scale-[0.98]"
+            className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl bg-gray-900 px-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 active:scale-[0.98] sm:px-4 lg:flex-none"
           >
             <UserRound className="w-4 h-4 flex-shrink-0" />
             <span className="truncate">Book 1-on-1</span>

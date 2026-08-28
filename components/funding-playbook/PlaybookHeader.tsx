@@ -215,14 +215,14 @@ export function ClientIdentityBar({
       : resolvedClientName.slice(0, 2).toUpperCase();
 
   return (
-    <div className="bg-[#18365d] text-white print:bg-[#18365d]">
-      <div className="max-w-[1500px] mx-auto px-4 sm:px-6 py-4 space-y-3.5">
+    <div className="min-w-0 bg-[#18365d] text-white print:bg-[#18365d]">
+      <div className="mx-auto max-w-[1500px] space-y-3.5 px-3 py-4 sm:px-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
           {/* Top row on mobile: Avatar + Name/Business, and Readiness card */}
-          <div className="flex items-start justify-between gap-3 lg:justify-start lg:flex-1 lg:min-w-0">
+          <div className="flex min-w-0 items-start justify-between gap-2.5 lg:flex-1 lg:justify-start lg:gap-3">
             {/* Avatar + Client Name & Business */}
-            <div className="flex items-center gap-3.5 min-w-0">
-              <div className="w-11 h-11 rounded-full bg-slate-700/80 ring-2 ring-white/20 flex items-center justify-center shrink-0 font-bold text-[15px] text-white tracking-wider">
+            <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-700/80 text-[14px] font-bold tracking-wider text-white ring-2 ring-white/20 sm:h-11 sm:w-11 sm:text-[15px]">
                 {initials}
               </div>
               <div className="min-w-0">
@@ -236,7 +236,7 @@ export function ClientIdentityBar({
             </div>
 
             {/* Readiness card — shown inline on mobile (compact), moves right on desktop */}
-            <div className="bg-white/10 backdrop-blur-xs ring-1 ring-white/15 rounded-2xl px-3 py-2 flex items-center gap-2.5 shrink-0 lg:hidden">
+            <div className="flex shrink-0 items-center gap-2.5 rounded-xl bg-white/10 px-2 py-1.5 ring-1 ring-white/15 sm:rounded-2xl sm:px-3 sm:py-2 lg:hidden">
               <ProgressRing
                 pct={pb.section4_approvalEstimate.clientMeetsMinFICO ? 94 : 65}
                 size={40}
@@ -256,7 +256,7 @@ export function ClientIdentityBar({
           <div className="hidden lg:block h-10 w-px bg-slate-600/50 shrink-0" />
 
           {/* Center: Stat columns — responsive grid */}
-          <div className="grid grid-cols-3 gap-x-4 gap-y-3 sm:gap-x-8 lg:flex lg:items-center lg:gap-x-8">
+          <div className="grid grid-cols-1 gap-x-5 gap-y-4 min-[400px]:grid-cols-2 sm:grid-cols-3 sm:gap-x-8 lg:flex lg:items-center lg:gap-x-8">
             {/* Stat 1: FICO */}
             <div className="min-w-0">
               <div className="text-[10px] sm:text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">
@@ -290,13 +290,13 @@ export function ClientIdentityBar({
             </div>
 
             {/* Stat 3: HOUSEHOLD INCOME */}
-            <div className="min-w-0">
+            <div className="min-w-0 min-[400px]:col-span-2 min-[400px]:border-t min-[400px]:border-white/10 min-[400px]:pt-3 sm:col-span-1 sm:border-0 sm:pt-0">
               <div className="text-[10px] sm:text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">
                 HOUSEHOLD INCOME
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <DollarSign className="w-4 h-4 text-blue-300 shrink-0" />
-                <span className="text-[17px] sm:text-[19px] font-extrabold text-white leading-none font-mono tabular-nums truncate">
+                <span className="break-words font-mono text-[17px] font-extrabold leading-none text-white tabular-nums sm:text-[19px]">
                   {formattedHouseholdIncome}
                 </span>
               </div>
@@ -325,9 +325,9 @@ export function ClientIdentityBar({
         </div>
 
         {/* Bottom Banner ("To reach 100%:") */}
-        <div className="w-full rounded-xl border border-blue-400/25 bg-blue-950/40 px-4 py-2.5 text-[12px] sm:text-[12.5px] flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+        <div className="flex w-full flex-col gap-1 rounded-xl border border-blue-400/25 bg-blue-950/40 px-3.5 py-2.5 text-[12px] sm:flex-row sm:items-center sm:gap-2 sm:px-4 sm:text-[12.5px]">
           <span className="font-bold text-white shrink-0">To reach 100%:</span>
-          <span className="text-slate-300 font-medium">
+          <span className="break-words font-medium leading-relaxed text-slate-200">
             Business bank statements (last 3 months) · EIN verification letter
           </span>
         </div>

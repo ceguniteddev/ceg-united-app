@@ -1068,12 +1068,13 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   try {
     const decoded = await authenticationAdmin().verifyIdToken(idToken, true);
+    const userData = await getUserById(decoded.uid);
     return {
       uid: decoded.uid,
       email: decoded.email ?? null,
       name: decoded.name ?? null,
       picture: decoded.picture ?? null,
-      role: (decoded as any).role ?? null,
+      role: userData?.role ?? (decoded as any).role ?? "Client",
       admin: !!(decoded as any).admin,
       token: decoded,
     };

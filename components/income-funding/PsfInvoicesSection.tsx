@@ -4,6 +4,7 @@ import { formatUSD } from "@/lib/underwriting";
 import {
   useUserPsfInvoicesQuery,
   useSignPsfInvoiceMutation,
+  usePayPsfInvoiceMutation,
   useSendPsfInvoiceMutation,
   useManualPayPsfInvoiceMutation,
 } from "@/hooks/psf-invoices";
@@ -57,6 +58,7 @@ export function PsfInvoicesSection({
   const { data: invoices = [], isLoading } = useUserPsfInvoicesQuery(userId);
   const router = useRouter();
   const signMutation = useSignPsfInvoiceMutation(userId);
+  const payMutation = usePayPsfInvoiceMutation(userId);
   const sendMutation = useSendPsfInvoiceMutation(userId);
   const manualPayMutation = useManualPayPsfInvoiceMutation(userId);
   const [selectedInvoice, setSelectedInvoice] = useState<PsfInvoice | null>(
@@ -95,6 +97,11 @@ export function PsfInvoicesSection({
 
   const handleSend = async (invoiceId: string) => {
     await sendMutation.mutateAsync({ invoiceId });
+  };
+
+  const handlePay = async (invoiceId: string) => {
+    const checkout = await payMutation.mutateAsync({ invoiceId });
+    window.location.assign(checkout.url);
   };
 
   const handleManualPay = async (invoiceId: string) => {
@@ -175,6 +182,7 @@ export function PsfInvoicesSection({
                 invoice={invoice}
                 isAdminView={isAdminView}
                 onSign={() => setSelectedInvoice(invoice)}
+                onPay={handlePay}
                 onSend={handleSend}
                 onManualPay={handleManualPay}
               />
@@ -212,18 +220,21 @@ function InvoiceRow({
   invoice,
   isAdminView = false,
   onSign,
+  onPay,
   onSend,
   onManualPay,
 }: {
   invoice: PsfInvoice;
   isAdminView?: boolean;
   onSign: () => void;
+  onPay: (invoiceId: string) => Promise<void>;
   onSend: (invoiceId: string) => void;
   onManualPay: (invoiceId: string) => Promise<void>;
 }) {
   const isCustom = invoice.type === "custom";
   const [expanded, setExpanded] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isStartingCheckout, setIsStartingCheckout] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
   const [isPayConfirmOpen, setIsPayConfirmOpen] = useState(false);
 
@@ -406,7 +417,7 @@ function InvoiceRow({
                 </div>
               )}
 
-              {invoice.status === "signed" && invoice.dodoCheckoutUrl && (
+              {invoice.status === "signed" && (
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
                   {invoice.sentAt && (
                     <div className="flex items-center gap-1.5 text-xs text-gray-500">
@@ -423,13 +434,25 @@ function InvoiceRow({
                   )}
                   <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <Button
-                      onClick={() =>
-                        window.open(invoice.dodoCheckoutUrl!, "_blank")
-                      }
+                      onClick={async () => {
+                        setIsStartingCheckout(true);
+                        try {
+                          await onPay(invoice.id!);
+                        } finally {
+                          setIsStartingCheckout(false);
+                        }
+                      }}
+                      disabled={isStartingCheckout || isPaying}
                       className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
-                      <CreditCard className="w-4 h-4" />
-                      Complete Payment
+                      {isStartingCheckout ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CreditCard className="w-4 h-4" />
+                      )}
+                      {isStartingCheckout
+                        ? "Starting Payment..."
+                        : "Complete Payment"}
                     </Button>
                     <Button
                       onClick={() => setIsPayConfirmOpen(true)}
@@ -471,15 +494,27 @@ function InvoiceRow({
                 </button>
               )}
 
-              {invoice.status === "signed" && invoice.dodoCheckoutUrl && (
+              {invoice.status === "signed" && (
                 <Button
-                  onClick={() =>
-                    window.open(invoice.dodoCheckoutUrl!, "_blank")
-                  }
+                  onClick={async () => {
+                    setIsStartingCheckout(true);
+                    try {
+                      await onPay(invoice.id!);
+                    } finally {
+                      setIsStartingCheckout(false);
+                    }
+                  }}
+                  disabled={isStartingCheckout}
                   className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
-                  <CreditCard className="w-4 h-4" />
-                  Complete Payment
+                  {isStartingCheckout ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CreditCard className="w-4 h-4" />
+                  )}
+                  {isStartingCheckout
+                    ? "Starting Payment..."
+                    : "Complete Payment"}
                 </Button>
               )}
 
