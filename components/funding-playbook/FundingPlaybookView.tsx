@@ -114,7 +114,7 @@ export function FundingPlaybookView({
   })();
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-gray-50">
+    <div className="flex min-h-dvh min-w-0 flex-col bg-gray-50">
       <ClientIdentityBar
         pb={playbook}
         clientName={clientName}
@@ -122,15 +122,15 @@ export function FundingPlaybookView({
         selectedFundingPath={selectedFundingPath}
       />
 
-      <main className="flex-1 max-w-[1500px] w-full mx-auto px-4 sm:px-6 pt-5 pb-10">
+      <main className="mx-auto w-full max-w-[1500px] min-w-0 flex-1 px-3 pb-8 pt-3 sm:px-6 sm:pb-10 sm:pt-5">
         <SectionAccordionNav active={active} />
 
-        <div className="flex gap-7 mt-3 lg:mt-1">
+        <div className="mt-3 flex min-w-0 gap-7 lg:mt-1">
           <SectionRail active={active} />
 
-          <div className="flex-1 min-w-0 space-y-4">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 sm:px-6 py-4 sm:py-5">
-              <div className="flex items-center justify-between">
+          <div className="min-w-0 flex-1 space-y-3 sm:space-y-4">
+            <div className="rounded-2xl border border-gray-100 bg-white px-4 py-4 sm:px-6 sm:py-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-600">
                   YOUR FUNDING PLAYBOOK
                 </div>
@@ -144,7 +144,7 @@ export function FundingPlaybookView({
                 {fullTitle}
               </h1>
 
-              <p className="text-[13px] text-gray-600 mt-2.5 leading-relaxed">
+              <p className="mt-2.5 max-w-[75ch] text-sm leading-relaxed text-gray-600 sm:text-[13px]">
                 {`${clientFirstName}, this is built for you specifically — not a generic guide. Every number below comes from your credit file, your income, and ${lenderName}'s actual underwriting behavior on this product. Work through the 13 sections in order, then apply using the link in Section 02.`}
               </p>
             </div>
@@ -172,8 +172,8 @@ export function FundingPlaybookView({
             <ImproveOddsSection pb={playbook} />
             <NeedHelpSection pb={playbook} />
 
-            <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4">
-              <p className="text-[11px] text-gray-400 leading-relaxed">
+            <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4 sm:px-5">
+              <p className="text-xs leading-relaxed text-gray-600">
                 This playbook is personalized guidance prepared by CEG United
                 and is not a formal credit decision or offer of credit.
               </p>

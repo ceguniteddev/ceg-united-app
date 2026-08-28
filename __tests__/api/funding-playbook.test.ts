@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   getProduct: vi.fn(),
   listProducts: vi.fn(),
   generateFundingPlaybook: vi.fn(),
+  findNearestBranchesN8N: vi.fn(),
   checkAndIncrementRateLimit: vi.fn(),
 }));
 
@@ -52,6 +53,7 @@ vi.mock("@/lib/funding-playbook/rate-limit", () => ({
 
 vi.mock("@/service/n8n", () => ({
   generateFundingPlaybook: mocks.generateFundingPlaybook,
+  findNearestBranchesN8N: mocks.findNearestBranchesN8N,
 }));
 
 import { GET as fetchPlaybook } from "@/app/api/funding-playbook/fetch/route";
@@ -64,6 +66,7 @@ import { POST as webhookRoute } from "@/app/api/funding-playbook/webhook/route";
 describe("Funding Playbook API Authorization & Security", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.findNearestBranchesN8N.mockResolvedValue({ branches: [] });
     process.env.ADMIN_ACCESS_KEY = "test-admin-secret-key";
   });
 
@@ -169,6 +172,42 @@ describe("Funding Playbook API Authorization & Security", () => {
       );
       const res = await generatePlaybook(req);
       expect(res.status).toBe(403);
+    });
+
+    it("bypasses a cached playbook when force regeneration is requested", async () => {
+      mocks.getCurrentUser.mockResolvedValue({
+        uid: "client_user_1",
+        role: "Client",
+      });
+      mocks.getCachedPlaybook.mockResolvedValue({ meta: { id: "cached" } });
+      mocks.getClient.mockResolvedValue({ id: "client_user_1" });
+      mocks.getLender.mockResolvedValue({ id: "chase", displayName: "Chase" });
+      mocks.getProduct.mockResolvedValue({ id: "csp", displayName: "CSP" });
+      mocks.listProducts.mockResolvedValue([]);
+      mocks.generateFundingPlaybook.mockResolvedValue({});
+
+      const req = new Request(
+        "http://localhost:3000/api/funding-playbook/generate?force=true",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            userId: "client_user_1",
+            lenderId: "chase",
+            productId: "csp",
+          }),
+        },
+      );
+      await generatePlaybook(req);
+
+      expect(mocks.checkAndIncrementRateLimit).toHaveBeenCalledWith(
+        "client_user_1",
+        "generatePlaybook",
+      );
+      expect(mocks.generateFundingPlaybook).toHaveBeenCalledWith({
+        userId: "client_user_1",
+        lenderId: "chase",
+        productId: "csp",
+      });
     });
   });
 

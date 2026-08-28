@@ -3,6 +3,7 @@
 import {
   normalizeN8nOutput,
   normalizeChannelEnum,
+  sanitizeOtherChannels,
   normalizeServiceEnum,
   assemblePlaybook,
 } from "../../lib/funding-playbook/playbook-mapper";
@@ -51,6 +52,27 @@ describe("playbook-mapper", () => {
       expect(normalized.section1_aiPersonalizedNote).toBe("Test note");
       expect(normalized.section4_confidenceLevel).toBe("high");
     });
+
+    it("forces Inquiry Removal Program impact time to five days", () => {
+      const normalized = normalizeN8nOutput({
+        output: {
+          section8_recommendations: [
+            {
+              service: "Inquiry Removal Program",
+              rank: 1,
+              aiApplicability: "Remove recent inquiries.",
+              estimatedTimeToImpactDays: 45,
+            },
+          ],
+        },
+      });
+
+      expect(normalized.section8_recommendations[0]).toMatchObject({
+        service: "credit_repair",
+        serviceLabel: "Inquiry Removal Program",
+        estimatedTimeToImpactDays: 5,
+      });
+    });
   });
 
   describe("normalizeChannelEnum", () => {
@@ -61,6 +83,37 @@ describe("playbook-mapper", () => {
       expect(normalizeChannelEnum("In Branch Application")).toBe("in_branch");
       expect(normalizeChannelEnum("Phone Call")).toBe("phone");
       expect(normalizeChannelEnum("Mobile App")).toBe("mobile_app");
+    });
+  });
+
+  describe("sanitizeOtherChannels", () => {
+    it("excludes the primary recommendation, removes duplicates, and marks alternatives as not recommended", () => {
+      const result = sanitizeOtherChannels(
+        [
+          { channel: "online", recommended: false, note: "Duplicate primary" },
+          { channel: "In Branch", recommended: true, note: "Ask a banker" },
+          {
+            channel: "in_branch",
+            recommended: false,
+            note: "Duplicate branch",
+          },
+          { channel: "phone", recommended: true, note: "Apply by phone" },
+        ],
+        "online",
+      );
+
+      expect(result).toEqual([
+        {
+          channel: "in_branch",
+          recommended: false,
+          note: "Ask a banker",
+        },
+        {
+          channel: "phone",
+          recommended: false,
+          note: "Apply by phone",
+        },
+      ]);
     });
   });
 
@@ -118,6 +171,13 @@ describe("playbook-mapper", () => {
             rank: 1,
             aiApplicability: "Top recommendation",
             estimatedTimeToImpactDays: 90,
+          },
+          {
+            service: "credit_repair",
+            serviceLabel: "Credit Monitoring",
+            rank: 2,
+            aiApplicability: "Monitor changes during the funding round.",
+            estimatedTimeToImpactDays: 1,
           },
         ],
         section10_aiPhoneScript:
@@ -254,6 +314,19 @@ describe("playbook-mapper", () => {
       expect(
         playbook.section8_cegRecommendations.recommendations[0].service,
       ).toBe("credit_repair");
+      expect(
+        playbook.section8_cegRecommendations.recommendations[1]
+          .curatedImpactEstimate,
+      ).toBe("");
+      expect(playbook.improvers?.[0]).toMatchObject({
+        title: "credit repair Strategy",
+        href: "/client/credit-repair",
+      });
+      expect(playbook.improvers?.[1]).toMatchObject({
+        title: "Credit Monitoring Strategy",
+        impactScore: "Monitoring only",
+        href: "/client/my-credit",
+      });
     });
   });
 });

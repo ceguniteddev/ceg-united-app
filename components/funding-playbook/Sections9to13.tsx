@@ -374,10 +374,18 @@ export function DeniedSection({
 
   // CEG "fix the underlying issue" cards derived from this client's ranked
   // recommendations (Section 8).
-  const fixCards = recs.slice(0, 3).map((rec, idx) => {
+  const uniqueFixRecommendations = recs
+    .filter(
+      (rec, index, recommendations) =>
+        recommendations.findIndex(
+          (candidate) => candidate.service === rec.service,
+        ) === index,
+    )
+    .slice(0, 3);
+  const fixCards = uniqueFixRecommendations.map((rec) => {
     const meta = DENIAL_FIX_META[rec.service];
     return {
-      key: `${rec.service}-${idx}`,
+      key: rec.service,
       header:
         meta?.header ||
         `Denied for ${rec.serviceLabel || rec.service.replace(/_/g, " ")}`,
@@ -385,7 +393,6 @@ export function DeniedSection({
         meta?.label ||
         `CEG ${rec.serviceLabel || rec.service.replace(/_/g, " ")}`,
       description: rec.aiApplicability,
-      timeline: `${rec.estimatedTimeToImpactDays} days`,
     };
   });
 
@@ -572,14 +579,19 @@ export function DeniedSection({
                   <p className="text-[12px] text-gray-600 mt-2 leading-relaxed flex-1">
                     {card.description}
                   </p>
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                    <span className="inline-flex items-center gap-1 text-[11px] text-gray-500">
-                      <Clock className="w-3 h-3 text-gray-400" />
-                      {card.timeline}
-                    </span>
+                  <div className="flex items-center justify-end mt-3 pt-3 border-t border-gray-100">
                     <ActionButton
-                      href="https://cegunited.com"
-                      external
+                      href={
+                        card.key === "credit_repair"
+                          ? "/client/credit-repair"
+                          : card.key === "tradelines"
+                            ? "/client/tradelines"
+                            : "https://cegunited.com"
+                      }
+                      external={
+                        card.key !== "credit_repair" &&
+                        card.key !== "tradelines"
+                      }
                       variant="ghost"
                       icon={ArrowUpRight}
                       size="sm"
@@ -599,8 +611,8 @@ export function DeniedSection({
 
         {/* Step 6 — talk to a coach */}
         <DenialStep n={6} title="Talk to a CEG coach" icon={Headphones} last>
-          <div className="rounded-xl bg-gradient-to-r from-blue-900 to-[#2a4f7c] p-4 flex flex-wrap items-center gap-4">
-            <div className="min-w-0 flex-1">
+          <div className="rounded-xl bg-gradient-to-r from-blue-900 to-[#2a4f7c] p-4 flex flex-col items-start gap-3">
+            <div className="min-w-0 w-full">
               <p className="text-[13px] font-semibold text-white leading-snug">
                 {help?.aiClosingNote ||
                   `A CEG coach will run the reconsideration call script with ${clientName} live, listen in, and tell you exactly what to say if the analyst pushes back.`}
@@ -616,6 +628,7 @@ export function DeniedSection({
               variant="secondary"
               icon={Headphones}
               size="lg"
+              className="self-start"
             >
               Talk to a coach
             </ActionButton>
@@ -669,28 +682,71 @@ const IMPROVER_ICON = {
 };
 
 export function ImproveOddsSection({ pb }: { pb: Playbook }) {
+  const resolveImproverHref = (imp: {
+    title: string;
+    cegProduct: string;
+    icon: string;
+    href?: string;
+  }) => {
+    if (imp.href && imp.href !== "https://cegunited.com") {
+      return imp.href;
+    }
+    const combined = `${imp.title} ${imp.cegProduct}`.toLowerCase();
+    if (combined.includes("credit monitoring")) {
+      return "/client/my-credit";
+    }
+    if (
+      imp.icon === "repair" ||
+      combined.includes("credit repair") ||
+      combined.includes("inquiry removal")
+    ) {
+      return "/client/credit-repair";
+    }
+    if (imp.icon === "tradeline" || combined.includes("tradeline")) {
+      return "/client/tradelines";
+    }
+    return imp.href || "https://cegunited.com";
+  };
+
   const improvers =
     pb.improvers && pb.improvers.length > 0
       ? pb.improvers
-      : pb.section8_cegRecommendations.recommendations.map((rec, idx) => ({
-          rank: rec.rank || idx + 1,
-          title: `${rec.serviceLabel || rec.service.replace("_", " ")} Strategy`,
-          cegProduct: `CEG ${rec.serviceLabel || rec.service.replace("_", " ")}`,
-          description: rec.aiApplicability,
-          impactScore: rec.curatedImpactEstimate,
-          impactApproval: `+${rec.rank === 1 ? 35 : 20}% odds`,
-          timeline: `${rec.estimatedTimeToImpactDays} days`,
-          investment: "Program Service",
-          ctaLabel: `Explore ${rec.serviceLabel || rec.service.replace("_", " ")}`,
-          href: "https://cegunited.com",
-          icon: (rec.service === "tradelines"
-            ? "tradeline"
-            : rec.service === "income_coaching"
-              ? "income"
-              : rec.service === "business_formation"
-                ? "mentor"
-                : "repair") as "tradeline" | "repair" | "income" | "mentor",
-        }));
+      : pb.section8_cegRecommendations.recommendations.map((rec, idx) => {
+          const serviceName = rec.serviceLabel || rec.service.replace("_", " ");
+          const isCreditMonitoring = serviceName
+            .toLowerCase()
+            .includes("credit monitoring");
+          let href = "https://cegunited.com";
+          if (isCreditMonitoring) {
+            href = "/client/my-credit";
+          } else if (rec.service === "credit_repair") {
+            href = "/client/credit-repair";
+          } else if (rec.service === "tradelines") {
+            href = "/client/tradelines";
+          }
+
+          return {
+            rank: rec.rank || idx + 1,
+            title: `${serviceName} Strategy`,
+            cegProduct: `CEG ${serviceName}`,
+            description: rec.aiApplicability,
+            impactScore: isCreditMonitoring
+              ? "Monitoring only"
+              : rec.curatedImpactEstimate,
+            impactApproval: `+${rec.rank === 1 ? 35 : 20}% odds`,
+            timeline: `${rec.estimatedTimeToImpactDays} days`,
+            investment: "Program Service",
+            ctaLabel: `Explore ${serviceName}`,
+            href,
+            icon: (rec.service === "tradelines"
+              ? "tradeline"
+              : rec.service === "income_coaching"
+                ? "income"
+                : rec.service === "business_formation"
+                  ? "mentor"
+                  : "repair") as "tradeline" | "repair" | "income" | "mentor",
+          };
+        });
 
   const lenderShortName = pb.meta.lenderDisplayName || "Lender";
 
@@ -771,15 +827,20 @@ export function ImproveOddsSection({ pb }: { pb: Playbook }) {
                 </div>
 
                 <div className="flex-shrink-0 w-full sm:w-auto sm:self-center">
-                  <ActionButton
-                    href={imp.href}
-                    external={imp.href.startsWith("http")}
-                    icon={ArrowUpRight}
-                    variant={imp.rank === 1 ? "success" : "secondary"}
-                    className="w-full sm:w-auto"
-                  >
-                    {imp.ctaLabel}
-                  </ActionButton>
+                  {(() => {
+                    const href = resolveImproverHref(imp);
+                    return (
+                      <ActionButton
+                        href={href}
+                        external={href.startsWith("http")}
+                        icon={ArrowUpRight}
+                        variant={imp.rank === 1 ? "success" : "secondary"}
+                        className="w-full sm:w-auto"
+                      >
+                        {imp.ctaLabel}
+                      </ActionButton>
+                    );
+                  })()}
                 </div>
               </div>
             </li>

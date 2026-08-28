@@ -55,6 +55,12 @@ export function BestMethodSection({ pb }: { pb: Playbook }) {
   const m = pb.section1_bestMethod;
   const channel = m.recommendedChannel;
   const RecommendedIcon = CHANNEL_ICON[channel] ?? Globe;
+  const otherChannels = (m.otherChannels || []).filter(
+    (option, index, options) =>
+      option.channel !== channel &&
+      options.findIndex((candidate) => candidate.channel === option.channel) ===
+        index,
+  );
 
   const productName =
     pb.meta.productDisplayName || pb.meta.productId || "this product";
@@ -123,8 +129,8 @@ export function BestMethodSection({ pb }: { pb: Playbook }) {
             Other channels
           </div>
 
-          {m.otherChannels && m.otherChannels.length > 0 ? (
-            m.otherChannels.map((oc, idx) => {
+          {otherChannels.length > 0 ? (
+            otherChannels.map((oc, idx) => {
               const OcIcon = CHANNEL_ICON[oc.channel] ?? Globe;
               return (
                 <div

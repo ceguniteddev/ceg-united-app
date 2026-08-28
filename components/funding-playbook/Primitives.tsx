@@ -37,7 +37,8 @@ export function SectionCard({
   return (
     <section
       id={id}
-      className="scroll-mt-[72px] lg:scroll-mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:break-inside-avoid print:shadow-none print:border-gray-300"
+      data-section-number={n}
+      className="scroll-mt-[72px] overflow-hidden rounded-2xl border border-gray-100 bg-white lg:scroll-mt-6 print:break-inside-avoid print:border-gray-300"
     >
       <div className="flex flex-wrap sm:flex-nowrap items-start gap-x-3 gap-y-2.5 px-4 sm:px-6 pt-4 sm:pt-5 pb-3.5 sm:pb-4 border-b border-gray-100">
         <div
@@ -66,7 +67,7 @@ export function SectionCard({
           </div>
         )}
       </div>
-      <div className="px-4 sm:px-6 py-4 sm:py-5">{children}</div>
+      <div className="min-w-0 px-4 py-4 sm:px-6 sm:py-5">{children}</div>
     </section>
   );
 }
@@ -234,7 +235,7 @@ export function StatRow({
         <div
           key={r.label}
           className={cn(
-            "flex items-center justify-between gap-4 px-4 py-2.5",
+            "flex flex-col items-start justify-between gap-1 px-4 py-2.5 min-[400px]:flex-row min-[400px]:items-center min-[400px]:gap-4",
             r.emphasis ? "bg-blue-50/60" : "bg-white",
           )}
         >
@@ -248,7 +249,7 @@ export function StatRow({
           </dt>
           <dd
             className={cn(
-              "font-mono text-[13px] tabular-nums flex-shrink-0",
+              "max-w-full break-words font-mono text-[13px] tabular-nums min-[400px]:flex-shrink-0 min-[400px]:text-right",
               r.emphasis
                 ? "font-bold text-blue-700"
                 : "font-medium text-gray-900",

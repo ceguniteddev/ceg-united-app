@@ -166,6 +166,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: DODO_PRODUCT_PSF_ID
+    value: pdt_0NmJGUhuSb0aIY0XIt6nx
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: DODO_PAYMENTS_ENVIRONMENT
     value: test_mode
     availability:

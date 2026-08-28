@@ -9,11 +9,13 @@ import { ApprovedBankFormData } from "@/schema/bank-products";
 interface ClientActiveFundingListProps {
   userId?: string;
   referenceNumber?: string;
+  showFundingPathway?: boolean;
 }
 
 export default function ClientActiveFundingList({
   userId,
   referenceNumber,
+  showFundingPathway = false,
 }: ClientActiveFundingListProps) {
   const { activeFunds = [], isLoading } = useClientActiveFundingDetailsQuery({
     userId,
@@ -29,7 +31,11 @@ export default function ClientActiveFundingList({
         isAdminView={false}
         viewColumns={[
           { columnId: "bankName" },
-          { columnId: "approvedProducts" },
+          {
+            columnId: showFundingPathway
+              ? "fundingPathway"
+              : "approvedProducts",
+          },
           { columnId: "clientApplicationStatus" },
           { columnId: "approvedAmount" },
           { columnId: "approvedRemarks" },

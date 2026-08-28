@@ -6,6 +6,15 @@ import {
 import { getCurrentUser } from "@/service/user";
 import { unauthorized, forbidden, badRequest } from "@/app/api/helpers";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const NO_STORE_HEADERS = {
+  "Cache-Control": "private, no-store, no-cache, max-age=0, must-revalidate",
+  Pragma: "no-cache",
+  Expires: "0",
+};
+
 export async function GET(req: Request) {
   try {
     const currentUser = await getCurrentUser();
@@ -36,7 +45,7 @@ export async function GET(req: Request) {
     if (!cached) {
       return NextResponse.json(
         { error: "No cached playbook found." },
-        { status: 404 },
+        { status: 404, headers: NO_STORE_HEADERS },
       );
     }
 
@@ -52,12 +61,15 @@ export async function GET(req: Request) {
       );
     }
 
-    return NextResponse.json({ cached: true, playbook: cached });
+    return NextResponse.json(
+      { cached: true, playbook: cached },
+      { headers: NO_STORE_HEADERS },
+    );
   } catch (err) {
     console.error("fetch Playbook failed", err);
     return NextResponse.json(
       { error: "Internal error fetching playbook." },
-      { status: 500 },
+      { status: 500, headers: NO_STORE_HEADERS },
     );
   }
 }

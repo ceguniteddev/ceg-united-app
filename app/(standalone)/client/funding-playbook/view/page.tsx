@@ -114,7 +114,7 @@ export function StandaloneFundingPlaybookContent({
 
   if (authLoading || isLoading) {
     return (
-      <div className="flex h-full min-h-[50vh] items-center justify-center p-8">
+      <div className="flex min-h-[60dvh] w-full items-center justify-center px-4 py-8 sm:min-h-[50vh] sm:p-8">
         <Spinner displayText="Loading Funding Playbook..." />
       </div>
     );
@@ -122,8 +122,8 @@ export function StandaloneFundingPlaybookContent({
 
   if (!user) {
     return (
-      <div className="max-w-xl mx-auto p-6 sm:p-8 text-center mt-12 space-y-4">
-        <div className="p-6 bg-white border border-gray-200 rounded-2xl shadow-xs space-y-3">
+      <div className="mx-auto w-full max-w-xl px-4 py-8 text-center sm:px-8 sm:py-12">
+        <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
           <div className="flex items-center justify-center gap-2 text-gray-800 font-bold text-base">
             <AlertCircle className="w-5 h-5 text-blue-600 shrink-0" />
             <span>Sign In Required</span>
@@ -138,8 +138,8 @@ export function StandaloneFundingPlaybookContent({
 
   if (error || !playbook) {
     return (
-      <div className="max-w-xl mx-auto p-6 sm:p-8 text-center mt-12 space-y-4">
-        <div className="p-6 bg-amber-50 border border-amber-200/80 rounded-2xl text-amber-900 text-sm shadow-xs space-y-3">
+      <div className="mx-auto w-full max-w-xl px-4 py-8 text-center sm:px-8 sm:py-12">
+        <div className="space-y-3 rounded-2xl border border-amber-200/80 bg-amber-50 p-5 text-sm text-amber-900 sm:p-6">
           <div className="flex items-center justify-center gap-2 text-amber-800 font-bold text-base">
             <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
             <span>Funding Playbook Unavailable</span>
@@ -151,7 +151,7 @@ export function StandaloneFundingPlaybookContent({
           <div className="pt-2">
             <Link
               href="/client/funding-playbook"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-colors shadow-xs"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 sm:w-auto"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Go to Funding Playbook Dashboard</span>
@@ -163,7 +163,7 @@ export function StandaloneFundingPlaybookContent({
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-3 sm:p-6 md:p-8 space-y-6">
+    <div className="mx-auto min-h-dvh w-full min-w-0 overflow-x-clip bg-gray-50">
       <FundingPlaybookView
         playbook={playbook}
         clientName={
