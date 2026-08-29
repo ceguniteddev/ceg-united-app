@@ -15,6 +15,7 @@ queryMock.doc = vi.fn(() => targetRef);
 vi.mock("@/lib/fireabase-admin", () => ({
   firestoreAdmin: () => ({
     collection: vi.fn(() => queryMock),
+    doc: vi.fn(() => targetRef),
     runTransaction: vi.fn(async (callback) =>
       callback({
         get: mocks.transactionGet,
@@ -30,7 +31,59 @@ vi.mock("@/service/membership", () => ({
 
 vi.mock("@/lib/logger", () => ({ logInfo: vi.fn() }));
 
-import { activateUserAddon } from "@/service/addons";
+import { activateUserAddon, synchronizeDodoAddon } from "@/service/addons";
+
+describe("synchronizeDodoAddon", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("keeps addon access active during the retry window", async () => {
+    mocks.transactionGet.mockResolvedValueOnce({
+      data: () => ({ entitlementStatus: "paid", createdAt: new Date() }),
+    });
+    await synchronizeDodoAddon({
+      userId: "user_1",
+      addonId: "credit_module_pro",
+      providerStatus: "on_hold",
+      subscriptionId: "sub_addon",
+      customerId: "cus_1",
+      productId: "p_addon",
+      amount: 197,
+    });
+    expect(mocks.transactionSet).toHaveBeenCalledWith(
+      targetRef,
+      expect.objectContaining({
+        providerStatus: "on_hold",
+        entitlementStatus: "grace",
+        status: "active",
+        retryAccessUntil: expect.any(Date),
+        nextReminderAt: expect.any(Date),
+      }),
+      { merge: true },
+    );
+  });
+
+  it("removes addon access when the subscription expires", async () => {
+    mocks.transactionGet.mockResolvedValueOnce({
+      data: () => ({ entitlementStatus: "grace", createdAt: new Date() }),
+    });
+    await synchronizeDodoAddon({
+      userId: "user_1",
+      addonId: "credit_module_pro",
+      providerStatus: "expired",
+      subscriptionId: "sub_addon",
+      amount: 197,
+    });
+    expect(mocks.transactionSet).toHaveBeenCalledWith(
+      targetRef,
+      expect.objectContaining({
+        entitlementStatus: "free",
+        status: "inactive",
+        nextReminderAt: null,
+      }),
+      { merge: true },
+    );
+  });
+});
 
 describe("activateUserAddon", () => {
   beforeEach(() => {

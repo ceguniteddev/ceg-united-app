@@ -1,7 +1,7 @@
 import { onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { defineSecret } from "firebase-functions/params";
-import * as puppeteer from "puppeteer";
+import type { Browser } from "puppeteer";
 
 const pdfApiKey = defineSecret("PDF_API_KEY");
 
@@ -26,8 +26,9 @@ export const generatePdf = onRequest(
       return;
     }
 
-    let browser;
+    let browser: Browser | undefined;
     try {
+      const puppeteer = await import("puppeteer");
       const { experian, transunion, equifax, letterContent, title } = req.body;
 
       logger.info("Starting PDF generation", { title });
@@ -132,3 +133,4 @@ export * from "./mailLetter";
 export * from "./lobWebhook";
 export * from "./verifyAddress";
 export * from "./wallet";
+export * from "./membershipDunning";
