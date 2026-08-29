@@ -20,19 +20,22 @@ const userIdForMembership = (path: string) => path.split("/").at(-3) || "";
 
 const paymentRecoveryHtml = ({
   firstName,
-  retryAccessUntil,
   settingsUrl,
   productName,
+  accessDescription,
 }: {
   firstName: string;
-  retryAccessUntil: string;
   settingsUrl: string;
   productName: string;
+  accessDescription: string;
 }) => `<p>Hi ${firstName || "there"},</p>
-<p>We could not process your ${productName} renewal. Your paid access remains available while Dodo Payments retries the charge.</p>
-<p>Please update your payment information before <strong>${retryAccessUntil}</strong> to avoid losing this paid access.</p>
-<p><a href="${settingsUrl}">Update payment information</a></p>
-<p>For security, CEG United never receives or stores your card details.</p>`;
+<p>We were unable to process your most recent payment for your ${productName}.</p>
+<p>As a result, your access to ${productName} has been temporarily suspended, including access to ${accessDescription}.</p>
+<p>To restore your access, simply click the link below to update your payment method and complete the outstanding payment:</p>
+<p>🔗 <a href="${settingsUrl}"><strong>UPDATE PAYMENT METHOD</strong></a></p>
+<p>Once your payment is successfully processed, your ${productName} access will be restored.</p>
+<p>If you need any assistance, simply reply to this message and our team will be happy to help.</p>
+<p>— CEG United Team</p>`;
 
 const accessEndedHtml = ({
   firstName,
@@ -80,6 +83,9 @@ export const processMembershipDunning = onSchedule(
       const productName = isAddon
         ? "CEG Credit Repair Addon"
         : "CEG Brain membership";
+      const accessDescription = isAddon
+        ? "your credit repair tools and other Credit Repair Addon features"
+        : "your funding tools, lender recommendations, and other membership features";
       const entityKey = isAddon ? membership.id : "membership";
 
       const user = await db.collection("user").doc(userId).get();
@@ -160,17 +166,12 @@ export const processMembershipDunning = onSchedule(
           from: "CEG United LLC <noreply@cegunited.com>",
           job: "MEMBERSHIP_PAYMENT_RETRY",
           message: {
-            subject: "Action needed: update your membership payment",
+            subject: `Action needed: update your ${productName} payment`,
             html: paymentRecoveryHtml({
               firstName: userData.firstName,
-              retryAccessUntil: retryAccessUntil
-                ? retryAccessUntil.toLocaleDateString("en-US", {
-                    timeZone: "UTC",
-                    dateStyle: "long",
-                  })
-                : "the end of the retry period",
               settingsUrl,
               productName,
+              accessDescription,
             }),
           },
           createdAt: now,
