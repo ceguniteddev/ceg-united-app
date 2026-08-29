@@ -15,12 +15,18 @@ const SidebarSettings = () => {
   if (!user) return null;
 
   const sidebar = role === "Admin" ? settingsSidebarAdmin : settingsSidebar;
+  const homeRoute =
+    role === "Admin"
+      ? "/admin/home"
+      : role === "Broker"
+        ? "/broker/home"
+        : "/client/home";
 
   return (
     <section className="sidebar">
       <nav className="flex flex-col">
         <Link
-          href="/"
+          href={homeRoute}
           className="mb-3 cursor-pointer flex items-center justify-center"
         >
           <Image

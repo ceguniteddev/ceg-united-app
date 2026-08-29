@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CancelMembershipButton } from "./cancel-button";
+import { AlertTriangle, CreditCard, ExternalLink } from "lucide-react";
+import { getUserAddons } from "@/service/addons";
 
 export default async function MembershipPage() {
   const user = await getCurrentUser();
@@ -21,8 +22,14 @@ export default async function MembershipPage() {
   }
 
   const membership = await getUserMembership(user.uid);
-
-  console.log("User Membership:", membership);
+  const addons = await getUserAddons(user.uid, { includeInactive: true });
+  const hasBillingProfile = Boolean(
+    membership?.customerId || membership?.subscriptionId,
+  );
+  const isRecovering = membership?.entitlementStatus === "grace";
+  const effectivePlan =
+    membership?.effectivePlan ||
+    (membership?.status === "active" ? membership?.tier : "free");
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 h-full max-w-4xl">
@@ -45,16 +52,36 @@ export default async function MembershipPage() {
           <CardContent className="pt-6 space-y-4">
             {membership ? (
               <div className="flex flex-col space-y-4">
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+                {isRecovering && (
+                  <div
+                    role="alert"
+                    className="flex gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950"
+                  >
+                    <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+                    <div className="space-y-2">
+                      <p className="font-semibold">Payment update required</p>
+                      <p className="text-sm leading-6">
+                        Dodo Payments could not process your renewal. Your paid
+                        access remains available during the retry period
+                        {membership.retryAccessUntil
+                          ? ` through ${format(new Date(membership.retryAccessUntil), "MMMM d, yyyy")}`
+                          : ""}
+                        . Update your payment method to avoid moving to the Free
+                        plan.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                   <div>
                     <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">
                       Plan
                     </p>
                     <p className="text-lg font-bold text-slate-900 mt-1">
-                      {membership.tier === "tier_starter" &&
-                        "CEG BRAIN STARTER"}
-                      {membership.tier === "tier_pro" && "CEG BRAIN PRO"}
-                      {membership.tier === "tier_executive" &&
+                      {effectivePlan === "free" && "Free"}
+                      {effectivePlan === "tier_starter" && "CEG BRAIN STARTER"}
+                      {effectivePlan === "tier_pro" && "CEG BRAIN PRO"}
+                      {effectivePlan === "tier_executive" &&
                         "CEG BRAIN EXECUTIVE"}
                     </p>
                   </div>
@@ -63,14 +90,14 @@ export default async function MembershipPage() {
                       Status
                     </p>
                     <span
-                      className={`inline-block mt-1 px-3 py-1 rounded-full text-sm font-semibold capitalize ${membership.status === "canceled" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}
+                      className={`inline-block mt-1 px-3 py-1 rounded-full text-sm font-semibold capitalize ${isRecovering ? "bg-amber-100 text-amber-800" : membership.status === "active" ? "bg-green-100 text-green-800" : "bg-slate-200 text-slate-700"}`}
                     >
-                      {membership.status}
+                      {isRecovering ? "payment retry" : membership.status}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+                <div className="grid gap-4 border-b border-slate-100 pb-5 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">
                       Amount
@@ -79,7 +106,28 @@ export default async function MembershipPage() {
                       ${membership.amount}/mo
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div>
+                    <p className="text-sm font-medium uppercase tracking-wider text-slate-500">
+                      Next billing date
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {membership.nextBillingDate
+                        ? format(
+                            new Date(membership.nextBillingDate),
+                            "MMMM d, yyyy",
+                          )
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium uppercase tracking-wider text-slate-500">
+                      Billing model
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {membership.legacyBillingModel ? "Legacy" : "Recurring"}
+                    </p>
+                  </div>
+                  <div className="sm:text-right lg:text-left">
                     <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">
                       Member Since
                     </p>
@@ -92,11 +140,27 @@ export default async function MembershipPage() {
                 </div>
 
                 <div className="pt-4 flex justify-end space-x-4">
-                  {membership.status !== "canceled" && (
-                    <CancelMembershipButton
-                      userId={user.uid}
-                      membershipId={membership.id}
-                    />
+                  {hasBillingProfile && (
+                    <Button
+                      asChild
+                      className={
+                        isRecovering
+                          ? "bg-amber-600 text-white hover:bg-amber-700"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
+                      }
+                    >
+                      <a
+                        href={`/api/user/${user.uid}/dodo/customer-portal`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <CreditCard className="mr-2 size-4" />
+                        {isRecovering
+                          ? "Update payment method"
+                          : "Manage billing"}
+                        <ExternalLink className="ml-2 size-4" />
+                      </a>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -114,6 +178,109 @@ export default async function MembershipPage() {
             )}
           </CardContent>
         </Card>
+        {addons.map((addon) => {
+          const addonRecovering = addon.entitlementStatus === "grace";
+          const addonActive = addon.status === "active";
+          return (
+            <Card key={addon.id} className="border-slate-200 shadow-sm">
+              <CardHeader className="rounded-t-xl border-b border-slate-100 bg-slate-50 pb-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-xl text-slate-800">
+                      Credit Repair Addon
+                    </CardTitle>
+                    <CardDescription className="mt-1.5 text-slate-500">
+                      Manage this subscription separately from your CEG Brain
+                      membership.
+                    </CardDescription>
+                  </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-sm font-semibold capitalize ${addonRecovering ? "bg-amber-100 text-amber-800" : addonActive ? "bg-green-100 text-green-800" : "bg-slate-200 text-slate-700"}`}
+                  >
+                    {addonRecovering ? "payment retry" : addon.status}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-5 pt-6">
+                {addonRecovering && (
+                  <div
+                    role="alert"
+                    className="flex gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950"
+                  >
+                    <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+                    <div>
+                      <p className="font-semibold">Payment update required</p>
+                      <p className="mt-1 text-sm leading-6">
+                        Your addon remains available during Dodo&apos;s retry
+                        period
+                        {addon.retryAccessUntil
+                          ? ` through ${format(new Date(addon.retryAccessUntil), "MMMM d, yyyy")}`
+                          : ""}
+                        . Update your payment method to avoid losing Credit
+                        Repair access.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <div className="grid gap-4 border-b border-slate-100 pb-5 sm:grid-cols-3">
+                  <div>
+                    <p className="text-sm font-medium uppercase tracking-wider text-slate-500">
+                      Amount
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-slate-900">
+                      ${addon.amount}/mo
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium uppercase tracking-wider text-slate-500">
+                      Next billing date
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {addon.nextBillingDate
+                        ? format(
+                            new Date(addon.nextBillingDate),
+                            "MMMM d, yyyy",
+                          )
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium uppercase tracking-wider text-slate-500">
+                      Billing model
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {addon.legacyBillingModel ? "Legacy" : "Recurring"}
+                    </p>
+                  </div>
+                </div>
+                {(addon.customerId || addon.subscriptionId) && (
+                  <div className="flex justify-end">
+                    <Button
+                      asChild
+                      className={
+                        addonRecovering
+                          ? "bg-amber-600 text-white hover:bg-amber-700"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
+                      }
+                    >
+                      <a
+                        href={`/api/user/${user.uid}/dodo/customer-portal`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <CreditCard className="mr-2 size-4" />
+                        {addonRecovering
+                          ? "Update addon payment"
+                          : "Manage addon billing"}
+                        <ExternalLink className="ml-2 size-4" />
+                      </a>
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

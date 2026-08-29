@@ -21,14 +21,14 @@ export default function ClientLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex h-[100dvh] w-full overflow-hidden font-inter">
+    <div className="flex h-[100dvh] w-full min-w-0 overflow-hidden font-inter">
       <Suspense fallback={null}>
         <DodoPaymentReturnSync />
       </Suspense>
       <Sidebar />
-      <div className="flex flex-1 min-h-0 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <MobileNavClient />
-        <div className="flex-1 min-h-0 overflow-y-auto pt-[110px] lg:pt-0 px-4 lg:px-6 pb-24 lg:pb-0">
+        <div className="min-h-0 min-w-0 w-full flex-1 overflow-x-hidden overflow-y-auto px-4 pb-24 pt-[110px] lg:px-6 lg:pb-0 lg:pt-0">
           {children}
         </div>
       </div>

@@ -6,8 +6,9 @@ import { firestoreAdmin } from "@/lib/fireabase-admin";
 import { Webhooks } from "@/lib/dodo-nextjs";
 import {
   recordPaymentSucceeded,
-  recordSubscriptionActive,
+  recordSubscriptionLifecycle,
 } from "@/service/dodo";
+import { createHash } from "crypto";
 
 export const claimWebhook = async (webhookId: string) => {
   const db = firestoreAdmin();
@@ -24,8 +25,12 @@ const eventId = (payload: any) => {
   if (payload.type === "payment.succeeded") {
     return `payment.succeeded:${payload.data.payment_id}`;
   }
-  if (payload.type === "subscription.active") {
-    return `subscription.active:${payload.data.subscription_id}`;
+  if (payload.type?.startsWith("subscription.")) {
+    const digest = createHash("sha256")
+      .update(JSON.stringify(payload))
+      .digest("hex")
+      .slice(0, 24);
+    return `${payload.type}:${payload.data.subscription_id}:${digest}`;
   }
   return null;
 };
@@ -38,9 +43,13 @@ export const handleDodoPayload = async (payload: any) => {
       await recordPaymentSucceeded({
         payment: payload.data as unknown as Payment,
       });
-    } else if (payload.type === "subscription.active") {
-      await recordSubscriptionActive({
+    } else if (payload.type.startsWith("subscription.")) {
+      await recordSubscriptionLifecycle({
         subscription: payload.data as unknown as Subscription,
+        eventType: payload.type,
+        eventCreatedAt:
+          payload.timestamp || payload.created_at || payload.data?.updated_at,
+        webhookEventId: webhookId,
       });
     }
 

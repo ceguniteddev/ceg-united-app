@@ -7,6 +7,7 @@ import { hasActiveAddon, getUserAddons } from "@/service/addons";
 import { getUserMembership } from "@/service/membership";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { getSystemConfig } from "@/service/system-config";
+import { hasPaidMembershipAccess } from "@/lib/membership-entitlement";
 
 const PUBLIC_ROUTES = new Set<string>([
   "/",
@@ -229,7 +230,7 @@ export async function proxy(req: NextRequest) {
       sessionCookie.uid,
     );
     const membership = await getUserMembership(sessionCookie.uid);
-    hasPaidContract = membership?.status === "active";
+    hasPaidContract = hasPaidMembershipAccess(membership);
 
     // We get isOnboarded so we can conditionally route clients
     // var isOnboarded = true;
