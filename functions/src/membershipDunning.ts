@@ -11,7 +11,7 @@ if (!admin.apps.length) admin.initializeApp();
 
 const projectId = process.env.GCLOUD_PROJECT || "cegunitedllc";
 const databaseId =
-  process.env.FIREBASE_DB_NAME ||
+  process.env.DATABASE_NAME ||
   (projectId === "ceg-united-llc-prod"
     ? "ceg-united-db-production"
     : "ceg-united-db-staging");
