@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AlertTriangle, CreditCard, ExternalLink } from "lucide-react";
+import { getUserAddons } from "@/service/addons";
 
 export default async function MembershipPage() {
   const user = await getCurrentUser();
@@ -21,6 +22,7 @@ export default async function MembershipPage() {
   }
 
   const membership = await getUserMembership(user.uid);
+  const addons = await getUserAddons(user.uid, { includeInactive: true });
   const hasBillingProfile = Boolean(
     membership?.customerId || membership?.subscriptionId,
   );
@@ -70,7 +72,7 @@ export default async function MembershipPage() {
                     </div>
                   </div>
                 )}
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                   <div>
                     <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">
                       Plan
@@ -95,7 +97,7 @@ export default async function MembershipPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+                <div className="grid gap-4 border-b border-slate-100 pb-5 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">
                       Amount
@@ -104,7 +106,28 @@ export default async function MembershipPage() {
                       ${membership.amount}/mo
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div>
+                    <p className="text-sm font-medium uppercase tracking-wider text-slate-500">
+                      Next billing date
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {membership.nextBillingDate
+                        ? format(
+                            new Date(membership.nextBillingDate),
+                            "MMMM d, yyyy",
+                          )
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium uppercase tracking-wider text-slate-500">
+                      Billing model
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {membership.legacyBillingModel ? "Legacy" : "Recurring"}
+                    </p>
+                  </div>
+                  <div className="sm:text-right lg:text-left">
                     <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">
                       Member Since
                     </p>
@@ -155,6 +178,109 @@ export default async function MembershipPage() {
             )}
           </CardContent>
         </Card>
+        {addons.map((addon) => {
+          const addonRecovering = addon.entitlementStatus === "grace";
+          const addonActive = addon.status === "active";
+          return (
+            <Card key={addon.id} className="border-slate-200 shadow-sm">
+              <CardHeader className="rounded-t-xl border-b border-slate-100 bg-slate-50 pb-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-xl text-slate-800">
+                      Credit Repair Addon
+                    </CardTitle>
+                    <CardDescription className="mt-1.5 text-slate-500">
+                      Manage this subscription separately from your CEG Brain
+                      membership.
+                    </CardDescription>
+                  </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-sm font-semibold capitalize ${addonRecovering ? "bg-amber-100 text-amber-800" : addonActive ? "bg-green-100 text-green-800" : "bg-slate-200 text-slate-700"}`}
+                  >
+                    {addonRecovering ? "payment retry" : addon.status}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-5 pt-6">
+                {addonRecovering && (
+                  <div
+                    role="alert"
+                    className="flex gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950"
+                  >
+                    <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+                    <div>
+                      <p className="font-semibold">Payment update required</p>
+                      <p className="mt-1 text-sm leading-6">
+                        Your addon remains available during Dodo&apos;s retry
+                        period
+                        {addon.retryAccessUntil
+                          ? ` through ${format(new Date(addon.retryAccessUntil), "MMMM d, yyyy")}`
+                          : ""}
+                        . Update your payment method to avoid losing Credit
+                        Repair access.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <div className="grid gap-4 border-b border-slate-100 pb-5 sm:grid-cols-3">
+                  <div>
+                    <p className="text-sm font-medium uppercase tracking-wider text-slate-500">
+                      Amount
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-slate-900">
+                      ${addon.amount}/mo
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium uppercase tracking-wider text-slate-500">
+                      Next billing date
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {addon.nextBillingDate
+                        ? format(
+                            new Date(addon.nextBillingDate),
+                            "MMMM d, yyyy",
+                          )
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium uppercase tracking-wider text-slate-500">
+                      Billing model
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {addon.legacyBillingModel ? "Legacy" : "Recurring"}
+                    </p>
+                  </div>
+                </div>
+                {(addon.customerId || addon.subscriptionId) && (
+                  <div className="flex justify-end">
+                    <Button
+                      asChild
+                      className={
+                        addonRecovering
+                          ? "bg-amber-600 text-white hover:bg-amber-700"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
+                      }
+                    >
+                      <a
+                        href={`/api/user/${user.uid}/dodo/customer-portal`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <CreditCard className="mr-2 size-4" />
+                        {addonRecovering
+                          ? "Update addon payment"
+                          : "Manage addon billing"}
+                        <ExternalLink className="ml-2 size-4" />
+                      </a>
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

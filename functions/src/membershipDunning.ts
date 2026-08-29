@@ -22,25 +22,29 @@ const paymentRecoveryHtml = ({
   firstName,
   retryAccessUntil,
   settingsUrl,
+  productName,
 }: {
   firstName: string;
   retryAccessUntil: string;
   settingsUrl: string;
+  productName: string;
 }) => `<p>Hi ${firstName || "there"},</p>
-<p>We could not process your CEG Brain membership renewal. Your paid access remains available while Dodo Payments retries the charge.</p>
-<p>Please update your payment information before <strong>${retryAccessUntil}</strong> to avoid moving to the Free plan.</p>
+<p>We could not process your ${productName} renewal. Your paid access remains available while Dodo Payments retries the charge.</p>
+<p>Please update your payment information before <strong>${retryAccessUntil}</strong> to avoid losing this paid access.</p>
 <p><a href="${settingsUrl}">Update payment information</a></p>
 <p>For security, CEG United never receives or stores your card details.</p>`;
 
 const accessEndedHtml = ({
   firstName,
   settingsUrl,
+  productName,
 }: {
   firstName: string;
   settingsUrl: string;
+  productName: string;
 }) => `<p>Hi ${firstName || "there"},</p>
-<p>Your Dodo Payments retry period has ended and your effective CEG Brain plan is now Free.</p>
-<p>You can restore paid access by updating your billing information and resolving the outstanding subscription payment.</p>
+<p>Your Dodo Payments retry period has ended and your ${productName} paid access is now inactive.</p>
+<p>You can restore access by updating your billing information and resolving the outstanding subscription payment.</p>
 <p><a href="${settingsUrl}">Manage billing</a></p>`;
 
 export const processMembershipDunning = onSchedule(
@@ -53,16 +57,30 @@ export const processMembershipDunning = onSchedule(
     const now = Timestamp.now();
     const enforce = process.env.MEMBERSHIP_DUNNING_ENFORCEMENT === "true";
     const settingsUrl = `${process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://cegunited.com"}/settings/membership`;
-    const due = await db
-      .collectionGroup("membership")
-      .where("entitlementStatus", "==", "grace")
-      .where("nextReminderAt", "<=", now)
-      .limit(200)
-      .get();
+    const [membershipDue, addonDue] = await Promise.all([
+      db
+        .collectionGroup("membership")
+        .where("entitlementStatus", "==", "grace")
+        .where("nextReminderAt", "<=", now)
+        .limit(200)
+        .get(),
+      db
+        .collectionGroup("addons")
+        .where("entitlementStatus", "==", "grace")
+        .where("nextReminderAt", "<=", now)
+        .limit(200)
+        .get(),
+    ]);
+    const due = [...membershipDue.docs, ...addonDue.docs];
 
-    for (const membership of due.docs) {
+    for (const membership of due) {
       const userId = userIdForMembership(membership.ref.path);
-      if (!userId || membership.id !== "current") continue;
+      const isAddon = membership.ref.path.includes("/addons/");
+      if (!userId || (!isAddon && membership.id !== "current")) continue;
+      const productName = isAddon
+        ? "CEG Credit Repair Addon"
+        : "CEG Brain membership";
+      const entityKey = isAddon ? membership.id : "membership";
 
       const user = await db.collection("user").doc(userId).get();
       const userData = user.data() || {};
@@ -104,16 +122,19 @@ export const processMembershipDunning = onSchedule(
 
           const finalMailRef = db
             .collection("mail")
-            .doc(`membership-ended-${data.subscriptionId}-${recoveryEpisode}`);
+            .doc(
+              `subscription-ended-${entityKey}-${data.subscriptionId}-${recoveryEpisode}`,
+            );
           transaction.create(finalMailRef, {
             to: userData.email,
             from: "CEG United LLC <noreply@cegunited.com>",
             job: "MEMBERSHIP_ACCESS_ENDED",
             message: {
-              subject: "Your CEG Brain plan is now Free",
+              subject: `Your ${productName} access is now inactive`,
               html: accessEndedHtml({
                 firstName: userData.firstName,
                 settingsUrl,
+                productName,
               }),
             },
             createdAt: now,
@@ -132,7 +153,7 @@ export const processMembershipDunning = onSchedule(
         const mailRef = db
           .collection("mail")
           .doc(
-            `membership-retry-${data.subscriptionId}-${recoveryEpisode}-${reminderCount}`,
+            `subscription-retry-${entityKey}-${data.subscriptionId}-${recoveryEpisode}-${reminderCount}`,
           );
         transaction.create(mailRef, {
           to: userData.email,
@@ -149,6 +170,7 @@ export const processMembershipDunning = onSchedule(
                   })
                 : "the end of the retry period",
               settingsUrl,
+              productName,
             }),
           },
           createdAt: now,
@@ -165,7 +187,7 @@ export const processMembershipDunning = onSchedule(
     }
 
     logger.info("Membership dunning run completed", {
-      due: due.size,
+      due: due.length,
       enforcement: enforce,
       databaseId,
     });

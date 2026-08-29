@@ -12,6 +12,7 @@ Confirmed policy:
 - When retries are exhausted, or Dodo reports the subscription as expired or terminally failed, paid access is removed and the effective app plan becomes Free.
 - The paid subscription record and billing history are preserved; the system does not overwrite the historical tier with a fake paid-to-Free subscription mutation.
 - Membership Settings displays a payment-failure banner and a Dodo-hosted Manage billing / Update payment method action.
+- Subscription-based addons follow the same lifecycle independently: recurring billing, 13-day grace access, reminders every 48 hours, terminal access removal, and separate status display. Membership and addon checkouts reuse one Dodo customer so both can be managed from the same portal.
 
 ## 2. Current-state audit
 
