@@ -558,7 +558,7 @@ const FundingCard = ({
               />
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-gray-500">Bank Name</p>
-                <p className="truncate font-semibold text-gray-900">
+                <p className="whitespace-normal [overflow-wrap:anywhere] font-semibold text-gray-900">
                   {displayBankName}
                 </p>
               </div>
