@@ -19,7 +19,7 @@ vi.mock("@/lib/dodo-nextjs", () => ({
 }));
 vi.mock("@/service/dodo", () => ({
   recordPaymentSucceeded: mocks.payment,
-  recordSubscriptionActive: mocks.subscription,
+  recordSubscriptionLifecycle: mocks.subscription,
 }));
 vi.mock("@/lib/fireabase-admin", () => ({
   firestoreAdmin: () => ({
@@ -79,9 +79,28 @@ describe("Dodo adapter webhook", () => {
       type: "subscription.active",
       data: { subscription_id: "sub_1" },
     });
-    expect(mocks.subscription).toHaveBeenCalledWith({
-      subscription: { subscription_id: "sub_1" },
-    });
+    expect(mocks.subscription).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subscription: { subscription_id: "sub_1" },
+        eventType: "subscription.active",
+      }),
+    );
+
+    for (const type of [
+      "subscription.renewed",
+      "subscription.on_hold",
+      "subscription.plan_changed",
+      "subscription.cancelled",
+      "subscription.failed",
+      "subscription.expired",
+    ]) {
+      await handleDodoPayload({
+        type,
+        timestamp: "2026-01-01T00:00:00.000Z",
+        data: { subscription_id: `sub_${type}` },
+      });
+    }
+    expect(mocks.subscription).toHaveBeenCalledTimes(7);
   });
 
   it("ignores unrelated and duplicate payloads", async () => {

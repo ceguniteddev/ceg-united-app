@@ -18,6 +18,7 @@ latestQuery.doc = vi.fn(() => currentRef);
 vi.mock("@/lib/fireabase-admin", () => ({
   firestoreAdmin: () => ({
     collection: vi.fn(() => latestQuery),
+    doc: vi.fn(() => currentRef),
     runTransaction: vi.fn(async (callback) =>
       callback({
         get: mocks.transactionGet,
@@ -48,8 +49,121 @@ vi.mock("@/lib/logger", () => ({ logInfo: vi.fn() }));
 
 import {
   activateUserMembership,
+  synchronizeDodoMembership,
   triggerActivationCRSWorkflow,
 } from "@/service/membership";
+import { hasPaidMembershipAccess } from "@/lib/membership-entitlement";
+
+describe("hasPaidMembershipAccess", () => {
+  it("supports paid, active legacy, grace, and expired grace states", () => {
+    const now = new Date("2026-01-10T00:00:00.000Z");
+    expect(
+      hasPaidMembershipAccess({
+        status: "inactive",
+        entitlementStatus: "paid",
+        retryAccessUntil: null,
+      }),
+    ).toBe(true);
+    expect(
+      hasPaidMembershipAccess({
+        status: "active",
+        entitlementStatus: null,
+        retryAccessUntil: null,
+      }),
+    ).toBe(true);
+    expect(
+      hasPaidMembershipAccess(
+        {
+          status: "active",
+          entitlementStatus: "grace",
+          retryAccessUntil: "2026-01-11T00:00:00.000Z",
+        },
+        now,
+      ),
+    ).toBe(true);
+    expect(
+      hasPaidMembershipAccess(
+        {
+          status: "active",
+          entitlementStatus: "grace",
+          retryAccessUntil: "2026-01-09T00:00:00.000Z",
+        },
+        now,
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("synchronizeDodoMembership", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("projects on-hold subscriptions to grace with a retry deadline", async () => {
+    mocks.transactionGet.mockResolvedValueOnce({
+      data: () => ({ entitlementStatus: "paid", createdAt: new Date() }),
+    });
+    await synchronizeDodoMembership({
+      userId: "u1",
+      tier: "tier_pro",
+      providerStatus: "on_hold",
+      subscriptionId: "sub_1",
+      customerId: "cus_1",
+      productId: "p_pro",
+      amount: 397,
+      nextBillingDate: "2026-02-01T00:00:00.000Z",
+    });
+    expect(mocks.transactionSet).toHaveBeenCalledWith(
+      currentRef,
+      expect.objectContaining({
+        providerStatus: "on_hold",
+        entitlementStatus: "grace",
+        status: "active",
+        retryAccessUntil: expect.any(Date),
+        nextReminderAt: expect.any(Date),
+      }),
+      { merge: true },
+    );
+  });
+
+  it("projects terminal subscriptions to Free access", async () => {
+    mocks.transactionGet.mockResolvedValueOnce({
+      data: () => ({ entitlementStatus: "grace", createdAt: new Date() }),
+    });
+    await synchronizeDodoMembership({
+      userId: "u1",
+      tier: "tier_pro",
+      providerStatus: "expired",
+      subscriptionId: "sub_1",
+      amount: 397,
+    });
+    expect(mocks.transactionSet).toHaveBeenCalledWith(
+      currentRef,
+      expect.objectContaining({
+        providerStatus: "expired",
+        entitlementStatus: "free",
+        status: "inactive",
+        nextReminderAt: null,
+      }),
+      { merge: true },
+    );
+  });
+
+  it("ignores an out-of-order provider event", async () => {
+    mocks.transactionGet.mockResolvedValueOnce({
+      data: () => ({
+        providerEventAt: new Date("2026-02-01T00:00:00.000Z"),
+      }),
+    });
+    await synchronizeDodoMembership({
+      userId: "u1",
+      tier: "tier_pro",
+      providerStatus: "on_hold",
+      subscriptionId: "sub_1",
+      amount: 397,
+      eventCreatedAt: "2026-01-01T00:00:00.000Z",
+    });
+    expect(mocks.transactionSet).not.toHaveBeenCalled();
+  });
+});
 
 describe("activateUserMembership", () => {
   beforeEach(() => {

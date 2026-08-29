@@ -7,8 +7,155 @@ import { logInfo } from "@/lib/logger";
 import { fundAnalysis, generateCRSReport } from "@/service/crs";
 import { getApplyFunding } from "./apply-funding";
 import { Query } from "firebase-admin/firestore";
-import { MembershipTier, UserMembership } from "@/schema/users";
+import {
+  MembershipEntitlementStatus,
+  MembershipProviderStatus,
+  MembershipTier,
+  UserMembership,
+} from "@/schema/users";
 import membershipCache from "@/lib/membership-cache";
+import { hasPaidMembershipAccess } from "@/lib/membership-entitlement";
+
+const RETRY_WINDOW_DAYS = Number(process.env.DODO_RETRY_WINDOW_DAYS || 13);
+
+const dateValue = (value: any): Date | null => {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value.toDate === "function") return value.toDate();
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const isoValue = (value: any) => dateValue(value)?.toISOString() || null;
+
+export const synchronizeDodoMembership = async ({
+  userId,
+  tier,
+  providerStatus,
+  subscriptionId,
+  customerId,
+  productId,
+  amount,
+  previousBillingDate,
+  nextBillingDate,
+  expiresAt,
+  cancelAtNextBillingDate = false,
+  eventCreatedAt,
+  lastWebhookEventId,
+}: {
+  userId: string;
+  tier: MembershipTier;
+  providerStatus: MembershipProviderStatus;
+  subscriptionId: string;
+  customerId?: string | null;
+  productId?: string | null;
+  amount: number;
+  previousBillingDate?: string | null;
+  nextBillingDate?: string | null;
+  expiresAt?: string | null;
+  cancelAtNextBillingDate?: boolean;
+  eventCreatedAt?: string | null;
+  lastWebhookEventId?: string;
+}) => {
+  if (!userId) throw new AppError("User ID is required.");
+
+  const db = firestoreAdmin();
+  const currentRef = db.doc(`${USER_COLLECTION}/${userId}/membership/current`);
+  const now = new Date();
+  let newlyPaid = false;
+
+  await db.runTransaction(async (transaction) => {
+    const current = await transaction.get(currentRef);
+    const existing = current.data() || {};
+    const incomingEventAt = dateValue(eventCreatedAt) || now;
+    const previousEventAt = dateValue(existing.providerEventAt);
+
+    if (
+      previousEventAt &&
+      incomingEventAt.getTime() < previousEventAt.getTime()
+    ) {
+      return;
+    }
+
+    let entitlementStatus: MembershipEntitlementStatus = "free";
+    if (providerStatus === "active") entitlementStatus = "paid";
+    if (providerStatus === "on_hold" || providerStatus === "paused") {
+      entitlementStatus = "grace";
+    }
+    if (providerStatus === "cancelled" && cancelAtNextBillingDate) {
+      const accessEnd = dateValue(expiresAt || nextBillingDate);
+      entitlementStatus = accessEnd && accessEnd > now ? "paid" : "free";
+    }
+    newlyPaid =
+      entitlementStatus === "paid" &&
+      existing.entitlementStatus !== "paid" &&
+      existing.entitlementStatus !== "grace" &&
+      existing.status !== "active";
+
+    const enteringRecovery =
+      entitlementStatus === "grace" && existing.entitlementStatus !== "grace";
+    const failureStartedAt = enteringRecovery
+      ? now
+      : dateValue(existing.paymentFailureStartedAt);
+    const retryAccessUntil = enteringRecovery
+      ? new Date(now.getTime() + RETRY_WINDOW_DAYS * 24 * 60 * 60 * 1000)
+      : dateValue(existing.retryAccessUntil);
+
+    const recoveryFields =
+      entitlementStatus === "grace"
+        ? {
+            paymentFailureStartedAt: failureStartedAt || now,
+            retryAccessUntil:
+              retryAccessUntil ||
+              new Date(now.getTime() + RETRY_WINDOW_DAYS * 24 * 60 * 60 * 1000),
+            nextReminderAt: enteringRecovery
+              ? now
+              : dateValue(existing.nextReminderAt) || now,
+            reminderCount: enteringRecovery ? 0 : existing.reminderCount || 0,
+            finalNoticeSentAt: null,
+          }
+        : {
+            paymentFailureStartedAt: null,
+            retryAccessUntil: null,
+            nextReminderAt: null,
+            lastReminderAt: null,
+            reminderCount: 0,
+          };
+
+    transaction.set(
+      currentRef,
+      {
+        provider: "dodo",
+        providerStatus,
+        entitlementStatus,
+        status: entitlementStatus === "free" ? "inactive" : "active",
+        tier,
+        amount,
+        subscriptionId,
+        customerId: customerId || existing.customerId || null,
+        productId: productId || existing.productId || null,
+        planId: productId || existing.planId || null,
+        currentPeriodStart: dateValue(previousBillingDate),
+        currentPeriodEnd: dateValue(expiresAt || nextBillingDate),
+        nextBillingDate: dateValue(nextBillingDate),
+        cancelAtNextBillingDate,
+        providerEventAt: incomingEventAt,
+        lastWebhookEventId: lastWebhookEventId || null,
+        legacyBillingModel: false,
+        createdAt: dateValue(existing.createdAt) || now,
+        updatedAt: now,
+        ...recoveryFields,
+      },
+      { merge: true },
+    );
+  });
+
+  membershipCache.invalidate(userId);
+  if (newlyPaid) {
+    await triggerActivationCRSWorkflow({ userId, source: "membership" });
+  }
+  return { success: true };
+};
 
 export const triggerActivationCRSWorkflow = async ({
   userId,
@@ -270,16 +417,47 @@ export const getUserMembership = async (
   const data = doc.data();
 
   // Convert Firestore Timestamp to string for the client component
-  const result: UserMembership = {
+  const rawResult: UserMembership = {
     id: doc.id,
     tier: data.tier || "unknown",
     amount: data.amount || 0,
     status: data.status || "active",
     checkoutId: data.checkoutId || null,
-    createdAt: data.createdAt?.toDate().toISOString() || null,
+    createdAt: isoValue(data.createdAt),
     canceledAt: data.canceledAt?.toDate().toISOString() || null,
     updatedBy: data.updatedBy || null,
-    updatedAt: data.updatedAt?.toDate().toISOString() || null,
+    updatedAt: isoValue(data.updatedAt),
+    provider: data.provider || null,
+    providerStatus: data.providerStatus || null,
+    entitlementStatus: data.entitlementStatus || null,
+    subscriptionId: data.subscriptionId || null,
+    customerId: data.customerId || null,
+    productId: data.productId || data.planId || null,
+    currentPeriodStart: isoValue(data.currentPeriodStart),
+    currentPeriodEnd: isoValue(data.currentPeriodEnd),
+    nextBillingDate: isoValue(data.nextBillingDate),
+    cancelAtNextBillingDate: Boolean(data.cancelAtNextBillingDate),
+    paymentFailureStartedAt: isoValue(data.paymentFailureStartedAt),
+    retryAccessUntil: isoValue(data.retryAccessUntil),
+    nextReminderAt: isoValue(data.nextReminderAt),
+    lastReminderAt: isoValue(data.lastReminderAt),
+    reminderCount: data.reminderCount || 0,
+    finalNoticeSentAt: isoValue(data.finalNoticeSentAt),
+    legacyBillingModel: Boolean(data.legacyBillingModel),
+  };
+  const access = hasPaidMembershipAccess(rawResult);
+  const result: UserMembership = {
+    ...rawResult,
+    status: access
+      ? "active"
+      : rawResult.entitlementStatus
+        ? "inactive"
+        : rawResult.status,
+    entitlementStatus:
+      rawResult.entitlementStatus === "grace" && !access
+        ? "free"
+        : rawResult.entitlementStatus,
+    effectivePlan: access ? rawResult.tier : "free",
   };
 
   logInfo("Resolved Firestore membership", {

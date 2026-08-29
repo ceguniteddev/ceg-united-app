@@ -13,6 +13,9 @@ import {
   USER_WALLET_TRANSACTIONS,
   COURSE,
   USER_COURSE_ENROLLMENT,
+  DODO_MEMBERSHIP_RECONCILIATIONS,
+  USER_COLLECTION,
+  MAIL_COLLECTION,
 } from "@/constant/collection-name";
 import { dodoClient } from "@/lib/dodo-sdk";
 import { resolveDodoReturnUrl } from "@/lib/dodo-env";
@@ -22,10 +25,11 @@ import type { PaymentPlan } from "@/schema/payments";
 import { EmailJobs } from "@/schema/trigger-email";
 import { getFeeSettings } from "@/service/fee-settings";
 import { activateUserAddon } from "@/service/addons";
-import { activateUserMembership } from "@/service/membership";
+import { synchronizeDodoMembership } from "@/service/membership";
 import { sendTriggerEmail } from "@/service/trigger-email";
 import { getUserById } from "@/service/user";
 import { getCoursePricing } from "@/lib/course-pricing";
+import membershipCache from "@/lib/membership-cache";
 
 type CheckoutResult = { checkoutId: string; url: string };
 type Metadata = Record<string, string>;
@@ -256,7 +260,6 @@ export const createMembershipCheckoutConfig = async ({
     productId: requireProduct(membershipProduct(planId), planId),
     paymentKey: planId,
     amountInCents: priceInCents,
-    onDemand: true,
     returnUrl: membershipReturnUrl(returnUrl),
     metadata: {
       planId,
@@ -458,15 +461,6 @@ export const recordPaymentSucceeded = async ({
   });
 
   if (userId && membershipProduct(paymentKey)) {
-    await activateUserMembership({
-      userId,
-      tier: paymentKey,
-      amount: Number(metadata.membershipAmount) || payment.total_amount / 100,
-      checkoutId: payment.checkout_session_id || undefined,
-      planId: payment.product_cart?.[0]?.product_id || checkoutData.productId,
-      receiptId: payment.payment_id,
-    });
-
     let selectedAddonIds: string[] = [];
     try {
       selectedAddonIds = JSON.parse(metadata.selectedAddonIds || "[]");
@@ -662,16 +656,136 @@ export const recordSubscriptionActive = async ({
     );
     return;
   }
-  await activateUserMembership({
+  await synchronizeDodoMembership({
     userId,
-    tier,
+    tier: tier as "tier_starter" | "tier_pro" | "tier_executive",
+    providerStatus: subscription.status,
+    subscriptionId: subscription.subscription_id,
+    customerId: subscription.customer?.customer_id,
+    productId: subscription.product_id,
     amount:
       Number(metadata.membershipAmount) ||
       subscription.recurring_pre_tax_amount / 100,
-    checkoutId: subscription.subscription_id,
-    planId: subscription.product_id,
-    receiptId: subscription.subscription_id,
+    previousBillingDate: subscription.previous_billing_date,
+    nextBillingDate: subscription.next_billing_date,
+    expiresAt: subscription.expires_at,
+    cancelAtNextBillingDate: subscription.cancel_at_next_billing_date,
+    eventCreatedAt: subscription.created_at,
   });
+};
+
+export const recordSubscriptionLifecycle = async ({
+  subscription,
+  eventType,
+  eventCreatedAt,
+  webhookEventId,
+  userIdOverride,
+}: {
+  subscription: Subscription;
+  eventType: string;
+  eventCreatedAt?: string | null;
+  webhookEventId?: string;
+  userIdOverride?: string;
+}) => {
+  const metadata = (subscription.metadata || {}) as Record<string, string>;
+  let userId = userIdOverride || metadata.userId;
+
+  if (!userId) {
+    const bySubscription = await firestoreAdmin()
+      .collectionGroup("membership")
+      .where("subscriptionId", "==", subscription.subscription_id)
+      .limit(1)
+      .get();
+    if (!bySubscription.empty) {
+      const path = bySubscription.docs[0].ref.path.split("/");
+      userId = path[path.length - 3];
+    }
+  }
+
+  if (!userId && subscription.customer?.customer_id) {
+    const paymentSnapshot = await firestoreAdmin()
+      .collection(USER_DODO_PAYMENTS)
+      .where("customer.customer_id", "==", subscription.customer.customer_id)
+      .limit(20)
+      .get();
+    userId = paymentSnapshot.docs[0]?.data()?.userId;
+  }
+
+  const isAddon =
+    metadata.isAddon === "true" ||
+    metadata.planId === "credit_module_pro" ||
+    (Boolean(process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID) &&
+      subscription.product_id ===
+        process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID);
+  if (isAddon) {
+    if (eventType === "subscription.active") {
+      return recordSubscriptionActive({ subscription });
+    }
+    return;
+  }
+
+  const tier =
+    metadata.planId || membershipTierForProduct(subscription.product_id);
+  if (!userId || !tier) {
+    logError(
+      new Error(
+        `Unable to synchronize subscription ${subscription.subscription_id}: missing ${!userId ? "userId" : "membership tier"}`,
+      ),
+    );
+    return;
+  }
+
+  await synchronizeDodoMembership({
+    userId,
+    tier: tier as "tier_starter" | "tier_pro" | "tier_executive",
+    providerStatus: subscription.status,
+    subscriptionId: subscription.subscription_id,
+    customerId: subscription.customer?.customer_id,
+    productId: subscription.product_id,
+    amount:
+      Number(metadata.membershipAmount) ||
+      subscription.recurring_pre_tax_amount / 100,
+    previousBillingDate: subscription.previous_billing_date,
+    nextBillingDate: subscription.next_billing_date,
+    expiresAt: subscription.expires_at,
+    cancelAtNextBillingDate: subscription.cancel_at_next_billing_date,
+    eventCreatedAt: eventCreatedAt || subscription.created_at,
+    lastWebhookEventId: webhookEventId,
+  });
+
+  const accessEnded =
+    subscription.status === "failed" ||
+    subscription.status === "expired" ||
+    (subscription.status === "cancelled" &&
+      !subscription.cancel_at_next_billing_date);
+  if (accessEnded) {
+    const user = await getUserById(userId).catch(() => null);
+    if (user?.email) {
+      const settingsUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/settings/membership`;
+      const mailRef = firestoreAdmin()
+        .collection(MAIL_COLLECTION)
+        .doc(`membership-ended-${subscription.subscription_id}`);
+      await mailRef
+        .create({
+          to: user.email,
+          from: "CEG United LLC <noreply@cegunited.com>",
+          job: EmailJobs.MEMBERSHIP_ACCESS_ENDED,
+          message: {
+            subject: "Your CEG Brain plan is now Free",
+            html: `<p>Hi ${user.firstName || "there"},</p><p>Your paid membership access has ended and your effective CEG Brain plan is now Free.</p><p><a href="${settingsUrl}">Manage billing</a> to restore paid access.</p>`,
+          },
+          createdAt: new Date(),
+        })
+        .catch((error: any) => {
+          if (error?.code !== 6 && error?.code !== "already-exists")
+            throw error;
+        });
+      await firestoreAdmin()
+        .collection(`${USER_COLLECTION}/${userId}/membership`)
+        .doc("current")
+        .set({ finalNoticeSentAt: new Date() }, { merge: true });
+    }
+  }
 };
 
 export const getDodoPayments = async () => {
@@ -697,6 +811,14 @@ export const getDodoPayments = async () => {
 };
 
 export const getDodoCustomerIdByUserId = async (userId: string) => {
+  const currentMembership = await firestoreAdmin()
+    .collection(`${USER_COLLECTION}/${userId}/membership`)
+    .doc("current")
+    .get();
+  if (currentMembership?.exists) {
+    const customerId = currentMembership.data()?.customerId;
+    if (customerId) return customerId as string;
+  }
   const snapshot = await firestoreAdmin()
     .collection(USER_DODO_PAYMENTS)
     .where("userId", "==", userId)
@@ -708,6 +830,110 @@ export const getDodoCustomerIdByUserId = async (userId: string) => {
     if (customerId) return customerId as string;
   }
   return null;
+};
+
+export const reconcileLegacyMemberships = async ({
+  apply = false,
+}: {
+  apply?: boolean;
+} = {}) => {
+  const db = firestoreAdmin();
+  const snapshot = await db.collectionGroup("membership").get();
+  const runId = randomUUID();
+  const results: Array<Record<string, unknown>> = [];
+
+  for (const membership of snapshot.docs) {
+    if (membership.id !== "current") continue;
+    const data = membership.data();
+    const path = membership.ref.path.split("/");
+    const userId = path[path.length - 3];
+    const candidateId =
+      data.subscriptionId ||
+      (String(data.checkoutId || "").startsWith("sub_")
+        ? data.checkoutId
+        : null);
+
+    if (!candidateId) {
+      results.push({ userId, status: "legacy_unmapped", applied: false });
+      if (apply) {
+        await membership.ref.set(
+          { legacyBillingModel: true, reconciliationRunId: runId },
+          { merge: true },
+        );
+      }
+      continue;
+    }
+
+    try {
+      const subscription = await dodoClient.subscriptions.retrieve(candidateId);
+      if (subscription.on_demand) {
+        results.push({
+          userId,
+          subscriptionId: candidateId,
+          status: "legacy_on_demand",
+          applied: apply,
+        });
+        if (apply) {
+          await membership.ref.set(
+            {
+              subscriptionId: candidateId,
+              customerId: subscription.customer?.customer_id || null,
+              provider: "dodo",
+              providerStatus: subscription.status,
+              legacyBillingModel: true,
+              reconciliationRunId: runId,
+              updatedAt: new Date(),
+            },
+            { merge: true },
+          );
+        }
+        continue;
+      }
+
+      results.push({
+        userId,
+        subscriptionId: candidateId,
+        status: "recurring",
+        applied: apply,
+      });
+      if (apply) {
+        await recordSubscriptionLifecycle({
+          subscription,
+          eventType: "reconciliation",
+          eventCreatedAt: new Date().toISOString(),
+          webhookEventId: `reconciliation:${runId}`,
+          userIdOverride: userId,
+        });
+      }
+    } catch (error: any) {
+      results.push({
+        userId,
+        subscriptionId: candidateId,
+        status: "provider_lookup_failed",
+        error: error.message,
+        applied: false,
+      });
+    }
+  }
+
+  const summary = results.reduce<Record<string, number>>((acc, item) => {
+    const status = String(item.status);
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
+  await db.collection(DODO_MEMBERSHIP_RECONCILIATIONS).doc(runId).set({
+    runId,
+    apply,
+    summary,
+    results,
+    createdAt: new Date(),
+  });
+  if (apply) {
+    for (const result of results) {
+      if (result.userId) membershipCache.invalidate(String(result.userId));
+    }
+  }
+  return { runId, apply, summary, results };
 };
 
 export const mapDodoPaymentToUser = async ({

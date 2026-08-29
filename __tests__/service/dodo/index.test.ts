@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   getFees: vi.fn(),
   activate: vi.fn(),
+  synchronize: vi.fn(),
   activateAddon: vi.fn(),
   sendEmail: vi.fn(),
   add: vi.fn(),
@@ -16,18 +17,23 @@ const mocks = vi.hoisted(() => ({
   txGet: vi.fn(),
   txSet: vi.fn(),
   txUpdate: vi.fn(),
+  docCreate: vi.fn(),
 }));
 
 vi.mock("@/lib/dodo-sdk", () => ({
   dodoClient: {
     checkoutSessions: { create: mocks.create },
-    subscriptions: { charge: mocks.charge },
+    subscriptions: { charge: mocks.charge, retrieve: vi.fn() },
   },
 }));
 vi.mock("@/service/user", () => ({ getUserById: mocks.getUser }));
 vi.mock("@/service/fee-settings", () => ({ getFeeSettings: mocks.getFees }));
 vi.mock("@/service/membership", () => ({
   activateUserMembership: mocks.activate,
+  synchronizeDodoMembership: mocks.synchronize,
+}));
+vi.mock("@/lib/membership-cache", () => ({
+  default: { invalidate: vi.fn() },
 }));
 vi.mock("@/service/addons", () => ({
   activateUserAddon: mocks.activateAddon,
@@ -57,6 +63,7 @@ const collection = vi.fn((name: string) => {
       set: mocks.set,
       update: mocks.update,
       get: mocks.get,
+      create: mocks.docCreate,
     })),
   };
   return query;
@@ -84,6 +91,7 @@ import {
   mapDodoPaymentToUser,
   recordPaymentSucceeded,
   recordSubscriptionActive,
+  recordSubscriptionLifecycle,
   sendPaymentLink,
   unmapDodoPayment,
 } from "@/service/dodo";
@@ -289,20 +297,19 @@ describe("Dodo payment service", () => {
       });
       expect(mocks.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          product_cart: [expect.objectContaining({ product_id: productId })],
           return_url: "https://app.test/client/home?membershipCheckout=1",
           metadata: expect.objectContaining({
             userId: "u1",
             planId,
             membershipAmount: expect.any(String),
           }),
-          subscription_data: {
-            on_demand: expect.objectContaining({
-              mandate_only: false,
-              product_price: price,
-            }),
-          },
+          product_cart: [
+            expect.objectContaining({ product_id: productId, amount: price }),
+          ],
         }),
+      );
+      expect(mocks.create.mock.calls.at(-1)?.[0]).not.toHaveProperty(
+        "subscription_data",
       );
     },
   );
@@ -314,9 +321,7 @@ describe("Dodo payment service", () => {
     });
     expect(mocks.create).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        subscription_data: {
-          on_demand: expect.objectContaining({ product_price: 100000 }),
-        },
+        product_cart: [expect.objectContaining({ amount: 100000 })],
       }),
     );
     mocks.getFees.mockResolvedValueOnce({
@@ -332,9 +337,7 @@ describe("Dodo payment service", () => {
     });
     expect(mocks.create).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        subscription_data: {
-          on_demand: expect.objectContaining({ product_price: 119700 }),
-        },
+        product_cart: [expect.objectContaining({ amount: 119700 })],
       }),
     );
   });
@@ -472,14 +475,7 @@ describe("Dodo payment service", () => {
       payment: payment({ metadata: undefined, total_amount: 240000 }),
     });
 
-    expect(mocks.activate).toHaveBeenCalledWith({
-      userId: "u1",
-      tier: "tier_pro",
-      amount: 2000,
-      checkoutId: "cks_1",
-      planId: "p_pro",
-      receiptId: "pay_1",
-    });
+    expect(mocks.activate).not.toHaveBeenCalled();
     expect(mocks.activateAddon).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "u1",
@@ -691,7 +687,7 @@ describe("Dodo payment service", () => {
       subscription: { metadata: { userId: "u1" } } as any,
     });
     await recordSubscriptionActive({ subscription: {} as any });
-    expect(mocks.activate).not.toHaveBeenCalled();
+    expect(mocks.synchronize).not.toHaveBeenCalled();
     await recordSubscriptionActive({
       subscription: {
         metadata: { userId: "u1", planId: "tier_pro" },
@@ -700,7 +696,7 @@ describe("Dodo payment service", () => {
         product_id: "p_pro",
       } as any,
     });
-    expect(mocks.activate).toHaveBeenCalledWith(
+    expect(mocks.synchronize).toHaveBeenCalledWith(
       expect.objectContaining({ amount: 20 }),
     );
   });
@@ -730,7 +726,7 @@ describe("Dodo payment service", () => {
         triggerCRSWorkflow: true,
       }),
     );
-    expect(mocks.activate).not.toHaveBeenCalled();
+    expect(mocks.synchronize).not.toHaveBeenCalled();
   });
 
   it("handles missing userId when activating addon subscription and handles invalid selectedAddonIds JSON", async () => {
@@ -767,9 +763,7 @@ describe("Dodo payment service", () => {
     await recordPaymentSucceeded({
       payment: payment({ metadata: undefined, total_amount: 200000 }),
     });
-    expect(mocks.activate).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "u1", tier: "tier_pro" }),
-    );
+    expect(mocks.activate).not.toHaveBeenCalled();
   });
 
   it("recovers subscription membership context from product and payments", async () => {
@@ -790,12 +784,41 @@ describe("Dodo payment service", () => {
       } as any,
     });
 
-    expect(mocks.activate).toHaveBeenCalledWith(
+    expect(mocks.synchronize).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "u1",
         tier: "tier_pro",
         amount: 2000,
-        checkoutId: "sub_1",
+        subscriptionId: "sub_1",
+      }),
+    );
+  });
+
+  it("sends one deterministic access-ended notice for a terminal subscription", async () => {
+    mocks.docCreate.mockResolvedValueOnce(undefined);
+    await recordSubscriptionLifecycle({
+      eventType: "subscription.expired",
+      eventCreatedAt: "2026-01-01T00:00:00.000Z",
+      subscription: {
+        metadata: { userId: "u1", planId: "tier_pro" },
+        customer: { customer_id: "cus_1" },
+        recurring_pre_tax_amount: 39700,
+        subscription_id: "sub_terminal",
+        product_id: "p_pro",
+        status: "expired",
+        cancel_at_next_billing_date: false,
+      } as any,
+    });
+    expect(mocks.synchronize).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerStatus: "expired",
+        subscriptionId: "sub_terminal",
+      }),
+    );
+    expect(mocks.docCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        job: "MEMBERSHIP_ACCESS_ENDED",
+        to: "person@example.com",
       }),
     );
   });
