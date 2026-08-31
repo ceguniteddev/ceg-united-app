@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface RegistrationPurposeStepProps {
-  onSelect: (purpose: RegistrationPurpose) => void;
+  onSelect: (purpose: RegistrationPurpose) => void | Promise<void>;
 }
 
 const purposes = [
