@@ -329,9 +329,14 @@ export function Step3Funding() {
   const isFinancialEducation =
     registrationPurpose === RegistrationPurpose.FinancialEducation;
 
-  const fundingType = watch("fundingType") || businessDetailsData.fundingType;
-  const employmentType =
-    watch("employmentType") || businessDetailsData.employmentType;
+  // Keep the Funding draft in the store so it can be restored if the user
+  // switches back, but never let it control the Financial Education UI.
+  const fundingType = isFinancialEducation
+    ? undefined
+    : watch("fundingType") || businessDetailsData.fundingType;
+  const employmentType = isFinancialEducation
+    ? undefined
+    : watch("employmentType") || businessDetailsData.employmentType;
 
   const isBusiness =
     fundingType === FundingType.Business || fundingType === FundingType.Both;
@@ -716,7 +721,7 @@ export function Step3Funding() {
         </div>
 
         {/* PERSONAL FUNDING DOCUMENTS */}
-        {isPersonal && (
+        {!isFinancialEducation && isPersonal && (
           <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 border border-slate-200 bg-white p-4 rounded-lg shadow-sm">
             <h3 className="text-lg font-semibold">Personal Requirements</h3>
             {employmentType === "W2" && (
@@ -762,7 +767,7 @@ export function Step3Funding() {
         )}
 
         {/* BUSINESS FUNDING DOCUMENTS */}
-        {isBusiness && (
+        {!isFinancialEducation && isBusiness && (
           <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 border border-slate-200 bg-white p-4 rounded-lg shadow-sm">
             <h3 className="text-lg font-semibold">Business Requirements</h3>
             <div className="space-y-2">
