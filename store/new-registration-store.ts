@@ -47,6 +47,10 @@ export const useNewRegistrationStore = create<NewRegistrationState>()(
         set({
           registrationPurpose,
           currentStep: 1,
+          // A lead belongs to the registration path that created it. Do not
+          // reuse it after the user returns to purpose selection or switches
+          // between Funding and Financial Education.
+          leadId: null,
           businessDetailsData: {},
           fundingData: {},
           documentUploadData: {},
