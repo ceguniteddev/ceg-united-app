@@ -22,7 +22,7 @@ export interface UserAddon {
   canceledAt?: string | null;
   updatedBy?: string | null;
   updatedAt?: string | null;
-  provider?: "dodo" | null;
+  provider?: "dodo" | "whop" | null;
   providerStatus?: MembershipProviderStatus | null;
   entitlementStatus?: MembershipEntitlementStatus | null;
   subscriptionId?: string | null;
@@ -39,6 +39,16 @@ export interface UserAddon {
   reminderCount?: number;
   finalNoticeSentAt?: string | null;
   legacyBillingModel?: boolean;
+  migrationStatus?:
+    | "required"
+    | "checkout_pending"
+    | "dodo_active_whop_cancellation_required"
+    | "completed"
+    | null;
+  migrationCheckoutId?: string | null;
+  migrationStartedAt?: string | null;
+  whopSubscriptionId?: string | null;
+  legacyProvider?: "whop" | "dodo" | null;
 }
 
 const RETRY_WINDOW_DAYS = Number(process.env.DODO_RETRY_WINDOW_DAYS || 13);
@@ -298,6 +308,12 @@ export const getUserAddons = async (
       reminderCount: data.reminderCount || 0,
       finalNoticeSentAt: isoValue(data.finalNoticeSentAt),
       legacyBillingModel: Boolean(data.legacyBillingModel),
+      migrationStatus: data.migrationStatus || null,
+      migrationCheckoutId: data.migrationCheckoutId || null,
+      migrationStartedAt: isoValue(data.migrationStartedAt),
+      whopSubscriptionId: data.whopSubscriptionId || null,
+      legacyProvider:
+        data.legacyProvider || (data.provider === "dodo" ? "dodo" : "whop"),
     };
   });
 };

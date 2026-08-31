@@ -35,6 +35,23 @@ Deploy [`processMembershipDunning`](../functions/src/membershipDunning.ts:47) an
 5. Validate test-mode lifecycle transitions and recovery emails.
 6. Set `MEMBERSHIP_DUNNING_ENFORCEMENT=true` only after observe-only logs and legacy classifications are approved.
 
+## Whop customer migration
+
+1. Run reconciliation with `{ "apply": true }` to mark active records without a Dodo subscription as `legacyBillingModel: true`, `legacyProvider: whop`, and `migrationStatus: required`.
+2. Legacy clients retain their current application access and see **Switch to Dodo billing** on Membership Settings.
+3. The migration action calls [`POST`](../app/api/user/[userId]/billing/migrate/route.ts:6), which validates ownership and creates the appropriate Dodo checkout using the client's current tier or addon.
+4. The checkout synchronizes the Dodo recurring product price from App Fee Settings before creating the session. Subscription checkout requests intentionally omit `product_cart.amount` because Dodo only supports that field for one-time products.
+5. A verified `subscription.active` webhook records the Dodo subscription and creates a `payment-provider-migrations` record with `status: whop_cancellation_required`.
+6. Operations must cancel the identified subscription in Whop to prevent an overlapping renewal, then call the admin completion endpoint at `POST /api/admin/dodo/memberships/migrations/{migrationId}/complete`.
+
+Whop card vault tokens are not transferred to Dodo. The client must authorize a payment method through Dodo's hosted checkout. Never deactivate legacy access merely because checkout was started; Dodo's verified activation webhook is the cutover point.
+
+## App Fee Settings and Dodo catalog pricing
+
+App Fee Settings are authoritative. [`setFeeSettings()`](../service/fee-settings.ts:48) first synchronizes all configured Dodo recurring product prices and persists Firestore settings only after Dodo accepts them. This prevents the application from advertising a price that Dodo will not use for renewal.
+
+Changing a Dodo product does not rewrite an existing subscription's snapshotted recurring amount. Existing Dodo subscriptions with an incorrect amount must be migrated through a corrected checkout and then cancelled separately; existing Whop subscriptions follow the migration workflow above.
+
 ## Expected lifecycle behavior
 
 - `active` or `renewed`: the affected membership or addon receives paid entitlement; reminder state is cleared.

@@ -14,6 +14,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AlertTriangle, CreditCard, ExternalLink } from "lucide-react";
 import { getUserAddons } from "@/service/addons";
+import { MigrateBillingButton } from "./migrate-billing-button";
 
 export default async function MembershipPage() {
   const user = await getCurrentUser();
@@ -52,6 +53,37 @@ export default async function MembershipPage() {
           <CardContent className="pt-6 space-y-4">
             {membership ? (
               <div className="flex flex-col space-y-4">
+                {membership.legacyBillingModel && (
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-950">
+                    <p className="font-semibold">
+                      {membership.legacyProvider === "dodo"
+                        ? "Correct your Dodo subscription price"
+                        : "Move your billing to Dodo Payments"}
+                    </p>
+                    <p className="mt-1 max-w-2xl text-sm leading-6">
+                      {membership.legacyProvider === "dodo"
+                        ? "Your current subscription uses an outdated recurring price. Authorize the corrected subscription; after activation, the app will cancel the old Dodo subscription."
+                        : "Your existing access remains active. Securely authorize your payment method with Dodo Payments. To avoid overlapping renewals, support must cancel the old Whop subscription after Dodo confirms activation."}
+                    </p>
+                    <div className="mt-4">
+                      <MigrateBillingButton
+                        userId={user.uid}
+                        target="membership"
+                      />
+                    </div>
+                  </div>
+                )}
+                {membership.migrationStatus ===
+                  "dodo_active_whop_cancellation_required" && (
+                  <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
+                    <p className="font-semibold">Dodo billing is active</p>
+                    <p className="mt-1 text-sm leading-6">
+                      Your previous Whop subscription is queued for
+                      cancellation. Contact support before making billing
+                      changes in Whop.
+                    </p>
+                  </div>
+                )}
                 {isRecovering && (
                   <div
                     role="alert"
@@ -202,6 +234,38 @@ export default async function MembershipPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-5 pt-6">
+                {addon.legacyBillingModel && (
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-950">
+                    <p className="font-semibold">
+                      {addon.legacyProvider === "dodo"
+                        ? "Correct this addon's Dodo price"
+                        : "Move this addon to Dodo Payments"}
+                    </p>
+                    <p className="mt-1 max-w-2xl text-sm leading-6">
+                      {addon.legacyProvider === "dodo"
+                        ? "Authorize a new subscription at the current App Fee Settings price. The old Dodo subscription will be cancelled after activation."
+                        : "Authorize the Credit Repair Addon with Dodo to keep it renewing. Existing access remains active during the migration."}
+                    </p>
+                    <div className="mt-4">
+                      <MigrateBillingButton
+                        userId={user.uid}
+                        target="credit_module_pro"
+                      />
+                    </div>
+                  </div>
+                )}
+                {addon.migrationStatus ===
+                  "dodo_active_whop_cancellation_required" && (
+                  <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
+                    <p className="font-semibold">
+                      Dodo addon billing is active
+                    </p>
+                    <p className="mt-1 text-sm leading-6">
+                      The previous Whop addon subscription is queued for
+                      cancellation.
+                    </p>
+                  </div>
+                )}
                 {addonRecovering && (
                   <div
                     role="alert"

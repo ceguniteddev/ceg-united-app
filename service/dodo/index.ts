@@ -16,6 +16,7 @@ import {
   DODO_MEMBERSHIP_RECONCILIATIONS,
   USER_COLLECTION,
   MAIL_COLLECTION,
+  PAYMENT_PROVIDER_MIGRATIONS,
 } from "@/constant/collection-name";
 import { dodoClient } from "@/lib/dodo-sdk";
 import { resolveDodoReturnUrl } from "@/lib/dodo-env";
@@ -24,12 +25,14 @@ import { logError, logInfo } from "@/lib/logger";
 import type { PaymentPlan } from "@/schema/payments";
 import { EmailJobs } from "@/schema/trigger-email";
 import { getFeeSettings } from "@/service/fee-settings";
-import { synchronizeDodoAddon } from "@/service/addons";
+import { getUserAddons, synchronizeDodoAddon } from "@/service/addons";
 import { synchronizeDodoMembership } from "@/service/membership";
+import { getUserMembership } from "@/service/membership";
 import { sendTriggerEmail } from "@/service/trigger-email";
 import { getUserById } from "@/service/user";
 import { getCoursePricing } from "@/lib/course-pricing";
 import membershipCache from "@/lib/membership-cache";
+import { synchronizeDodoRecurringProductPrice } from "@/service/dodo/catalog";
 
 type CheckoutResult = { checkoutId: string; url: string };
 type Metadata = Record<string, string>;
@@ -99,6 +102,7 @@ const createSession = async ({
   metadata = {},
   onDemand,
   reuseCustomer = false,
+  includeAmount = true,
   returnUrl,
 }: {
   userId: string;
@@ -108,6 +112,7 @@ const createSession = async ({
   metadata?: Metadata;
   onDemand?: boolean;
   reuseCustomer?: boolean;
+  includeAmount?: boolean;
   returnUrl?: string;
 }): Promise<CheckoutResult> => {
   const user = await getCheckoutUser(userId);
@@ -119,7 +124,7 @@ const createSession = async ({
       {
         product_id: productId,
         quantity: 1,
-        amount: Math.round(amountInCents),
+        ...(includeAmount ? { amount: Math.round(amountInCents) } : {}),
       },
     ],
     customer: existingCustomerId
@@ -242,12 +247,16 @@ export const createMembershipCheckoutConfig = async ({
   selectedAddonIds = [],
   isAddon = false,
   returnUrl,
+  migrationSource,
+  whopSubscriptionId,
 }: {
   userId: string;
   planId: "tier_starter" | "tier_pro" | "tier_executive";
   selectedAddonIds?: string[];
   isAddon?: boolean;
   returnUrl?: string;
+  migrationSource?: "whop" | "dodo_legacy";
+  whopSubscriptionId?: string;
 }): Promise<CheckoutResult> => {
   const fees = await getFeeSettings();
   const prices = {
@@ -255,25 +264,31 @@ export const createMembershipCheckoutConfig = async ({
     tier_pro: fees.tierProPrice,
     tier_executive: fees.tierExecutivePrice,
   };
-  const priceInDollars =
-    prices[planId] +
-    (selectedAddonIds.includes("credit_module_pro")
-      ? (fees.creditModuleProAddonPrice ?? 197)
-      : 0);
+  if (selectedAddonIds.length > 0) {
+    throw new Error(
+      "Recurring addons must be purchased separately so Dodo can manage each subscription and renewal price correctly.",
+    );
+  }
+  const priceInDollars = prices[planId];
   const priceInCents = Math.round(priceInDollars * 100);
+  const productId = requireProduct(membershipProduct(planId), planId);
+  await synchronizeDodoRecurringProductPrice(productId, priceInCents);
 
   return createSession({
     userId,
-    productId: requireProduct(membershipProduct(planId), planId),
+    productId,
     paymentKey: planId,
     amountInCents: priceInCents,
     reuseCustomer: true,
+    includeAmount: false,
     returnUrl: membershipReturnUrl(returnUrl),
     metadata: {
       planId,
       membershipAmount: String(prices[planId]),
       isAddon: String(isAddon),
       selectedAddonIds: JSON.stringify(selectedAddonIds),
+      ...(migrationSource ? { migrationSource } : {}),
+      ...(whopSubscriptionId ? { whopSubscriptionId } : {}),
     },
   });
 };
@@ -282,28 +297,145 @@ export const createAddonCheckoutConfig = async ({
   userId,
   addonId,
   returnUrl,
+  migrationSource,
+  whopSubscriptionId,
 }: {
   userId: string;
   addonId: "credit_module_pro";
   returnUrl?: string;
+  migrationSource?: "whop" | "dodo_legacy";
+  whopSubscriptionId?: string;
 }): Promise<CheckoutResult> => {
   const fees = await getFeeSettings();
+  const productId = requireProduct(
+    process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID,
+    addonId,
+  );
+  await synchronizeDodoRecurringProductPrice(
+    productId,
+    Math.round(fees.creditModuleProAddonPrice * 100),
+  );
   return createSession({
     userId,
-    productId: requireProduct(
-      process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID,
-      addonId,
-    ),
+    productId,
     paymentKey: addonId,
     amountInCents: Math.round(fees.creditModuleProAddonPrice * 100),
     reuseCustomer: true,
+    includeAmount: false,
     returnUrl,
     metadata: {
       planId: addonId,
       isAddon: "true",
       addonAmount: String(fees.creditModuleProAddonPrice),
+      ...(migrationSource ? { migrationSource } : {}),
+      ...(whopSubscriptionId ? { whopSubscriptionId } : {}),
     },
   });
+};
+
+export const createWhopMigrationCheckout = async ({
+  userId,
+  target,
+}: {
+  userId: string;
+  target: "membership" | "credit_module_pro";
+}) => {
+  const db = firestoreAdmin();
+  const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/settings/membership?migration=processing`;
+  let result: CheckoutResult;
+  let recordPath: string;
+  let whopSubscriptionId: string | undefined;
+  let migrationSource: "whop" | "dodo_legacy" = "whop";
+
+  if (target === "membership") {
+    const membership = await getUserMembership(userId, { bypassCache: true });
+    if (!membership || !membership.legacyBillingModel) {
+      throw new Error("This membership does not require Whop migration.");
+    }
+    if (!membership.tier || membership.tier === ("unknown" as any)) {
+      throw new Error("Legacy membership tier is missing.");
+    }
+    whopSubscriptionId =
+      membership.whopSubscriptionId || membership.checkoutId || undefined;
+    migrationSource =
+      membership.legacyProvider === "dodo" ? "dodo_legacy" : "whop";
+    result = await createMembershipCheckoutConfig({
+      userId,
+      planId: membership.tier,
+      returnUrl,
+      migrationSource,
+      whopSubscriptionId,
+    });
+    recordPath = `${USER_COLLECTION}/${userId}/membership/current`;
+  } else {
+    const addon = (await getUserAddons(userId, { includeInactive: true })).find(
+      (item) => item.addonId === target,
+    );
+    if (!addon || !addon.legacyBillingModel) {
+      throw new Error("This addon does not require Whop migration.");
+    }
+    whopSubscriptionId =
+      addon.whopSubscriptionId || addon.checkoutId || undefined;
+    migrationSource = addon.legacyProvider === "dodo" ? "dodo_legacy" : "whop";
+    result = await createAddonCheckoutConfig({
+      userId,
+      addonId: target,
+      returnUrl,
+      migrationSource,
+      whopSubscriptionId,
+    });
+    recordPath = `${USER_COLLECTION}/${userId}/addons/${target}`;
+  }
+
+  await db.doc(recordPath).set(
+    {
+      legacyBillingModel: true,
+      migrationStatus: "checkout_pending",
+      migrationCheckoutId: result.checkoutId,
+      migrationStartedAt: new Date(),
+      whopSubscriptionId: whopSubscriptionId || null,
+      legacyProvider: migrationSource === "whop" ? "whop" : "dodo",
+      updatedAt: new Date(),
+    },
+    { merge: true },
+  );
+  return result;
+};
+
+export const completeWhopCancellation = async ({
+  migrationId,
+  completedBy,
+}: {
+  migrationId: string;
+  completedBy: string;
+}) => {
+  const db = firestoreAdmin();
+  const migrationRef = db
+    .collection(PAYMENT_PROVIDER_MIGRATIONS)
+    .doc(migrationId);
+  await db.runTransaction(async (transaction) => {
+    const migration = await transaction.get(migrationRef);
+    if (!migration.exists) throw new Error("Migration record not found.");
+    const data = migration.data() || {};
+    if (!data.recordPath) throw new Error("Migration record path is missing.");
+    const now = new Date();
+    transaction.set(
+      migrationRef,
+      {
+        status: "completed",
+        whopCancelledAt: now,
+        completedBy,
+        updatedAt: now,
+      },
+      { merge: true },
+    );
+    transaction.set(
+      db.doc(data.recordPath),
+      { migrationStatus: "completed", whopCancelledAt: now, updatedAt: now },
+      { merge: true },
+    );
+  });
+  return { success: true };
 };
 
 export const createCRSReportCheckoutConfig = async ({
@@ -687,6 +819,92 @@ const sendSubscriptionAccessEndedNotice = async ({
     .set({ finalNoticeSentAt: new Date() }, { merge: true });
 };
 
+const queueWhopCancellation = async ({
+  userId,
+  entity,
+  subscriptionId,
+  whopSubscriptionId,
+  recordPath,
+}: {
+  userId: string;
+  entity: string;
+  subscriptionId: string;
+  whopSubscriptionId?: string;
+  recordPath: string;
+}) => {
+  const db = firestoreAdmin();
+  const migrationId = `${userId}-${entity}-${subscriptionId}`;
+  await db
+    .collection(PAYMENT_PROVIDER_MIGRATIONS)
+    .doc(migrationId)
+    .set(
+      {
+        userId,
+        entity,
+        dodoSubscriptionId: subscriptionId,
+        whopSubscriptionId: whopSubscriptionId || null,
+        recordPath,
+        status: "whop_cancellation_required",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      { merge: true },
+    );
+  await db.doc(recordPath).set(
+    {
+      migrationStatus: "dodo_active_whop_cancellation_required",
+      legacyBillingModel: false,
+      updatedAt: new Date(),
+    },
+    { merge: true },
+  );
+};
+
+const completeLegacyDodoCutover = async ({
+  userId,
+  entity,
+  subscriptionId,
+  oldSubscriptionId,
+  recordPath,
+}: {
+  userId: string;
+  entity: string;
+  subscriptionId: string;
+  oldSubscriptionId?: string;
+  recordPath: string;
+}) => {
+  if (oldSubscriptionId && oldSubscriptionId !== subscriptionId) {
+    await dodoClient.subscriptions.update(oldSubscriptionId, {
+      status: "cancelled",
+    });
+  }
+  const now = new Date();
+  await firestoreAdmin()
+    .collection(PAYMENT_PROVIDER_MIGRATIONS)
+    .doc(`${userId}-${entity}-${subscriptionId}`)
+    .set(
+      {
+        userId,
+        entity,
+        oldDodoSubscriptionId: oldSubscriptionId || null,
+        dodoSubscriptionId: subscriptionId,
+        recordPath,
+        status: "completed",
+        createdAt: now,
+        updatedAt: now,
+      },
+      { merge: true },
+    );
+  await firestoreAdmin().doc(recordPath).set(
+    {
+      migrationStatus: "completed",
+      legacyBillingModel: false,
+      updatedAt: now,
+    },
+    { merge: true },
+  );
+};
+
 export const recordSubscriptionLifecycle = async ({
   subscription,
   eventType,
@@ -777,6 +995,29 @@ export const recordSubscriptionLifecycle = async ({
       eventCreatedAt: eventCreatedAt || subscription.created_at,
       lastWebhookEventId: webhookEventId,
     });
+    if (
+      metadata.migrationSource === "whop" &&
+      subscription.status === "active"
+    ) {
+      await queueWhopCancellation({
+        userId,
+        entity: addonId,
+        subscriptionId: subscription.subscription_id,
+        whopSubscriptionId: metadata.whopSubscriptionId,
+        recordPath: `${USER_COLLECTION}/${userId}/addons/${addonId}`,
+      });
+    } else if (
+      metadata.migrationSource === "dodo_legacy" &&
+      subscription.status === "active"
+    ) {
+      await completeLegacyDodoCutover({
+        userId,
+        entity: addonId,
+        subscriptionId: subscription.subscription_id,
+        oldSubscriptionId: metadata.whopSubscriptionId,
+        recordPath: `${USER_COLLECTION}/${userId}/addons/${addonId}`,
+      });
+    }
 
     const accessEnded =
       subscription.status === "failed" ||
@@ -825,6 +1066,26 @@ export const recordSubscriptionLifecycle = async ({
     eventCreatedAt: eventCreatedAt || subscription.created_at,
     lastWebhookEventId: webhookEventId,
   });
+  if (metadata.migrationSource === "whop" && subscription.status === "active") {
+    await queueWhopCancellation({
+      userId,
+      entity: "membership",
+      subscriptionId: subscription.subscription_id,
+      whopSubscriptionId: metadata.whopSubscriptionId,
+      recordPath: `${USER_COLLECTION}/${userId}/membership/current`,
+    });
+  } else if (
+    metadata.migrationSource === "dodo_legacy" &&
+    subscription.status === "active"
+  ) {
+    await completeLegacyDodoCutover({
+      userId,
+      entity: "membership",
+      subscriptionId: subscription.subscription_id,
+      oldSubscriptionId: metadata.whopSubscriptionId,
+      recordPath: `${USER_COLLECTION}/${userId}/membership/current`,
+    });
+  }
 
   let selectedAddonIds: string[] = [];
   try {
@@ -945,8 +1206,10 @@ export const reconcileLegacyMemberships = async ({
     db.collectionGroup("membership").get(),
     db.collectionGroup("addons").get(),
   ]);
+  const fees = await getFeeSettings();
   const runId = randomUUID();
   const results: Array<Record<string, unknown>> = [];
+  const whopNoticeUsers = new Set<string>();
 
   for (const membership of [
     ...membershipSnapshot.docs,
@@ -972,9 +1235,22 @@ export const reconcileLegacyMemberships = async ({
       });
       if (apply) {
         await membership.ref.set(
-          { legacyBillingModel: true, reconciliationRunId: runId },
+          {
+            legacyBillingModel: true,
+            legacyProvider: data.provider === "dodo" ? "dodo" : "whop",
+            migrationStatus: "required",
+            whopSubscriptionId:
+              data.provider === "dodo"
+                ? null
+                : data.whopSubscriptionId ||
+                  data.receiptId ||
+                  data.checkoutId ||
+                  null,
+            reconciliationRunId: runId,
+          },
           { merge: true },
         );
+        if (data.provider !== "dodo") whopNoticeUsers.add(userId);
       }
       continue;
     }
@@ -997,6 +1273,44 @@ export const reconcileLegacyMemberships = async ({
               provider: "dodo",
               providerStatus: subscription.status,
               legacyBillingModel: true,
+              reconciliationRunId: runId,
+              updatedAt: new Date(),
+            },
+            { merge: true },
+          );
+        }
+        continue;
+      }
+
+      const expectedAmount = isAddon
+        ? Math.round(fees.creditModuleProAddonPrice * 100)
+        : data.tier === "tier_starter"
+          ? Math.round(fees.tierStarterPrice * 100)
+          : data.tier === "tier_pro"
+            ? Math.round(fees.tierProPrice * 100)
+            : data.tier === "tier_executive"
+              ? Math.round(fees.tierExecutivePrice * 100)
+              : null;
+      if (
+        expectedAmount != null &&
+        Math.abs(subscription.recurring_pre_tax_amount - expectedAmount) > 100
+      ) {
+        results.push({
+          userId,
+          entity: isAddon ? membership.id : "membership",
+          subscriptionId: candidateId,
+          status: "dodo_price_mismatch",
+          currentAmount: subscription.recurring_pre_tax_amount,
+          expectedAmount,
+          applied: apply,
+        });
+        if (apply) {
+          await membership.ref.set(
+            {
+              legacyBillingModel: true,
+              legacyProvider: "dodo",
+              migrationStatus: "required",
+              whopSubscriptionId: candidateId,
               reconciliationRunId: runId,
               updatedAt: new Date(),
             },
@@ -1039,6 +1353,30 @@ export const reconcileLegacyMemberships = async ({
     acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {});
+  if (apply) {
+    for (const userId of whopNoticeUsers) {
+      const user = await getUserById(userId).catch(() => null);
+      if (!user?.email) continue;
+      const settingsUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/settings/membership`;
+      await db
+        .collection(MAIL_COLLECTION)
+        .doc(`billing-migration-${userId}`)
+        .create({
+          to: user.email,
+          from: "CEG United LLC <noreply@cegunited.com>",
+          job: EmailJobs.BILLING_MIGRATION,
+          message: {
+            subject: "Action required: move your CEG billing to Dodo Payments",
+            html: `<p>Hi ${user.firstName || "there"},</p><p>CEG United has moved recurring billing from Whop to Dodo Payments. Your current access remains active, but you must securely authorize your payment method with Dodo to keep your subscription renewing.</p><p><a href="${settingsUrl}">Switch to Dodo billing</a></p><p>CEG never receives or stores your full card number or CVC.</p>`,
+          },
+          createdAt: new Date(),
+        })
+        .catch((error: any) => {
+          if (error?.code !== 6 && error?.code !== "already-exists")
+            throw error;
+        });
+    }
+  }
   await db.collection(DODO_MEMBERSHIP_RECONCILIATIONS).doc(runId).set({
     runId,
     apply,

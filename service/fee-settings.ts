@@ -1,6 +1,7 @@
 "use server";
 import { SYSTEM_CONFIG_COLLECTION } from "@/constant/collection-name";
 import { firestoreAdmin } from "@/lib/fireabase-admin";
+import { synchronizeDodoSubscriptionCatalog } from "@/service/dodo/catalog";
 
 const CONFIG_DOC_ID = "fee-settings";
 
@@ -45,6 +46,7 @@ export const getFeeSettings = async (): Promise<FeeSettings> => {
 };
 
 export const setFeeSettings = async (settings: FeeSettings): Promise<void> => {
+  await synchronizeDodoSubscriptionCatalog(settings);
   const db = firestoreAdmin();
   await db
     .collection(SYSTEM_CONFIG_COLLECTION)

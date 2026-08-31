@@ -28,7 +28,7 @@ export interface UserMembership {
   canceledAt?: string | null;
   updatedBy?: string | null;
   updatedAt?: string | null;
-  provider?: "dodo" | null;
+  provider?: "dodo" | "whop" | null;
   providerStatus?: MembershipProviderStatus | null;
   entitlementStatus?: MembershipEntitlementStatus | null;
   effectivePlan?: MembershipTier | "free";
@@ -46,4 +46,14 @@ export interface UserMembership {
   reminderCount?: number;
   finalNoticeSentAt?: string | null;
   legacyBillingModel?: boolean;
+  migrationStatus?:
+    | "required"
+    | "checkout_pending"
+    | "dodo_active_whop_cancellation_required"
+    | "completed"
+    | null;
+  migrationCheckoutId?: string | null;
+  migrationStartedAt?: string | null;
+  whopSubscriptionId?: string | null;
+  legacyProvider?: "whop" | "dodo" | null;
 }

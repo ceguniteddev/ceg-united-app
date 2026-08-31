@@ -444,6 +444,12 @@ export const getUserMembership = async (
     reminderCount: data.reminderCount || 0,
     finalNoticeSentAt: isoValue(data.finalNoticeSentAt),
     legacyBillingModel: Boolean(data.legacyBillingModel),
+    migrationStatus: data.migrationStatus || null,
+    migrationCheckoutId: data.migrationCheckoutId || null,
+    migrationStartedAt: isoValue(data.migrationStartedAt),
+    whopSubscriptionId: data.whopSubscriptionId || null,
+    legacyProvider:
+      data.legacyProvider || (data.provider === "dodo" ? "dodo" : "whop"),
   };
   const access = hasPaidMembershipAccess(rawResult);
   const result: UserMembership = {

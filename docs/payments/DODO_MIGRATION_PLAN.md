@@ -6,7 +6,9 @@
 
 ---
 
-## 0. Locked Decisions
+## 0. Historical Decisions and Current Override
+
+> **Current implementation override:** recurring memberships and subscription addons now use normal Dodo auto-renewing products. App Fee Settings are authoritative and synchronize the Dodo product catalog before settings are committed or checkout is created. The on-demand approach described below is retained as migration history and must not be used for new subscriptions.
 
 The following choices are confirmed and drive the rest of this plan:
 

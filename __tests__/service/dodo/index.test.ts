@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   synchronize: vi.fn(),
   activateAddon: vi.fn(),
   synchronizeAddon: vi.fn(),
+  getAddons: vi.fn(),
+  syncProductPrice: vi.fn(),
   sendEmail: vi.fn(),
   add: vi.fn(),
   update: vi.fn(),
@@ -19,16 +21,24 @@ const mocks = vi.hoisted(() => ({
   txSet: vi.fn(),
   txUpdate: vi.fn(),
   docCreate: vi.fn(),
+  updateSubscription: vi.fn(),
 }));
 
 vi.mock("@/lib/dodo-sdk", () => ({
   dodoClient: {
     checkoutSessions: { create: mocks.create },
-    subscriptions: { charge: mocks.charge, retrieve: vi.fn() },
+    subscriptions: {
+      charge: mocks.charge,
+      retrieve: vi.fn(),
+      update: mocks.updateSubscription,
+    },
   },
 }));
 vi.mock("@/service/user", () => ({ getUserById: mocks.getUser }));
 vi.mock("@/service/fee-settings", () => ({ getFeeSettings: mocks.getFees }));
+vi.mock("@/service/dodo/catalog", () => ({
+  synchronizeDodoRecurringProductPrice: mocks.syncProductPrice,
+}));
 vi.mock("@/service/membership", () => ({
   activateUserMembership: mocks.activate,
   synchronizeDodoMembership: mocks.synchronize,
@@ -39,6 +49,7 @@ vi.mock("@/lib/membership-cache", () => ({
 vi.mock("@/service/addons", () => ({
   activateUserAddon: mocks.activateAddon,
   synchronizeDodoAddon: mocks.synchronizeAddon,
+  getUserAddons: mocks.getAddons,
 }));
 vi.mock("@/service/trigger-email", () => ({
   sendTriggerEmail: mocks.sendEmail,
@@ -143,6 +154,8 @@ describe("Dodo payment service", () => {
       session_id: "cks_1",
       checkout_url: "https://test.dodopayments.com/checkout/cks_1",
     });
+    mocks.syncProductPrice.mockResolvedValue(false);
+    mocks.getAddons.mockResolvedValue([]);
     mocks.runTransaction.mockImplementation(async (fn) =>
       fn({
         get: mocks.txGet,
@@ -286,17 +299,15 @@ describe("Dodo payment service", () => {
   });
 
   it.each([
-    ["tier_starter", "p_starter", 140000],
-    ["tier_pro", "p_pro", 240000],
-    ["tier_executive", "p_exec", 340000],
+    ["tier_starter", "p_starter", 100000],
+    ["tier_pro", "p_pro", 200000],
+    ["tier_executive", "p_exec", 300000],
   ] as const)(
     "creates dynamic %s membership",
     async (planId, productId, price) => {
       await createMembershipCheckoutConfig({
         userId: "u1",
         planId,
-        selectedAddonIds: ["credit_module_pro"],
-        isAddon: true,
       });
       expect(mocks.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -306,25 +317,27 @@ describe("Dodo payment service", () => {
             planId,
             membershipAmount: expect.any(String),
           }),
-          product_cart: [
-            expect.objectContaining({ product_id: productId, amount: price }),
-          ],
+          product_cart: [expect.objectContaining({ product_id: productId })],
         }),
       );
       expect(mocks.create.mock.calls.at(-1)?.[0]).not.toHaveProperty(
         "subscription_data",
       );
+      expect(mocks.syncProductPrice).toHaveBeenCalledWith(productId, price);
+      expect(
+        mocks.create.mock.calls.at(-1)?.[0].product_cart[0],
+      ).not.toHaveProperty("amount");
     },
   );
 
-  it("uses membership defaults, no-addon pricing, and addon fallback pricing", async () => {
+  it("uses membership pricing and rejects bundled recurring addons", async () => {
     await createMembershipCheckoutConfig({
       userId: "u1",
       planId: "tier_starter",
     });
     expect(mocks.create).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        product_cart: [expect.objectContaining({ amount: 100000 })],
+        product_cart: [expect.objectContaining({ product_id: "p_starter" })],
       }),
     );
     mocks.getFees.mockResolvedValueOnce({
@@ -333,16 +346,13 @@ describe("Dodo payment service", () => {
       tierExecutivePrice: 3000,
       creditModuleProAddonPrice: undefined,
     });
-    await createMembershipCheckoutConfig({
-      userId: "u1",
-      planId: "tier_starter",
-      selectedAddonIds: ["credit_module_pro"],
-    });
-    expect(mocks.create).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        product_cart: [expect.objectContaining({ amount: 119700 })],
+    await expect(
+      createMembershipCheckoutConfig({
+        userId: "u1",
+        planId: "tier_starter",
+        selectedAddonIds: ["credit_module_pro"],
       }),
-    );
+    ).rejects.toThrow("Recurring addons must be purchased separately");
   });
 
   it("creates a recurring addon checkout on the existing Dodo customer", async () => {
@@ -746,6 +756,58 @@ describe("Dodo payment service", () => {
         customerId: "cus_1",
       }),
     );
+  });
+
+  it("queues Whop cancellation after Dodo migration activation", async () => {
+    await recordSubscriptionLifecycle({
+      eventType: "subscription.active",
+      subscription: {
+        metadata: {
+          userId: "u1",
+          planId: "tier_pro",
+          migrationSource: "whop",
+          whopSubscriptionId: "whop_sub_1",
+        },
+        customer: { customer_id: "cus_1" },
+        recurring_pre_tax_amount: 200000,
+        subscription_id: "sub_dodo_1",
+        product_id: "p_pro",
+        status: "active",
+        cancel_at_next_billing_date: false,
+      } as any,
+    });
+    expect(mocks.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "whop_cancellation_required",
+        whopSubscriptionId: "whop_sub_1",
+        dodoSubscriptionId: "sub_dodo_1",
+      }),
+      { merge: true },
+    );
+  });
+
+  it("cancels an incorrectly priced legacy Dodo subscription after cutover", async () => {
+    await recordSubscriptionLifecycle({
+      eventType: "subscription.active",
+      subscription: {
+        metadata: {
+          userId: "u1",
+          planId: "credit_module_pro",
+          isAddon: "true",
+          migrationSource: "dodo_legacy",
+          whopSubscriptionId: "sub_wrong_price",
+        },
+        customer: { customer_id: "cus_1" },
+        recurring_pre_tax_amount: 19700,
+        subscription_id: "sub_correct_price",
+        product_id: "p_addon",
+        status: "active",
+        cancel_at_next_billing_date: false,
+      } as any,
+    });
+    expect(mocks.updateSubscription).toHaveBeenCalledWith("sub_wrong_price", {
+      status: "cancelled",
+    });
   });
 
   it("handles missing userId when activating addon subscription and handles invalid selectedAddonIds JSON", async () => {

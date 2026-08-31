@@ -13,6 +13,7 @@ export const USER_DODO_PAYMENTS = "user-dodo-payments";
 export const DODO_WEBHOOK_EVENTS = "dodo-webhook-events";
 export const DODO_MEMBERSHIP_RECONCILIATIONS =
   "dodo-membership-reconciliations";
+export const PAYMENT_PROVIDER_MIGRATIONS = "payment-provider-migrations";
 export const USER_LUMINO_PAYMENTS = "user-lumino-payments";
 export const LUMINO_WEBHOOK_EVENTS = "lumino-webhook-events";
 
