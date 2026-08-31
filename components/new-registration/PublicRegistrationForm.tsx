@@ -29,6 +29,7 @@ import {
   CircleCheckBigIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { updateExistingLeadPurpose } from "@/lib/registration-lead";
 import {
   Dialog,
   DialogContent,
@@ -129,7 +130,8 @@ export function PublicRegistrationForm() {
     },
   });
 
-  // Hydrate forms once mounted
+  // Hydrate the shared auth form once. Purpose changes must not reset or
+  // rewrite authData because these fields belong to both registration paths.
   useEffect(() => {
     if (isHydrated) {
       formStep1.reset({
@@ -143,6 +145,12 @@ export function PublicRegistrationForm() {
         consentConfirmTerms: authData.consentConfirmTerms || undefined,
         consentConfirmPrivacy: authData.consentConfirmPrivacy || undefined,
       });
+    }
+  }, [isHydrated, formStep1]);
+
+  // Purpose-specific forms are reset whenever the selected path changes.
+  useEffect(() => {
+    if (isHydrated) {
       formStep2.reset(businessDetailsData);
       formStep3.reset({
         ...documentUploadData,
@@ -151,7 +159,7 @@ export function PublicRegistrationForm() {
         employmentType: businessDetailsData.employmentType,
       });
     }
-  }, [isHydrated, registrationPurpose]);
+  }, [isHydrated, registrationPurpose, formStep2, formStep3]);
 
   // Sync business details to formStep3 when moving to step 3
   useEffect(() => {
@@ -219,6 +227,27 @@ export function PublicRegistrationForm() {
       ? 50
       : 100
     : Math.floor(Math.min((currentStep / 3) * 100, 100));
+
+  const handleRegistrationPurposeSelect = async (
+    purpose: RegistrationPurpose,
+  ) => {
+    setRegistrationPurpose(purpose);
+
+    // A lead created by the other registration path belongs to the same
+    // person. Reuse it and update only the path; shared auth data remains
+    // untouched in both the store and the existing lead.
+    if (!leadId) return;
+
+    try {
+      const response = await updateExistingLeadPurpose(leadId, purpose);
+
+      if (!response.ok) {
+        toast.error("Could not update registration type. Please try again.");
+      }
+    } catch {
+      toast.error("Could not update registration type. Please try again.");
+    }
+  };
 
   const handleNextStep1 = async () => {
     const isValid = await formStep1.trigger();
@@ -406,6 +435,12 @@ export function PublicRegistrationForm() {
       }
 
       const latestDocumentData = formStep3.getValues();
+      const submittedDocumentData = isFinancialEducation
+        ? {
+            registrationPurpose,
+            driverLicense: latestDocumentData.driverLicense,
+          }
+        : latestDocumentData;
 
       updateAuthData(latestAuthData);
       updateBusinessDetailsData(latestBusinessData);
@@ -416,7 +451,7 @@ export function PublicRegistrationForm() {
         registrationPurpose,
         auth: latestAuthData,
         business: isFinancialEducation ? undefined : latestBusinessData,
-        documents: latestDocumentData,
+        documents: submittedDocumentData,
       };
 
       const response = await fetch("/api/register", {
@@ -444,7 +479,7 @@ export function PublicRegistrationForm() {
   return (
     <div className="w-full max-w-[95vw] sm:max-w-[900px] lg:max-w-[1000px] mx-auto">
       {!registrationPurpose && (
-        <RegistrationPurposeStep onSelect={setRegistrationPurpose} />
+        <RegistrationPurposeStep onSelect={handleRegistrationPurposeSelect} />
       )}
 
       {registrationPurpose && (

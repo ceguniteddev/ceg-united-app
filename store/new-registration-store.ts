@@ -47,9 +47,6 @@ export const useNewRegistrationStore = create<NewRegistrationState>()(
         set({
           registrationPurpose,
           currentStep: 1,
-          businessDetailsData: {},
-          fundingData: {},
-          documentUploadData: {},
         }),
       setLeadId: (id) => set({ leadId: id }),
 
