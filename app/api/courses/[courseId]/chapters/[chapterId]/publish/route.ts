@@ -1,5 +1,6 @@
 import { badRequest } from "@/app/api/helpers";
 import { withAuth } from "@/lib/api-validation";
+import { getMissingChapterPublishFields } from "@/lib/chapter-publishing";
 import {
   getChapterById,
   updateCourseChapter,
@@ -9,7 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const PATCH = withAuth(
   async (
     req: NextRequest,
-    { params }: { params?: Promise<{ courseId: string; chapterId: string }> }
+    { params }: { params?: Promise<{ courseId: string; chapterId: string }> },
   ) => {
     const { courseId, chapterId } = (await params) ?? {};
     if (!courseId) {
@@ -18,7 +19,7 @@ export const PATCH = withAuth(
     if (!chapterId) {
       return NextResponse.json(
         { error: "Missing chapter id" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -26,14 +27,16 @@ export const PATCH = withAuth(
       const chapter = await getChapterById({ courseId, chapterId });
       if (!chapter) return badRequest({ errors: "Chapter not found." });
 
-      if (
-        !chapter ||
-        !chapter.muxData ||
-        !chapter.title ||
-        !chapter.description ||
-        !chapter.videoUrl
-      ) {
-        return new NextResponse("Missing required fields", { status: 400 });
+      const missingFields = getMissingChapterPublishFields(chapter);
+      if (missingFields.length > 0) {
+        return NextResponse.json(
+          {
+            error: "Missing required fields",
+            fields: missingFields,
+            message: `Complete the following fields before publishing: ${missingFields.join(", ")}.`,
+          },
+          { status: 400 },
+        );
       }
 
       const response = await updateCourseChapter({
@@ -48,5 +51,5 @@ export const PATCH = withAuth(
       console.log("[CHAPTER_ID_PATCH]", error);
       return new NextResponse("Internal Error", { status: 500 });
     }
-  }
+  },
 );
