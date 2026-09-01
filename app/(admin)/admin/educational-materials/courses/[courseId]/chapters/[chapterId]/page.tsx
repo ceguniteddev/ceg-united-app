@@ -19,6 +19,7 @@ import { ChapterTypeForm } from "./_components/chapter-type-form";
 import { ChapterArticleForm } from "./_components/chapter-article-form";
 import { ChapterQuizForm } from "./_components/chapter-quiz-form";
 import { useGetChapterById } from "@/hooks/educational-materials/chapter";
+import { getMissingChapterPublishFields } from "@/lib/chapter-publishing";
 import Spinner from "@/components/Spinner";
 import { useEffect } from "react";
 
@@ -52,19 +53,11 @@ const ChapterIdPage = () => {
   const isArticle = chapter.type === "article";
   const isQuiz = chapter.type === "quiz";
 
-  const requiredFields = [
-    chapter.title,
-    isVideo
-      ? chapter.videoUrl
-      : isArticle
-        ? chapter.articleContentHtml
-        : chapter.quiz?.questions?.length,
-  ];
-
-  const totalFields = requiredFields.length;
-  const completedFields = requiredFields.filter(Boolean).length;
+  const missingFields = getMissingChapterPublishFields(chapter);
+  const totalFields = 2;
+  const completedFields = totalFields - missingFields.length;
   const completionText = `(${completedFields}/${totalFields})`;
-  const isComplete = requiredFields.every(Boolean);
+  const isComplete = missingFields.length === 0;
 
   return (
     <>
