@@ -5,7 +5,13 @@ const RolesEnum = z.enum(["Admin", "Client", "Broker"]);
 export const RegistrationTypesEnum = z.enum(["Self", "Broker", "Admin"]);
 export type RegistrationType = z.infer<typeof RegistrationTypesEnum>;
 
-export type MembershipTier = "tier_starter" | "tier_pro" | "tier_executive";
+export type LegacyMembershipTier =
+  | "tier_starter"
+  | "tier_pro"
+  | "tier_executive";
+
+export type MembershipTier = LegacyMembershipTier | "platform_access";
+export type MembershipAccessModel = "legacy_tier" | "platform_course";
 
 export type MembershipProviderStatus =
   | "pending"
@@ -46,4 +52,6 @@ export interface UserMembership {
   reminderCount?: number;
   finalNoticeSentAt?: string | null;
   legacyBillingModel?: boolean;
+  accessModel?: MembershipAccessModel | null;
+  billingPlan?: MembershipTier | null;
 }

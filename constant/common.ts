@@ -259,6 +259,11 @@ export const adminSidebarLinks: AdminSidebarGroup[] = [
         route: "/admin/educational-materials",
         label: "Educational Materials",
       },
+      {
+        imgURL: "/icons/book-open-text.svg",
+        route: "/admin/course-capability-grants",
+        label: "Course Access Grants",
+      },
     ],
   },
   {

@@ -309,6 +309,48 @@ export const getApplyFunding = async (
   return results;
 };
 
+export const ensureIncomeFundingApplication = async (
+  userId: string,
+): Promise<{ referenceNumber: string; created: boolean }> => {
+  if (!userId) throw new AppError("User ID is required");
+
+  const db = firestoreAdmin();
+  const existingQuery = db
+    .collection(USER_FUNDING_APPLICATION)
+    .where("userId", "==", userId)
+    .limit(1);
+  const deterministicReference = `income-${userId}`;
+  const applicationRef = db
+    .collection(USER_FUNDING_APPLICATION)
+    .doc(deterministicReference);
+  let result = { referenceNumber: deterministicReference, created: false };
+
+  await db.runTransaction(async (transaction) => {
+    const existing = await transaction.get(existingQuery);
+    if (!existing.empty) {
+      result = { referenceNumber: existing.docs[0].id, created: false };
+      return;
+    }
+
+    transaction.set(applicationRef, {
+      userId,
+      interestedProduct: "Income-Based Funding",
+      fundingProducts: ["Business Income Based Funding"],
+      fundingType: "Income",
+      appliedDate: new Date(),
+      status: "New",
+      analysisStatus: "In Progress",
+      appliedPathways: [],
+      applicationSource: "financial_education_access",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    result = { referenceNumber: deterministicReference, created: true };
+  });
+
+  return result;
+};
+
 type Props = {
   state?: string;
   status?: FundingApplicationSatus;

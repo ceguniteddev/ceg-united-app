@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getUserAddons: vi.fn(),
   hasActiveAddon: vi.fn(),
   getSystemConfig: vi.fn(),
+  getClientEntitlements: vi.fn(),
 }));
 
 vi.mock("@/lib/session", () => ({
@@ -30,6 +31,10 @@ vi.mock("@/service/system-config", () => ({
   getSystemConfig: mocks.getSystemConfig,
 }));
 
+vi.mock("@/service/course-capabilities", () => ({
+  getClientEntitlements: mocks.getClientEntitlements,
+}));
+
 import { NextRequest, NextResponse } from "next/server";
 import { proxy } from "@/proxy";
 
@@ -39,6 +44,10 @@ describe("proxy middleware API validation", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getClientEntitlements.mockResolvedValue({
+      hasNonIncomeFundingAccess: true,
+      hasDisputeAccess: true,
+    });
 
     // Spy on NextResponse methods
     nextSpy = vi.spyOn(NextResponse, "next");
@@ -221,7 +230,7 @@ describe("proxy middleware API validation", () => {
       expect(nextSpy).toHaveBeenCalled();
     });
 
-    it("redirects /client/my-analysis to /client/home when client has only active addon without active membership", async () => {
+    it("redirects /client/my-analysis to Platform Access when the client has only an addon", async () => {
       const redirectSpy = vi.spyOn(NextResponse, "redirect");
       const req = createMockReq("/client/my-analysis", "valid_session");
 
@@ -238,7 +247,10 @@ describe("proxy middleware API validation", () => {
       await proxy(req);
 
       expect(redirectSpy).toHaveBeenCalledWith(
-        new URL("/client/home", "http://localhost:3000"),
+        new URL(
+          "/client/platform-access?required=platform",
+          "http://localhost:3000",
+        ),
       );
     });
   });

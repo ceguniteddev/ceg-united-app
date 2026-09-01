@@ -1301,7 +1301,7 @@ export const getFundMappingAnalysisDetails = async ({
   return result;
 };
 
-import { getUserMembership } from "./membership";
+import { getClientEntitlements } from "./course-capabilities";
 
 export const getAutoServedClientFunds = async ({
   userId,
@@ -1318,13 +1318,11 @@ export const getAutoServedClientFunds = async ({
     "Approved",
   ];
 
-  let membershipTier = "tier_starter"; // default
+  let membershipTier = "none";
 
   try {
-    const membership = await getUserMembership(userId);
-    if (membership && membership.status === "active") {
-      membershipTier = membership.tier;
-    }
+    const entitlements = await getClientEntitlements(userId);
+    membershipTier = entitlements.legacyPermissionLevel;
   } catch (error) {
     console.error("Error fetching user membership for auto serve cap:", error);
   }
@@ -1389,21 +1387,23 @@ export const getAutoServedClientFunds = async ({
   let globalCap = true;
 
   switch (membershipTier) {
-    case "tier_starter":
+    case "starter":
       SLOT_TARGET = 6;
       MONTHLY_CAP = 6;
       globalCap = true; // 6 lenders TOTAL
       break;
-    case "tier_pro":
+    case "pro":
       SLOT_TARGET = 6;
       MONTHLY_CAP = 6;
       globalCap = false; // 6 lenders PER CATEGORY
       break;
-    case "tier_executive":
+    case "executive":
       SLOT_TARGET = 12;
       MONTHLY_CAP = 12;
       globalCap = false; // 12 lenders PER CATEGORY
       break;
+    default:
+      return [];
   }
 
   const effectiveNotAppliedCount = globalCap

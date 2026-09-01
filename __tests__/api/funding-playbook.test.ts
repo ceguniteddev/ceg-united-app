@@ -14,10 +14,15 @@ const mocks = vi.hoisted(() => ({
   generateFundingPlaybook: vi.fn(),
   findNearestBranchesN8N: vi.fn(),
   checkAndIncrementRateLimit: vi.fn(),
+  getClientEntitlements: vi.fn(),
 }));
 
 vi.mock("@/service/user", () => ({
   getCurrentUser: mocks.getCurrentUser,
+}));
+
+vi.mock("@/service/course-capabilities", () => ({
+  getClientEntitlements: mocks.getClientEntitlements,
 }));
 
 vi.mock("@/lib/fireabase-admin", () => ({
@@ -66,6 +71,9 @@ import { POST as webhookRoute } from "@/app/api/funding-playbook/webhook/route";
 describe("Funding Playbook API Authorization & Security", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getClientEntitlements.mockResolvedValue({
+      hasNonIncomeFundingAccess: true,
+    });
     mocks.findNearestBranchesN8N.mockResolvedValue({ branches: [] });
     process.env.ADMIN_ACCESS_KEY = "test-admin-secret-key";
   });

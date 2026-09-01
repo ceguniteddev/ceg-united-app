@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+/// <reference types="vitest/globals" />
 
 vi.mock("@/service/user", () => ({
   registerUser: vi.fn(),
@@ -8,6 +8,10 @@ vi.mock("@/service/documents", () => ({
   uploadDocument: vi.fn(),
 }));
 
+vi.mock("@/service/apply-funding", () => ({
+  ensureIncomeFundingApplication: vi.fn(),
+}));
+
 vi.mock("@/lib/fireabase-admin", () => ({
   firestoreAdmin: vi.fn(),
 }));
@@ -15,6 +19,7 @@ vi.mock("@/lib/fireabase-admin", () => ({
 import { POST } from "@/app/api/register/route";
 import { registerUser } from "@/service/user";
 import { uploadDocument } from "@/service/documents";
+import { ensureIncomeFundingApplication } from "@/service/apply-funding";
 
 const auth = {
   firstName: "Jane",
@@ -57,6 +62,10 @@ describe("current POST /api/register", () => {
     vi.clearAllMocks();
     vi.mocked(registerUser).mockResolvedValue({ id: "user-1" } as any);
     vi.mocked(uploadDocument).mockResolvedValue({} as any);
+    vi.mocked(ensureIncomeFundingApplication).mockResolvedValue({
+      referenceNumber: "income-user-1",
+      created: true,
+    });
   });
 
   it("creates a Financial Education user without funding data and stores the license", async () => {
@@ -87,6 +96,7 @@ describe("current POST /api/register", () => {
         }),
       }),
     );
+    expect(ensureIncomeFundingApplication).toHaveBeenCalledWith("user-1");
   });
 
   it("rejects Financial Education registration with financial documents", async () => {
@@ -135,5 +145,6 @@ describe("current POST /api/register", () => {
       }),
     );
     expect(uploadDocument).not.toHaveBeenCalled();
+    expect(ensureIncomeFundingApplication).not.toHaveBeenCalled();
   });
 });

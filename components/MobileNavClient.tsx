@@ -16,6 +16,8 @@ import { usePathname, useRouter } from "next/navigation";
 import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
 import { useMembership } from "@/hooks/membership";
+import { useAddons } from "@/hooks/addons";
+import { useClientEntitlements } from "@/hooks/entitlements";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
 // import { useGetUserApplyFunding } from "@/hooks/apply-funding";
 import { LockIcon } from "lucide-react";
@@ -28,7 +30,6 @@ import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
 import { AddonPlans } from "@/components/pricing-plans/AddonPlans";
 import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
 import { AddonCheckoutView } from "@/components/pricing-plans/AddonCheckoutView";
-import { useAddons } from "@/hooks/addons";
 // import { useFeeSettings } from "@/hooks/fee-settings";
 import {
   Sheet as PricingSheet,
@@ -46,8 +47,9 @@ import { useUserPsfInvoicesQuery } from "@/hooks/psf-invoices";
 const MobileNavClient = () => {
   const { user, userData } = useAuth();
   // const { appliedFunding } = useGetUserApplyFunding();
-  const { data: addons = [] } = useAddons();
   const { data: membership } = useMembership(userData?.id);
+  const { data: addons = [] } = useAddons();
+  const { data: entitlements } = useClientEntitlements(userData?.id);
   // const { data: feeSettings } = useFeeSettings();
   const pathname = usePathname();
   const router = useRouter();
@@ -203,19 +205,20 @@ const MobileNavClient = () => {
 
                   const hasActiveMembership =
                     !!userData && membership?.status === "active";
-                  const hasAnyActiveAddon = addons.some(
-                    (a) => a.status === "active",
+                  const hasCreditRepairAddon = addons.some(
+                    (addon) =>
+                      addon.addonId === "credit_module_pro" &&
+                      addon.status === "active",
                   );
-
+                  const hasCreditRepairAccess =
+                    hasCreditRepairAddon ||
+                    entitlements?.hasDisputeAccess === true;
                   const isLocked =
                     (!hasActiveMembership &&
                       (item.route === "/client/my-analysis" ||
                         item.route === "/client/my-credit")) ||
-                    (!hasActiveMembership &&
-                      !hasAnyActiveAddon &&
-                      item.route === "/client/my-learning") ||
                     (item.route === "/client/credit-repair" &&
-                      !addons.some((a) => a.addonId === "credit_module_pro"));
+                      !hasCreditRepairAccess);
 
                   const content = (
                     <>

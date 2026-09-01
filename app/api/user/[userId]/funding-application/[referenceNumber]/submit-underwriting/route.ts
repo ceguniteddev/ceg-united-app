@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { badRequest, internalServerError } from "@/app/api/helpers";
+import { badRequest, forbidden, internalServerError } from "@/app/api/helpers";
 import { withAuth } from "@/lib/api-validation";
 import { updatePathwayStatus } from "@/service/apply-funding";
 import { getBanks } from "@/service/bank-management";
 import { sendTriggerEmail } from "@/service/trigger-email";
 import { EmailJobs } from "@/schema/trigger-email";
 import { getUserById, getUserDocuments } from "@/service/user";
+import { getClientEntitlements } from "@/service/course-capabilities";
 
 export const POST = withAuth(
   async (
@@ -33,6 +34,15 @@ export const POST = withAuth(
       // 1. Update application status to under-review
       const body = await request.json().catch(() => ({}));
       const pathwayId = body.pathwayId;
+
+      if (pathwayId && pathwayId !== "income_based") {
+        const entitlements = await getClientEntitlements(userId);
+        if (!entitlements.hasPlatformAccess) {
+          return forbidden(
+            "CEG Brain Platform Access is required for this funding pathway.",
+          );
+        }
+      }
 
       if (pathwayId) {
         await updatePathwayStatus({

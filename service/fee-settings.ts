@@ -10,6 +10,7 @@ export interface FeeSettings {
   tierStarterPrice: number;
   tierProPrice: number;
   tierExecutivePrice: number;
+  platformAccessPrice: number;
   creditModuleProAddonPrice: number;
   earlyRefreshFee: number;
   personalUnlimitedUnlockFee: number;
@@ -33,6 +34,7 @@ export const getFeeSettings = async (): Promise<FeeSettings> => {
     tierStarterPrice: data?.tierStarterPrice ?? 297,
     tierProPrice: data?.tierProPrice ?? 397,
     tierExecutivePrice: data?.tierExecutivePrice ?? 697,
+    platformAccessPrice: data?.platformAccessPrice ?? 499,
     creditModuleProAddonPrice: data?.creditModuleProAddonPrice ?? 197,
     earlyRefreshFee: data?.earlyRefreshFee ?? 99,
     personalUnlimitedUnlockFee: data?.personalUnlimitedUnlockFee ?? 999,
