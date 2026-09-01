@@ -1,14 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import {
-  Geist,
-  Geist_Mono,
+  // Geist,
+  // Geist_Mono,
   Inter,
   IBM_Plex_Serif,
   Caveat,
 } from "next/font/google";
 import "./globals.css";
 import Providers from "@/provider/Providers";
-import Script from "next/script";
+// import Script from "next/script";
 import RecaptchaGate from "@/components/RecaptchaGate";
 import { ConfettiProvider } from "@/provider/confetti-provider";
 
