@@ -181,11 +181,13 @@ export const triggerActivationCRSWorkflow = async ({
       bypassPremiumCheck: true,
     });
 
-    let referenceNumber = "";
     const appliedFundings = await getApplyFunding(userId);
-    if (appliedFundings && appliedFundings.length > 0) {
-      referenceNumber = appliedFundings[0].referenceNumber!;
-    }
+    const fundingApplication = appliedFundings?.find(
+      (application) =>
+        application.applicationSource !== "financial_education_access" &&
+        Boolean(application.referenceNumber),
+    );
+    const referenceNumber = fundingApplication?.referenceNumber;
 
     if (referenceNumber) {
       // We trigger the funding analysis here immediately after the CRS report succeeds,
