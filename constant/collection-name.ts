@@ -49,6 +49,7 @@ export const DODO_CHECKOUTS_COLLECTION = "dodo-checkouts";
 
 export const USER_COURSE_PROGRESS = "user-course-progress";
 export const USER_COURSE_ENROLLMENT = "user-course-enrollment";
+export const USER_COURSE_CAPABILITY_GRANTS = "user-course-capability-grants";
 
 export const MAIL_COLLECTION = "mail";
 

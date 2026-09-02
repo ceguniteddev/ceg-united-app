@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+/// <reference types="vitest/globals" />
 
 // ── Mock objects (defined before vi.mock so factories can close over them) ────
 const mockGet = vi.fn();
@@ -9,6 +9,11 @@ const mockAdd = vi.fn();
 const mockWhere = vi.fn();
 const mockOrderBy = vi.fn();
 const mockLimit = vi.fn();
+const mockTransactionGet = vi.fn();
+const mockTransactionSet = vi.fn();
+const mockRunTransaction = vi.fn(async (callback: any) =>
+  callback({ get: mockTransactionGet, set: mockTransactionSet }),
+);
 
 const mockDocRef: any = {
   get: mockGet,
@@ -54,6 +59,7 @@ const mockDb: any = {
   collection: vi.fn().mockReturnValue(mockCollectionRef),
   collectionGroup: vi.fn().mockReturnValue(mockCollectionGroupRef),
   recursiveDelete: vi.fn().mockResolvedValue(undefined),
+  runTransaction: mockRunTransaction,
 };
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -100,6 +106,7 @@ import {
   createReferenceId,
   getFundingApplications,
   updateApplyFunding,
+  ensureIncomeFundingApplication,
 } from "@/service/apply-funding";
 import { noteSchema } from "@/schema/notes";
 import { uploadDocument } from "@/service/documents";
@@ -115,6 +122,10 @@ describe("service/apply-funding", () => {
     mockDocRef.collection = vi.fn().mockReturnValue(mockCollectionRef);
     mockDb.collection = vi.fn().mockReturnValue(mockCollectionRef);
     mockDb.recursiveDelete = vi.fn().mockResolvedValue(undefined);
+    mockDb.runTransaction = mockRunTransaction;
+    mockRunTransaction.mockClear();
+    mockTransactionGet.mockReset();
+    mockTransactionSet.mockReset();
     mockSet.mockResolvedValue(undefined);
     mockUpdate.mockResolvedValue(undefined);
     mockDelete.mockResolvedValue(undefined);
@@ -129,6 +140,40 @@ describe("service/apply-funding", () => {
     mockCollectionGroupRef.where.mockReturnValue(mockCollectionGroupRef);
     mockCollectionGroupRef.orderBy.mockReturnValue(mockCollectionGroupRef);
     mockCollectionGroupRef.limit.mockReturnValue(mockCollectionGroupRef);
+  });
+
+  describe("ensureIncomeFundingApplication", () => {
+    it("creates a deterministic free income application when none exists", async () => {
+      mockTransactionGet.mockResolvedValueOnce({ empty: true, docs: [] });
+
+      await expect(ensureIncomeFundingApplication("user-1")).resolves.toEqual({
+        referenceNumber: "income-user-1",
+        created: true,
+      });
+      expect(mockCollectionRef.doc).toHaveBeenCalledWith("income-user-1");
+      expect(mockTransactionSet).toHaveBeenCalledWith(
+        mockDocRef,
+        expect.objectContaining({
+          userId: "user-1",
+          fundingType: "Income",
+          interestedProduct: "Income-Based Funding",
+          applicationSource: "financial_education_access",
+        }),
+      );
+    });
+
+    it("reuses an existing application instead of creating a duplicate", async () => {
+      mockTransactionGet.mockResolvedValueOnce({
+        empty: false,
+        docs: [{ id: "REF-EXISTING" }],
+      });
+
+      await expect(ensureIncomeFundingApplication("user-1")).resolves.toEqual({
+        referenceNumber: "REF-EXISTING",
+        created: false,
+      });
+      expect(mockTransactionSet).not.toHaveBeenCalled();
+    });
   });
 
   // ── getApplyFunding ───────────────────────────────────────────────────────

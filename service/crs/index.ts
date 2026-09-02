@@ -22,6 +22,7 @@ import { Business } from "@/schema";
 import { getBusiness } from "@/service/business";
 import { getUserById } from "@/service/user";
 import { getUserMembership } from "@/service/membership";
+import { getClientEntitlements } from "@/service/course-capabilities";
 import { checkFreePullEligibility } from "@/lib/crs-eligibility";
 import { CRSAddressInfo, CRSPersonalInfo, CRSReportType } from "@/types/crs";
 import { getFeeSettings } from "@/service/fee-settings";
@@ -311,8 +312,8 @@ export const generateCRSReport = async ({
   // check if the user is premium client before allowing to generate CRS report
   const user = await getUserById(userId);
   if (!user) throw new Error("User not found.");
-  const membership = await getUserMembership(userId);
-  if (membership?.status !== "active" && !bypassPremiumCheck) {
+  const entitlements = await getClientEntitlements(userId);
+  if (!entitlements.hasCreditReportAccess && !bypassPremiumCheck) {
     throw new Error("Only premium clients can generate CRS reports.");
   }
 
@@ -347,8 +348,8 @@ export const generateCRSReportBusiness = async ({
 }) => {
   const user = await getUserById(userId);
   if (!user) throw new Error("User not found.");
-  const membership = await getUserMembership(userId);
-  if (membership?.status !== "active" && !bypassPremiumCheck) {
+  const entitlements = await getClientEntitlements(userId);
+  if (!entitlements.hasCreditReportAccess && !bypassPremiumCheck) {
     throw new Error("Only premium clients can generate CRS reports.");
   }
 
@@ -413,8 +414,8 @@ export const refreshCRSData = async ({
   if (refreshBusinessCredit) {
     const user = await getUserById(userId);
     if (!user) throw new Error("User not found.");
-    const membership = await getUserMembership(userId);
-    if (membership?.status !== "active") {
+    const entitlements = await getClientEntitlements(userId);
+    if (!entitlements.hasCreditReportAccess) {
       throw new Error("Only premium clients can refresh business credit.");
     }
 
@@ -558,6 +559,14 @@ export const requestMapBankProductsN8nNewRegistration = async ({
   userId: string;
   selectedPathwayId: string;
 }) => {
+  if (selectedPathwayId !== "income_based") {
+    const entitlements = await getClientEntitlements(userId);
+    if (!entitlements.hasPlatformAccess) {
+      throw new Error(
+        "CEG Brain Platform Access is required for this funding pathway.",
+      );
+    }
+  }
   logInfo("Sending bank product mapping request for new registration...", {
     referenceNumber,
     userId,

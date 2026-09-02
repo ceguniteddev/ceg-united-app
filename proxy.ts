@@ -3,11 +3,12 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/session";
 import { getUserById } from "@/service/user";
-import { hasActiveAddon, getUserAddons } from "@/service/addons";
+import { hasActiveAddon } from "@/service/addons";
 import { getUserMembership } from "@/service/membership";
 import { FIREBASE_TOKEN_NAME } from "@/constant/common";
 import { getSystemConfig } from "@/service/system-config";
 import { hasPaidMembershipAccess } from "@/lib/membership-entitlement";
+import { getClientEntitlements } from "@/service/course-capabilities";
 
 const PUBLIC_ROUTES = new Set<string>([
   "/",
@@ -177,6 +178,52 @@ export async function proxy(req: NextRequest) {
               status: 403,
             });
           }
+
+          if (
+            pathname.includes("/dispute") ||
+            pathname.includes("/dispute-letter")
+          ) {
+            const [entitlements, hasLegacyAddon] = await Promise.all([
+              getClientEntitlements(sessionCookie.uid),
+              hasActiveAddon(sessionCookie.uid, "credit_module_pro"),
+            ]);
+            if (!entitlements.hasDisputeAccess && !hasLegacyAddon) {
+              return NextResponse.json(
+                "Credit to Capital and active Platform Access are required.",
+                { status: 403 },
+              );
+            }
+          }
+
+          if (pathname.startsWith("/api/funding-playbook")) {
+            const entitlements = await getClientEntitlements(sessionCookie.uid);
+            if (!entitlements.hasNonIncomeFundingAccess) {
+              return NextResponse.json(
+                "An eligible funding course and active Platform Access are required.",
+                { status: 403 },
+              );
+            }
+          }
+
+          if (
+            pathname.startsWith(`/api/crs/${sessionCookie.uid}`) ||
+            (pathname.includes("/business/") && pathname.endsWith("/audit")) ||
+            (pathname.includes("/funding-application/") &&
+              pathname.includes("/analysis"))
+          ) {
+            const entitlements = await getClientEntitlements(sessionCookie.uid);
+            const allowed = pathname.includes("/audit")
+              ? entitlements.hasAuditAccess
+              : pathname.includes("/analysis")
+                ? entitlements.hasAnalysisAccess
+                : entitlements.hasCreditReportAccess;
+            if (!allowed) {
+              return NextResponse.json(
+                "Active CEG Brain Platform Access is required.",
+                { status: 403 },
+              );
+            }
+          }
         }
 
         return NextResponse.next();
@@ -218,12 +265,17 @@ export async function proxy(req: NextRequest) {
   // 4) Token present → verify + find role
   let role: "Admin" | "Client" | "Broker" | null = null;
   let hasPaidContract = false;
+  let hasNonIncomeFundingAccess = false;
+  let hasDisputeAccess = false;
+  let isOnboarded = true;
+  let isLegacyPaidMember = false;
 
   try {
     // Use the already verified session instead of verifying again
     if (!sessionCookie?.email) throw new Error("Invalid session");
     const user = await getUserById(sessionCookie.uid);
     role = (user?.role as any) ?? "Client";
+    isOnboarded = user?.isOnboarded !== false;
 
     console.log(
       "proxy.ts - Calling getUserMembership for userId:",
@@ -231,6 +283,12 @@ export async function proxy(req: NextRequest) {
     );
     const membership = await getUserMembership(sessionCookie.uid);
     hasPaidContract = hasPaidMembershipAccess(membership);
+    isLegacyPaidMember = Boolean(
+      hasPaidContract && membership && membership.tier !== "platform_access",
+    );
+    const entitlements = await getClientEntitlements(sessionCookie.uid);
+    hasNonIncomeFundingAccess = entitlements.hasNonIncomeFundingAccess;
+    hasDisputeAccess = entitlements.hasDisputeAccess;
 
     // We get isOnboarded so we can conditionally route clients
     // var isOnboarded = true;
@@ -269,11 +327,22 @@ export async function proxy(req: NextRequest) {
     if (
       !hasPaidContract &&
       (pathname.startsWith("/client/my-analysis") ||
-        pathname.startsWith("/client/my-credit") ||
-        // pathname.startsWith("/client/credit-repair") ||
-        pathname.startsWith("/client/income-funding/apply"))
+        pathname.startsWith("/client/my-credit"))
     ) {
-      return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+      return NextResponse.redirect(
+        new URL("/client/platform-access?required=platform", origin),
+      );
+    }
+
+    if (
+      !hasNonIncomeFundingAccess &&
+      (pathname.startsWith("/client/my-funding") ||
+        pathname.startsWith("/client/funding-playbook") ||
+        pathname.startsWith("/client/_funding-playbook"))
+    ) {
+      return NextResponse.redirect(
+        new URL("/client/platform-access?required=funding-course", origin),
+      );
     }
 
     if (pathname.startsWith("/client/credit-repair")) {
@@ -285,20 +354,25 @@ export async function proxy(req: NextRequest) {
         sessionCookie.uid,
         "credit_module_pro",
       );
-      if (!hasCreditRepairAddon) {
-        return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+      if (!hasCreditRepairAddon && !hasDisputeAccess) {
+        return NextResponse.redirect(
+          new URL("/client/platform-access?required=credit-to-capital", origin),
+        );
       }
     }
 
-    // Force onboarding if not onboarded and trying to access client area
-    // if (!isOnboarded && isClientRoute(pathname)) {
-    //   return NextResponse.redirect(new URL("/onboarding", origin));
-    // }
+    if (
+      !isOnboarded &&
+      !isLegacyPaidMember &&
+      isClientRoute(pathname) &&
+      pathname !== "/client/platform-access"
+    ) {
+      return NextResponse.redirect(new URL("/onboarding", origin));
+    }
 
-    // Redirect to home if they are onboarded and try to go to onboarding
-    // if (isOnboarded && pathname === "/onboarding") {
-    //   return NextResponse.redirect(new URL(CLIENT_HOME, origin));
-    // }
+    if ((isOnboarded || isLegacyPaidMember) && pathname === "/onboarding") {
+      return NextResponse.redirect(new URL(CLIENT_HOME, origin));
+    }
   }
 
   // BROKER ROLE: Can only access broker routes

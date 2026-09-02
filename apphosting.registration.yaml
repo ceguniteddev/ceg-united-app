@@ -159,6 +159,9 @@ env:
   - variable: DODO_PRODUCT_MEMBERSHIP_STARTER_ID
     value: ""
     availability: [RUNTIME]
+  - variable: DODO_PRODUCT_MEMBERSHIP_PLATFORM_ID
+    value: ""
+    availability: [RUNTIME]
   - variable: DODO_PRODUCT_MEMBERSHIP_PRO_ID
     value: ""
     availability: [RUNTIME]

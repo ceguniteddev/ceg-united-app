@@ -16,6 +16,7 @@ import * as crypto from "node:crypto";
 import { getCourseById } from "@/service/educational-materials/course";
 import { getUserRecordByEmail } from "@/service/user";
 import { Course } from "@/schema/educational-materials/course";
+import { buildVerifiedCourseGrant } from "@/service/course-capabilities";
 
 export interface LuminoWebhookResult {
   success: boolean;
@@ -308,6 +309,9 @@ export const processLuminoZapierWebhook = async (
       paymentCreatedAt: payload.paymentCreatedAt ?? null,
       paymentStatus: "Succeeded",
       provider: "lumino_zapier",
+      capabilityGrantStatus: payload.courseId
+        ? "eligible"
+        : "manual_review_required",
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
@@ -336,6 +340,7 @@ export const processLuminoZapierWebhook = async (
           progressPercentage: 0,
           luminoPaymentId: payload.paymentId,
           status: "active",
+          enrollmentSource: "lumino_webhook",
         });
 
         // Increment enrolledStudentsCount on the course
@@ -347,6 +352,23 @@ export const processLuminoZapierWebhook = async (
             enrolledStudentsCount: currentCount + 1,
           });
         }
+      }
+
+      if (
+        payload.courseId === courseId &&
+        course.grantEnabled === true &&
+        course.courseKey &&
+        course.capabilityGrant
+      ) {
+        const grant = await buildVerifiedCourseGrant({
+          userId: user.id,
+          courseId,
+          courseKey: course.courseKey,
+          capabilityGrant: course.capabilityGrant,
+          source: "lumino_webhook",
+          providerPaymentId: payload.paymentId,
+        });
+        transaction.set(grant.ref, grant.data, { merge: true });
       }
     }
   });

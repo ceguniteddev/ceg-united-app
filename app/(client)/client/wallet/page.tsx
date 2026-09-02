@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/sheet";
 import { useQueryClient } from "@tanstack/react-query";
 import { GET_WALLET } from "@/constant/react-query-keys";
+import { currency } from "@/lib/utils";
 
 // Set to true to view gorgeous mock transaction data, or false to use live Firestore data
 const USE_MOCK_DATA = false;
@@ -362,7 +363,7 @@ export default function WalletPage() {
               <Skeleton className="h-10 w-32 bg-white/10" />
             ) : (
               <h2 className="text-4xl font-bold text-white tracking-tight flex items-center gap-2">
-                ${displayBalance.toFixed(2)}
+                {currency(displayBalance)}
                 {isPollingBalance && (
                   <Loader2 className="w-5 h-5 animate-spin text-blue-200" />
                 )}
@@ -425,7 +426,7 @@ export default function WalletPage() {
                     </div>
                     {pkg.id !== "custom" ? (
                       <span className="text-2xl font-bold text-gray-900 pl-7">
-                        ${pkg.amount.toFixed(2)}
+                        {currency(pkg.amount)}
                       </span>
                     ) : (
                       <div className="pl-7 w-full mt-1">
@@ -474,7 +475,7 @@ export default function WalletPage() {
                   ) : (
                     <IconMenu
                       icon={<ShoppingCart className="h-4 w-4" />}
-                      text={`Purchase $${currentSelectionAmount.toFixed(2)}`}
+                      text={`Purchase ${currency(currentSelectionAmount)}`}
                     />
                   )}
                 </Button>
@@ -580,8 +581,8 @@ export default function WalletPage() {
                           <div
                             className={`text-sm font-semibold ${txn.type === "credit" ? "text-green-600" : "text-gray-900"}`}
                           >
-                            {txn.type === "credit" ? "+" : "-"}$
-                            {txn.amount.toFixed(2)}
+                            {txn.type === "credit" ? "+" : "-"}
+                            {currency(txn.amount)}
                           </div>
                         </div>
                       ))}
@@ -673,7 +674,7 @@ export default function WalletPage() {
                 <p className="text-sm text-gray-600 max-w-sm mb-5">
                   Your payment of{" "}
                   <span className="font-semibold text-gray-900">
-                    ${lastPurchasedAmount.toFixed(2)}
+                    {currency(lastPurchasedAmount)}
                   </span>{" "}
                   was received. Adding funds to your wallet...
                 </p>

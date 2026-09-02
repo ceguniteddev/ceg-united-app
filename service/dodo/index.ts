@@ -30,6 +30,7 @@ import { sendTriggerEmail } from "@/service/trigger-email";
 import { getUserById } from "@/service/user";
 import { getCoursePricing } from "@/lib/course-pricing";
 import membershipCache from "@/lib/membership-cache";
+import { buildVerifiedCourseGrant } from "@/service/course-capabilities";
 
 type CheckoutResult = { checkoutId: string; url: string };
 type Metadata = Record<string, string>;
@@ -216,6 +217,7 @@ export const createDodoCheckoutConfig = async ({
 
 const membershipProduct = (planId: string) => {
   const products: Record<string, string | undefined> = {
+    platform_access: process.env.DODO_PRODUCT_MEMBERSHIP_PLATFORM_ID,
     tier_starter: process.env.DODO_PRODUCT_MEMBERSHIP_STARTER_ID,
     tier_pro: process.env.DODO_PRODUCT_MEMBERSHIP_PRO_ID,
     tier_executive: process.env.DODO_PRODUCT_MEMBERSHIP_EXECUTIVE_ID,
@@ -225,9 +227,9 @@ const membershipProduct = (planId: string) => {
 
 const membershipTierForProduct = (productId?: string) => {
   if (!productId) return undefined;
-  return (["tier_starter", "tier_pro", "tier_executive"] as const).find(
-    (tier) => membershipProduct(tier) === productId,
-  );
+  return (
+    ["platform_access", "tier_starter", "tier_pro", "tier_executive"] as const
+  ).find((tier) => membershipProduct(tier) === productId);
 };
 
 const membershipReturnUrl = (returnUrl?: string) => {
@@ -244,13 +246,17 @@ export const createMembershipCheckoutConfig = async ({
   returnUrl,
 }: {
   userId: string;
-  planId: "tier_starter" | "tier_pro" | "tier_executive";
+  planId: "platform_access" | "tier_starter" | "tier_pro" | "tier_executive";
   selectedAddonIds?: string[];
   isAddon?: boolean;
   returnUrl?: string;
 }): Promise<CheckoutResult> => {
+  if (planId !== "platform_access") {
+    throw new Error("Legacy membership plans are closed to new sales.");
+  }
   const fees = await getFeeSettings();
   const prices = {
+    platform_access: fees.platformAccessPrice,
     tier_starter: fees.tierStarterPrice,
     tier_pro: fees.tierProPrice,
     tier_executive: fees.tierExecutivePrice,
@@ -272,6 +278,9 @@ export const createMembershipCheckoutConfig = async ({
     metadata: {
       planId,
       membershipAmount: String(prices[planId]),
+      accessModel:
+        planId === "platform_access" ? "platform_course" : "legacy_tier",
+      billingPlan: planId,
       isAddon: String(isAddon),
       selectedAddonIds: JSON.stringify(selectedAddonIds),
     },
@@ -527,6 +536,8 @@ export const recordPaymentSucceeded = async ({
           .where("courseId", "==", courseId)
           .limit(1);
         const existing = await transaction.get(enrollmentQuery);
+        const courseRef = db.collection(COURSE).doc(courseId);
+        const courseDoc = await transaction.get(courseRef);
         if (existing.empty) {
           const newEnrollmentRef = db.collection(USER_COURSE_ENROLLMENT).doc();
           transaction.set(newEnrollmentRef, {
@@ -538,16 +549,32 @@ export const recordPaymentSucceeded = async ({
             dodoPaymentId: payment.payment_id,
             amountPaid: payment.total_amount / 100,
             status: "active",
+            enrollmentSource: "dodo_webhook",
           });
 
-          const courseRef = db.collection(COURSE).doc(courseId);
-          const courseDoc = await transaction.get(courseRef);
           if (courseDoc.exists) {
             const currentCount = courseDoc.data()?.enrolledStudentsCount || 0;
             transaction.update(courseRef, {
               enrolledStudentsCount: currentCount + 1,
             });
           }
+        }
+
+        const courseData = courseDoc.data();
+        if (
+          courseData?.grantEnabled === true &&
+          courseData.courseKey &&
+          courseData.capabilityGrant
+        ) {
+          const grant = await buildVerifiedCourseGrant({
+            userId,
+            courseId,
+            courseKey: courseData.courseKey,
+            capabilityGrant: courseData.capabilityGrant,
+            source: "dodo_webhook",
+            providerPaymentId: payment.payment_id,
+          });
+          transaction.set(grant.ref, grant.data, { merge: true });
         }
       });
     }
@@ -629,7 +656,11 @@ export const recordSubscriptionActive = async ({
   }
   await synchronizeDodoMembership({
     userId,
-    tier: tier as "tier_starter" | "tier_pro" | "tier_executive",
+    tier: tier as
+      | "platform_access"
+      | "tier_starter"
+      | "tier_pro"
+      | "tier_executive",
     providerStatus: subscription.status,
     subscriptionId: subscription.subscription_id,
     customerId: subscription.customer?.customer_id,
@@ -810,7 +841,11 @@ export const recordSubscriptionLifecycle = async ({
 
   await synchronizeDodoMembership({
     userId,
-    tier: tier as "tier_starter" | "tier_pro" | "tier_executive",
+    tier: tier as
+      | "platform_access"
+      | "tier_starter"
+      | "tier_pro"
+      | "tier_executive",
     providerStatus: subscription.status,
     subscriptionId: subscription.subscription_id,
     customerId: subscription.customer?.customer_id,

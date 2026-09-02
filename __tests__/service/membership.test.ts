@@ -163,6 +163,30 @@ describe("synchronizeDodoMembership", () => {
     });
     expect(mocks.transactionSet).not.toHaveBeenCalled();
   });
+
+  it("marks only new Platform Access subscriptions with the new access model", async () => {
+    mocks.transactionGet.mockResolvedValueOnce({
+      data: () => ({ createdAt: new Date() }),
+    });
+    await synchronizeDodoMembership({
+      userId: "u1",
+      tier: "platform_access",
+      providerStatus: "active",
+      subscriptionId: "sub_platform",
+      productId: "p_platform",
+      amount: 499,
+    });
+    expect(mocks.transactionSet).toHaveBeenCalledWith(
+      currentRef,
+      expect.objectContaining({
+        tier: "platform_access",
+        accessModel: "platform_course",
+        billingPlan: "platform_access",
+        amount: 499,
+      }),
+      { merge: true },
+    );
+  });
 });
 
 describe("activateUserMembership", () => {

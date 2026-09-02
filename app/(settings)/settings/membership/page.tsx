@@ -14,6 +14,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AlertTriangle, CreditCard, ExternalLink } from "lucide-react";
 import { getUserAddons } from "@/service/addons";
+import { getClientEntitlements } from "@/service/course-capabilities";
 
 export default async function MembershipPage() {
   const user = await getCurrentUser();
@@ -23,6 +24,7 @@ export default async function MembershipPage() {
 
   const membership = await getUserMembership(user.uid);
   const addons = await getUserAddons(user.uid, { includeInactive: true });
+  const entitlements = await getClientEntitlements(user.uid);
   const hasBillingProfile = Boolean(
     membership?.customerId || membership?.subscriptionId,
   );
@@ -40,8 +42,8 @@ export default async function MembershipPage() {
       </div>
 
       <div className="grid gap-6">
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="bg-slate-50 border-b border-slate-100 pb-4 rounded-t-xl">
+        <Card className="border-blue-200 bg-white">
+          <CardHeader className="rounded-t-xl border-b border-blue-100 bg-blue-50 pb-4">
             <CardTitle className="text-xl text-slate-800">
               Current Plan
             </CardTitle>
@@ -55,7 +57,7 @@ export default async function MembershipPage() {
                 {isRecovering && (
                   <div
                     role="alert"
-                    className="flex gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950"
+                    className="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-950"
                   >
                     <AlertTriangle className="mt-0.5 size-5 shrink-0" />
                     <div className="space-y-2">
@@ -72,17 +74,19 @@ export default async function MembershipPage() {
                     </div>
                   </div>
                 )}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center justify-between border-b border-blue-100 pb-4">
                   <div>
                     <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">
                       Plan
                     </p>
                     <p className="text-lg font-bold text-slate-900 mt-1">
                       {effectivePlan === "free" && "Free"}
-                      {effectivePlan === "tier_starter" && "CEG BRAIN STARTER"}
-                      {effectivePlan === "tier_pro" && "CEG BRAIN PRO"}
-                      {effectivePlan === "tier_executive" &&
-                        "CEG BRAIN EXECUTIVE"}
+                      {effectivePlan === "platform_access" &&
+                        "CEG Brain Platform Access"}
+                      {(effectivePlan === "tier_starter" ||
+                        effectivePlan === "tier_pro" ||
+                        effectivePlan === "tier_executive") &&
+                        "Grandfathered CEG Brain Access"}
                     </p>
                   </div>
                   <div className="text-right">
@@ -90,14 +94,14 @@ export default async function MembershipPage() {
                       Status
                     </p>
                     <span
-                      className={`inline-block mt-1 px-3 py-1 rounded-full text-sm font-semibold capitalize ${isRecovering ? "bg-amber-100 text-amber-800" : membership.status === "active" ? "bg-green-100 text-green-800" : "bg-slate-200 text-slate-700"}`}
+                      className={`mt-1 inline-block rounded-full border px-3 py-1 text-sm font-semibold capitalize ${membership.status === "active" ? "border-blue-200 bg-blue-50 text-blue-700" : "border-blue-100 bg-white text-blue-900"}`}
                     >
                       {isRecovering ? "payment retry" : membership.status}
                     </span>
                   </div>
                 </div>
 
-                <div className="grid gap-4 border-b border-slate-100 pb-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 border-b border-blue-100 pb-5 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">
                       Amount
@@ -145,7 +149,7 @@ export default async function MembershipPage() {
                       asChild
                       className={
                         isRecovering
-                          ? "bg-amber-600 text-white hover:bg-amber-700"
+                          ? "bg-blue-700 text-white hover:bg-blue-800"
                           : "bg-blue-600 text-white hover:bg-blue-700"
                       }
                     >
@@ -169,21 +173,59 @@ export default async function MembershipPage() {
                 <p className="text-slate-600 mb-4">
                   You do not have an active membership.
                 </p>
-                <Link href="/client/income-funding">
+                <Link href="/client/platform-access">
                   <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Upgrade Now
+                    View Platform Access
                   </Button>
                 </Link>
               </div>
             )}
           </CardContent>
         </Card>
+        <Card className="border-blue-200 bg-white">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-800">
+              Current Capabilities
+            </CardTitle>
+            <CardDescription>
+              Course purchases add tools while Platform Access is active.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
+            {[
+              ["Income-based funding", entitlements.hasIncomeFundingAccess],
+              ["Audits and analysis", entitlements.hasAnalysisAccess],
+              ["Credit reports", entitlements.hasCreditReportAccess],
+              ["Credit disputes", entitlements.hasDisputeAccess],
+              [
+                "Expanded funding tools",
+                entitlements.hasNonIncomeFundingAccess,
+              ],
+            ].map(([label, enabled]) => (
+              <div
+                key={String(label)}
+                className="flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50/40 p-3"
+              >
+                <span>{label}</span>
+                <span
+                  className={
+                    enabled
+                      ? "font-semibold text-blue-700"
+                      : "font-medium text-blue-300"
+                  }
+                >
+                  {enabled ? "Available" : "Locked"}
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
         {addons.map((addon) => {
           const addonRecovering = addon.entitlementStatus === "grace";
           const addonActive = addon.status === "active";
           return (
-            <Card key={addon.id} className="border-slate-200 shadow-sm">
-              <CardHeader className="rounded-t-xl border-b border-slate-100 bg-slate-50 pb-4">
+            <Card key={addon.id} className="border-blue-200 bg-white">
+              <CardHeader className="rounded-t-xl border-b border-blue-100 bg-blue-50 pb-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <CardTitle className="text-xl text-slate-800">
@@ -195,7 +237,7 @@ export default async function MembershipPage() {
                     </CardDescription>
                   </div>
                   <span
-                    className={`rounded-full px-3 py-1 text-sm font-semibold capitalize ${addonRecovering ? "bg-amber-100 text-amber-800" : addonActive ? "bg-green-100 text-green-800" : "bg-slate-200 text-slate-700"}`}
+                    className={`rounded-full border px-3 py-1 text-sm font-semibold capitalize ${addonActive ? "border-blue-200 bg-blue-50 text-blue-700" : "border-blue-100 bg-white text-blue-900"}`}
                   >
                     {addonRecovering ? "payment retry" : addon.status}
                   </span>
@@ -205,7 +247,7 @@ export default async function MembershipPage() {
                 {addonRecovering && (
                   <div
                     role="alert"
-                    className="flex gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950"
+                    className="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-950"
                   >
                     <AlertTriangle className="mt-0.5 size-5 shrink-0" />
                     <div>
@@ -222,7 +264,7 @@ export default async function MembershipPage() {
                     </div>
                   </div>
                 )}
-                <div className="grid gap-4 border-b border-slate-100 pb-5 sm:grid-cols-3">
+                <div className="grid gap-4 border-b border-blue-100 pb-5 sm:grid-cols-3">
                   <div>
                     <p className="text-sm font-medium uppercase tracking-wider text-slate-500">
                       Amount
@@ -259,7 +301,7 @@ export default async function MembershipPage() {
                       asChild
                       className={
                         addonRecovering
-                          ? "bg-amber-600 text-white hover:bg-amber-700"
+                          ? "bg-blue-700 text-white hover:bg-blue-800"
                           : "bg-blue-600 text-white hover:bg-blue-700"
                       }
                     >

@@ -130,6 +130,12 @@ export const synchronizeDodoMembership = async ({
         entitlementStatus,
         status: entitlementStatus === "free" ? "inactive" : "active",
         tier,
+        ...(tier === "platform_access"
+          ? {
+              accessModel: "platform_course",
+              billingPlan: "platform_access",
+            }
+          : {}),
         amount,
         subscriptionId,
         customerId: customerId || existing.customerId || null,

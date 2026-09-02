@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { FormCheckbox } from "@/components/forms/form-checkbox";
 import { FormNumberInput } from "@/components/forms/form-number-input";
 import { FormInput } from "@/components/forms/form-input";
+import { FormSelect } from "@/components/forms/form-select";
 import { toast } from "sonner";
 import { useCourseMutation } from "@/hooks/educational-materials/course";
 import { Course } from "@/schema/educational-materials/course";
@@ -27,7 +28,36 @@ const formSchema = z.object({
   discountPrice: z.coerce.number().min(0).optional(),
   dodoProductId: z.string().optional(),
   luminoCheckoutUrl: z.string().optional(),
+  courseKey: z
+    .enum([
+      "credit_to_capital",
+      "first_50k",
+      "funding_150k",
+      "funding_250k_plus",
+    ])
+    .optional(),
+  capabilityGrant: z
+    .enum(["dispute", "legacy_starter", "legacy_pro", "legacy_executive"])
+    .optional(),
+  grantEnabled: z.boolean(),
 });
+
+const courseKeyOptions = [
+  { value: "credit_to_capital", label: "Credit to Capital" },
+  { value: "first_50k", label: "First $50K" },
+  { value: "funding_150k", label: "Up to $150K" },
+  { value: "funding_250k_plus", label: "$250K+" },
+];
+
+const capabilityOptions = [
+  { value: "dispute", label: "Credit dispute module" },
+  { value: "legacy_starter", label: "Starter tool set" },
+  { value: "legacy_pro", label: "Starter + Pro tool sets" },
+  {
+    value: "legacy_executive",
+    label: "Starter + Pro + Executive tool sets",
+  },
+];
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -46,6 +76,9 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
       discountPrice: initialData?.discountPrice,
       dodoProductId: initialData?.dodoProductId || "",
       luminoCheckoutUrl: initialData?.luminoCheckoutUrl || "",
+      courseKey: initialData?.courseKey,
+      capabilityGrant: initialData?.capabilityGrant,
+      grantEnabled: Boolean(initialData?.grantEnabled),
     },
   });
 
@@ -68,6 +101,9 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
             values.isFree || !values.luminoCheckoutUrl
               ? undefined
               : values.luminoCheckoutUrl,
+          courseKey: values.courseKey,
+          capabilityGrant: values.capabilityGrant,
+          grantEnabled: values.grantEnabled,
         },
       });
       toast.success("Pricing updated successfully");
@@ -79,10 +115,10 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
   };
 
   return (
-    <div className="mt-6 border bg-slate-100 dark:bg-slate-900 rounded-md p-4">
+    <div className="mt-6 rounded-xl border border-blue-200 bg-white p-4">
       <div className="font-medium flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <DollarSign className="w-4 h-4 text-emerald-600" />
+          <DollarSign className="h-4 w-4 text-blue-600" />
           <span>Course Pricing & Monetization</span>
         </div>
         <Button onClick={toggleEdit} variant="ghost" size="sm">
@@ -100,7 +136,7 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
       {!isEditing && (
         <div className="mt-3 space-y-2 text-sm">
           {initialData?.isFree ? (
-            <div className="flex items-center gap-2 text-emerald-600 font-semibold">
+            <div className="flex items-center gap-2 font-semibold text-blue-700">
               <CheckCircle2 className="w-4 h-4" /> Free Course (No checkout
               required)
             </div>
@@ -124,7 +160,7 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
                   <span className="text-gray-500 font-medium">
                     Sale / Discount Price:
                   </span>
-                  <span className="font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded text-xs">
+                  <span className="rounded bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700">
                     $
                     {initialData.discountPrice.toLocaleString("en-US", {
                       minimumFractionDigits: 2,
@@ -158,6 +194,16 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
                   </code>
                 </div>
               )}
+              {initialData?.courseKey && (
+                <div className="mt-2 rounded border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
+                  <p className="font-semibold">Capability configuration</p>
+                  <p>Course key: {initialData.courseKey}</p>
+                  <p>
+                    Grant: {initialData.capabilityGrant || "Not configured"} (
+                    {initialData.grantEnabled ? "enabled" : "disabled"})
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -169,7 +215,7 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 mt-4"
           >
-            <div className="rounded-md border p-2 bg-white dark:bg-slate-950">
+            <div className="rounded-md border border-blue-100 bg-blue-50/40 p-2">
               <FormCheckbox
                 control={form.control}
                 name="isFree"
@@ -230,6 +276,37 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
                 </div>
               </>
             )}
+
+            <div className="space-y-4 rounded-md border border-blue-100 bg-blue-50/60 p-4">
+              <p className="text-sm font-semibold text-blue-950">
+                Paid course capability grant
+              </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormSelect
+                  control={form.control}
+                  name="courseKey"
+                  label="Stable Course Key"
+                  options={courseKeyOptions}
+                  placeholder="Select course identity"
+                />
+                <FormSelect
+                  control={form.control}
+                  name="capabilityGrant"
+                  label="Tool Permission Grant"
+                  options={capabilityOptions}
+                  placeholder="Select permission set"
+                />
+              </div>
+              <FormCheckbox
+                control={form.control}
+                name="grantEnabled"
+                label="Enable tool grants after verified paid enrollment"
+              />
+              <p className="text-xs text-blue-800">
+                Course assignment alone never grants financial tools. Enable
+                only after the payment integration has been verified.
+              </p>
+            </div>
 
             <div className="flex items-center gap-x-2">
               <Button

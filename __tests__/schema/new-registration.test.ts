@@ -93,3 +93,41 @@ describe("documentUploadSchema personal bank statements", () => {
     expect(documentUploadSchema.safeParse(documents).success).toBe(false);
   });
 });
+
+describe("documentUploadSchema Financial Education documents", () => {
+  it("ignores stale Funding metadata and requires only a driver's license", () => {
+    const result = documentUploadSchema.safeParse({
+      registrationPurpose: RegistrationPurpose.FinancialEducation,
+      fundingType: FundingType.Personal,
+      employmentType: "W2",
+      driverLicense: documentGroup(1),
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("still requires a driver's license", () => {
+    const result = documentUploadSchema.safeParse({
+      registrationPurpose: RegistrationPurpose.FinancialEducation,
+      fundingType: FundingType.Personal,
+      employmentType: "W2",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            message: "Driver's license is required",
+            path: ["driverLicense"],
+          }),
+        ]),
+      );
+      expect(result.error.issues).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ message: "Paystubs are required" }),
+        ]),
+      );
+    }
+  });
+});

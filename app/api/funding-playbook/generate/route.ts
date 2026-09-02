@@ -26,6 +26,7 @@ import {
 import type { Branch } from "@/types/funding-playbook";
 import { getCurrentUser } from "@/service/user";
 import { unauthorized, forbidden } from "@/app/api/helpers";
+import { getClientEntitlements } from "@/service/course-capabilities";
 
 export async function POST(req: Request) {
   try {
@@ -52,6 +53,14 @@ export async function POST(req: Request) {
       return forbidden(
         "Access denied: You cannot generate a playbook for another user.",
       );
+    }
+    if (currentUser.role !== "Admin") {
+      const entitlements = await getClientEntitlements(currentUser.uid);
+      if (!entitlements.hasNonIncomeFundingAccess) {
+        return forbidden(
+          "An active Platform Access membership and eligible funding course are required.",
+        );
+      }
     }
 
     const lenderId = reqLenderId || "chase";

@@ -15,6 +15,7 @@ import {
   FundingApplicationType,
   FUNDING_PRODUCTS_BY_CATEGORY,
 } from "@/schema/apply-funding";
+import { ensureIncomeFundingApplication } from "@/service/apply-funding";
 
 const registrationRequestSchema = z
   .object({
@@ -268,6 +269,7 @@ export async function POST(req: Request) {
         leadId: body.leadId,
         documents: body.documents,
       });
+      await ensureIncomeFundingApplication(registeredUser.id);
     }
 
     // Update the lead document status if leadId is provided

@@ -492,7 +492,9 @@ export const getUserCoursesWithProgress = async (
         }),
       ]);
 
-      if (!course) return null;
+      // Enrollments are durable records, but unpublished courses must not be
+      // exposed in the client library or learning player.
+      if (!course?.isPublished) return null;
 
       const totalChapters = course.chapters?.length || 0;
       const completedChapters = userProgress.filter(

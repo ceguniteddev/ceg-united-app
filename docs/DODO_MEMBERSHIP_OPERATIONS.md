@@ -4,7 +4,9 @@ The architecture and state model are defined in [`dodo-membership-lifecycle-plan
 
 ## Dodo dashboard configuration
 
-1. Confirm the Starter, Pro, and Executive product IDs are monthly recurring products.
+1. Confirm `DODO_PRODUCT_MEMBERSHIP_PLATFORM_ID` is a monthly recurring product
+   used for all new Platform Access sales. Keep the Starter, Pro, and Executive
+   products unchanged so grandfathered subscriptions continue to synchronize.
 2. Enable Recovery payment retries with a 13-day retry window.
 3. Configure the verified webhook URL as `/api/payments/dodo`.
 4. Subscribe the endpoint to `payment.succeeded` and all subscription lifecycle events: `subscription.active`, `subscription.renewed`, `subscription.on_hold`, `subscription.plan_changed`, `subscription.cancelled`, `subscription.failed`, and `subscription.expired`. These events synchronize both memberships and subscription-based addons.
@@ -14,7 +16,13 @@ The architecture and state model are defined in [`dodo-membership-lifecycle-plan
 
 Set `DODO_RETRY_WINDOW_DAYS=13` in the Next.js/App Hosting environment. It must remain equal to the Dodo Recovery retry window. Keep the existing Dodo API key, webhook key, product IDs, return URL, and public application URL configured.
 
-The app creates normal recurring memberships in [`createMembershipCheckoutConfig()`](../service/dodo/index.ts:239) and recurring Credit Repair Addons in [`createAddonCheckoutConfig()`](../service/dodo/index.ts:281). Both checkout flows reuse the client’s existing Dodo customer when available. A verified subscription lifecycle webhook—not the checkout return page or `payment.succeeded` event—controls paid access.
+The app creates normal recurring Platform Access memberships in [`createMembershipCheckoutConfig()`](../service/dodo/index.ts:239) using the server-side `platformAccessPrice` setting (default $499). Existing tier product mappings remain active for legacy webhook delivery. Recurring Credit Repair Addons continue through [`createAddonCheckoutConfig()`](../service/dodo/index.ts:281). These checkout flows reuse the client’s existing Dodo customer when available. A verified subscription lifecycle webhook—not the checkout return page or `payment.succeeded` event—controls paid access.
+
+Course payments remain separate. A verified successful course payment creates
+course enrollment and, only when the course has a stable key and an enabled
+capability mapping, a durable course capability grant. Never infer grants from
+course title or amount. Lumino events without an explicit course ID require
+manual review and do not automatically grant financial tools.
 
 ## Firebase scheduled function configuration
 

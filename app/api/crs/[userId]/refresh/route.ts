@@ -5,7 +5,7 @@ import { getApplyFunding } from "@/service/apply-funding";
 import { refreshCRSData } from "@/service/crs";
 import { getUserById } from "@/service/user";
 
-import { getUserMembership } from "@/service/membership";
+import { getClientEntitlements } from "@/service/course-capabilities";
 
 import { NextRequest, NextResponse } from "next/server";
 
@@ -54,8 +54,8 @@ export const POST = withAuth(
           return badRequest({ errors: "User not found" });
         }
 
-        const membership = await getUserMembership(userId);
-        if (membership?.status !== "active") {
+        const entitlements = await getClientEntitlements(userId);
+        if (!entitlements.hasCreditReportAccess) {
           return badRequest({
             errors: "Only premium clients can refresh business credit.",
           });

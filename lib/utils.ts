@@ -29,7 +29,7 @@ export function countTransactionCategories(
       const category = transaction.category;
 
       // If the category exists in the categoryCounts object, increment its count
-      if (categoryCounts.hasOwnProperty(category)) {
+      if (Object.prototype.hasOwnProperty.call(categoryCounts, category)) {
         categoryCounts[category]++;
       } else {
         // Otherwise, initialize the count to 1
