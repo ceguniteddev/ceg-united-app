@@ -109,7 +109,7 @@ export function PricingPlans({
         </div>
       </section>
 
-      <section>
+      {/* <section>
         <div className="flex items-end justify-between gap-6">
           <div>
             <p className="flex items-center gap-2 text-sm font-semibold text-blue-700">
@@ -143,7 +143,7 @@ export function PricingPlans({
           content is purchased individually; Credit to Capital separately
           unlocks the dispute module.
         </p>
-      </section>
+      </section> */}
     </div>
   );
 }
