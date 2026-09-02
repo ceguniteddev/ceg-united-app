@@ -160,13 +160,16 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
             )}
 
             <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-slate-300 pt-2">
-              <div className="flex items-center gap-1 text-amber-400 font-bold">
-                <span>{(course.averageRating || 5.0).toFixed(1)}</span>
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                <span className="text-slate-400 font-normal">
-                  ({course.totalRatingsCount || 0} reviews)
-                </span>
-              </div>
+              {(course.totalRatingsCount ?? 0) > 0 && (
+                <div className="flex items-center gap-1 font-bold text-amber-400">
+                  <span>{(course.averageRating || 5.0).toFixed(1)}</span>
+                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  <span className="font-normal text-slate-400">
+                    ({course.totalRatingsCount}{" "}
+                    {course.totalRatingsCount === 1 ? "review" : "reviews"})
+                  </span>
+                </div>
+              )}
               <div className="flex items-center gap-1 text-slate-400">
                 <Users className="w-4 h-4" />
                 <span>{course.enrolledStudentsCount || 0} enrolled</span>

@@ -731,6 +731,7 @@ describe("service/educational-materials/progress", () => {
       mocks.getCourseById.mockResolvedValueOnce({
         id: "c1",
         title: "Test Course",
+        isPublished: true,
         chapters: [{ id: "ch-1" }, { id: "ch-2" }],
       });
 
@@ -740,6 +741,28 @@ describe("service/educational-materials/progress", () => {
       expect(result[0].id).toBe("c1");
       expect(result[0].completedChapters).toBe(1);
       expect(result[0].totalChapters).toBe(2);
+    });
+
+    it("excludes an enrolled course after it is unpublished", async () => {
+      const enrollmentDoc = makeDocSnap("enroll-1", {
+        userId: "u1",
+        courseId: "c1",
+        progressPercentage: 100,
+      });
+      mockGet
+        .mockResolvedValueOnce({ empty: false, docs: [enrollmentDoc] })
+        .mockResolvedValueOnce({ docs: [] });
+
+      mocks.getCourseById.mockResolvedValueOnce({
+        id: "c1",
+        title: "Unpublished Course",
+        isPublished: false,
+        chapters: [],
+      });
+
+      const result = await getUserCoursesWithProgress("u1");
+
+      expect(result).toEqual([]);
     });
   });
 });

@@ -541,13 +541,17 @@ const MyLearningPage = () => {
                         {course.subtitle || course.description}
                       </p>
 
-                      <div className="flex items-center gap-1 text-xs text-amber-500 font-bold pt-1">
-                        <span>{(course.averageRating || 5.0).toFixed(1)}</span>
-                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                        <span className="text-gray-400 font-normal">
-                          ({course.totalRatingsCount || 0})
-                        </span>
-                      </div>
+                      {(course.totalRatingsCount ?? 0) > 0 && (
+                        <div className="flex items-center gap-1 pt-1 text-xs font-bold text-amber-500">
+                          <span>
+                            {(course.averageRating || 5.0).toFixed(1)}
+                          </span>
+                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                          <span className="font-normal text-gray-500">
+                            ({course.totalRatingsCount})
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Price & Action */}
