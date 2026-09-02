@@ -311,15 +311,6 @@ export const ClientDashboard = ({
               ) : (
                 <NextStepsPanel steps={dashboardData.nextSteps} />
               )}
-
-              {/* Application Status Donut */}
-              {loading ? (
-                <ApplicationStatusSkeleton />
-              ) : (
-                <ApplicationStatusChart
-                  data={dashboardData.applicationStatus}
-                />
-              )}
             </div>
           </div>
 
