@@ -70,6 +70,7 @@ export const applyFundingSchema = z
     status: FundingApplicationSatusEnum,
     appliedDate: z.coerce.date<Date>({ error: "Required" }),
     referenceNumber: z.string().optional(),
+    applicationSource: z.string().optional(),
 
     interestedProduct: z.string().min(1, { error: "Required" }),
     fundingProducts: z.array(z.string()).optional(),
