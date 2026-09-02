@@ -282,6 +282,24 @@ describe("triggerActivationCRSWorkflow", () => {
     });
   });
 
+  it("skips funding analysis for a Financial Education access application", async () => {
+    mocks.getApplyFunding.mockResolvedValueOnce([
+      {
+        referenceNumber: "income-u1",
+        applicationSource: "financial_education_access",
+      },
+    ]);
+
+    await triggerActivationCRSWorkflow({ userId: "u1", source: "membership" });
+
+    expect(mocks.generateCRSReport).toHaveBeenCalledWith({
+      userId: "u1",
+      bureaus: { equifax: true, experian: true, transunion: true },
+      bypassPremiumCheck: true,
+    });
+    expect(mocks.fundAnalysis).not.toHaveBeenCalled();
+  });
+
   it("swallows errors gracefully if CRS report generation fails", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.generateCRSReport.mockRejectedValueOnce(new Error("CRS API failure"));
