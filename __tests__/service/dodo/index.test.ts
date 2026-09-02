@@ -130,6 +130,7 @@ describe("Dodo payment service", () => {
       DODO_PRODUCT_MEMBERSHIP_STARTER_ID: "p_starter",
       DODO_PRODUCT_MEMBERSHIP_PRO_ID: "p_pro",
       DODO_PRODUCT_MEMBERSHIP_EXECUTIVE_ID: "p_exec",
+      DODO_PRODUCT_MEMBERSHIP_PLATFORM_ID: "p_platform",
       DODO_PRODUCT_CREDIT_MODULE_PRO_ID: "p_addon",
     });
     mocks.getUser.mockResolvedValue(user);
@@ -137,6 +138,7 @@ describe("Dodo payment service", () => {
       tierStarterPrice: 1000,
       tierProPrice: 2000,
       tierExecutivePrice: 3000,
+      platformAccessPrice: 499,
       creditModuleProAddonPrice: 400,
     });
     mocks.create.mockResolvedValue({
@@ -285,11 +287,7 @@ describe("Dodo payment service", () => {
     );
   });
 
-  it.each([
-    ["tier_starter", "p_starter", 140000],
-    ["tier_pro", "p_pro", 240000],
-    ["tier_executive", "p_exec", 340000],
-  ] as const)(
+  it.each([["platform_access", "p_platform", 89900]] as const)(
     "creates dynamic %s membership",
     async (planId, productId, price) => {
       await createMembershipCheckoutConfig({
@@ -305,6 +303,8 @@ describe("Dodo payment service", () => {
             userId: "u1",
             planId,
             membershipAmount: expect.any(String),
+            accessModel:
+              planId === "platform_access" ? "platform_course" : "legacy_tier",
           }),
           product_cart: [
             expect.objectContaining({ product_id: productId, amount: price }),
@@ -317,30 +317,40 @@ describe("Dodo payment service", () => {
     },
   );
 
+  it("rejects legacy tiers for new membership sales", async () => {
+    await expect(
+      createMembershipCheckoutConfig({
+        userId: "u1",
+        planId: "tier_starter",
+      }),
+    ).rejects.toThrow("Legacy membership plans are closed");
+  });
+
   it("uses membership defaults, no-addon pricing, and addon fallback pricing", async () => {
     await createMembershipCheckoutConfig({
       userId: "u1",
-      planId: "tier_starter",
+      planId: "platform_access",
     });
     expect(mocks.create).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        product_cart: [expect.objectContaining({ amount: 100000 })],
+        product_cart: [expect.objectContaining({ amount: 49900 })],
       }),
     );
     mocks.getFees.mockResolvedValueOnce({
       tierStarterPrice: 1000,
       tierProPrice: 2000,
       tierExecutivePrice: 3000,
+      platformAccessPrice: 499,
       creditModuleProAddonPrice: undefined,
     });
     await createMembershipCheckoutConfig({
       userId: "u1",
-      planId: "tier_starter",
+      planId: "platform_access",
       selectedAddonIds: ["credit_module_pro"],
     });
     expect(mocks.create).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        product_cart: [expect.objectContaining({ amount: 119700 })],
+        product_cart: [expect.objectContaining({ amount: 69600 })],
       }),
     );
   });
@@ -948,13 +958,28 @@ describe("Dodo payment service", () => {
             .mockResolvedValueOnce({ empty: true })
             .mockResolvedValueOnce({
               exists: true,
-              data: () => ({ enrolledStudentsCount: 2 }),
+              data: () => ({
+                enrolledStudentsCount: 2,
+                grantEnabled: true,
+                courseKey: "credit_to_capital",
+                capabilityGrant: "dispute",
+              }),
             }),
           set: vi.fn(),
           update: vi.fn(),
         };
         await cb(tx);
-        expect(tx.set).toHaveBeenCalled();
+        expect(tx.set).toHaveBeenCalledTimes(2);
+        expect(tx.set).toHaveBeenLastCalledWith(
+          expect.objectContaining({ __doc: true }),
+          expect.objectContaining({
+            userId: "u1",
+            courseKey: "credit_to_capital",
+            capabilityGrant: "dispute",
+            source: "dodo_webhook",
+          }),
+          { merge: true },
+        );
         expect(tx.update).toHaveBeenCalled();
       });
 

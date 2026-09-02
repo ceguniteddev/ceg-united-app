@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/provider/AuthContext";
+import { useMembership } from "@/hooks/membership";
+import { hasPaidMembershipAccess } from "@/lib/membership-entitlement";
 import {
   useGetUserCoursesWithProgress,
   useGetCourses,
@@ -9,6 +11,10 @@ import {
   useCourseCheckout,
 } from "@/hooks/educational-materials/course";
 import Spinner from "@/components/Spinner";
+import { PricingPlans } from "@/components/pricing-plans/PricingPlans";
+import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipCheckoutView";
+import { createMembershipCheckoutConfig } from "@/service/dodo";
+import { toast } from "sonner";
 import {
   BookOpen,
   CheckCircle2,
@@ -44,10 +50,23 @@ const COURSE_GRADIENTS = [
 type FilterStatus = "all" | "in-progress" | "not-started" | "completed";
 
 const MyLearningPage = () => {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
   const router = useRouter();
+  const { data: membership, isLoading: isLoadingMembership } = useMembership(
+    userData?.id || user?.uid,
+  );
+  const hasMembership = hasPaidMembershipAccess(membership ?? null);
+
+  const [membershipCheckout, setMembershipCheckout] = useState<{
+    id: string;
+    url: string;
+    amount: number;
+  } | null>(null);
+  const [isStartingMembershipCheckout, setIsStartingMembershipCheckout] =
+    useState(false);
+
   const { coursesWithProgress, isLoading } = useGetUserCoursesWithProgress(
-    user?.uid || "",
+    hasMembership ? user?.uid || "" : "",
   );
   const { courses: allCourses, isLoading: isLoadingAll } = useGetCourses();
   const { enrollUser, isEnrolling } = useEnrollUserInCourse();
@@ -59,6 +78,25 @@ const MyLearningPage = () => {
   const [activeTab, setActiveTab] = useState("my-courses");
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const startMembershipCheckout = async (_planId: string, amount: number) => {
+    if (!userData?.id) return;
+    setIsStartingMembershipCheckout(true);
+    try {
+      const result = await createMembershipCheckoutConfig({
+        userId: userData.id,
+        planId: "platform_access",
+        returnUrl: `${window.location.origin}/client/my-learning?membershipCheckout=1`,
+      });
+      setMembershipCheckout({ id: result.checkoutId, url: result.url, amount });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to start checkout.",
+      );
+    } finally {
+      setIsStartingMembershipCheckout(false);
+    }
+  };
 
   const handleBuyCourse = async (course: any) => {
     if (!user?.uid || !course.id) return;
@@ -80,6 +118,48 @@ const MyLearningPage = () => {
       setCheckingOutCourseId(null);
     }
   };
+
+  if (isLoadingMembership) {
+    return <Spinner displayText="Loading..." />;
+  }
+
+  if (membershipCheckout && userData?.id) {
+    return (
+      <MembershipCheckoutView
+        checkoutId={membershipCheckout.id}
+        checkoutUrl={membershipCheckout.url}
+        userId={userData.id}
+        tierId="platform_access"
+        amount={membershipCheckout.amount}
+        membershipAmount={membershipCheckout.amount}
+        onPaymentCompleteAction={() =>
+          window.location.assign(
+            "/client/my-learning?membershipCheckout=processing",
+          )
+        }
+      />
+    );
+  }
+
+  if (!hasMembership) {
+    return (
+      <main className="min-h-screen bg-white pb-16">
+        <div className="mx-auto max-w-4xl px-4 pt-8 sm:px-6">
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 text-blue-950">
+            <p className="font-semibold">This feature is currently locked</p>
+            <p className="mt-1 text-sm leading-6">
+              Platform Access is required to access the Learning Center and
+              courses.
+            </p>
+          </div>
+        </div>
+        <PricingPlans
+          onSelectPlan={startMembershipCheckout}
+          isLoading={isStartingMembershipCheckout}
+        />
+      </main>
+    );
+  }
 
   if (isLoading || isLoadingAll) {
     return <Spinner displayText="Loading courses..." />;
@@ -461,13 +541,17 @@ const MyLearningPage = () => {
                         {course.subtitle || course.description}
                       </p>
 
-                      <div className="flex items-center gap-1 text-xs text-amber-500 font-bold pt-1">
-                        <span>{(course.averageRating || 5.0).toFixed(1)}</span>
-                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                        <span className="text-gray-400 font-normal">
-                          ({course.totalRatingsCount || 0})
-                        </span>
-                      </div>
+                      {(course.totalRatingsCount ?? 0) > 0 && (
+                        <div className="flex items-center gap-1 pt-1 text-xs font-bold text-amber-500">
+                          <span>
+                            {(course.averageRating || 5.0).toFixed(1)}
+                          </span>
+                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                          <span className="font-normal text-gray-500">
+                            ({course.totalRatingsCount})
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Price & Action */}

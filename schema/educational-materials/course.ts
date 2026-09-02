@@ -92,6 +92,29 @@ export const CourseLevelEnum = z.enum([
 ]);
 export type CourseLevel = z.infer<typeof CourseLevelEnum>;
 
+export const CourseKeyEnum = z.enum([
+  "credit_to_capital",
+  "first_50k",
+  "funding_150k",
+  "funding_250k_plus",
+]);
+export type CourseKey = z.infer<typeof CourseKeyEnum>;
+
+export const CourseCapabilityGrantEnum = z.enum([
+  "dispute",
+  "legacy_starter",
+  "legacy_pro",
+  "legacy_executive",
+]);
+export type CourseCapabilityGrant = z.infer<typeof CourseCapabilityGrantEnum>;
+
+export const CourseGrantSourceEnum = z.enum([
+  "dodo_webhook",
+  "lumino_webhook",
+  "manual_admin",
+]);
+export type CourseGrantSource = z.infer<typeof CourseGrantSourceEnum>;
+
 export const courseSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, "Title is required"),
@@ -117,6 +140,9 @@ export const courseSchema = z.object({
   discountPrice: z.number().min(0).optional(),
   dodoProductId: z.string().optional(),
   luminoCheckoutUrl: z.string().optional(),
+  courseKey: CourseKeyEnum.optional(),
+  capabilityGrant: CourseCapabilityGrantEnum.optional(),
+  grantEnabled: z.boolean().default(false),
 
   // Publishing & Metrics
   isPublished: z.boolean().default(false),
@@ -247,6 +273,29 @@ export const UserCourseEnrollmentSchema = z.object({
 });
 
 export type UserCourseEnrollment = z.infer<typeof UserCourseEnrollmentSchema>;
+
+export const UserCourseCapabilityGrantSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string(),
+  courseId: z.string(),
+  courseKey: CourseKeyEnum,
+  capabilityGrant: CourseCapabilityGrantEnum,
+  source: CourseGrantSourceEnum,
+  providerPaymentId: z.string().optional(),
+  providerEventId: z.string().optional(),
+  status: z.enum(["active", "revoked"]).default("active"),
+  grantedAt: z.date(),
+  grantedByAdminId: z.string().optional(),
+  grantedByAdminEmail: z.string().optional(),
+  reason: z.string().optional(),
+  revokedAt: z.date().optional(),
+  revokedByAdminId: z.string().optional(),
+  revokedByAdminEmail: z.string().optional(),
+  updatedAt: z.date().optional(),
+});
+export type UserCourseCapabilityGrant = z.infer<
+  typeof UserCourseCapabilityGrantSchema
+>;
 
 // Course Reviews
 export const CourseReviewSchema = z.object({

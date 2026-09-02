@@ -229,6 +229,12 @@ export const documentUploadSchema = z
       });
     }
 
+    // Funding metadata can remain in the draft when a user switches paths.
+    // Financial Education requires identity verification only.
+    if (data.registrationPurpose === RegistrationPurpose.FinancialEducation) {
+      return;
+    }
+
     if (isPersonal) {
       if (data.employmentType === "W2") {
         if (

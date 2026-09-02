@@ -21,6 +21,7 @@ interface FeeSettingsFormData {
   tierStarterPrice: number;
   tierProPrice: number;
   tierExecutivePrice: number;
+  platformAccessPrice: number;
   creditModuleProAddonPrice: number;
   earlyRefreshFee: number;
   personalUnlimitedUnlockFee: number;
@@ -42,6 +43,7 @@ export default function FeeSettingsPage() {
       tierStarterPrice: 297,
       tierProPrice: 397,
       tierExecutivePrice: 697,
+      platformAccessPrice: 499,
       creditModuleProAddonPrice: 197,
       earlyRefreshFee: 99,
       personalUnlimitedUnlockFee: 999,
@@ -63,6 +65,10 @@ export default function FeeSettingsPage() {
   const tierExecutivePriceValue = useWatch({
     control,
     name: "tierExecutivePrice",
+  });
+  const platformAccessPriceValue = useWatch({
+    control,
+    name: "platformAccessPrice",
   });
   const creditModuleProAddonPriceValue = useWatch({
     control,
@@ -90,6 +96,7 @@ export default function FeeSettingsPage() {
         tierStarterPrice: feeSettings.tierStarterPrice,
         tierProPrice: feeSettings.tierProPrice,
         tierExecutivePrice: feeSettings.tierExecutivePrice,
+        platformAccessPrice: feeSettings.platformAccessPrice,
         creditModuleProAddonPrice: feeSettings.creditModuleProAddonPrice,
         earlyRefreshFee: feeSettings.earlyRefreshFee,
         personalUnlimitedUnlockFee: feeSettings.personalUnlimitedUnlockFee,
@@ -110,6 +117,7 @@ export default function FeeSettingsPage() {
         tierStarterPrice: Number(data.tierStarterPrice),
         tierProPrice: Number(data.tierProPrice),
         tierExecutivePrice: Number(data.tierExecutivePrice),
+        platformAccessPrice: Number(data.platformAccessPrice),
         creditModuleProAddonPrice: Number(data.creditModuleProAddonPrice),
         earlyRefreshFee: Number(data.earlyRefreshFee),
         personalUnlimitedUnlockFee: Number(data.personalUnlimitedUnlockFee),
@@ -135,8 +143,8 @@ export default function FeeSettingsPage() {
       </div>
 
       <div className="grid gap-6">
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="bg-slate-50 border-b border-slate-100 pb-4 rounded-t-xl">
+        <Card className="border-blue-200 bg-white">
+          <CardHeader className="rounded-t-xl border-b border-blue-100 bg-blue-50 pb-4">
             <div className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-blue-600" />
               <CardTitle className="text-xl text-slate-800">
@@ -178,7 +186,7 @@ export default function FeeSettingsPage() {
                       {feeSettings &&
                         Number(creditReportFeeValue) !==
                           feeSettings.creditReportFee && (
-                          <p className="text-[0.8rem] text-amber-600 mt-1">
+                          <p className="mt-1 text-[0.8rem] text-blue-700">
                             Previous fee:{" "}
                             <span className="font-semibold">
                               ${feeSettings.creditReportFee.toFixed(2)}
@@ -205,7 +213,7 @@ export default function FeeSettingsPage() {
                       {feeSettings &&
                         Number(businessCreditReportFeeValue) !==
                           feeSettings.businessCreditReportFee && (
-                          <p className="text-[0.8rem] text-amber-600 mt-1">
+                          <p className="mt-1 text-[0.8rem] text-blue-700">
                             Previous fee:{" "}
                             <span className="font-semibold">
                               ${feeSettings.businessCreditReportFee.toFixed(2)}
@@ -216,10 +224,45 @@ export default function FeeSettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-4 rounded-xl border border-purple-100 bg-purple-50/40 p-5">
-                  <h3 className="text-lg font-semibold text-purple-900 border-b border-purple-100 pb-2 flex items-center gap-2">
-                    ⭐ Membership Tiers (Monthly)
+                <div className="space-y-4 rounded-xl border border-blue-200 bg-white p-5">
+                  <h3 className="flex items-center gap-2 border-b border-blue-100 pb-2 text-lg font-semibold text-blue-900">
+                    ⭐ Platform Access (Monthly)
                   </h3>
+                  <div className="max-w-sm space-y-1">
+                    <FormNumberInput
+                      control={control}
+                      name="platformAccessPrice"
+                      label="CEG Brain Platform Access"
+                      prefix="$"
+                      decimalScale={2}
+                      fixedDecimalScale={true}
+                      min={0}
+                    />
+                    <p className="mt-1 text-[0.8rem] text-slate-500">
+                      Used for future Platform Access checkouts. Existing
+                      subscriptions are never repriced by this setting.
+                    </p>
+                    {feeSettings &&
+                      Number(platformAccessPriceValue) !==
+                        feeSettings.platformAccessPrice && (
+                        <p className="mt-1 text-[0.8rem] text-blue-700">
+                          Previous fee:{" "}
+                          <span className="font-semibold">
+                            ${feeSettings.platformAccessPrice.toFixed(2)}
+                          </span>
+                        </p>
+                      )}
+                  </div>
+                </div>
+
+                <div className="space-y-4 rounded-xl border border-blue-100 bg-blue-50/50 p-5">
+                  <h3 className="flex items-center gap-2 border-b border-blue-100 pb-2 text-lg font-semibold text-blue-900">
+                    Legacy Membership Tiers (Compatibility Only)
+                  </h3>
+                  <p className="text-sm text-blue-800">
+                    Retained for grandfathered subscriptions and rollback. These
+                    prices are not offered to new clients.
+                  </p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-1">
                       <FormNumberInput
@@ -257,8 +300,8 @@ export default function FeeSettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-5">
-                  <h3 className="text-lg font-semibold text-emerald-900 border-b border-emerald-100 pb-2 flex items-center gap-2">
+                <div className="space-y-4 rounded-xl border border-blue-100 bg-white p-5">
+                  <h3 className="flex items-center gap-2 border-b border-blue-100 pb-2 text-lg font-semibold text-blue-900">
                     🔄 Add-ons & Refresh Fees
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -287,8 +330,8 @@ export default function FeeSettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-4 rounded-xl border border-amber-100 bg-amber-50/40 p-5">
-                  <h3 className="text-lg font-semibold text-amber-900 border-b border-amber-100 pb-2 flex items-center gap-2">
+                <div className="space-y-4 rounded-xl border border-blue-100 bg-blue-50/50 p-5">
+                  <h3 className="flex items-center gap-2 border-b border-blue-100 pb-2 text-lg font-semibold text-blue-900">
                     🔓 One-Time Unlocks
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

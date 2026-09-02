@@ -151,6 +151,10 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: DODO_PRODUCT_MEMBERSHIP_PLATFORM_ID
+    value: "pdt_0NmdGdIGZptCRlnXQ6NKw"
+    availability:
+      - RUNTIME
   - variable: DODO_PRODUCT_MEMBERSHIP_PRO_ID
     value: pdt_0NllsZvkGytlONhuyaTYD
     availability:

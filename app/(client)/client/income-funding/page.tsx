@@ -114,6 +114,15 @@ export function IncomeFundingContent({
     }
   }, [referenceOptions, selectedReference]);
 
+  useEffect(() => {
+    if (
+      (realDeal as any)?.applicationSource === "financial_education_access" &&
+      deal.status === "prequalified"
+    ) {
+      setShowPathways(true);
+    }
+  }, [deal.status, realDeal]);
+
   // If returning from applying, automatically set status to show offers
   useEffect(() => {
     const fromApply = searchParams.get("fromApply") === "true";
@@ -321,12 +330,11 @@ export function IncomeFundingContent({
             <AlertCircle className="w-8 h-8 text-gray-400" />
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">
-            Access Denied
+            Funding setup unavailable
           </h2>
           <p className="text-sm text-gray-500 mb-6">
-            {`You do not currently have an active application for "Business Income
-            Based Funding". Please apply for this funding product to access this
-            page.`}
+            We could not initialize your free Income-Based Funding pathway.
+            Please return to the dashboard and try again.
           </p>
           <Link
             href={

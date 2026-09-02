@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 
 // -------------------------- Types --------------------------
 
@@ -143,7 +144,7 @@ const DEFAULT_PATHWAYS: FundingPathway[] = [
     bestFor: "Businesses doing $20K+/month in revenue",
     fundingTime: "24-72 hours",
     pullType: "No hard pull",
-    badge: "Fastest",
+    badge: "Free",
     Icon: IconCashflow,
     route: "/funding/income-based/offers",
   },
@@ -221,7 +222,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2 } from "lucide-react";
+import { Info, Loader2, LockKeyhole } from "lucide-react";
 import { useMembership } from "@/hooks/membership";
 import { toast } from "sonner";
 
@@ -249,14 +250,7 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
 
   const computationFromBackend = realDeal?.businessIncomeComputation || {};
 
-  const appliedPathwaysCount = (realDeal?.appliedPathways || []).length;
-
-  let maxPathways = 1; // Default
-  if (membership?.status === "active") {
-    if (membership.tier === "tier_starter") maxPathways = 1;
-    else if (membership.tier === "tier_pro") maxPathways = 2;
-    else if (membership.tier === "tier_executive") maxPathways = 6;
-  }
+  const hasMembershipAccess = membership?.status === "active";
 
   useEffect(() => {
     if (!selectedPathwayId) {
@@ -329,6 +323,11 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
 
   const dynamicSelected =
     dynamicPathways.find((p) => p.id === selectedId) || null;
+  const isMembershipLocked = Boolean(
+    dynamicSelected &&
+    dynamicSelected.id !== "income_based" &&
+    !hasMembershipAccess,
+  );
 
   const handleSelect = (p: FundingPathway) => {
     setSelectedId(p.id);
@@ -342,10 +341,9 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
       (ap: any) => ap.pathwayId === dynamicSelected.id,
     );
 
-    if (!ap && appliedPathwaysCount >= maxPathways) {
-      // Trying to apply for a new pathway, but maxed out
+    if (dynamicSelected.id !== "income_based" && !hasMembershipAccess) {
       toast.error(
-        `Your current membership tier allows a maximum of ${maxPathways} pathway(s). Please upgrade to access more.`,
+        "CEG Brain Platform Access is required for this funding pathway. Income-Based Lenders remain free.",
       );
       return;
     }
@@ -379,6 +377,13 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
       return (
         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
           {p.badge}
+        </span>
+      );
+    }
+    if (p.id !== "income_based" && !hasMembershipAccess) {
+      return (
+        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+          Membership required
         </span>
       );
     }
@@ -601,22 +606,54 @@ const FundingPathways: React.FC<FundingPathwaysProps> = ({
           )}
         </div>
 
+        {isMembershipLocked && (
+          <div
+            role="status"
+            className="mt-4 flex flex-col gap-4 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-950 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="flex items-start gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white text-blue-700">
+                <Info className="size-5" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="font-semibold">Platform Access required</p>
+                <p className="mt-1 text-sm leading-5 text-blue-800">
+                  This pathway is available with an active CEG Brain membership.
+                  Income-Based Lenders remain free and can be selected now.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/client/platform-access?required=funding-course"
+              className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+            >
+              View membership
+            </Link>
+          </div>
+        )}
+
         {/* Footer actions */}
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
           <button
             type="button"
-            disabled={!dynamicSelected || isSubmitting}
+            disabled={!dynamicSelected || isSubmitting || isMembershipLocked}
             onClick={handleContinue}
             className={[
               "cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all",
-              dynamicSelected && !isSubmitting
+              dynamicSelected && !isSubmitting && !isMembershipLocked
                 ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
-                : "cursor-not-allowed bg-slate-300",
+                : "cursor-not-allowed bg-blue-100 text-blue-400 shadow-none",
             ].join(" ")}
           >
-            {isSubmitting ? "Submitting..." : "Continue to Offers"}
-            {!isSubmitting ? (
+            {isSubmitting
+              ? "Submitting..."
+              : isMembershipLocked
+                ? "Membership required"
+                : "Continue to Offers"}
+            {!isSubmitting && !isMembershipLocked ? (
               <IconArrowRight className="h-4 w-4" />
+            ) : isMembershipLocked ? (
+              <LockKeyhole className="h-4 w-4" aria-hidden="true" />
             ) : (
               <Loader2 className="h-4 w-4 animate-spin" />
             )}

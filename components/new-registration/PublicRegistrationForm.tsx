@@ -125,8 +125,12 @@ export function PublicRegistrationForm() {
     defaultValues: {
       ...documentUploadData,
       registrationPurpose: registrationPurpose ?? undefined,
-      fundingType: businessDetailsData.fundingType,
-      employmentType: businessDetailsData.employmentType,
+      fundingType: isFinancialEducation
+        ? undefined
+        : businessDetailsData.fundingType,
+      employmentType: isFinancialEducation
+        ? undefined
+        : businessDetailsData.employmentType,
     },
   });
 
@@ -155,8 +159,12 @@ export function PublicRegistrationForm() {
       formStep3.reset({
         ...documentUploadData,
         registrationPurpose: registrationPurpose ?? undefined,
-        fundingType: businessDetailsData.fundingType,
-        employmentType: businessDetailsData.employmentType,
+        fundingType: isFinancialEducation
+          ? undefined
+          : businessDetailsData.fundingType,
+        employmentType: isFinancialEducation
+          ? undefined
+          : businessDetailsData.employmentType,
       });
     }
   }, [isHydrated, registrationPurpose, formStep2, formStep3]);
@@ -168,12 +176,19 @@ export function PublicRegistrationForm() {
         "registrationPurpose",
         registrationPurpose ?? undefined,
       );
-      formStep3.setValue("fundingType", businessDetailsData.fundingType);
-      formStep3.setValue("employmentType", businessDetailsData.employmentType);
+      formStep3.setValue(
+        "fundingType",
+        isFinancialEducation ? undefined : businessDetailsData.fundingType,
+      );
+      formStep3.setValue(
+        "employmentType",
+        isFinancialEducation ? undefined : businessDetailsData.employmentType,
+      );
     }
   }, [
     currentStep,
     registrationPurpose,
+    isFinancialEducation,
     businessDetailsData.fundingType,
     businessDetailsData.employmentType,
     formStep3,

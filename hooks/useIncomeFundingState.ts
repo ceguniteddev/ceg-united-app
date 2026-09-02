@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type {
   DealOffer,
@@ -14,6 +14,7 @@ import {
 } from "@/hooks/apply-funding";
 import { toast } from "sonner";
 import { useConfettiStore } from "@/hooks/use-confetti-store";
+import { ensureIncomeFundingApplication } from "@/service/apply-funding";
 
 const defaultEmptyDeal: IncomeFundingDeal = {
   id: "default",
@@ -98,6 +99,10 @@ export function useIncomeFundingState(
 ) {
   const [deal, setDeal] = useState<IncomeFundingDeal>(defaultEmptyDeal);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProvisioningApplication, setIsProvisioningApplication] =
+    useState(false);
+  const [provisioningFailed, setProvisioningFailed] = useState(false);
+  const provisioningAttempted = useRef(false);
   const { user, loading: isAuthLoading } = useAuth();
   const queryClient = useQueryClient();
 
@@ -123,6 +128,40 @@ export function useIncomeFundingState(
   // );
 
   const incomeFundingApps = appliedFunding;
+
+  useEffect(() => {
+    if (
+      isAuthLoading ||
+      isLoadingApplications ||
+      !targetUserId ||
+      (incomeFundingApps && incomeFundingApps.length > 0) ||
+      provisioningAttempted.current
+    ) {
+      return;
+    }
+
+    provisioningAttempted.current = true;
+    setProvisioningFailed(false);
+    setIsProvisioningApplication(true);
+    ensureIncomeFundingApplication(targetUserId)
+      .then(() =>
+        queryClient.invalidateQueries({
+          queryKey: ["GET_USER_APPLY_FUNDING", targetUserId],
+        }),
+      )
+      .catch((error) => {
+        console.error("Unable to initialize income funding access:", error);
+        setProvisioningFailed(true);
+        toast.error("Unable to initialize your free funding pathway.");
+      })
+      .finally(() => setIsProvisioningApplication(false));
+  }, [
+    incomeFundingApps,
+    isAuthLoading,
+    isLoadingApplications,
+    queryClient,
+    targetUserId,
+  ]);
 
   const realDeal = selectedReference
     ? incomeFundingApps?.find(
@@ -584,7 +623,13 @@ export function useIncomeFundingState(
     deal,
     realDeal,
     incomeFundingApps,
-    isLoadingApplications: isLoadingApplications || isAuthLoading,
+    isLoadingApplications:
+      isLoadingApplications ||
+      isAuthLoading ||
+      isProvisioningApplication ||
+      (!provisioningFailed &&
+        Boolean(targetUserId) &&
+        (!incomeFundingApps || incomeFundingApps.length === 0)),
     setStatus,
     setDocuments,
     uploadDocument,
