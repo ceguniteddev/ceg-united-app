@@ -6,6 +6,12 @@ import { MembershipCheckoutView } from "@/components/pricing-plans/MembershipChe
 import { createMembershipCheckoutConfig } from "@/service/dodo";
 import { useAuth } from "@/provider/AuthContext";
 import { toast } from "sonner";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 const messages: Record<string, string> = {
   platform:
@@ -51,33 +57,55 @@ export default function ClientAccessPage() {
     }
   };
 
-  if (checkout && userData?.id) {
-    return (
-      <MembershipCheckoutView
-        checkoutId={checkout.id}
-        checkoutUrl={checkout.url}
-        userId={userData.id}
-        tierId="platform_access"
-        amount={checkout.amount}
-        membershipAmount={checkout.amount}
-        onPaymentCompleteAction={() =>
-          window.location.assign("/client/home?membershipCheckout=processing")
-        }
-      />
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-white pb-16">
-      <div className="mx-auto max-w-4xl px-4 pt-8 sm:px-6">
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 text-blue-950">
-          <p className="font-semibold">This feature is currently locked</p>
-          <p className="mt-1 text-sm leading-6">
-            {messages[required] || messages.platform}
-          </p>
+    <>
+      <main className="min-h-screen bg-white pb-16">
+        <div className="mx-auto max-w-4xl px-4 pt-8 sm:px-6">
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 text-blue-950">
+            <p className="font-semibold">This feature is currently locked</p>
+            <p className="mt-1 text-sm leading-6">
+              {messages[required] || messages.platform}
+            </p>
+          </div>
         </div>
-      </div>
-      <PricingPlans onSelectPlan={startCheckout} isLoading={isLoading} />
-    </main>
+        <PricingPlans onSelectPlan={startCheckout} isLoading={isLoading} />
+      </main>
+
+      <Sheet
+        open={checkout !== null}
+        onOpenChange={(open) => {
+          if (!open) setCheckout(null);
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
+        >
+          <SheetHeader className="border-b border-gray-200 px-6 py-4">
+            <SheetTitle className="text-xl font-bold">
+              Secure Checkout
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            {checkout && userData?.id && (
+              <MembershipCheckoutView
+                checkoutId={checkout.id}
+                checkoutUrl={checkout.url}
+                userId={userData.id}
+                tierId="platform_access"
+                amount={checkout.amount}
+                membershipAmount={checkout.amount}
+                prefillEmail={userData.email || ""}
+                onPaymentCompleteAction={() =>
+                  window.location.assign(
+                    "/client/home?membershipCheckout=processing",
+                  )
+                }
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
