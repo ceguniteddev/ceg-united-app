@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { COURSES_KEY, CHAPTERS_KEY } from "@/constant/react-query-keys";
 import { useAuth } from "@/provider/AuthContext";
 import { Chapter } from "@/schema/educational-materials/course";
@@ -66,7 +65,6 @@ export const useGetChapterById = ({
  */
 export const useChapterMutation = () => {
   const queryClient = useQueryClient();
-  const router = useRouter();
 
   const createChapterMutation = useMutation({
     mutationFn: async ({
@@ -254,10 +252,16 @@ export const useChapterMutation = () => {
       if (!res.ok) {
         let message = "Failed to publish chapter";
         try {
-          message = await res.text();
+          const contentType = res.headers.get("content-type");
+          if (contentType?.includes("application/json")) {
+            const json = await res.json();
+            message = json?.message || json?.error || message;
+          } else {
+            const text = await res.text();
+            if (text) message = text;
+          }
         } catch (_) {
-          const text = await res.text();
-          if (text) message = text;
+          // Preserve the fallback message when the response cannot be parsed.
         }
         throw new Error(message);
       }
@@ -274,8 +278,7 @@ export const useChapterMutation = () => {
       });
     },
     onError: (error: any) => {
-      toast.error(error || "Something went wrong");
-      console.error(error);
+      toast.error(error?.message || "Something went wrong");
     },
   });
 
