@@ -216,7 +216,8 @@ const MobileNavClient = () => {
                   const isLocked =
                     (!hasActiveMembership &&
                       (item.route === "/client/my-analysis" ||
-                        item.route === "/client/my-credit")) ||
+                        item.route === "/client/my-credit" ||
+                        item.route === "/client/my-learning")) ||
                     (item.route === "/client/credit-repair" &&
                       !hasCreditRepairAccess);
 
