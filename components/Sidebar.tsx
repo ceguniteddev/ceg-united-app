@@ -148,12 +148,12 @@ const Sidebar = () => {
             //   return false;
             // }
 
-            // if (
-            //   item.route === "/client/credit-repair" &&
-            //   (!userData || membership?.status !== "active")
-            // ) {
-            //   return false;
-            // }
+            if (
+              item.route === "/client/credit-repair" &&
+              (!userData || membership?.status !== "active")
+            ) {
+              return false;
+            }
 
             if (item.route === "/client/letter-stream") {
               const hasAnyLetterFeature =
