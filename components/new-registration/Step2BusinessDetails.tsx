@@ -10,8 +10,10 @@ import { FormSelect } from "../forms/form-select";
 import { FormEINInput } from "../forms/form-ein-number-input";
 import { FormPhoneNumberInput } from "../forms/form-phone-number-input";
 import { IncomeSourceSection } from "./IncomeSourceSection";
+import { useTranslation } from "@/lib/i18n";
 
 export function Step2BusinessDetails() {
+  const { t } = useTranslation();
   const form = useFormContext();
   const fundingType = useWatch({
     control: form.control,
@@ -27,7 +29,7 @@ export function Step2BusinessDetails() {
     <Card className="bg-white border-blue-100 shadow-md">
       <CardHeader className="border-b border-blue-50 bg-blue-50/50 flex items-center justify-center p-6">
         <CardTitle className="text-center text-2xl font-bold text-blue-900 flex items-center gap-2">
-          <span>💼</span> Funding Details
+          <span>💼</span> {t("registration.fundingDetails")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
@@ -35,7 +37,7 @@ export function Step2BusinessDetails() {
           <FormNumberInput
             control={form.control}
             name="fundingAmount"
-            label="How much are you looking for?"
+            label={t("registration.fundingAmountQuestion")}
             required
             placeholder="$"
             prefix="$"

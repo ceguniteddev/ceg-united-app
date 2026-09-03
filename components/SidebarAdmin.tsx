@@ -12,6 +12,7 @@ import { useGetFundingApplicationsIsNew } from "@/hooks/apply-funding";
 import { usePendingTradelinesCount } from "@/hooks/tradelines";
 import { useAdminIncomeFunding } from "@/hooks/admin/income-funding";
 import { ChevronDown } from "lucide-react";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 import {
   Sidebar,
@@ -49,18 +50,21 @@ const SidebarAdmin = () => {
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <Link
-          href="/admin/home"
-          className="mb-4 cursor-pointer flex items-center gap-2 justify-center"
-        >
-          <Image
-            src="/icon.png"
-            alt="Logo"
-            width={548}
-            height={455}
-            className="h-16 w-auto object-contain"
-          />
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link
+            href="/admin/home"
+            className="cursor-pointer flex items-center gap-2"
+          >
+            <Image
+              src="/icon.png"
+              alt="Logo"
+              width={548}
+              height={455}
+              className="h-12 w-auto object-contain"
+            />
+          </Link>
+          <LanguageSwitcher variant="outline" size="sm" showLabel={false} />
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
