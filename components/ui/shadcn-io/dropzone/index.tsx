@@ -8,6 +8,7 @@ import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useTranslation } from "@/lib/i18n";
 
 type DropzoneContextType = {
   src?: File[];
@@ -58,6 +59,8 @@ export const Dropzone = ({
   children,
   ...props
 }: DropzoneProps) => {
+  const { t } = useTranslation();
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept,
     ...(maxFiles !== undefined ? { maxFiles } : {}),
@@ -72,9 +75,7 @@ export const Dropzone = ({
             if (err.code === "file-too-large") {
               toast.warning(
                 maxSize
-                  ? `File is too large. Maximum size is ${renderBytes(
-                      maxSize,
-                    )}.`
+                  ? t("dropzone.fileTooLarge", { size: renderBytes(maxSize) })
                   : err.message,
               );
               return;
@@ -86,7 +87,9 @@ export const Dropzone = ({
             }
 
             if (err.code === "too-many-files") {
-              toast.warning(`Too many files. Maximum allowed is ${maxFiles}.`);
+              toast.warning(
+                t("dropzone.tooManyFiles", { count: maxFiles ?? 0 }),
+              );
               return;
             }
 
@@ -145,6 +148,7 @@ export const DropzoneContent = ({
   children,
   className,
 }: DropzoneContentProps) => {
+  const { t, locale } = useTranslation();
   const { src } = useDropzoneContext();
 
   if (!src) {
@@ -155,6 +159,8 @@ export const DropzoneContent = ({
     return children;
   }
 
+  const listLocale = locale === "es" ? "es" : "en";
+
   return (
     <div className={cn("flex flex-col items-center justify-center", className)}>
       <div className="flex size-10 sm:size-12 items-center justify-center rounded-md bg-muted text-muted-foreground">
@@ -162,13 +168,15 @@ export const DropzoneContent = ({
       </div>
       <p className="my-2 w-full truncate font-medium text-xs sm:text-sm">
         {src.length > maxLabelItems
-          ? `${new Intl.ListFormat("en").format(
+          ? `${new Intl.ListFormat(listLocale).format(
               src.slice(0, maxLabelItems).map((file) => file.name),
-            )} and ${src.length - maxLabelItems} more`
-          : new Intl.ListFormat("en").format(src.map((file) => file.name))}
+            )} ${t("dropzone.andMore", { count: src.length - maxLabelItems })}`
+          : new Intl.ListFormat(listLocale).format(
+              src.map((file) => file.name),
+            )}
       </p>
       <p className="w-full text-wrap text-muted-foreground text-[10px] sm:text-xs">
-        Drag and drop or click to replace
+        {t("dropzone.dragAndDropReplace")}
       </p>
     </div>
   );
@@ -183,6 +191,7 @@ export const DropzoneEmptyState = ({
   children,
   className,
 }: DropzoneEmptyStateProps) => {
+  const { t, locale } = useTranslation();
   const { src, accept, maxSize, minSize, maxFiles } = useDropzoneContext();
 
   if (src) {
@@ -194,10 +203,11 @@ export const DropzoneEmptyState = ({
   }
 
   let caption = "";
+  const listLocale = locale === "es" ? "es" : "en";
 
   if (accept) {
-    caption += "Accepts ";
-    caption += new Intl.ListFormat("en").format(Object.keys(accept));
+    caption += `${t("dropzone.accepts")} `;
+    caption += new Intl.ListFormat(listLocale).format(Object.keys(accept));
   }
 
   if (minSize && maxSize) {
@@ -214,10 +224,10 @@ export const DropzoneEmptyState = ({
         <UploadIcon size={20} className="sm:w-6 sm:h-6" />
       </div>
       <p className="my-2 w-full truncate text-wrap font-medium text-xs sm:text-sm">
-        Upload {maxFiles === 1 ? "a file" : "files"}
+        {maxFiles === 1 ? t("dropzone.uploadAFile") : t("dropzone.uploadFiles")}
       </p>
       <p className="w-full truncate text-wrap text-muted-foreground text-[10px] sm:text-xs">
-        Drag and drop or click to upload
+        {t("dropzone.dragAndDropUpload")}
       </p>
       {caption && (
         <p className="text-wrap text-muted-foreground text-[10px] sm:text-xs">

@@ -78,21 +78,21 @@ export function Step2BusinessDetails() {
         <FormSelect
           control={form.control}
           name="fundingType"
-          label="Type of funding"
+          label={t("registration.fundingType")}
           required
           options={[
-            { value: FundingType.Personal, label: "Personal" },
-            { value: FundingType.Business, label: "Business" },
-            { value: FundingType.Both, label: "Both" },
+            { value: FundingType.Personal, label: t("registration.personal") },
+            { value: FundingType.Business, label: t("registration.business") },
+            { value: FundingType.Both, label: t("registration.both") },
           ]}
-          placeholder="Select funding type"
+          placeholder={t("registration.selectFundingType")}
         />
 
         {showPersonal && (
           <Card className="border-blue-100 shadow-sm overflow-hidden">
             <CardHeader className="bg-blue-50/30 border-b border-blue-50 p-4">
               <CardTitle className="text-lg font-semibold text-blue-900">
-                Personal Details
+                {t("registration.personalDetails")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
@@ -101,7 +101,7 @@ export function Step2BusinessDetails() {
                   control={form.control}
                   name="creditScore"
                   required
-                  label="What is your credit score?"
+                  label={t("registration.creditScoreQuestion")}
                   placeholder="700"
                   min={400}
                   max={900}
@@ -138,13 +138,16 @@ export function Step2BusinessDetails() {
               <FormSelect
                 control={form.control}
                 name="employmentType"
-                label="Employment type"
+                label={t("registration.employmentType")}
                 required
                 options={[
                   { value: "W2", label: "W2" },
-                  { value: "Self-employed", label: "Self-employed" },
+                  {
+                    value: "Self-employed",
+                    label: t("registration.selfEmployed"),
+                  },
                 ]}
-                placeholder="Select employment type"
+                placeholder={t("registration.selectEmploymentType")}
               />
 
               <IncomeSourceSection />
@@ -156,7 +159,7 @@ export function Step2BusinessDetails() {
           <Card className="border-blue-100 shadow-sm overflow-hidden">
             <CardHeader className="bg-blue-50/30 border-b border-blue-50 p-4">
               <CardTitle className="text-lg font-semibold text-blue-900">
-                Business Details
+                {t("registration.businessDetails")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
@@ -166,7 +169,7 @@ export function Step2BusinessDetails() {
                     control={form.control}
                     name="businessCreditScore"
                     required
-                    label="What is your credit score?"
+                    label={t("registration.creditScoreQuestion")}
                     placeholder="700"
                     min={400}
                     max={900}
@@ -204,21 +207,21 @@ export function Step2BusinessDetails() {
               <FormSelect
                 control={form.control}
                 name="timeInBusiness"
-                label="How long have you been in business?"
+                label={t("registration.timeInBusinessQuestion")}
                 required
                 options={[
-                  { value: "1-6M", label: "1-6 Months" },
-                  { value: "6-12M", label: "6-12 Months" },
-                  { value: "1-2yrs", label: "1-2 Years" },
-                  { value: "2yrs+", label: "2+ Years" },
+                  { value: "1-6M", label: t("registration.months1to6") },
+                  { value: "6-12M", label: t("registration.months6to12") },
+                  { value: "1-2yrs", label: t("registration.years1to2") },
+                  { value: "2yrs+", label: t("registration.years2plus") },
                 ]}
-                placeholder="Select time in business"
+                placeholder={t("registration.selectTimeInBusiness")}
               />
 
               <FormInput
                 control={form.control}
                 name="businessName"
-                label="Business Name"
+                label={t("registration.businessName")}
                 type="text"
                 required
                 placeholder="e.g. Acme Corp"
@@ -227,7 +230,7 @@ export function Step2BusinessDetails() {
               <FormPhoneNumberInput
                 control={form.control}
                 name="businessPhoneNumber"
-                label="Business Contact Number"
+                label={t("registration.businessContactNumber")}
                 required
                 placeholder="e.g. (123) 456-7890"
               />
@@ -235,7 +238,7 @@ export function Step2BusinessDetails() {
               <FormEINInput
                 control={form.control}
                 name="ein"
-                label="EIN Number"
+                label={t("registration.einNumber")}
                 required
                 placeholder="e.g. 12-3456789"
               />
@@ -243,7 +246,7 @@ export function Step2BusinessDetails() {
               <FormInput
                 control={form.control}
                 name="businessIndustry"
-                label="What does your business do?"
+                label={t("registration.businessIndustryQuestion")}
                 type="text"
                 required
                 placeholder="e.g. Retail, Construction, Consulting..."
