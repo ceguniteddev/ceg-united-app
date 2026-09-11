@@ -318,6 +318,7 @@ describe("approveMappedFund", () => {
       referenceNumber: "",
       bankProductId: "bp1",
       products: [{}] as any,
+      selectedPathwayId: "pathway-1",
     });
     expect(result.success).toBe(false);
   });
@@ -326,6 +327,7 @@ describe("approveMappedFund", () => {
       referenceNumber: "REF",
       bankProductId: "bp1",
       products: [],
+      selectedPathwayId: "pathway-1",
     });
     expect(result.success).toBe(false);
   });
@@ -335,6 +337,7 @@ describe("approveMappedFund", () => {
       referenceNumber: "REF",
       bankProductId: "bp1",
       products: [{}] as any,
+      selectedPathwayId: "pathway-1",
     });
     expect(result.success).toBe(false);
   });
@@ -347,6 +350,7 @@ describe("approveMappedFund", () => {
       referenceNumber: "REF",
       bankProductId: "bp1",
       products: [{}] as any,
+      selectedPathwayId: "pathway-1",
     });
     expect(result.success).toBe(false);
   });
@@ -364,6 +368,7 @@ describe("approveMappedFund", () => {
       referenceNumber: "REF",
       bankProductId: "bp1",
       products: [{}] as any,
+      selectedPathwayId: "pathway-1",
     });
     expect(result.success).toBe(false);
   });
@@ -385,6 +390,7 @@ describe("approveMappedFund", () => {
       referenceNumber: "REF",
       bankProductId: "bp1",
       products: [{}] as any,
+      selectedPathwayId: "pathway-1",
     });
     expect(result.success).toBe(true);
     expect(mockAdd).toHaveBeenCalled();

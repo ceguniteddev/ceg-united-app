@@ -37,7 +37,7 @@ describe("admin/bank-management hooks", () => {
 
   describe("useBankManagementQuery", () => {
     it("should fetch banks", async () => {
-      const mockData = [{ id: "b1", name: "Bank 1" }];
+      const mockData = [{ id: "b1", bankName: "Bank 1" }];
       (getBanks as any).mockResolvedValueOnce(mockData);
 
       const { result } = renderHook(() => useBankManagementQuery(), {
@@ -60,9 +60,9 @@ describe("admin/bank-management hooks", () => {
         wrapper: createWrapper(),
       });
 
-      await result.current.createBank({ name: "New Bank" } as any);
+      await result.current.createBank({ bankName: "New Bank" } as any);
 
-      expect(createBank).toHaveBeenCalledWith({ name: "New Bank" });
+      expect(createBank).toHaveBeenCalledWith({ bankName: "New Bank" });
       expect(toast.success).toHaveBeenCalledWith("Bank created successfully");
     });
 
@@ -75,10 +75,10 @@ describe("admin/bank-management hooks", () => {
 
       await result.current.updateBank({
         id: "b1",
-        data: { name: "Updated" },
+        data: { bankName: "Updated" },
       });
 
-      expect(updateBank).toHaveBeenCalledWith("b1", { name: "Updated" });
+      expect(updateBank).toHaveBeenCalledWith("b1", { bankName: "Updated" });
       expect(toast.success).toHaveBeenCalledWith("Bank updated successfully");
     });
 

@@ -16,8 +16,18 @@ import { usePathname } from "next/navigation";
 import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
+import LanguageSwitcher from "./LanguageSwitcher";
+import { useTranslation } from "@/lib/i18n";
+
+const BROKER_NAV_LABEL_KEYS: Record<string, string> = {
+  Home: "navigation.home",
+  Clients: "navigation.clients",
+  "Funding Products": "navigation.fundingProducts",
+  "Apply Funding": "navigation.funding",
+};
 
 const MobileNavBroker = () => {
+  const { t } = useTranslation();
   const { user, loading } = useAuth();
   const pathname = usePathname();
 
@@ -87,7 +97,9 @@ const MobileNavBroker = () => {
                           "text-white": isActive,
                         })}
                       >
-                        {item.label}
+                        {BROKER_NAV_LABEL_KEYS[item.label]
+                          ? t(BROKER_NAV_LABEL_KEYS[item.label])
+                          : item.label}
                       </p>
                     </Link>
                   </SheetClose>
@@ -103,15 +115,18 @@ const MobileNavBroker = () => {
         </SheetContent>
       </Sheet>
 
-      <Link href="/broker/home" className="flex items-center">
-        <Image
-          src="/icon.png"
-          alt="Logo"
-          width={548}
-          height={455}
-          className="h-14 w-auto object-contain"
-        />
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link href="/broker/home" className="flex items-center">
+          <Image
+            src="/icon.png"
+            alt="Logo"
+            width={548}
+            height={455}
+            className="h-14 w-auto object-contain"
+          />
+        </Link>
+        <LanguageSwitcher variant="outline" size="sm" showLabel={false} />
+      </div>
     </div>
   );
 };

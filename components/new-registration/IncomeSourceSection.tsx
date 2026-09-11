@@ -6,26 +6,20 @@ import { FormNumberInput } from "../forms/form-number-input";
 import { FormSelect } from "../forms/form-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-
-const ADDITIONAL_INCOME_SOURCES = [
-  { value: "spouse_partner", label: "Spouse / Partner Income" },
-  { value: "rental_property", label: "Rental Property Income" },
-  { value: "investments", label: "Investment / Dividend Income" },
-  { value: "side_business", label: "Side Business / 1099 Income" },
-  { value: "pension_disability", label: "Pension / Retirement / Disability" },
-  { value: "other", label: "Other Household Income" },
-];
-
-function usd(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+import { useTranslation } from "@/lib/i18n";
 
 export function IncomeSourceSection() {
+  const { t, formatCurrency } = useTranslation();
   const { control } = useFormContext();
+
+  const additionalIncomeSources = [
+    { value: "spouse_partner", label: t("registration.spousePartner") },
+    { value: "rental_property", label: t("registration.rentalProperty") },
+    { value: "investments", label: t("registration.investments") },
+    { value: "side_business", label: t("registration.sideBusiness") },
+    { value: "pension_disability", label: t("registration.pensionDisability") },
+    { value: "other", label: t("registration.otherHousehold") },
+  ];
 
   const statedAnnualIncomeCorrected = useWatch({
     control,
@@ -47,23 +41,22 @@ export function IncomeSourceSection() {
       <CardHeader className="p-4 bg-blue-50/20 border-b border-blue-50">
         <CardTitle className="text-base font-semibold text-blue-900 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span>💵</span> Additional Income & Stated Adjustment
+            <span>💵</span> {t("registration.additionalIncomeTitle")}
           </div>
           <span className="text-xs font-normal text-slate-500 bg-slate-200/80 px-2.5 py-0.5 rounded-full">
-            Optional
+            {t("registration.optionalBadge")}
           </span>
         </CardTitle>
         <p className="text-xs text-slate-500 mt-0.5">
-          Include spouse/partner income, rental income, or adjust your stated
-          gross annual income to strengthen your credit application.
+          {t("registration.additionalIncomeDesc")}
         </p>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 [&_[data-slot=field-label]]:min-h-[2.5rem] [&_[data-slot=field-label]]:flex [&_[data-slot=field-label]]:items-end">
           <FormNumberInput
             control={control}
             name="statedAnnualIncomeCorrected"
-            label="Stated / Corrected Gross Annual Income ($)"
+            label={t("registration.statedAnnualIncome")}
             placeholder="e.g. 96000"
             prefix="$"
             thousandSeparator=","
@@ -72,7 +65,7 @@ export function IncomeSourceSection() {
           <FormNumberInput
             control={control}
             name="additionalMonthlyIncome"
-            label="Additional Monthly Income ($)"
+            label={t("registration.additionalMonthlyIncome")}
             placeholder="e.g. 4083"
             prefix="$"
             thousandSeparator=","
@@ -81,9 +74,9 @@ export function IncomeSourceSection() {
           <FormSelect
             control={control}
             name="additionalIncomeSource"
-            label="Additional Income Source"
-            placeholder="Select source"
-            options={ADDITIONAL_INCOME_SOURCES}
+            label={t("registration.additionalIncomeSource")}
+            placeholder={t("registration.selectSource")}
+            options={additionalIncomeSources}
           />
         </div>
 
@@ -94,12 +87,12 @@ export function IncomeSourceSection() {
               <div>
                 <span className="font-semibold text-blue-900 block text-sm">
                   Estimated Total Household Annual Income:{" "}
-                  {usd(totalHouseholdAnnual)}
+                  {formatCurrency(totalHouseholdAnnual)}
                 </span>
                 <span className="text-blue-700/80 mt-0.5 block">
-                  Base: {usd(baseAnnual)}/yr{" "}
+                  Base: {formatCurrency(baseAnnual)}/yr{" "}
                   {additionalAnnual > 0
-                    ? `+ Additional: ${usd(additionalAnnual)}/yr`
+                    ? `+ Additional: ${formatCurrency(additionalAnnual)}/yr`
                     : ""}
                 </span>
               </div>

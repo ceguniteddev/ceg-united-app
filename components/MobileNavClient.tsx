@@ -23,6 +23,8 @@ import { WhatsNewAccordion } from "./WhatsNewAccordion";
 import { LockIcon } from "lucide-react";
 import React, { useState } from "react";
 import { useSystemConfig } from "@/hooks/system-config";
+import { useTranslation } from "@/lib/i18n";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 // Pricing / Checkout imports
 import { ResponsiveDialog } from "@/components/responsive-dialog";
@@ -44,7 +46,23 @@ import {
 import { toast } from "sonner";
 import { useUserPsfInvoicesQuery } from "@/hooks/psf-invoices";
 
+const NAV_LABEL_KEYS: Record<string, string> = {
+  Home: "navigation.home",
+  "My Invoice": "navigation.myInvoices",
+  "My Funding": "navigation.myFunding",
+  "My Funding Analysis": "navigation.myFundingAnalysis",
+  "My Business": "navigation.myBusiness",
+  "My Credit": "navigation.myCredit",
+  "My Documents": "navigation.myDocuments",
+  "Credit Repair": "navigation.creditRepair",
+  "Letter Stream": "navigation.letterStream",
+  Wallet: "navigation.wallet",
+  "My Learning": "navigation.myLearning",
+  Tradelines: "navigation.tradelines",
+};
+
 const MobileNavClient = () => {
+  const { t } = useTranslation();
   const { user, userData } = useAuth();
   // const { appliedFunding } = useGetUserApplyFunding();
   const { data: membership } = useMembership(userData?.id);
@@ -244,7 +262,9 @@ const MobileNavClient = () => {
                               },
                             )}
                           >
-                            {item.label}
+                            {NAV_LABEL_KEYS[item.label]
+                              ? t(NAV_LABEL_KEYS[item.label])
+                              : item.label}
                           </p>
                           {item.route === "/client/my-invoices" &&
                             unpaidInvoicesCount > 0 && (
@@ -335,6 +355,8 @@ const MobileNavClient = () => {
           className="h-14 w-auto object-contain"
         />
       </Link>
+
+      <LanguageSwitcher variant="outline" size="sm" showLabel={false} />
 
       <ResponsiveDialog
         isOpen={isPricingModalOpen}

@@ -7,12 +7,17 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator, // Optional: for visual separation
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "./ui/button";
-import { CogIcon, LogOutIcon } from "lucide-react";
+import { CogIcon, LogOutIcon, Globe, Check } from "lucide-react";
 import IconMenu from "./icon-menu";
-import { Avatar, AvatarFallback } from "./ui/avatar"; // Assuming you use shadcn Avatar
+import { Avatar, AvatarFallback } from "./ui/avatar";
+import { useTranslation, LOCALES, Locale } from "@/lib/i18n";
+import { LocaleFlag } from "./ui/flag-icon";
 
 // Define props for clarity
 interface FooterProps {
@@ -22,6 +27,7 @@ interface FooterProps {
 const Footer = ({ type = "desktop" }: FooterProps) => {
   const { user, logOut } = useAuth();
   const router = useRouter();
+  const { locale, setLocale, t } = useTranslation();
 
   if (!user) return null;
 
@@ -74,19 +80,58 @@ const Footer = ({ type = "desktop" }: FooterProps) => {
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end" className="w-48">
-          {/* IMPROVEMENT: Use onSelect for actions, no nested button needed */}
           <DropdownMenuItem
             onSelect={handleSettings}
             className="cursor-pointer"
           >
-            <IconMenu text="Settings" icon={<CogIcon className="h-4 w-4" />} />
+            <IconMenu
+              text={t("common.settings")}
+              icon={<CogIcon className="h-4 w-4" />}
+            />
           </DropdownMenuItem>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="cursor-pointer">
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  {t("common.selectLanguage")}
+                </span>
+              </div>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-40">
+              {(Object.keys(LOCALES) as Locale[]).map((locKey) => {
+                const loc = LOCALES[locKey];
+                const isSelected = locale === locKey;
+                return (
+                  <DropdownMenuItem
+                    key={locKey}
+                    onClick={() => setLocale(locKey)}
+                    className="flex items-center justify-between cursor-pointer text-xs font-medium"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <LocaleFlag
+                        locale={locKey}
+                        className="h-3.5 w-5 rounded-[2px] shadow-xs border border-border/60 shrink-0 object-cover"
+                      />
+                      <span>{loc.nativeLabel}</span>
+                    </div>
+                    {isSelected && (
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onSelect={handleLogOut}
             className="cursor-pointer text-red-500 focus:text-red-500"
           >
-            <IconMenu text="Logout" icon={<LogOutIcon className="h-4 w-4" />} />
+            <IconMenu
+              text={t("common.logout")}
+              icon={<LogOutIcon className="h-4 w-4" />}
+            />
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

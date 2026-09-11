@@ -72,11 +72,10 @@ describe("Bug 7 — clearCart cancels pending debounced sync", () => {
     // Only one fetch should have occurred: the DELETE from clearCart
     // The debounced POST sync should NOT have fired
     const deleteCalls = fetchCalls.filter(
-      ([, opts]: [string, RequestInit | undefined]) =>
-        opts?.method === "DELETE",
+      (call) => (call[1] as RequestInit | undefined)?.method === "DELETE",
     );
     const postCalls = fetchCalls.filter(
-      ([, opts]: [string, RequestInit | undefined]) => opts?.method === "POST",
+      (call) => (call[1] as RequestInit | undefined)?.method === "POST",
     );
 
     expect(deleteCalls).toHaveLength(1);
