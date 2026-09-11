@@ -9,8 +9,18 @@ import Footer from "./Footer";
 import UserNav from "./logout";
 import { useAuth } from "@/provider/AuthContext";
 import { WhatsNewAccordion } from "./WhatsNewAccordion";
+import { useTranslation } from "@/lib/i18n";
+import LanguageSwitcher from "./LanguageSwitcher";
+
+const BROKER_NAV_LABEL_KEYS: Record<string, string> = {
+  Home: "navigation.home",
+  Clients: "navigation.clients",
+  "Funding Products": "navigation.fundingProducts",
+  "Apply Funding": "navigation.funding",
+};
 
 const SidebarBroker = () => {
+  const { t } = useTranslation();
   const { user, loading } = useAuth();
   const pathname = usePathname();
 
@@ -41,21 +51,24 @@ const SidebarBroker = () => {
   return (
     <aside className="sidebar max-lg:hidden">
       <nav className="flex flex-col">
-        <Link
-          href="/broker/home"
-          className="mb-6 cursor-pointer flex items-center gap-2 xl:justify-center"
-        >
-          <Image
-            src="/icon.png"
-            alt="Logo"
-            width={548}
-            height={455}
-            className="h-20 w-auto object-contain"
-          />
-          <h1 className="sidebar-logo xl:hidden">
-            {process.env.NEXT_PUBLIC_APP_NAME as string}
-          </h1>
-        </Link>
+        <div className="mb-6 flex items-center justify-between gap-2">
+          <Link
+            href="/broker/home"
+            className="cursor-pointer flex items-center gap-2"
+          >
+            <Image
+              src="/icon.png"
+              alt="Logo"
+              width={548}
+              height={455}
+              className="h-14 w-auto object-contain"
+            />
+            <h1 className="sidebar-logo xl:hidden text-lg font-bold">
+              {process.env.NEXT_PUBLIC_APP_NAME as string}
+            </h1>
+          </Link>
+          <LanguageSwitcher variant="outline" size="sm" showLabel={false} />
+        </div>
 
         {brokerSidebarLinks.map((item) => {
           const isActive =
@@ -87,7 +100,9 @@ const SidebarBroker = () => {
                   "!text-white": isActive,
                 })}
               >
-                {item.label}
+                {BROKER_NAV_LABEL_KEYS[item.label]
+                  ? t(BROKER_NAV_LABEL_KEYS[item.label])
+                  : item.label}
               </p>
             </Link>
           );

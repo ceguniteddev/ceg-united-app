@@ -39,7 +39,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+import { useTranslation } from "@/lib/i18n";
+
 export function PublicRegistrationForm() {
+  const { t } = useTranslation();
   const router = useRouter();
   const {
     registrationPurpose,
@@ -518,7 +521,7 @@ export function PublicRegistrationForm() {
                     onClick={() => setRegistrationPurpose(null)}
                     size="lg"
                   >
-                    <ChevronLeft className="mr-2 h-4 w-4" /> Back
+                    <ChevronLeft className="mr-2 h-4 w-4" /> {t("common.back")}
                   </Button>
                   <Button
                     type="submit"
@@ -530,7 +533,7 @@ export function PublicRegistrationForm() {
                     className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base py-6 transition-colors disabled:opacity-50"
                   >
                     <IconMenu
-                      text="Next"
+                      text={t("common.next")}
                       iconLocation="right"
                       icon={<ChevronRight className="ml-2 h-5 w-5" />}
                     />
@@ -557,7 +560,7 @@ export function PublicRegistrationForm() {
                     onClick={() => setStep(1)}
                     size="lg"
                   >
-                    <ChevronLeft className="mr-2 h-4 w-4" /> Back
+                    <ChevronLeft className="mr-2 h-4 w-4" /> {t("common.back")}
                   </Button>
                   <Button
                     type="submit"
@@ -565,7 +568,7 @@ export function PublicRegistrationForm() {
                     className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base px-8 transition-colors"
                   >
                     <IconMenu
-                      text="Next"
+                      text={t("common.next")}
                       iconLocation="right"
                       icon={<ChevronRight className="ml-2 h-5 w-5" />}
                     />
@@ -593,7 +596,7 @@ export function PublicRegistrationForm() {
                     size="lg"
                     disabled={isSubmitting}
                   >
-                    <ChevronLeft className="mr-2 h-4 w-4" /> Back
+                    <ChevronLeft className="mr-2 h-4 w-4" /> {t("common.back")}
                   </Button>
                   <Button
                     type="submit"
@@ -910,7 +913,7 @@ export function PublicRegistrationForm() {
                       onClick={() => setShowConfirmModal(false)}
                       disabled={isSubmitting}
                     >
-                      Back to Edit
+                      {t("common.back")}
                     </Button>
                     <Button
                       onClick={executeFinalSubmit}
@@ -918,7 +921,7 @@ export function PublicRegistrationForm() {
                       disabled={isSubmitting}
                     >
                       <IconMenu
-                        text={"Confirm & Join!"}
+                        text={t("registration.submitApplication")}
                         icon={<UserPlus className="mr-2 h-4 w-4" />}
                       />
                     </Button>

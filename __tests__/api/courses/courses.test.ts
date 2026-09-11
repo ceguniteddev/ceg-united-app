@@ -64,7 +64,8 @@ describe("GET /api/courses", () => {
     const mockCourses = [{ id: "c1", title: "Course 1" }];
     (getCourses as any).mockResolvedValue(mockCourses);
 
-    const res = await listCourses();
+    const req = new NextRequest("http://localhost/api/courses");
+    const res = await listCourses(req);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toEqual(mockCourses);
@@ -72,13 +73,15 @@ describe("GET /api/courses", () => {
 
   it("should call getCourses once", async () => {
     (getCourses as any).mockResolvedValue([]);
-    await listCourses();
+    const req = new NextRequest("http://localhost/api/courses");
+    await listCourses(req);
     expect(getCourses).toHaveBeenCalledOnce();
   });
 
   it("should return 500 on service error", async () => {
     (getCourses as any).mockRejectedValue(new Error("DB error"));
-    const res = await listCourses();
+    const req = new NextRequest("http://localhost/api/courses");
+    const res = await listCourses(req);
     expect(res.status).toBe(500);
   });
 });

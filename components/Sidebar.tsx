@@ -7,6 +7,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Footer from "./Footer";
 import { useAuth } from "@/provider/AuthContext";
+import { useTranslation } from "@/lib/i18n";
+import LanguageSwitcher from "./LanguageSwitcher";
 import { useMembership } from "@/hooks/membership";
 import { useAddons } from "@/hooks/addons";
 import { useClientEntitlements } from "@/hooks/entitlements";
@@ -36,7 +38,23 @@ import {
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
+const NAV_LABEL_KEYS: Record<string, string> = {
+  Home: "navigation.home",
+  "My Invoice": "navigation.myInvoices",
+  "My Funding": "navigation.myFunding",
+  "My Funding Analysis": "navigation.myFundingAnalysis",
+  "My Business": "navigation.myBusiness",
+  "My Credit": "navigation.myCredit",
+  "My Documents": "navigation.myDocuments",
+  "Credit Repair": "navigation.creditRepair",
+  "Letter Stream": "navigation.letterStream",
+  Wallet: "navigation.wallet",
+  "My Learning": "navigation.myLearning",
+  Tradelines: "navigation.tradelines",
+};
+
 const Sidebar = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user, userData } = useAuth();
   const { data: membership } = useMembership(userData?.id);
@@ -118,21 +136,24 @@ const Sidebar = () => {
   return (
     <aside className="sidebar max-md:hidden">
       <nav className="flex flex-col">
-        <Link
-          href="/broker/home"
-          className="mb-6 cursor-pointer flex items-center gap-2 xl:justify-center"
-        >
-          <Image
-            src="/icon.png"
-            alt="Logo"
-            width={548}
-            height={455}
-            className="h-20 w-auto object-contain"
-          />
-          <h1 className="sidebar-logo xl:hidden">
-            {process.env.NEXT_PUBLIC_APP_NAME as string}
-          </h1>
-        </Link>
+        <div className="mb-6 flex items-center justify-between gap-2">
+          <Link
+            href="/client/home"
+            className="cursor-pointer flex items-center gap-2"
+          >
+            <Image
+              src="/icon.png"
+              alt="Logo"
+              width={548}
+              height={455}
+              className="h-14 w-auto object-contain"
+            />
+            <h1 className="sidebar-logo xl:hidden text-lg font-bold">
+              {process.env.NEXT_PUBLIC_APP_NAME as string}
+            </h1>
+          </Link>
+          <LanguageSwitcher variant="outline" size="sm" showLabel={false} />
+        </div>
         {sidebarLinks
           .filter((item) => {
             if (
@@ -214,7 +235,9 @@ const Sidebar = () => {
                         "!text-white": isActive,
                       })}
                     >
-                      {item.label}
+                      {NAV_LABEL_KEYS[item.label]
+                        ? t(NAV_LABEL_KEYS[item.label])
+                        : item.label}
                     </p>
                     {item.route === "/client/my-invoices" &&
                       unpaidInvoicesCount > 0 && (

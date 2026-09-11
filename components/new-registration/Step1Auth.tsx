@@ -8,8 +8,10 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { FormSSNInput } from "../forms/form-ssn-input";
 import { FormCheckbox } from "../forms/form-checkbox";
 import { Label } from "../ui/label";
+import { useTranslation } from "@/lib/i18n";
 
 export function Step1Auth() {
+  const { t } = useTranslation();
   const form = useFormContext();
 
   const password = useWatch({
@@ -22,7 +24,7 @@ export function Step1Auth() {
     <Card className="bg-white border-blue-100 shadow-md">
       <CardHeader className="border-b border-blue-50 bg-blue-50/50 flex items-center justify-center p-6">
         <CardTitle className="text-center text-2xl font-bold text-blue-900 ">
-          Create an Account
+          {t("registration.title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 pt-6">
@@ -30,7 +32,7 @@ export function Step1Auth() {
           <FormInput
             control={form.control}
             name="firstName"
-            label="First Name"
+            label={t("registration.firstName")}
             placeholder="John"
             required
             autoComplete="given-name"
@@ -38,14 +40,14 @@ export function Step1Auth() {
           <FormInput
             control={form.control}
             name="middleName"
-            label="Middle Name"
-            placeholder="(Optional)"
+            label={t("registration.middleName")}
+            placeholder={t("registration.optional")}
             autoComplete="additional-name"
           />
           <FormInput
             control={form.control}
             name="lastName"
-            label="Last Name"
+            label={t("registration.lastName")}
             placeholder="Doe"
             required
             autoComplete="family-name"
@@ -55,21 +57,21 @@ export function Step1Auth() {
         <FormSSNInput
           control={form.control}
           name="ssn"
-          label="Social Security Number"
+          label={t("registration.ssn")}
           required
         />
 
         <FormPhoneInput
           control={form.control}
           name="phoneNumber"
-          label="Phone Number"
+          label={t("registration.phoneNumber")}
           required
         />
 
         <FormInput
           control={form.control}
           name="email"
-          label="Email Address"
+          label={t("auth.email")}
           type="email"
           placeholder="john@example.com"
           required
@@ -78,7 +80,7 @@ export function Step1Auth() {
         <FormInput
           control={form.control}
           name="password"
-          label="Password"
+          label={t("auth.password")}
           type="password"
           placeholder="••••••••"
           required

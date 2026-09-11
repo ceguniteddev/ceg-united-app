@@ -11,24 +11,28 @@ describe("renderCommentText", () => {
       bankName: "Bank of America",
       website: "https://bankofamerica.com",
       contacts: [],
+      successFeePercentage: 10,
     },
     {
       id: "2",
       bankName: "Chase",
       website: "https://chase.com",
       contacts: [],
+      successFeePercentage: 10,
     },
     {
       id: "3",
       bankName: "Bank",
       website: "https://bank.com",
       contacts: [],
+      successFeePercentage: 10,
     },
     {
       id: "4",
       bankName: "Wells Fargo & Co. (Corp?)",
       website: "https://wellsfargo.com",
       contacts: [],
+      successFeePercentage: 10,
     },
   ];
 

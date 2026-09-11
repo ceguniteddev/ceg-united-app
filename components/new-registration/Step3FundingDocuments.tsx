@@ -26,6 +26,7 @@ import {
 import { FormInput } from "@/components/forms/form-input";
 import { FormSelect } from "../forms/form-select";
 import { US_STATES } from "@/constant/common";
+import { useTranslation } from "@/lib/i18n";
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -160,13 +161,15 @@ const PublicFileUpload = ({
       ? `${documentType.description} (${pdfOnly ? "PDF only" : "PDF or Image only"})`
       : `Upload documents (${pdfOnly ? "PDF only" : "PDF or Image only"})`);
 
+  const { t } = useTranslation();
+
   return (
     <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 mb-4 relative">
       {isLoading && (
         <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
           <span className="text-sm font-medium text-gray-700">
-            Processing Document...
+            {t("registration.processingDocument")}
           </span>
         </div>
       )}
@@ -225,10 +228,12 @@ const LocalDocumentList = ({
     );
   };
 
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-2 mt-4 border-t border-slate-100 pt-4">
       <h4 className="text-sm font-semibold text-gray-700">
-        Uploaded {documentType?.title || "Documents"}
+        {t("registration.uploadedDocuments")}
       </h4>
       <div className="space-y-2">
         {files.map((doc: any, index: number) => {
@@ -317,6 +322,7 @@ const LocalDocumentList = ({
 };
 
 export function Step3Funding() {
+  const { t } = useTranslation();
   const { watch, setValue, getValues, control } = useFormContext();
   const {
     registrationPurpose,
@@ -646,18 +652,22 @@ export function Step3Funding() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span>📄</span>{" "}
-          {isFinancialEducation ? "Identity Verification" : "Document Upload"}
+          {isFinancialEducation
+            ? t("registration.identityVerification")
+            : t("registration.documentUpload")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* DRIVERS LICENSE (FOR ALL) */}
         <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 border border-slate-200 bg-white p-4 rounded-lg shadow-sm">
-          <h3 className="text-lg font-semibold">Identity</h3>
+          <h3 className="text-lg font-semibold">
+            {t("registration.identity")}
+          </h3>
           <div className="space-y-4">
             <PublicFileUpload
               documentType={driversLicenseType}
-              titleOverride="Upload Driver's License"
-              descriptionOverride="Upload a clear image or PDF of your Driver's License."
+              titleOverride={t("registration.uploadDriversLicense")}
+              descriptionOverride={t("registration.uploadDriversLicenseDesc")}
               onUploadComplete={(files) =>
                 handleUploadComplete("driverLicense", files)
               }
@@ -675,17 +685,10 @@ export function Step3Funding() {
                 </div>
                 <div>
                   <h4 className="text-base font-bold text-blue-900 mb-1">
-                    Verify Your Address for Credit Report
+                    {t("registration.verifyAddressTitle")}
                   </h4>
                   <p className="text-sm text-blue-800/90 leading-relaxed">
-                    This address will auto-populate once you upload your
-                    Driver&apos;s License.{" "}
-                    <strong>
-                      Please carefully review and correct any errors.
-                    </strong>{" "}
-                    We use this address to pull your credit report, so accuracy
-                    is critical to process your funding application
-                    successfully.
+                    {t("registration.verifyAddressDesc")}
                   </p>
                 </div>
               </div>
@@ -693,26 +696,26 @@ export function Step3Funding() {
                 <FormInput
                   control={control}
                   name="addressStreet"
-                  label="Street Address"
+                  label={t("registration.streetAddress")}
                   placeholder="123 Main St"
                 />
                 <FormInput
                   control={control}
                   name="addressCity"
-                  label="City"
+                  label={t("registration.city")}
                   placeholder="New York"
                 />
                 <FormSelect
                   control={control}
                   name="addressState"
-                  label="State"
+                  label={t("registration.state")}
                   placeholder="NY"
                   options={US_STATES}
                 />
                 <FormInput
                   control={control}
                   name="addressPostal"
-                  label="Zip / Postal Code"
+                  label={t("registration.postalCode")}
                   placeholder="10001"
                 />
               </div>
@@ -723,13 +726,15 @@ export function Step3Funding() {
         {/* PERSONAL FUNDING DOCUMENTS */}
         {!isFinancialEducation && isPersonal && (
           <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 border border-slate-200 bg-white p-4 rounded-lg shadow-sm">
-            <h3 className="text-lg font-semibold">Personal Requirements</h3>
+            <h3 className="text-lg font-semibold">
+              {t("registration.personalRequirements")}
+            </h3>
             {employmentType === "W2" && (
               <div className="space-y-2">
                 <PublicFileUpload
                   documentType={paystubsType}
-                  titleOverride="Last 2 Recent Paystubs"
-                  descriptionOverride="Click to upload your paystubs."
+                  titleOverride={t("registration.uploadPaystubs")}
+                  descriptionOverride={t("registration.uploadPaystubsDesc")}
                   onUploadComplete={(files) =>
                     handleUploadComplete("personalDocs.paystubs", files)
                   }
@@ -747,8 +752,10 @@ export function Step3Funding() {
                   documentType={DOCUMENT_TYPES.find(
                     (dt) => dt.id === "PERSONAL_BANK_STATEMENTS",
                   )}
-                  titleOverride="3 Months Bank Statements"
-                  descriptionOverride="Click to upload your recent personal bank statements. (PDF only)"
+                  titleOverride={t("registration.uploadPersonalBankStatements")}
+                  descriptionOverride={t(
+                    "registration.uploadPersonalBankStatementsDesc",
+                  )}
                   onUploadComplete={(files) =>
                     handleUploadComplete("personalDocs.bankStatements", files)
                   }
@@ -769,12 +776,16 @@ export function Step3Funding() {
         {/* BUSINESS FUNDING DOCUMENTS */}
         {!isFinancialEducation && isBusiness && (
           <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 border border-slate-200 bg-white p-4 rounded-lg shadow-sm">
-            <h3 className="text-lg font-semibold">Business Requirements</h3>
+            <h3 className="text-lg font-semibold">
+              {t("registration.businessRequirements")}
+            </h3>
             <div className="space-y-2">
               <PublicFileUpload
                 documentType={bankStatementsType}
-                titleOverride="4 Months of Bank Statements"
-                descriptionOverride="Upload your most recent 4 months of business bank statements. (PDF only)"
+                titleOverride={t("registration.uploadBusinessBankStatements")}
+                descriptionOverride={t(
+                  "registration.uploadBusinessBankStatementsDesc",
+                )}
                 onUploadComplete={(files) =>
                   handleUploadComplete("businessDocs.bankStatements", files)
                 }
@@ -793,16 +804,10 @@ export function Step3Funding() {
                   </div>
                   <div>
                     <h4 className="text-base font-bold text-blue-900 mb-1">
-                      Verify Your Business Address
+                      {t("registration.verifyBusinessAddressTitle")}
                     </h4>
                     <p className="text-sm text-blue-800/90 leading-relaxed">
-                      This address will auto-populate once you upload your
-                      Business Bank Statements.{" "}
-                      <strong>
-                        Please carefully review and correct any errors.
-                      </strong>{" "}
-                      Accuracy is critical to process your business funding
-                      application successfully.
+                      {t("registration.verifyBusinessAddressDesc")}
                     </p>
                   </div>
                 </div>
@@ -810,26 +815,26 @@ export function Step3Funding() {
                   <FormInput
                     control={control}
                     name="businessStreetAddress"
-                    label="Business Street Address"
+                    label={t("registration.businessStreetAddress")}
                     placeholder="123 Business St"
                   />
                   <FormInput
                     control={control}
                     name="businessCityAddress"
-                    label="Business City"
+                    label={t("registration.businessCity")}
                     placeholder="New York"
                   />
                   <FormSelect
                     control={control}
                     name="businessStateAddress"
-                    label="Business State"
+                    label={t("registration.businessState")}
                     placeholder="NY"
                     options={US_STATES}
                   />
                   <FormInput
                     control={control}
                     name="businessPostalAddress"
-                    label="Business Zip / Postal Code"
+                    label={t("registration.businessPostalCode")}
                     placeholder="10001"
                   />
                 </div>

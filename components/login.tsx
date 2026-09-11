@@ -10,8 +10,11 @@ import { getCaptchaTokenRegistration } from "@/lib/captcha";
 import { LoaderIcon, LogInIcon, Eye, EyeOff } from "lucide-react";
 import { ResponsiveDialog } from "./responsive-dialog";
 import ForgotPassword from "./ForgotPassword";
+import { useTranslation } from "@/lib/i18n";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,7 +52,10 @@ export default function LoginPage() {
       >
         <ForgotPassword setOpenForgotPassword={setOpenForgotPassword} />
       </ResponsiveDialog>
-      <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg w-full max-w-md">
+      <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg w-full max-w-md relative">
+        <div className="absolute top-4 right-4">
+          <LanguageSwitcher variant="outline" size="sm" showLabel={false} />
+        </div>
         <div className="flex justify-center mb-4">
           <Image
             src="/icon.png"
@@ -60,7 +66,7 @@ export default function LoginPage() {
           />
         </div>
         <h2 className="text-xl sm:text-2xl font-bold text-center mb-6 text-gray-700">
-          Sign In to {process.env.NEXT_PUBLIC_APP_NAME}
+          {t("auth.signIn")} - {process.env.NEXT_PUBLIC_APP_NAME}
         </h2>
 
         {error && (
@@ -71,7 +77,7 @@ export default function LoginPage() {
           <fieldset disabled={loading}>
             <div className="mb-4">
               <Label className="block text-gray-600 font-medium mb-1 text-sm">
-                Email Address
+                {t("auth.email")}
               </Label>
               <Input
                 type="email"
@@ -85,7 +91,7 @@ export default function LoginPage() {
 
             <div className="mb-2">
               <Label className="block text-gray-600 font-medium mb-1 text-sm">
-                Password
+                {t("auth.password")}
               </Label>
               <div className="relative">
                 <Input
@@ -121,7 +127,7 @@ export default function LoginPage() {
                 aria-disabled={loading}
                 onClick={() => setOpenForgotPassword(true)}
               >
-                Forgot password?
+                {t("auth.forgotPassword")}
               </Link>
             </div>
 
@@ -133,12 +139,12 @@ export default function LoginPage() {
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
                   <LoaderIcon className="animate-spin h-4 w-4" />
-                  <span>Signing in...</span>
+                  <span>{t("auth.signingIn")}</span>
                 </div>
               ) : (
                 <div className="flex items-center justify-center gap-2">
                   <LogInIcon className="h-4 w-4" />
-                  <span>Sign In</span>
+                  <span>{t("auth.signIn")}</span>
                 </div>
               )}
             </button>
@@ -146,12 +152,12 @@ export default function LoginPage() {
         </form>
 
         <div className="text-sm text-gray-600 text-center mt-4">
-          No account?{" "}
+          {t("auth.dontHaveAccount")}{" "}
           <Link
             href="/register"
             className="font-medium underline underline-offset-4 hover:no-underline focus:outline-none focus:ring-2 focus:ring-offset-2"
           >
-            Register here
+            {t("common.register")}
           </Link>
         </div>
 

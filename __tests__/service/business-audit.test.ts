@@ -16,7 +16,7 @@ import {
 } from "@/service/crs";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const makeApp = (overrides: Record<string, any> = {}) => ({
+const makeApp = (overrides: Record<string, any> = {}): any => ({
   businessId: "biz-1",
   annualBusinessRevenue: "120000",
   businessFiledWithIRS1: true,

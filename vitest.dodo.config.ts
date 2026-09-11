@@ -14,6 +14,7 @@ export default defineConfig({
       "__tests__/components/payments/**/*.test.tsx",
       "__tests__/api/dodo/**/*.test.ts",
       "__tests__/lib/dodo-sdk.test.ts",
+      "__tests__/i18n/**/*.test.ts",
     ],
     coverage: {
       provider: "istanbul",

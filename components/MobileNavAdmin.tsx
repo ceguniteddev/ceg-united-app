@@ -25,6 +25,7 @@ import { useGetFundingApplicationsIsNew } from "@/hooks/apply-funding";
 import { usePendingTradelinesCount } from "@/hooks/tradelines";
 import { useAdminIncomeFunding } from "@/hooks/admin/income-funding";
 import { ChevronDown } from "lucide-react";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const MobileNavAdmin = () => {
   const { user, role } = useAuth();
@@ -158,15 +159,18 @@ const MobileNavAdmin = () => {
         </SheetContent>
       </Sheet>
 
-      <Link href="/admin/home" className="flex items-center">
-        <Image
-          src="/icon.png"
-          alt="Logo"
-          width={548}
-          height={455}
-          className="h-20 w-auto object-contain"
-        />
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link href="/admin/home" className="flex items-center">
+          <Image
+            src="/icon.png"
+            alt="Logo"
+            width={548}
+            height={455}
+            className="h-14 w-auto object-contain"
+          />
+        </Link>
+        <LanguageSwitcher variant="outline" size="sm" showLabel={false} />
+      </div>
     </div>
   );
 };
