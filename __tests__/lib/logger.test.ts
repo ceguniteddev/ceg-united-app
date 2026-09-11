@@ -155,7 +155,7 @@ describe("logger", () => {
       const { logWarn } = await import("@/lib/logger");
       await logWarn("warn should be filtered");
       // Vitest itself may call console.warn; verify our specific message was not logged
-      const calledWithOurMessage = warnSpy.mock.calls.some((args) =>
+      const calledWithOurMessage = warnSpy.mock.calls.some((args: any[]) =>
         String(args[0]).includes("warn should be filtered"),
       );
       expect(calledWithOurMessage).toBe(false);

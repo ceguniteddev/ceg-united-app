@@ -55,6 +55,11 @@ import PricingPlansGrid from "@/components/funding/PricingPlansGrid";
 import { DOCUMENT_TYPES } from "@/lib/document-types";
 import UploadFile from "@/components/UploadFileV2";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  buildAnalysisPreviewHtml,
+  getUniqueAnalysisReports,
+  isAnalysisHeightMessage,
+} from "@/lib/analysis-preview";
 
 // const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -66,6 +71,14 @@ type Item = { id: string; analysis?: string };
 const AnalysisView = ({ referenceNumber }: Props) => {
   const queryClient = useQueryClient();
   const { analysisData = [], isLoading } = useAnalysisQuery(referenceNumber);
+  const uniqueReports = React.useMemo(
+    () =>
+      getUniqueAnalysisReports(
+        (analysisData ?? []) as Item[],
+        extractHtmlFromFence,
+      ),
+    [analysisData],
+  );
   const { isAdmin, role, userData } = useAuth();
   const { data: userMembership } = useMembership(userData?.id);
   const { appliedFunding } = useGetApplyFundingByReferenceNumber({
@@ -92,7 +105,7 @@ const AnalysisView = ({ referenceNumber }: Props) => {
     );
   }
 
-  if (!analysisData || analysisData?.length === 0) {
+  if (uniqueReports.length === 0) {
     return (
       <div className="flex flex-col sm:flex-row justify-between gap-3 p-4">
         <div className="text-sm sm:text-base">No analysis found.</div>
@@ -126,7 +139,7 @@ const AnalysisView = ({ referenceNumber }: Props) => {
       </div>
       <Card className="w-full border-none shadow-none sm:border-solid sm:border sm:shadow-sm bg-transparent sm:bg-card">
         <CardContent className="p-0 sm:p-6 space-y-4 sm:space-y-8">
-          {(analysisData as Item[])?.map((item) => (
+          {uniqueReports.map((item) => (
             <AnalysisDetailsView key={item.id} analysis={item.analysis ?? ""} />
           ))}
         </CardContent>
@@ -453,30 +466,18 @@ const AnalysisDetailsView = ({ analysis }: PropsView) => {
     [analysis],
   );
 
-  const wrappedHtml = React.useMemo(() => {
-    // Inject a script that reports document height to the parent via postMessage
-    const heightReporter = `<script>
-      function reportHeight() {
-        var h = document.documentElement.scrollHeight || document.body.scrollHeight;
-        window.parent.postMessage({ type: 'iframe-height', height: h }, '*');
-      }
-      window.addEventListener('load', function() { setTimeout(reportHeight, 100); });
-      window.addEventListener('resize', reportHeight);
-      new MutationObserver(reportHeight).observe(document.body, { childList: true, subtree: true, attributes: true });
-    </script>`;
-    return initial + heightReporter;
-  }, [initial]);
+  const wrappedHtml = React.useMemo(
+    () => buildAnalysisPreviewHtml(initial),
+    [initial],
+  );
 
   const [iframeHeight, setIframeHeight] = React.useState(600);
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
   React.useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
-      if (
-        e.data?.type === "iframe-height" &&
-        typeof e.data.height === "number"
-      ) {
-        setIframeHeight(e.data.height);
+      if (isAnalysisHeightMessage(e, iframeRef.current?.contentWindow)) {
+        setIframeHeight(Math.ceil(e.data.height));
       }
     };
     window.addEventListener("message", handleMessage);
@@ -490,7 +491,7 @@ const AnalysisDetailsView = ({ analysis }: PropsView) => {
       <iframe
         ref={iframeRef}
         srcDoc={wrappedHtml}
-        className="w-full border-0"
+        className="block w-full border-0"
         style={{ height: iframeHeight }}
         title="Analysis Details"
         sandbox="allow-scripts"

@@ -170,12 +170,12 @@ describe("service/special-deals", () => {
     it("updates the document with data and updatedAt timestamp", async () => {
       mockUpdate.mockResolvedValueOnce(undefined);
 
-      await updateSpecialDeal("deal-1", { title: "Updated Deal" });
+      await updateSpecialDeal("deal-1", { bank_name: "Updated Bank" });
 
       expect(mockCollectionRef.doc).toHaveBeenCalledWith("deal-1");
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: "Updated Deal",
+          bank_name: "Updated Bank",
           updatedAt: expect.any(String),
         }),
       );
