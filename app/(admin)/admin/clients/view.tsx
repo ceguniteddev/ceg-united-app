@@ -90,6 +90,28 @@ function fmtDate(d?: Date) {
   });
 }
 
+function fmtDateOfBirth(value?: string) {
+  if (!value) return undefined;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!match) return value;
+  const [, year, month, day] = match;
+  return `${month}/${day}/${year}`;
+}
+
+// Normalizes any stored date value into the YYYY-MM-DD format required by
+// the native <input type="date"> control.
+function toDateInputValue(value?: string) {
+  if (!value) return "";
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (match) return match[0];
+  const parsed = new Date(value);
+  if (isNaN(parsed.getTime())) return "";
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export const metadata: Metadata = {
   title: "User Profile",
 };
@@ -156,6 +178,10 @@ const ClientData = ({
               <Info label="SSN" value={user.ssn} />
               <Info label="Email" value={user.email} />
               <Info label="Phone" value={user.phoneNumber} />
+              <Info
+                label="Date of Birth"
+                value={fmtDateOfBirth(user.dateOfBirth)}
+              />
 
               {!isBrokerView && (
                 <Info label="Broker" value={user.brokerName || ""} />
@@ -1275,6 +1301,7 @@ const EditClientModal = ({
       lastName: user.lastName || "",
       phoneNumber: user.phoneNumber || "",
       ssn: user.ssn || "",
+      dateOfBirth: toDateInputValue(user.dateOfBirth),
       successFeePercentage: user.successFeePercentage || "",
     },
   });
@@ -1362,6 +1389,11 @@ const EditClientModal = ({
                 type="ssn"
                 label="SSN"
                 placeholder="XXX-XX-XXXX"
+              />
+              <CustomFormField
+                name="dateOfBirth"
+                type="date"
+                label="Date of Birth"
               />
               <CustomFormField
                 name="successFeePercentage"

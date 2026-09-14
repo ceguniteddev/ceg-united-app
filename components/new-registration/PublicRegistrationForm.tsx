@@ -41,6 +41,14 @@ import {
 
 import { useTranslation } from "@/lib/i18n";
 
+const formatDateOfBirth = (value?: string) => {
+  if (!value) return value;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!match) return value;
+  const [, year, month, day] = match;
+  return `${month}/${day}/${year}`;
+};
+
 export function PublicRegistrationForm() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -112,6 +120,7 @@ export function PublicRegistrationForm() {
       password: authData.password || "",
       consentConfirmTerms: authData.consentConfirmTerms || undefined,
       consentConfirmPrivacy: authData.consentConfirmPrivacy || undefined,
+      dateOfBirth: authData.dateOfBirth || "",
     },
   });
 
@@ -151,6 +160,7 @@ export function PublicRegistrationForm() {
         password: authData.password || "",
         consentConfirmTerms: authData.consentConfirmTerms || undefined,
         consentConfirmPrivacy: authData.consentConfirmPrivacy || undefined,
+        dateOfBirth: authData.dateOfBirth || "",
       });
     }
   }, [isHydrated, formStep1]);
@@ -701,6 +711,16 @@ export function PublicRegistrationForm() {
                             {authData.phoneNumber}
                           </span>
                         </div>
+                        {authData.dateOfBirth && (
+                          <div>
+                            <span className="text-gray-500 font-medium">
+                              Date of Birth:
+                            </span>{" "}
+                            <span className="font-medium text-gray-900">
+                              {formatDateOfBirth(authData.dateOfBirth)}
+                            </span>
+                          </div>
+                        )}
                         {authData.addressStreet && (
                           <div className="col-span-1 sm:col-span-2">
                             <span className="text-gray-500 font-medium">

@@ -35,7 +35,10 @@ describe("analysis height messages", () => {
 describe("analysis iframe sizing in Chromium", () => {
   let browser: Browser;
   beforeAll(async () => {
-    browser = await puppeteer.launch({ headless: true });
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
   }, 30000);
   afterAll(async () => {
     await browser?.close();
