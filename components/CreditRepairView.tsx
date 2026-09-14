@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Bot, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -76,6 +76,8 @@ export default function CreditRepair({ userId }: { userId: string }) {
             onChange={s.setReasonByItem}
             onBack={() => s.setView("select-items")}
             onContinue={s.goAgencies}
+            suggestionsByItem={s.suggestedReasonsByItem}
+            suggestionsLoading={s.suggestionsLoading}
           />
         );
       case "pick-agencies":
@@ -223,6 +225,15 @@ export default function CreditRepair({ userId }: { userId: string }) {
       <LetterPreviewModal
         letter={previewLetter}
         onClose={() => setPreviewLetter(null)}
+        onSave={(agencyKey, content) => {
+          s.updateLetterContent(agencyKey, content);
+          // Reflect the edit immediately in the open modal.
+          setPreviewLetter((prev) =>
+            prev && prev.agencyKey === agencyKey
+              ? { ...prev, content, isEdited: true }
+              : prev,
+          );
+        }}
       />
 
       {/* Bulk action bar (only on select-items view) */}
@@ -251,13 +262,6 @@ export default function CreditRepair({ userId }: { userId: string }) {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Floating assistant button — hidden while bulk action bar is up */}
-      {s.view !== "select-items" && (
-        <button className="fixed bottom-6 right-6 w-12 h-12 bg-brand-600 text-white rounded-full shadow-lg hover:bg-brand-700 hover:shadow-xl transition-all flex items-center justify-center z-30">
-          <Bot className="w-5 h-5" />
-        </button>
       )}
     </div>
   );

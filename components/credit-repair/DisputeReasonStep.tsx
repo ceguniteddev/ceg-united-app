@@ -5,10 +5,14 @@ import {
   AlertTriangle,
   ShieldAlert,
   ChevronDown,
+  Sparkles,
+  Check,
+  Loader2,
 } from "lucide-react";
 import type {
   DisputeReasonAssignment,
   NegativeItem,
+  SuggestedReason,
 } from "@/lib/credit-repair/credit-repair-types";
 import { DISPUTE_REASONS, getReason } from "@/lib/credit-repair/disputeReasons";
 import { ItemTypeIcon, getTypeLabel } from "./ItemTypeIcon";
@@ -20,6 +24,10 @@ interface Props {
   onChange: (next: Record<string, DisputeReasonAssignment>) => void;
   onBack: () => void;
   onContinue: () => void;
+  /** AI-derived reason suggestions keyed by item id. */
+  suggestionsByItem?: Record<string, SuggestedReason[]>;
+  /** True while the AI report analysis is running. */
+  suggestionsLoading?: boolean;
 }
 
 function fmtMoney(n: number): string {
@@ -33,6 +41,8 @@ export function DisputeReasonStep({
   onChange,
   onBack,
   onContinue,
+  suggestionsByItem = {},
+  suggestionsLoading = false,
 }: Props) {
   const [applyAll, setApplyAll] = useState(false);
   const [bulkReason, setBulkReason] = useState("cannot-verify");
@@ -64,6 +74,25 @@ export function DisputeReasonStep({
       [itemId]: {
         reasonCode: reasonByItem[itemId]?.reasonCode || "cannot-verify",
         additionalDetails: details,
+      },
+    });
+  };
+
+  // Applying an AI suggestion both selects the reason and pre-fills the
+  // additional-details field with the AI's specific finding (unless the client
+  // has already typed their own note).
+  const applySuggestion = (itemId: string, s: SuggestedReason) => {
+    const existingDetails = reasonByItem[itemId]?.additionalDetails;
+    onChange({
+      ...reasonByItem,
+      [itemId]: {
+        reasonCode: s.reasonCode,
+        additionalDetails:
+          existingDetails && existingDetails.trim().length > 0
+            ? existingDetails
+            : s.source === "ai"
+              ? s.rationale
+              : existingDetails,
       },
     });
   };
@@ -177,6 +206,14 @@ export function DisputeReasonStep({
                 </div>
               </div>
 
+              {/* AI-suggested reasons */}
+              <SuggestionChips
+                loading={suggestionsLoading}
+                suggestions={suggestionsByItem[item.id] || []}
+                activeCode={assigned?.reasonCode}
+                onSelect={(s) => applySuggestion(item.id, s)}
+              />
+
               {/* Legal flags */}
               {reason?.requiresIdTheftReport && (
                 <div className="mt-3 flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-red-50 border border-red-100">
@@ -267,6 +304,91 @@ function ReasonSelect({
         ))}
       </select>
       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+    </div>
+  );
+}
+
+// Renders the AI-derived reason recommendations for a single item as
+// selectable chips. Handles the loading skeleton and the empty state so the
+// client always has guidance instead of a bare dropdown.
+function SuggestionChips({
+  loading,
+  suggestions,
+  activeCode,
+  onSelect,
+}: {
+  loading: boolean;
+  suggestions: SuggestedReason[];
+  activeCode?: string;
+  onSelect: (s: SuggestedReason) => void;
+}) {
+  if (loading && suggestions.length === 0) {
+    return (
+      <div className="mt-3">
+        <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl border border-brand-100 bg-gradient-to-r from-brand-50 to-violet-50">
+          <span className="relative flex h-8 w-8 shrink-0 items-center justify-center">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-brand-400/30 animate-ping" />
+            <Loader2 className="w-5 h-5 text-brand-600 animate-spin" />
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-brand-700">
+              <Sparkles className="w-4 h-4" />
+              Analyzing your report…
+            </div>
+            <div className="text-xs text-brand-600/80 mt-0.5">
+              The AI is scanning your credit file to recommend the strongest
+              dispute reasons.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (suggestions.length === 0) return null;
+
+  const hasAi = suggestions.some((s) => s.source === "ai");
+
+  return (
+    <div className="mt-3">
+      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-brand-600">
+        <Sparkles className="w-3.5 h-3.5" />
+        {hasAi ? "AI-suggested reasons" : "Suggested reasons"}
+        <span className="normal-case font-normal text-gray-400">
+          · tap one to apply
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {suggestions.map((s) => {
+          const reason = getReason(s.reasonCode);
+          if (!reason) return null;
+          const isActive = activeCode === s.reasonCode;
+          return (
+            <button
+              key={`${s.reasonCode}-${s.source}`}
+              type="button"
+              onClick={() => onSelect(s)}
+              title={s.rationale}
+              className={`group inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border text-xs font-semibold transition-colors max-w-full ${
+                isActive
+                  ? "bg-brand-600 border-brand-600 text-white"
+                  : "bg-white border-gray-200 text-gray-700 hover:border-brand-300 hover:bg-brand-50"
+              }`}
+            >
+              {isActive ? (
+                <Check className="w-3.5 h-3.5 shrink-0" />
+              ) : s.source === "ai" ? (
+                <Sparkles
+                  className={`w-3.5 h-3.5 shrink-0 ${
+                    isActive ? "text-white" : "text-brand-500"
+                  }`}
+                />
+              ) : null}
+              <span className="truncate">{reason.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
