@@ -127,6 +127,7 @@
     "city": "Ciudad",
     "state": "Estado",
     "postalCode": "Código Postal",
+    "dateOfBirth": "Fecha de Nacimiento",
     "personalRequirements": "Requisitos Personales",
     "uploadPaystubs": "Últimos 2 Comprobantes de Pago",
     "uploadPaystubsDesc": "Haga clic para subir sus comprobantes de ingresos.",

@@ -25,9 +25,15 @@ const TODAY = (): string =>
   });
 
 function formatAddress(addr: ClientInfo["address"]): string {
-  const lines = [addr.line1];
-  if (addr.line2) lines.push(addr.line2);
-  lines.push(`${addr.city}, ${addr.state} ${addr.zip}`);
+  const lines: string[] = [];
+  if (addr.line1?.trim()) lines.push(addr.line1.trim());
+  if (addr.line2?.trim()) lines.push(addr.line2.trim());
+  const city = addr.city?.trim() ?? "";
+  const state = addr.state?.trim() ?? "";
+  const zip = addr.zip?.trim() ?? "";
+  const cityState = [city, state].filter(Boolean).join(", ");
+  const cityStateZip = [cityState, zip].filter(Boolean).join(" ");
+  if (cityStateZip) lines.push(cityStateZip);
   return lines.join("\n");
 }
 
@@ -45,6 +51,24 @@ function fmtMoney(n: number): string {
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+// Formats a date of birth without shifting across time zones. A plain
+// "YYYY-MM-DD" string is parsed by `new Date()` as UTC midnight, which can
+// render as the previous day in time zones behind UTC. Parsing the parts
+// manually keeps the DOB accurate.
+function fmtDob(value: string): string {
+  if (!value) return "";
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  const d = match
+    ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+    : new Date(value);
+  if (isNaN(d.getTime())) return value;
   return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -105,9 +129,11 @@ export function generateLetter(args: GenerateLetterArgs): GeneratedLetter {
   const sender = [
     `${client.firstName} ${client.lastName}`,
     formatAddress(client.address),
-    `DOB: ${fmtDate(client.dob)}`,
+    `DOB: ${fmtDob(client.dob)}`,
     `SSN (last 4): XXX-XX-${client.ssnLast4}`,
-  ].join("\n");
+  ]
+    .filter((line) => line.trim() !== "")
+    .join("\n");
 
   const recipient = formatAgencyAddress(agency);
 
@@ -224,7 +250,7 @@ export function generateLetter(args: GenerateLetterArgs): GeneratedLetter {
     "",
     `RE: ${subject}`,
     `Consumer: ${client.firstName} ${client.lastName}`,
-    `DOB: ${fmtDate(client.dob)}    SSN (last 4): XXX-XX-${client.ssnLast4}`,
+    `DOB: ${fmtDob(client.dob)}    SSN: XXX-XX-${client.ssnLast4}`,
     "",
     `To Whom It May Concern,`,
     "",

@@ -90,6 +90,21 @@ export interface DisputeReasonAssignment {
   additionalDetails?: string;
 }
 
+// A single AI-derived recommendation for why an item should be disputed.
+// Surfaced as a selectable chip beneath the reason dropdown so clients who
+// don't know the correct dispute reason can pick one the AI vouches for.
+export interface SuggestedReason {
+  reasonCode: string;
+  // Plain-language explanation of the detected problem, shown as helper text
+  // and pre-filled into the "additional details" field when selected.
+  rationale: string;
+  // Higher = more confident/relevant. Used to order the chips.
+  confidence: number;
+  // "ai" when derived from the report analysis, "heuristic" when inferred
+  // locally from the item type as a fallback.
+  source: "ai" | "heuristic";
+}
+
 // -------- Agencies (Bureaus + 3rd-party CRAs) --------
 export type AgencyCategory = "bureau" | "cra";
 
@@ -128,6 +143,9 @@ export interface GeneratedLetter {
   generatedAt: string; // ISO
   sentAt?: string;
   status: LetterStatus;
+  // Set when the client manually edits the generated letter body before mailing.
+  isEdited?: boolean;
+  editedAt?: string;
   lastResponseAt?: string;
   responseSummary?: string;
   // Lob.com mailing fields — populated after the Mail Letter flow runs.

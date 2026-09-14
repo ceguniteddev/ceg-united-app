@@ -38,6 +38,7 @@ interface FormFieldProps {
   label?: string;
   type?:
     | "text"
+    | "date"
     | "date-picker"
     | "datetime-picker"
     | "email"

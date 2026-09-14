@@ -6,8 +6,14 @@ import type {
   GeneratedLetter,
   NegativeItem,
   RepairView,
+  SuggestedReason,
   Toast,
 } from "@/lib/credit-repair/credit-repair-types";
+import {
+  useIdentifyFactualErrors,
+  type IdentifyFactualErrorsResponse,
+} from "@/hooks/identify-factual-errors";
+import { buildSuggestions } from "@/lib/credit-repair/reasonSuggestions";
 import type {
   LobMailResponse,
   MailingMethod,
@@ -220,7 +226,7 @@ export function useCreditRepairState(userId?: string) {
 
         return {
           id:
-            `${t.creditorName || "unknown"}-${t.accountIdentifier || "****"}-${t.accountOpenedDate || "nodate"}`
+            `${t.creditorName || "unknown"}-${t.accountIdentifier || "****"}-${t.accountOpenedDate || "nodate"}-${bKey}-${idx}`
               .replace(/[^a-zA-Z0-9-]/g, "")
               .toLowerCase() || `live-item-${idx}`,
           type: "late-payment",
@@ -252,7 +258,7 @@ export function useCreditRepairState(userId?: string) {
 
         return {
           id:
-            `inquiry-${t.creditorName || "unknown"}-${bKey}-${inquiryDate || "nodate"}`
+            `inquiry-${t.creditorName || "unknown"}-${bKey}-${inquiryDate || "nodate"}-${idx}`
               .replace(/[^a-zA-Z0-9-]/g, "")
               .toLowerCase() || `live-inquiry-${idx}`,
           type: "inquiry" as const,
@@ -537,6 +543,16 @@ export function useCreditRepairState(userId?: string) {
   >({});
   const [selectedAgencies, setSelectedAgencies] = useState<string[]>([]);
 
+  // AI-derived dispute-reason suggestions, keyed by item id. Populated when the
+  // client reaches the "choose-reasons" step so they can pick a reason the AI
+  // recommends instead of guessing.
+  const [suggestedReasonsByItem, setSuggestedReasonsByItem] = useState<
+    Record<string, SuggestedReason[]>
+  >({});
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const { mutateAsync: identifyFactualErrors } =
+    useIdentifyFactualErrors(userId);
+
   // Letters + tracking
   const [letters, setLetters] = useState<Record<string, GeneratedLetter>>({});
   const [trackingRows, setTrackingRows] = useState<TrackingRow[]>([]);
@@ -625,14 +641,44 @@ export function useCreditRepairState(userId?: string) {
   // ---------- view transitions ----------
   const goSelect = useCallback(() => setView("select-items"), []);
 
+  // Ask the AI to analyse the report, then translate its findings into ranked
+  // dispute-reason suggestions for the currently selected items. Runs in the
+  // background; failures fall back to heuristic-only suggestions so the reason
+  // step is never blocked.
+  const fetchSuggestions = useCallback(
+    async (itemsToScore: NegativeItem[]) => {
+      setSuggestionsLoading(true);
+      let errorsByBureau: Partial<IdentifyFactualErrorsResponse> = {};
+      try {
+        errorsByBureau = await identifyFactualErrors({
+          disputeType: "inaccurate-info",
+          action: "identify",
+        });
+      } catch (err) {
+        // Swallow — buildSuggestions still yields heuristic suggestions.
+        console.warn("AI reason suggestions unavailable:", err);
+      }
+      const map = buildSuggestions(itemsToScore, {
+        experian: errorsByBureau.experian,
+        transunion: errorsByBureau.transunion,
+        equifax: errorsByBureau.equifax,
+      });
+      setSuggestedReasonsByItem(map);
+      setSuggestionsLoading(false);
+    },
+    [identifyFactualErrors],
+  );
+
   const goReasons = useCallback(() => {
     // Auto-toggle on bureaus that have at least one selected item.
     const bureausInPlay = new Set<Bureau>();
     const newReasons = { ...reasonByItem };
+    const selected: NegativeItem[] = [];
 
     for (const id of selectedItemIds) {
       const it = items.find((x) => x.id === id);
       if (it) {
+        selected.push(it);
         for (const b of it.bureaus) bureausInPlay.add(b);
 
         // Auto-select dispute reason based on item type if not already set
@@ -650,7 +696,10 @@ export function useCreditRepairState(userId?: string) {
     setReasonByItem(newReasons);
     setSelectedAgencies(Array.from(bureausInPlay));
     setView("choose-reasons");
-  }, [items, selectedItemIds, reasonByItem]);
+
+    // Kick off AI analysis to populate suggestion chips.
+    void fetchSuggestions(selected);
+  }, [items, selectedItemIds, reasonByItem, fetchSuggestions]);
 
   const goAgencies = useCallback(() => setView("pick-agencies"), []);
   const goGenerating = useCallback(() => setView("generating"), []);
@@ -859,6 +908,47 @@ export function useCreditRepairState(userId?: string) {
   }, []);
 
   // ---------- letter actions ----------
+  // Persist a client's manual edits to a generated letter body. Flags the
+  // letter as edited so downstream PDF/mailing (which read letter.content)
+  // pick up the change automatically, and any tracking rows stay in sync.
+  const updateLetterContent = useCallback(
+    (agencyKey: string, content: string) => {
+      const editedAt = new Date().toISOString();
+      setLetters((prev) => {
+        const cur = prev[agencyKey];
+        if (!cur) return prev;
+        return {
+          ...prev,
+          [agencyKey]: { ...cur, content, isEdited: true, editedAt },
+        };
+      });
+      // Keep any already-seeded tracking rows for this agency consistent.
+      setTrackingRows((prev) =>
+        prev.map((r) =>
+          r.agencyKey === agencyKey
+            ? {
+                ...r,
+                letter: {
+                  ...r.letter,
+                  content,
+                  isEdited: true,
+                  editedAt,
+                },
+              }
+            : r,
+        ),
+      );
+      setToast({
+        id: String(Date.now()),
+        tone: "success",
+        title: "Letter updated",
+        message: "Your changes were saved to this dispute letter.",
+      });
+      setTimeout(() => setToast(null), 3500);
+    },
+    [],
+  );
+
   const markLetterSent = useCallback(
     (agencyKey: string) => {
       setLetters((prev) => {
@@ -993,6 +1083,8 @@ export function useCreditRepairState(userId?: string) {
     });
     setSelectedItemIds([]);
     setReasonByItem({});
+    setSuggestedReasonsByItem({});
+    setSuggestionsLoading(false);
     setSelectedAgencies([]);
     setLetters({});
     setTrackingRows([]);
@@ -1021,6 +1113,8 @@ export function useCreditRepairState(userId?: string) {
     selectedItemIds,
     selectedItems,
     reasonByItem,
+    suggestedReasonsByItem,
+    suggestionsLoading,
     selectedAgencies,
     letters,
     trackingRows,
@@ -1050,6 +1144,7 @@ export function useCreditRepairState(userId?: string) {
     setReasonByItem,
     setSelectedAgencies,
     markLetterSent,
+    updateLetterContent,
     refreshFromCRS,
     reset,
     startMailFlow,

@@ -5,6 +5,7 @@ import {
   Send,
   Check,
   ExternalLink,
+  Pencil,
 } from "lucide-react";
 import type { GeneratedLetter } from "@/lib/credit-repair/credit-repair-types";
 import { downloadLetterPdf } from "@/lib/pdfGenerator";
@@ -56,6 +57,11 @@ export function LetterCard({
             {isSent && (
               <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100 text-[10px] font-semibold text-emerald-700">
                 <Check className="w-3 h-3" /> Sent
+              </span>
+            )}
+            {letter.isEdited && (
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-100 text-[10px] font-semibold text-amber-700">
+                <Pencil className="w-2.5 h-2.5" /> Edited
               </span>
             )}
           </div>
