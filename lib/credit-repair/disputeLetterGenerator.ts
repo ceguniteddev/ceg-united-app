@@ -25,9 +25,15 @@ const TODAY = (): string =>
   });
 
 function formatAddress(addr: ClientInfo["address"]): string {
-  const lines = [addr.line1];
-  if (addr.line2) lines.push(addr.line2);
-  lines.push(`${addr.city}, ${addr.state} ${addr.zip}`);
+  const lines: string[] = [];
+  if (addr.line1?.trim()) lines.push(addr.line1.trim());
+  if (addr.line2?.trim()) lines.push(addr.line2.trim());
+  const city = addr.city?.trim() ?? "";
+  const state = addr.state?.trim() ?? "";
+  const zip = addr.zip?.trim() ?? "";
+  const cityState = [city, state].filter(Boolean).join(", ");
+  const cityStateZip = [cityState, zip].filter(Boolean).join(" ");
+  if (cityStateZip) lines.push(cityStateZip);
   return lines.join("\n");
 }
 
@@ -125,7 +131,9 @@ export function generateLetter(args: GenerateLetterArgs): GeneratedLetter {
     formatAddress(client.address),
     `DOB: ${fmtDob(client.dob)}`,
     `SSN (last 4): XXX-XX-${client.ssnLast4}`,
-  ].join("\n");
+  ]
+    .filter((line) => line.trim() !== "")
+    .join("\n");
 
   const recipient = formatAgencyAddress(agency);
 
