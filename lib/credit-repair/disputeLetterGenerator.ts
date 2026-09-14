@@ -52,6 +52,24 @@ function fmtDate(iso: string): string {
   });
 }
 
+// Formats a date of birth without shifting across time zones. A plain
+// "YYYY-MM-DD" string is parsed by `new Date()` as UTC midnight, which can
+// render as the previous day in time zones behind UTC. Parsing the parts
+// manually keeps the DOB accurate.
+function fmtDob(value: string): string {
+  if (!value) return "";
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  const d = match
+    ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+    : new Date(value);
+  if (isNaN(d.getTime())) return value;
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 function itemTypeLabel(type: NegativeItem["type"]): string {
   switch (type) {
     case "collection":
@@ -105,7 +123,7 @@ export function generateLetter(args: GenerateLetterArgs): GeneratedLetter {
   const sender = [
     `${client.firstName} ${client.lastName}`,
     formatAddress(client.address),
-    `DOB: ${fmtDate(client.dob)}`,
+    `DOB: ${fmtDob(client.dob)}`,
     `SSN (last 4): XXX-XX-${client.ssnLast4}`,
   ].join("\n");
 
@@ -224,7 +242,7 @@ export function generateLetter(args: GenerateLetterArgs): GeneratedLetter {
     "",
     `RE: ${subject}`,
     `Consumer: ${client.firstName} ${client.lastName}`,
-    `DOB: ${fmtDate(client.dob)}    SSN (last 4): XXX-XX-${client.ssnLast4}`,
+    `DOB: ${fmtDob(client.dob)}    SSN: XXX-XX-${client.ssnLast4}`,
     "",
     `To Whom It May Concern,`,
     "",
