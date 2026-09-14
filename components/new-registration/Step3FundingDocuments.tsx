@@ -205,6 +205,7 @@ const LocalDocumentList = ({
 }) => {
   const { watch, setValue } = useFormContext();
   const [previewDoc, setPreviewDoc] = useState<any | null>(null);
+  const { t } = useTranslation();
 
   const fieldData = watch(fieldName);
   const files = fieldData?.files || [];
@@ -227,8 +228,6 @@ const LocalDocumentList = ({
       { shouldValidate: true, shouldDirty: true },
     );
   };
-
-  const { t } = useTranslation();
 
   return (
     <div className="space-y-2 mt-4 border-t border-slate-100 pt-4">
@@ -354,22 +353,32 @@ export function Step3Funding() {
   const addressCity = watch("addressCity");
   const addressState = watch("addressState");
   const addressPostal = watch("addressPostal");
+  const dateOfBirth = watch("dateOfBirth");
 
   React.useEffect(() => {
     if (
       addressStreet !== undefined ||
       addressCity !== undefined ||
       addressState !== undefined ||
-      addressPostal !== undefined
+      addressPostal !== undefined ||
+      dateOfBirth !== undefined
     ) {
       updateAuthData({
         ...(addressStreet !== undefined && { addressStreet }),
         ...(addressCity !== undefined && { addressCity }),
         ...(addressState !== undefined && { addressState }),
         ...(addressPostal !== undefined && { addressPostal }),
+        ...(dateOfBirth !== undefined && { dateOfBirth }),
       });
     }
-  }, [addressStreet, addressCity, addressState, addressPostal, updateAuthData]);
+  }, [
+    addressStreet,
+    addressCity,
+    addressState,
+    addressPostal,
+    dateOfBirth,
+    updateAuthData,
+  ]);
 
   // Set initial values from store if not already set (e.g. going back/forth)
   React.useEffect(() => {
@@ -381,6 +390,8 @@ export function Step3Funding() {
       setValue("addressState", authData.addressState);
     if (authData.addressPostal && !getValues("addressPostal"))
       setValue("addressPostal", authData.addressPostal);
+    if (authData.dateOfBirth && !getValues("dateOfBirth"))
+      setValue("dateOfBirth", authData.dateOfBirth);
   }, []);
 
   // Sync business address fields to the store when user edits them
@@ -502,6 +513,8 @@ export function Step3Funding() {
           newData.addressState = data.personal.addressState;
         if (data.personal.addressPostal)
           newData.addressPostal = data.personal.addressPostal;
+        if (data.personal.dateOfBirth)
+          newData.dateOfBirth = data.personal.dateOfBirth;
 
         // Let's only update fields that were actually found
         if (Object.keys(newData).length > 0) {
@@ -717,6 +730,12 @@ export function Step3Funding() {
                   name="addressPostal"
                   label={t("registration.postalCode")}
                   placeholder="10001"
+                />
+                <FormInput
+                  control={control}
+                  name="dateOfBirth"
+                  type="date"
+                  label={t("registration.dateOfBirth")}
                 />
               </div>
             </div>

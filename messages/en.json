@@ -127,6 +127,7 @@
     "city": "City",
     "state": "State",
     "postalCode": "Zip / Postal Code",
+    "dateOfBirth": "Date of Birth",
     "personalRequirements": "Personal Requirements",
     "uploadPaystubs": "Last 2 Recent Paystubs",
     "uploadPaystubsDesc": "Click to upload your paystubs.",

@@ -32,6 +32,7 @@ export const authSchema = z.object({
   addressCity: z.string().optional(),
   addressState: z.string().optional(),
   addressPostal: z.string().optional(),
+  dateOfBirth: z.string().optional(),
 });
 
 export type AuthForm = z.infer<typeof authSchema>;
