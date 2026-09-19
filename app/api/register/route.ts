@@ -107,6 +107,7 @@ async function uploadFinancialEducationDriverLicense({
       file,
       documentType: "DRIVERS_LICENSE",
       customMetadata: {
+        documentType: "DRIVERS_LICENSE",
         registrationPurpose: RegistrationPurpose.FinancialEducation,
         uploadedAt: new Date().toISOString(),
         ...(leadId ? { leadId } : {}),
