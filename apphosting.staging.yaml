@@ -186,7 +186,7 @@ env:
       - BUILD
       - RUNTIME
   - variable: WC_CONSUMER_KEY
-    value: ck_ea997ec7a404f79481d6e57a9b1d22bfe1278371
+    value: ci_7ZqYfJElBu0gPB6e8m4l04uK9jGAR6GN
     availability:
       - BUILD
       - RUNTIME
