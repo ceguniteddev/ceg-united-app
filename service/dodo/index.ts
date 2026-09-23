@@ -123,12 +123,9 @@ const createSession = async ({
         amount: Math.round(amountInCents),
       },
     ],
-    customer: existingCustomerId
-      ? { customer_id: existingCustomerId }
-      : {
-          email: user.email,
-          name: `${user.firstName} ${user.lastName}`.trim(),
-        },
+    ...(existingCustomerId
+      ? { customer: { customer_id: existingCustomerId } }
+      : {}),
     metadata: { userId, paymentKey, ...metadata },
     return_url: returnUrl ?? resolveDodoReturnUrl(),
     allowed_payment_method_types: [
