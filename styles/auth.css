@@ -44,9 +44,11 @@
 /* --- Page shell --- */
 .auth-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
   position: relative;
   overflow-x: hidden;
+  background-color: var(--bg);
   background:
     radial-gradient(
       1000px 700px at 78% 42%,
@@ -88,6 +90,7 @@
   gap: 72px;
   align-items: center;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* --- Left / Hero column --- */
@@ -164,45 +167,103 @@
   line-height: 1.55;
   color: var(--ink-2);
   max-width: 480px;
-  margin: 0 0 36px;
+  margin: 0 0 32px;
 }
 
-.proof {
+/* Proof / Testimonials (Desktop) */
+.proof-desktop {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   max-width: 560px;
 }
 
-.proof .card {
+.proof-carousel {
+  display: none;
+}
+
+.proof-card {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--r);
-  padding: 14px 14px 16px;
+  padding: 14px 16px;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
 
-.proof .stars {
+.proof-card .stars {
   color: #7db4ff;
   font-size: 12px;
   letter-spacing: 2px;
 }
 
-.proof .quote {
+.proof-card .quote {
   font-size: 13px;
   line-height: 1.4;
   color: var(--ink);
   margin: 6px 0 8px;
 }
 
-.proof .who {
+.proof-card .who {
   font-size: 11px;
   color: var(--ink-3);
 }
 
+/* Carousel Track & Stacked Grid Slides (Mobile) */
+.proof-carousel-track {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  width: 100%;
+}
+
+.proof-slide {
+  grid-area: 1 / 1 / 2 / 2;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
+  min-height: 94px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.proof-slide.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.carousel-dot {
+  appearance: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.25);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: all 250ms ease;
+}
+
+.carousel-dot.active {
+  background: var(--brand-2);
+  width: 22px;
+}
+
 .trust-row {
-  margin-top: 28px;
+  margin-top: 20px;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -555,8 +616,9 @@
 @media (max-width: 960px) {
   .auth-grid {
     grid-template-columns: 1fr;
-    gap: 40px;
-    padding: 32px 20px;
+    gap: 32px;
+    padding: 32px 20px 48px;
+    padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px));
   }
   .hero {
     max-width: none;
@@ -565,15 +627,19 @@
   .hero h1 {
     font-size: clamp(34px, 7vw, 48px);
   }
+  .hero .sub {
+    margin-bottom: 24px;
+  }
   .card-wrap {
     justify-self: stretch;
     max-width: none;
   }
-  .proof {
-    grid-template-columns: 1fr;
-  }
-  .proof .card:nth-child(n + 2) {
+  .proof-desktop {
     display: none;
+  }
+  .proof-carousel {
+    display: block;
+    max-width: 100%;
   }
 }
 
