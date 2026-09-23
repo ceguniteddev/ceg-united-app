@@ -4,8 +4,9 @@
  * <AuthHero/>
  * -----------------------------------------------------------------
  * Left column of the auth page.
- * Marketing copy, value proposition, client proof, and platform guarantee.
+ * Marketing copy, value proposition, client proof (grid on desktop, fixed carousel on mobile), and platform guarantee.
  */
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ShieldIcon } from "./Icons";
 
@@ -25,6 +26,15 @@ const testimonials = [
 ];
 
 export default function AuthHero() {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % testimonials.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <section className="hero reveal d1" aria-labelledby="ceg-headline">
       <Link href="/" className="brand" aria-label="CEG United home">
@@ -47,9 +57,10 @@ export default function AuthHero() {
         you approved.
       </p>
 
-      <div className="proof" aria-label="What clients say">
+      {/* Desktop View: 3-column grid */}
+      <div className="proof proof-desktop" aria-label="What clients say">
         {testimonials.map((t) => (
-          <div className="card" key={t.who}>
+          <div className="proof-card" key={t.who}>
             <div className="stars" aria-label="5 out of 5 stars">
               ★ ★ ★ ★ ★
             </div>
@@ -57,6 +68,42 @@ export default function AuthHero() {
             <div className="who">— {t.who}</div>
           </div>
         ))}
+      </div>
+
+      {/* Mobile View: Fixed-height Carousel Stack */}
+      <div className="proof-carousel" aria-label="Client testimonials carousel">
+        <div className="proof-carousel-track">
+          {testimonials.map((t, idx) => (
+            <div
+              className={`proof-card proof-slide ${idx === activeIndex ? "active" : ""}`}
+              key={t.who}
+              aria-hidden={idx !== activeIndex}
+            >
+              <div className="stars" aria-label="5 out of 5 stars">
+                ★ ★ ★ ★ ★
+              </div>
+              <p className="quote">“{t.q}”</p>
+              <div className="who">— {t.who}</div>
+            </div>
+          ))}
+        </div>
+        <div
+          className="carousel-dots"
+          role="tablist"
+          aria-label="Testimonial slides"
+        >
+          {testimonials.map((t, idx) => (
+            <button
+              key={t.who}
+              type="button"
+              role="tab"
+              aria-selected={idx === activeIndex}
+              aria-label={`Go to testimonial ${idx + 1}`}
+              className={`carousel-dot ${idx === activeIndex ? "active" : ""}`}
+              onClick={() => setActiveIndex(idx)}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="trust-row">
