@@ -37,13 +37,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en">
       <body
-        className={`${inter.variable} ${ibmPlexSerif.variable} ${caveat.variable} antialiased min-h-full w-full`}
+        className={`${inter.variable} ${ibmPlexSerif.variable} ${caveat.variable} antialiased h-full overflow-hidden pb-[env(safe-area-inset-bottom)]`}
       >
         <Providers>
           <ConfettiProvider />
-          <div className="min-h-full w-full">{children}</div>
+          <div className="h-full w-full">{children}</div>
           <RecaptchaGate />
         </Providers>
       </body>
