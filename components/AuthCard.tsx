@@ -11,6 +11,7 @@
  *   - Forgot password dialog integration
  *   - Direct routing to registration onboarding
  *   - NO Google Sign-In
+ *   - Scoped .auth-* class names to prevent style leakage
  */
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -100,19 +101,19 @@ export default function AuthCard({ initialMode = "signin", onAuthed }: Props) {
         <ForgotPassword setOpenForgotPassword={setOpenForgotPassword} />
       </ResponsiveDialog>
 
-      <div className="card-wrap reveal d2">
-        <div className="card-glow" aria-hidden />
-        <div className="card">
+      <div className="auth-card-wrap auth-reveal d2">
+        <div className="auth-card-glow" aria-hidden />
+        <div className="auth-card-box">
           {/* Tabs */}
           <div
-            className="tabs"
+            className="auth-tabs"
             role="tablist"
             aria-label="Sign in or create account"
           >
             <button
               role="tab"
               aria-selected={!isSignup}
-              className={!isSignup ? "active" : ""}
+              className={`auth-tab-btn ${!isSignup ? "active" : ""}`}
               onClick={() => switchMode("signin")}
               type="button"
             >
@@ -121,7 +122,7 @@ export default function AuthCard({ initialMode = "signin", onAuthed }: Props) {
             <button
               role="tab"
               aria-selected={isSignup}
-              className={isSignup ? "active" : ""}
+              className={`auth-tab-btn ${isSignup ? "active" : ""}`}
               onClick={() => switchMode("signup")}
               type="button"
             >
@@ -129,24 +130,31 @@ export default function AuthCard({ initialMode = "signin", onAuthed }: Props) {
             </button>
           </div>
 
-          <h2>{isSignup ? "Start free" : "Welcome back"}</h2>
-          <p className="lede">
+          <h2 className="auth-card-title">
+            {isSignup ? "Start free" : "Welcome back"}
+          </h2>
+          <p className="auth-card-lede">
             {isSignup
               ? "Create your account in under 2 minutes."
               : "Sign in to your CEG United dashboard."}
           </p>
 
           {banner && (
-            <div className={`alert alert-${banner.kind}`} role="alert">
+            <div
+              className={`auth-alert ${banner.kind === "error" ? "auth-alert-error" : "auth-alert-success"}`}
+              role="alert"
+            >
               <AlertIcon /> <span>{banner.msg}</span>
             </div>
           )}
 
           <form onSubmit={handleEmailSubmit} noValidate>
-            <div className="field">
-              <label htmlFor="ceg-email">Email address</label>
-              <div className="input-wrap">
-                <span className="icon">
+            <div className="auth-field">
+              <label htmlFor="ceg-email" className="auth-label">
+                Email address
+              </label>
+              <div className="auth-input-wrap">
+                <span className="auth-input-icon">
                   <MailIcon />
                 </span>
                 <input
@@ -155,6 +163,7 @@ export default function AuthCard({ initialMode = "signin", onAuthed }: Props) {
                   type="email"
                   autoComplete="email"
                   placeholder="you@company.com"
+                  className="auth-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   aria-invalid={!!errors.email}
@@ -163,17 +172,19 @@ export default function AuthCard({ initialMode = "signin", onAuthed }: Props) {
                 />
               </div>
               {errors.email && (
-                <div id="err-email" className="field-error">
+                <div id="err-email" className="auth-field-error">
                   <AlertIcon />
                   {errors.email}
                 </div>
               )}
             </div>
 
-            <div className="field">
-              <label htmlFor="ceg-password">Password</label>
-              <div className="input-wrap">
-                <span className="icon">
+            <div className="auth-field">
+              <label htmlFor="ceg-password" className="auth-label">
+                Password
+              </label>
+              <div className="auth-input-wrap">
+                <span className="auth-input-icon">
                   <LockIcon />
                 </span>
                 <input
@@ -182,6 +193,7 @@ export default function AuthCard({ initialMode = "signin", onAuthed }: Props) {
                   type={showPw ? "text" : "password"}
                   autoComplete="current-password"
                   placeholder="Your password"
+                  className="auth-input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   aria-invalid={!!errors.password}
@@ -192,7 +204,7 @@ export default function AuthCard({ initialMode = "signin", onAuthed }: Props) {
                 />
                 <button
                   type="button"
-                  className="toggle"
+                  className="auth-input-toggle"
                   aria-label={showPw ? "Hide password" : "Show password"}
                   onClick={() => setShowPw((v) => !v)}
                 >
@@ -200,15 +212,15 @@ export default function AuthCard({ initialMode = "signin", onAuthed }: Props) {
                 </button>
               </div>
               {errors.password && (
-                <div id="err-password" className="field-error">
+                <div id="err-password" className="auth-field-error">
                   <AlertIcon />
                   {errors.password}
                 </div>
               )}
             </div>
 
-            <div className="form-row">
-              <label className="checkbox">
+            <div className="auth-form-row">
+              <label className="auth-checkbox">
                 <input
                   type="checkbox"
                   checked={remember}
@@ -218,17 +230,17 @@ export default function AuthCard({ initialMode = "signin", onAuthed }: Props) {
               </label>
               <button
                 type="button"
-                className="forgot"
+                className="auth-forgot-btn"
                 onClick={() => setOpenForgotPassword(true)}
               >
                 Forgot password?
               </button>
             </div>
 
-            <button className="btn-primary" type="submit" disabled={busy}>
+            <button className="auth-btn-primary" type="submit" disabled={busy}>
               {busy ? (
                 <>
-                  <span className="spinner" /> Signing in…
+                  <span className="auth-spinner" /> Signing in…
                 </>
               ) : (
                 "Sign in"
@@ -236,11 +248,11 @@ export default function AuthCard({ initialMode = "signin", onAuthed }: Props) {
             </button>
           </form>
 
-          <div className="card-foot">
+          <div className="auth-card-foot">
             New to CEG? <Link href="/register">Create an account</Link>
           </div>
 
-          <p className="legal">
+          <p className="auth-legal">
             By signing in, you agree to our{" "}
             <a
               href="https://www.cegunited.com/privacy"
