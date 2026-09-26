@@ -465,7 +465,15 @@ export const recordPaymentSucceeded = async ({
     ...((checkoutData.metadata || {}) as Record<string, string>),
     ...((payment.metadata || {}) as Record<string, string>),
   };
-  const userId = metadata.userId || checkoutData.userId || null;
+  let userId = metadata.userId || checkoutData.userId || null;
+  if (!userId && payment.customer?.customer_id) {
+    const paymentSnapshot = await db
+      .collection(USER_DODO_PAYMENTS)
+      .where("customer.customer_id", "==", payment.customer.customer_id)
+      .limit(20)
+      .get();
+    userId = paymentSnapshot.docs[0]?.data()?.userId || null;
+  }
   const paymentKey = metadata.paymentKey || checkoutData.paymentKey;
 
   logInfo("Recording Dodo payment succeeded", {
@@ -577,6 +585,116 @@ export const recordPaymentSucceeded = async ({
     }
   }
 
+  const isAddon =
+    metadata.isAddon === "true" ||
+    paymentKey === "credit_module_pro" ||
+    metadata.planId === "credit_module_pro" ||
+    (Boolean(process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID) &&
+      (payment.product_cart?.[0]?.product_id ===
+        process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID ||
+        checkoutData.productId ===
+          process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID));
+
+  if (userId && isAddon) {
+    const fees = await getFeeSettings();
+    const addonId =
+      (metadata.planId as "credit_module_pro") || "credit_module_pro";
+    await synchronizeDodoAddon({
+      userId,
+      addonId,
+      providerStatus: "active",
+      subscriptionId: payment.subscription_id || payment.payment_id,
+      customerId: payment.customer?.customer_id,
+      productId:
+        payment.product_cart?.[0]?.product_id ||
+        checkoutData.productId ||
+        process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID,
+      amount:
+        Number(metadata.addonAmount) ||
+        fees.creditModuleProAddonPrice ||
+        payment.total_amount / 100 ||
+        197,
+      eventCreatedAt: payment.created_at,
+      lastWebhookEventId: `payment.succeeded:${payment.payment_id}`,
+    });
+  }
+
+  const tier =
+    metadata.planId ||
+    metadata.billingPlan ||
+    membershipTierForProduct(payment.product_cart?.[0]?.product_id) ||
+    membershipTierForProduct(checkoutData.productId) ||
+    (["platform_access", "tier_starter", "tier_pro", "tier_executive"].includes(
+      paymentKey,
+    )
+      ? paymentKey
+      : undefined);
+
+  if (userId && tier && !isAddon) {
+    const fees = await getFeeSettings();
+    const defaultPrices: Record<string, number> = {
+      platform_access: fees.platformAccessPrice,
+      tier_starter: fees.tierStarterPrice,
+      tier_pro: fees.tierProPrice,
+      tier_executive: fees.tierExecutivePrice,
+    };
+    const validTier = tier as
+      | "platform_access"
+      | "tier_starter"
+      | "tier_pro"
+      | "tier_executive";
+
+    await synchronizeDodoMembership({
+      userId,
+      tier: validTier,
+      providerStatus: "active",
+      subscriptionId: payment.subscription_id || payment.payment_id,
+      customerId: payment.customer?.customer_id,
+      productId:
+        payment.product_cart?.[0]?.product_id ||
+        checkoutData.productId ||
+        membershipProduct(validTier),
+      amount:
+        Number(metadata.membershipAmount) ||
+        defaultPrices[validTier] ||
+        payment.total_amount / 100,
+      eventCreatedAt: payment.created_at,
+      lastWebhookEventId: `payment.succeeded:${payment.payment_id}`,
+    });
+
+    let selectedAddonIds: string[] = [];
+    try {
+      selectedAddonIds = JSON.parse(
+        metadata.selectedAddonIds ||
+          checkoutData.metadata?.selectedAddonIds ||
+          "[]",
+      );
+    } catch (error) {
+      logError(
+        new Error(
+          `Invalid selectedAddonIds for payment ${payment.payment_id}: ${error}`,
+        ),
+      );
+    }
+
+    if (selectedAddonIds.includes("credit_module_pro")) {
+      await synchronizeDodoAddon({
+        userId,
+        addonId: "credit_module_pro",
+        providerStatus: "active",
+        subscriptionId: payment.subscription_id || payment.payment_id,
+        customerId: payment.customer?.customer_id,
+        productId:
+          process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID ||
+          payment.product_cart?.[0]?.product_id ||
+          checkoutData.productId,
+        amount: fees.creditModuleProAddonPrice ?? 197,
+        eventCreatedAt: payment.created_at,
+        lastWebhookEventId: `payment.succeeded:${payment.payment_id}`,
+      });
+    }
+  }
+
   await db
     .collection(USER_DODO_PAYMENTS)
     .doc(payment.payment_id)
@@ -591,6 +709,17 @@ export const recordSubscriptionActive = async ({
   const metadata = (subscription.metadata || {}) as Record<string, string>;
   let userId = metadata.userId;
 
+  if (!userId && subscription.subscription_id) {
+    const byPaymentSub = await firestoreAdmin()
+      .collection(USER_DODO_PAYMENTS)
+      .where("subscription_id", "==", subscription.subscription_id)
+      .limit(1)
+      .get();
+    if (!byPaymentSub.empty) {
+      userId = byPaymentSub.docs[0].data()?.userId;
+    }
+  }
+
   if (!userId && subscription.customer?.customer_id) {
     const paymentSnapshot = await firestoreAdmin()
       .collection(USER_DODO_PAYMENTS)
@@ -598,6 +727,17 @@ export const recordSubscriptionActive = async ({
       .limit(20)
       .get();
     userId = paymentSnapshot.docs[0]?.data()?.userId;
+  }
+
+  if (!userId && subscription.customer?.email) {
+    const userSnapshot = await firestoreAdmin()
+      .collection(USER_COLLECTION)
+      .where("email", "==", subscription.customer.email.toLowerCase().trim())
+      .limit(1)
+      .get();
+    if (!userSnapshot.empty) {
+      userId = userSnapshot.docs[0].id;
+    }
   }
 
   const isAddon =
@@ -641,7 +781,9 @@ export const recordSubscriptionActive = async ({
   }
 
   const tier =
-    metadata.planId || membershipTierForProduct(subscription.product_id);
+    metadata.planId ||
+    metadata.billingPlan ||
+    membershipTierForProduct(subscription.product_id);
 
   if (!userId || !tier) {
     logError(
@@ -760,6 +902,17 @@ export const recordSubscriptionLifecycle = async ({
     }
   }
 
+  if (!userId && subscription.subscription_id) {
+    const byPaymentSub = await firestoreAdmin()
+      .collection(USER_DODO_PAYMENTS)
+      .where("subscription_id", "==", subscription.subscription_id)
+      .limit(1)
+      .get();
+    if (!byPaymentSub.empty) {
+      userId = byPaymentSub.docs[0].data()?.userId;
+    }
+  }
+
   if (!userId && subscription.customer?.customer_id) {
     const paymentSnapshot = await firestoreAdmin()
       .collection(USER_DODO_PAYMENTS)
@@ -767,6 +920,17 @@ export const recordSubscriptionLifecycle = async ({
       .limit(20)
       .get();
     userId = paymentSnapshot.docs[0]?.data()?.userId;
+  }
+
+  if (!userId && subscription.customer?.email) {
+    const userSnapshot = await firestoreAdmin()
+      .collection(USER_COLLECTION)
+      .where("email", "==", subscription.customer.email.toLowerCase().trim())
+      .limit(1)
+      .get();
+    if (!userSnapshot.empty) {
+      userId = userSnapshot.docs[0].id;
+    }
   }
 
   const isAddon =
@@ -826,7 +990,9 @@ export const recordSubscriptionLifecycle = async ({
   }
 
   const tier =
-    metadata.planId || membershipTierForProduct(subscription.product_id);
+    metadata.planId ||
+    metadata.billingPlan ||
+    membershipTierForProduct(subscription.product_id);
   if (!userId || !tier) {
     logError(
       new Error(
@@ -1063,6 +1229,52 @@ export const reconcileLegacyMemberships = async ({
         error: error.message,
         applied: false,
       });
+    }
+  }
+
+  // Scan unfulfilled membership payments in USER_DODO_PAYMENTS
+  const paymentSnapshot = await db.collection(USER_DODO_PAYMENTS).get();
+  for (const doc of paymentSnapshot.docs) {
+    const payData = doc.data() as Payment & { userId?: string };
+    const payMetadata = (payData.metadata || {}) as Record<string, string>;
+    const payUserId = payData.userId || payMetadata.userId;
+    const planId =
+      payMetadata.planId ||
+      payMetadata.billingPlan ||
+      payMetadata.paymentKey ||
+      membershipTierForProduct(payData.product_cart?.[0]?.product_id);
+    const isAddonPayment =
+      payMetadata.isAddon === "true" ||
+      planId === "credit_module_pro" ||
+      (Boolean(process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID) &&
+        payData.product_cart?.[0]?.product_id ===
+          process.env.DODO_PRODUCT_CREDIT_MODULE_PRO_ID);
+
+    if (
+      payUserId &&
+      (planId === "platform_access" ||
+        planId === "tier_starter" ||
+        planId === "tier_pro" ||
+        planId === "tier_executive" ||
+        isAddonPayment)
+    ) {
+      const docRef = isAddonPayment
+        ? db.doc(`${USER_COLLECTION}/${payUserId}/addons/credit_module_pro`)
+        : db.doc(`${USER_COLLECTION}/${payUserId}/membership/current`);
+      const existingDoc = await docRef.get();
+      if (!existingDoc.exists || existingDoc.data()?.status !== "active") {
+        results.push({
+          userId: payUserId,
+          entity: isAddonPayment ? "addon_backfill" : "membership_backfill",
+          paymentId: payData.payment_id,
+          planId,
+          status: "unreconciled_payment_found",
+          applied: apply,
+        });
+        if (apply) {
+          await recordPaymentSucceeded({ payment: payData });
+        }
+      }
     }
   }
 

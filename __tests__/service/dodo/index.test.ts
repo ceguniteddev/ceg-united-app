@@ -481,7 +481,7 @@ describe("Dodo payment service", () => {
     expect(mocks.set).toHaveBeenCalled();
   });
 
-  it("does not grant membership or bundled addon access from payment events", async () => {
+  it("grants membership and bundled addon access from payment events", async () => {
     queryResult = {
       empty: false,
       docs: [
@@ -506,53 +506,48 @@ describe("Dodo payment service", () => {
       payment: payment({ metadata: undefined, total_amount: 240000 }),
     });
 
-    expect(mocks.activate).not.toHaveBeenCalled();
-    expect(mocks.activateAddon).not.toHaveBeenCalled();
-    expect(mocks.synchronizeAddon).not.toHaveBeenCalled();
+    expect(mocks.synchronize).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "u1",
+        tier: "tier_pro",
+        amount: 2000,
+        providerStatus: "active",
+      }),
+    );
+    expect(mocks.synchronizeAddon).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "u1",
+        addonId: "credit_module_pro",
+        providerStatus: "active",
+      }),
+    );
 
-    // Fallback when metadata.selectedAddonIds is undefined
-    queryResult = {
-      empty: false,
-      docs: [
-        {
-          id: "checkout",
-          data: () => ({
-            userId: "u1",
-            productId: "p_pro",
-            paymentKey: "tier_pro",
-            metadata: {
-              userId: "u1",
-              planId: "tier_pro",
-            },
-          }),
+    // Platform access payment
+    vi.clearAllMocks();
+    await recordPaymentSucceeded({
+      payment: payment({
+        payment_id: "pay_platform_1",
+        metadata: {
+          userId: "u2",
+          planId: "platform_access",
+          paymentKey: "platform_access",
+          membershipAmount: "499",
         },
-      ],
-    };
-    await recordPaymentSucceeded({
-      payment: payment({ metadata: undefined, total_amount: 200000 }),
+        total_amount: 49900,
+      }),
     });
 
-    // Fallback when creditModuleProAddonPrice is undefined and checkout_session_id is undefined
-    mocks.getFees.mockResolvedValueOnce({
-      creditModuleProAddonPrice: undefined as any,
-    });
-    await recordPaymentSucceeded({
-      payment: {
-        ...payment({
-          metadata: {
-            userId: "u1",
-            paymentKey: "tier_pro",
-            selectedAddonIds: '["credit_module_pro"]',
-          },
-          total_amount: 240000,
-        }),
-        checkout_session_id: undefined,
-      } as any,
-    });
-    expect(mocks.synchronizeAddon).not.toHaveBeenCalled();
+    expect(mocks.synchronize).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "u2",
+        tier: "platform_access",
+        amount: 499,
+        providerStatus: "active",
+      }),
+    );
   });
 
-  it("does not grant standalone addon access from payment events", async () => {
+  it("grants standalone addon access from payment events", async () => {
     queryResult = {
       empty: false,
       docs: [
@@ -588,22 +583,28 @@ describe("Dodo payment service", () => {
       } as any,
     });
 
+    expect(mocks.synchronizeAddon).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "u1",
+        addonId: "credit_module_pro",
+        amount: 500,
+        providerStatus: "active",
+      }),
+    );
+
     // Case 2: falls back to fees.creditModuleProAddonPrice
     await recordPaymentSucceeded({
       payment: payment({ metadata: undefined, total_amount: 0 }),
     });
 
-    // Case 3: fees price is undefined/0, falls back to total_amount / 100
-    await recordPaymentSucceeded({
-      payment: payment({ metadata: undefined, total_amount: 30000 }),
-    });
-
-    // Case 4: all zero/falsy, falls back to 197
-    await recordPaymentSucceeded({
-      payment: payment({ metadata: undefined, total_amount: 0 }),
-    });
-    expect(mocks.activateAddon).not.toHaveBeenCalled();
-    expect(mocks.synchronizeAddon).not.toHaveBeenCalled();
+    expect(mocks.synchronizeAddon).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "u1",
+        addonId: "credit_module_pro",
+        amount: 400,
+        providerStatus: "active",
+      }),
+    );
   });
 
   it("activates addon subscription with fallback branches for planId and amount", async () => {
