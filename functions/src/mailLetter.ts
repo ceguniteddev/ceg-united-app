@@ -1,13 +1,10 @@
 import * as functions from "firebase-functions/v2/https";
 // import * as Lob from "@lob/lob-typescript-sdk";
 import { defineSecret } from "firebase-functions/params";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { FieldValue } from "firebase-admin/firestore";
 import * as admin from "firebase-admin";
-
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
 import { PDFDocument, PageSizes } from "pdf-lib";
+import { getDb } from "./db";
 
 const LOB_API_KEY = defineSecret("LOB_API_KEY");
 
@@ -185,12 +182,7 @@ export const mailLetter = functions.onCall(
     const letter = (await lobRes.json()) as any;
 
     // 3. Persist tracking back to Firestore
-    const projectId = process.env.GCLOUD_PROJECT || "cegunitedllc";
-    const databaseId =
-      projectId === "ceg-united-llc-prod"
-        ? "ceg-united-db-production"
-        : "ceg-united-db-staging";
-    const db = getFirestore(databaseId);
+    const db = getDb();
 
     // Create or update the parent dispute document
     await db.doc(`disputes/${disputeId}`).set(

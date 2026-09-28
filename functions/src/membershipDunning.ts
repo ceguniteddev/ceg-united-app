@@ -1,21 +1,12 @@
-import * as admin from "firebase-admin";
 import * as logger from "firebase-functions/logger";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 import {
   getMembershipDunningAction,
   MEMBERSHIP_REMINDER_INTERVAL_MS,
 } from "./membershipDunningCore";
+import { getDb, getResolvedDatabaseId, getResolvedProjectId } from "./db";
 
-if (!admin.apps.length) admin.initializeApp();
-
-const projectId = process.env.GCLOUD_PROJECT || "cegunitedllc";
-const databaseId =
-  process.env.DATABASE_NAME ||
-  (projectId === "ceg-united-llc-prod"
-    ? "ceg-united-db-production"
-    : "ceg-united-db-staging");
-const db = getFirestore(databaseId);
 const userIdForMembership = (path: string) => path.split("/").at(-3) || "";
 
 const paymentRecoveryHtml = ({
@@ -57,140 +48,167 @@ export const processMembershipDunning = onSchedule(
     retryCount: 3,
   },
   async () => {
-    const now = Timestamp.now();
-    const enforce = process.env.MEMBERSHIP_DUNNING_ENFORCEMENT === "true";
-    const settingsUrl = `${process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://cegunited.com"}/settings/membership`;
-    const [membershipDue, addonDue] = await Promise.all([
-      db
-        .collectionGroup("membership")
-        .where("entitlementStatus", "==", "grace")
-        .where("nextReminderAt", "<=", now)
-        .limit(200)
-        .get(),
-      db
-        .collectionGroup("addons")
-        .where("entitlementStatus", "==", "grace")
-        .where("nextReminderAt", "<=", now)
-        .limit(200)
-        .get(),
-    ]);
-    const due = [...membershipDue.docs, ...addonDue.docs];
+    const db = getDb();
+    const databaseId = getResolvedDatabaseId();
+    const projectId = getResolvedProjectId();
+    logger.info("Starting membership dunning check", {
+      projectId,
+      databaseId,
+    });
 
-    for (const membership of due) {
-      const userId = userIdForMembership(membership.ref.path);
-      const isAddon = membership.ref.path.includes("/addons/");
-      if (!userId || (!isAddon && membership.id !== "current")) continue;
-      const productName = isAddon
-        ? "CEG Credit Repair Addon"
-        : "CEG Brain membership";
-      const accessDescription = isAddon
-        ? "your credit repair tools and other Credit Repair Addon features"
-        : "your funding tools, lender recommendations, and other membership features";
-      const entityKey = isAddon ? membership.id : "membership";
+    try {
+      const now = Timestamp.now();
+      const enforce = process.env.MEMBERSHIP_DUNNING_ENFORCEMENT === "true";
+      const settingsUrl = `${process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://cegunited.com"}/settings/membership`;
+      const [membershipDue, addonDue] = await Promise.all([
+        db
+          .collectionGroup("membership")
+          .where("entitlementStatus", "==", "grace")
+          .where("nextReminderAt", "<=", now)
+          .limit(200)
+          .get(),
+        db
+          .collectionGroup("addons")
+          .where("entitlementStatus", "==", "grace")
+          .where("nextReminderAt", "<=", now)
+          .limit(200)
+          .get(),
+      ]);
+      const due = [...membershipDue.docs, ...addonDue.docs];
 
-      const user = await db.collection("user").doc(userId).get();
-      const userData = user.data() || {};
-      if (!userData.email) {
-        logger.warn("Skipping membership reminder without email", { userId });
-        continue;
-      }
+      for (const membership of due) {
+        try {
+          const userId = userIdForMembership(membership.ref.path);
+          const isAddon = membership.ref.path.includes("/addons/");
+          if (!userId || (!isAddon && membership.id !== "current")) continue;
+          const productName = isAddon
+            ? "CEG Credit Repair Addon"
+            : "CEG Brain membership";
+          const accessDescription = isAddon
+            ? "your credit repair tools and other Credit Repair Addon features"
+            : "your funding tools, lender recommendations, and other membership features";
+          const entityKey = isAddon ? membership.id : "membership";
 
-      await db.runTransaction(async (transaction) => {
-        const fresh = await transaction.get(membership.ref);
-        const data = fresh.data();
-        if (!data) return;
-        const nextReminderAt = data.nextReminderAt?.toDate?.();
-        const retryAccessUntil = data.retryAccessUntil?.toDate?.();
-        const action = getMembershipDunningAction({
-          entitlementStatus: data.entitlementStatus,
-          nextReminderAt,
-          retryAccessUntil,
-          now: now.toDate(),
-          enforce,
-        });
-        if (action === "skip") return;
-        const recoveryEpisode =
-          data.paymentFailureStartedAt?.toMillis?.() || "unknown";
-        if (action === "observe_expired" || action === "downgrade") {
-          if (action === "observe_expired") {
-            logger.info("Observe-only membership downgrade", {
+          const user = await db.collection("user").doc(userId).get();
+          const userData = user.data() || {};
+          if (!userData.email) {
+            logger.warn("Skipping membership reminder without email", {
               userId,
-              subscriptionId: data.subscriptionId,
+            });
+            continue;
+          }
+
+          await db.runTransaction(async (transaction) => {
+            const fresh = await transaction.get(membership.ref);
+            const data = fresh.data();
+            if (!data) return;
+            const nextReminderAt = data.nextReminderAt?.toDate?.();
+            const retryAccessUntil = data.retryAccessUntil?.toDate?.();
+            const action = getMembershipDunningAction({
+              entitlementStatus: data.entitlementStatus,
+              nextReminderAt,
+              retryAccessUntil,
+              now: now.toDate(),
+              enforce,
+            });
+            if (action === "skip") return;
+            const recoveryEpisode =
+              data.paymentFailureStartedAt?.toMillis?.() || "unknown";
+            if (action === "observe_expired" || action === "downgrade") {
+              if (action === "observe_expired") {
+                logger.info("Observe-only membership downgrade", {
+                  userId,
+                  subscriptionId: data.subscriptionId,
+                });
+                transaction.update(membership.ref, {
+                  nextReminderAt: Timestamp.fromMillis(
+                    Date.now() + MEMBERSHIP_REMINDER_INTERVAL_MS,
+                  ),
+                  lastObservedExpiredAt: now,
+                });
+                return;
+              }
+
+              const finalMailRef = db
+                .collection("mail")
+                .doc(
+                  `subscription-ended-${entityKey}-${data.subscriptionId}-${recoveryEpisode}`,
+                );
+              transaction.create(finalMailRef, {
+                to: userData.email,
+                from: "CEG United LLC <noreply@cegunited.com>",
+                job: "MEMBERSHIP_ACCESS_ENDED",
+                message: {
+                  subject: `Your ${productName} access is now inactive`,
+                  html: accessEndedHtml({
+                    firstName: userData.firstName,
+                    settingsUrl,
+                    productName,
+                  }),
+                },
+                createdAt: now,
+              });
+              transaction.update(membership.ref, {
+                entitlementStatus: "free",
+                status: "inactive",
+                nextReminderAt: null,
+                finalNoticeSentAt: now,
+                updatedAt: now,
+              });
+              return;
+            }
+
+            const reminderCount = Number(data.reminderCount || 0);
+            const mailRef = db
+              .collection("mail")
+              .doc(
+                `subscription-retry-${entityKey}-${data.subscriptionId}-${recoveryEpisode}-${reminderCount}`,
+              );
+            transaction.create(mailRef, {
+              to: userData.email,
+              from: "CEG United LLC <noreply@cegunited.com>",
+              job: "MEMBERSHIP_PAYMENT_RETRY",
+              message: {
+                subject: `Action needed: update your ${productName} payment`,
+                html: paymentRecoveryHtml({
+                  firstName: userData.firstName,
+                  settingsUrl,
+                  productName,
+                  accessDescription,
+                }),
+              },
+              createdAt: now,
             });
             transaction.update(membership.ref, {
+              lastReminderAt: now,
               nextReminderAt: Timestamp.fromMillis(
                 Date.now() + MEMBERSHIP_REMINDER_INTERVAL_MS,
               ),
-              lastObservedExpiredAt: now,
+              reminderCount: reminderCount + 1,
+              updatedAt: now,
             });
-            return;
-          }
-
-          const finalMailRef = db
-            .collection("mail")
-            .doc(
-              `subscription-ended-${entityKey}-${data.subscriptionId}-${recoveryEpisode}`,
-            );
-          transaction.create(finalMailRef, {
-            to: userData.email,
-            from: "CEG United LLC <noreply@cegunited.com>",
-            job: "MEMBERSHIP_ACCESS_ENDED",
-            message: {
-              subject: `Your ${productName} access is now inactive`,
-              html: accessEndedHtml({
-                firstName: userData.firstName,
-                settingsUrl,
-                productName,
-              }),
-            },
-            createdAt: now,
           });
-          transaction.update(membership.ref, {
-            entitlementStatus: "free",
-            status: "inactive",
-            nextReminderAt: null,
-            finalNoticeSentAt: now,
-            updatedAt: now,
+        } catch (itemError: any) {
+          logger.error("Failed processing membership dunning item", {
+            path: membership.ref.path,
+            error: itemError?.message || itemError,
           });
-          return;
         }
+      }
 
-        const reminderCount = Number(data.reminderCount || 0);
-        const mailRef = db
-          .collection("mail")
-          .doc(
-            `subscription-retry-${entityKey}-${data.subscriptionId}-${recoveryEpisode}-${reminderCount}`,
-          );
-        transaction.create(mailRef, {
-          to: userData.email,
-          from: "CEG United LLC <noreply@cegunited.com>",
-          job: "MEMBERSHIP_PAYMENT_RETRY",
-          message: {
-            subject: `Action needed: update your ${productName} payment`,
-            html: paymentRecoveryHtml({
-              firstName: userData.firstName,
-              settingsUrl,
-              productName,
-              accessDescription,
-            }),
-          },
-          createdAt: now,
-        });
-        transaction.update(membership.ref, {
-          lastReminderAt: now,
-          nextReminderAt: Timestamp.fromMillis(
-            Date.now() + MEMBERSHIP_REMINDER_INTERVAL_MS,
-          ),
-          reminderCount: reminderCount + 1,
-          updatedAt: now,
-        });
+      logger.info("Membership dunning run completed", {
+        due: due.length,
+        enforcement: enforce,
+        databaseId,
       });
+    } catch (err: any) {
+      logger.error("Error in processMembershipDunning", {
+        error: err?.message || err,
+        stack: err?.stack,
+        projectId,
+        databaseId,
+      });
+      throw err;
     }
-
-    logger.info("Membership dunning run completed", {
-      due: due.length,
-      enforcement: enforce,
-      databaseId,
-    });
   },
 );

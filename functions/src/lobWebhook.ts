@@ -1,13 +1,9 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import * as logger from "firebase-functions/logger";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import * as admin from "firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import * as crypto from "crypto";
-
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
+import { getDb } from "./db";
 
 const LOB_WEBHOOK_SECRET = defineSecret("LOB_WEBHOOK_SECRET");
 
@@ -165,12 +161,7 @@ export const lobWebhook = onRequest(
         const { disputeId, agencyKey } = metadata;
 
         if (disputeId && agencyKey) {
-          const projectId = process.env.GCLOUD_PROJECT || "cegunitedllc";
-          const databaseId =
-            projectId === "ceg-united-llc-prod"
-              ? "ceg-united-db-production"
-              : "ceg-united-db-staging";
-          const db = getFirestore(databaseId);
+          const db = getDb();
 
           const docRef = db.doc(
             `disputes/${disputeId}/generatedLetters/${agencyKey}`,
