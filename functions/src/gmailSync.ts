@@ -4,9 +4,11 @@ import { defineSecret } from "firebase-functions/params";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
+import * as crypto from "crypto";
 import type { gmail_v1 } from "googleapis";
 import { getGmailClient } from "./gmailClient";
 import { getDb } from "./db";
+import { evaluateEmailLeadCandidate } from "./emailFilter";
 
 const gmailKeySecret = defineSecret("GMAIL_SERVICE_ACCOUNT_KEY");
 
@@ -177,10 +179,23 @@ export const onGmailInbound = onMessagePublished(
         const emailMatch = fromHeader.match(/<([^>]+)>/) || [null, fromHeader];
         const senderEmail = (emailMatch[1] || fromHeader).trim().toLowerCase();
 
-        // Skip outbound or system self-loops
-        if (senderEmail === TARGET_MAILBOX) continue;
+        // 4. Lead Evaluation & Spam / Automation Filter Check
+        const filterEval = evaluateEmailLeadCandidate({
+          senderEmail,
+          subject,
+          headers,
+          labelIds: msg.labelIds || [],
+          targetMailbox: TARGET_MAILBOX,
+        });
 
-        // 4. Idempotency Check: Verify message not already stored
+        if (!filterEval.shouldProcess) {
+          logger.info(
+            `Skipping non-lead email ${msg.id} from "${senderEmail}" (Subject: "${subject}"): ${filterEval.reason}`,
+          );
+          continue;
+        }
+
+        // 5. Idempotency Check: Verify message not already stored
         const existingIx = await db
           .collectionGroup("interactions")
           .where("providerId", "==", msg.id)
@@ -192,7 +207,7 @@ export const onGmailInbound = onMessagePublished(
           continue;
         }
 
-        // 5. Match or Auto-Create Client
+        // 6. Match or Auto-Create Client
         let clientId: string;
         const userQuery = await db
           .collection("user")
@@ -209,15 +224,17 @@ export const onGmailInbound = onMessagePublished(
           const senderName =
             fromHeader.replace(/<[^>]+>/, "").trim() ||
             senderEmail.split("@")[0] ||
-            "New Client";
+            "New Lead";
 
           await newDocRef.set({
             firstName: senderName,
             lastName: "",
             email: senderEmail,
             role: "Client",
+            leadStatus: "New",
+            leadSource: "Inbound Email (contact@cegunited.com)",
             registrationDate: dateStr,
-            registrationPurpose: "General Inquiry",
+            registrationPurpose: "Inbound Email Lead",
             activeStatus: "Active",
             vip: false,
             highPriority: false,
@@ -225,18 +242,18 @@ export const onGmailInbound = onMessagePublished(
             updatedAt: dateStr,
           });
           logger.info(
-            `Created new client ${clientId} for sender ${senderEmail}`,
+            `Created new lead client ${clientId} for sender ${senderEmail}`,
           );
         }
 
-        // 6. Parse Body & Upload Attachments
+        // 7. Parse Body & Upload Attachments
         const { textBody, attachments } = await parseMessagePayload(
           gmail,
           msg,
           clientId,
         );
 
-        // 7. Write Interaction to user/{clientId}/interactions
+        // 8. Write Interaction to user/{clientId}/interactions
         const interactionId = `ix_gmail_${msg.id}`;
         const ixRef = db
           .collection(`user/${clientId}/interactions`)
@@ -262,7 +279,7 @@ export const onGmailInbound = onMessagePublished(
           createdAt: new Date().toISOString(),
         });
 
-        // 8. Update Client Summary Document
+        // 9. Update Client Summary Document
         await db
           .collection("user")
           .doc(clientId)
@@ -282,7 +299,7 @@ export const onGmailInbound = onMessagePublished(
         );
       }
 
-      // 9. Update lastHistoryId
+      // 10. Update lastHistoryId
       await syncDocRef.set(
         {
           lastHistoryId: historyId,
@@ -359,17 +376,38 @@ async function parseMessagePayload(
         const safeName = item.name.replace(/[^a-zA-Z0-9._-]/g, "_");
         const storagePath = `clients/${clientId}/attachments/${Date.now()}_${safeName}`;
         const file = storage.file(storagePath);
+        const downloadToken = crypto.randomUUID();
 
         await file.save(buffer, {
           contentType: item.mimeType,
-          metadata: { originalName: item.name },
+          metadata: {
+            originalName: item.name,
+            firebaseStorageDownloadTokens: downloadToken,
+            metadata: {
+              firebaseStorageDownloadTokens: downloadToken,
+            },
+          },
         });
 
-        // Generate signed URL (valid for long-term secure preview)
-        const [downloadUrl] = await file.getSignedUrl({
-          action: "read",
-          expires: "03-01-2035",
-        });
+        // Firebase Storage Token URL (No IAM signBlob permission required)
+        const bucketName = storage.name;
+        const encodedPath = encodeURIComponent(storagePath);
+        let downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedPath}?alt=media&token=${downloadToken}`;
+
+        // Attempt signed URL if available, fallback to Firebase Storage Token URL
+        try {
+          const [signed] = await file.getSignedUrl({
+            action: "read",
+            expires: "03-01-2035",
+          });
+          if (signed) {
+            downloadUrl = signed;
+          }
+        } catch (signErr) {
+          logger.warn(
+            `signBlob permission unavailable. Using persistent Firebase Storage download token URL for ${item.name}`,
+          );
+        }
 
         processedAttachments.push({
           type: item.mimeType.startsWith("image/")

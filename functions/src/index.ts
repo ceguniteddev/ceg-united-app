@@ -135,3 +135,4 @@ export * from "./verifyAddress";
 export * from "./wallet";
 export * from "./membershipDunning";
 export * from "./gmailSync";
+export * from "./emailFilter";
