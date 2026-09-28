@@ -1,26 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import {
-  Geist,
-  Geist_Mono,
-  Inter,
-  IBM_Plex_Serif,
-  Caveat,
-} from "next/font/google";
+import { Inter, IBM_Plex_Serif, Caveat } from "next/font/google";
 import "./globals.css";
 import Providers from "@/provider/Providers";
-import Script from "next/script";
 import RecaptchaGate from "@/components/RecaptchaGate";
 import { ConfettiProvider } from "@/provider/confetti-provider";
-
-// const geistSans = Geist({
-//   variable: "--font-geist-sans",
-//   subsets: ["latin"],
-// });
-
-// const geistMono = Geist_Mono({
-//   variable: "--font-geist-mono",
-//   subsets: ["latin"],
-// });
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const ibmPlexSerif = IBM_Plex_Serif({
@@ -61,10 +44,6 @@ export default function RootLayout({
         <Providers>
           <ConfettiProvider />
           <div className="h-full w-full">{children}</div>
-          {/* <Script
-            strategy="afterInteractive"
-            src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}
-          /> */}
           <RecaptchaGate />
         </Providers>
       </body>
