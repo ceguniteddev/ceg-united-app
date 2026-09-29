@@ -1,21 +1,10 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import * as admin from "firebase-admin";
-import { getFirestore } from "firebase-admin/firestore";
-
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
-const projectId = process.env.GCLOUD_PROJECT || "cegunitedllc";
-const databaseId =
-  projectId === "ceg-united-llc-prod"
-    ? "ceg-united-db-production"
-    : "ceg-united-db-staging";
-const db = getFirestore(databaseId);
+import { getDb } from "./db";
 
 export const addFunds = onCall(
   { cors: true, invoker: "public" },
   async (request) => {
+    const db = getDb();
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Sign in required to add funds.");
     }
@@ -78,6 +67,7 @@ export const addFunds = onCall(
 export const spendFunds = onCall(
   { cors: true, invoker: "public" },
   async (request) => {
+    const db = getDb();
     if (!request.auth) {
       throw new HttpsError(
         "unauthenticated",
@@ -146,6 +136,7 @@ export const spendFunds = onCall(
 export const getWallet = onCall(
   { cors: true, invoker: "public" },
   async (request) => {
+    const db = getDb();
     if (!request.auth) {
       throw new HttpsError(
         "unauthenticated",

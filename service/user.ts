@@ -201,7 +201,7 @@ export const registerUser = async ({
 
   // Create business record first if business data exists
   let businessId: string | undefined;
-  let referenceNumber: string | undefined;
+  let referenceNumber: string | undefined = "";
   if (fundingData?.businessName && fundingData.businessName.trim().length > 0) {
     const businessData = {
       userId: userId,
@@ -359,7 +359,7 @@ export const registerUser = async ({
     job: EmailJobs.NEW_REGISTRATION,
   });
 
-  if (user.role === "Client" && referenceNumber) {
+  if (user.role === "Client") {
     await createAsanaTaskForNewRegistration({
       userId: userId,
       referenceNumber: referenceNumber,
