@@ -95,7 +95,7 @@ export const DOMAIN_BLOCKLIST = new Set<string>([
  * Subject patterns indicating automated bounces, out-of-office, or system error messages
  */
 export const AUTOMATED_SUBJECT_PATTERNS: RegExp[] = [
-  /^auto(matic)?\s*reply/i,
+  /^auto(matic)?[\s_-]*reply/i,
   /^out of office/i,
   /^undeliverable/i,
   /^delivery status notification/i,
