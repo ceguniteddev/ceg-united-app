@@ -280,6 +280,11 @@ export const adminSidebarLinks: AdminSidebarGroup[] = [
         route: "/admin/consumer-reporting-agency",
         label: "Consumer Reporting Agency",
       },
+      {
+        imgURL: "/icons/settings.svg",
+        route: "/admin/api-keys",
+        label: "API Keys",
+      },
     ],
   },
 ];
