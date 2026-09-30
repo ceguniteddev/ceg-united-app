@@ -77,3 +77,4 @@ export const USER_WALLET = "user-wallet";
 export const USER_WALLET_TRANSACTIONS = "user-wallet-transactions";
 export const PSF_INVOICES_COLLECTION = "psf-invoices";
 export const PLAYBOOKS_COLLECTION = "playbooks";
+export const API_KEYS_COLLECTION = "api-keys";
