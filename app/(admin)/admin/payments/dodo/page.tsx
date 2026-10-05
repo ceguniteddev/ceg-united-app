@@ -2,6 +2,7 @@
 
 import Spinner from "@/components/Spinner";
 import { useGetDodoPayments } from "@/hooks/admin/payments/dodo";
+import { formatDate } from "@/lib/date-parser";
 import { currency } from "@/lib/utils";
 
 export default function DodoPaymentsPage() {
@@ -22,13 +23,15 @@ export default function DodoPaymentsPage() {
         <tbody>
           {(dodoPayments || []).map((payment) => (
             <tr key={payment.payment_id} className="border-b last:border-0">
+              <td className="p-3">{formatDate(payment.created_at)}</td>
               <td className="p-3">
-                {new Date(payment.created_at).toLocaleDateString()}
+                {payment.mappedEmail || payment.customer?.email || "-"}
               </td>
               <td className="p-3">
-                {payment.mappedEmail || payment.customer.email}
+                {payment.total_amount != null
+                  ? currency(payment.total_amount / 100)
+                  : "-"}
               </td>
-              <td className="p-3">{currency(payment.total_amount / 100)}</td>
               <td className="p-3">{payment.status || "unknown"}</td>
             </tr>
           ))}
