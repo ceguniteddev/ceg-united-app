@@ -13,8 +13,20 @@ export function normalizeDate(value: any): Date | null {
     date = new Date(value.seconds * 1000);
   } else if (typeof value === "string") {
     date = new Date(value);
+  } else if (typeof value === "number") {
+    date = value < 10000000000 ? new Date(value * 1000) : new Date(value);
   }
   return date;
+}
+
+export function formatDate(
+  value: any,
+  fallback = "-",
+  options?: Intl.DateTimeFormatOptions,
+): string {
+  const date = normalizeDate(value);
+  if (!date || isNaN(date.getTime())) return fallback;
+  return date.toLocaleDateString(undefined, options);
 }
 
 function isValidDateString(value: string): boolean {
