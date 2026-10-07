@@ -1,4 +1,3 @@
-import { initializeFirestore } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
@@ -34,16 +33,10 @@ const getConfig = () => {
 export const app = initializeApp(getConfig());
 
 export const authFirebase = getAuth(app);
-export const db = initializeFirestore(
-  app,
-  { ignoreUndefinedProperties: true },
-  process.env.NEXT_PUBLIC_ENVIRONMENT === "production"
-    ? "ceg-united-db-production"
-    : "ceg-united-db-staging",
-);
 export const storage = getStorage(
   app,
   process.env.NEXT_PUBLIC_ENVIRONMENT === "production"
     ? "gs://ceg-united-llc-prod.firebasestorage.app"
     : "gs://cegunitedllc.firebasestorage.app",
 );
+

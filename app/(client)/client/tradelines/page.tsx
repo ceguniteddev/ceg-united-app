@@ -20,7 +20,6 @@ import type {
   AvailableTradeline,
   CartItem,
   PurchasedTradeline,
-  TradelineCategory,
 } from "@/types/tradelines";
 import { TradelineCard } from "@/components/tradelines/TradelineCard";
 import { PurchasedTradelineCard } from "@/components/tradelines/PurchasedTradelineCard";
@@ -41,11 +40,7 @@ import {
   mockPersonalCreditBuilders,
   mockBusinessCreditBuilders,
 } from "@/lib/tradelineMockData";
-import {
-  useUserRecentTradelines,
-  useUserTradelines,
-  USER_ALL_TRADELINES_KEY,
-} from "@/hooks/tradelines";
+import { useUserRecentTradelines, useUserTradelines } from "@/hooks/tradelines";
 import { useSystemConfig } from "@/hooks/system-config";
 import { useActiveSpecialDeals } from "@/hooks/special-deals";
 import { Input } from "@/components/ui/input";
@@ -55,11 +50,12 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { stripHtml } from "@/lib/utils";
+import { PositiveCoachView } from "@/components/tradelines/PositiveCoachView";
 
 type TabId =
+  | "coach"
   | "available"
   | "purchased"
   | "personal-builder"
@@ -136,6 +132,7 @@ function TradelinesPage() {
   const [activeTab, setActiveTab] = useState<TabId>(
     initialTab &&
       [
+        "coach",
         "available",
         "purchased",
         "personal-builder",
@@ -143,7 +140,7 @@ function TradelinesPage() {
         "special-deals",
       ].includes(initialTab)
       ? initialTab
-      : "available",
+      : "coach",
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortField>("price-asc");
@@ -160,9 +157,7 @@ function TradelinesPage() {
   // Fetch data
   const { config } = useSystemConfig();
   const markupPercentage = config?.markupPercentage ?? 0;
-  const { recentTradelines, refetch: refetchRecent } = useUserRecentTradelines(
-    user?.uid,
-  );
+  const { recentTradelines } = useUserRecentTradelines(user?.uid);
   const { tradelines: purchasedTradelines, isLoading: purchasedLoading } =
     useUserTradelines(user?.uid);
   const { data: specialDeals } = useActiveSpecialDeals();
@@ -175,7 +170,6 @@ function TradelinesPage() {
         cart.loadCart();
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid, cart.isInitialized]);
 
   // Fetch available tradelines
@@ -221,6 +215,12 @@ function TradelinesPage() {
   // Tab definitions
   const tabs: TabDef[] = useMemo(
     () => [
+      {
+        id: "coach",
+        label: "Positive Account Coach",
+        shortLabel: "Coach",
+        icon: TrendingUp,
+      },
       {
         id: "available",
         label: "Available Tradelines",
@@ -508,6 +508,8 @@ function TradelinesPage() {
       )}
 
       {/* Tab content */}
+      {activeTab === "coach" && <PositiveCoachView userId={user?.uid || ""} />}
+
       {activeTab === "available" && (
         <div>
           {loading ? (

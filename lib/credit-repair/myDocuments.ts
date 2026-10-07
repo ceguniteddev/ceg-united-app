@@ -120,22 +120,6 @@ export const MOCK_USER_DOCUMENTS: MyDocument[] = [
 
 // ---------- helpers ----------
 
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
-import { db } from "../../lib/firebase";
-
-export function subscribeToDocuments(
-  uid: string,
-  callback: (docs: MyDocument[]) => void,
-) {
-  const q = query(
-    collection(db, `users/${uid}/documents`),
-    orderBy("uploadedAt", "desc"),
-  );
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as MyDocument));
-  });
-}
-
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
