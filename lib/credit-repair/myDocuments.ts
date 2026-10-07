@@ -1,7 +1,7 @@
 // ============================================
 // CEG Brain — My Documents Library (mock)
 // ============================================
-// In production, this lives at Firestore: users/{uid}/documents/{docId}
+// In production, this lives at Firestore: user/{uid}/documents/{docId}
 // with file storage in Firebase Storage. Each document captures the
 // metadata needed to attach it to outbound dispute mail.
 //
@@ -119,22 +119,6 @@ export const MOCK_USER_DOCUMENTS: MyDocument[] = [
 ];
 
 // ---------- helpers ----------
-
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
-import { db } from "../../lib/firebase";
-
-export function subscribeToDocuments(
-  uid: string,
-  callback: (docs: MyDocument[]) => void,
-) {
-  const q = query(
-    collection(db, `users/${uid}/documents`),
-    orderBy("uploadedAt", "desc"),
-  );
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as MyDocument));
-  });
-}
 
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

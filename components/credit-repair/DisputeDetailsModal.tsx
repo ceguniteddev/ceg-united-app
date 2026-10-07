@@ -4,6 +4,10 @@ import { getTypeLabel, ItemTypeIcon } from "./ItemTypeIcon";
 import { getPdfBlob } from "@/lib/pdfGenerator";
 import { useUserDocumentsQuery } from "@/hooks/document";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { StatutoryDeadlineBar } from "./StatutoryDeadlineBar";
+import { ResponseLetterUploadModal } from "./ResponseLetterUploadModal";
+import { Button } from "@/components/ui/button";
+import { Upload } from "lucide-react";
 
 interface Props {
   row: TrackingRow;
@@ -13,6 +17,7 @@ interface Props {
 
 export function DisputeDetailsModal({ row, onClose, userId }: Props) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const { userDocuments } = useUserDocumentsQuery({ userId });
 
   useEffect(() => {
@@ -128,9 +133,57 @@ export function DisputeDetailsModal({ row, onClose, userId }: Props) {
                 {new Date(row.lastUpdatedAt).toLocaleString()}
               </p>
             </div>
+
+            {/* Statutory FCRA Timeline Clock */}
+            <div className="pt-2">
+              <StatutoryDeadlineBar
+                d0_mailedAt={row.letter.mailedAt}
+                r_receivedAt={row.letter.mailedAt}
+                c_investigationDue={
+                  row.letter.mailedAt
+                    ? new Date(
+                        new Date(row.letter.mailedAt).getTime() +
+                          30 * 24 * 60 * 60 * 1000,
+                      ).toISOString()
+                    : null
+                }
+                n_resultsDue={
+                  row.letter.mailedAt
+                    ? new Date(
+                        new Date(row.letter.mailedAt).getTime() +
+                          35 * 24 * 60 * 60 * 1000,
+                      ).toISOString()
+                    : null
+                }
+              />
+            </div>
+
+            {/* Bureau Response Upload Action */}
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full flex items-center justify-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                onClick={() => setShowUploadModal(true)}
+              >
+                <Upload className="w-4 h-4" />
+                Upload Investigation Response Letter
+              </Button>
+            </div>
           </div>
         </div>
       </div>
+
+      {showUploadModal && (
+        <ResponseLetterUploadModal
+          isOpen={showUploadModal}
+          onClose={() => setShowUploadModal(false)}
+          userId={userId}
+          lineId={(row as any).id || (row as any).lineId || ""}
+          creditor={row.item.creditor}
+          bureau={row.agencyName}
+        />
+      )}
     </ResponsiveDialog>
   );
 }

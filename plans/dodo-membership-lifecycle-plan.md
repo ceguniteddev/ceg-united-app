@@ -80,7 +80,7 @@ Use Dodo's provider status and the app's effective entitlement as related but se
 
 ### Provider lifecycle fields
 
-Extend the canonical current membership document at `users/{userId}/membership/current` with:
+Extend the canonical current membership document at `user/{userId}/membership/current` with:
 
 | Field                     | Purpose                                                                     |
 | ------------------------- | --------------------------------------------------------------------------- |
