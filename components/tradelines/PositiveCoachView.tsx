@@ -39,8 +39,6 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "@/lib/firebase";
 import { useRefreshCRSData } from "@/hooks/crs";
 import {
   bureaus,
@@ -432,28 +430,49 @@ export function PositiveCoachView({
     : (activeProvider?.instructions ?? []);
 
   const handleFileUpload = async (f: File) => {
-    if (!f || !activeEnrollment) return;
+    if (!f || !activeEnrollment || uploadingDoc) return;
+    if (f.size > 10 * 1024 * 1024) {
+      toast.error("File size exceeds 10MB limit.");
+      return;
+    }
     setUploadingDoc(true);
+    setError(null);
+    setNotice(null);
     try {
-      await runAction(async () => {
-        const path = `user/${userId}/positive/${activeEnrollment.id}/${Date.now()}_${f.name}`;
-        const storageRef = ref(storage, path);
-        await uploadBytes(storageRef, f);
-        const downloadUrl = await getDownloadURL(storageRef);
+      const formData = new FormData();
+      formData.append("file", f);
+      formData.append("enrollmentId", activeEnrollment.id);
 
-        await fetch(`/api/user/${userId}/positive`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "upload",
-            enrollmentId: activeEnrollment.id,
-            documentPath: path,
-            documentUrl: downloadUrl,
-          }),
-        });
-      }, "Confirmation document uploaded successfully.");
+      const res = await fetch(`/api/user/${userId}/positive/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(
+          data.error || data.errors || `Upload failed with status ${res.status}`,
+        );
+      }
+
+      const data = await res.json();
+      if (data.snapshot) {
+        setSnapshot(data.snapshot);
+      } else {
+        await loadSnapshot();
+      }
+      setNotice("Confirmation document uploaded successfully.");
+      toast.success("Confirmation document uploaded successfully.");
+    } catch (err: any) {
+      console.error("Positive doc upload error:", err);
+      const msg = err.message || "Unable to upload confirmation document.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setUploadingDoc(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -1142,186 +1161,298 @@ export function PositiveCoachView({
       </div>
 
       {/* --- MODAL 1: Provider Picker Modal --- */}
-      {pickerCategory && snapshot && report && (
-        <Modal
-          title={`Choose ${labels[pickerCategory]}`}
-          onClose={() => setPickerCategory(null)}
-          maxWidth="max-w-3xl"
-        >
-          <div className="space-y-4">
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Select only the accounts you want to pursue. This does not submit
-              an application or charge a deposit.
-            </p>
+      {pickerCategory && snapshot && report && (() => {
+        const CategoryIcon = categoryIcons[pickerCategory] || Award;
+        const categoryStep = plan?.steps.find((x) => x.category === pickerCategory);
+        const suggestedMax = categoryStep?.quantity ?? 1;
+        const isOverLimit = pickerChoices.length > suggestedMax;
+        const availableProviders =
+          pickerCategory === "au"
+            ? plan?.au.map((x) => x.provider) || []
+            : snapshot.providers.filter(
+                (p) =>
+                  p.category === pickerCategory &&
+                  isCurrentProvider(p, now, snapshot.demo) &&
+                  p.bureaus.includes(bureau),
+              );
 
-            <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
-              {(pickerCategory === "au"
-                ? plan?.au.map((x) => x.provider) || []
-                : snapshot.providers.filter(
-                    (p) =>
-                      p.category === pickerCategory &&
-                      isCurrentProvider(p, now, snapshot.demo) &&
-                      p.bureaus.includes(bureau),
-                  )
-              ).map((p) => {
-                const impact =
-                  pickerCategory === "au"
-                    ? auImpact(report, bureau, [p])
-                    : null;
-                const isSelected = pickerChoices.includes(p.id);
+        return (
+          <Modal
+            title={`Choose ${labels[pickerCategory]}`}
+            subtitle={
+              <div className="flex items-center gap-2 flex-wrap mt-1">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-100 dark:border-blue-900/60">
+                  <CategoryIcon className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  {labels[pickerCategory]}
+                </span>
+                <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                  Plan Target: {bureauLabels[bureau]} · Max recommended: {suggestedMax}
+                </span>
+              </div>
+            }
+            onClose={() => setPickerCategory(null)}
+            maxWidth="max-w-2xl"
+          >
+            <div className="space-y-4">
+              {/* Trust & Guidance Notice Banner */}
+              <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 flex items-start gap-3">
+                <div className="w-7 h-7 rounded-lg bg-blue-600/10 dark:bg-blue-400/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed flex-1">
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    Zero upfront commitment.
+                  </span>{" "}
+                  Selecting an account adds its step-by-step setup guide to your action plan. You apply directly with the provider when you&apos;re ready.
+                </div>
+              </div>
 
-                return (
-                  <label
-                    key={p.id}
-                    className={`block p-4 rounded-xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-1 ring-blue-500"
-                        : "border-gray-200 dark:border-gray-800 hover:border-gray-300 bg-white dark:bg-gray-900"
+              {/* Provider Options List */}
+              <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+                {availableProviders.length === 0 ? (
+                  <div className="p-8 text-center rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40">
+                    <Sparkles className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <h4 className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                      No additional providers available
+                    </h4>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      All verified options for this category are already in your active plan.
+                    </p>
+                  </div>
+                ) : (
+                  availableProviders.map((p) => {
+                    const impact =
+                      pickerCategory === "au"
+                        ? auImpact(report, bureau, [p])
+                        : null;
+                    const isSelected = pickerChoices.includes(p.id);
+                    const isEnrolled = snapshot.enrollments.some(
+                      (e) => e.providerId === p.id,
+                    );
+
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          if (isEnrolled || busy) return;
+                          setPickerChoices(
+                            isSelected
+                              ? pickerChoices.filter((x) => x !== p.id)
+                              : [...pickerChoices, p.id],
+                          );
+                        }}
+                        className={`group relative rounded-2xl border p-4 sm:p-5 transition-all duration-200 select-none ${
+                          isEnrolled
+                            ? "opacity-65 bg-gray-50/70 dark:bg-gray-900/40 border-gray-200 dark:border-gray-800 cursor-not-allowed"
+                            : isSelected
+                              ? "bg-gradient-to-br from-blue-50/80 via-white to-blue-50/30 dark:from-blue-950/40 dark:via-gray-900 dark:to-blue-950/20 border-blue-600 dark:border-blue-500 shadow-md ring-2 ring-blue-500/20 cursor-pointer"
+                              : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-xs cursor-pointer"
+                        }`}
+                      >
+                        {/* Header: Checkbox + Brand Info + Pricing */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3.5 min-w-0">
+                            {/* Custom Checkbox Indicator */}
+                            <div
+                              className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-200 flex-shrink-0 mt-0.5 ${
+                                isEnrolled
+                                  ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
+                                  : isSelected
+                                    ? "bg-blue-600 border-blue-600 text-white shadow-xs scale-105"
+                                    : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 group-hover:border-blue-400"
+                              }`}
+                            >
+                              {(isSelected || isEnrolled) && (
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              )}
+                            </div>
+
+                            {/* Brand Avatar & Name */}
+                            <div className="space-y-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white tracking-tight">
+                                  {p.name}
+                                </h4>
+                                {isEnrolled && (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 inline-flex items-center gap-1">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                    Active in Plan
+                                  </span>
+                                )}
+                              </div>
+                              {p.eligibility && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 leading-normal">
+                                  {p.eligibility}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Pricing Badge */}
+                          <div className="text-right flex-shrink-0 pl-2">
+                            {p.monthlyCost !== null && p.monthlyCost !== undefined ? (
+                              <div className="text-sm sm:text-base font-black text-gray-900 dark:text-white tracking-tight">
+                                {p.monthlyCost === 0 ? "Free" : currency(p.monthlyCost)}
+                                {p.monthlyCost > 0 && (
+                                  <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
+                                    {" "}
+                                    / mo
+                                  </span>
+                                )}
+                              </div>
+                            ) : null}
+                            {p.setupCost !== null && p.setupCost !== undefined && (
+                              <div className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-0.5">
+                                {p.setupCost === 0
+                                  ? "No setup fee"
+                                  : `${currency(p.setupCost)} upfront`}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* AU Impact Metrics Panel (Only for AU accounts) */}
+                        {impact && (
+                          <div className="mt-3.5 pt-3 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                            <div className="bg-gray-50/80 dark:bg-gray-800/50 p-2.5 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                              <span className="text-[10px] text-gray-400 dark:text-gray-500 block uppercase font-bold tracking-wider">
+                                Credit Limit
+                              </span>
+                              <strong className="text-sm font-extrabold text-gray-900 dark:text-white">
+                                {currency(p.limit)}
+                              </strong>
+                            </div>
+                            <div className="bg-gray-50/80 dark:bg-gray-800/50 p-2.5 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                              <span className="text-[10px] text-gray-400 dark:text-gray-500 block uppercase font-bold tracking-wider">
+                                Reported Balance
+                              </span>
+                              <strong className="text-sm font-extrabold text-gray-900 dark:text-white">
+                                {currency(p.balance)}
+                              </strong>
+                            </div>
+                            <div className="col-span-2 sm:col-span-1 bg-emerald-50/70 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-100 dark:border-emerald-900/50 flex flex-col justify-center">
+                              <span className="text-[10px] text-emerald-800 dark:text-emerald-300 block uppercase font-bold tracking-wider">
+                                Combined Util Impact
+                              </span>
+                              <strong className="text-sm font-extrabold text-emerald-700 dark:text-emerald-300">
+                                {percent(impact.before)} → {percent(impact.after)}
+                              </strong>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Metadata Footer: Bureau reporting + Verification date */}
+                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between flex-wrap gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                              Reports to:
+                            </span>
+                            {p.bureaus.map((bKey) => (
+                              <span
+                                key={bKey}
+                                className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 font-semibold text-[10px] text-gray-700 dark:text-gray-300 tracking-wider uppercase border border-gray-200/60 dark:border-gray-700/60"
+                              >
+                                {bureauLabels[bKey] || bKey}
+                              </span>
+                            ))}
+                          </div>
+                          {p.verifiedAt && (
+                            <div className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
+                              <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                              <span>Verified: {shortDate(p.verifiedAt)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Modal Action Footer */}
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-colors ${
+                      isOverLimit
+                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                        : pickerChoices.length > 0
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                          : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          disabled={snapshot.enrollments.some(
-                            (e) => e.providerId === p.id,
-                          )}
-                          onChange={(e) =>
-                            setPickerChoices(
-                              e.target.checked
-                                ? [...pickerChoices, p.id]
-                                : pickerChoices.filter((x) => x !== p.id),
-                            )
-                          }
-                          className="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300"
-                        />
-                        <div>
-                          <div className="font-bold text-sm text-gray-900 dark:text-white">
-                            {p.name}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-0.5">
-                            {p.eligibility}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        {p.monthlyCost !== null && (
-                          <div className="text-xs font-bold text-gray-900 dark:text-white">
-                            {currency(p.monthlyCost)} / mo
-                          </div>
-                        )}
-                        {p.setupCost !== null && (
-                          <div className="text-[11px] text-gray-500">
-                            {currency(p.setupCost)} upfront
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {impact && (
-                      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                        <div>
-                          <span className="text-[10px] text-gray-400 block uppercase">
-                            Limit
-                          </span>
-                          <strong className="text-gray-800 dark:text-gray-200">
-                            {currency(p.limit)}
-                          </strong>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-gray-400 block uppercase">
-                            Reported Balance
-                          </span>
-                          <strong className="text-gray-800 dark:text-gray-200">
-                            {currency(p.balance)}
-                          </strong>
-                        </div>
-                        <div className="col-span-2 sm:col-span-1">
-                          <span className="text-[10px] text-gray-400 block uppercase">
-                            Combined Util Impact
-                          </span>
-                          <strong className="text-emerald-600">
-                            {percent(impact.before)} → {percent(impact.after)}
-                          </strong>
-                        </div>
-                      </div>
+                    {pickerChoices.length > 0 && !isOverLimit && (
+                      <Check className="w-3 h-3 stroke-[2.5]" />
                     )}
-
-                    <div className="mt-2 text-[10px] text-gray-400 flex items-center justify-between">
-                      <span>
-                        Reports to: {p.bureaus.join(", ").toUpperCase()}
-                      </span>
-                      <span>Verified: {shortDate(p.verifiedAt)}</span>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-
-            <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between flex-wrap gap-3">
-              <span className="text-xs text-gray-500 font-medium">
-                {pickerChoices.length} selected · suggested max{" "}
-                {plan?.steps.find((x) => x.category === pickerCategory)
-                  ?.quantity ?? 0}
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => setPickerCategory(null)}
-                  className="h-9 px-3.5 text-xs font-semibold gap-1.5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-xl shadow-xs transition-all cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5 text-gray-400" />
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  disabled={
-                    busy ||
-                    pickerChoices.length === 0 ||
-                    pickerChoices.length >
-                      (plan?.steps.find((x) => x.category === pickerCategory)
-                        ?.quantity ?? 0)
-                  }
-                  onClick={() =>
-                    runAction(async () => {
-                      await fetch(`/api/user/${userId}/positive`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          action: "select",
-                          category: pickerCategory,
-                          ids: pickerChoices,
-                          bureau,
-                          reportId: report?.id || "default",
-                        }),
-                      });
-                      setPickerCategory(null);
-                    }, "Choices saved. Begin the first registration step.")
-                  }
-                  className="h-9 px-4 text-xs font-bold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none rounded-xl transition-all cursor-pointer"
-                >
-                  {busy ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      Save My Choices
-                      <ChevronRight className="w-3.5 h-3.5 opacity-80" />
-                    </>
+                    {isOverLimit && <AlertCircle className="w-3 h-3 text-rose-600" />}
+                    <span>{pickerChoices.length} selected</span>
+                    <span className="opacity-60 font-normal">
+                      · suggested max {suggestedMax}
+                    </span>
+                  </div>
+                  {isOverLimit && (
+                    <span className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">
+                      Please unselect {pickerChoices.length - suggestedMax} to match plan quota
+                    </span>
                   )}
-                </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => setPickerCategory(null)}
+                    className="h-9 px-3.5 text-xs font-semibold gap-1.5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-xl shadow-xs transition-all cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5 text-gray-400" />
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={
+                      busy ||
+                      pickerChoices.length === 0 ||
+                      isOverLimit
+                    }
+                    onClick={() =>
+                      runAction(async () => {
+                        await fetch(`/api/user/${userId}/positive`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            action: "select",
+                            category: pickerCategory,
+                            ids: pickerChoices,
+                            bureau,
+                            reportId: report?.id || "default",
+                          }),
+                        });
+                        setPickerCategory(null);
+                      }, "Choices saved. Begin the first registration step.")
+                    }
+                    className="h-9 px-4 text-xs font-bold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none rounded-xl transition-all cursor-pointer"
+                  >
+                    {busy ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        Save My Choices
+                        <ChevronRight className="w-3.5 h-3.5 opacity-80" />
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        </Modal>
-      )}
+          </Modal>
+        );
+      })()}
 
       {/* --- MODAL 2: Enrollment Detail & Stepper Action Modal --- */}
       {activeEnrollment && (
@@ -1572,7 +1703,12 @@ export function PositiveCoachView({
                       Registration Documentation
                     </span>
                   </div>
-                  {activeEnrollment.documentPath ? (
+                  {uploadingDoc ? (
+                    <span className="text-[10px] font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                      <RefreshCw className="w-3 h-3 text-blue-600 animate-spin" />
+                      Uploading...
+                    </span>
+                  ) : activeEnrollment.documentPath ? (
                     <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                       Uploaded
@@ -1586,17 +1722,37 @@ export function PositiveCoachView({
                 </div>
 
                 {activeEnrollment.documentPath ? (
-                  <div className="p-3 bg-white dark:bg-gray-900 rounded-lg border border-emerald-200 dark:border-emerald-900/60 flex items-center justify-between flex-wrap gap-2">
+                  <div
+                    className={`p-3 bg-white dark:bg-gray-900 rounded-lg border transition-all flex items-center justify-between flex-wrap gap-2 ${
+                      uploadingDoc
+                        ? "border-blue-300 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/20 shadow-xs"
+                        : "border-emerald-200 dark:border-emerald-900/60"
+                    }`}
+                  >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-7 h-7 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                        <FileText className="w-4 h-4" />
+                      <div
+                        className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${
+                          uploadingDoc
+                            ? "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400"
+                            : "bg-emerald-50 dark:bg-emerald-950 text-emerald-600"
+                        }`}
+                      >
+                        {uploadingDoc ? (
+                          <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
+                        ) : (
+                          <FileText className="w-4 h-4" />
+                        )}
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-                          Confirmation On File
+                          {uploadingDoc
+                            ? "Replacing Document..."
+                            : "Confirmation On File"}
                         </div>
                         <div className="text-[10px] text-gray-500 truncate max-w-[200px] sm:max-w-xs">
-                          {activeEnrollment.documentPath.split("/").pop()}
+                          {uploadingDoc
+                            ? "Uploading new verification file to server..."
+                            : activeEnrollment.documentPath.split("/").pop()}
                         </div>
                       </div>
                     </div>
@@ -1606,9 +1762,16 @@ export function PositiveCoachView({
                       size="sm"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={busy || uploadingDoc}
-                      className="h-7 px-2.5 text-[11px] font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+                      className="h-7 px-2.5 text-[11px] font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer disabled:opacity-60"
                     >
-                      Replace
+                      {uploadingDoc ? (
+                        <>
+                          <RefreshCw className="w-3 h-3 animate-spin mr-1 text-blue-600" />
+                          Uploading...
+                        </>
+                      ) : (
+                        "Replace"
+                      )}
                     </Button>
                   </div>
                 ) : (

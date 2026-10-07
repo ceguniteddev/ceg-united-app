@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { firestoreAdmin } from "@/lib/fireabase-admin";
+import { firestoreAdmin, storageAdmin } from "@/lib/fireabase-admin";
 import { getCRSReport } from "@/service/crs";
 import {
   categories,
@@ -501,6 +501,50 @@ export async function attachPositiveDocument({
   );
 
   return getUserPositiveSnapshot(userId);
+}
+
+export async function uploadPositiveDocumentFile({
+  userId,
+  enrollmentId,
+  file,
+}: {
+  userId: string;
+  enrollmentId: string;
+  file: File;
+}): Promise<{ path: string; url: string; snapshot: Snapshot }> {
+  const bucket = storageAdmin();
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const filename = `${Date.now()}_${safeName}`;
+  const path = `user/${userId}/positive/${enrollmentId}/${filename}`;
+
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const blob = bucket.file(path);
+
+  await blob.save(buffer, {
+    metadata: {
+      contentType: file.type || "application/octet-stream",
+    },
+  });
+
+  let downloadUrl = "";
+  try {
+    const [url] = await blob.getSignedUrl({
+      action: "read",
+      expires: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year
+    });
+    downloadUrl = url;
+  } catch {
+    downloadUrl = path;
+  }
+
+  const snapshot = await attachPositiveDocument({
+    userId,
+    enrollmentId,
+    path,
+  });
+
+  return { path, url: downloadUrl, snapshot };
 }
 
 export async function requestPositiveHelp({
