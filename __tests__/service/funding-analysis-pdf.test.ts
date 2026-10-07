@@ -57,7 +57,7 @@ describe("saveAnalysisToPDF", () => {
       Buffer.from("pdf-bytes"),
     );
     (uploadDocument as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      gcsPath: "users/user-1/FUNDING_ANALYSIS/REF-001.pdf",
+      gcsPath: "documents/user-1/FUNDING_ANALYSIS/REF-001.pdf",
       originalFilename: "REF-001.pdf",
       size: 1024,
       contentType: "application/pdf",
@@ -73,7 +73,7 @@ describe("saveAnalysisToPDF", () => {
       customMetadata: expect.objectContaining({ referenceNumber: "REF-001" }),
     });
     expect(result).toEqual({
-      gcsPath: "users/user-1/FUNDING_ANALYSIS/REF-001.pdf",
+      gcsPath: "documents/user-1/FUNDING_ANALYSIS/REF-001.pdf",
       filename: "REF-001.pdf",
       size: 1024,
       contentType: "application/pdf",

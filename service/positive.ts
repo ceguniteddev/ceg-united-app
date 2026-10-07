@@ -261,12 +261,12 @@ export async function getUserPositiveSnapshot(
     enrollmentsSnap,
     crsReports,
   ] = await Promise.all([
-    db.doc(`users/${userId}/credit/current`).get(),
-    db.doc(`users/${userId}/positive/context`).get(),
-    db.doc(`users/${userId}/credit/refresh`).get(),
+    db.doc(`user/${userId}/credit/current`).get(),
+    db.doc(`user/${userId}/positive/context`).get(),
+    db.doc(`user/${userId}/credit/refresh`).get(),
     db.collection("positive_providers").get(),
     db.collection("positive_rules").get(),
-    db.collection(`users/${userId}/positiveEnrollments`).get(),
+    db.collection(`user/${userId}/positiveEnrollments`).get(),
     getCRSReport(userId),
   ]);
 
@@ -344,7 +344,7 @@ export async function getUserPositiveSnapshot(
   let disputeStatus: string | null = null;
   try {
     const disputeSnap = await db
-      .collection(`users/${userId}/disputeLines`)
+      .collection(`user/${userId}/disputeLines`)
       .limit(50)
       .get();
     if (!disputeSnap.empty) {
@@ -403,7 +403,7 @@ export async function selectPositiveProviders({
 
   const now = new Date().toISOString();
   for (const p of picks) {
-    const eRef = db.doc(`users/${userId}/positiveEnrollments/${p.id}`);
+    const eRef = db.doc(`user/${userId}/positiveEnrollments/${p.id}`);
     const existing = await eRef.get();
     if (!existing.exists) {
       const enrollment: Enrollment = {
@@ -443,7 +443,7 @@ export async function advancePositiveMilestone({
   documentUrl?: string | null;
 }): Promise<Snapshot> {
   const db = firestoreAdmin();
-  const eRef = db.doc(`users/${userId}/positiveEnrollments/${enrollmentId}`);
+  const eRef = db.doc(`user/${userId}/positiveEnrollments/${enrollmentId}`);
   const snap = await eRef.get();
 
   if (!snap.exists) {
@@ -485,7 +485,7 @@ export async function attachPositiveDocument({
   path: string;
 }): Promise<Snapshot> {
   const db = firestoreAdmin();
-  const eRef = db.doc(`users/${userId}/positiveEnrollments/${enrollmentId}`);
+  const eRef = db.doc(`user/${userId}/positiveEnrollments/${enrollmentId}`);
   const snap = await eRef.get();
 
   if (!snap.exists) throw new Error("Enrollment not found");
@@ -517,7 +517,7 @@ export async function requestPositiveHelp({
   const db = firestoreAdmin();
   const timestamp = Date.now();
   const taskRef = db.doc(
-    `users/${userId}/positiveEnrollments/${enrollmentId}/helpRequests/${timestamp}`,
+    `user/${userId}/positiveEnrollments/${enrollmentId}/helpRequests/${timestamp}`,
   );
 
   await taskRef.set({
@@ -528,7 +528,7 @@ export async function requestPositiveHelp({
     createdAt: new Date().toISOString(),
   });
 
-  const eRef = db.doc(`users/${userId}/positiveEnrollments/${enrollmentId}`);
+  const eRef = db.doc(`user/${userId}/positiveEnrollments/${enrollmentId}`);
   await eRef.set({ helpRequested: true }, { merge: true });
 }
 
@@ -540,7 +540,7 @@ export async function setPositiveConsent({
   enabled: boolean;
 }): Promise<Snapshot> {
   const db = firestoreAdmin();
-  await db.doc(`users/${userId}/positive/context`).set(
+  await db.doc(`user/${userId}/positive/context`).set(
     {
       smsConsent: enabled,
       consentAt: new Date().toISOString(),
@@ -603,7 +603,7 @@ export async function seedPositiveRecommendation(
   userId: string,
 ): Promise<void> {
   const db = firestoreAdmin();
-  const eRef = db.doc(`users/${userId}/positiveEnrollments/chase_sapphire_au`);
+  const eRef = db.doc(`user/${userId}/positiveEnrollments/chase_sapphire_au`);
 
   await eRef.set(
     {
@@ -647,5 +647,5 @@ export async function updatePositiveContext(
 ): Promise<void> {
   const db = firestoreAdmin();
   const parsed = contextSchema.parse(context);
-  await db.doc(`users/${userId}/positive/context`).set(parsed, { merge: true });
+  await db.doc(`user/${userId}/positive/context`).set(parsed, { merge: true });
 }

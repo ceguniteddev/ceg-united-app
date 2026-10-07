@@ -89,7 +89,7 @@ const defaultEmptyDeal: IncomeFundingDeal = {
 // State Machine Hook for Income-Based Funding
 // ============================================
 // In production, replace useState(defaultEmptyDeal) with a Firestore subscription:
-//   const [deal] = useDocument(doc(db, `users/${uid}/income-funding-deals/${dealId}`))
+//   const [deal] = useDocument(doc(db, `user/${uid}/income-funding-deals/${dealId}`))
 // and persist setDeal* calls back to Firestore.
 
 export function useIncomeFundingState(

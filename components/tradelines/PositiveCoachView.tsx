@@ -435,7 +435,7 @@ export function PositiveCoachView({
     setUploadingDoc(true);
     try {
       await runAction(async () => {
-        const path = `users/${userId}/positive/${activeEnrollment.id}/${Date.now()}_${f.name}`;
+        const path = `user/${userId}/positive/${activeEnrollment.id}/${Date.now()}_${f.name}`;
         const storageRef = ref(storage, path);
         await uploadBytes(storageRef, f);
         const downloadUrl = await getDownloadURL(storageRef);

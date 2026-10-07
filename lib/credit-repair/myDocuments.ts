@@ -1,7 +1,7 @@
 // ============================================
 // CEG Brain — My Documents Library (mock)
 // ============================================
-// In production, this lives at Firestore: users/{uid}/documents/{docId}
+// In production, this lives at Firestore: user/{uid}/documents/{docId}
 // with file storage in Firebase Storage. Each document captures the
 // metadata needed to attach it to outbound dispute mail.
 //

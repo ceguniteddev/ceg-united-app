@@ -45,7 +45,7 @@ export function ResponseLetterUploadModal({
     try {
       // 1. Upload to Firebase Storage
       const ext = file.name.split(".").pop() || "pdf";
-      const path = `users/${userId}/disputes/${lineId}/responses/${Date.now()}.${ext}`;
+      const path = `user/${userId}/disputes/${lineId}/responses/${Date.now()}.${ext}`;
       const storageRef = ref(storage, path);
       await uploadBytes(storageRef, file);
       const downloadUrl = await getDownloadURL(storageRef);
