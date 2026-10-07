@@ -67,7 +67,7 @@ describe("saveApplicationToPDF", () => {
       Buffer.from("pdf-bytes"),
     );
     const mockUploadResult = {
-      gcsPath: "users/user-1/FUNDING_APPLICATION/REF-001.pdf",
+      gcsPath: "documents/user-1/FUNDING_APPLICATION/REF-001.pdf",
       originalFilename: "REF-001.pdf",
       size: 2048,
       contentType: "application/pdf",

@@ -161,7 +161,7 @@ The [`POST()`](../../app/api/register/route.ts:228) handler validates the comple
 
 1.  **Prevents Duplicates:** Checks if a user with the given email already exists.
 2.  **Creates Firebase Auth User:** Creates a new user in Firebase Authentication.
-3.  **Creates Firestore User:** Creates a new document in the `users` collection with the validated personal data.
+3.  **Creates Firestore User:** Creates a new document in the `user` collection with the validated personal data.
 4.  **Funding only:** Calls [`applyFunding()`](../../service/apply-funding.ts:192) to create the application and upload its documents.
 5.  **Financial Education only:** Skips the business and funding records, then uploads the driver's license through [`uploadDocument()`](../../service/documents.ts:67) with Financial Education metadata.
 6.  **Sends Emails:**
