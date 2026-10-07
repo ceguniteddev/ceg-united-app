@@ -239,7 +239,7 @@ function Modal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
+            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -285,6 +285,7 @@ export function PositiveCoachView({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [addingAU, setAddingAU] = useState(false);
 
   // Load snapshot from API
   const loadSnapshot = async () => {
@@ -518,7 +519,7 @@ export function PositiveCoachView({
                 variant="outline"
                 size="sm"
                 onClick={() => setShowAdminModal(true)}
-                className="h-9 px-3.5 gap-2 text-xs font-semibold text-blue-600 border-blue-200 bg-blue-50/60 hover:bg-blue-100 hover:text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/60 shadow-sm transition-all"
+                className="h-9 px-3.5 gap-2 text-xs font-semibold text-blue-600 border-blue-200 bg-blue-50/60 hover:bg-blue-100 hover:text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/60 shadow-sm transition-all cursor-pointer"
               >
                 <Settings className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 Knowledge Base Admin
@@ -543,7 +544,7 @@ export function PositiveCoachView({
             <Button
               size="sm"
               onClick={loadSnapshot}
-              className="h-7 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+              className="h-7 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Retry
@@ -834,7 +835,7 @@ export function PositiveCoachView({
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-              Here’s Your Path Forward
+              Here&apos;s Your Path Forward
             </h3>
             <p className="text-xs text-gray-500">
               {plan?.steps.reduce((n, x) => n + x.quantity, 0) ?? 0} suggested
@@ -844,21 +845,36 @@ export function PositiveCoachView({
           {snapshot?.enrollments.length === 0 && (
             <Button
               size="sm"
-              onClick={() =>
-                runAction(
-                  () =>
-                    fetch(`/api/user/${userId}/positive`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ action: "seed" }),
-                    }),
-                  "Recommended AU Tradeline candidate added to plan.",
-                )
-              }
-              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-1.5 shadow-sm transition-all"
+              disabled={busy || addingAU}
+              onClick={async () => {
+                setAddingAU(true);
+                try {
+                  await runAction(
+                    () =>
+                      fetch(`/api/user/${userId}/positive`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "seed" }),
+                      }),
+                    "Recommended AU Tradeline candidate added to plan.",
+                  );
+                } finally {
+                  setAddingAU(false);
+                }
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-1.5 shadow-sm transition-all cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              Add Coach AU Recommendation
+              {addingAU ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Adding AU Recommendation...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Add Coach AU Recommendation
+                </>
+              )}
             </Button>
           )}
         </div>
@@ -897,7 +913,7 @@ export function PositiveCoachView({
               >
                 <button
                   onClick={() => setOpenCategory(isOpen ? null : step.category)}
-                  className={`w-full p-4 text-left flex items-center justify-between gap-4 transition-colors ${
+                  className={`w-full p-4 text-left flex items-center justify-between gap-4 transition-colors cursor-pointer ${
                     isOpen
                       ? "bg-blue-50/60 dark:bg-blue-950/30 border-b border-blue-100 dark:border-blue-900/40"
                       : "bg-white dark:bg-gray-900 hover:bg-gray-50"
@@ -982,7 +998,7 @@ export function PositiveCoachView({
                                 setActiveEnrollmentId(e.id);
                                 setHelpMessage("");
                               }}
-                              className="text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all"
+                              className="text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all cursor-pointer"
                             >
                               Continue Setup{" "}
                               <ChevronRight className="w-3.5 h-3.5" />
@@ -1003,7 +1019,7 @@ export function PositiveCoachView({
                           );
                           setPickerCategory(step.category);
                         }}
-                        className="text-xs font-semibold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all"
+                        className="text-xs font-semibold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all cursor-pointer"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                         {selectedForCategory.length
@@ -1249,35 +1265,59 @@ export function PositiveCoachView({
                 {plan?.steps.find((x) => x.category === pickerCategory)
                   ?.quantity ?? 0}
               </span>
-              <Button
-                disabled={
-                  busy ||
-                  pickerChoices.length === 0 ||
-                  pickerChoices.length >
-                    (plan?.steps.find((x) => x.category === pickerCategory)
-                      ?.quantity ?? 0)
-                }
-                onClick={() =>
-                  runAction(async () => {
-                    await fetch(`/api/user/${userId}/positive`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        action: "select",
-                        category: pickerCategory,
-                        ids: pickerChoices,
-                        bureau,
-                        reportId: report?.id || "default",
-                      }),
-                    });
-                    setPickerCategory(null);
-                  }, "Choices saved. Begin the first registration step.")
-                }
-                className="text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm disabled:opacity-50 disabled:pointer-events-none transition-all"
-              >
-                <Check className="w-3.5 h-3.5" />
-                Save My Choices →
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => setPickerCategory(null)}
+                  className="h-9 px-3.5 text-xs font-semibold gap-1.5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-xl shadow-xs transition-all cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5 text-gray-400" />
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={
+                    busy ||
+                    pickerChoices.length === 0 ||
+                    pickerChoices.length >
+                      (plan?.steps.find((x) => x.category === pickerCategory)
+                        ?.quantity ?? 0)
+                  }
+                  onClick={() =>
+                    runAction(async () => {
+                      await fetch(`/api/user/${userId}/positive`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          action: "select",
+                          category: pickerCategory,
+                          ids: pickerChoices,
+                          bureau,
+                          reportId: report?.id || "default",
+                        }),
+                      });
+                      setPickerCategory(null);
+                    }, "Choices saved. Begin the first registration step.")
+                  }
+                  className="h-9 px-4 text-xs font-bold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none rounded-xl transition-all cursor-pointer"
+                >
+                  {busy ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      Save My Choices
+                      <ChevronRight className="w-3.5 h-3.5 opacity-80" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </Modal>
@@ -1566,7 +1606,7 @@ export function PositiveCoachView({
                       size="sm"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={busy || uploadingDoc}
-                      className="h-7 px-2.5 text-[11px] font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      className="h-7 px-2.5 text-[11px] font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                     >
                       Replace
                     </Button>
@@ -1761,7 +1801,7 @@ export function PositiveCoachView({
                       size="sm"
                       disabled={busy || !helpMessage.trim()}
                       onClick={submitHelpRequest}
-                      className="h-9 px-3.5 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs disabled:opacity-50 disabled:pointer-events-none transition-all flex-shrink-0"
+                      className="h-9 px-3.5 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs disabled:opacity-50 disabled:pointer-events-none transition-all flex-shrink-0 cursor-pointer"
                     >
                       <Send className="w-3.5 h-3.5" />
                       <span className="hidden sm:inline">Submit</span>
@@ -1945,7 +1985,7 @@ function UtilizationPanelComponent({
 
       <button
         onClick={onShowMethodology}
-        className="mt-3 text-xs font-semibold text-blue-600 hover:underline inline-flex items-center gap-1"
+        className="mt-3 text-xs font-semibold text-blue-600 hover:underline inline-flex items-center gap-1 cursor-pointer"
       >
         See the calculation and score considerations →
       </button>
@@ -2111,7 +2151,7 @@ function AdminModalComponent({
           <Button
             size="sm"
             onClick={() => setTab("providers")}
-            className={`text-xs font-semibold ${
+            className={`text-xs font-semibold cursor-pointer ${
               tab === "providers"
                 ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                 : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
@@ -2122,7 +2162,7 @@ function AdminModalComponent({
           <Button
             size="sm"
             onClick={() => setTab("rules")}
-            className={`text-xs font-semibold ${
+            className={`text-xs font-semibold cursor-pointer ${
               tab === "rules"
                 ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                 : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
@@ -2172,7 +2212,7 @@ function AdminModalComponent({
                     sample: false,
                   })
                 }
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-1.5 shadow-sm transition-all"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-1.5 shadow-sm transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add New Provider
@@ -2196,7 +2236,7 @@ function AdminModalComponent({
                     size="sm"
                     variant="outline"
                     onClick={() => setEditingProvider(p)}
-                    className="text-xs font-semibold text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400"
+                    className="text-xs font-semibold text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 cursor-pointer"
                   >
                     Edit
                   </Button>
@@ -2258,13 +2298,14 @@ function AdminModalComponent({
                     variant="ghost"
                     size="sm"
                     onClick={() => setEditingProvider(null)}
+                    className="cursor-pointer"
                   >
                     Cancel
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => saveProvider(editingProvider)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-1.5 shadow-sm transition-all"
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-1.5 shadow-sm transition-all cursor-pointer"
                   >
                     <Check className="w-3.5 h-3.5" />
                     Save Provider
@@ -2312,7 +2353,7 @@ function AdminModalComponent({
                         },
                       )
                     }
-                    className="text-xs font-semibold text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400"
+                    className="text-xs font-semibold text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 cursor-pointer"
                   >
                     Edit Rule
                   </Button>
@@ -2348,13 +2389,14 @@ function AdminModalComponent({
                     variant="ghost"
                     size="sm"
                     onClick={() => setEditingRule(null)}
+                    className="cursor-pointer"
                   >
                     Cancel
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => saveRule(editingRule)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-1.5 shadow-sm transition-all"
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-1.5 shadow-sm transition-all cursor-pointer"
                   >
                     <Check className="w-3.5 h-3.5" />
                     Save Rule
