@@ -48,9 +48,15 @@ describe("Dispute Module v3 Core Engine", () => {
 
     const decisiveKey = specs.find((s) => s.decisive)?.key;
     if (decisiveKey) {
-      const strongStrength = evidenceStrength(specs, new Set([decisiveKey]));
-      expect(strongStrength.pct).toBeGreaterThanOrEqual(80);
+      const partialStrength = evidenceStrength(specs, new Set([decisiveKey]));
+      expect(partialStrength.level).toBe("fair");
+      expect(partialStrength.pct).toBe(40);
     }
+
+    const allDecisiveKeys = specs.filter((s) => s.decisive).map((s) => s.key);
+    const strongStrength = evidenceStrength(specs, new Set(allDecisiveKeys));
+    expect(strongStrength.level).toBe("strong");
+    expect(strongStrength.pct).toBeGreaterThanOrEqual(80);
   });
 
   it("evaluates noResponseAllowed gate based on date N", () => {
@@ -66,8 +72,9 @@ describe("Dispute Module v3 Core Engine", () => {
 
     // Before N
     expect(noResponseAllowed(mockLine, "2026-06-15").allowed).toBe(false);
-    // On or after N (2026-07-08)
-    expect(noResponseAllowed(mockLine, "2026-07-08").allowed).toBe(true);
+    expect(noResponseAllowed(mockLine, "2026-07-08").allowed).toBe(false);
+    // On or after N (2026-07-09)
+    expect(noResponseAllowed(mockLine, "2026-07-09").allowed).toBe(true);
     expect(noResponseAllowed(mockLine, "2026-07-10").allowed).toBe(true);
   });
 });
