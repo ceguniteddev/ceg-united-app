@@ -166,7 +166,13 @@ export async function startDisputeAudit(userId: string): Promise<DisputeSnapshot
     if (crsReports && crsReports.length > 0) {
       const batch = db.batch();
       crsReports.forEach((rep: any, rIdx: number) => {
-        const tradelines = rep?.creditFiles?.[0]?.creditFileDetail?.tradelines || [];
+        const report = rep?.report || rep;
+        const tradelines =
+          (Array.isArray(report?.tradelines) ? report.tradelines : null) ||
+          (Array.isArray(rep?.tradelines) ? rep.tradelines : null) ||
+          report?.creditFiles?.[0]?.creditFileDetail?.tradelines ||
+          rep?.creditFiles?.[0]?.creditFileDetail?.tradelines ||
+          [];
         tradelines.forEach((t: any, tIdx: number) => {
           const isNegative =
             t?.derogatoryDataIndicator ||
@@ -174,13 +180,15 @@ export async function startDisputeAudit(userId: string): Promise<DisputeSnapshot
             Number(t?._60DayLates || 0) > 0 ||
             Number(t?._90DayLates || 0) > 0 ||
             (t?.currentAccountStatus &&
-              String(t.currentAccountStatus).toLowerCase().includes("collection"));
+              String(t.currentAccountStatus).toLowerCase().includes("collection")) ||
+            (t?.accountStatus &&
+              String(t.accountStatus).toLowerCase().includes("collection"));
 
           if (isNegative) {
             const creditor = t?.creditorName || t?.subscriberName || "Creditor";
-            const last4 = String(t?.accountNumber || "0000").slice(-4);
+            const last4 = String(t?.accountNumber || t?.accountIdentifier || "0000").slice(-4);
             const itemId = `crs_neg_${rIdx}_${tIdx}`;
-            const amount = Number(t?.currentBalance || t?.pastDueAmount || 0);
+            const amount = Number(t?.currentBalance || t?.currentBalanceAmount || t?.pastDueAmount || 0);
             const isLate = Number(t?._30DayLates || 0) > 0;
             const errCode: ErrorCode = isLate ? "E06" : "E04";
 
