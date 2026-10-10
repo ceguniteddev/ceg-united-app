@@ -11,7 +11,7 @@ import ClientDocuments from "@/components/ClientDocuments";
 import ClientCreditReport from "@/components/ClientCreditReport";
 import UserLearningMaterials from "@/components/UserLearningMaterials";
 import AdminLetterFeatureManagement from "@/components/AdminLetterFeatureManagement";
-import CreditRepairView from "@/components/CreditRepairView";
+import CreditRepairDisputesView from "@/components/credit-repair/CreditRepairDisputesView";
 import LetterList from "@/components/letter-stream/list";
 import LetterForm from "@/components/letter-stream/form";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
@@ -206,7 +206,7 @@ const ClientProfilePage = () => {
       )}
 
       <TabsContent value="credit-repair" className="w-full">
-        <CreditRepairView userId={userId} />
+        <CreditRepairDisputesView userId={userId} />
       </TabsContent>
 
       <TabsContent value="note" className="w-full">

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import CreditRepairView from "@/components/CreditRepairView";
+import CreditRepairDisputesView from "@/components/credit-repair/CreditRepairDisputesView";
 import { useAuth } from "@/provider/AuthContext";
 
 export default function CreditRepairPage() {
@@ -11,7 +11,7 @@ export default function CreditRepairPage() {
 
   return (
     <div className="flex flex-col gap-6 w-full h-full">
-      <CreditRepairView userId={user.uid} />
+      <CreditRepairDisputesView userId={user.uid} />
     </div>
   );
 }
